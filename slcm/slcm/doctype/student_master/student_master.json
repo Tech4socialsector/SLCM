@@ -1297,7 +1297,7 @@
             "role": "Programme Chair"
         },
         {
-            "read": 1,
+            "read": 0,
             "role": "Student"
         }
     ],
