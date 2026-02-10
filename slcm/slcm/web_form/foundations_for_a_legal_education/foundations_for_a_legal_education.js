@@ -21,8 +21,6 @@ frappe.ready(function () {
 				}
 			}
 
-			console.log("[Web Form] DOB:", dob_val, "Calculated Age:", age, "Show Declaration:", show_declaration);
-
 			// --- 1. Toggle Section Break (Declaration) ---
 			// Try standard API first
 			toggle_field('section_break_declaration', show_declaration);
@@ -61,7 +59,7 @@ frappe.ready(function () {
 			toggle_field('declaration_consent', show_declaration);
 
 		} catch (e) {
-			console.warn("[Web Form] Error toggling declaration:", e);
+			// Error handling silently in production or log to system console if available
 		}
 	}
 
@@ -80,14 +78,14 @@ frappe.ready(function () {
 			}
 
 			// Method 3: Direct DOM manipulation via get_field
-			var field = frappe.web_form.get_field(fieldname);
+			let field = frappe.web_form.get_field(fieldname);
 			if (field && field.$wrapper) {
 				field.$wrapper.toggle(show);
 				return;
 			}
 
 			// Method 4: Data attribute selector
-			var $el = $('[data-fieldname="' + fieldname + '"]');
+			let $el = $('[data-fieldname="' + fieldname + '"]');
 			if ($el.length) {
 				// If it's a section break, hide the container
 				if ($el.hasClass('section-break') || $el.hasClass('web-form-section')) {
@@ -97,7 +95,7 @@ frappe.ready(function () {
 				}
 			}
 		} catch (e) {
-			console.warn("[Web Form] Error into toggle_field for " + fieldname + ":", e);
+			// Error handling silently
 		}
 	}
 
