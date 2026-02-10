@@ -2,7 +2,7 @@
 
 Student Life Cycle Management
 
-### Installation
+### Installation Process
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
 
