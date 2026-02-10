@@ -18,7 +18,7 @@
  "prepared_report": 0,
  "ref_doctype": "Attendance Summary",
  "report_name": "Comprehensive Attendance Report",
- "report_type": "Query Report",
+ "report_type": "Script Report",
  "roles": [],
  "timeout": 0
 }

@@ -1,54 +1,117 @@
-# Copyright (c) 2026, Nishanth and contributors
+# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
+from __future__ import unicode_literals
 import frappe
-import os
+from frappe import _
 
 def execute(filters=None):
-    if not filters:
-        filters = {}
-        
-    # Ensure defaults for all filters to avoid KeyError in SQL
-    filters.setdefault("department", None)
-    filters.setdefault("program", None)
-    filters.setdefault("batch", None)
-    filters.setdefault("section", None)
-    filters.setdefault("course", None)
+	columns = get_columns(filters)
+	data = get_data(filters)
+	return columns, data
 
-    # Read the SQL file
-    sql_file_path = os.path.join(os.path.dirname(__file__), "comprehensive_attendance_report.sql")
-    with open(sql_file_path, "r") as f:
-        sql_query = f.read()
+def get_columns(filters):
+	columns = [
+		{
+			"fieldname": "student",
+			"label": _("Student"),
+			"fieldtype": "Link",
+			"options": "Student Master",
+			"width": 150
+		},
+		{
+			"fieldname": "student_name",
+			"label": _("Student Name"),
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"fieldname": "program",
+			"label": _("Program"),
+			"fieldtype": "Link",
+			"options": "Cohort",
+			"width": 120
+		},
+		{
+			"fieldname": "section",
+			"label": _("Section"),
+			"fieldtype": "Link",
+			"options": "Program Batch Section",
+			"width": 100
+		},
+		{
+			"fieldname": "course",
+			"label": _("Course"),
+			"fieldtype": "Link",
+			"options": "Course",
+			"width": 200
+		},
+		{
+			"fieldname": "total_classes",
+			"label": _("Total Classes"),
+			"fieldtype": "Int",
+			"width": 100
+		},
+		{
+			"fieldname": "attended_classes",
+			"label": _("Attended Classes"),
+			"fieldtype": "Int",
+			"width": 100
+		},
+		{
+			"fieldname": "attendance_percentage",
+			"label": _("Percentage"),
+			"fieldtype": "Percent",
+			"width": 100
+		},
+		{
+			"fieldname": "status",
+			"label": _("Status"),
+			"fieldtype": "Data",
+			"width": 100
+		}
+	]
+	return columns
 
-    # Execute SQL
-    data = frappe.db.sql(sql_query, filters, as_dict=True)
-    
-    # Define Columns explicitly
-    columns = [
-        {"fieldname": "S.No", "label": "S.No", "fieldtype": "Int", "width": 50},
-        {"fieldname": "Student ID", "label": "Student ID", "fieldtype": "Link", "options": "Student Master", "width": 120},
-        {"fieldname": "Student Name", "label": "Student Name", "fieldtype": "Data", "width": 150},
-        {"fieldname": "Section", "label": "Section", "fieldtype": "Data", "width": 80},
-        {"fieldname": "Course Name", "label": "Course Name", "fieldtype": "Data", "width": 150},
-        {"fieldname": "Applied for Condonation", "label": "Applied for Condonation", "fieldtype": "Data", "width": 120},
-        {"fieldname": "Condonation Attachment", "label": "Condonation Attachment", "fieldtype": "Data", "width": 100},
-        {"fieldname": "Condonation Status", "label": "Condonation Status", "fieldtype": "Data", "width": 100},
-        {"fieldname": "Condonation Reason", "label": "Condonation Reason", "fieldtype": "Data", "width": 150},
-        {"fieldname": "Condonation Remarks", "label": "Condonation Remarks", "fieldtype": "Data", "width": 150},
-        {"fieldname": "Condonation Hours", "label": "Condonation Hours", "fieldtype": "Float", "width": 100},
-        {"fieldname": "Applied for FA / MFA", "label": "Applied for FA / MFA", "fieldtype": "Data", "width": 120},
-        {"fieldname": "FA / MFA Attachment", "label": "FA / MFA Attachment", "fieldtype": "Data", "width": 100},
-        {"fieldname": "FA / MFA Status", "label": "FA / MFA Status", "fieldtype": "Data", "width": 100},
-        {"fieldname": "FA / MFA Reason", "label": "FA / MFA Reason", "fieldtype": "Data", "width": 150},
-        {"fieldname": "FA / MFA Remarks", "label": "FA / MFA Remarks", "fieldtype": "Data", "width": 150},
-        {"fieldname": "FA / MFA Hours", "label": "FA / MFA Hours", "fieldtype": "Float", "width": 100},
-        {"fieldname": "Total Classes Held", "label": "Total Classes Held", "fieldtype": "Float", "width": 100},
-        {"fieldname": "Total Office Hours Held", "label": "Total Office Hours Held", "fieldtype": "Float", "width": 100},
-        {"fieldname": "Total Hours", "label": "Total Hours", "fieldtype": "Float", "width": 100},
-        {"fieldname": "Attendance Percentage Before", "label": "Attendance % Before", "fieldtype": "Percent", "width": 100},
-        {"fieldname": "Hours Absent", "label": "Hours Absent", "fieldtype": "Float", "width": 100},
-        {"fieldname": "Final Attended Hours", "label": "Final Attended Hours", "fieldtype": "Float", "width": 100},
-        {"fieldname": "Attendance Percentage After", "label": "Attendance % After", "fieldtype": "Percent", "width": 100},
-    ]
+def get_data(filters):
+	data = []
+	
+	conditions = ""
+	if filters.get("department"):
+		conditions += " AND s.department = %(department)s"
+	if filters.get("program"):
+		conditions += " AND s.programme = %(program)s"
+	if filters.get("section"):
+		conditions += " AND att.section = %(section)s" # Fetch section from Attendance Summary
+	if filters.get("course"):
+		conditions += " AND att.course = %(course)s"
 
-    return columns, data
+	# Fetch data from Attendance Summary
+	query = """
+		SELECT
+			att.student,
+			att.student_name,
+			s.programme as program,
+			att.section as section,
+			att.course,
+			att.total_classes,
+			att.attended_classes,
+			att.attendance_percentage,
+			CASE
+				WHEN att.eligible_for_exam = 1 THEN 'Eligible'
+				ELSE 'Not Eligible'
+			END as status
+		FROM
+			`tabAttendance Summary` att
+		LEFT JOIN
+			`tabStudent Master` s ON att.student = s.name
+		WHERE
+			att.docstatus < 2
+			{conditions}
+		ORDER BY
+			att.student, att.course
+	""".format(conditions=conditions)
+
+	results = frappe.db.sql(query, filters, as_dict=True)
+	
+	return results
