@@ -14,6 +14,8 @@
         "term_name",
         "total_classes",
         "attended_classes",
+        "raw_attended_classes",
+        "office_hours_attended",
         "attendance_percentage",
         "minimum_required_percentage",
         "eligible_for_exam",
@@ -102,7 +104,19 @@
             "fieldname": "attended_classes",
             "fieldtype": "Float",
             "in_list_view": 1,
-            "label": "Attended Classes",
+            "label": "Total Attended (Incl. Bonus)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "raw_attended_classes",
+            "fieldtype": "Float",
+            "label": "Class Attended (Raw)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "office_hours_attended",
+            "fieldtype": "Float",
+            "label": "Office Hours Attended",
             "read_only": 1
         },
         {

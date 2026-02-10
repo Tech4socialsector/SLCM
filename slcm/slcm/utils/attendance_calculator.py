@@ -49,6 +49,10 @@ def calculate_student_attendance(student, course_offering):
 	# Basic Attendance (Sessions)
 	raw_attended = attendance_data['attended_hours']
 	
+	# Populate new fields
+	summary.raw_attended_classes = raw_attended
+	summary.office_hours_attended = office_hours_data['total_hours']
+	
 	# Total Attended (including exceptions)
 	total_attended = raw_attended
 	

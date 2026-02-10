@@ -49,18 +49,78 @@ def get_columns(filters):
 		{
 			"fieldname": "total_classes",
 			"label": _("Total Classes"),
-			"fieldtype": "Int",
+			"fieldtype": "Float",
 			"width": 100
 		},
 		{
-			"fieldname": "attended_classes",
-			"label": _("Attended Classes"),
-			"fieldtype": "Int",
+			"fieldname": "raw_attended_classes",
+			"label": _("Class Attended"),
+			"fieldtype": "Float",
 			"width": 100
 		},
 		{
-			"fieldname": "attendance_percentage",
-			"label": _("Percentage"),
+			"fieldname": "office_hours_attended",
+			"label": _("Office Hours Attended"),
+			"fieldtype": "Float",
+			"width": 100
+		},
+		{
+			"fieldname": "total_hours_attended_calc",
+			"label": _("Total Hours (Class+Office)"),
+			"fieldtype": "Float",
+			"width": 120
+		},
+		{
+			"fieldname": "is_condonation_applied",
+			"label": _("Is Condonation Applied"),
+			"fieldtype": "Data",
+			"width": 100
+		},
+		{
+			"fieldname": "condonation_hours",
+			"label": _("Condonation Hours"),
+			"fieldtype": "Float",
+			"width": 100
+		},
+		{
+			"fieldname": "condonation_reason",
+			"label": _("Condonation Reason"),
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"fieldname": "condonation_proof",
+			"label": _("Condonation Proof"),
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"fieldname": "is_fa_mfa_applied",
+			"label": _("Is FA/MFA Applied"),
+			"fieldtype": "Data",
+			"width": 100
+		},
+		{
+			"fieldname": "fa_mfa_reason",
+			"label": _("FA/MFA Reason"),
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"fieldname": "fa_mfa_proof",
+			"label": _("FA/MFA Proof"),
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"fieldname": "percentage_before_condonation",
+			"label": _("% Before Condonation"),
+			"fieldtype": "Percent",
+			"width": 100
+		},
+		{
+			"fieldname": "percentage_after_condonation",
+			"label": _("% After Condonation"),
 			"fieldtype": "Percent",
 			"width": 100
 		},
@@ -95,8 +155,28 @@ def get_data(filters):
 			att.section as section,
 			att.course,
 			att.total_classes,
-			att.attended_classes,
-			att.attendance_percentage,
+			
+			COALESCE(att.raw_attended_classes, 0) as raw_attended_classes,
+			COALESCE(att.office_hours_attended, 0) as office_hours_attended,
+			(COALESCE(att.raw_attended_classes, 0) + COALESCE(att.office_hours_attended, 0)) as total_hours_attended_calc,
+			
+			CASE WHEN (SELECT COUNT(*) FROM `tabAttendance Condonation Reference` WHERE parent=att.name) > 0 THEN 'Yes' ELSE 'No' END as is_condonation_applied,
+			(SELECT COALESCE(SUM(number_of_hours), 0) FROM `tabAttendance Condonation Reference` WHERE parent=att.name) as condonation_hours,
+			(SELECT GROUP_CONCAT(condonation_reason SEPARATOR ', ') FROM `tabAttendance Condonation Reference` WHERE parent=att.name) as condonation_reason,
+			(SELECT GROUP_CONCAT(proof_document SEPARATOR ', ') FROM `tabAttendance Condonation Reference` WHERE parent=att.name) as condonation_proof,
+			
+			CASE WHEN (SELECT COUNT(*) FROM `tabAttendance FA MFA Reference` WHERE parent=att.name) > 0 THEN 'Yes' ELSE 'No' END as is_fa_mfa_applied,
+			(SELECT GROUP_CONCAT(reason SEPARATOR ', ') FROM `tabAttendance FA MFA Reference` WHERE parent=att.name) as fa_mfa_reason,
+			(SELECT GROUP_CONCAT(proof_document SEPARATOR ', ') FROM `tabAttendance FA MFA Reference` WHERE parent=att.name) as fa_mfa_proof,
+			
+			CASE 
+				WHEN att.total_classes > 0 THEN 
+					((COALESCE(att.raw_attended_classes, 0) + COALESCE(att.office_hours_attended, 0)) / att.total_classes) * 100 
+				ELSE 0 
+			END as percentage_before_condonation,
+			
+			att.attendance_percentage as percentage_after_condonation,
+			
 			CASE
 				WHEN att.eligible_for_exam = 1 THEN 'Eligible'
 				ELSE 'Not Eligible'
