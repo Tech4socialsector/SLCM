@@ -1,13 +1,8 @@
 {
     "actions": [],
     "allow_rename": 1,
-<<<<<<< HEAD
     "autoname": "format:FLE-{YYYY}-{####}",
     "creation": "2026-02-10 17:28:11.898533",
-=======
-    "autoname": "format:FLE-{YYYY}-####",
-    "creation": "2026-02-10 15:48:42.510631",
->>>>>>> 16c31c6bc49ac85d2c17031080df954fc7af2ea3
     "doctype": "DocType",
     "engine": "InnoDB",
     "field_order": [
@@ -49,11 +44,7 @@
             "label": "Candidate Details"
         },
         {
-<<<<<<< HEAD
             "default": "Now",
-=======
-            "default": "Today",
->>>>>>> 16c31c6bc49ac85d2c17031080df954fc7af2ea3
             "fieldname": "timestamp",
             "fieldtype": "Datetime",
             "label": "Timestamp",
@@ -231,19 +222,11 @@
     "grid_page_length": 50,
     "index_web_pages_for_search": 1,
     "links": [],
-<<<<<<< HEAD
     "modified": "2026-02-10 17:47:45.909281",
     "modified_by": "Administrator",
     "module": "SLCM",
     "name": "Foundations for a Legal Education",
     "naming_rule": "Expression (old style)",
-=======
-    "modified": "2026-02-10 16:23:12.465311",
-    "modified_by": "Administrator",
-    "module": "SLCM",
-    "name": "Foundations for a Legal Education",
-    "naming_rule": "Expression",
->>>>>>> 16c31c6bc49ac85d2c17031080df954fc7af2ea3
     "owner": "Administrator",
     "permissions": [
         {

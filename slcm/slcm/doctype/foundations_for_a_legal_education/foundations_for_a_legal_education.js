@@ -1,11 +1,24 @@
 // Copyright (c) 2026, Nishanth and contributors
 // For license information, please see license.txt
 
-<<<<<<< HEAD
 frappe.ui.form.on("Foundations for a Legal Education", {
     refresh(frm) {
         // Trigger the check on form load
-        frm.trigger('candidate_dob');
+        if (frm.doc.candidate_dob) {
+            frm.trigger('candidate_dob');
+        } else {
+            // If no DOB, hide by default or handle as needed
+            let is_visible = false;
+            // Toggle visibility: show if under 18, hide otherwise
+            if (frm.toggle_display) {
+                frm.toggle_display(['section_break_declaration', 'declaration_html', 'declaration_consent'], is_visible);
+            } else {
+                // Fallback
+                frm.set_df_property('section_break_declaration', 'hidden', is_visible ? 0 : 1);
+                frm.set_df_property('declaration_html', 'hidden', is_visible ? 0 : 1);
+                frm.set_df_property('declaration_consent', 'hidden', is_visible ? 0 : 1);
+            }
+        }
     },
     candidate_dob(frm) {
         let is_visible = false;
@@ -28,13 +41,13 @@ frappe.ui.form.on("Foundations for a Legal Education", {
         }
 
         // Toggle visibility: show if under 18, hide otherwise
-        frm.toggle_display(['section_break_declaration', 'declaration_html', 'declaration_consent'], is_visible);
+        if (frm.toggle_display) {
+            frm.toggle_display(['section_break_declaration', 'declaration_html', 'declaration_consent'], is_visible);
+        } else {
+            // Fallback for older frappe versions if toggle_display isn't available on frm
+            frm.set_df_property('section_break_declaration', 'hidden', is_visible ? 0 : 1);
+            frm.set_df_property('declaration_html', 'hidden', is_visible ? 0 : 1);
+            frm.set_df_property('declaration_consent', 'hidden', is_visible ? 0 : 1);
+        }
     }
 });
-=======
-// frappe.ui.form.on("Foundations for a Legal Education", {
-// 	refresh(frm) {
-
-// 	},
-// });
->>>>>>> 16c31c6bc49ac85d2c17031080df954fc7af2ea3
