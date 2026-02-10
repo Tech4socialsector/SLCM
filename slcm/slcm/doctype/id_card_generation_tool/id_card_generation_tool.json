@@ -1,0 +1,164 @@
+{
+    "actions": [],
+    "creation": "2024-05-21 12:00:00",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "section_filters",
+        "academic_year",
+        "department",
+        "program",
+        "batch",
+        "get_students",
+        "column_break_options",
+        "id_card_template",
+        "issue_date",
+        "expiry_date",
+        "generate_front",
+        "generate_back",
+        "section_students",
+        "student_list",
+        "generate_cards",
+        "download_zip",
+        "preview_section",
+        "preview_html"
+    ],
+    "fields": [
+        {
+            "fieldname": "section_filters",
+            "fieldtype": "Section Break",
+            "label": "Filters"
+        },
+        {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "label": "Academic Year",
+            "options": "Academic Year"
+        },
+        {
+            "fieldname": "department",
+            "fieldtype": "Link",
+            "label": "Department",
+            "options": "Department"
+        },
+        {
+            "fieldname": "program",
+            "fieldtype": "Link",
+            "label": "Program",
+            "options": "Program"
+        },
+        {
+            "fieldname": "batch",
+            "fieldtype": "Link",
+            "label": "Batch",
+            "options": "Student Batch Name"
+        },
+        {
+            "fieldname": "get_students",
+            "fieldtype": "Button",
+            "hidden": 1,
+            "label": "Get Students"
+        },
+        {
+            "fieldname": "column_break_options",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "id_card_template",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "ID Card Template",
+            "options": "ID Card Template",
+            "reqd": 1
+        },
+        {
+            "default": "Today",
+            "fieldname": "issue_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Issue Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "expiry_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Expiry Date",
+            "reqd": 1
+        },
+        {
+            "default": "1",
+            "fieldname": "generate_front",
+            "fieldtype": "Check",
+            "label": "Generate Front"
+        },
+        {
+            "default": "1",
+            "fieldname": "generate_back",
+            "fieldtype": "Check",
+            "label": "Generate Back"
+        },
+        {
+            "fieldname": "section_students",
+            "fieldtype": "Section Break",
+            "label": "Students"
+        },
+        {
+            "fieldname": "student_list",
+            "fieldtype": "Table",
+            "label": "Student List",
+            "options": "ID Card Generation Item"
+        },
+        {
+            "fieldname": "generate_cards",
+            "fieldtype": "Button",
+            "hidden": 1,
+            "label": "Generate Cards"
+        },
+        {
+            "fieldname": "download_zip",
+            "fieldtype": "Button",
+            "hidden": 1,
+            "label": "Download ZIP"
+        },
+        {
+            "fieldname": "preview_section",
+            "fieldtype": "Section Break",
+            "hidden": 1,
+            "label": "Card Preview"
+        },
+        {
+            "fieldname": "preview_html",
+            "fieldtype": "HTML",
+            "label": "Preview HTML"
+        }
+    ],
+    "issingle": 1,
+    "links": [],
+    "modified": "2026-01-08 15:20:16.786772",
+    "modified_by": "Administrator",
+    "module": "SLCM",
+    "name": "ID Card Generation Tool",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "print": 1,
+            "read": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "read": 1,
+            "role": "SLCM Registrar",
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}
