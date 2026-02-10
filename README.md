@@ -1,6 +1,6 @@
 ### SLCM
 
-Student Life Cycle Management
+Student Life Cycle Management - SLCM
 
 ### Installation Process
 
