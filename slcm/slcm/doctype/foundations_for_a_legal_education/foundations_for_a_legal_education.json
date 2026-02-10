@@ -1,0 +1,250 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "format:FLE-{YYYY}-####",
+    "creation": "2026-02-10 15:48:42.510631",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "section_break_candidate",
+        "timestamp",
+        "email_address",
+        "candidate_name",
+        "relationship_with_candidate",
+        "candidate_email_id",
+        "candidate_current_occupation",
+        "candidate_gender",
+        "candidate_dob",
+        "candidate_nationality",
+        "candidate_address",
+        "candidate_contact_number",
+        "section_break_education",
+        "last_examination_attended",
+        "last_institution_attended",
+        "section_break_parent",
+        "parent_name",
+        "parent_contact_number",
+        "parent_email_address",
+        "parent_occupation",
+        "section_break_payment",
+        "payment_instructions",
+        "payment_receipt",
+        "section_break_documents",
+        "id_card_scan",
+        "signature_scan",
+        "candidate_photo",
+        "section_break_declaration",
+        "declaration_text",
+        "declaration_consent"
+    ],
+    "fields": [
+        {
+            "fieldname": "section_break_candidate",
+            "fieldtype": "Section Break",
+            "label": "Candidate Details"
+        },
+        {
+            "default": "Today",
+            "fieldname": "timestamp",
+            "fieldtype": "Datetime",
+            "label": "Timestamp",
+            "read_only": 1
+        },
+        {
+            "fieldname": "email_address",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Email Address",
+            "options": "Email",
+            "reqd": 1
+        },
+        {
+            "fieldname": "candidate_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Candidate's Name",
+            "reqd": 1
+        },
+        {
+            "fieldname": "relationship_with_candidate",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Relationship with the candidate",
+            "options": "\nSelf\nParent\nGuardian"
+        },
+        {
+            "fieldname": "candidate_email_id",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Candidate's email ID",
+            "options": "Email"
+        },
+        {
+            "fieldname": "candidate_current_occupation",
+            "fieldtype": "Data",
+            "label": "Candidate's current occupation (for working professionals only)"
+        },
+        {
+            "fieldname": "candidate_gender",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Candidate's Gender",
+            "options": "Gender"
+        },
+        {
+            "fieldname": "candidate_dob",
+            "fieldtype": "Date",
+            "label": "Candidate's Date of Birth"
+        },
+        {
+            "fieldname": "candidate_nationality",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Candidate's Nationality",
+            "options": "Country"
+        },
+        {
+            "fieldname": "candidate_address",
+            "fieldtype": "Small Text",
+            "label": "Candidate's Current Correspondence/ Residential Address (with pin code & state)"
+        },
+        {
+            "description": "10 digits only for domestic applicants. In case of international applicant, please add the ISD code/ dialling code",
+            "fieldname": "candidate_contact_number",
+            "fieldtype": "Data",
+            "label": "Contact Number"
+        },
+        {
+            "fieldname": "section_break_education",
+            "fieldtype": "Section Break",
+            "label": "Educational Background"
+        },
+        {
+            "fieldname": "last_examination_attended",
+            "fieldtype": "Small Text",
+            "label": "Last examination attended along with the year of passing"
+        },
+        {
+            "fieldname": "last_institution_attended",
+            "fieldtype": "Small Text",
+            "label": "Last institution attended"
+        },
+        {
+            "fieldname": "section_break_parent",
+            "fieldtype": "Section Break",
+            "label": "Parent/Guardian Details"
+        },
+        {
+            "fieldname": "parent_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Parent's Name (Mother/Father/Guardian)"
+        },
+        {
+            "fieldname": "parent_contact_number",
+            "fieldtype": "Data",
+            "label": "Parent's contact number"
+        },
+        {
+            "fieldname": "parent_email_address",
+            "fieldtype": "Data",
+            "label": "Parent's Email Address",
+            "options": "Email"
+        },
+        {
+            "fieldname": "parent_occupation",
+            "fieldtype": "Data",
+            "label": "Parent's Occupation"
+        },
+        {
+            "fieldname": "section_break_payment",
+            "fieldtype": "Section Break",
+            "label": "Payment Details"
+        },
+        {
+            "fieldname": "payment_instructions",
+            "fieldtype": "HTML",
+            "label": "Payment Instructions",
+            "options": "Click this link to pay the admission fees amounting to Rs. 10,000/- along with any applicable payment gateway charges. After payment, proceed to upload the screenshot of the payment receipt. Please be advised that the fees are deemed non-refundable under all circumstances."
+        },
+        {
+            "fieldname": "payment_receipt",
+            "fieldtype": "Attach Image",
+            "label": "Please upload Payment receipt below in \"Attach\""
+        },
+        {
+            "fieldname": "section_break_documents",
+            "fieldtype": "Section Break",
+            "label": "Documents"
+        },
+        {
+            "description": "Upload the scanned copy of any government approved ID card of the Candidate (JPEG/ PDF less than 1 MB) example - AADHAR card, PAN Card, Passport, etc.",
+            "fieldname": "id_card_scan",
+            "fieldtype": "Attach Image",
+            "label": "Upload Government Approved ID Card"
+        },
+        {
+            "description": "Upload a scanned copy of Candidate's signature in blue/ black ink (JPEG/PDF less than 1 MB)",
+            "fieldname": "signature_scan",
+            "fieldtype": "Attach Image",
+            "label": "Upload Candidate's Signature"
+        },
+        {
+            "description": "Upload a passport size colour photo of the Candidate (JPEG/PDF format less than 1 MB). Please refrain from posting AI generated images/ selfie photos",
+            "fieldname": "candidate_photo",
+            "fieldtype": "Attach Image",
+            "label": "Upload Candidate's Photo"
+        },
+        {
+            "fieldname": "section_break_declaration",
+            "fieldtype": "Section Break",
+            "label": "Declaration"
+        },
+        {
+            "fieldname": "declaration_text",
+            "fieldtype": "HTML",
+            "label": "Declaration Text",
+            "options": "This declaration is only for the students below 18 years of age.<br><br>I, as the parent/guardian, hereby declare and pledge to enroll my child in your summer school programme, as detailed on the PACE website of the National Law School of India University. I acknowledge that the programme will be conducted online, and I commit to ensuring my child's participation throughout the programme duration.<br><br>By affixing my signature to this declaration, I certify that I possess the legal authorization to register my child for the Foundations of Legal Education (FLE) course and that all information provided is truthful and comprehensive to the best of my understanding."
+        },
+        {
+            "default": "0",
+            "fieldname": "declaration_consent",
+            "fieldtype": "Check",
+            "label": "I hereby consent to this declaration."
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-02-10 16:23:12.465311",
+    "modified_by": "Administrator",
+    "module": "SLCM",
+    "name": "Foundations for a Legal Education",
+    "naming_rule": "Expression",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "rows_threshold_for_grid_search": 20,
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}

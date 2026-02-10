@@ -167,10 +167,14 @@ def create_data():
     summary_before = calculate_student_attendance(student_id, offering_id)
     print(f"Summary Before Condonation: {summary_before['attended_classes']} / {summary_before['total_classes']} ({summary_before['attendance_percentage']}%)")
     
-    # 5. Create Condonation
-    # Force clean up existing condonation if any for this test
-    # frappe.db.sql("DELETE FROM `tabStudent Attendance Condonation` WHERE student=%s AND course_offering=%s", (student_id, offering_id))
+    # Reload all relevant doctypes
+    frappe.reload_doc("slcm", "doctype", "student_attendance_condonation")
+    frappe.reload_doc("slcm", "doctype", "attendance_condonation_reference")
+    frappe.reload_doc("slcm", "doctype", "attendance_fa_mfa_reference")
 
+    # ... (rest of the setup code remains same until creating condonation)
+
+    # 5. Create Condonation
     condonation = frappe.get_doc({
         "doctype": "Student Attendance Condonation",
         "student": student_id,
@@ -179,30 +183,75 @@ def create_data():
         "number_of_sessions": 1,
         "number_of_hours": 1.0,
         "condonation_reason": "Medical reasons",
-        "final_status": "Approved"
+        "final_status": "Approved",
+        "proof_document": "/files/test_proof.pdf" # Mock file path
     })
     condonation.insert(ignore_permissions=True)
     condonation.submit()
     
-    print(f"Condonation Created: {condonation.name} (Approved, 1 hour)")
+    print(f"Condonation Created: {condonation.name} (Approved, 1 hour, Proof: {condonation.proof_document})")
 
-    # 6. Check Summary After - Validating Automatic Trigger
+    # 6. Check Summary After - Validating Automatic Trigger and Proof Document
     summary_doc_name = frappe.db.exists("Attendance Summary", {"student": student_id, "course_offering": offering_id})
     summary_after = frappe.get_doc("Attendance Summary", summary_doc_name)
     
     print(f"Summary After Condonation (Automatic): {summary_after.attended_classes} / {summary_after.total_classes} ({summary_after.attendance_percentage}%)")
 
-    # In our scenario:
-    # Total Classes (Hours) = 1.0
-    # Attended (before) = 0.0 (Absent)
-    # Condonation = 1.0 Hour
-    # Expected Attended (after) = 0.0 + 1.0 = 1.0
-    # Expected % = 100%
+    # Verify Proof Document in Child Table
+    proof_found = False
+    if summary_after.condonation_list:
+        first_row = summary_after.condonation_list[0]
+        print(f"Reference Row Proof: {first_row.proof_document}")
+        if first_row.proof_document == "/files/test_proof.pdf":
+             proof_found = True
 
-    if summary_after.attended_classes > summary_before['attended_classes']:
-        print("SUCCESS: Condonation added to attendance automatically.")
+    if summary_after.attended_classes > summary_before['attended_classes'] and proof_found:
+        print("SUCCESS: Condonation added to attendance automatically AND Proof Document verified.")
     else:
-        print("FAILURE: Condonation NOT added to attendance automatically.")
-        
+        print(f"FAILURE: Attended increased? {summary_after.attended_classes > summary_before['attended_classes']}, Proof Found? {proof_found}")
+
+    # 7. Test FA/MFA Application (Proof Document)
+    fa_mfa = frappe.get_doc({
+        "doctype": "FA MFA Application",
+        "student": student_id,
+        "course": "TEST-COURSE-CONDONATION", # Course Master Name
+        "examination_date": today(),
+        "application_type": "First Attempt (FA)",
+        "reason": "Medical Reasons",
+        "proof_document": "/files/test_famfa_proof.pdf",
+        "status": "Approved"
+    })
+    fa_mfa.insert(ignore_permissions=True)
+    # Check if FA/MFA is submittable. If so, submit. If not, save is enough? 
+    # The code checks for docstatus < 2, so 0 or 1 is fine. But usually approved apps are submitted.
+    if fa_mfa.meta.is_submittable:
+        fa_mfa.submit()
+    else:
+        # Manually set docstatus 1 for testing if not submittable but logic requires it?
+        # The logic in calculator uses docstatus < 2. So Draft (0) or Submitted (1) is fine.
+        # But let's assume it should be submitted if approved.
+        pass
+
+    print(f"FA/MFA Created: {fa_mfa.name}")
+
+    # Recalculate Summary (FA/MFA might not auto-trigger, let's trigger manually to test population)
+    # Creating FA/MFA might not have an on_submit hook to calculate attendance. 
+    # We are testing the POPULATION logic in calculator, so calling calculate_student_attendance is valid.
+    from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+    calculate_student_attendance(student_id, offering_id)
+    
+    summary_famfa = frappe.get_doc("Attendance Summary", summary_doc_name)
+    famfa_proof_found = False
+    if summary_famfa.fa_mfa_list:
+        first_row = summary_famfa.fa_mfa_list[0]
+        print(f"FA/MFA Row Proof: {first_row.proof_document}")
+        if first_row.proof_document == "/files/test_famfa_proof.pdf":
+             famfa_proof_found = True
+    
+    if famfa_proof_found:
+        print("SUCCESS: FA/MFA Proof Document verified.")
+    else:
+        print("FAILURE: FA/MFA Proof Document NOT found.")
+
     frappe.db.rollback() # Rollback to keep DB clean
 
