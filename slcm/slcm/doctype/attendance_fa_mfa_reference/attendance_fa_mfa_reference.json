@@ -43,6 +43,14 @@
             "in_list_view": 1,
             "label": "Status",
             "read_only": 1
+        },
+        {
+            "fetch_from": "fa_mfa_application.proof_document",
+            "fieldname": "proof_document",
+            "fieldtype": "Attach",
+            "in_list_view": 1,
+            "label": "Proof Document",
+            "read_only": 1
         }
     ],
     "index_web_pages_for_search": 1,

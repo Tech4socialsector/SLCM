@@ -334,7 +334,7 @@ def populate_application_lists(summary, student, course_offering):
 				"course_offering": course_offering,
 				"docstatus": ["<", 2]  # Exclude Cancelled
 			},
-			fields=["name", "condonation_reason", "number_of_sessions", "number_of_hours", "final_status"],
+			fields=["name", "condonation_reason", "number_of_sessions", "number_of_hours", "final_status", "proof_document"],
 			order_by="creation desc"
 		)
 		
@@ -345,6 +345,7 @@ def populate_application_lists(summary, student, course_offering):
 			row.number_of_sessions = app.number_of_sessions
 			row.number_of_hours = app.number_of_hours
 			row.final_status = app.final_status
+			row.proof_document = app.proof_document
 			
 	except Exception as e:
 		frappe.log_error(message=f"Error fetching condonation list: {str(e)}", title="Condonation List Fetch Error")
@@ -362,7 +363,7 @@ def populate_application_lists(summary, student, course_offering):
 					"course": course_id,
 					"docstatus": ["<", 2]
 				},
-				fields=["name", "application_type", "reason", "status"],
+				fields=["name", "application_type", "reason", "status", "proof_document"],
 				order_by="creation desc"
 			)
 			
@@ -372,6 +373,7 @@ def populate_application_lists(summary, student, course_offering):
 				row.application_type = app.application_type
 				row.reason = app.reason
 				row.status = app.status
+				row.proof_document = app.proof_document
 				
 	except Exception as e:
 		frappe.log_error(message=f"Error fetching FA/MFA list: {str(e)}", title="FA/MFA List Fetch Error")
