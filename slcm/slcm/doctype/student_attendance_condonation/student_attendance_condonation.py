@@ -31,6 +31,9 @@ class StudentAttendanceCondonation(Document):
 			settings = frappe.get_single("Attendance Settings")
 			min_req = flt(settings.minimum_attendance_percentage)
 			
+			if summary.attendance_percentage < 66.0:
+				frappe.throw("⚠️ Your attendance is less than the required 66%, so you cannot apply for condonation.")
+
 			if summary.attendance_percentage >= min_req:
 				frappe.msgprint("Warning: Student already has sufficient attendance.", alert=True)
 
