@@ -10,6 +10,7 @@
         "group_based_on",
         "column_break_2",
         "student_group",
+        "office_hours_group",
         "academic_year",
         "academic_term",
         "batch",
@@ -28,7 +29,7 @@
             "fieldname": "based_on",
             "fieldtype": "Select",
             "label": "Based On",
-            "options": "Student Group\nCourse Schedule\nClass Schedule"
+            "options": "Student Group\nCourse Schedule\nClass Schedule\nOffice Hours"
         },
         {
             "default": "Batch",
@@ -49,6 +50,15 @@
             "in_list_view": 1,
             "label": "Student Group",
             "options": "Student Group",
+            "reqd": 1
+        },
+        {
+            "depends_on": "eval:doc.based_on ==\"Office Hours\"",
+            "fieldname": "office_hours_group",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Office Hours Group",
+            "options": "Office Hours Group",
             "reqd": 1
         },
         {
@@ -77,7 +87,7 @@
             "reqd": 1
         },
         {
-            "depends_on": "eval: (doc.course_schedule || doc.class_schedule\n|| (doc.student_group && doc.date))",
+            "depends_on": "eval: (doc.course_schedule || doc.class_schedule || doc.office_hours_group\n|| (doc.student_group && doc.date))",
             "fieldname": "attendance",
             "fieldtype": "Section Break",
             "label": "Attendance"
