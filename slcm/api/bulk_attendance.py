@@ -168,6 +168,7 @@ def mark_attendance(
 	class_schedule=None,
 	date=None,
 	based_on=None,
+	office_hours_group=None,
 ):
 	if not date:
 		frappe.throw(_("Date is required"))
@@ -186,6 +187,7 @@ def mark_attendance(
 	group = frappe.get_doc("Student Group", student_group) if student_group else None
 	schedule = frappe.get_doc("Course Schedule", course_schedule) if course_schedule else None
 	class_sched = frappe.get_doc("Class Schedule", class_schedule) if class_schedule else None
+	office_group = frappe.get_doc("Office Hours Group", office_hours_group) if office_hours_group else None
 
 	program = None
 	if schedule:
@@ -194,6 +196,8 @@ def mark_attendance(
 		program = class_sched.programme
 	elif group:
 		program = group.program
+	elif office_group:
+		program = office_group.program
 
 	if not program:
 		frappe.throw(_("Program could not be determined"))
@@ -206,6 +210,8 @@ def mark_attendance(
 		course = class_sched.course
 	elif group:
 		course = group.course
+	elif office_group:
+		course = office_group.course
 
 	# Determine Course Offering
 	course_offering = None
@@ -263,6 +269,9 @@ def mark_attendance(
 		session_filters["class_schedule"] = class_schedule
 	elif based_on == "Course Schedule" and course_schedule:
 		session_filters["course_schedule"] = course_schedule
+	elif based_on == "Office Hours" and office_hours_group:
+		session_filters["office_hours_group"] = office_hours_group
+		session_filters["session_type"] = "Office Hour"
 	
 	# Try finding existing session
 	# DEBUG LOGGING
@@ -298,11 +307,12 @@ def mark_attendance(
 				"student_group": student_group,
 				"class_schedule": class_schedule,
 				"course_schedule": course_schedule if based_on == "Course Schedule" else None,
+				"office_hours_group": office_hours_group if based_on == "Office Hours" else None,
 				"course_offering": course_offering,
 				"session_start_time": class_sched.from_time,
 				"session_end_time": class_sched.to_time,
 				"duration_hours": duration,
-				"session_type": "Lecture", # Default
+				"session_type": "Lecture" if not office_group else "Office Hour", # Default
 				"instructor": class_sched.instructor,
 				"room": class_sched.room,
 				"session_status": "Conducted", 
@@ -324,6 +334,7 @@ def mark_attendance(
 				"student_group": student_group,
 				"course_schedule": course_schedule,
 				"class_schedule": class_schedule,
+				"office_hours_group": office_hours_group,
 				"docstatus": ("<", 2),
 			},
 		)
@@ -346,12 +357,13 @@ def mark_attendance(
 				"student_group": student_group,
 				"course_schedule": course_schedule,
 				"class_schedule": class_schedule,
+				"office_hours_group": office_hours_group,
 				"program": program,
 				"course": course,
 				"course_offer": course_offering,
 				"attendance_session": attendance_session,
-				"instructor": schedule.instructor if schedule else class_sched.instructor if class_sched else None,
-				"room": schedule.room if schedule else class_sched.room if class_sched else None,
+				"instructor": schedule.instructor if schedule else class_sched.instructor if class_sched else office_group.instructor if office_group else None,
+				"room": schedule.room if schedule else class_sched.room if class_sched else None, # Office Hours might not have room in doc
 				"source": "Manual",
 			}
 		).insert()
