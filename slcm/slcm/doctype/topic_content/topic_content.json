@@ -17,7 +17,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Content Type",
-   "options": "\nArticle\nVideo\nQuiz\nCourse"
+   "options": "\nArticle\nVideo\nQuiz"
   },
   {
    "fieldname": "column_break_pamy",
@@ -36,7 +36,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-09 17:50:18.070814",
+ "modified": "2026-02-11 11:20:27.730854",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Topic Content",
