@@ -112,6 +112,6 @@ def get_student_attendance_records(
 	attendance_map = {row["student"]: row["status"] for row in attendance_rows}
 
 	for student in student_list:
-		student["status"] = attendance_map.get(student["student"], "Absent")
+		student["status"] = attendance_map.get(student["student"], "Present")
 
 	return student_list
