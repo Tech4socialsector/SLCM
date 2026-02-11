@@ -14,6 +14,7 @@
   "examination_date",
   "event_from_date",
   "event_to_date",
+  "granted_hours",
   "column_break_1",
   "application_type",
   "reason",
@@ -112,6 +113,13 @@
    "reqd": 1
   },
   {
+   "description": "Number of attendance hours granted for this application",
+   "fieldname": "granted_hours",
+   "fieldtype": "Float",
+   "label": "Granted Hours",
+   "permlevel": 1
+  },
+  {
    "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
@@ -144,8 +152,9 @@
    "read_only": 1
   }
  ],
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-02-09 16:19:54.590977",
+ "modified": "2026-02-11 12:40:37.485549",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "FA MFA Application",

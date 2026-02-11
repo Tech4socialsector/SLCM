@@ -40,34 +40,58 @@ def calculate_student_attendance(student, course_offering):
 	
 	# Get condonation
 	condonation_data = get_approved_condonation(student, course_offering)
+
+	# Get FA/MFA hours
+	fa_mfa_data = calculate_fa_mfa_hours(student, course_offering)
 	
 	# -- Update summary fields --
-	# Map to existing fields in Attendance Summary JSON
-	# Note: total_classes now stores HOURS
-	summary.total_classes = sessions_data['conducted_hours']
+	# 1. Total Sessions (Count)
+	summary.total_classes = sessions_data['conducted_sessions']
 	
-	# Basic Attendance (Sessions)
+	# 2. Total Class Hours (Conducted)
+	summary.total_class_hours = sessions_data['conducted_hours']
+
+	# 3. Total Office Hours
+	summary.total_office_hours = office_hours_data['total_hours']
+
+	# 4. Total Condonation Hours
+	summary.total_condonation_hours = condonation_data['hours']
+
+	# 5. Total FA/MFA Hours
+	summary.total_fa_mfa_hours = fa_mfa_data['total_hours']
+	
+	# 6. Basic Attendance (Sessions/Hours Attended)
+	# This usually tracks Class Hours attended
 	raw_attended = attendance_data['attended_hours']
+	summary.total_attended_class_hours = raw_attended
 	
-	# Populate new fields
-	summary.raw_attended_classes = raw_attended
-	summary.office_hours_attended = office_hours_data['total_hours']
+	# 7. Total Hours (Calculated)
+	# Sum of Class + Office + Condonation + FA/MFA
+	# As requested: "only calculate total attended class, total office hours, total condonation hours, total fa mfa hours"
+	total_hours_calculated = raw_attended
 	
-	# Total Attended (including exceptions)
-	total_attended = raw_attended
+	# Add Office Hours
+	total_hours_calculated += office_hours_data['total_hours'] 
 	
-	# Add Office Hours if enabled
-	if settings.include_office_hours_in_attendance:
-		total_attended += office_hours_data['total_hours']
-	
-	# Add Condonation (assuming condonation records hours too)
-	total_attended += condonation_data['hours']
-	
-	summary.attended_classes = total_attended
+	# Add Condonation
+	total_hours_calculated += condonation_data['hours']
+
+	# Add FA/MFA
+	total_hours_calculated += fa_mfa_data['total_hours']
+
+	summary.attended_classes = total_hours_calculated
 	
 	# Calculate Percentage
-	if summary.total_classes > 0:
-		summary.attendance_percentage = (summary.attended_classes / summary.total_classes) * 100
+	# Percentage = (Total Hours Calculated / Total Class Hours Conducted) * 100
+	# Note: Office hours usually don't add to the denominator unless they are mandatory "sessions".
+	# If Office Hours are purely supplementary (bonus), denominator stays as Class Hours.
+	# If Office Hours are mandatory, they should be in 'total_classes' (denominator).
+	# Assuming standard "Bonus" behavior for now: Denominator = Class Hours.
+	
+	denominator = summary.total_class_hours
+	
+	if denominator > 0:
+		summary.attendance_percentage = (summary.attended_classes / denominator) * 100
 	else:
 		summary.attendance_percentage = 0
 	
@@ -112,18 +136,45 @@ def calculate_sessions(course_offering):
 	# Office Hours are usually supplementary.
 	sessions = frappe.db.sql("""
 		SELECT 
+			COUNT(name) as conducted_sessions,
 			COALESCE(SUM(duration_hours), 0) as total_hours,
 			COALESCE(SUM(CASE WHEN session_status = 'Conducted' THEN duration_hours ELSE 0 END), 0) as conducted_hours
 		FROM `tabAttendance Session`
 		WHERE course_offering = %s
 		AND session_type IN ('Lecture', 'Tutorial')
-		AND session_status != 'Cancelled'
+		AND session_status = 'Conducted'
 	""", course_offering, as_dict=True)
 	
 	if sessions:
 		return sessions[0]
 	
-	return {'total_hours': 0, 'conducted_hours': 0}
+	return {'total_hours': 0, 'conducted_hours': 0, 'conducted_sessions': 0}
+
+
+def calculate_fa_mfa_hours(student, course_offering):
+	"""
+	Calculate approved FA/MFA hours for a student in a course offering.
+	"""
+	# Get Course ID from Offering
+	course_id = frappe.db.get_value("Course Offering", course_offering, "course_title")
+	
+	if not course_id:
+		return {'total_hours': 0}
+
+	fa_mfa = frappe.db.sql("""
+		SELECT 
+			COALESCE(SUM(granted_hours), 0) as total_hours
+		FROM `tabFA MFA Application`
+		WHERE student = %s
+		AND course = %s
+		AND status = 'Approved'
+		AND docstatus = 1
+	""", (student, course_id), as_dict=True)
+	
+	if fa_mfa:
+		return fa_mfa[0]
+	
+	return {'total_hours': 0}
 
 
 def calculate_attendance_records(student, course_offering):

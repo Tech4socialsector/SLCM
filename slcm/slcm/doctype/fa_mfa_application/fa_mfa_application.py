@@ -93,21 +93,23 @@ class FAMFAApplication(Document):
 		Since FA/MFA applies to a Course, we need to find relevant Course Offerings.
 		"""
 		try:
-			# Find Course Offerings for this Course where the student has attendance/enrollment
-			# Searching Attendance Summary is the most direct way to find relevant offerings
+			# Find Course Offerings for this Course
+			# We filter Attendance Summary by Course Offering because 'course' in Summary is a fetched field and may not be reliable for filtering
+			offerings = frappe.get_all("Course Offering", filters={"course_title": self.course}, pluck="name")
+			
+			if not offerings:
+				return
+
 			summaries = frappe.get_all("Attendance Summary", 
-				filters={"student": self.student, "course": self.course},
+				filters={"student": self.student, "course_offering": ["in", offerings]},
 				fields=["course_offering"]
 			)
 			
 			from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
 			
 			for summary in summaries:
-				frappe.enqueue(
-					calculate_student_attendance,
-					student=self.student,
-					course_offering=summary.course_offering,
-					queue="short"
-				)
+				# Synchronous call for immediate UI update
+				calculate_student_attendance(self.student, summary.course_offering)
+				
 		except Exception as e:
 			frappe.log_error(f"FA/MFA Recalc Error: {str(e)}")
