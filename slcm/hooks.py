@@ -1,5 +1,6 @@
 app_name = "slcm"
 app_title = "SLCM"
+
 app_publisher = "Nishanth"
 app_description = "Student Life Cycle Management"
 app_email = "nishanth.a@azimpremjifoundation.org"
@@ -11,6 +12,13 @@ app_include_js = ["/assets/slcm/js/student_workspace_redirect.js"]
 doc_events = {
 	"Student Master": {"before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"}
 }
+
+
+
+app_publisher = "TFSS"
+app_description = "Student Life Cycle Management"
+app_email = "tech4socialsector@azimpremjifoundation.org"
+app_license = "mit"
 
 
 # Apps
@@ -256,6 +264,7 @@ doc_events = {
 # ignore_translatable_strings_from = []
 
 
+
 # RFID Attendance Processing
 scheduler_events = {
 	"cron": {
@@ -264,3 +273,5 @@ scheduler_events = {
 		]
 	}
 }
+
+
