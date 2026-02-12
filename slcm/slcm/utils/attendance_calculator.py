@@ -275,12 +275,21 @@ def get_or_create_summary(student, course_offering):
 		return frappe.get_doc("Attendance Summary", summary_name)
 	
 	# Create new summary
-	summary = frappe.get_doc({
-		"doctype": "Attendance Summary",
-		"student": student,
-		"course_offering": course_offering
-	})
-	summary.insert(ignore_permissions=True)
+	summary = frappe.new_doc("Attendance Summary")
+	summary.student = student
+	summary.course_offering = course_offering
+	
+	try:
+		summary.insert(ignore_permissions=True)
+	except frappe.DuplicateEntryError:
+		# Race condition: Record created concurrently
+		# Re-fetch using the deterministic name logic or filters
+		# Re-calculate name logic to find it
+		import hashlib
+		offering_hash = hashlib.md5(course_offering.encode("utf-8")).hexdigest()[:10]
+		name = f"ASU-{student}-{offering_hash}"
+		summary = frappe.get_doc("Attendance Summary", name)
+		
 	return summary
 
 

@@ -9,7 +9,51 @@ class OfficeHoursGroup(Document):
 def get_students(program, course, academic_year=None, academic_term=None, batch=None, section=None):
 	if not program:
 		return []
+
+	if section:
+		# If Section is provided, the source of truth is the Student Group
+		# We want all students active in the Student Group(s) for this Section
 		
+		# Find Student Groups for this Section
+		# Filters: Program, Course, Section are mandatory context from the UI
+		sg_filters = {
+			"program": program,
+			"course": course,
+			"section": section,
+			"docstatus": ["<", 2],
+			"status": "Active" # Only active groups
+		}
+		
+		if academic_year:
+			sg_filters["academic_year"] = academic_year
+		if academic_term:
+			sg_filters["academic_term"] = academic_term
+		if batch:
+			sg_filters["batch"] = batch
+			
+		student_groups = frappe.get_all("Student Group", filters=sg_filters, pluck="name")
+		
+		if not student_groups:
+			return []
+			
+		# Fetch students from these groups
+		students = frappe.db.sql("""
+			SELECT DISTINCT
+				sgs.student,
+				sgs.student_name,
+				sgs.group_roll_number,
+				sgs.active
+			FROM
+				`tabStudent Group Student` sgs
+			WHERE
+				sgs.parent IN %(groups)s
+				AND sgs.active = 1
+			ORDER BY
+				sgs.group_roll_number, sgs.student_name
+		""", {"groups": student_groups}, as_dict=True)
+		
+		return students
+
 	# Base query on Student Enrollment
 	# We want students who are Active and Enrolled in the Program
 	
