@@ -57,6 +57,7 @@ frappe.ui.form.on("Office Hours Group", {
                         let row = frm.add_child("students");
                         row.student = s.student;
                         row.student_name = s.student_name;
+                        row.group_roll_number = s.group_roll_number;
                         row.active = s.active;
                     });
 
