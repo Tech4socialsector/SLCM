@@ -49,3 +49,4 @@ class StudentAttendanceCondonation(Document):
 	def trigger_recalculation(self):
 		from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
 		calculate_student_attendance(self.student, self.course_offering)
+		

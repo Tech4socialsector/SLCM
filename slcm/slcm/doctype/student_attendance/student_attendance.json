@@ -65,7 +65,7 @@
             "fieldname": "attendance_based_on",
             "fieldtype": "Select",
             "label": "Attendance Based On",
-            "options": "RFID\nManual\nQR\nStudent Group\nCourse Schedule\nClass\nClass Schedule"
+            "options": "RFID\nManual\nQR\nStudent Group\nCourse Schedule\nClass\nClass Schedule\nOffice Hours"
         },
         {
             "depends_on": "eval:doc.based_on==\"Student Group\"",
