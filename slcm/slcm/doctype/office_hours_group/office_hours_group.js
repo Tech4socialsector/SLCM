@@ -32,8 +32,8 @@ frappe.ui.form.on("Office Hours Group", {
     },
 
     get_students(frm) {
-        if (!frm.doc.program || !frm.doc.course) {
-            frappe.msgprint(__("Please select Program and Course first."));
+        if (!frm.doc.program) {
+            frappe.msgprint(__("Please select Program first."));
             return;
         }
 

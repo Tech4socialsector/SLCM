@@ -156,9 +156,9 @@ def get_data(filters):
 			att.course,
 			att.total_classes,
 			
-			COALESCE(att.raw_attended_classes, 0) as raw_attended_classes,
-			COALESCE(att.office_hours_attended, 0) as office_hours_attended,
-			(COALESCE(att.raw_attended_classes, 0) + COALESCE(att.office_hours_attended, 0)) as total_hours_attended_calc,
+			COALESCE(att.total_attended_class_hours, 0) as raw_attended_classes,
+			COALESCE(att.total_office_hours, 0) as office_hours_attended,
+			(COALESCE(att.total_attended_class_hours, 0) + COALESCE(att.total_office_hours, 0)) as total_hours_attended_calc,
 			
 			CASE WHEN (SELECT COUNT(*) FROM `tabAttendance Condonation Reference` WHERE parent=att.name) > 0 THEN 'Yes' ELSE 'No' END as is_condonation_applied,
 			(SELECT COALESCE(SUM(number_of_hours), 0) FROM `tabAttendance Condonation Reference` WHERE parent=att.name) as condonation_hours,
@@ -170,8 +170,8 @@ def get_data(filters):
 			(SELECT GROUP_CONCAT(proof_document SEPARATOR ', ') FROM `tabAttendance FA MFA Reference` WHERE parent=att.name) as fa_mfa_proof,
 			
 			CASE 
-				WHEN att.total_classes > 0 THEN 
-					((COALESCE(att.raw_attended_classes, 0) + COALESCE(att.office_hours_attended, 0)) / att.total_classes) * 100 
+				WHEN att.total_class_hours > 0 THEN 
+					((COALESCE(att.total_attended_class_hours, 0) + COALESCE(att.total_office_hours, 0)) / att.total_class_hours) * 100 
 				ELSE 0 
 			END as percentage_before_condonation,
 			

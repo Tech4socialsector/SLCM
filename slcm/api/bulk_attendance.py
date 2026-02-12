@@ -222,7 +222,7 @@ def mark_attendance(
 	
 	# Priority 1: Strict match with Academic Year and Term (if available)
 	if not course_offering and course and program:
-		filters = {"course_title": course, "program": program, "docstatus": 1}
+		filters = {"course_title": course, "program": program, "docstatus": ["<", 2]}
 		
 		# Add Academic Year if available in Student Group
 		if group and group.academic_year:
@@ -255,7 +255,7 @@ def mark_attendance(
 		# Strategy 4: If still fail, try finding *any* Open/Active offering for this Course+Program
 		# Sort by creation desc to get the most recent one
 		if not course_offering:
-			final_filters = {"course_title": course, "program": program, "docstatus": 1}
+			final_filters = {"course_title": course, "program": program, "docstatus": ["<", 2]}
 			offerings = frappe.get_all(
 				"Course Offering",
 				filters=final_filters,
@@ -336,6 +336,10 @@ def mark_attendance(
 			# instructor from OH group?
 			og_doc = frappe.get_doc("Office Hours Group", office_hours_group)
 			instructor = og_doc.instructor
+			
+			# Ensure we store the course offering if we found one!
+			# (Code logic handles it via locals or logic below?)
+			# Yes, `course_offering` variable is available.
 
 		if start_time and end_time:
 			sess_doc = frappe.get_doc({
@@ -399,34 +403,42 @@ def mark_attendance(
 				"program": program,
 				"course": course,
 				"course_offer": course_offering,
+				"academic_year": group.academic_year if group else office_group.academic_year if office_group else schedule.academic_year if schedule else None,
+				"academic_term": group.academic_term if group else office_group.academic_term if office_group else schedule.academic_term if schedule else None,
 				"attendance_session": attendance_session,
 				"instructor": schedule.instructor if schedule else class_sched.instructor if class_sched else office_group.instructor if office_group else None,
 				"room": schedule.room if schedule else class_sched.room if class_sched else None, # Office Hours might not have room in doc
 				"source": "Manual",
+				"session_type": "Office Hour" if based_on == "Office Hours" else "Lecture",
 			}
 		).insert()
 		return "created"
 
 	created, updated, errors = 0, 0, []
+	affected_students = set()
 
 	for row in students_present:
 		try:
-			result = upsert(row.get("student"), "Present")
+			student_id = row.get("student")
+			result = upsert(student_id, "Present")
 			created += result == "created"
 			updated += result == "updated"
+			affected_students.add(student_id)
 		except Exception as e:
 			errors.append(f"{row.get('student')}: {e!s}")
 
 	for row in students_absent:
 		try:
-			result = upsert(row.get("student"), "Absent")
+			student_id = row.get("student")
+			result = upsert(student_id, "Absent")
 			created += result == "created"
 			updated += result == "updated"
+			affected_students.add(student_id)
 		except Exception as e:
 			errors.append(f"{row.get('student')}: {e!s}")
 
 	# ---------------------------------------------------------
-	# Trigger Session Summary Update
+	# Trigger Session Summary Update AND Student Calculation
 	# ---------------------------------------------------------
 	if attendance_session:
 		try:
@@ -436,6 +448,16 @@ def mark_attendance(
 		except Exception as e:
 			# Don't fail the whole request if summary update fails, just log it
 			frappe.log_error(message=f"Failed to update summary for session {attendance_session}: {e!s}", title="Update Session Summary Error")
+	
+	# Trigger individual student calculation if Course Offering is known
+	if course_offering:
+		from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+		for student_id in affected_students:
+			try:
+				calculate_student_attendance(student_id, course_offering)
+			except Exception as e:
+				frappe.log_error(message=f"Failed to calculate attendance for {student_id}: {e!s}", title="Attendance Calculation Error")
+
 	# ---------------------------------------------------------
 
 	return {
