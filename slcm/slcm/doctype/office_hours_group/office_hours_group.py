@@ -19,6 +19,10 @@ def get_students(program, course, academic_year=None, academic_term=None, batch=
 	if academic_year:
 		conditions.append("se.academic_year = %(academic_year)s")
 		params["academic_year"] = academic_year
+
+	if academic_term:
+		conditions.append("se.term_name = %(academic_term)s")
+		params["academic_term"] = academic_term
 		
 	if batch:
 		# 'data_xgxm' is the fieldname for Batch in 'Student Enrollment'

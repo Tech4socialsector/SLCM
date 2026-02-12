@@ -78,7 +78,7 @@
             "in_standard_filter": 1,
             "label": "Course Offering",
             "options": "Course Offering",
-            "reqd": 1
+            "reqd": 0
         },
         {
             "fetch_from": "course_offering.course_title",

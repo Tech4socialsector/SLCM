@@ -208,16 +208,32 @@ def calculate_office_hours(student, course_offering):
 	"""
 	Calculate office hours attendance for a student (from Student Attendance now).
 	"""
+	# Get Course Context for Fallback
+	course = None
+	academic_year = None
+	if course_offering:
+		offering = frappe.db.get_value("Course Offering", course_offering, ["course_title", "academic_year"], as_dict=True)
+		if offering:
+			course = offering.course_title
+			academic_year = offering.academic_year
+
 	office_hours = frappe.db.sql("""
 		SELECT 
 			COALESCE(SUM(hours_counted), 0) as total_hours
 		FROM `tabStudent Attendance`
 		WHERE student = %s
-		AND course_offer = %s
+		AND (
+			course_offer = %s
+			OR (
+				course_offer IS NULL 
+				AND course = %s 
+				AND academic_year = %s
+			)
+		)
 		AND session_type = 'Office Hour'
 		AND status IN ('Present', 'Late', 'Excused')
 		AND docstatus < 2
-	""", (student, course_offering), as_dict=True)
+	""", (student, course_offering, course, academic_year), as_dict=True)
 	
 	if office_hours:
 		return office_hours[0]
