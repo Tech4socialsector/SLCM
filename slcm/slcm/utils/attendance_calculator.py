@@ -38,6 +38,9 @@ def calculate_student_attendance(student, course_offering):
 	# Calculate office hours
 	office_hours_data = calculate_office_hours(student, course_offering)
 	
+	# Update Student Group Student (Office Hours)
+	update_office_hours_in_group(student, course_offering, office_hours_data['total_hours'])
+	
 	# Get condonation
 	condonation_data = get_approved_condonation(student, course_offering)
 
@@ -479,5 +482,46 @@ def get_student_group(student, course_offering):
 	except Exception:
 		pass
 
+
 	return None
+
+
+def update_office_hours_in_group(student, course_offering, total_hours):
+	"""
+	Update total_office_hours in Student Group Student doc for Office Hours Groups
+	"""
+	try:
+		# Get Course Context
+		offering = frappe.db.get_value("Course Offering", course_offering, ["course_title", "academic_year", "term_name"], as_dict=True)
+		if not offering:
+			return
+
+		# Find all Office Hours Groups for this course context
+		office_groups = frappe.get_all("Office Hours Group", 
+			filters={
+				"course": offering.course_title,
+				"academic_year": offering.academic_year,
+				"academic_term": offering.term_name,
+			},
+			pluck="name"
+		)
+		
+		if not office_groups:
+			return
+
+		# Update the child table rows
+		rows = frappe.get_all("Student Group Student",
+			filters={
+				"parent": ["in", office_groups],
+				"parenttype": "Office Hours Group",
+				"student": student
+			},
+			fields=["name"]
+		)
+		
+		for row in rows:
+			frappe.db.set_value("Student Group Student", row.name, "total_office_hours", total_hours)
+			
+	except Exception as e:
+		frappe.log_error(message=f"Failed to update office hours group for {student}: {str(e)}", title="Office Hours Update Error")
 

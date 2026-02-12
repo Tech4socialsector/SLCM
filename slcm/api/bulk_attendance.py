@@ -227,6 +227,13 @@ def mark_attendance(
 		# Add Academic Year if available in Student Group
 		if group and group.academic_year:
 			filters["academic_year"] = group.academic_year
+
+		# Add Academic Year/Term from Office Hours Group
+		if office_group:
+			if office_group.academic_year:
+				filters["academic_year"] = office_group.academic_year
+			if office_group.academic_term:
+				filters["term_name"] = office_group.academic_term
 			
 		# Add Academic Term if available in Student Group (check against term_name or similar)
 		# Note: Course Offering has 'term_name' data field, might be risky to filter strictly if naming differs.
@@ -235,23 +242,35 @@ def mark_attendance(
 		# Try fetching with Year
 		course_offering = frappe.db.get_value("Course Offering", filters, "name")
 		
-		# Strategy 2: If fail, try removing Academic Year (maybe data mismatch)
+		# Strategy 2: If fail, try removing Term (common mismatch source)
+		if not course_offering:
+			filters.pop("term_name", None)
+			course_offering = frappe.db.get_value("Course Offering", filters, "name")
+
+		# Strategy 3: If fail, try removing Academic Year (maybe data mismatch)
 		if not course_offering:
 			filters.pop("academic_year", None)
 			course_offering = frappe.db.get_value("Course Offering", filters, "name")
 			
-		# Strategy 3: If still fail, try finding *any* Open/Active offering for this Course+Program
+		# Strategy 4: If still fail, try finding *any* Open/Active offering for this Course+Program
 		# Sort by creation desc to get the most recent one
 		if not course_offering:
+			final_filters = {"course_title": course, "program": program, "docstatus": 1}
 			offerings = frappe.get_all(
 				"Course Offering",
-				filters={"course_title": course, "program": program, "docstatus": 1},
+				filters=final_filters,
 				fields=["name"],
 				order_by="creation desc",
 				limit=1
 			)
 			if offerings:
 				course_offering = offerings[0].name
+
+		if not course_offering:
+			frappe.log_error(
+				title="Course Offering Lookup Failed",
+				message=f"Could not find Course Offering.\nCourse: {course}\nProgram: {program}\nOffice Group: {office_hours_group}\nFilters tried: {filters}"
+			)
 
 	# ---------------------------------------------------------
 	# Ensure Attendance Session Exists and Update It
@@ -274,10 +293,8 @@ def mark_attendance(
 		session_filters["session_type"] = "Office Hour"
 	
 	# Try finding existing session
-	# DEBUG LOGGING
-	frappe.log_error(message=f"Lookup filters: {session_filters}", title="Lookup Filters Debug")
+	# Try finding existing session
 	session_name = frappe.db.exists("Attendance Session", session_filters)
-	frappe.log_error(message=f"Found Session: {session_name}", title="Session Found Debug")
 	
 	if session_name:
 		attendance_session = session_name
@@ -294,12 +311,33 @@ def mark_attendance(
 
 	else:
 		# Create new Attendance Session if not found (Fallback)
+		start_time = None
+		end_time = None
+		duration = 0
+		instructor = None
+		room = None
+		
 		if class_sched and class_sched.from_time and class_sched.to_time:
 			# Calculate duration
 			start_dt = frappe.utils.get_datetime(f"{date} {class_sched.from_time}")
 			end_dt = frappe.utils.get_datetime(f"{date} {class_sched.to_time}")
 			duration = frappe.utils.time_diff_in_hours(end_dt, start_dt)
-			
+			start_time = class_sched.from_time
+			end_time = class_sched.to_time
+			instructor = class_sched.instructor
+			room = class_sched.room
+		
+		# Fallback for Office Hours (default 1 hour?)
+		elif based_on == "Office Hours" and office_hours_group:
+			# Use current time or default? Let's use 09:00 - 10:00 as placeholder
+			start_time = "09:00:00"
+			end_time = "10:00:00"
+			duration = 1.0
+			# instructor from OH group?
+			og_doc = frappe.get_doc("Office Hours Group", office_hours_group)
+			instructor = og_doc.instructor
+
+		if start_time and end_time:
 			sess_doc = frappe.get_doc({
 				"doctype": "Attendance Session",
 				"session_date": date,
@@ -309,12 +347,12 @@ def mark_attendance(
 				"course_schedule": course_schedule if based_on == "Course Schedule" else None,
 				"office_hours_group": office_hours_group if based_on == "Office Hours" else None,
 				"course_offering": course_offering,
-				"session_start_time": class_sched.from_time,
-				"session_end_time": class_sched.to_time,
+				"session_start_time": start_time,
+				"session_end_time": end_time,
 				"duration_hours": duration,
-				"session_type": "Lecture" if not office_group else "Office Hour", # Default
-				"instructor": class_sched.instructor,
-				"room": class_sched.room,
+				"session_type": "Office Hour" if based_on == "Office Hours" else "Lecture",
+				"instructor": instructor,
+				"room": room,
 				"session_status": "Conducted", 
 				"attendance_marked": 1
 			})

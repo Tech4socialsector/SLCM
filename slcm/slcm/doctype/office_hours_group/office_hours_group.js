@@ -19,13 +19,7 @@ frappe.ui.form.on("Office Hours Group", {
             };
         });
 
-        frm.set_query("batch", () => {
-            return {
-                filters: {
-                    program: frm.doc.program
-                }
-            };
-        });
+
 
         frm.set_query("section", () => {
             const filters = {};

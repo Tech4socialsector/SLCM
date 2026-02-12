@@ -40,7 +40,7 @@
             "fieldname": "based_on",
             "fieldtype": "Select",
             "label": "Based On",
-            "options": "Student Group\nCourse Schedule\nClass Schedule"
+            "options": "Student Group\nCourse Schedule\nClass Schedule\nOffice Hours"
         },
         {
             "fieldname": "student_group",
