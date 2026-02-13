@@ -8,12 +8,7 @@
     "field_order": [
         "room_name",
         "room_number",
-        "room_type",
-        "floor",
-        "column_break_1",
-        "seating_capacity",
-        "facilities",
-        "is_booking_allowed"
+        "seating_capacity"
     ],
     "fields": [
         {
@@ -30,41 +25,15 @@
             "label": "Room Number"
         },
         {
-            "fieldname": "room_type",
-            "fieldtype": "Select",
-            "label": "Room Type",
-            "options": "Classroom\nMoot Court\nOpen Spaces\nMeeting Room\nMess\nQuad\nConference Hall\nProject\nGuest House\nStaff Quarters"
-        },
-        {
-            "fieldname": "floor",
-            "fieldtype": "Data",
-            "label": "Floor"
-        },
-        {
-            "fieldname": "column_break_1",
-            "fieldtype": "Column Break"
-        },
-        {
             "fieldname": "seating_capacity",
-            "fieldtype": "Int",
-            "label": "Capacity"
-        },
-        {
-            "fieldname": "facilities",
-            "fieldtype": "Text",
-            "label": "Facilities"
-        },
-        {
-            "default": "1",
-            "fieldname": "is_booking_allowed",
-            "fieldtype": "Check",
-            "label": "Is Booking Allowed"
+            "fieldtype": "Data",
+            "label": "Seating Capacity"
         }
     ],
     "grid_page_length": 50,
     "index_web_pages_for_search": 1,
     "links": [],
-    "modified": "2026-02-12 18:20:00.000000",
+    "modified": "2026-01-01 16:50:58.377939",
     "modified_by": "Administrator",
     "module": "SLCM",
     "name": "Room",
@@ -81,14 +50,6 @@
             "role": "System Manager",
             "share": 1,
             "write": 1
-        },
-        {
-            "read": 1,
-            "role": "Student"
-        },
-        {
-            "read": 1,
-            "role": "Faculty"
         }
     ],
     "row_format": "Dynamic",

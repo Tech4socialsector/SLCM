@@ -23,10 +23,11 @@
   "section_break_schedule",
   "schedule_date",
   "from_time",
-  "column_break_3",
   "to_time",
-  "room",
-  "block",
+  "column_break_3",
+  "venue",
+  "capacity",
+  "status",
   "section_break_repeat",
   "repeat_frequency",
   "repeats_till",
@@ -95,7 +96,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course",
-   "options": "Course Master"
+   "options": "Course"
   },
   {
    "fieldname": "course_offering",
@@ -155,12 +156,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "room",
-   "fieldtype": "Link",
-   "label": "Room",
-   "options": "Room"
-  },
-  {
    "fieldname": "section_break_repeat",
    "fieldtype": "Section Break",
    "label": "Repeat Settings"
@@ -211,13 +206,26 @@
    "options": "Blue\nGreen\nRed\nYellow\nOrange\nPurple\nPink\nGray"
   },
   {
-   "fieldname": "block",
+   "fieldname": "venue",
+   "fieldtype": "Link",
+   "label": "Venue",
+   "options": "Venue Booking"
+  },
+  {
+   "fetch_from": "venue.capacity",
+   "fieldname": "capacity",
    "fieldtype": "Data",
-   "label": "Block"
+   "label": "Capacity"
+  },
+  {
+   "fetch_from": "venue.status",
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "label": "Status"
   }
  ],
  "links": [],
- "modified": "2026-02-09 10:28:33.749528",
+ "modified": "2026-02-12 18:46:43.515223",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Class Schedule",

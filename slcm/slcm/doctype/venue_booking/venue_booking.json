@@ -1,0 +1,133 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "format:VB-{YYYY}-{MM}-{DD}-{####}",
+    "creation": "2026-02-12 18:30:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "venue_type",
+        "room",
+        "capacity",
+        "column_break_1",
+        "start_datetime",
+        "end_datetime",
+        "status",
+        "book_by_occupancy",
+        "section_break_1",
+        "reason",
+        "amended_from"
+    ],
+    "fields": [
+        {
+            "fieldname": "venue_type",
+            "fieldtype": "Select",
+            "label": "Venue Type",
+            "options": "Classroom\nMoot Court\nOpen Spaces\nMeeting Room\nMess\nQuad\nConference Hall\nProject\nGuest House\nStaff Quarters",
+            "reqd": 1
+        },
+        {
+            "fieldname": "room",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Venue",
+            "options": "Room",
+            "reqd": 1,
+            "get_query": "slcm.slcm.doctype.venue_booking.venue_booking.get_room_query"
+        },
+        {
+            "fetch_from": "room.seating_capacity",
+            "fieldname": "capacity",
+            "fieldtype": "Int",
+            "in_list_view": 1,
+            "label": "Capacity",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "start_datetime",
+            "fieldtype": "Datetime",
+            "label": "Start Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "end_datetime",
+            "fieldtype": "Datetime",
+            "label": "End Date",
+            "reqd": 1
+        },
+        {
+            "default": "Pending",
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Status",
+            "options": "Pending\nApproved\nRejected\nCancelled"
+        },
+        {
+            "default": "0",
+            "fieldname": "book_by_occupancy",
+            "fieldtype": "Check",
+            "label": "Filter By Expected Occupancy"
+        },
+        {
+            "fieldname": "section_break_1",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "reason",
+            "fieldtype": "Small Text",
+            "label": "Reason"
+        },
+        {
+            "fieldname": "amended_from",
+            "fieldtype": "Link",
+            "label": "Amended From",
+            "no_copy": 1,
+            "options": "Venue Booking",
+            "print_hide": 1,
+            "read_only": 1
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "is_submittable": 1,
+    "links": [],
+    "modified": "2026-02-12 18:30:00.000000",
+    "modified_by": "Administrator",
+    "module": "SLCM",
+    "name": "Venue Booking",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "read": 1,
+            "role": "Student",
+            "write": 1
+        },
+        {
+            "create": 1,
+            "read": 1,
+            "role": "Faculty",
+            "write": 1
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "track_changes": 1
+}
