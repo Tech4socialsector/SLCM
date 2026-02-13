@@ -87,6 +87,11 @@ class ClassSchedule(Document):
         if exists:
             return
 
+        # Fetch Room from Venue Booking if venue is selected
+        room_name = None
+        if self.venue:
+            room_name = frappe.db.get_value("Venue Booking", self.venue, "room")
+
         doc = frappe.get_doc({
             "doctype": "Attendance Session",
             "based_on": "Class Schedule",
@@ -95,7 +100,7 @@ class ClassSchedule(Document):
             "course_offering": self.course_offering,
             "course": self.course,
             "instructor": self.instructor,
-            "room": self.room,
+            "room": room_name,
             "session_date": self.schedule_date,
             "session_start_time": self.from_time,
             "session_end_time": self.to_time,

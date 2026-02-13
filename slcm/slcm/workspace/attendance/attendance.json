@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "Attendance",
  "links": [],
- "modified": "2026-02-12 18:41:08.837844",
+ "modified": "2026-02-13 09:56:32.976936",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance",
@@ -25,6 +25,14 @@
  "roles": [],
  "sequence_id": 7.0,
  "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Office Hours",
+   "link_to": "Office Hours Group",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
   {
    "color": "Grey",
    "doc_view": "List",
@@ -54,14 +62,6 @@
    "doc_view": "List",
    "label": "Student Attendance Tool",
    "link_to": "Student Attendance Tool",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Office Hours",
-   "link_to": "Student Attendance",
-   "stats_filter": "[]",
    "type": "DocType"
   },
   {
