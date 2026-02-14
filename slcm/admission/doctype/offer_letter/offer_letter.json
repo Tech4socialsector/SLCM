@@ -1,0 +1,169 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-13 12:42:43.280155",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "offer_details_section",
+  "applicant",
+  "campus",
+  "program",
+  "admission_cycle",
+  "column_break_uiqy",
+  "template_used",
+  "template_version",
+  "offer_letter_pdf",
+  "rendered_content",
+  "controls_tab",
+  "issued_on",
+  "accepted_on",
+  "column_break_hdcy",
+  "payment_deadline",
+  "offer_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campus"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Admission Cycle"
+  },
+  {
+   "fieldname": "template_used",
+   "fieldtype": "Link",
+   "label": "Template Used",
+   "options": "Offer Letter Template"
+  },
+  {
+   "fetch_from": "template_used.version",
+   "fieldname": "template_version",
+   "fieldtype": "Data",
+   "label": "Template Version",
+   "options": "Offer Letter Template"
+  },
+  {
+   "fieldname": "offer_details_section",
+   "fieldtype": "Section Break",
+   "label": "Offer Details"
+  },
+  {
+   "fieldname": "column_break_uiqy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "offer_letter_pdf",
+   "fieldtype": "Attach",
+   "label": "Offer letter PDF"
+  },
+  {
+   "fieldname": "rendered_content",
+   "fieldtype": "Long Text",
+   "label": "Rendered Content"
+  },
+  {
+   "fieldname": "controls_tab",
+   "fieldtype": "Tab Break",
+   "label": "Controls"
+  },
+  {
+   "fieldname": "issued_on",
+   "fieldtype": "Datetime",
+   "label": "Issued On"
+  },
+  {
+   "fieldname": "accepted_on",
+   "fieldtype": "Datetime",
+   "label": "Accepted On"
+  },
+  {
+   "fieldname": "column_break_hdcy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_deadline",
+   "fieldtype": "Datetime",
+   "label": "Payment Deadline"
+  },
+  {
+   "fieldname": "offer_status",
+   "fieldtype": "Select",
+   "label": "Offer Status",
+   "options": "Draft\nIssued\nAccepted\nRejected\nExpired\nWithdrawn"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-13 17:15:41.285399",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Offer Letter",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Cyan",
+   "title": "Draft"
+  },
+  {
+   "color": "Blue",
+   "title": "Issued"
+  },
+  {
+   "color": "Green",
+   "title": "Accepted"
+  },
+  {
+   "color": "Red",
+   "title": "Rejected"
+  },
+  {
+   "color": "Orange",
+   "title": "Expired"
+  },
+  {
+   "color": "Yellow",
+   "title": "Withdrawn"
+  }
+ ],
+ "title_field": "applicant",
+ "track_changes": 1
+}
