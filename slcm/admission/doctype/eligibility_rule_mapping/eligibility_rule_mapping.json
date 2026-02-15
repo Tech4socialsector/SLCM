@@ -1,0 +1,99 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-15 12:04:23.155000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "rule",
+  "admission_cycle",
+  "program",
+  "campus",
+  "reservation_category",
+  "ews_applicable",
+  "priority",
+  "is_generic",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "rule",
+   "fieldtype": "Link",
+   "label": "Rule",
+   "options": "Eligibility Rule"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Data",
+   "label": "Admission Cycle",
+   "options": "will linked to admissoin cycle "
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Data",
+   "label": "Campus",
+   "options": "will link with campus"
+  },
+  {
+   "fieldname": "reservation_category",
+   "fieldtype": "Select",
+   "label": "Reservation Category",
+   "options": "NA\nSC\nST\nOBC"
+  },
+  {
+   "default": "0",
+   "fieldname": "ews_applicable",
+   "fieldtype": "Check",
+   "label": "EWS Applicable"
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "label": "Priority"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_generic",
+   "fieldtype": "Check",
+   "label": "Is Generic"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-15 12:48:39.348100",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Eligibility Rule Mapping",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
