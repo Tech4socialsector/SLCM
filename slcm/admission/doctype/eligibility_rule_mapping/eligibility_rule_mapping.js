@@ -1,8 +1,30 @@
-// Copyright (c) 2026, TFSS and contributors
-// For license information, please see license.txt
+frappe.ui.form.on('Eligibility Rule Mapping', {
 
-// frappe.ui.form.on("Eligibility Rule Mapping", {
-// 	refresh(frm) {
+    priority: function(frm) {
 
-// 	},
-// });
+        if (frm.doc.priority && frm.doc.priority > 100) {
+
+            frappe.msgprint({
+                title: "Invalid Priority",
+                message: "Priority value cannot be greater than 100.",
+                indicator: "red"
+            });
+
+            frm.set_value('priority', '');
+        }
+    },
+
+    validate: function(frm) {
+
+        if (frm.doc.priority && frm.doc.priority > 100) {
+
+            frappe.msgprint({
+                title: "Invalid Priority",
+                message: "Priority value must be 100 or less.",
+                indicator: "red"
+            });
+
+            frappe.validated = false;
+        }
+    }
+});

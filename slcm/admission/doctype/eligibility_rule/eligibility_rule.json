@@ -1,6 +1,8 @@
 {
+ "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
+ "autoname": "field:rule_name",
  "creation": "2026-02-15 11:51:18.947424",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -8,6 +10,8 @@
   "eligibility_rule_details_section",
   "rule_name",
   "rule_code",
+  "academic_year",
+  "campus",
   "qualification_level",
   "rule_type",
   "subject",
@@ -25,14 +29,16 @@
  "fields": [
   {
    "fieldname": "rule_name",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Data",
    "label": "Rule Name",
-   "options": "Eligibility Mapping"
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "rule_code",
    "fieldtype": "Data",
-   "label": "Rule Code"
+   "label": "Rule Code",
+   "read_only": 1
   },
   {
    "fieldname": "qualification_level",
@@ -50,15 +56,16 @@
   },
   {
    "fieldname": "subject",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Subject",
-   "options": "link to Subject"
+   "options": "Subject"
   },
   {
    "fieldname": "operator",
    "fieldtype": "Select",
    "label": "Operator",
-   "options": ">=\n<=\n="
+   "options": ">=\n<=\n=",
+   "reqd": 1
   },
   {
    "fieldname": "unit_type",
@@ -77,12 +84,14 @@
   {
    "fieldname": "effective_from",
    "fieldtype": "Date",
-   "label": "Effective From"
+   "label": "Effective From",
+   "reqd": 1
   },
   {
    "fieldname": "effective_to",
    "fieldtype": "Date",
-   "label": "Effective To"
+   "label": "Effective To",
+   "reqd": 1
   },
   {
    "fieldname": "description",
@@ -119,15 +128,30 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Required Score"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year ",
+   "options": "Academic Year",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 12:40:51.498019",
+ "modified": "2026-02-16 22:14:24.955100",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
