@@ -1,7 +1,8 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-02-14 20:13:00.000000",
+ "autoname": "field:cycle_name",
+ "creation": "2026-02-14 20:13:00",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -17,7 +18,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Cycle Name",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "start_date",
@@ -34,22 +36,25 @@
    "reqd": 1
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Draft\nOpen\nClosed",
-   "default": "Draft"
+   "options": "Draft\nOpen\nClosed"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
- "modified": "2026-02-14 20:13:00.000000",
+ "links": [],
+ "modified": "2026-02-16 15:59:39.194956",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

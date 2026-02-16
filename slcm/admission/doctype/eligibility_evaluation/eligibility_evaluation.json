@@ -1,0 +1,111 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-16 16:51:50.987241",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "context_information_section",
+  "applicant",
+  "academic_year",
+  "admission_cycle",
+  "campus",
+  "program",
+  "reservation_category",
+  "evaluation_result_section",
+  "rule",
+  "evaluation_status",
+  "failure_message"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "label": "Applicant",
+   "options": "Applicant"
+  },
+  {
+   "fieldname": "context_information_section",
+   "fieldtype": "Section Break",
+   "label": "Context Information"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "reservation_category",
+   "fieldtype": "Data",
+   "label": "Reservation Category"
+  },
+  {
+   "fieldname": "evaluation_result_section",
+   "fieldtype": "Section Break",
+   "label": "Evaluation Result"
+  },
+  {
+   "fieldname": "evaluation_status",
+   "fieldtype": "Select",
+   "label": "Evaluation Status",
+   "options": "Eligible\nIneligible"
+  },
+  {
+   "fieldname": "rule",
+   "fieldtype": "Link",
+   "label": "Rule ",
+   "options": "Eligibility Rule"
+  },
+  {
+   "fieldname": "failure_message",
+   "fieldtype": "Small Text",
+   "label": "Failure Message"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-16 18:34:25.337701",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Eligibility Evaluation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

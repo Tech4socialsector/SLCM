@@ -1,13 +1,17 @@
 {
+ "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-16 11:21:09.072829",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "national_test_exemption_details_section",
   "exemption_name",
   "exemption_code",
   "admission_cycle",
+  "academic_year",
+  "column_break_wiuc",
   "applicable_program",
   "campus",
   "test_configuration_section",
@@ -16,6 +20,7 @@
   "operator",
   "valid_from",
   "valid_until",
+  "column_break_ulsu",
   "exempts_entrance_test",
   "exempts_interview",
   "overrides_academic_rule",
@@ -26,28 +31,36 @@
   {
    "fieldname": "exemption_name",
    "fieldtype": "Data",
-   "label": " Exemption Name "
+   "in_list_view": 1,
+   "label": " Exemption Name ",
+   "reqd": 1
   },
   {
    "fieldname": "admission_cycle",
-   "fieldtype": "Data",
-   "label": "Admission Cycle"
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle"
   },
   {
    "fieldname": "exemption_code",
    "fieldtype": "Data",
-   "label": "Exemption Code"
+   "label": "Exemption Code",
+   "read_only": 1
   },
   {
    "fieldname": "applicable_program",
-   "fieldtype": "Link",
+   "fieldtype": "Table MultiSelect",
    "label": "Applicable Program",
-   "options": "Program"
+   "options": "National Test Exemption Mapping",
+   "reqd": 1
   },
   {
    "fieldname": "campus",
-   "fieldtype": "Data",
-   "label": "Campus"
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -62,29 +75,36 @@
   },
   {
    "fieldname": "national_test",
-   "fieldtype": "Select",
-   "label": "National Test"
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "National Test",
+   "options": "National Test",
+   "reqd": 1
   },
   {
    "fieldname": "mark_percentage",
    "fieldtype": "Percent",
-   "label": "Mark Percentage "
+   "label": "Mark Percentage ",
+   "reqd": 1
   },
   {
    "fieldname": "operator",
    "fieldtype": "Select",
    "label": "Operator",
-   "options": ">=\n<=\n="
+   "options": ">=\n<=\n=",
+   "reqd": 1
   },
   {
    "fieldname": "valid_from",
    "fieldtype": "Date",
-   "label": "Valid From"
+   "label": "Valid From",
+   "reqd": 1
   },
   {
    "fieldname": "valid_until",
    "fieldtype": "Date",
-   "label": "Valid Until"
+   "label": "Valid Until",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -108,12 +128,33 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
+  },
+  {
+   "fieldname": "column_break_ulsu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_wiuc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "national_test_exemption_details_section",
+   "fieldtype": "Section Break",
+   "label": "National Test Exemption Details "
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Academic Year ",
+   "options": "Academic Year",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 12:49:56.365652",
+ "modified": "2026-02-16 22:26:33.394854",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "National Test Exemption Rule",
