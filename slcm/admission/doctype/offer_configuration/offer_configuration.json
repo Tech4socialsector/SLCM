@@ -9,11 +9,11 @@
   "campus",
   "pdf_format",
   "email_template",
+  "template_version",
   "column_break_sswl",
   "validity_type",
   "valid_days",
   "offer_expiry_date",
-  "version",
   "is_active"
  ],
  "fields": [
@@ -41,7 +41,7 @@
    "fieldname": "email_template",
    "fieldtype": "Link",
    "label": "Email Template",
-   "options": "Email Template"
+   "options": "Email Templates"
   },
   {
    "description": "Set Offer letter validity type",
@@ -49,11 +49,6 @@
    "fieldtype": "Select",
    "label": "Validity Type",
    "options": "Days valid\nFixed due date"
-  },
-  {
-   "fieldname": "version",
-   "fieldtype": "Int",
-   "label": "Version"
   },
   {
    "default": "0",
@@ -77,12 +72,18 @@
    "label": "Valid Days",
    "mandatory_depends_on": "eval:doc.validity_type == \"Days valid\"",
    "non_negative": 1
+  },
+  {
+   "fetch_from": "email_template.version",
+   "fieldname": "template_version",
+   "fieldtype": "Int",
+   "label": "Template Version"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-14 12:56:46.279960",
+ "modified": "2026-02-16 10:27:20.662614",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",

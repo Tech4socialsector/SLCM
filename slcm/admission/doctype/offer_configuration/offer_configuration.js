@@ -14,6 +14,13 @@ frappe.ui.form.on("Offer Configuration", {
                     'doc_type': 'Offer Letter'
                 }
             }
+        }),
+        frm.set_query('email_template', function () {
+            return {
+                filters: {
+                    'template_for_offer_letter': 1
+                }
+            }
         })
     }
 });
