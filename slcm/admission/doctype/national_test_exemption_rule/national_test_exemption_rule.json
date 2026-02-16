@@ -1,0 +1,140 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-16 11:21:09.072829",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "exemption_name",
+  "exemption_code",
+  "admission_cycle",
+  "applicable_program",
+  "campus",
+  "test_configuration_section",
+  "national_test",
+  "mark_percentage",
+  "operator",
+  "valid_from",
+  "valid_until",
+  "exempts_entrance_test",
+  "exempts_interview",
+  "overrides_academic_rule",
+  "description",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "exemption_name",
+   "fieldtype": "Data",
+   "label": " Exemption Name "
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Data",
+   "label": "Admission Cycle"
+  },
+  {
+   "fieldname": "exemption_code",
+   "fieldtype": "Data",
+   "label": "Exemption Code"
+  },
+  {
+   "fieldname": "applicable_program",
+   "fieldtype": "Link",
+   "label": "Applicable Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Data",
+   "label": "Campus"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "test_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "Test Configuration "
+  },
+  {
+   "fieldname": "national_test",
+   "fieldtype": "Select",
+   "label": "National Test"
+  },
+  {
+   "fieldname": "mark_percentage",
+   "fieldtype": "Percent",
+   "label": "Mark Percentage "
+  },
+  {
+   "fieldname": "operator",
+   "fieldtype": "Select",
+   "label": "Operator",
+   "options": ">=\n<=\n="
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "label": "Valid From"
+  },
+  {
+   "fieldname": "valid_until",
+   "fieldtype": "Date",
+   "label": "Valid Until"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_entrance_test",
+   "fieldtype": "Check",
+   "label": "Exempts Entrance Test"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_interview",
+   "fieldtype": "Check",
+   "label": "Exempts Interview"
+  },
+  {
+   "default": "0",
+   "fieldname": "overrides_academic_rule",
+   "fieldtype": "Check",
+   "label": "Overrides Academic Rule"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-16 12:49:56.365652",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "National Test Exemption Rule",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
