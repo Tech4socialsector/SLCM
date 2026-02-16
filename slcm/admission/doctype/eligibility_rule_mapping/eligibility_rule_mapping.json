@@ -1,4 +1,5 @@
 {
+ "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-15 12:04:23.155000",
@@ -11,62 +12,70 @@
   "campus",
   "reservation_category",
   "priority",
-  "is_generic",
+  "failure_message",
   "is_active"
  ],
  "fields": [
   {
    "fieldname": "rule",
-   "fieldtype": "Link",
+   "fieldtype": "Table MultiSelect",
    "label": "Rule",
-   "options": "Eligibility Rule"
+   "options": "Eligibility Mapping",
+   "reqd": 1
   },
   {
    "fieldname": "admission_cycle",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Admission Cycle",
-   "options": "will linked to admissoin cycle "
+   "options": "Admission Cycle",
+   "reqd": 1
   },
   {
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Program",
-   "options": "Program"
+   "options": "Program",
+   "reqd": 1
   },
   {
    "fieldname": "campus",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Campus",
-   "options": "will link with campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "fieldname": "reservation_category",
    "fieldtype": "Select",
    "label": "Reservation Category",
-   "options": "NA\nSC\nST\nOBC"
+   "options": "NA\nSC\nST\nOBC",
+   "reqd": 1
   },
   {
    "fieldname": "priority",
    "fieldtype": "Int",
-   "label": "Priority"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_generic",
-   "fieldtype": "Check",
-   "label": "Is Generic"
+   "label": "Priority",
+   "non_negative": 1,
+   "reqd": 1
   },
   {
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
    "label": "Is Active"
+  },
+  {
+   "fieldname": "failure_message",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Failure Message",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 12:43:39.488691",
+ "modified": "2026-02-16 22:30:46.073974",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",
