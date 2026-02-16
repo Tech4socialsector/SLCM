@@ -4,13 +4,7 @@ from frappe.model.document import Document
 
 class ProgramOffering(Document):
 	def validate(self):
-		self.validate_capacity()
 		self.validate_availability()
-		self.validate_duplicate()
-
-	def validate_capacity(self):
-		if self.intake_capacity <= 0:
-			frappe.throw(_("Intake Capacity must be greater than 0"))
 
 	def validate_availability(self):
 		if self.is_available_for_admission:
@@ -23,11 +17,11 @@ class ProgramOffering(Document):
 				frappe.throw(_("Campus {0} is not active. Cannot enable Program Offering.").format(self.campus))
 
 			# 2. Admission Year must be Open
-			if admission_year.status != "Open":
-				frappe.throw(_("Admission Year {0} is not Open. Current status: {1}").format(
-					self.admission_year, admission_year.status
+				
+				frappe.throw(_("Admission Year {0} is not allowing campus enrollment. Current status: {1}").format(
+					self.admission_year, admission_year.allow_campus_enrollment
 				))
-
+			
 			# 3. Campus must be part of Admission Year
 			is_participating = any(c.campus == self.campus and c.is_active for c in admission_year.participating_campuses)
 			if not is_participating:
@@ -35,18 +29,6 @@ class ProgramOffering(Document):
 					self.campus, self.admission_year
 				))
 
-	def validate_duplicate(self):
-		# Prevent duplicate program under same campus + admission year
-		duplicate = frappe.db.exists("Program Offering", {
-			"program_name": self.program_name,
-			"campus": self.campus,
-			"admission_year": self.admission_year,
-			"name": ["!=", self.name]
-		})
-		if duplicate:
-			frappe.throw(_("Program {0} is already offered at {1} for {2}").format(
-				self.program_name, self.campus, self.admission_year
-			))
 
 	def before_save(self):
 		# Cannot disable program if applications already submitted

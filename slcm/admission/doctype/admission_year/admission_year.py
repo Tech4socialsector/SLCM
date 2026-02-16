@@ -4,6 +4,9 @@ from frappe import _
 from frappe.utils import getdate
 
 class AdmissionYear(Document):
+	def autoname(self):
+		self.name = f"AY-{self.academic_year}"
+
 	def validate(self):
 		self.validate_dates()
 		self.validate_cycles()
@@ -53,3 +56,68 @@ class AdmissionYear(Document):
 				{"status": "Open", "name": ["!=", self.name]}, "name")
 			if existing_open_year:
 				frappe.throw(_("Admission Year {0} is already Open. Only one Admission Year can be Open at a time.").format(existing_open_year))
+
+
+@frappe.whitelist()
+def activate_admission_year(admission_year):
+
+	try:
+		if not admission_year:
+			return {
+				"status": "Error",
+				"message": _("Admission Year is required.")
+			}
+
+		year = frappe.get_doc("Admission Year", admission_year)
+
+		current_academic_year = frappe.db.get_single_value(
+			"Admission Settings",
+			"current_academic_year"
+		)
+
+		if year.academic_year != current_academic_year:
+			return {
+				"status": "Error",
+				"message": _("Academic Year {0} is not the current academic year.")
+				.format(year.academic_year)
+			}
+
+
+		frappe.db.sql("""
+			UPDATE `tabAdmission Year`
+			SET is_active = 0
+			WHERE is_active = 1
+			AND name != %s
+		""", (admission_year,))
+
+		year.db_set("is_active", 1)
+
+		return {
+			"status": "success",
+			"message": _("Admission Year {0} has been activated.")
+			.format(year.academic_year)
+		}
+
+	except frappe.DoesNotExistError:
+		return {
+			"status": "Error",
+			"message": _("Admission Year not found.")
+		}
+
+	except frappe.ValidationError as e:
+		return {
+			"status": "Error",
+			"message": str(e)
+		}
+
+	except Exception as e:
+		frappe.log_error(
+			title="Admission Year Activation Error",
+			message=frappe.get_traceback()
+		)
+		return {
+			"status": "Error",
+			"message": _("Something went wrong while activating the Admission Year.")
+		}
+
+
