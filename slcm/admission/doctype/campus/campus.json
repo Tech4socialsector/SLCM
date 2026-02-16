@@ -1,0 +1,136 @@
+{
+ "actions": [],
+ "autoname": "field:campus_name",
+ "creation": "2026-02-14 12:22:18.192651",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "campus_name",
+  "campus_code",
+  "parent_campus",
+  "is_active",
+  "is_group",
+  "section_break_location",
+  "city",
+  "state",
+  "country",
+  "section_break_nsm",
+  "lft",
+  "rgt",
+  "old_parent"
+ ],
+ "fields": [
+  {
+   "fieldname": "campus_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campus Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "campus_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campus Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "parent_campus",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Parent Campus",
+   "options": "Campus"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_group",
+   "fieldtype": "Check",
+   "label": "Is Group"
+  },
+  {
+   "fieldname": "section_break_location",
+   "fieldtype": "Section Break",
+   "label": "Location Details"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Countries"
+  },
+  {
+   "fieldname": "section_break_nsm",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "lft",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Left",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "rgt",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Right",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "old_parent",
+   "fieldtype": "Link",
+   "label": "Old Parent",
+   "options": "Campus"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_tree": 1,
+ "links": [],
+ "modified": "2026-02-16 09:58:56.531178",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Campus",
+ "naming_rule": "By fieldname",
+ "nsm_parent_field": "parent_campus",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
