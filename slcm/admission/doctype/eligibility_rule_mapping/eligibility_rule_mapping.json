@@ -10,7 +10,6 @@
   "program",
   "campus",
   "reservation_category",
-  "ews_applicable",
   "priority",
   "is_generic",
   "is_active"
@@ -47,12 +46,6 @@
    "options": "NA\nSC\nST\nOBC"
   },
   {
-   "default": "0",
-   "fieldname": "ews_applicable",
-   "fieldtype": "Check",
-   "label": "EWS Applicable"
-  },
-  {
    "fieldname": "priority",
    "fieldtype": "Int",
    "label": "Priority"
@@ -73,7 +66,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-15 12:48:39.348100",
+ "modified": "2026-02-16 12:43:39.488691",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",

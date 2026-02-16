@@ -17,19 +17,17 @@
   "required_percentage",
   "required_score",
   "allowed_degrees",
-  "priority",
-  "mandatory",
-  "is_active",
-  "version",
   "effective_from",
   "effective_to",
-  "description"
+  "description",
+  "is_active"
  ],
  "fields": [
   {
    "fieldname": "rule_name",
-   "fieldtype": "Data",
-   "label": "Rule Name"
+   "fieldtype": "Table MultiSelect",
+   "label": "Rule Name",
+   "options": "Eligibility Mapping"
   },
   {
    "fieldname": "rule_code",
@@ -70,30 +68,11 @@
    "reqd": 1
   },
   {
-   "fieldname": "priority",
-   "fieldtype": "Int",
-   "label": "Priority",
-   "options": "Rule priority"
-  },
-  {
-   "default": "0",
-   "fieldname": "mandatory",
-   "fieldtype": "Check",
-   "label": "Mandatory",
-   "options": "If fail \u2192 Ineligible"
-  },
-  {
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
    "label": "Is Active",
    "options": "Enable/Disable rule"
-  },
-  {
-   "fieldname": "version",
-   "fieldtype": "Int",
-   "label": "Version",
-   "options": "Rule version"
   },
   {
    "fieldname": "effective_from",
@@ -145,7 +124,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-15 18:07:40.516801",
+ "modified": "2026-02-16 12:40:51.498019",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",

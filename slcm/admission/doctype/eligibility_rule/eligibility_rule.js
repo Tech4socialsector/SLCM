@@ -62,7 +62,7 @@ function apply_qualification_level_logic(frm) {
             frm.set_value('unit_type', 'CGPA');
         }
 
-        frm.set_df_property('rule_type', 'hidden', 1);
+        frm.set_df_property('rule_type', 'hidden', 0);
         frm.set_df_property('subject', 'hidden', 1);
 
         frm.set_df_property('unit_type', 'options', ['', 'CGPA']);
