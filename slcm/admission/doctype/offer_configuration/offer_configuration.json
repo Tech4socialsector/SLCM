@@ -5,11 +5,11 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "admission_year",
   "admission_cycle",
   "campus",
   "pdf_format",
   "email_template",
-  "template_version",
   "column_break_sswl",
   "validity_type",
   "valid_days",
@@ -19,13 +19,16 @@
  "fields": [
   {
    "fieldname": "admission_cycle",
-   "fieldtype": "Data",
-   "label": "Admission Cycle"
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
   },
   {
    "fieldname": "campus",
-   "fieldtype": "Data",
-   "label": "Campus"
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus"
   },
   {
    "fieldname": "pdf_format",
@@ -54,6 +57,7 @@
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Is active"
   },
   {
@@ -69,24 +73,27 @@
    "description": "Expiry days from offer issued ( Ex : offer issued date + Valid Days = Expiry date ) ",
    "fieldname": "valid_days",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Valid Days",
    "mandatory_depends_on": "eval:doc.validity_type == \"Days valid\"",
    "non_negative": 1
   },
   {
-   "fetch_from": "email_template.version",
-   "fieldname": "template_version",
-   "fieldtype": "Int",
-   "label": "Template Version"
+   "fieldname": "admission_year",
+   "fieldtype": "Link",
+   "label": "Admission Year",
+   "options": "Admission Year",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 10:27:20.662614",
+ "modified": "2026-02-16 15:19:55.550381",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",
+ "naming_rule": "By script",
  "owner": "Administrator",
  "permissions": [
   {

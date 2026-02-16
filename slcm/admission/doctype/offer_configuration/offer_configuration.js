@@ -5,7 +5,6 @@ frappe.ui.form.on("Offer Configuration", {
     refresh(frm) {
 
     },
-
     onload: function (frm) {
         frm.set_query('pdf_format', function () {
             return {

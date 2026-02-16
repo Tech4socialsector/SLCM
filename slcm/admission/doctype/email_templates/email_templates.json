@@ -59,13 +59,14 @@
    "fieldname": "version",
    "fieldtype": "Int",
    "label": "Version",
-   "mandatory_depends_on": "eval:doc.template_for_offer_letter ==1"
+   "mandatory_depends_on": "eval:doc.template_for_offer_letter ==1",
+   "non_negative": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 10:27:36.862895",
+ "modified": "2026-02-16 11:42:53.945555",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Email Templates",

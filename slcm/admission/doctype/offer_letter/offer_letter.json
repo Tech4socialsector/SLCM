@@ -10,8 +10,10 @@
   "campus",
   "program",
   "admission_cycle",
+  "offer_configrationn",
+  "payable_amount",
   "column_break_uiqy",
-  "template_used",
+  "email_template_used",
   "template_version",
   "offer_letter_pdf",
   "rendered_content",
@@ -25,17 +27,21 @@
  "fields": [
   {
    "fieldname": "applicant",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Applicant"
+   "label": "Applicant",
+   "options": "Applicant"
   },
   {
+   "fetch_from": "applicant.campus",
    "fieldname": "campus",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Campus"
+   "label": "Campus",
+   "options": "Campus"
   },
   {
+   "fetch_from": "applicant.program",
    "fieldname": "program",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -43,19 +49,15 @@
    "options": "Program"
   },
   {
+   "fetch_from": "applicant.admission_cycle",
    "fieldname": "admission_cycle",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Admission Cycle"
-  },
-  {
-   "fieldname": "template_used",
    "fieldtype": "Link",
-   "label": "Template Used",
-   "options": "Offer Letter Template"
+   "in_list_view": 1,
+   "label": "Admission Cycle",
+   "options": "Admission Cycle"
   },
   {
-   "fetch_from": "template_used.version",
+   "fetch_from": "email_template_used.version",
    "fieldname": "template_version",
    "fieldtype": "Data",
    "label": "Template Version",
@@ -109,12 +111,30 @@
    "fieldtype": "Select",
    "label": "Offer Status",
    "options": "Draft\nIssued\nAccepted\nRejected\nExpired\nWithdrawn"
+  },
+  {
+   "fieldname": "offer_configrationn",
+   "fieldtype": "Link",
+   "label": "Offer Configrationn",
+   "options": "Offer Configuration"
+  },
+  {
+   "fetch_from": "offer_configrationn.email_template",
+   "fieldname": "email_template_used",
+   "fieldtype": "Link",
+   "label": "Email Template Used",
+   "options": "Email Templates"
+  },
+  {
+   "fieldname": "payable_amount",
+   "fieldtype": "Currency",
+   "label": "Payable Amount"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-13 17:15:41.285399",
+ "modified": "2026-02-16 15:36:06.738483",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

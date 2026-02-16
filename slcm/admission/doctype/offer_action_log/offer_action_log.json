@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-16 15:41:48.700770",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "offer_letter",
+  "applicant",
+  "action",
+  "is_payment_deadline_extended",
+  "payment_deadline",
+  "column_break_tzmt",
+  "performed_by",
+  "timestamp",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "offer_letter",
+   "fieldtype": "Link",
+   "label": "Offer Letter",
+   "options": "Offer Letter"
+  },
+  {
+   "fetch_from": "offer_letter.applicant",
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "label": "Applicant",
+   "options": "Applicant"
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "label": "Action",
+   "options": "Draft\nIssued\nAccepted\nRejected\nExpired\nWithdrawn"
+  },
+  {
+   "fieldname": "performed_by",
+   "fieldtype": "Link",
+   "label": "Performed By",
+   "options": "User"
+  },
+  {
+   "fieldname": "timestamp",
+   "fieldtype": "Datetime",
+   "label": "Timestamp"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "column_break_tzmt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_payment_deadline_extended",
+   "fieldtype": "Check",
+   "label": "Is payment deadline extended"
+  },
+  {
+   "depends_on": "eval:doc.is_payment_deadline_extended ==1",
+   "fieldname": "payment_deadline",
+   "fieldtype": "Date",
+   "label": "Payment Deadline"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-16 17:38:38.258859",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Offer Action Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
