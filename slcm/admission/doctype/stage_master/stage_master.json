@@ -1,0 +1,80 @@
+{
+    "actions": [],
+    "autoname": "field:stage_name",
+    "creation": "2026-02-14 19:52:44.344195",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "stage_name",
+        "sequence_number",
+        "is_mandatory",
+        "applicable_for_scholarship",
+        "applicable_for_interview",
+        "deadline_days"
+    ],
+    "fields": [
+        {
+            "fieldname": "stage_name",
+            "fieldtype": "Data",
+            "label": "Stage Name",
+            "reqd": 1,
+            "unique": 1
+        },
+        {
+            "fieldname": "sequence_number",
+            "fieldtype": "Int",
+            "label": "Sequence Number",
+            "reqd": 1,
+            "unique": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "is_mandatory",
+            "fieldtype": "Check",
+            "label": "Is Mandatory"
+        },
+        {
+            "default": "0",
+            "fieldname": "applicable_for_scholarship",
+            "fieldtype": "Check",
+            "label": "Applicable for Scholarship"
+        },
+        {
+            "default": "0",
+            "fieldname": "applicable_for_interview",
+            "fieldtype": "Check",
+            "label": "Applicable for Interview"
+        },
+        {
+            "fieldname": "deadline_days",
+            "fieldtype": "Int",
+            "label": "Deadline Days"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-02-14 20:35:00.000000",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Stage Master",
+    "naming_rule": "By fieldname",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "sort_field": "sequence_number",
+    "sort_order": "ASC",
+    "states": []
+}
