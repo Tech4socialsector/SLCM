@@ -1,4 +1,5 @@
 {
+ "app": "slcm",
  "charts": [],
  "content": "[{\"id\":\"qaOSi5ehAD\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">REGO</span>\",\"col\":12}},{\"id\":\"QSfgl1b70S\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Master\",\"col\":3}},{\"id\":\"d3XPCbqjCZ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Master\",\"col\":3}},{\"id\":\"CmEMELn-sx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Master\",\"col\":3}},{\"id\":\"m5JzWYmuIs\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Academic Year\",\"col\":3}},{\"id\":\"i8c7vEgUdO\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Academic Term\",\"col\":3}},{\"id\":\"SDVAKj6ak8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Department\",\"col\":3}},{\"id\":\"D_8QPjha2j\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program\",\"col\":3}},{\"id\":\"fV3cXRhJAc\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course\",\"col\":3}},{\"id\":\"TQQajFDH1x\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cohort\",\"col\":3}}]",
  "creation": "2026-01-07 18:11:36.419086",
@@ -13,7 +14,7 @@
  "is_hidden": 0,
  "label": "REGO",
  "links": [],
- "modified": "2026-02-05 15:30:07.531984",
+ "modified": "2026-02-17 18:13:52.354961",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "REGO",
@@ -98,5 +99,6 @@
    "type": "DocType"
   }
  ],
- "title": "REGO"
+ "title": "REGO",
+ "type": "Workspace"
 }
