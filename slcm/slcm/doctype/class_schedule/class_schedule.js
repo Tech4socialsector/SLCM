@@ -109,34 +109,65 @@ frappe.ui.form.on('Class Schedule', {
 
     from_time: function (frm) {
         frm.events.calculate_duration(frm);
+        frm.events.sync_to_attendance_session(frm);
     },
 
     to_time: function (frm) {
         frm.events.calculate_duration(frm);
+        frm.events.sync_to_attendance_session(frm);
     },
 
     calculate_duration: function (frm) {
         if (frm.doc.from_time && frm.doc.to_time) {
             // Parse time strings (format: HH:MM:SS)
-            let from_parts = frm.doc.from_time.toString().split(':');
-            let to_parts = frm.doc.to_time.toString().split(':');
+            const from_parts = frm.doc.from_time.split(':');
+            const to_parts = frm.doc.to_time.split(':');
 
-            // Convert to total minutes
-            // Hours to minutes + minutes + seconds to minutes
-            let from_minutes = (parseInt(from_parts[0]) * 60) + parseInt(from_parts[1]) + (parseInt(from_parts[2]) / 60);
-            let to_minutes = (parseInt(to_parts[0]) * 60) + parseInt(to_parts[1]) + (parseInt(to_parts[2]) / 60);
+            // Create Date objects for today with the specified times
+            const from_date = new Date();
+            from_date.setHours(parseInt(from_parts[0]), parseInt(from_parts[1]), parseInt(from_parts[2] || 0), 0);
 
-            // Calculate difference in minutes
-            let diff_minutes = to_minutes - from_minutes;
+            const to_date = new Date();
+            to_date.setHours(parseInt(to_parts[0]), parseInt(to_parts[1]), parseInt(to_parts[2] || 0), 0);
 
-            // Convert to hours
-            let duration_hours = diff_minutes / 60;
+            // Calculate difference in milliseconds and convert to hours
+            const diff_ms = to_date - from_date;
+            const duration_hours = diff_ms / (1000 * 60 * 60);
 
-            // Round to 2 decimal places
-            duration_hours = Math.round(duration_hours * 100) / 100;
-
-            // Set the value
-            frm.set_value('duration_hours', duration_hours);
+            // Set the duration field (rounded to 2 decimal places)
+            frm.set_value('duration_hours', parseFloat(duration_hours.toFixed(2)));
         }
+    },
+
+    sync_to_attendance_session: function (frm) {
+        // Only sync if the document is saved (has a name)
+        if (!frm.doc.name || frm.is_new()) {
+            return;
+        }
+
+        // Only sync if we have valid times
+        if (!frm.doc.from_time || !frm.doc.to_time) {
+            return;
+        }
+
+        // Call server method to update Attendance Session in real-time
+        frappe.call({
+            method: 'slcm.slcm.doctype.class_schedule.class_schedule.update_attendance_session_realtime',
+            args: {
+                class_schedule_name: frm.doc.name,
+                from_time: frm.doc.from_time,
+                to_time: frm.doc.to_time,
+                schedule_date: frm.doc.schedule_date,
+                duration_hours: frm.doc.duration_hours
+            },
+            callback: function (r) {
+                if (r.message && r.message.success) {
+                    frappe.show_alert({
+                        message: __('Attendance Session updated'),
+                        indicator: 'green'
+                    }, 3);
+                }
+            }
+        });
     }
 });
