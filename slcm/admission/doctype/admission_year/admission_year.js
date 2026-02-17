@@ -70,7 +70,9 @@ frappe.ui.form.on("Admission Year", {
                     // is_active: 1,
                 }
             }
-        })
+        });
+
+        configuration_settings(frm);
     },
 
 });
@@ -110,4 +112,11 @@ function validate_dates(frm) {
     if (end_year !== academic_end_year) {
         frappe.throw(__("Application End Date must be in Academic End Year {0}", [academic_end_year]));
     }
+}
+
+function configuration_settings(frm) {
+    frm.set_df_property("enable_scholarship", "read_only", frm.doc.is_active ? 0 : 1);
+    frm.set_df_property("enable_interview", "read_only", frm.doc.is_active ? 0 : 1);
+    frm.set_df_property("enable_reservation", "read_only", frm.doc.is_active ? 0 : 1);
+    frm.set_df_property("allow_campus_enrollment", "read_only", frm.doc.is_active ? 0 : 1);
 }

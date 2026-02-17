@@ -11,9 +11,10 @@
   "admission_year",
   "application_fee",
   "column_break_alqx",
+  "is_available_for_admission",
   "interview_required",
   "scholarship_applicable",
-  "is_available_for_admission",
+  "is_reservation_applicable",
   "section_break_djee",
   "programs"
  ],
@@ -43,13 +44,15 @@
    "default": "0",
    "fieldname": "scholarship_applicable",
    "fieldtype": "Check",
-   "label": "Scholarship Applicable"
+   "label": "Scholarship Applicable",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "interview_required",
    "fieldtype": "Check",
-   "label": "Interview Required"
+   "label": "Interview Required",
+   "read_only": 1
   },
   {
    "fieldname": "programs",
@@ -78,12 +81,19 @@
    "fieldname": "is_available_for_admission",
    "fieldtype": "Check",
    "label": "Is Available For Admission"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_reservation_applicable",
+   "fieldtype": "Check",
+   "label": "Is Reservation Applicable?",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 19:04:51.663223",
+ "modified": "2026-02-17 12:22:49.854464",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Offering",

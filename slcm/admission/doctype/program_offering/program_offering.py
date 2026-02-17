@@ -38,3 +38,32 @@ class ProgramOffering(Document):
 			# but requirements say "Application DocType"
 			if frappe.db.exists("Student Application", {"program_offering": self.name}):
 				frappe.throw(_("Cannot disable Program Offering {0} as applications have already been submitted").format(self.name))
+
+
+@frappe.whitelist()
+def configuration_settings(admission_year):
+
+	try:
+		year = frappe.get_doc(
+			"Admission Year",
+			admission_year,
+			is_active=1,
+			fields=[
+				"enable_scholarship",
+				"enable_interview",
+				"enable_reservation"
+			]
+		)
+
+		return year
+
+	except frappe.DoesNotExistError:
+		return {
+			"status": "Error",
+			"message": _("Admission Year not found.")
+		}
+	except Exception as e:
+		 return{
+			"status": "Error",
+			"message": _("Something went wrong while fetching configuration settings.")
+		 }

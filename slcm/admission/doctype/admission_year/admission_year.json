@@ -57,19 +57,22 @@
    "default": "0",
    "fieldname": "enable_scholarship",
    "fieldtype": "Check",
-   "label": "Enable Scholarship"
+   "label": "Enable Scholarship",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "enable_interview",
    "fieldtype": "Check",
-   "label": "Enable Interview"
+   "label": "Enable Interview",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "enable_reservation",
    "fieldtype": "Check",
-   "label": "Enable Reservation"
+   "label": "Enable Reservation",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_cycles",
@@ -101,7 +104,8 @@
    "default": "0",
    "fieldname": "allow_campus_enrollment",
    "fieldtype": "Check",
-   "label": "Allow Campus Enrollment"
+   "label": "Allow Campus Enrollment",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -113,7 +117,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 09:24:51.540523",
+ "modified": "2026-02-17 12:51:23.317443",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Year",
