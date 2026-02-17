@@ -15,8 +15,7 @@ frappe.ui.form.on("Campus", {
             return;
         }
 
-
-        const r = await frappe.db.get_value(
+        let r = await frappe.db.get_value(
             "Admission Year",
             { is_active: 1 },
             ["name", "allow_campus_enrollment", "application_start_date", "academic_year"]
@@ -27,12 +26,12 @@ frappe.ui.form.on("Campus", {
             return;
         }
 
-        const admission_year = r.message;
+        let admission_year = r.message;
 
         if (admission_year.allow_campus_enrollment) {
-            const d = frappe.datetime.str_to_obj(admission_year.application_start_date);
+            let d = frappe.datetime.str_to_obj(admission_year.application_start_date);
 
-            const formatted =
+            let formatted =
                 ("0" + d.getDate()).slice(-2) + "-" +
                 ("0" + (d.getMonth() + 1)).slice(-2) + "-" +
                 d.getFullYear();
@@ -50,8 +49,6 @@ frappe.ui.form.on("Campus", {
                 }
             );
 
-        } else {
-            frm.set_intro(`Admission is not open for Academic Year ${admission_year.academic_year}`, "orange");
         }
     }
 

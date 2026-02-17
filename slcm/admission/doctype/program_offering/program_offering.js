@@ -28,6 +28,19 @@ frappe.ui.form.on("Program Offering", {
     },
 });
 
+frappe.ui.form.on("Program Offering Criteria", {
+    program(frm, cdt, cdn) {
+        child_duplicate_entry(
+            frm,
+            cdt,
+            cdn,
+            "programs",
+            "program",
+            "Program"
+        )
+    }
+})
+
 function configure_stages(frm) {
     frappe.call({
         method: "slcm.admission.doctype.program_offering.program_offering.configuration_settings",
@@ -78,4 +91,39 @@ function configure_stages(frm) {
             frappe.msgprint(e.message);
         }
     });
+}
+
+
+function child_duplicate_entry(frm, cdt, cdn, child_table, field_name, label) {
+
+    let row = locals[cdt][cdn];
+    let value = row[field_name];
+
+    if (!value) return;
+
+    let duplicate_row = frm.doc[child_table].find(d =>
+        d.name !== row.name && d[field_name] === value
+    );
+
+    if (duplicate_row) {
+
+        let dialog = frappe.msgprint({
+            title: __("Duplicate Entry"),
+            indicator: "red",
+            message: __(
+                "{0} '{1}' is already added in Row {2}. Remove it?",
+                [label, value, duplicate_row.idx]
+            ),
+            primary_action: {
+                label: __("Remove"),
+                action: () => {
+                    frappe.model.clear_doc(cdt, cdn);
+                    frm.refresh_field(child_table);
+                    dialog.hide();
+                }
+            }
+        });
+
+        dialog.$wrapper.find(".modal-header .close").hide();
+    }
 }

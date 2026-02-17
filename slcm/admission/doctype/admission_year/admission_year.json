@@ -117,7 +117,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 12:51:23.317443",
+ "modified": "2026-02-17 18:02:19.953612",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Year",
@@ -153,7 +153,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "track_seen": 1,
- "track_views": 1
+ "track_changes": 1
 }

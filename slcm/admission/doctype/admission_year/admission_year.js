@@ -4,6 +4,23 @@
 frappe.ui.form.on("Admission Year", {
 
     async onload(frm) {
+        let current_academic_year = await frappe.db.get_single_value(
+            "Admission Settings",
+            "current_academic_year"
+        );
+        if (frm.doc.is_active == 1 &&
+            frm.doc.academic_year === current_academic_year) {
+            frm.set_intro(
+                "This Admission Year is active for the academic year " + frm.doc.academic_year + ".",
+                "green"
+            );
+        } else {
+            if (frm.doc.academic_year === current_academic_year)
+                frm.set_intro(
+                    "This Admission Year is not active for the academic year " + frm.doc.academic_year + ".",
+                    "yellow"
+                );
+        }
         if (!frm.doc.academic_year) {
             const value = await frappe.db.get_single_value(
                 'Admission Settings',
@@ -63,7 +80,6 @@ frappe.ui.form.on("Admission Year", {
     },
 
     refresh: function (frm) {
-        const current_academic_year = frappe.db.get_single_value("Admission Settings", "current_academic_year");
         frm.set_query("academic_year", () => {
             return {
                 filters: {
@@ -72,11 +88,71 @@ frappe.ui.form.on("Admission Year", {
             }
         });
 
+        frm.set_query(
+            "campus",
+            "participating_campuses",
+            function () {
+                return {
+                    filters: {
+                        is_active: 1,
+                        allow_admission: 1
+                    }
+                };
+            }
+        );
+
         configuration_settings(frm);
     },
 
 });
 
+
+frappe.ui.form.on("Participating Campus", {
+    campus(frm, cdt, cdn) {
+        child_duplicate_entry(frm, cdt, cdn, "participating_campuses", "campus", "Campus");
+    }
+});
+
+frappe.ui.form.on("Admission Cycle", {
+    cycle_name(frm, cdt, cdn) {
+        child_duplicate_entry(frm, cdt, cdn, "cycles", "cycle_name", "Cycle");
+    }
+})
+
+
+function child_duplicate_entry(frm, cdt, cdn, child_table, field_name, label) {
+
+    let row = locals[cdt][cdn];
+    let value = row[field_name];
+
+    if (!value) return;
+
+    let duplicate_row = frm.doc[child_table].find(d =>
+        d.name !== row.name && d[field_name] === value
+    );
+
+    if (duplicate_row) {
+
+        let dialog = frappe.msgprint({
+            title: __("Duplicate Entry"),
+            indicator: "red",
+            message: __(
+                "{0} '{1}' is already added in Row {2}. Remove it?",
+                [label, value, duplicate_row.idx]
+            ),
+            primary_action: {
+                label: __("Remove"),
+                action: () => {
+                    frappe.model.clear_doc(cdt, cdn);
+                    frm.refresh_field(child_table);
+                    dialog.hide();
+                }
+            }
+        });
+
+        dialog.$wrapper.find(".modal-header .close").hide();
+    }
+}
 
 function validate_dates(frm) {
 
