@@ -19,7 +19,6 @@
   "unit_type",
   "required_cgpa",
   "required_percentage",
-  "required_score",
   "allowed_degrees",
   "effective_from",
   "effective_to",
@@ -51,7 +50,7 @@
    "fieldname": "rule_type",
    "fieldtype": "Select",
    "label": "Rule Type",
-   "options": "HSC Group\nTotal Score\nPercentage\nCGPA",
+   "options": "HSC Group\nPercentage\nCGPA",
    "reqd": 1
   },
   {
@@ -65,7 +64,7 @@
    "fieldname": "unit_type",
    "fieldtype": "Select",
    "label": "Unit Type",
-   "options": "Percentage\nScore\nCGPA",
+   "options": "Percentage\nCGPA",
    "reqd": 1
   },
   {
@@ -118,12 +117,6 @@
    "label": "Required Percentage"
   },
   {
-   "fieldname": "required_score",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Required Score"
-  },
-  {
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
@@ -147,7 +140,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 11:01:11.452626",
+ "modified": "2026-02-17 20:43:31.401070",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",
