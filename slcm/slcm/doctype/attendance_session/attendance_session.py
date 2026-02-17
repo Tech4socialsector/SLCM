@@ -92,7 +92,6 @@ class AttendanceSession(Document):
 					"course_offer": self.course_offering,
 					"attendance_date": self.session_date,
 					"date": self.session_date,
-					"session_type": self.session_type,
 					"status": "Absent", # Default to Absent or Present based on logic, safely Absent
 					"source": "Manual",
 					"student_group": self.student_group
@@ -100,7 +99,7 @@ class AttendanceSession(Document):
 				doc.insert(ignore_permissions=True)
 				
 		self.update_attendance_summary()
-	
+
 	def get_enrolled_students(self):
 		"""Find students based on Student Group or Class Enrollment"""
 		if self.student_group:
@@ -145,7 +144,6 @@ class AttendanceSession(Document):
 		students = self.get_enrolled_students()
 		for student_id in students:
 			calculate_student_attendance(student_id, self.course_offering)
-
 
 	def before_save(self):
 		"""Calculate summary before saving"""
@@ -236,60 +234,51 @@ def get_pending_sessions(instructor=None, course_offering=None):
 		order_by="session_date desc"
 	)
 
+
 @frappe.whitelist()
 def update_attendance_summary_realtime(session_name, course_offering, duration_hours):
-	from frappe.utils import flt
-	
-	# Fetch current session details
-	session = frappe.db.get_value("Attendance Session", session_name, 
-		["session_status", "session_type", "duration_hours"], as_dict=True)
-	
-	if not session or session.session_status != "Conducted":
-		return
+	"""
+	Update Attendance Summary in real-time when Attendance Session times change.
+	Called from client-side JavaScript without requiring a full save.
+	Recalculates total_class_hours for all affected students.
+	"""
+	try:
+		# Verify the session exists
+		if not frappe.db.exists("Attendance Session", session_name):
+			return {"success": False, "message": "Attendance Session not found"}
+
+		# Trigger attendance recalculation for all students in this course offering
+		from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
 		
-	old_duration = flt(session.duration_hours)
-	new_duration = flt(duration_hours)
-	diff = new_duration - old_duration
-	
-	if diff == 0:
-		return
+		# Get all students who have attendance records for this course offering
+		students = frappe.db.sql("""
+			SELECT DISTINCT student
+			FROM `tabStudent Attendance`
+			WHERE course_offer = %s
+		""", course_offering, as_dict=True)
+		
+		students_updated = 0
+		
+		# Recalculate attendance for each student
+		for student_row in students:
+			try:
+				calculate_student_attendance(student_row.student, course_offering)
+				students_updated += 1
+			except Exception as student_error:
+				frappe.log_error(
+					message=f"Error updating student {student_row.student}: {str(student_error)}",
+					title="Student Attendance Update Error"
+				)
+		
+		frappe.db.commit()
 
-	# Update Denominator (Total Class Hours)
-	# And Recalculate Percentage
-	# Note: We need to handle Numerator update separately or join
-	
-	# 1. Update Total Class Hours generally
-	frappe.db.sql("""
-		UPDATE `tabAttendance Summary`
-		SET total_class_hours = total_class_hours + %s
-		WHERE course_offering = %s
-	""", (diff, course_offering))
-	
-	# 2. Update Numerator for Present Students
-	present_students = frappe.get_all("Student Attendance", 
-		filters={"attendance_session": session_name, "status": ["in", ["Present", "Late", "Excused"]]},
-		pluck="student"
-	)
-	
-	if present_students:
-		frappe.db.sql("""
-			UPDATE `tabAttendance Summary`
-			SET 
-				attended_classes = attended_classes + %s,
-				total_attended_class_hours = total_attended_class_hours + %s
-			WHERE course_offering = %s
-			AND student IN %s
-		""", (diff, diff, course_offering, present_students))
+		return {
+			"success": True,
+			"message": f"Attendance Summary updated for {students_updated} students",
+			"students_updated": students_updated
+		}
 
-	# 3. Recalculate Percentages
-	frappe.db.sql("""
-		UPDATE `tabAttendance Summary`
-		SET attendance_percentage = CASE 
-			WHEN total_class_hours > 0 
-			THEN (attended_classes / total_class_hours) * 100 
-			ELSE 0 
-		END
-		WHERE course_offering = %s
-	""", (course_offering,))
-	
-	return {"success": True, "students_updated": len(present_students)}
+	except Exception as e:
+		frappe.log_error(message=str(e), title="Real-time Attendance Summary Update Error")
+		return {"success": False, "message": str(e)}
+

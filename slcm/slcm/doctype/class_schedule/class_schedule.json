@@ -24,6 +24,7 @@
   "schedule_date",
   "from_time",
   "to_time",
+  "duration_hours",
   "column_break_3",
   "venue",
   "capacity",
@@ -36,8 +37,7 @@
   "title",
   "color",
   "column_break_4",
-  "class_schedule_color",
-  "duration_hours"
+  "class_schedule_color"
  ],
  "fields": [
   {
@@ -157,12 +157,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "duration_hours",
-   "fieldtype": "Float",
-   "label": "Duration (Hours)",
-   "precision": "2"
-  },
-  {
    "fieldname": "section_break_repeat",
    "fieldtype": "Section Break",
    "label": "Repeat Settings"
@@ -229,10 +223,17 @@
    "fieldname": "status",
    "fieldtype": "Data",
    "label": "Status"
+  },
+  {
+   "fieldname": "duration_hours",
+   "fieldtype": "Float",
+   "label": "Duration (Hours)",
+   "precision": "2",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-02-16 20:36:43.527191",
+ "modified": "2026-02-16 21:09:15.037380",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Class Schedule",
