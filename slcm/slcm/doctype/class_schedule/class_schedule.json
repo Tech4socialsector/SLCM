@@ -36,7 +36,8 @@
   "title",
   "color",
   "column_break_4",
-  "class_schedule_color"
+  "class_schedule_color",
+  "duration_hours"
  ],
  "fields": [
   {
@@ -156,6 +157,12 @@
    "reqd": 1
   },
   {
+   "fieldname": "duration_hours",
+   "fieldtype": "Float",
+   "label": "Duration (Hours)",
+   "precision": "2"
+  },
+  {
    "fieldname": "section_break_repeat",
    "fieldtype": "Section Break",
    "label": "Repeat Settings"
@@ -225,7 +232,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-12 18:46:43.515223",
+ "modified": "2026-02-16 20:36:43.527191",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Class Schedule",

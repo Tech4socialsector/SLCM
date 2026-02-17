@@ -19,6 +19,9 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 	if not attendance_date:
 		frappe.throw(_("Attendance Date is required"))
 
+	if get_datetime(attendance_date) > get_datetime():
+		frappe.throw(_("Cannot mark attendance for future dates"))
+
 	schedule = frappe.get_doc("Course Schedule", course_schedule)
 
 	if not schedule.student_group:
@@ -96,6 +99,9 @@ def create_bulk_attendance_from_group(student_group, attendance_date, attendance
 	if not attendance_date:
 		frappe.throw(_("Attendance Date is required"))
 
+	if get_datetime(attendance_date) > get_datetime():
+		frappe.throw(_("Cannot mark attendance for future dates"))
+
 	group = frappe.get_doc("Student Group", student_group)
 	students = [row.student for row in group.students if row.active]
 
@@ -172,6 +178,9 @@ def mark_attendance(
 ):
 	if not date:
 		frappe.throw(_("Date is required"))
+
+	if get_datetime(date) > get_datetime():
+		frappe.throw(_("Cannot mark attendance for future dates"))
 
 	if not based_on:
 		frappe.throw(_("Based On is required"))

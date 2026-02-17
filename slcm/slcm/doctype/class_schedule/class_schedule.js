@@ -105,5 +105,38 @@ frappe.ui.form.on('Class Schedule', {
             frappe.msgprint(__('To Time must be after From Time'));
             frappe.validated = false;
         }
+    },
+
+    from_time: function (frm) {
+        frm.events.calculate_duration(frm);
+    },
+
+    to_time: function (frm) {
+        frm.events.calculate_duration(frm);
+    },
+
+    calculate_duration: function (frm) {
+        if (frm.doc.from_time && frm.doc.to_time) {
+            // Parse time strings (format: HH:MM:SS)
+            let from_parts = frm.doc.from_time.toString().split(':');
+            let to_parts = frm.doc.to_time.toString().split(':');
+
+            // Convert to total minutes
+            // Hours to minutes + minutes + seconds to minutes
+            let from_minutes = (parseInt(from_parts[0]) * 60) + parseInt(from_parts[1]) + (parseInt(from_parts[2]) / 60);
+            let to_minutes = (parseInt(to_parts[0]) * 60) + parseInt(to_parts[1]) + (parseInt(to_parts[2]) / 60);
+
+            // Calculate difference in minutes
+            let diff_minutes = to_minutes - from_minutes;
+
+            // Convert to hours
+            let duration_hours = diff_minutes / 60;
+
+            // Round to 2 decimal places
+            duration_hours = Math.round(duration_hours * 100) / 100;
+
+            // Set the value
+            frm.set_value('duration_hours', duration_hours);
+        }
     }
 });

@@ -362,6 +362,11 @@ class StudentAttendanceTool {
 			return;
 		}
 
+		if (frappe.datetime.get_diff(attendance_date, frappe.datetime.get_today()) > 0) {
+			frappe.msgprint(__("Cannot mark attendance for future dates"));
+			return;
+		}
+
 		if (based_on === "Student Group") {
 			let student_group = this.student_group_field.get_value();
 			if (!student_group) {
@@ -541,6 +546,11 @@ class StudentAttendanceTool {
 			return;
 		}
 
+		if (frappe.datetime.get_diff(attendance_date, frappe.datetime.get_today()) > 0) {
+			frappe.msgprint(__("Cannot mark attendance for future dates"));
+			return;
+		}
+
 		if (this.students.length === 0) {
 			frappe.msgprint(__("No students to mark attendance for"));
 			return;
@@ -563,8 +573,8 @@ class StudentAttendanceTool {
 
 		let confirm_message = __(
 			"Mark attendance for all {0} students?<br><br>" +
-				"<strong>Present:</strong> {1} students<br>" +
-				"<strong>Absent:</strong> {2} students",
+			"<strong>Present:</strong> {1} students<br>" +
+			"<strong>Absent:</strong> {2} students",
 			[this.students.length, present_count, absent_count]
 		);
 
