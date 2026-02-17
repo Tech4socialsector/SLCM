@@ -7,10 +7,10 @@
  "field_order": [
   "offer_details_section",
   "applicant",
+  "admission_year",
+  "admission_cycle",
   "campus",
   "program",
-  "admission_cycle",
-  "offer_configrationn",
   "payable_amount",
   "column_break_uiqy",
   "email_template_used",
@@ -20,9 +20,11 @@
   "controls_tab",
   "issued_on",
   "accepted_on",
+  "offer_configrationn",
   "column_break_hdcy",
   "payment_deadline",
-  "offer_status"
+  "offer_status",
+  "edit_reason"
  ],
  "fields": [
   {
@@ -129,12 +131,25 @@
    "fieldname": "payable_amount",
    "fieldtype": "Currency",
    "label": "Payable Amount"
+  },
+  {
+   "fieldname": "edit_reason",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Edit Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "admission_year",
+   "fieldtype": "Link",
+   "label": "Admission Year",
+   "options": "Admission Year"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 15:36:06.738483",
+ "modified": "2026-02-17 17:01:11.202616",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
@@ -152,6 +167,15 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

@@ -89,7 +89,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 15:19:55.550381",
+ "modified": "2026-02-17 12:16:51.708694",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",
@@ -98,7 +98,6 @@
  "permissions": [
   {
    "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,

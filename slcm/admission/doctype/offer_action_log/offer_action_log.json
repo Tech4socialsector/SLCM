@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "OAL-.YYYY.-.#####",
  "creation": "2026-02-16 15:41:48.700770",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -8,12 +9,16 @@
   "offer_letter",
   "applicant",
   "action",
-  "is_payment_deadline_extended",
-  "payment_deadline",
+  "field_changed",
+  "old_value",
+  "new_value",
+  "reason",
   "column_break_tzmt",
   "performed_by",
   "timestamp",
-  "notes"
+  "notes",
+  "is_payment_deadline_extended",
+  "payment_deadline"
  ],
  "fields": [
   {
@@ -30,10 +35,28 @@
    "options": "Applicant"
   },
   {
-   "fieldname": "action",
-   "fieldtype": "Select",
-   "label": "Action",
-   "options": "Draft\nIssued\nAccepted\nRejected\nExpired\nWithdrawn"
+   "fieldname": "field_changed",
+   "fieldtype": "Data",
+   "label": "Field Changed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "old_value",
+   "fieldtype": "JSON",
+   "label": "Old Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_value",
+   "fieldtype": "JSON",
+   "label": "New Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "read_only": 1
   },
   {
    "fieldname": "performed_by",
@@ -49,7 +72,8 @@
   {
    "fieldname": "notes",
    "fieldtype": "Small Text",
-   "label": "Notes"
+   "label": "Notes",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_tzmt",
@@ -66,30 +90,49 @@
    "fieldname": "payment_deadline",
    "fieldtype": "Date",
    "label": "Payment Deadline"
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "label": "Action",
+   "options": "Draft\nIssued\nAccepted\nRejected\nExpired\nWithdrawn\nField Updated"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 17:38:38.258859",
+ "modified": "2026-02-17 17:06:55.626558",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Action Log",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
+   "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "System Manager",
-   "share": 1
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [
+  {
+   "color": "Blue",
+   "title": "Draft"
+  },
+  {
+   "color": "Green",
+   "title": "Issued"
+  }
+ ]
 }

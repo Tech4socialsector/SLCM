@@ -67,6 +67,7 @@ class OfferService:
             offer.applicant = applicant
             offer.campus = campus
             offer.program = program
+            offer.admission_year = admission_year
             offer.admission_cycle = cycle
             offer.offer_configrationn = config.name  # Note: fieldname typo from DocType definition
             offer.offer_status = "Draft"
@@ -90,19 +91,31 @@ class OfferService:
             # Generate and Attach PDF
             if config.pdf_format:
                 OfferService._generate_offer_pdf(offer, config.pdf_format)
-
+            
+            #send offer letter email to applicant
+            OfferService._send_offer_letter_email(offer, config.email_template)
+            
             # Transition to Issued
             offer.offer_status = "Issued"
             offer.save(ignore_permissions=True)
 
-            # Log action
-            OfferService.log_action(offer.name, "Issued", _("Offer generated and issued automatically."))
-
             frappe.db.commit()
-            return offer.name
+            return {
+                "offer_name": offer.name,
+                "offer_status": offer.offer_status,
+                "payment_deadline": offer.payment_deadline,
+                "payable_amount": offer.payable_amount,
+                "message": "Offer letter generated successfully"
+            }
         except Exception as e:
             frappe.db.rollback()
-            raise e
+            return {
+                "offer_name": None,
+                "offer_status": None,
+                "payment_deadline": None,
+                "payable_amount": None,
+                "message": str(e)
+            }
 
     @staticmethod
     def accept_offer(offer_name):
@@ -255,6 +268,44 @@ class OfferService:
         }
 
     @staticmethod
+    def _send_offer_letter_email(offer, email_template):
+        """Sends the offer letter email to the applicant."""
+        if not email_template or not offer.applicant:
+            return
+
+        applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
+        if not applicant_email:
+            frappe.log_error(f"Email not found for Applicant {offer.applicant}", "Offer Email Error")
+            return
+
+        tpl = frappe.get_doc("Email Templates", email_template)
+        subject = frappe.render_template(tpl.subject, {"doc": offer, "frappe": frappe})
+        message = OfferService._render_snapshot(offer, email_template)
+
+        attachments = []
+        if offer.offer_letter_pdf:
+            try:
+                # Use standard way to get file from URL or filters
+                file_doc = frappe.get_doc("File", {
+                    "attached_to_doctype": "Offer Letter",
+                    "attached_to_name": offer.name,
+                    "attached_to_field": "offer_letter_pdf"
+                })
+                attachments.append({
+                    "fname": file_doc.file_name,
+                    "fcontent": file_doc.get_content()
+                })
+            except Exception as e:
+                frappe.log_error(f"Failed to attach PDF to email for {offer.name}: {str(e)}")
+
+        frappe.sendmail(
+            recipients=[applicant_email],
+            subject=subject,
+            message=message,
+            attachments=attachments
+        )
+
+    @staticmethod
     def _create_snapshot_record(offer_name, fee_data):
         """Creates the Offer Fee Snapshot record."""
         snapshot = frappe.new_doc("Offer Fee Snapshot")
@@ -309,8 +360,8 @@ class OfferService:
             })
             _file.insert(ignore_permissions=True)
             
-            # Update the attachment field in the doc (avoid recursive save)
-            frappe.db.set_value("Offer Letter", offer_doc.name, "offer_letter_pdf", _file.file_url)
+            # Set the attachment field on the object so it gets saved in the final .save() call
+            offer_doc.offer_letter_pdf = _file.file_url
             
         except Exception as e:
             frappe.log_error(f"PDF Generation Failed for {offer_doc.name}: {str(e)}")
@@ -321,7 +372,7 @@ class OfferService:
         log = frappe.new_doc("Offer Action Log")
         log.offer_letter = offer_name
         log.action = action
-        log.performed_by = frappe.session.user
+        log.performed_by = frappe.session.user  
         log.timestamp = now_datetime()
         log.notes = notes
         log.insert(ignore_permissions=True)
@@ -338,3 +389,11 @@ def bulk_generate_offers(applicants_json):
 @frappe.whitelist()
 def bulk_update_status(offer_names, action, notes=None):
     return OfferService.bulk_update_status(offer_names, action, notes)
+
+@frappe.whitelist()
+def accept_offer(offer_name):
+    return OfferService.accept_offer(offer_name)
+
+@frappe.whitelist()
+def reject_offer(offer_name, reason=None):
+    return OfferService.reject_offer(offer_name, reason)

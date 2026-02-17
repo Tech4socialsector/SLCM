@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "OFS-.##",
  "creation": "2026-02-16 16:09:49.977295",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -18,47 +19,55 @@
    "fieldname": "offer_id",
    "fieldtype": "Link",
    "label": "Offer ID",
-   "options": "Offer Letter"
+   "options": "Offer Letter",
+   "read_only": 1
   },
   {
    "fieldname": "base_fee",
    "fieldtype": "Currency",
-   "label": "Base Fee"
+   "label": "Base Fee",
+   "read_only": 1
   },
   {
    "fieldname": "scholarship_amount",
    "fieldtype": "Currency",
-   "label": "Scholarship Amount"
+   "label": "Scholarship Amount",
+   "read_only": 1
   },
   {
    "fieldname": "tax_amount",
    "fieldtype": "Currency",
-   "label": "Tax Amount"
+   "label": "Tax Amount",
+   "read_only": 1
   },
   {
    "fieldname": "total_payable",
    "fieldtype": "Currency",
-   "label": "Total Payable"
+   "label": "Total Payable",
+   "read_only": 1
   },
   {
    "fieldname": "frozen_on",
    "fieldtype": "Datetime",
-   "label": "Frozen On"
+   "label": "Frozen On",
+   "read_only": 1
   },
   {
    "fieldname": "frozen_by",
    "fieldtype": "Link",
    "label": "Frozen By",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 17:08:07.032506",
+ "modified": "2026-02-17 17:08:54.462779",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Fee Snapshot",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
