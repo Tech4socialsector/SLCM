@@ -1,0 +1,103 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2026-02-17 11:05:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "applicant",
+        "program",
+        "category",
+        "hsc_percentage",
+        "entrance_percentage",
+        "interview_percentage",
+        "total_score",
+        "overall_rank",
+        "program_rank",
+        "category_rank",
+        "status"
+    ],
+    "fields": [
+        {
+            "fieldname": "applicant",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Applicant",
+            "options": "test Applicant",
+            "reqd": 1
+        },
+        {
+            "fieldname": "program",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Program",
+            "options": "test Program",
+            "reqd": 1
+        },
+        {
+            "fieldname": "category",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Category",
+            "options": "GEN\nOBC\nSC\nST\nEWS\nPwD"
+        },
+        {
+            "fieldname": "hsc_percentage",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "HSC %"
+        },
+        {
+            "fieldname": "entrance_percentage",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Entrance %"
+        },
+        {
+            "fieldname": "interview_percentage",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Interview %"
+        },
+        {
+            "fieldname": "total_score",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Total Score"
+        },
+        {
+            "fieldname": "overall_rank",
+            "fieldtype": "Int",
+            "in_list_view": 1,
+            "label": "Overall Rank"
+        },
+        {
+            "fieldname": "program_rank",
+            "fieldtype": "Int",
+            "in_list_view": 1,
+            "label": "Program Rank"
+        },
+        {
+            "fieldname": "category_rank",
+            "fieldtype": "Int",
+            "in_list_view": 1,
+            "label": "Category Rank"
+        },
+        {
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Status",
+            "options": "Selected\nWaitlisted\nRejected"
+        }
+    ],
+    "istable": 1,
+    "modified": "2026-02-17 11:45:00.000000",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Merit List Applicant",
+    "owner": "Administrator",
+    "permissions": [],
+    "row_format": "Dynamic",
+    "states": []
+}
