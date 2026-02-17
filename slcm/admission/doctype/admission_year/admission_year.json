@@ -24,6 +24,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
@@ -46,6 +47,8 @@
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nOpen\nClosed",
    "read_only": 1
@@ -104,12 +107,13 @@
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
+   "in_standard_filter": 1,
    "label": "Is Active"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 17:40:57.554918",
+ "modified": "2026-02-17 09:24:51.540523",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Year",

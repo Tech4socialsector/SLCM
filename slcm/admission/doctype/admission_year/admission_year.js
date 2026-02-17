@@ -60,7 +60,18 @@ frappe.ui.form.on("Admission Year", {
 
     application_start_date: function (frm) {
         validate_dates(frm);
-    }
+    },
+
+    refresh: function (frm) {
+        const current_academic_year = frappe.db.get_single_value("Admission Settings", "current_academic_year");
+        frm.set_query("academic_year", () => {
+            return {
+                filters: {
+                    // is_active: 1,
+                }
+            }
+        })
+    },
 
 });
 
@@ -97,6 +108,6 @@ function validate_dates(frm) {
     }
 
     if (end_year !== academic_end_year) {
-        frappe.throw(__("Application End Date must be in Academic Start Year {0}", [academic_end_year]));
+        frappe.throw(__("Application End Date must be in Academic End Year {0}", [academic_end_year]));
     }
 }

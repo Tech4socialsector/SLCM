@@ -26,7 +26,7 @@ class AdmissionYear(Document):
 			if getdate(cycle.start_date) < getdate(self.application_start_date) or \
 			   getdate(cycle.end_date) > getdate(self.application_end_date):
 				frappe.throw(_("Cycle {0} dates must be within Admission Year dates ({1} to {2})").format(
-					cycle.cycle_name, self.application_start_date, self.application_end_date
+					cycle.cycle_name, frappe.utils.format_date(self.application_start_date), frappe.utils.format_date(self.application_end_date)
 				))
 			
 			if getdate(cycle.end_date) <= getdate(cycle.start_date):
