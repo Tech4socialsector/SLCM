@@ -32,9 +32,9 @@
   },
   {
    "fieldname": "program",
-   "fieldtype": "Link",
+   "fieldtype": "Table MultiSelect",
    "label": "Program",
-   "options": "Program",
+   "options": "Eligibility Program",
    "reqd": 1
   },
   {
@@ -75,7 +75,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 22:30:46.073974",
+ "modified": "2026-02-17 11:30:42.408562",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",

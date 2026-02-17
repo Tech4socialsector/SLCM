@@ -14,7 +14,7 @@
   "campus",
   "qualification_level",
   "rule_type",
-  "subject",
+  "hsc_group",
   "operator",
   "unit_type",
   "required_cgpa",
@@ -51,14 +51,8 @@
    "fieldname": "rule_type",
    "fieldtype": "Select",
    "label": "Rule Type",
-   "options": "Subject\nTotal Score\nPercentage\nCGPA",
+   "options": "HSC Group\nTotal Score\nPercentage\nCGPA",
    "reqd": 1
-  },
-  {
-   "fieldname": "subject",
-   "fieldtype": "Link",
-   "label": "Subject",
-   "options": "Subject"
   },
   {
    "fieldname": "operator",
@@ -142,12 +136,18 @@
    "label": "Academic Year ",
    "options": "Academic Year",
    "reqd": 1
+  },
+  {
+   "fieldname": "hsc_group",
+   "fieldtype": "Link",
+   "label": "HSC Group ",
+   "options": "HSC Groups"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 22:14:24.955100",
+ "modified": "2026-02-17 11:01:11.452626",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",
