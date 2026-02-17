@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestSubject(FrappeTestCase):
+class TestHSCGroups(FrappeTestCase):
 	pass
