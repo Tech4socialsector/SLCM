@@ -42,8 +42,7 @@ def get_columns(filters):
 		{
 			"fieldname": "course",
 			"label": _("Course"),
-			"fieldtype": "Link",
-			"options": "Course",
+			"fieldtype": "Data",
 			"width": 200
 		},
 		{
@@ -153,7 +152,7 @@ def get_data(filters):
 			att.student_name,
 			s.programme as program,
 			att.section as section,
-			att.course,
+			c.course_name as course,
 			att.total_classes,
 			
 			COALESCE(att.total_attended_class_hours, 0) as raw_attended_classes,
@@ -185,11 +184,13 @@ def get_data(filters):
 			`tabAttendance Summary` att
 		LEFT JOIN
 			`tabStudent Master` s ON att.student = s.name
+		LEFT JOIN
+			`tabCourse` c ON att.course = c.name
 		WHERE
 			att.docstatus < 2
 			{conditions}
 		ORDER BY
-			att.student, att.course
+			att.student, c.course_name
 	""".format(conditions=conditions)
 
 	results = frappe.db.sql(query, filters, as_dict=True)

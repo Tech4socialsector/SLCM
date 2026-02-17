@@ -13,6 +13,7 @@ class ClassSchedule(Document):
     def validate(self):
         """Validate the Class Schedule"""
         self.validate_time()
+        self.calculate_duration()
         self.validate_repeat_settings()
         self.check_conflicts()
 
@@ -21,6 +22,12 @@ class ClassSchedule(Document):
         if self.from_time and self.to_time:
             if to_timedelta(self.from_time) >= to_timedelta(self.to_time):
                 frappe.throw("To Time must be after From Time")
+
+    def calculate_duration(self):
+        """Calculate session duration in hours"""
+        if self.from_time and self.to_time:
+            from frappe.utils import time_diff_in_hours
+            self.duration_hours = time_diff_in_hours(self.to_time, self.from_time)
 
     def validate_repeat_settings(self):
         """Validate repeat frequency and repeats_till"""
@@ -32,31 +39,54 @@ class ClassSchedule(Document):
 
     def check_conflicts(self):
         """Check for scheduling conflicts"""
-        if not self.instructor or not self.schedule_date or not self.from_time or not self.to_time:
+        if not self.schedule_date or not self.from_time or not self.to_time:
             return
 
-        # Check if instructor has another class at the same time
-        conflicts = frappe.get_all(
-            "Class Schedule",
-            filters={
+        # 1. Check for Duplicate Class Schedule (Same Student Group, Same Date, Overlapping Time)
+        if self.student_group:
+            filters = {
                 "name": ["!=", self.name],
-                "instructor": self.instructor,
+                "student_group": self.student_group,
                 "schedule_date": self.schedule_date,
-            },
-            fields=["name", "from_time", "to_time", "course"],
-        )
+                "docstatus": ["<", 2] # Exclude cancelled
+            }
+            
+            conflicts = frappe.get_all(
+                "Class Schedule",
+                filters=filters,
+                fields=["name", "from_time", "to_time", "course", "student_group"],
+            )
 
-        for conflict in conflicts:
-            # Check if times overlap
-            if self.times_overlap(
-                self.from_time, self.to_time, conflict.from_time, conflict.to_time
-            ):
-                frappe.msgprint(
-                    f"Warning: Instructor {self.instructor} has another class ({conflict.course}) "
-                    f"from {conflict.from_time} to {conflict.to_time} on {self.schedule_date}",
-                    indicator="orange",
-                    alert=True,
-                )
+            for conflict in conflicts:
+                if self.times_overlap(self.from_time, self.to_time, conflict.from_time, conflict.to_time):
+                    frappe.throw(
+                        f"Already scheduled same time class {conflict.course} for {self.student_group} ({conflict.from_time} - {conflict.to_time})",
+                        title="Duplicate Schedule"
+                    )
+
+        # 2. Check Instructor Conflict
+        if self.instructor:
+            conflicts = frappe.get_all(
+                "Class Schedule",
+                filters={
+                    "name": ["!=", self.name],
+                    "instructor": self.instructor,
+                    "schedule_date": self.schedule_date,
+                    "docstatus": ["<", 2]
+                },
+                fields=["name", "from_time", "to_time", "course"],
+            )
+
+            for conflict in conflicts:
+                if self.times_overlap(
+                    self.from_time, self.to_time, conflict.from_time, conflict.to_time
+                ):
+                    frappe.msgprint(
+                        f"Instructor {self.instructor} has another class ({conflict.course}) "
+                        f"from {conflict.from_time} to {conflict.to_time} on {self.schedule_date}",
+                        indicator="orange",
+                        alert=True,
+                    )
 
     def times_overlap(self, start1, end1, start2, end2):
         """Check if two time ranges overlap"""
@@ -69,6 +99,27 @@ class ClassSchedule(Document):
         
         # Create attendance session for this schedule
         self.create_attendance_session()
+
+    def on_update(self):
+        """Update linked Attendance Session"""
+        # Ensure duration is calculated if times changed
+        self.calculate_duration()
+        self.update_attendance_session()
+
+    def update_attendance_session(self):
+        """Sync changes to Attendance Session"""
+        if not self.schedule_date or not self.from_time:
+            return
+
+        session_name = frappe.db.get_value("Attendance Session", {"class_schedule": self.name}, "name")
+        if session_name:
+            session = frappe.get_doc("Attendance Session", session_name)
+            if session.docstatus < 1:  # Only if not submitted
+                session.session_date = self.schedule_date
+                session.session_start_time = self.from_time
+                session.session_end_time = self.to_time
+                session.room = frappe.db.get_value("Venue Booking", self.venue, "room") if self.venue else None
+                session.save()
 
     def create_attendance_session(self):
         """Create an attendance session for this schedule"""

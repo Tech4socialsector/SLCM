@@ -25,6 +25,39 @@ class AttendanceSession(Document):
 		self.update_student_attendance_status()
 		self.trigger_calculations()
 
+	def on_update(self):
+		"""Trigger calculations on save"""
+		# Ensure duration is recalculated if times changed
+		self.calculate_duration()
+		
+		# Sync generated hours to student attendance
+		self.update_student_attendance_hours()
+		
+		# Sync session_type to Review/Student Attendance records if changed
+		self.sync_details_to_attendance()
+		self.trigger_calculations()
+
+	def update_student_attendance_hours(self):
+		"""Update hours_counted in linked Student Attendance records"""
+		if not self.duration_hours:
+			return
+
+		frappe.db.sql("""
+			UPDATE `tabStudent Attendance`
+			SET hours_counted = %s
+			WHERE attendance_session = %s
+			AND status IN ('Present', 'Late', 'Excused')
+			AND docstatus < 2
+		""", (self.duration_hours, self.name))
+
+	def sync_details_to_attendance(self):
+		"""Sync Session Type and other details to linked Student Attendance"""
+		frappe.db.sql("""
+			UPDATE `tabStudent Attendance`
+			SET session_type = %s, attendance_date = %s
+			WHERE attendance_session = %s
+		""", (self.session_type, self.session_date, self.name))
+
 	def calculate_duration(self):
 		"""Calculate session duration in hours"""
 		if self.session_start_time and self.session_end_time:
@@ -59,6 +92,7 @@ class AttendanceSession(Document):
 					"course_offer": self.course_offering,
 					"attendance_date": self.session_date,
 					"date": self.session_date,
+					"session_type": self.session_type,
 					"status": "Absent", # Default to Absent or Present based on logic, safely Absent
 					"source": "Manual",
 					"student_group": self.student_group
@@ -66,7 +100,7 @@ class AttendanceSession(Document):
 				doc.insert(ignore_permissions=True)
 				
 		self.update_attendance_summary()
-
+	
 	def get_enrolled_students(self):
 		"""Find students based on Student Group or Class Enrollment"""
 		if self.student_group:
@@ -111,6 +145,7 @@ class AttendanceSession(Document):
 		students = self.get_enrolled_students()
 		for student_id in students:
 			calculate_student_attendance(student_id, self.course_offering)
+
 
 	def before_save(self):
 		"""Calculate summary before saving"""
@@ -200,3 +235,61 @@ def get_pending_sessions(instructor=None, course_offering=None):
 		fields=["name", "session_date", "course", "instructor", "duration_hours"],
 		order_by="session_date desc"
 	)
+
+@frappe.whitelist()
+def update_attendance_summary_realtime(session_name, course_offering, duration_hours):
+	from frappe.utils import flt
+	
+	# Fetch current session details
+	session = frappe.db.get_value("Attendance Session", session_name, 
+		["session_status", "session_type", "duration_hours"], as_dict=True)
+	
+	if not session or session.session_status != "Conducted":
+		return
+		
+	old_duration = flt(session.duration_hours)
+	new_duration = flt(duration_hours)
+	diff = new_duration - old_duration
+	
+	if diff == 0:
+		return
+
+	# Update Denominator (Total Class Hours)
+	# And Recalculate Percentage
+	# Note: We need to handle Numerator update separately or join
+	
+	# 1. Update Total Class Hours generally
+	frappe.db.sql("""
+		UPDATE `tabAttendance Summary`
+		SET total_class_hours = total_class_hours + %s
+		WHERE course_offering = %s
+	""", (diff, course_offering))
+	
+	# 2. Update Numerator for Present Students
+	present_students = frappe.get_all("Student Attendance", 
+		filters={"attendance_session": session_name, "status": ["in", ["Present", "Late", "Excused"]]},
+		pluck="student"
+	)
+	
+	if present_students:
+		frappe.db.sql("""
+			UPDATE `tabAttendance Summary`
+			SET 
+				attended_classes = attended_classes + %s,
+				total_attended_class_hours = total_attended_class_hours + %s
+			WHERE course_offering = %s
+			AND student IN %s
+		""", (diff, diff, course_offering, present_students))
+
+	# 3. Recalculate Percentages
+	frappe.db.sql("""
+		UPDATE `tabAttendance Summary`
+		SET attendance_percentage = CASE 
+			WHEN total_class_hours > 0 
+			THEN (attended_classes / total_class_hours) * 100 
+			ELSE 0 
+		END
+		WHERE course_offering = %s
+	""", (course_offering,))
+	
+	return {"success": True, "students_updated": len(present_students)}

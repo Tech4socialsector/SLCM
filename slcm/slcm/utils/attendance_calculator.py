@@ -54,8 +54,14 @@ def calculate_student_attendance(student, course_offering):
 	# 2. Total Class Hours (Conducted)
 	summary.total_class_hours = sessions_data['conducted_hours']
 
+	# 2.1 Total Scheduled Class Hours (All)
+	summary.total_scheduled_class_hours = sessions_data['total_scheduled_hours']
+
 	# 3. Total Office Hours
 	summary.total_office_hours = office_hours_data['total_hours']
+
+	# 3.1 Total Scheduled Office Hours
+	summary.total_scheduled_office_hours = office_hours_data['total_scheduled_hours']
 
 	# 4. Total Condonation Hours
 	summary.total_condonation_hours = condonation_data['hours']
@@ -74,7 +80,8 @@ def calculate_student_attendance(student, course_offering):
 	total_hours_calculated = raw_attended
 	
 	# Add Office Hours
-	total_hours_calculated += office_hours_data['total_hours'] 
+	if settings.include_office_hours_in_attendance:
+		total_hours_calculated += office_hours_data['total_hours'] 
 	
 	# Add Condonation
 	total_hours_calculated += condonation_data['hours']
@@ -137,21 +144,26 @@ def calculate_sessions(course_offering):
 	"""
 	# We assume only 'Lecture' and 'Tutorial' count towards the mandatory denominator.
 	# Office Hours are usually supplementary.
+	session_types = ['Lecture', 'Tutorial']
+	settings = frappe.get_single("Attendance Settings")
+	if settings.include_office_hours_in_attendance:
+		session_types.append('Office Hour')
+	
 	sessions = frappe.db.sql("""
 		SELECT 
-			COUNT(name) as conducted_sessions,
-			COALESCE(SUM(duration_hours), 0) as total_hours,
+			COUNT(CASE WHEN session_status = 'Conducted' THEN 1 ELSE NULL END) as conducted_sessions,
+			COALESCE(SUM(duration_hours), 0) as total_scheduled_hours,
 			COALESCE(SUM(CASE WHEN session_status = 'Conducted' THEN duration_hours ELSE 0 END), 0) as conducted_hours
 		FROM `tabAttendance Session`
 		WHERE course_offering = %s
-		AND session_type IN ('Lecture', 'Tutorial')
-		AND session_status = 'Conducted'
-	""", course_offering, as_dict=True)
+		AND session_type IN %s
+		AND docstatus < 2
+	""", (course_offering, session_types), as_dict=True)
 	
 	if sessions:
 		return sessions[0]
 	
-	return {'total_hours': 0, 'conducted_hours': 0, 'conducted_sessions': 0}
+	return {'total_scheduled_hours': 0, 'conducted_hours': 0, 'conducted_sessions': 0}
 
 
 def calculate_fa_mfa_hours(student, course_offering):
@@ -235,10 +247,23 @@ def calculate_office_hours(student, course_offering):
 		AND docstatus < 2
 	""", (student, course_offering, course, academic_year), as_dict=True)
 	
+	# Calculate Total Scheduled Office Hours
+	scheduled_office_hours = frappe.db.sql("""
+		SELECT 
+			COALESCE(SUM(duration_hours), 0) as total_hours
+		FROM `tabOffice Hours Session`
+		WHERE course_offering = %s
+		AND docstatus < 2
+	""", (course_offering,), as_dict=True)
+
+	total_scheduled = scheduled_office_hours[0]['total_hours'] if scheduled_office_hours else 0
+
 	if office_hours:
-		return office_hours[0]
+		result = office_hours[0]
+		result['total_scheduled_hours'] = total_scheduled
+		return result
 	
-	return {'total_hours': 0}
+	return {'total_hours': 0, 'total_scheduled_hours': total_scheduled}
 
 
 def get_approved_condonation(student, course_offering):
