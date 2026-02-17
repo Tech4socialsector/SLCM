@@ -1,0 +1,48 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-17 12:59:02.310136",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "category_information_section",
+  "category",
+  "campus"
+ ],
+ "fields": [
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "label": "Category",
+   "options": "Admission Category"
+  },
+  {
+   "fetch_from": "category.campus",
+   "fieldname": "campus",
+   "fieldtype": "Data",
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "category_information_section",
+   "fieldtype": "Section Break",
+   "label": "Category Information"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-17 14:23:40.616445",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Applicant Category",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

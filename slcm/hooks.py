@@ -273,5 +273,13 @@ scheduler_events = {
 		]
 	}
 }
+# Add this to your existing hooks.py file
 
+# Document Events
+doc_events = {
+    "Applicant": {
+        "validate": "slcm.admission.doctype.applicant.applicant.validate_applicant",
+        "before_submit": "slcm.admission.doctype.applicant.applicant.before_submit_applicant"
+    }
+}
 

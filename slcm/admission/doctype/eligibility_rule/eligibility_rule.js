@@ -15,7 +15,6 @@ frappe.ui.form.on('Eligibility Rule', {
         frm.set_value('unit_type', '');
         frm.set_value('required_cgpa', '');
         frm.set_value('required_percentage', '');
-        frm.set_value('required_score', '');
 
         apply_qualification_level_logic(frm);
     },
@@ -28,7 +27,6 @@ frappe.ui.form.on('Eligibility Rule', {
         frm.set_value('unit_type', '');
         frm.set_value('required_cgpa', '');
         frm.set_value('required_percentage', '');
-        frm.set_value('required_score', '');
 
         apply_rule_type_logic(frm);
     },
@@ -47,8 +45,8 @@ function apply_qualification_level_logic(frm) {
 
     if (qualification_level === 'XII') {
 
-        frm.set_df_property('rule_type', 'options', ['', 'HSC Group', 'Total Score', 'Percentage']);
-        frm.set_df_property('unit_type', 'options', ['', 'Percentage', 'Score']);
+        frm.set_df_property('rule_type', 'options', ['', 'HSC Group','Percentage']);
+        frm.set_df_property('unit_type', 'options', ['', 'Percentage']);
 
         frm.set_df_property('allowed_degrees', 'hidden', 1);
         frm.set_df_property('rule_type', 'hidden', 0);
@@ -69,7 +67,6 @@ function apply_qualification_level_logic(frm) {
 
         frm.set_df_property('required_cgpa', 'hidden', 0);
         frm.set_df_property('required_percentage', 'hidden', 1);
-        frm.set_df_property('required_score', 'hidden', 1);
 
         frm.set_df_property('allowed_degrees', 'hidden', 0);
 
@@ -79,7 +76,6 @@ function apply_qualification_level_logic(frm) {
         frm.set_df_property('hsc_group', 'hidden', 1);
         frm.set_df_property('required_cgpa', 'hidden', 1);
         frm.set_df_property('required_percentage', 'hidden', 1);
-        frm.set_df_property('required_score', 'hidden', 1);
         frm.set_df_property('allowed_degrees', 'hidden', 1);
     }
 }
@@ -94,13 +90,7 @@ function apply_rule_type_logic(frm) {
         if (rule_type === 'HSC Group') {
 
             frm.set_df_property('hsc_group', 'hidden', 0);
-            frm.set_df_property('unit_type', 'options', ['', 'Percentage', 'Score']);
-            frm.set_df_property('allowed_degrees', 'hidden', 1);
-
-        } else if (rule_type === 'Total Score') {
-
-            frm.set_df_property('hsc_group', 'hidden', 1);
-            frm.set_df_property('unit_type', 'options', ['', 'Score', 'Percentage']);
+            frm.set_df_property('unit_type', 'options', ['', 'Percentage']);
             frm.set_df_property('allowed_degrees', 'hidden', 1);
 
         } else if (rule_type === 'Percentage') {
@@ -115,7 +105,6 @@ function apply_rule_type_logic(frm) {
 
             frm.set_df_property('required_percentage', 'hidden', 0);
             frm.set_df_property('required_cgpa', 'hidden', 1);
-            frm.set_df_property('required_score', 'hidden', 1);
 
             frm.set_df_property('allowed_degrees', 'hidden', 1);
         }
@@ -133,26 +122,16 @@ function apply_unit_type_logic(frm) {
 
             frm.set_df_property('required_percentage', 'hidden', 0);
             frm.set_df_property('required_cgpa', 'hidden', 1);
-            frm.set_df_property('required_score', 'hidden', 1);
-
-        } else if (unit_type === 'Score') {
-
-            frm.set_df_property('required_score', 'hidden', 0);
-            frm.set_df_property('required_cgpa', 'hidden', 1);
-            frm.set_df_property('required_percentage', 'hidden', 1);
-
         } else {
 
             frm.set_df_property('required_cgpa', 'hidden', 1);
             frm.set_df_property('required_percentage', 'hidden', 1);
-            frm.set_df_property('required_score', 'hidden', 1);
         }
 
     } else if (qualification_level === 'UG' || qualification_level === 'PG') {
 
         frm.set_df_property('required_cgpa', 'hidden', 0);
         frm.set_df_property('required_percentage', 'hidden', 1);
-        frm.set_df_property('required_score', 'hidden', 1);
     }
 }
 frappe.ui.form.on('Eligibility Rule', {
