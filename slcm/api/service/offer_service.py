@@ -181,31 +181,50 @@ class OfferService:
 
     @staticmethod
     @frappe.whitelist()
-    def bulk_generate_offers(applicants_json):
+    def bulk_generate_offers(applicants):
         """
         API endpoint for bulk offer generation.
-        Expects JSON list of dicts: [{"applicant": "...", "campus": "...", "program": "...", "cycle": "..."}]
+        Accepts:
+        1. JSON list of dicts: [{"applicant": "...", "campus": "...", "program": "...", "cycle": "...", "admission_year": "..."}]
+        2. JSON list of applicant names: ["APP-2026-00001", "APP-2026-00002"]
         """
-        if isinstance(applicants_json, str):
-            applicants = json.loads(applicants_json)
-        else:
-            applicants = applicants_json
+        if isinstance(applicants, str):
+            applicants = json.loads(applicants)
 
         results = {"success": [], "errors": []}
         
         for data in applicants:
             try:
+                # Handle case where only applicant name is passed
+                if isinstance(data, str):
+                    applicant_name = data
+                    # Fetch details from Applicant record
+                    details = frappe.db.get_value("Applicant", applicant_name, 
+                        ["campus", "program", "admission_cycle", "academic_year"], as_dict=1)
+                    
+                    if not details:
+                        raise ValueError(_("Applicant {0} not found").format(applicant_name))
+                    
+                    payload = {
+                        "applicant": applicant_name,
+                        "campus": details.campus,
+                        "program": details.program,
+                        "cycle": details.admission_cycle,
+                        "admission_year": details.academic_year
+                    }
+                else:
+                    payload = data
+
                 name = OfferService.generate_offer(
-                    applicant=data.get("applicant"),
-                    campus=data.get("campus"),
-                    program=data.get("program"),
-                    cycle=data.get("cycle"),
-                    admission_year=data.get("admission_year")
+                    applicant=payload.get("applicant"),
+                    campus=payload.get("campus"),
+                    program=payload.get("program"),
+                    cycle=payload.get("cycle"),
+                    admission_year=payload.get("admission_year")
                 )
-                results["success"].append({"applicant": data.get("applicant"), "offer": name})
+                results["success"].append({"applicant": payload.get("applicant"), "offer": name})
             except Exception as e:
-                # We catch errors to continue with next applicants
-                results["errors"].append({"applicant": data.get("applicant"), "error": str(e)})
+                results["errors"].append({"applicant": str(data), "error": str(e)})
                 frappe.log_error(f"Bulk Offer Generation Error: {str(e)}")
 
         return results
@@ -383,8 +402,8 @@ def generate_offer(applicant, campus, program, cycle, admission_year=None):
     return OfferService.generate_offer(applicant, campus, program, cycle, admission_year)
 
 @frappe.whitelist()
-def bulk_generate_offers(applicants_json):
-    return OfferService.bulk_generate_offers(applicants_json)
+def bulk_generate_offers(applicants):
+    return OfferService.bulk_generate_offers(applicants)
 
 @frappe.whitelist()
 def bulk_update_status(offer_names, action, notes=None):
