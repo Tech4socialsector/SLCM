@@ -4,6 +4,20 @@ from frappe import _, throw
 from frappe.model.document import Document
 
 class OfferLetter(Document):
+    def before_insert(self):
+        """
+        Ensure data integrity before record creation.
+        """
+        # If admission_cycle is fetched from applicant and points to a non-existent record,
+        # we should ensure it's valid if we have a configuration selected.
+        if self.applicant and self.admission_cycle:
+            if not frappe.db.exists("Admission Cycle", self.admission_cycle):
+                # If we have an offer configuration, use its cycle instead
+                if self.offer_configrationn:
+                    self.admission_cycle = frappe.db.get_value("Offer Configuration", self.offer_configrationn, "admission_cycle")
+                else:
+                    self.admission_cycle = None
+
     def validate(self):
         print("VALIDATE TRIGGERED")
         self.validate_status_transition()

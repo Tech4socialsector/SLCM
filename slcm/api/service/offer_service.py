@@ -16,19 +16,67 @@ class OfferService:
         Validates and returns the unique active Offer Configuration 
         for a given year, cycle, and campus.
         """
-        config_name = frappe.db.get_value("Offer Configuration", {
+        filters = {
             "admission_year": admission_year,
-            "admission_cycle": admission_cycle,
             "campus": campus,
             "is_active": 1
-        })
-
-        if not config_name:
-            throw(_("No active Offer Configuration found for Year: {0}, Cycle: {1}, Campus: {2}").format(
-                admission_year, admission_cycle, campus
+        }
+        
+        # 1. Try strict match with provided cycle
+        if admission_cycle:
+            filters["admission_cycle"] = admission_cycle
+            config_name = frappe.db.get_value("Offer Configuration", filters)
+            if config_name:
+                return frappe.get_doc("Offer Configuration", config_name)
+        
+        # 2. Fallback: If no strict match, try to find ANY active config for this Year and Campus
+        # This helps if the applicant's cycle is missing, invalid, or pointing to a different ID
+        # that actually represents the same semantic cycle.
+        del filters["admission_cycle"]
+        configs = frappe.db.get_all("Offer Configuration", filters=filters, fields=["name"])
+        
+        if len(configs) == 1:
+            return frappe.get_doc("Offer Configuration", configs[0].name)
+        elif len(configs) > 1:
+            # If multiple active cycles exist, we can't safely fallback without more info
+            throw(_("Multiple active Offer Configurations found for Year: {0}, Campus: {1}. Please specify a valid Admission Cycle.").format(
+                admission_year, campus
             ))
+
+        # 3. Final error if nothing found
+        throw(_("No active Offer Configuration found for Year: {0}, Cycle: {1}, Campus: {2}").format(
+            admission_year, admission_cycle, campus
+        ))
+
+    @staticmethod
+    def resolve_admission_year(applicant, campus, cycle, admission_year=None):
+        """
+        Resolves the Admission Year based on direct input, Application, or Academic Year.
+        """
+        # 1. If admission_year is provided, check if it's actually an Academic Year
+        if admission_year:
+            if not frappe.db.exists("Admission Year", admission_year):
+                # Probably an Academic Year name (e.g. 2026-2027), find active Admission Year for it
+                resolved = frappe.db.get_value("Admission Year", 
+                    {"academic_year": admission_year, "is_active": 1}, "name")
+                if resolved:
+                    return resolved
+            return admission_year
+
+        # 2. Try to get from Admission Application (most specific)
+        admission_year = frappe.db.get_value("Admission Application", 
+            {"applicant": applicant, "campus": campus, "admission_cycle": cycle}, 
+            "admission_year")
+        if admission_year:
+            return admission_year
+
+        # 3. Try to map from Applicant's Academic Year (most common fallback)
+        academic_year = frappe.db.get_value("Applicant", applicant, "academic_year")
+        if academic_year:
+            admission_year = frappe.db.get_value("Admission Year", 
+                {"academic_year": academic_year, "is_active": 1}, "name")
             
-        return frappe.get_doc("Offer Configuration", config_name)
+        return admission_year
 
     @staticmethod
     @frappe.whitelist(allow_guest=True)
@@ -37,85 +85,77 @@ class OfferService:
         Main entry point for generating an offer letter.
         Ensures idempotency and follows financial snapshotting rules.
         """
-        # Validate unique identifier (Year) if not provided
-        if not admission_year:
-            admission_year = frappe.db.get_value("Admission Application", 
-                {"applicant": applicant, "campus": campus, "admission_cycle": cycle}, 
-                "admission_year") or frappe.db.get_value("Applicant", applicant, "admission_year")
+        # Resolve the actual Admission Year DocType entry
+        admission_year = OfferService.resolve_admission_year(applicant, campus, cycle, admission_year)
 
         if not admission_year:
-            throw(_("Admission Year missing for applicant {0}. Unable to determine configuration.").format(applicant))
+            throw(_("No active Admission Year found for applicant {0}. Please ensure an Admission Year is configured and active for their Academic Year.").format(applicant))
 
-        # Idempotency: Prevent duplicate offers for same campus , cycle , program  and admission_year
+        config = OfferService.get_active_config(admission_year, cycle, campus)
+        resolved_cycle = config.admission_cycle
+
+        # Idempotency: Prevent duplicate offers for same campus, cycle, program and admission_year
         existing = frappe.db.exists("Offer Letter", {
             "applicant": applicant,
-            "admission_cycle": cycle,
+            "admission_cycle": resolved_cycle,
             "campus": campus,
             "program": program,
             "admission_year": admission_year,
             "offer_status": ["not in", ["Expired", "Withdrawn", "Rejected"]]
         })
         if existing:
-            throw(_("An active offer already exists for Applicant {0} in Cycle {1} for Campus {2} and Program {3}.").format(applicant, cycle, campus, program))
-
-        config = OfferService.get_active_config(admission_year, cycle, campus)
+            throw(_("An active offer already exists for Applicant {0} in Cycle {1} for Campus {2} and Program {3}.").format(
+                applicant, resolved_cycle, campus, program
+            ))
 
         # Start Transaction
         frappe.db.begin()
-        try:
-            offer = frappe.new_doc("Offer Letter")
-            offer.applicant = applicant
-            offer.campus = campus
-            offer.program = program
-            offer.admission_year = admission_year
-            offer.admission_cycle = cycle
-            offer.offer_configrationn = config.name  # Note: fieldname typo from DocType definition
-            offer.offer_status = "Draft"
-            offer.issued_on = now_datetime()
-            
-            # Set validity/deadline
-            offer.payment_deadline = OfferService._calculate_deadline(config)
-            
-            # Freeze Fees
-            fee_data = OfferService._calculate_and_freeze_fees(applicant, program, campus, cycle)
-            offer.payable_amount = fee_data.get("total_payable")
-            
-            # Snapshot Content
-            offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
-            
-            offer.insert(ignore_permissions=True)
+        
+        offer = frappe.new_doc("Offer Letter")
+        offer.applicant = applicant
+        offer.campus = campus
+        offer.program = program
+        offer.admission_year = admission_year
+        offer.admission_cycle = resolved_cycle
+        offer.offer_configrationn = config.name
+        offer.offer_status = "Draft"
+        offer.issued_on = now_datetime()
+        
+        # Set validity/deadline
+        offer.payment_deadline = OfferService._calculate_deadline(config)
+        
+        # Freeze Fees
+        fee_data = OfferService._calculate_and_freeze_fees(applicant, program, campus, resolved_cycle)
+        offer.payable_amount = fee_data.get("total_payable")
+        
+        # Snapshot Content
+        offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
+        
+        # Ensure Fetch From doesn't overwrite our resolved cycle if it's different from the applicant
+        offer.insert(ignore_permissions=True)
 
-            # Create the actual snapshot record
-            OfferService._create_snapshot_record(offer.name, fee_data)
+        # Create the actual snapshot record
+        OfferService._create_snapshot_record(offer.name, fee_data)
 
-            # Generate and Attach PDF
-            if config.pdf_format:
-                OfferService._generate_offer_pdf(offer, config.pdf_format)
-            
-            #send offer letter email to applicant
-            OfferService._send_offer_letter_email(offer, config.email_template)
-            
-            # Transition to Issued
-            offer.offer_status = "Issued"
-            offer.save(ignore_permissions=True)
+        # Generate and Attach PDF
+        if config.pdf_format:
+            OfferService._generate_offer_pdf(offer, config.pdf_format)
+        
+        # Send offer letter email to applicant
+        OfferService._send_offer_letter_email(offer, config.email_template)
+        
+        # Transition to Issued
+        offer.offer_status = "Issued"
+        offer.save(ignore_permissions=True)
 
-            frappe.db.commit()
-            return {
-                "offer_name": offer.name,
-                "offer_status": offer.offer_status,
-                "payment_deadline": offer.payment_deadline,
-                "payable_amount": offer.payable_amount,
-                "message": "Offer letter generated successfully"
-            }
-        except Exception as e:
-            frappe.db.rollback()
-            return {
-                "offer_name": None,
-                "offer_status": None,
-                "payment_deadline": None,
-                "payable_amount": None,
-                "message": str(e)
-            }
+        frappe.db.commit()
+        return {
+            "offer_name": offer.name,
+            "offer_status": offer.offer_status,
+            "payment_deadline": offer.payment_deadline,
+            "payable_amount": offer.payable_amount,
+            "message": "Offer letter generated successfully"
+        }
 
     @staticmethod
     def accept_offer(offer_name):

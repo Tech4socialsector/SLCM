@@ -1,6 +1,6 @@
 frappe.listview_settings['Applicant'] = {
     onload: function (listview) {
-        listview.page.add_inner_button(__("Generate Offer Letters"), function () {
+        listview.page.add_inner_button(__("Generate Offers"), function () {
             new frappe.ui.form.MultiSelectDialog({
                 doctype: "Applicant",
                 target: listview,
@@ -11,6 +11,11 @@ frappe.listview_settings['Applicant'] = {
                     admission_cycle: null
                 },
                 add_filters_group: 1,
+                primary_action_label: __("Generate Offers"),
+                secondary_action_label: __("New Applicant"),
+                secondary_action() {
+                    frappe.new_doc("Applicant");
+                },
                 get_query() {
                     return {
                         filters: {
@@ -28,9 +33,9 @@ frappe.listview_settings['Applicant'] = {
                     // Hide the dialog
                     this.dialog.hide();
 
-                    // Show Progress
+                    // Show Progress - FIXED typo
                     const total = selections.length;
-                    frappe.show_progress(__("Generating Offer Letters"), 0, total, __("Initializing...e"));
+                    frappe.show_progress(__("Generating Offer Letters"), 0, total, __("Initializing..."));
 
                     let processed = 0;
                     let success_count = 0;
@@ -49,10 +54,11 @@ frappe.listview_settings['Applicant'] = {
                             setTimeout(() => {
                                 frappe.hide_progress();
 
-                                let message = __("Successfully generated {0} offers.").format(success_count);
+                                // Use Frappe standard formatting for translations
+                                let message = __("Successfully generated {0} offers.", [success_count]);
                                 if (error_count > 0) {
-                                    message += "<br><br>" + __("{0} errors encountered:").format(error_count);
-                                    message += '<div style="max-height: 200px; overflow-y: auto; font-size: 12px; margin-top: 10px;">';
+                                    message += "<br><br>" + __("<b>{0} errors encountered:</b>", [error_count]);
+                                    message += '<div style="max-height: 200px; overflow-y: auto; font-size: 11px; margin-top: 10px; background: #fff5f5; border: 1px solid #ffcccc; padding: 10px; border-radius: 4px;">';
                                     message += summary_log.join("<br>");
                                     message += '</div>';
                                 }
@@ -63,7 +69,10 @@ frappe.listview_settings['Applicant'] = {
                                     indicator: error_count > 0 ? 'orange' : 'green',
                                     primary_action: {
                                         label: __("Refresh List"),
-                                        action: () => listview.refresh()
+                                        action: () => {
+                                            listview.refresh()
+                                            this.dialog.hide()
+                                        }
                                     }
                                 });
                             }, 800);
@@ -75,11 +84,11 @@ frappe.listview_settings['Applicant'] = {
                             __("Generating Offer Letters"),
                             processed + 1,
                             total,
-                            __(`Generating for ${current_applicant}...`)
+                            __("Generating for {0}...", [current_applicant])
                         );
 
                         frappe.call({
-                            method: "slcm.api.service.bulk_generate_offers", // From __init__.py mapping
+                            method: "slcm.api.service.bulk_generate_offers",
                             args: {
                                 applicants: [current_applicant]
                             },
@@ -109,6 +118,6 @@ frappe.listview_settings['Applicant'] = {
                     processNextBatch();
                 }
             });
-        }, __("Actions"));
+        });
     }
 };
