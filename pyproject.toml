@@ -17,7 +17,7 @@ build-backend = "flit_core.buildapi"
 
 # These dependencies are only installed when developer mode is enabled
 [tool.bench.frappe-dependencies]
-frappe = ">=15,<16"
+frappe = ">=15,<18"
 qrcode = "~=7.4.2"
 Pillow = "~=10.2.0"
 
