@@ -7,6 +7,7 @@
     "field_order": [
         "applicant",
         "program",
+        "program_level",
         "category",
         "hsc_percentage",
         "entrance_percentage",
@@ -33,6 +34,13 @@
             "label": "Program",
             "options": "test Program",
             "reqd": 1
+        },
+        {
+            "fieldname": "program_level",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Program Level",
+            "options": "UG\nPG\nPhD"
         },
         {
             "fieldname": "category",

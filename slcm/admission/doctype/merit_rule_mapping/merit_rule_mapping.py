@@ -3,16 +3,23 @@
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils import now_datetime
 
 
 class MeritRuleMapping(Document):
+
 	def validate(self):
+		if not self.program_level:
+			frappe.throw("Program Level is required for Merit Rule Mapping.")
+
 		if self.is_active:
+			# Allow multiple active mappings per campus+cycle, but NOT for the same program_level
 			existing = frappe.get_all(
 				"Merit Rule Mapping",
 				filters={
 					"admission_cycle": self.admission_cycle,
 					"campus": self.campus,
+					"program_level": self.program_level,
 					"is_active": 1,
 					"name": ["!=", self.name]
 				}
@@ -20,22 +27,19 @@ class MeritRuleMapping(Document):
 
 			if existing:
 				frappe.throw(
-					f"Active mapping already exists for Admission Cycle '{self.admission_cycle}' "
-					f"and Campus '{self.campus}'."
+					f"An active Merit Rule Mapping already exists for Admission Cycle '{self.admission_cycle}', "
+					f"Campus '{self.campus}' and Program Level '{self.program_level}'. "
+					f"Please deactivate the existing mapping before creating a new one."
 				)
-	
+
 	def autoname(self):
-		if not self.admission_cycle or not self.campus:
-			frappe.throw("Admission Cycle and Campus are required for naming.")
+		if not self.admission_cycle or not self.campus or not self.program_level:
+			frappe.throw("Admission Cycle, Campus and Program Level are required for naming.")
 
 		cycle = self.admission_cycle.replace(" ", "").upper()
 		campus = self.campus.replace(" ", "").upper()
-		
-		# Get count of existing mappings for this combination
-		count = frappe.db.count("Merit Rule Mapping", {
-			"admission_cycle": self.admission_cycle,
-			"campus": self.campus
-		})
-		
-		number = str(count + 1).zfill(2)
-		self.name = f"MRM-{cycle}-{campus}-{number}"
+		level = self.program_level.upper()
+
+		# Use timestamp suffix to guarantee uniqueness even after deletions
+		ts = now_datetime().strftime("%Y%m%d%H%M%S")
+		self.name = f"MRM-{cycle}-{campus}-{level}-{ts}"

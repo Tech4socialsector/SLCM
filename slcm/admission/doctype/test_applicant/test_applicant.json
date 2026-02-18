@@ -9,6 +9,7 @@
         "applicant_name",
         "campus",
         "program",
+        "program_level",
         "category",
         "column_break_ercs",
         "admission_cycle",
@@ -36,6 +37,14 @@
             "fieldtype": "Link",
             "label": "Program",
             "options": "test Program"
+        },
+        {
+            "fieldname": "program_level",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Program Level",
+            "options": "UG\nPG\nPhD",
+            "reqd": 1
         },
         {
             "fieldname": "campus",

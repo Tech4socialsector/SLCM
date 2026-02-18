@@ -1,6 +1,7 @@
 import frappe
 from frappe.model.document import Document
 
+
 class MeritList(Document):
 
     def autoname(self):
@@ -10,4 +11,8 @@ class MeritList(Document):
         cycle = self.admission_cycle.replace(" ", "").upper()
         campus = self.campus.replace(" ", "").upper()
 
-        self.name = f"ML-{cycle}-{campus}"
+        if self.program_level:
+            level = self.program_level.upper()
+            self.name = f"ML-{cycle}-{campus}-{level}"
+        else:
+            self.name = f"ML-{cycle}-{campus}"
