@@ -88,7 +88,7 @@
             "fieldname": "number_of_terms_per_academic_year",
             "fieldtype": "Select",
             "label": "Number of terms per academic year",
-            "options": "\n1\n2\n3\n4"
+            "options": "\n1\n2\n3\n4\n5"
         }
     ],
     "grid_page_length": 50,
