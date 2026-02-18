@@ -1,36 +1,36 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-02-16 10:51:52.500065",
+ "creation": "2026-02-18 13:56:12.957796",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "eligibility_mapping_section",
-  "eligibility_rule"
+  "category",
+  "priority"
  ],
  "fields": [
   {
-   "fieldname": "eligibility_rule",
+   "fieldname": "category",
    "fieldtype": "Link",
-   "label": "Eligibility Rule ",
-   "options": "Eligibility Rule"
+   "label": "Category",
+   "options": "Admission Category"
   },
   {
-   "fieldname": "eligibility_mapping_section",
-   "fieldtype": "Section Break",
-   "label": "Eligibility Mapping"
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "label": "Priority",
+   "non_negative": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-16 14:45:15.757015",
+ "modified": "2026-02-18 13:58:05.491876",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "Eligibility Mapping",
+ "name": "Exemption Rule Category",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",

@@ -23,9 +23,10 @@
   "research_course_section",
   "pg_program",
   "pg_cgpa",
-  "section_break_rnvz",
-  "rejected_reason",
-  "evaluation_status"
+  "applied_category",
+  "applied_priority",
+  "applied_minimum_percentage",
+  "evaluation_breakdown"
  ],
  "fields": [
   {
@@ -61,16 +62,6 @@
   {
    "fieldname": "column_break_rynw",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_rnvz",
-   "fieldtype": "Section Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "rejected_reason",
-   "fieldtype": "Small Text",
-   "label": "Rejected Reason"
   },
   {
    "fieldname": "applicant",
@@ -138,16 +129,31 @@
    "options": "Admission Cycle"
   },
   {
-   "fieldname": "evaluation_status",
-   "fieldtype": "Select",
-   "label": "Evaluation Status",
-   "options": "Eligible\nIneligible"
+   "fieldname": "applied_category",
+   "fieldtype": "Link",
+   "label": "Applied Category",
+   "options": "Admission Category"
+  },
+  {
+   "fieldname": "applied_priority",
+   "fieldtype": "Int",
+   "label": "Applied Priority"
+  },
+  {
+   "fieldname": "applied_minimum_percentage",
+   "fieldtype": "Percent",
+   "label": "Applied Minimum"
+  },
+  {
+   "fieldname": "evaluation_breakdown",
+   "fieldtype": "Long Text",
+   "label": "Evaluation Breakdown"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 21:18:19.830060",
+ "modified": "2026-02-18 19:04:28.270814",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

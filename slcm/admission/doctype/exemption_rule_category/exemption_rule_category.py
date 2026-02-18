@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class EligibilityProgram(Document):
+class ExemptionRuleCategory(Document):
 	pass
