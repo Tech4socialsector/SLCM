@@ -18,7 +18,6 @@ frappe.ui.form.on("Program Offering", {
 
     async onload(frm) {
         if (!frm.doc.academic_year) {
-            3
             const value = await frappe.db.get_single_value(
                 'Admission Settings',
                 'current_academic_year'

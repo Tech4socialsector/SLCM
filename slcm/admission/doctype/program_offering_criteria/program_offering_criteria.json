@@ -33,8 +33,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Reservation Rule",
-   "options": "Reservation Rule",
-   "reqd": 1
+   "options": "Reservation Rule"
   },
   {
    "fieldname": "program_level",
@@ -65,7 +64,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-18 15:38:18.391719",
+ "modified": "2026-02-18 16:23:49.613336",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Offering Criteria",

@@ -11,11 +11,14 @@
   "program",
   "academic_year",
   "academic_term",
+  "admission_year",
   "column_break_1",
+  "is_active",
   "valid_from",
   "valid_until",
   "status",
   "total_amount",
+  "campus",
   "section_components",
   "components"
  ],
@@ -90,10 +93,29 @@
    "fieldtype": "Table",
    "label": "Components",
    "options": "Fee Component Child"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "admission_year",
+   "fieldtype": "Link",
+   "label": "Admission Year",
+   "options": "Admission Year"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
   }
  ],
  "links": [],
- "modified": "2026-01-19 16:59:34.238479",
+ "modified": "2026-02-18 15:40:46.739445",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Structure",
