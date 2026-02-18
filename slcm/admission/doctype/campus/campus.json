@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "autoname": "field:campus_name",
+ "creation": "2026-02-14 12:22:18.192651",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "campus_name",
+  "campus_code",
+  "column_break_qlnd",
+  "is_active",
+  "allow_admission",
+  "section_break_location",
+  "city",
+  "state",
+  "column_break_bgkw",
+  "zip_code",
+  "country",
+  "conections_tab"
+ ],
+ "fields": [
+  {
+   "fieldname": "campus_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campus Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "campus_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campus Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "section_break_location",
+   "fieldtype": "Section Break",
+   "label": "Location Details"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Countries"
+  },
+  {
+   "fieldname": "column_break_qlnd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_bgkw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Don't use special symbols (@,-,#)",
+   "fieldname": "zip_code",
+   "fieldtype": "Data",
+   "label": "Zip Code",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_admission",
+   "fieldtype": "Check",
+   "label": "Allow Admission"
+  },
+  {
+   "fieldname": "conections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Conections",
+   "show_dashboard": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-17 17:12:43.056736",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Campus",
+ "naming_rule": "By fieldname",
+ "nsm_parent_field": "parent_campus",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

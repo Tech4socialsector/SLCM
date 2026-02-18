@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "autoname": "field:stage_name",
+ "creation": "2026-02-14 19:52:44.344195",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "stage_name",
+  "sequence_number",
+  "column_break_ooxk",
+  "is_mandatory"
+ ],
+ "fields": [
+  {
+   "fieldname": "stage_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stage Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "sequence_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sequence Number",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "label": "Is Mandatory"
+  },
+  {
+   "fieldname": "column_break_ooxk",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-16 12:04:16.935585",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Stage Master",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "sequence_number",
+ "sort_order": "ASC",
+ "states": []
+}
