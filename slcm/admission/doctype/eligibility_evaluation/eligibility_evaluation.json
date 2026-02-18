@@ -6,7 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "context_information_section",
-  "applicant",
+  "applicant_name",
   "academic_year",
   "admission_cycle",
   "campus",
@@ -18,12 +18,6 @@
   "failure_message"
  ],
  "fields": [
-  {
-   "fieldname": "applicant",
-   "fieldtype": "Link",
-   "label": "Applicant",
-   "options": "Applicant"
-  },
   {
    "fieldname": "context_information_section",
    "fieldtype": "Section Break",
@@ -55,8 +49,9 @@
   },
   {
    "fieldname": "reservation_category",
-   "fieldtype": "Data",
-   "label": "Reservation Category"
+   "fieldtype": "Table",
+   "label": "Reservation Category",
+   "options": "Applicant Category"
   },
   {
    "fieldname": "evaluation_result_section",
@@ -66,6 +61,7 @@
   {
    "fieldname": "evaluation_status",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Evaluation Status",
    "options": "Eligible\nIneligible"
   },
@@ -79,12 +75,17 @@
    "fieldname": "failure_message",
    "fieldtype": "Small Text",
    "label": "Failure Message"
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 18:34:25.337701",
+ "modified": "2026-02-18 16:26:11.080093",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Evaluation",

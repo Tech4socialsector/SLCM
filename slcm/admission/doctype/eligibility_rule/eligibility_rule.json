@@ -14,12 +14,11 @@
   "campus",
   "qualification_level",
   "rule_type",
-  "subject",
+  "hsc_group",
   "operator",
   "unit_type",
   "required_cgpa",
   "required_percentage",
-  "required_score",
   "allowed_degrees",
   "effective_from",
   "effective_to",
@@ -51,14 +50,8 @@
    "fieldname": "rule_type",
    "fieldtype": "Select",
    "label": "Rule Type",
-   "options": "Subject\nTotal Score\nPercentage\nCGPA",
+   "options": "HSC Group\nPercentage\nCGPA",
    "reqd": 1
-  },
-  {
-   "fieldname": "subject",
-   "fieldtype": "Link",
-   "label": "Subject",
-   "options": "Subject"
   },
   {
    "fieldname": "operator",
@@ -71,7 +64,7 @@
    "fieldname": "unit_type",
    "fieldtype": "Select",
    "label": "Unit Type",
-   "options": "Percentage\nScore\nCGPA",
+   "options": "Percentage\nCGPA",
    "reqd": 1
   },
   {
@@ -124,12 +117,6 @@
    "label": "Required Percentage"
   },
   {
-   "fieldname": "required_score",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Required Score"
-  },
-  {
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
@@ -142,12 +129,18 @@
    "label": "Academic Year ",
    "options": "Academic Year",
    "reqd": 1
+  },
+  {
+   "fieldname": "hsc_group",
+   "fieldtype": "Link",
+   "label": "HSC Group ",
+   "options": "HSC Groups"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 22:14:24.955100",
+ "modified": "2026-02-17 20:43:31.401070",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",
