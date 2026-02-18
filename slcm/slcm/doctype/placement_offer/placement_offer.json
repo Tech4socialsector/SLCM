@@ -16,7 +16,6 @@
  "sort_order": "DESC",
  "grid_page_length": 50,
  "rows_threshold_for_grid_search": 20,
-
  "field_order": [
   "section_offer",
   "student",
@@ -29,7 +28,6 @@
   "offer_status",
   "decision_date"
  ],
-
  "fields": [
   {
    "fieldname": "section_offer",
@@ -98,7 +96,6 @@
    "depends_on": "eval:doc.offer_status=='Accepted' || doc.offer_status=='Declined'"
   }
  ],
-
  "permissions": [
   {
    "role": "Placement Officer",
@@ -123,6 +120,6 @@
    "share": 1
   }
  ],
-
- "states": []
+ "states": [],
+ "custom": 1
 }

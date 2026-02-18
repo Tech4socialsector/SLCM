@@ -117,5 +117,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "fee_structure_name"
+ "title_field": "fee_structure_name",
+ "custom": 1
 }

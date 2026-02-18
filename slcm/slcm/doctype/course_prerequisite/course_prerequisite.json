@@ -4,11 +4,9 @@
  "module": "SLCM",
  "istable": 1,
  "engine": "InnoDB",
-
  "field_order": [
   "prerequisite_course"
  ],
-
  "fields": [
   {
    "fieldname": "prerequisite_course",
@@ -18,8 +16,8 @@
    "reqd": 1
   }
  ],
-
  "row_format": "Dynamic",
  "sort_field": "idx",
- "sort_order": "ASC"
+ "sort_order": "ASC",
+ "custom": 1
 }

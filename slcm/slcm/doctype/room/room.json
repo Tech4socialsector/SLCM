@@ -105,5 +105,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "room_name"
+ "title_field": "room_name",
+ "custom": 1
 }
