@@ -1,4 +1,5 @@
 {
+ "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-18 13:52:52.093682",
@@ -7,7 +8,7 @@
  "field_order": [
   "admission_cycle",
   "campus",
-  "program",
+  "program_level",
   "merit_list",
   "status",
   "column_break_tgne",
@@ -37,12 +38,11 @@
    "reqd": 1
   },
   {
-   "fieldname": "program",
-   "fieldtype": "Link",
+   "fieldname": "program_level",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Program",
-   "options": "test Program",
-   "reqd": 1
+   "label": "Program Level",
+   "options": "UG\nPG\nPhD"
   },
   {
    "fieldname": "merit_list",
@@ -96,16 +96,16 @@
    "fieldname": "selection_applicant",
    "fieldtype": "Table",
    "label": "Selection Applicant",
-   "options": "Selection Applicant"
+   "options": "Seat Selection Applicant"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 14:32:39.008087",
+ "modified": "2026-02-18 17:44:22.656992",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "Merit Selection Process",
+ "name": "Seat Allocation",
  "owner": "Administrator",
  "permissions": [
   {

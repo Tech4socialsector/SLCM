@@ -1,109 +1,109 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "autoname": "field:applicant_name",
-    "creation": "2026-02-16 19:26:12.511089",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "applicant_name",
-        "campus",
-        "program",
-        "program_level",
-        "category",
-        "column_break_ercs",
-        "admission_cycle",
-        "hsc_percentage",
-        "entrance_percentage",
-        "interview_percentage"
-    ],
-    "fields": [
-        {
-            "fieldname": "category",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Category",
-            "options": "GEN\nOBC\nSC\nST\nEWS\nPwD",
-            "reqd": 1
-        },
-        {
-            "fieldname": "applicant_name",
-            "fieldtype": "Data",
-            "label": "Applicant Name",
-            "unique": 1
-        },
-        {
-            "fieldname": "program",
-            "fieldtype": "Link",
-            "label": "Program",
-            "options": "test Program"
-        },
-        {
-            "fieldname": "program_level",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Program Level",
-            "options": "UG\nPG\nPhD",
-            "reqd": 1
-        },
-        {
-            "fieldname": "campus",
-            "fieldtype": "Link",
-            "label": "Campus",
-            "options": "test Campus"
-        },
-        {
-            "fieldname": "column_break_ercs",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "admission_cycle",
-            "fieldtype": "Link",
-            "label": "Admission Cycle",
-            "options": "test Admission Cycle"
-        },
-        {
-            "fieldname": "entrance_percentage",
-            "fieldtype": "Float",
-            "label": "Entrance %"
-        },
-        {
-            "fieldname": "interview_percentage",
-            "fieldtype": "Float",
-            "label": "Interview %"
-        },
-        {
-            "fieldname": "hsc_percentage",
-            "fieldtype": "Float",
-            "label": "HSC Percentage"
-        }
-    ],
-    "grid_page_length": 50,
-    "index_web_pages_for_search": 1,
-    "links": [],
-    "modified": "2026-02-17 16:05:43.152475",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "test Applicant",
-    "naming_rule": "By fieldname",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "write": 1
-        }
-    ],
-    "row_format": "Dynamic",
-    "rows_threshold_for_grid_search": 20,
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:applicant_name",
+ "creation": "2026-02-16 19:26:12.511089",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_name",
+  "campus",
+  "program",
+  "program_level",
+  "category",
+  "column_break_ercs",
+  "admission_cycle",
+  "hsc_percentage",
+  "entrance_percentage",
+  "interview_percentage"
+ ],
+ "fields": [
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Category",
+   "options": "Admission Category",
+   "reqd": 1
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name",
+   "unique": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "test Program"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Program Level",
+   "options": "UG\nPG\nPhD",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "test Campus"
+  },
+  {
+   "fieldname": "column_break_ercs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "test Admission Cycle"
+  },
+  {
+   "fieldname": "entrance_percentage",
+   "fieldtype": "Float",
+   "label": "Entrance %"
+  },
+  {
+   "fieldname": "interview_percentage",
+   "fieldtype": "Float",
+   "label": "Interview %"
+  },
+  {
+   "fieldname": "hsc_percentage",
+   "fieldtype": "Float",
+   "label": "HSC Percentage"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-18 15:15:54.647506",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "test Applicant",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
 }

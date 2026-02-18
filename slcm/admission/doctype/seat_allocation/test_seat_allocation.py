@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestMeritSelectionProcess(FrappeTestCase):
+class TestSeatAllocation(FrappeTestCase):
 	pass

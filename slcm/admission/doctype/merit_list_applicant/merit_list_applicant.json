@@ -1,7 +1,8 @@
 {
+    "_liked_by": "[\"Administrator\"]",
     "actions": [],
     "allow_rename": 1,
-    "creation": "2026-02-17 11:05:00.000000",
+    "creation": "2026-02-17 11:05:00",
     "doctype": "DocType",
     "engine": "InnoDB",
     "field_order": [
@@ -44,10 +45,10 @@
         },
         {
             "fieldname": "category",
-            "fieldtype": "Select",
+            "fieldtype": "Link",
             "in_list_view": 1,
             "label": "Category",
-            "options": "GEN\nOBC\nSC\nST\nEWS\nPwD"
+            "options": "Admission Category"
         },
         {
             "fieldname": "hsc_percentage",
@@ -100,12 +101,15 @@
         }
     ],
     "istable": 1,
-    "modified": "2026-02-17 11:45:00.000000",
+    "links": [],
+    "modified": "2026-02-18 15:14:57.632493",
     "modified_by": "Administrator",
     "module": "Admission",
     "name": "Merit List Applicant",
     "owner": "Administrator",
     "permissions": [],
     "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
     "states": []
 }

@@ -1,8 +1,7 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:category_name",
+ "autoname": "hash",
  "creation": "2026-02-17 12:56:19.550469",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -17,8 +16,7 @@
   {
    "fieldname": "category_name",
    "fieldtype": "Data",
-   "label": "Category Name ",
-   "unique": 1
+   "label": "Category Name "
   },
   {
    "fieldname": "category_code",
@@ -39,17 +37,17 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
-   "options": "Campus"
+   "options": "test Campus"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 15:32:10.015958",
+ "modified": "2026-02-18 17:55:46.986698",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Category",
- "naming_rule": "By fieldname",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {
