@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "field:campus_name",
+ "autoname": "field:campus_code",
  "creation": "2026-02-14 12:22:18.192651",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -93,7 +93,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 17:12:43.056736",
+ "modified": "2026-02-18 17:36:08.856641",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Campus",

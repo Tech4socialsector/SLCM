@@ -10,10 +10,15 @@ frappe.ui.form.on("Program Offering", {
         set_reservation_rule_query(frm, field_name = "reservation_rule");
         set_reservation_rule_query(frm, field_name = "eligibility_rule");
         set_reservation_rule_query(frm, field_name = "program_fee");
+        toggle_reservation_rule(frm);
+        frm.add_custom_button("Add Programs", function () {
+            open_program_selector(frm);
+        });
     },
 
     async onload(frm) {
-        if (!frm.doc.academic_year) {3
+        if (!frm.doc.academic_year) {
+            3
             const value = await frappe.db.get_single_value(
                 'Admission Settings',
                 'current_academic_year'
@@ -29,6 +34,10 @@ frappe.ui.form.on("Program Offering", {
                 }
             };
         });
+
+    },
+    is_reservation_applicable(frm) {
+        toggle_reservation_rule(frm)
     },
 });
 
@@ -51,6 +60,18 @@ function set_reservation_rule_query(frm, field_name) {
             }
         };
     });
+}
+
+function toggle_reservation_rule(frm) {
+    const is_applicable = frm.doc.is_reservation_applicable === 1;
+
+    frm.fields_dict["programs"].grid.update_docfield_property(
+        "reservation_rule",
+        "hidden",
+        is_applicable ? 0 : 1
+    );
+
+    frm.refresh_field("programs");
 }
 
 function configure_stages(frm) {
@@ -138,4 +159,56 @@ function child_duplicate_entry(frm, cdt, cdn, child_table, field_name, label) {
 
         dialog.$wrapper.find(".modal-header .close").hide();
     }
+}
+
+function open_program_selector(frm) {
+
+    new frappe.ui.form.MultiSelectDialog({
+        doctype: "Program",
+        target: frm,
+
+        setters: {
+            program_category: frm.doc.program_category,
+            campus: frm.doc.campus
+        },
+
+        add_filters_group: 1,
+
+        get_query() {
+            return {
+                filters: {
+                    campus: frm.doc.campus,
+                    is_active: 1
+                }
+            };
+        },
+
+        action(selections) {
+
+            if (!selections.length) {
+                frappe.msgprint("Please select at least one Program");
+                return;
+            }
+
+            selections.forEach(program => {
+
+                // Prevent duplicate entry
+                let exists = frm.doc.programs.some(d => d.program === program);
+
+                if (!exists) {
+                    let row = frm.add_child("programs");
+                    row.program = program;
+                }
+
+            });
+
+            frm.refresh_field("programs");
+
+            frappe.show_alert({
+                message: "Programs Added Successfully",
+                indicator: "green"
+            });
+
+        }
+    });
 }
