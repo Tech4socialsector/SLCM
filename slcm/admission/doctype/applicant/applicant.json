@@ -30,7 +30,6 @@
         "campus",
         "section_break_azsq",
         "title",
-        "amended_from",
         "section_break_rnvz",
         "rejected_reason",
         "parent_and_guardian_details",
@@ -304,17 +303,14 @@
         },
         {
             "fieldname": "city",
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "label": "City",
-            "options": "District List",
             "reqd": 1
         },
         {
-            "fetch_from": "city.state",
             "fieldname": "state",
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "label": "State",
-            "options": "State List",
             "reqd": 1
         },
         {
@@ -571,22 +567,19 @@
         },
         {
             "fieldname": "first_preference",
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "label": "First Preference",
-            "options": "Test Center",
             "reqd": 1
         },
         {
             "fieldname": "second_preference",
-            "fieldtype": "Link",
-            "label": "Second Preference",
-            "options": "Test Center"
+            "fieldtype": "Data",
+            "label": "Second Preference"
         },
         {
             "fieldname": "third_preference",
-            "fieldtype": "Link",
-            "label": "Third Preference",
-            "options": "Test Center"
+            "fieldtype": "Data",
+            "label": "Third Preference"
         },
         {
             "fieldname": "other_information_tab",
@@ -817,16 +810,6 @@
             "fieldtype": "Currency",
             "label": "Annual House Hold Income",
             "precision": "2"
-        },
-        {
-            "fieldname": "amended_from",
-            "fieldtype": "Link",
-            "label": "Amended From",
-            "no_copy": 1,
-            "options": "Student Application",
-            "print_hide": 1,
-            "read_only": 1,
-            "search_index": 1
         },
         {
             "fieldname": "section_break_rnvz",
