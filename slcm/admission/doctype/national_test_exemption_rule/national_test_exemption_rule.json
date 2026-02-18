@@ -1,7 +1,7 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
+ "autoname": "field:exemption_name",
  "creation": "2026-02-16 11:21:09.072829",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -9,12 +9,11 @@
   "national_test_exemption_details_section",
   "exemption_name",
   "exemption_code",
+  "campus",
   "admission_cycle",
   "academic_year",
   "column_break_wiuc",
   "applicable_program",
-  "campus",
-  "reservation_category",
   "test_configuration_section",
   "national_test",
   "mark_percentage",
@@ -34,7 +33,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": " Exemption Name ",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "admission_cycle",
@@ -50,9 +50,9 @@
   },
   {
    "fieldname": "applicable_program",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Table",
    "label": "Applicable Program",
-   "options": "National Test Exemption Mapping",
+   "options": "Eligibility Allowed Degree",
    "reqd": 1
   },
   {
@@ -150,21 +150,16 @@
    "label": "Academic Year ",
    "options": "Academic Year",
    "reqd": 1
-  },
-  {
-   "fieldname": "reservation_category",
-   "fieldtype": "Table",
-   "label": "Reservation Category",
-   "options": "Exemption Rule Category"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 13:58:52.844291",
+ "modified": "2026-02-18 23:15:28.570010",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "National Test Exemption Rule",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

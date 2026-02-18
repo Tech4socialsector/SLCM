@@ -13,6 +13,9 @@
   "column_break_rynw",
   "academic_year",
   "campus",
+  "national_test_details_section",
+  "national_test_name",
+  "percentage",
   "ug_details_section",
   "categories",
   "hsc_group",
@@ -22,11 +25,7 @@
   "ug_cgpa",
   "research_course_section",
   "pg_program",
-  "pg_cgpa",
-  "applied_category",
-  "applied_priority",
-  "applied_minimum_percentage",
-  "evaluation_breakdown"
+  "pg_cgpa"
  ],
  "fields": [
   {
@@ -129,31 +128,26 @@
    "options": "Admission Cycle"
   },
   {
-   "fieldname": "applied_category",
+   "fieldname": "national_test_details_section",
+   "fieldtype": "Section Break",
+   "label": "National Test Details "
+  },
+  {
+   "fieldname": "national_test_name",
    "fieldtype": "Link",
-   "label": "Applied Category",
-   "options": "Admission Category"
+   "label": "National Test Name ",
+   "options": "National Test"
   },
   {
-   "fieldname": "applied_priority",
-   "fieldtype": "Int",
-   "label": "Applied Priority"
-  },
-  {
-   "fieldname": "applied_minimum_percentage",
+   "fieldname": "percentage",
    "fieldtype": "Percent",
-   "label": "Applied Minimum"
-  },
-  {
-   "fieldname": "evaluation_breakdown",
-   "fieldtype": "Long Text",
-   "label": "Evaluation Breakdown"
+   "label": "Percentage "
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 19:04:28.270814",
+ "modified": "2026-02-18 23:24:05.580448",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

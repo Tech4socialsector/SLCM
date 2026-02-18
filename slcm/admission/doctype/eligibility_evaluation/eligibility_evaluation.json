@@ -13,8 +13,9 @@
   "program",
   "reservation_category",
   "evaluation_result_section",
-  "rule",
   "evaluation_status",
+  "exempts_entrance_test",
+  "exempts_interview",
   "failure_message"
  ],
  "fields": [
@@ -66,12 +67,6 @@
    "options": "Eligible\nIneligible"
   },
   {
-   "fieldname": "rule",
-   "fieldtype": "Link",
-   "label": "Rule ",
-   "options": "Eligibility Rule"
-  },
-  {
    "fieldname": "failure_message",
    "fieldtype": "Small Text",
    "label": "Failure Message"
@@ -80,12 +75,24 @@
    "fieldname": "applicant_name",
    "fieldtype": "Data",
    "label": "Applicant Name"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_entrance_test",
+   "fieldtype": "Check",
+   "label": " Exempts Entrance Test"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_interview",
+   "fieldtype": "Check",
+   "label": " Exempts Interview"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 16:26:11.080093",
+ "modified": "2026-02-18 23:30:47.173194",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Evaluation",
