@@ -4,7 +4,7 @@ authors = [
     { name = "Nishanth", email = "nishanth.a@azimpremjifoundation.org"}
 ]
 description = "Student Life Cycle Management"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10,<3.15"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
