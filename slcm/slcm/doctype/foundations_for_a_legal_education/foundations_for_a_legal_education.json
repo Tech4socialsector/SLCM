@@ -35,7 +35,10 @@
         "candidate_photo",
         "section_break_declaration",
         "declaration_text",
-        "declaration_consent"
+        "declaration_consent",
+        "section_break_status",
+        "enrollment_status",
+        "payment_status"
     ],
     "fields": [
         {
@@ -217,6 +220,23 @@
             "fieldname": "declaration_consent",
             "fieldtype": "Check",
             "label": "I hereby consent to this declaration."
+        },
+        {
+            "fieldname": "section_break_status",
+            "fieldtype": "Section Break",
+            "label": "Status"
+        },
+        {
+            "fieldname": "enrollment_status",
+            "fieldtype": "Select",
+            "label": "Enrollment Status",
+            "options": "Enrolled\nIn Progress\nCompleted\nFailed\nDropped\nCertificate Issued"
+        },
+        {
+            "fieldname": "payment_status",
+            "fieldtype": "Select",
+            "label": "Payment Status",
+            "options": "Unpaid\nPayment Initiated\nPaid\nPayment Failed\nRefunded\nCancelled"
         }
     ],
     "grid_page_length": 50,
