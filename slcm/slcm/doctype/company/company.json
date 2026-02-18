@@ -16,7 +16,6 @@
  "sort_order": "DESC",
  "grid_page_length": 50,
  "rows_threshold_for_grid_search": 20,
-
  "field_order": [
   "section_basic_details",
   "company_name",
@@ -27,7 +26,6 @@
   "section_status",
   "status"
  ],
-
  "fields": [
   {
    "fieldname": "section_basic_details",
@@ -80,7 +78,6 @@
    "in_list_view": 1
   }
  ],
-
  "permissions": [
   {
    "role": "Placement Officer",
@@ -105,6 +102,6 @@
    "share": 1
   }
  ],
-
- "states": []
+ "states": [],
+ "custom": 1
 }

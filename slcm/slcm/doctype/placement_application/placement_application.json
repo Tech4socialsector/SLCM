@@ -114,5 +114,6 @@
  "sort_field": "applied_on",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1
+ "track_changes": 1,
+ "custom": 1
 }
