@@ -338,7 +338,11 @@ class OfferService:
             return
 
         tpl = frappe.get_doc("Email Templates", email_template)
-        subject = frappe.render_template(tpl.subject, {"doc": offer, "frappe": frappe})
+        
+        # Prepare context with full objects for template rendering
+        context = OfferService._get_template_context(offer)
+        
+        subject = frappe.render_template(tpl.subject, context)
         message = OfferService._render_snapshot(offer, email_template)
 
         attachments = []
@@ -380,6 +384,31 @@ class OfferService:
         snapshot.insert(ignore_permissions=True)
 
     @staticmethod
+    def _get_template_context(offer):
+        """Helper to build rich context for Jinja templates."""
+        context = {
+            "doc": offer,
+            "frappe": frappe
+        }
+        
+        if offer.applicant:
+            applicant_doc = frappe.get_doc("Applicant", offer.applicant)
+            context["applicant_doc"] = applicant_doc
+            # Map 'applicant' to the candidate name as per requirement
+            context["applicant"] = applicant_doc.candidate_name or applicant_doc.name
+            
+        if offer.program:
+            context["program"] = frappe.get_doc("Program", offer.program)
+            
+        if offer.campus:
+            context["campus"] = frappe.get_doc("Campus", offer.campus)
+            
+        if offer.admission_cycle:
+            context["admission_cycle"] = frappe.get_doc("Admission Cycle", offer.admission_cycle)
+            
+        return context
+
+    @staticmethod
     def _render_snapshot(offer_doc, template_name):
         """Renders the HTML content snapshot of the offer."""
         if not template_name:
@@ -392,11 +421,7 @@ class OfferService:
             return ""
 
         # Context for rendering
-        context = {
-            "doc": offer_doc,
-            "applicant": frappe.get_doc("Applicant", offer_doc.applicant) if offer_doc.applicant else None,
-            "frappe": frappe
-        }
+        context = OfferService._get_template_context(offer_doc)
         
         return frappe.render_template(html, context)
 
