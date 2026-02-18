@@ -7,17 +7,16 @@
  "field_order": [
   "campus_name",
   "campus_code",
-  "parent_campus",
+  "column_break_qlnd",
   "is_active",
-  "is_group",
+  "allow_admission",
   "section_break_location",
   "city",
   "state",
+  "column_break_bgkw",
+  "zip_code",
   "country",
-  "section_break_nsm",
-  "lft",
-  "rgt",
-  "old_parent"
+  "conections_tab"
  ],
  "fields": [
   {
@@ -37,23 +36,10 @@
    "unique": 1
   },
   {
-   "fieldname": "parent_campus",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "label": "Parent Campus",
-   "options": "Campus"
-  },
-  {
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
    "label": "Is Active"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_group",
-   "fieldtype": "Check",
-   "label": "Is Group"
   },
   {
    "fieldname": "section_break_location",
@@ -77,38 +63,37 @@
    "options": "Countries"
   },
   {
-   "fieldname": "section_break_nsm",
-   "fieldtype": "Section Break",
-   "hidden": 1
+   "fieldname": "column_break_qlnd",
+   "fieldtype": "Column Break"
   },
   {
-   "fieldname": "lft",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "label": "Left",
-   "no_copy": 1,
-   "read_only": 1
+   "fieldname": "column_break_bgkw",
+   "fieldtype": "Column Break"
   },
   {
-   "fieldname": "rgt",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "label": "Right",
-   "no_copy": 1,
-   "read_only": 1
+   "description": "Don't use special symbols (@,-,#)",
+   "fieldname": "zip_code",
+   "fieldtype": "Data",
+   "label": "Zip Code",
+   "non_negative": 1
   },
   {
-   "fieldname": "old_parent",
-   "fieldtype": "Link",
-   "label": "Old Parent",
-   "options": "Campus"
+   "default": "0",
+   "fieldname": "allow_admission",
+   "fieldtype": "Check",
+   "label": "Allow Admission"
+  },
+  {
+   "fieldname": "conections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Conections",
+   "show_dashboard": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "is_tree": 1,
  "links": [],
- "modified": "2026-02-16 09:58:56.531178",
+ "modified": "2026-02-17 17:12:43.056736",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Campus",

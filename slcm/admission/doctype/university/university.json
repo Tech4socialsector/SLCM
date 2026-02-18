@@ -7,6 +7,15 @@
  "field_order": [
   "university_name",
   "abbr",
+  "university_code",
+  "county",
+  "column_break_invx",
+  "contact_email",
+  "contact_phone",
+  "city",
+  "zip_code",
+  "section_break_utgs",
+  "small_text_svsa",
   "connections_tab"
  ],
  "fields": [
@@ -26,12 +35,58 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
+  },
+  {
+   "fieldname": "university_code",
+   "fieldtype": "Data",
+   "label": "University Code"
+  },
+  {
+   "fieldname": "contact_email",
+   "fieldtype": "Data",
+   "label": "Contact Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "contact_phone",
+   "fieldtype": "Phone",
+   "label": "Contact Phone"
+  },
+  {
+   "fieldname": "small_text_svsa",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "column_break_invx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "section_break_utgs",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "county",
+   "fieldtype": "Link",
+   "label": "County",
+   "options": "Countries"
+  },
+  {
+   "description": "Don't use special symbols (@,-,#)",
+   "fieldname": "zip_code",
+   "fieldtype": "Data",
+   "label": "Zip Code"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 09:47:47.381348",
+ "modified": "2026-02-17 17:12:25.659251",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "University",

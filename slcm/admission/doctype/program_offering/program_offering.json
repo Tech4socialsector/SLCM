@@ -1,18 +1,21 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:PO-{campus}-{admission_year}",
  "creation": "2026-02-14 19:44:49.093390",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "campus",
+  "academic_year",
   "admission_year",
-  "is_available_for_admission",
-  "section_break_details",
-  "intake_capacity",
   "application_fee",
-  "scholarship_applicable",
+  "column_break_alqx",
+  "is_available_for_admission",
   "interview_required",
+  "scholarship_applicable",
+  "is_reservation_applicable",
+  "section_break_djee",
   "programs"
  ],
  "fields": [
@@ -33,22 +36,6 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "fieldname": "is_available_for_admission",
-   "fieldtype": "Check",
-   "label": "Is Available for Admission"
-  },
-  {
-   "fieldname": "section_break_details",
-   "fieldtype": "Section Break",
-   "label": "Capacity and Fees"
-  },
-  {
-   "fieldname": "intake_capacity",
-   "fieldtype": "Int",
-   "label": "Intake Capacity"
-  },
-  {
    "fieldname": "application_fee",
    "fieldtype": "Currency",
    "label": "Application Fee"
@@ -57,28 +44,60 @@
    "default": "0",
    "fieldname": "scholarship_applicable",
    "fieldtype": "Check",
-   "label": "Scholarship Applicable"
+   "label": "Scholarship Applicable",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "interview_required",
    "fieldtype": "Check",
-   "label": "Interview Required"
+   "label": "Interview Required",
+   "read_only": 1
   },
   {
    "fieldname": "programs",
    "fieldtype": "Table",
    "label": "Programs",
    "options": "Program Offering Criteria"
+  },
+  {
+   "fieldname": "column_break_alqx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_djee",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_available_for_admission",
+   "fieldtype": "Check",
+   "label": "Is Available For Admission"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_reservation_applicable",
+   "fieldtype": "Check",
+   "label": "Is Reservation Applicable?",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 09:56:30.768518",
+ "modified": "2026-02-17 12:22:49.854464",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Offering",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

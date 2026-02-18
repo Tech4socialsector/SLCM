@@ -5,6 +5,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "current_academic_year",
   "admission_year",
   "start_date",
   "end_date",
@@ -52,13 +53,19 @@
    "fieldtype": "Table",
    "label": "Stage Configure",
    "options": "Admission Stages"
+  },
+  {
+   "fieldname": "current_academic_year",
+   "fieldtype": "Link",
+   "label": "Current Academic Year",
+   "options": "Academic Year"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-02-14 19:55:14.550659",
+ "modified": "2026-02-16 12:50:54.038534",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Settings",
