@@ -386,6 +386,10 @@ class OfferService:
     @staticmethod
     def _get_template_context(offer):
         """Helper to build rich context for Jinja templates."""
+        # Inject virtual fields for template compatibility
+        offer.offer_id = offer.name
+        offer.valid_till = offer.payment_deadline
+
         context = {
             "doc": offer,
             "frappe": frappe
@@ -395,7 +399,9 @@ class OfferService:
             applicant_doc = frappe.get_doc("Applicant", offer.applicant)
             context["applicant_doc"] = applicant_doc
             # Map 'applicant' to the candidate name as per requirement
-            context["applicant"] = applicant_doc.candidate_name or applicant_doc.name
+            name = applicant_doc.candidate_name or applicant_doc.name
+            context["applicant"] = name
+            context["applicant_name"] = name
             
         if offer.program:
             context["program"] = frappe.get_doc("Program", offer.program)

@@ -8,7 +8,8 @@ frappe.listview_settings['Applicant'] = {
                     application_status: "Approved",
                     academic_year: null,
                     campus: null,
-                    admission_cycle: null
+                    admission_cycle: null,
+                    program: null
                 },
                 add_filters_group: 1,
                 primary_action_label: __("Generate Offers"),
