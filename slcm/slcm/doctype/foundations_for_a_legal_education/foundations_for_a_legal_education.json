@@ -18,6 +18,8 @@
   "candidate_nationality",
   "candidate_address",
   "candidate_contact_number",
+  "where_did_you_hear_about_the_fle_programme",
+  "if_others_mention_here",
   "section_break_education",
   "last_examination_attended",
   "last_institution_attended",
@@ -237,12 +239,25 @@
    "fieldtype": "Select",
    "label": "Payment Status",
    "options": "Unpaid\nPayment Initiated\nPaid\nPayment Failed\nRefunded\nCancelled"
+  },
+  {
+   "fieldname": "where_did_you_hear_about_the_fle_programme",
+   "fieldtype": "Select",
+   "label": "Where did you hear about the FLE Programme?",
+   "options": "\nSocial Media\nNLSIU Website\nFrom my School\nOthers",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.where_did_you_hear==\"Others\"",
+   "fieldname": "if_others_mention_here",
+   "fieldtype": "Data",
+   "label": "If Others, Mention here"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-10 17:47:45.909281",
+ "modified": "2026-02-19 11:20:18.320971",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
@@ -266,6 +281,5 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 1
+ "states": []
 }
