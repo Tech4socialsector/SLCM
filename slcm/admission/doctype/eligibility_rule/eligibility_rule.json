@@ -1,0 +1,167 @@
+{
+ "_liked_by": "[\"Administrator\"]",
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:rule_name",
+ "creation": "2026-02-15 11:51:18.947424",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "eligibility_rule_details_section",
+  "rule_name",
+  "rule_code",
+  "academic_year",
+  "campus",
+  "qualification_level",
+  "rule_type",
+  "hsc_group",
+  "operator",
+  "unit_type",
+  "required_cgpa",
+  "required_percentage",
+  "allowed_degrees",
+  "effective_from",
+  "effective_to",
+  "description",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "rule_name",
+   "fieldtype": "Data",
+   "label": "Rule Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "rule_code",
+   "fieldtype": "Data",
+   "label": "Rule Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qualification_level",
+   "fieldtype": "Select",
+   "label": "Qualification Level",
+   "options": "XII\nUG\nPG",
+   "reqd": 1
+  },
+  {
+   "fieldname": "rule_type",
+   "fieldtype": "Select",
+   "label": "Rule Type",
+   "options": "HSC Group\nPercentage\nCGPA",
+   "reqd": 1
+  },
+  {
+   "fieldname": "operator",
+   "fieldtype": "Select",
+   "label": "Operator",
+   "options": ">=\n<=\n=",
+   "reqd": 1
+  },
+  {
+   "fieldname": "unit_type",
+   "fieldtype": "Select",
+   "label": "Unit Type",
+   "options": "Percentage\nCGPA",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active",
+   "options": "Enable/Disable rule"
+  },
+  {
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "Effective From",
+   "reqd": 1
+  },
+  {
+   "fieldname": "effective_to",
+   "fieldtype": "Date",
+   "label": "Effective To",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "options": "Admin explanation"
+  },
+  {
+   "fieldname": "allowed_degrees",
+   "fieldtype": "Table",
+   "label": "Allowed Degrees",
+   "options": "Eligibility Allowed Degree"
+  },
+  {
+   "fieldname": "eligibility_rule_details_section",
+   "fieldtype": "Section Break",
+   "label": "Eligibility Rule Details"
+  },
+  {
+   "fieldname": "required_cgpa",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Required CGPA",
+   "options": "Marks / CGPA"
+  },
+  {
+   "fieldname": "required_percentage",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Required Percentage"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year ",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "hsc_group",
+   "fieldtype": "Link",
+   "label": "HSC Group ",
+   "options": "HSC Groups"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-17 20:43:31.401070",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Eligibility Rule",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
