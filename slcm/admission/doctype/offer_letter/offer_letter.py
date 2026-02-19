@@ -1,0 +1,144 @@
+import frappe
+import json
+from frappe import _, throw
+from frappe.model.document import Document
+
+class OfferLetter(Document):
+    def before_insert(self):
+        """
+        Ensure data integrity before record creation.
+        """
+        # If admission_cycle is fetched from applicant and points to a non-existent record,
+        # we should ensure it's valid if we have a configuration selected.
+        if self.applicant and self.admission_cycle:
+            if not frappe.db.exists("Admission Cycle", self.admission_cycle):
+                # If we have an offer configuration, use its cycle instead
+                if self.offer_configrationn:
+                    self.admission_cycle = frappe.db.get_value("Offer Configuration", self.offer_configrationn, "admission_cycle")
+                else:
+                    self.admission_cycle = None
+
+    def validate(self):
+        print("VALIDATE TRIGGERED")
+        self.validate_status_transition()
+        self.handle_audit_and_locking()
+
+    def on_update(self):
+        # Deterministic logging after successful update
+        # We use flags to pass audit data from validate to on_update to avoid redundant logic
+        print("on update called for offer letter")
+        if getattr(self, "_audit_logs", None):
+            for log_data in self._audit_logs:
+                self.log_action(**log_data)
+                print(f"Logged action called: {log_data['action']} for Offer Letter {self.name}")
+            # Clear logs to avoid duplicates in same session
+            self._audit_logs = []
+
+    def validate_status_transition(self):
+        """Ensures that status transitions follow the defined lifecycle."""
+        if self.is_new():
+            if not self.offer_status:
+                self.offer_status = "Draft"
+            return
+
+        db_status = frappe.db.get_value(self.doctype, self.name, "offer_status")
+        if db_status == self.offer_status:
+            return
+
+        allowed_transitions = {
+            "Draft": ["Issued", "Withdrawn"],
+            "Issued": ["Accepted", "Rejected", "Expired", "Withdrawn"],
+            "Accepted": ["Withdrawn"],
+            "Rejected": [],
+            "Expired": ["Issued"],
+            "Withdrawn": ["Draft"]
+        }
+
+        if self.offer_status not in allowed_transitions.get(db_status, []):
+            throw(_("Invalid status transition: From {0} to {1}").format(db_status, self.offer_status))
+
+        # Track status change for audit
+        self._queue_audit_log(
+            action=self.offer_status,
+            notes=_("Status changed from {0} to {1}").format(db_status, self.offer_status)
+        )
+
+    def handle_audit_and_locking(self):
+        """Detects changes in sensitive fields and enforces locking."""
+        if self.is_new():
+            return
+
+        db_doc = self.get_doc_before_save()
+        if not db_doc:
+            return
+
+        sensitive_fields = ["offer_status", "payment_deadline", "payable_amount", "campus", "program","accepted_on"]
+        db_status = db_doc.offer_status
+
+        # If Issued or beyond, restrict modification of sensitive fields
+        is_locked_state = db_status not in ["Draft"]
+        
+        for fieldname in sensitive_fields:
+            if self.has_value_changed(fieldname):
+                # Status change is handled by validate_status_transition
+                if fieldname == "offer_status":
+                    continue
+                
+                # Check for lock override
+                if is_locked_state:
+                    self.enforce_lock_override(fieldname)
+
+                # Queue log for field change
+                self._queue_audit_log(
+                    action="Field Updated",
+                    field_changed=fieldname,
+                    old_value=db_doc.get(fieldname),
+                    new_value=self.get(fieldname),
+                    reason=self.get("edit_reason") or frappe.flags.edit_reason or ""
+                )
+
+    def enforce_lock_override(self, fieldname):
+        """Validates if the user has permission to override a locked field."""
+
+        if "System Manager" not in frappe.get_roles():
+            throw(_("Modification of '{0}' is locked after the offer is Issued. Only System Managers can override.").format(
+                self.meta.get_label(fieldname)
+            ))
+
+        # Require reason for override
+        reason = (self.get("edit_reason") or "").strip()
+
+        if not reason:
+            throw(_("A reason is required to override the lock on field '{0}'. Please provide an Edit Reason before saving.").format(
+                self.meta.get_label(fieldname)
+            ))
+
+    def _queue_audit_log(self, **kwargs):
+        """Queues an audit log to be created in on_update."""
+        if not hasattr(self, "_audit_logs"):
+            self._audit_logs = []
+        
+        # Ensure timestamp and user are set (though helper handles it)
+        kwargs.update({
+            "timestamp": frappe.utils.now_datetime(),
+            "performed_by": frappe.session.user
+        })
+        self._audit_logs.append(kwargs)
+
+    def log_action(self, action, field_changed=None, old_value=None, new_value=None, reason=None, notes=None, **kwargs):
+        """Creates an entry in the Offer Action Log."""
+        # Prevent duplicate status logs if already logged by generate_offer etc.
+        # This is a safety check for deterministic logging.
+        print(f"Logging action: {action} for Offer Letter {self.name}")
+        log = frappe.new_doc("Offer Action Log")
+        log.offer_letter = self.name
+        log.action = action
+        log.field_changed = field_changed
+        log.old_value = frappe.as_json(old_value) if old_value is not None else None
+        log.new_value = frappe.as_json(new_value) if new_value is not None else None
+        log.reason = reason
+        log.notes = notes
+        log.timestamp = kwargs.get("timestamp") or frappe.utils.now_datetime()
+        log.performed_by = kwargs.get("performed_by") or frappe.session.user
+        log.insert(ignore_permissions=True)
+        print(f"Logged action: {action} for Offer Letter {self.name} with log ID {log.name}")

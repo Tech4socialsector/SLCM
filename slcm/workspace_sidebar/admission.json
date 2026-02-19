@@ -1,0 +1,100 @@
+{
+ "app": "slcm",
+ "creation": "2026-02-18 09:56:18.378263",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "liabilities",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "wallpaper",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offer Letters",
+   "link_to": "Offer Letters",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "album",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offer Letter",
+   "link_to": "Offer Letter",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "settings",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offer Configuration",
+   "link_to": "Offer Configuration",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "book-copy",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offer Action Log",
+   "link_to": "Offer Action Log",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "aperture",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offer Fee Snapshot",
+   "link_to": "Offer Fee Snapshot",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Reports",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "file-user",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Applicant",
+   "link_to": "Applicant",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-18 10:11:36.743924",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Admission"
+}

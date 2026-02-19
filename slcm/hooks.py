@@ -271,7 +271,10 @@ scheduler_events = {
 		"*/10 * * * *": [  # Every 10 minutes
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs"
 		]
-	}
+	},
+	"daily": [
+		"slcm.api.service.offer_service.OfferService.expire_offers"
+	]
 }
 doc_events = {
     "Student Master": {
