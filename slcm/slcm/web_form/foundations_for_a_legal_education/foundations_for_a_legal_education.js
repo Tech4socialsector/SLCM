@@ -104,5 +104,137 @@ frappe.ready(function () {
 	});
 
 	// Run on load
+	console.log("Loading Custom JS for Payment");
 	toggle_declaration_section();
+	setup_payment();
+
+	function setup_payment() {
+		console.log("Setting up payment...");
+		// Load Razorpay Script
+		if (typeof Razorpay === 'undefined') {
+			let script = document.createElement('script');
+			script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+			script.onload = function () {
+				console.log("Razorpay script loaded");
+				init_payment_button();
+			};
+			document.head.appendChild(script);
+		} else {
+			console.log("Razorpay script already loaded");
+			init_payment_button();
+		}
+	}
+
+	function init_payment_button() {
+		console.log("Initializing payment button...");
+		// Find the payment section or a suitable place to put the button
+		// We'll place it after 'payment_instructions' HTML field
+		let $payment_trigger = $('[data-fieldname="payment_instructions"]');
+		console.log("Payment trigger (field):", $payment_trigger.length);
+		if ($payment_trigger.length === 0) {
+			// Fallback if field not found
+			$payment_trigger = $('.web-form-actions');
+			console.log("Payment trigger (actions):", $payment_trigger.length);
+		}
+
+		if ($payment_trigger.length) {
+			let amount = frappe.web_form.doc.amount || 10000;
+			// Button styled like Frappe School 'Proceed to Payment'
+			let $btn = $(`<button class="btn btn-lg btn-primary" style="margin-top: 15px; margin-bottom: 15px;">Proceed to Payment</button>`);
+
+			$btn.click(function (e) {
+				console.log("Proceed to Payment clicked");
+				e.preventDefault();
+				// Save form first
+				frappe.web_form.save().then(() => {
+					console.log("Form saved, initiating payment...");
+					initiate_payment();
+				});
+			});
+
+			// Insert after instructions if found, else prepend to actions
+			if ($payment_trigger.hasClass('web-form-actions')) {
+				$payment_trigger.prepend($btn);
+			} else {
+				$payment_trigger.after($btn);
+			}
+			console.log("Button added to DOM");
+		} else {
+			console.error("Could not find place to insert payment button");
+		}
+	}
+
+	function initiate_payment() {
+		frappe.call({
+			method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.create_razorpay_order",
+			args: {
+				doc_name: frappe.web_form.doc.name
+			},
+			freeze: true,
+			freeze_message: "Creating Order...",
+			callback: function (r) {
+				if (r.message) {
+					open_razorpay_checkout(r.message);
+				}
+			}
+		});
+	}
+
+	function open_razorpay_checkout(data) {
+		console.log("Razorpay Data:", data);
+		var options = {
+			"key": data.key_id,
+			"amount": data.amount,
+			"currency": data.currency,
+			"name": "Foundations for a Legal Education",
+			"description": "Admission Fees",
+			"order_id": data.order_id,
+			"handler": function (response) {
+				verify_payment(response, data.order_id);
+			},
+			"prefill": {
+				"name": frappe.web_form.doc.candidate_name,
+				"email": frappe.web_form.doc.email_address,
+				"contact": frappe.web_form.doc.candidate_contact_number
+			},
+			"theme": {
+				"color": "#3399cc"
+			}
+		};
+		var rzp1 = new Razorpay(options);
+		rzp1.on('payment.failed', function (response) {
+			frappe.msgprint({
+				title: __('Payment Failed'),
+				message: response.error.description,
+				indicator: 'red'
+			});
+		});
+		rzp1.open();
+	}
+
+	function verify_payment(response, order_id) {
+		frappe.call({
+			method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.verify_payment",
+			args: {
+				razorpay_payment_id: response.razorpay_payment_id,
+				razorpay_order_id: response.razorpay_order_id,
+				razorpay_signature: response.razorpay_signature,
+				doc_name: frappe.web_form.doc.name
+			},
+			freeze: true,
+			freeze_message: "Verifying Payment...",
+			callback: function (r) {
+				if (r.message && r.message.status === 'success') {
+					frappe.msgprint({
+						title: __('Success'),
+						message: __('Payment Successful!'),
+						indicator: 'green'
+					});
+					setTimeout(function () {
+						window.location.reload();
+					}, 2000);
+				}
+			}
+		});
+	}
 });
