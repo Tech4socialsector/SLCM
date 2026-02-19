@@ -8,13 +8,22 @@
  "field_order": [
   "campus",
   "academic_year",
+  "column_break_alqx",
   "admission_year",
   "application_fee",
-  "column_break_alqx",
+  "section_break_uxbe",
   "is_available_for_admission",
-  "interview_required",
-  "scholarship_applicable",
   "is_reservation_applicable",
+  "reservation_rule",
+  "eligibility_based",
+  "eligibility_rule",
+  "column_break_vkwj",
+  "need_entrence_test",
+  "interview_required",
+  "merit_list",
+  "merit_rule",
+  "scholarship_applicable",
+  "scholarship_scheme",
   "section_break_djee",
   "programs"
  ],
@@ -38,7 +47,8 @@
   {
    "fieldname": "application_fee",
    "fieldtype": "Currency",
-   "label": "Application Fee"
+   "label": "Application Fee",
+   "precision": "2"
   },
   {
    "default": "0",
@@ -88,12 +98,67 @@
    "fieldtype": "Check",
    "label": "Is Reservation Applicable?",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "eligibility_based",
+   "fieldtype": "Check",
+   "label": "Eligibility Based"
+  },
+  {
+   "default": "0",
+   "fieldname": "need_entrence_test",
+   "fieldtype": "Check",
+   "label": "Need Entrence Test"
+  },
+  {
+   "default": "0",
+   "fieldname": "merit_list",
+   "fieldtype": "Check",
+   "label": "Merit List"
+  },
+  {
+   "fieldname": "section_break_uxbe",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval: doc.is_reservation_applicable",
+   "fieldname": "reservation_rule",
+   "fieldtype": "Link",
+   "label": "Reservation Rule",
+   "mandatory_depends_on": "eval: doc.is_reservation_applicable",
+   "options": "Reservation Rule"
+  },
+  {
+   "fieldname": "column_break_vkwj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.merit_list",
+   "fieldname": "merit_rule",
+   "fieldtype": "Data",
+   "label": "Merit Rule",
+   "mandatory_depends_on": "eval: doc.merit_list"
+  },
+  {
+   "depends_on": "eval: doc.eligibility_based",
+   "fieldname": "eligibility_rule",
+   "fieldtype": "Data",
+   "label": "Eligibility Rule",
+   "mandatory_depends_on": "eval: doc.eligibility_based"
+  },
+  {
+   "depends_on": "eval: doc.scholarship_applicable",
+   "fieldname": "scholarship_scheme",
+   "fieldtype": "Data",
+   "label": "Scholarship Scheme",
+   "mandatory_depends_on": "eval: doc.scholarship_applicable"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 12:22:49.854464",
+ "modified": "2026-02-19 10:47:21.762528",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Offering",

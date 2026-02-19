@@ -7,34 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "program_of_study",
-  "program_level",
-  "seat_availability",
-  "eligibility_rule",
-  "reservation_rule",
-  "program_fee"
+  "program_level"
  ],
  "fields": [
-  {
-   "fieldname": "seat_availability",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Seat Availability",
-   "non_negative": 1,
-   "reqd": 1
-  },
-  {
-   "fieldname": "eligibility_rule",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Eligibility Rule"
-  },
-  {
-   "fieldname": "reservation_rule",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Reservation Rule",
-   "options": "Reservation Rule"
-  },
   {
    "fieldname": "program_level",
    "fieldtype": "Link",
@@ -50,21 +25,13 @@
    "label": "Program Of Study",
    "options": "Program",
    "reqd": 1
-  },
-  {
-   "fieldname": "program_fee",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Program Fee",
-   "options": "Fee Structure",
-   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-18 16:23:49.613336",
+ "modified": "2026-02-19 10:25:17.762175",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Offering Criteria",
