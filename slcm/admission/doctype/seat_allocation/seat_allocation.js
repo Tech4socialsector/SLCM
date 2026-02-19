@@ -25,7 +25,7 @@ frappe.ui.form.on("Seat Allocation", {
     },
 
     refresh(frm) {
-        if (frm.doc.status === "Draft") {
+        if (frm.doc.status === "Draft" || frm.doc.status === "Allocated") {
             frm.add_custom_button(__("Get Merit List"), () => {
                 if (!frm.doc.merit_list) {
                     frappe.msgprint({
@@ -57,6 +57,43 @@ frappe.ui.form.on("Seat Allocation", {
                     }
                 );
             });
+        }
+
+        if (frm.doc.status === "Draft" || frm.doc.status === "Allocated") {
+            frm.add_custom_button(__("Allocate Seats"), () => {
+                frm.call({
+                    method: "allocate_seats",
+                    doc: frm.doc,
+                    freeze: true,
+                    freeze_message: __("Allocating seats based on merit and capacity..."),
+                    callback(r) {
+                        if (!r.exc) {
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            }, __("Actions"));
+        }
+
+        if (frm.doc.status === "Allocated") {
+            frm.add_custom_button(__("Publish Allocation"), () => {
+                frappe.confirm(
+                    __("Are you sure you want to publish this allocation? This action is irreversible."),
+                    () => {
+                        frm.call({
+                            method: "publish_allocation",
+                            doc: frm.doc,
+                            freeze: true,
+                            freeze_message: __("Publishing allocation..."),
+                            callback(r) {
+                                if (!r.exc) {
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }
+                );
+            }, __("Actions"));
         }
     }
 });

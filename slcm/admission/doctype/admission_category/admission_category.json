@@ -6,7 +6,6 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "campus",
   "category_name",
   "category_code",
   "column_break_guxi",
@@ -32,12 +31,6 @@
   {
    "fieldname": "column_break_guxi",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "label": "Campus",
-   "options": "Campus"
   }
  ],
  "grid_page_length": 50,
