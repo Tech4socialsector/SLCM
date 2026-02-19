@@ -67,3 +67,28 @@ def configuration_settings(admission_year):
 			"status": "Error",
 			"message": _("Something went wrong while fetching configuration settings.")
 		 }
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_filtered_reservation_rule(doctype, txt, searchfield, start, page_len, filters):
+
+    return frappe.db.sql("""
+        SELECT DISTINCT rr.name
+        FROM `tabProgram Offering Criteria` poc
+        INNER JOIN `tabReservation Rule` rr
+            ON rr.name = poc.reservation_rule
+        WHERE poc.program = %(program)s
+        AND poc.campus = %(campus)s
+        AND poc.admission_year = %(admission_year)s
+        AND rr.docstatus < 2
+        AND rr.name LIKE %(txt)s
+        LIMIT %(start)s, %(page_len)s
+    """, {
+        "program": filters.get("program"),
+        "campus": filters.get("campus"),
+        "admission_year": filters.get("admission_year"),
+        "txt": "%" + txt + "%",
+        "start": start,
+        "page_len": page_len
+    })

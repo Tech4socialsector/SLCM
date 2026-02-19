@@ -7,9 +7,13 @@ frappe.ui.form.on("Program Offering", {
             return;
         }
         configure_stages(frm);
+        set_reservation_rule_query(frm, field_name = "reservation_rule");
+        set_reservation_rule_query(frm, field_name = "eligibility_rule");
+        set_reservation_rule_query(frm, field_name = "program_fee");
     },
+
     async onload(frm) {
-        if (!frm.doc.academic_year) {
+        if (!frm.doc.academic_year) {3
             const value = await frappe.db.get_single_value(
                 'Admission Settings',
                 'current_academic_year'
@@ -23,23 +27,31 @@ frappe.ui.form.on("Program Offering", {
                     academic_year: frm.doc.academic_year,
                     is_active: 1
                 }
-            }
-        })
+            };
+        });
     },
 });
 
 frappe.ui.form.on("Program Offering Criteria", {
     program(frm, cdt, cdn) {
-        child_duplicate_entry(
-            frm,
-            cdt,
-            cdn,
-            "programs",
-            "program",
-            "Program"
-        )
+        child_duplicate_entry(frm, cdt, cdn, "programs", "program", "Program");
+        set_reservation_rule_query(frm);
     }
-})
+});
+
+function set_reservation_rule_query(frm, field_name) {
+    frm.set_query(field_name, "programs", function (doc, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        return {
+            filters: {
+                program: row.program_of_study,
+                campus: frm.doc.campus,
+                admission_year: frm.doc.admission_year,
+                is_active: 1
+            }
+        };
+    });
+}
 
 function configure_stages(frm) {
     frappe.call({
