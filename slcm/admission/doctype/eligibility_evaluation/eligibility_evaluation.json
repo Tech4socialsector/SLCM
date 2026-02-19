@@ -1,5 +1,4 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-16 16:51:50.987241",
@@ -7,24 +6,19 @@
  "engine": "InnoDB",
  "field_order": [
   "context_information_section",
-  "applicant",
+  "applicant_name",
   "academic_year",
   "admission_cycle",
   "campus",
   "program",
   "reservation_category",
   "evaluation_result_section",
-  "rule",
   "evaluation_status",
+  "exempts_entrance_test",
+  "exempts_interview",
   "failure_message"
  ],
  "fields": [
-  {
-   "fieldname": "applicant",
-   "fieldtype": "Link",
-   "label": "Applicant",
-   "options": "Applicant"
-  },
   {
    "fieldname": "context_information_section",
    "fieldtype": "Section Break",
@@ -68,25 +62,37 @@
   {
    "fieldname": "evaluation_status",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Evaluation Status",
    "options": "Eligible\nIneligible"
-  },
-  {
-   "fieldname": "rule",
-   "fieldtype": "Table MultiSelect",
-   "label": "Rule ",
-   "options": "Eligibility Mapping"
   },
   {
    "fieldname": "failure_message",
    "fieldtype": "Small Text",
    "label": "Failure Message"
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_entrance_test",
+   "fieldtype": "Check",
+   "label": " Exempts Entrance Test"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_interview",
+   "fieldtype": "Check",
+   "label": " Exempts Interview"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 14:49:15.147551",
+ "modified": "2026-02-18 23:30:47.173194",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Evaluation",

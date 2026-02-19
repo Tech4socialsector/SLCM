@@ -1,5 +1,4 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-15 12:04:23.155000",
@@ -17,9 +16,9 @@
  "fields": [
   {
    "fieldname": "rule",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Link",
    "label": "Rule",
-   "options": "Eligibility Mapping",
+   "options": "Eligibility Rule",
    "reqd": 1
   },
   {
@@ -31,9 +30,9 @@
   },
   {
    "fieldname": "program",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Link",
    "label": "Program",
-   "options": "Eligibility Program",
+   "options": "Program",
    "reqd": 1
   },
   {
@@ -67,7 +66,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 15:47:04.531580",
+ "modified": "2026-02-18 09:53:21.470370",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",

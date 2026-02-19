@@ -273,13 +273,12 @@ scheduler_events = {
 		]
 	}
 }
-# Add this to your existing hooks.py file
-
-# Document Events
 doc_events = {
+    "Student Master": {
+        "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
+    },
     "Applicant": {
-        "validate": "slcm.admission.doctype.applicant.applicant.validate_applicant",
+        "validate":      "slcm.admission.doctype.applicant.applicant.validate_applicant",
         "before_submit": "slcm.admission.doctype.applicant.applicant.before_submit_applicant"
     }
 }
-

@@ -37,7 +37,7 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
-   "options": "test Campus"
+   "options": "Campus"
   }
  ],
  "grid_page_length": 50,
