@@ -16,5 +16,21 @@ frappe.ui.form.on("Merit Generation", {
                 });
             });
         }
+
+        if (frm.doc.status === "Completed") {
+            frm.add_custom_button(__("View Merit List"), () => {
+                frappe.db.get_value("Merit List", {
+                    admission_cycle: frm.doc.admission_cycle,
+                    campus: frm.doc.campus,
+                    program_level: frm.doc.generation_type
+                }, "name", (r) => {
+                    if (r && r.name) {
+                        frappe.set_route("Form", "Merit List", r.name);
+                    } else {
+                        frappe.msgprint(__("Associated Merit List not found."));
+                    }
+                });
+            },);
+        }
     },
 });

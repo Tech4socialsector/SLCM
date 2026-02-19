@@ -1,129 +1,129 @@
 {
- "_liked_by": "[\"Administrator\"]",
- "actions": [],
- "allow_rename": 1,
- "creation": "2026-02-18 13:52:52.093682",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "admission_cycle",
-  "campus",
-  "program_level",
-  "merit_list",
-  "status",
-  "column_break_tgne",
-  "total_selected",
-  "total_waitlisted",
-  "total_rejected",
-  "published_on",
-  "published_by",
-  "section_break_ganj",
-  "selection_applicant"
- ],
- "fields": [
-  {
-   "fieldname": "admission_cycle",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Admission Cycle",
-   "options": "test Admission Cycle",
-   "reqd": 1
-  },
-  {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Campus",
-   "options": "test Campus",
-   "reqd": 1
-  },
-  {
-   "fieldname": "program_level",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Program Level",
-   "options": "UG\nPG\nPhD"
-  },
-  {
-   "fieldname": "merit_list",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Merit List",
-   "options": "Merit List",
-   "reqd": 1
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "Draft\nAllocated\nPublished"
-  },
-  {
-   "fieldname": "column_break_tgne",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "total_selected",
-   "fieldtype": "Int",
-   "label": "Total Selected"
-  },
-  {
-   "fieldname": "total_waitlisted",
-   "fieldtype": "Int",
-   "label": "Total Waitlisted"
-  },
-  {
-   "fieldname": "total_rejected",
-   "fieldtype": "Int",
-   "label": "Total Rejected"
-  },
-  {
-   "fieldname": "published_on",
-   "fieldtype": "Datetime",
-   "label": "Published On"
-  },
-  {
-   "fieldname": "published_by",
-   "fieldtype": "Link",
-   "label": "Published By",
-   "options": "User"
-  },
-  {
-   "fieldname": "section_break_ganj",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "selection_applicant",
-   "fieldtype": "Table",
-   "label": "Selection Applicant",
-   "options": "Seat Selection Applicant"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2026-02-18 17:44:22.656992",
- "modified_by": "Administrator",
- "module": "Admission",
- "name": "Seat Allocation",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "rows_threshold_for_grid_search": 20,
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": []
+    "_liked_by": "[\"Administrator\"]",
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2026-02-18 13:52:52.093682",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "admission_cycle",
+        "campus",
+        "program_level",
+        "merit_list",
+        "status",
+        "column_break_tgne",
+        "total_selected",
+        "total_waitlisted",
+        "total_rejected",
+        "published_on",
+        "published_by",
+        "section_break_ganj",
+        "selection_applicant"
+    ],
+    "fields": [
+        {
+            "fieldname": "admission_cycle",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Admission Cycle",
+            "options": "Admission Cycle",
+            "reqd": 1
+        },
+        {
+            "fieldname": "campus",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Campus",
+            "options": "Campus",
+            "reqd": 1
+        },
+        {
+            "fieldname": "program_level",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Program Level",
+            "options": "UG\nPG\nPhD"
+        },
+        {
+            "fieldname": "merit_list",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Merit List",
+            "options": "Merit List",
+            "reqd": 1
+        },
+        {
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "label": "Status",
+            "options": "Draft\nAllocated\nPublished"
+        },
+        {
+            "fieldname": "column_break_tgne",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "total_selected",
+            "fieldtype": "Int",
+            "label": "Total Selected"
+        },
+        {
+            "fieldname": "total_waitlisted",
+            "fieldtype": "Int",
+            "label": "Total Waitlisted"
+        },
+        {
+            "fieldname": "total_rejected",
+            "fieldtype": "Int",
+            "label": "Total Rejected"
+        },
+        {
+            "fieldname": "published_on",
+            "fieldtype": "Datetime",
+            "label": "Published On"
+        },
+        {
+            "fieldname": "published_by",
+            "fieldtype": "Link",
+            "label": "Published By",
+            "options": "User"
+        },
+        {
+            "fieldname": "section_break_ganj",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "selection_applicant",
+            "fieldtype": "Table",
+            "label": "Selection Applicant",
+            "options": "Seat Selection Applicant"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-02-18 17:44:22.656992",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Seat Allocation",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "rows_threshold_for_grid_search": 20,
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
 }

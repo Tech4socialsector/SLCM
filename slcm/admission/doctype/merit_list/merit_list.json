@@ -19,7 +19,7 @@
             "fieldtype": "Link",
             "in_list_view": 1,
             "label": "Admission Cycle",
-            "options": "test Admission Cycle",
+            "options": "Admission Cycle",
             "reqd": 1
         },
         {
@@ -27,7 +27,7 @@
             "fieldtype": "Link",
             "in_list_view": 1,
             "label": "Campus",
-            "options": "test Campus",
+            "options": "Campus",
             "reqd": 1
         },
         {

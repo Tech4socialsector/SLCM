@@ -1,7 +1,7 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("test Admission Cycle", {
+// frappe.ui.form.on("Admission Result", {
 // 	refresh(frm) {
 
 // 	},

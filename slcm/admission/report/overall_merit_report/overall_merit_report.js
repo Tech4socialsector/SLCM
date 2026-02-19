@@ -4,27 +4,27 @@ frappe.query_reports["Overall Merit Report"] = {
             "fieldname": "admission_cycle",
             "label": __("Admission Cycle"),
             "fieldtype": "Link",
-            "options": "test Admission Cycle",
+            "options": "Admission Cycle",
             "reqd": 1
         },
         {
             "fieldname": "campus",
             "label": __("Campus"),
             "fieldtype": "Link",
-            "options": "test Campus",
+            "options": "Campus",
             "reqd": 1
         },
         {
             "fieldname": "program",
             "label": __("Program"),
             "fieldtype": "Link",
-            "options": "test Program"
+            "options": "Program"
         },
         {
-            "fieldname": "category",
+            "fieldname": "reservation_category",
             "label": __("Category"),
-            "fieldtype": "Select",
-            "options": "\nGEN\nOBC\nSC\nST\nEWS\nPwD"
+            "fieldtype": "Link",
+            "options": "Admission Category"
         }
     ]
 };

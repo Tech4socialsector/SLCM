@@ -10,7 +10,7 @@
   "campus",
   "program",
   "program_level",
-  "category",
+  "reservation_category",
   "column_break_ercs",
   "admission_cycle",
   "hsc_percentage",
@@ -19,7 +19,7 @@
  ],
  "fields": [
   {
-   "fieldname": "category",
+   "fieldname": "reservation_category",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Category",
@@ -36,7 +36,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Program",
-   "options": "test Program"
+   "options": "Program"
   },
   {
    "fieldname": "program_level",
@@ -50,7 +50,7 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
-   "options": "test Campus"
+   "options": "Campus"
   },
   {
    "fieldname": "column_break_ercs",
@@ -60,17 +60,17 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "label": "Admission Cycle",
-   "options": "test Admission Cycle"
+   "options": "Admission Cycle"
   },
   {
    "fieldname": "entrance_percentage",
    "fieldtype": "Float",
-   "label": "Entrance %"
+   "label": "Entrance Test Percentage"
   },
   {
    "fieldname": "interview_percentage",
    "fieldtype": "Float",
-   "label": "Interview %"
+   "label": "Interview Percentage"
   },
   {
    "fieldname": "hsc_percentage",
@@ -81,10 +81,10 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 15:15:54.647506",
+ "modified": "2026-02-19 12:16:06.841484",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "test Applicant",
+ "name": "Admission Result",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

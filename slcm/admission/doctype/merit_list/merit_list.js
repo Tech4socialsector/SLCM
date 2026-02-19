@@ -30,7 +30,7 @@ function open_allocation_dialog(frm) {
             <td>${row.overall_rank || "-"}</td>
             <td><b>${row.applicant || "-"}</b></td>
             <td>${row.program || "-"}</td>
-            <td>${row.category || "-"}</td>
+            <td>${row.reservation_category || "-"}</td>
             <td>${(row.total_score !== undefined && row.total_score !== null) ? parseFloat(row.total_score).toFixed(3) : "-"}</td>
             <td>${row.category_rank || "-"}</td>
         </tr>
@@ -44,7 +44,7 @@ function open_allocation_dialog(frm) {
                 fieldtype: "Link",
                 fieldname: "admission_cycle",
                 label: __("Admission Cycle"),
-                options: "test Admission Cycle",
+                options: "Admission Cycle",
                 read_only: 1,
                 default: frm.doc.admission_cycle
             },
@@ -55,7 +55,7 @@ function open_allocation_dialog(frm) {
                 fieldtype: "Link",
                 fieldname: "campus",
                 label: __("Campus"),
-                options: "test Campus",
+                options: "Campus",
                 read_only: 1,
                 default: frm.doc.campus
             },
@@ -94,7 +94,7 @@ function open_allocation_dialog(frm) {
                                     <th>Rank</th>
                                     <th>Applicant</th>
                                     <th>Program</th>
-                                    <th>Category</th>
+                                    <th>Reservation Category</th>
                                     <th>Total Score</th>
                                     <th>Category Rank</th>
                                 </tr>

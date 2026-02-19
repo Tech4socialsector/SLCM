@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class testApplicant(Document):
+class AdmissionResult(Document):
 	pass

@@ -19,27 +19,28 @@ def get_columns():
             "label": "Applicant",
             "fieldname": "applicant",
             "fieldtype": "Link",
-            "options": "test Applicant",
+            "options": "Admission Result",
             "width": 150
         },
         {
             "label": "Program",
             "fieldname": "program",
             "fieldtype": "Link",
-            "options": "test Program",
+            "options": "Program",
             "width": 120
         },
         {
             "label": "Campus",
             "fieldname": "campus",
             "fieldtype": "Link",
-            "options": "test Campus",
+            "options": "Campus",
             "width": 120
         },
         {
             "label": "Category",
-            "fieldname": "category",
-            "fieldtype": "Select",
+            "fieldname": "reservation_category",
+            "fieldtype": "Link",
+            "options": "Admission Category",
             "width": 100
         },
         {
@@ -62,7 +63,7 @@ def get_data(filters):
             mla.applicant,
             mla.program,
             ml.campus,
-            mla.category,
+            mla.reservation_category,
             mla.total_score,
             mla.overall_rank
         FROM
@@ -79,8 +80,8 @@ def get_data(filters):
     if filters.get("program"):
         query += " AND mla.program = %(program)s"
         
-    if filters.get("category"):
-        query += " AND mla.category = %(category)s"
+    if filters.get("reservation_category"):
+        query += " AND mla.reservation_category = %(reservation_category)s"
         
     query += " ORDER BY mla.total_score DESC"
     
@@ -88,5 +89,5 @@ def get_data(filters):
         "cycle": filters.get("admission_cycle"),
         "campus": filters.get("campus"),
         "program": filters.get("program"),
-        "category": filters.get("category")
+        "reservation_category": filters.get("reservation_category")
     }, as_list=1)

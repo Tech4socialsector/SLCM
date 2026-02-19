@@ -53,7 +53,7 @@ def _rank_applicants(applicant_rows):
     # Category Rank
     category_groups = defaultdict(list)
     for row in applicant_rows:
-        category_groups[row.category].append(row)
+        category_groups[row.reservation_category].append(row)
     for group in category_groups.values():
         group.sort(key=sort_key, reverse=True)
         for i, row in enumerate(group):
@@ -101,14 +101,14 @@ def generate_merit_for_level(cycle, campus, program_level):
 
     # Fetch applicants for this program level
     applicants = frappe.get_all(
-        "test Applicant",
+        "Admission Result",
         filters={
             "admission_cycle": cycle,
             "campus": campus,
             "program_level": program_level
         },
         fields=[
-            "name", "program", "program_level", "category",
+            "name", "program", "program_level", "reservation_category",
             "hsc_percentage", "entrance_percentage", "interview_percentage"
         ]
     )
@@ -133,7 +133,7 @@ def generate_merit_for_level(cycle, campus, program_level):
             "applicant": app.name,
             "program": app.program,
             "program_level": app.program_level,
-            "category": app.category,
+            "reservation_category": app.reservation_category,
             "hsc_percentage": app.hsc_percentage,
             "entrance_percentage": app.entrance_percentage,
             "interview_percentage": app.interview_percentage,

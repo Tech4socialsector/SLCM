@@ -45,7 +45,7 @@ class MeritGeneration(Document):
 
         # 2. Check if applicants exist for this program level
         applicants = frappe.get_all(
-            "test Applicant",
+            "Admission Result",
             filters={
                 "admission_cycle": self.admission_cycle,
                 "campus": self.campus,
@@ -120,3 +120,4 @@ def run_generation(docname):
         doc.status = "Failed"
         doc.save()
         frappe.db.commit()
+    
