@@ -6,7 +6,6 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "campus",
   "category_name",
   "category_code",
   "column_break_guxi",
@@ -32,18 +31,12 @@
   {
    "fieldname": "column_break_guxi",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "label": "Campus",
-   "options": "Campus"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 17:55:46.986698",
+ "modified": "2026-02-19 20:47:47.602115",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Category",
