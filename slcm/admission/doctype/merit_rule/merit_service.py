@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import now_datetime
 from collections import defaultdict
 
 
@@ -77,7 +78,22 @@ def generate_merit_for_level(cycle, campus, program_level):
         as_dict=True
     )
     if existing:
-        return frappe.get_doc("Merit List", existing.get("name"))
+        existing_doc = frappe.get_doc("Merit List", existing.get("name"))
+
+        # If it is already submitted and has applicants, treat it as final.
+        if existing_doc.docstatus == 1 and existing_doc.get("merit_applicants"):
+            return existing_doc
+
+        # Otherwise (draft/empty/partial), remove it so we can regenerate cleanly.
+        # This situation commonly happens when a background job previously failed.
+        if existing_doc.docstatus == 0:
+            frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
+            frappe.db.commit()
+        elif existing_doc.docstatus == 1 and not existing_doc.get("merit_applicants"):
+            # Very rare: submitted but empty. Cancel then delete.
+            existing_doc.cancel()
+            frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
+            frappe.db.commit()
 
     # Fetch the active Merit Rule for this program level
     merit_rule_name = frappe.db.get_value(
@@ -124,7 +140,7 @@ def generate_merit_for_level(cycle, campus, program_level):
     merit.admission_cycle = cycle
     merit.campus = campus
     merit.program_level = program_level
-    merit.generated_on = frappe.utils.now_datetime()
+    merit.generated_on = now_datetime()
     merit.status = "Generated"
 
     for app in applicants:
@@ -150,4 +166,5 @@ def generate_merit_for_level(cycle, campus, program_level):
     _rank_applicants(merit.merit_applicants)
     merit.insert()
     merit.submit()
+    frappe.db.commit()
     return merit
