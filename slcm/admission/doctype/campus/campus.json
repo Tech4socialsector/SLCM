@@ -71,6 +71,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Don't use special symbols (@,-,#)",
    "fieldname": "zip_code",
    "fieldtype": "Data",
    "label": "Zip Code",
@@ -92,7 +93,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 18:31:17.817972",
+ "modified": "2026-02-17 17:12:43.056736",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Campus",

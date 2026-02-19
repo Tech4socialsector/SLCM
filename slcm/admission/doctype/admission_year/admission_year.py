@@ -12,6 +12,8 @@ class AdmissionYear(Document):
 		self.validate_cycles()
 		self.validate_status()
 		self.validate_one_open_year()
+		self.validate_campus_duplicates()
+		self.validate_cycles_duplicates()
 
 	def validate_dates(self):
 		if getdate(self.application_end_date) <= getdate(self.application_start_date):
@@ -26,7 +28,7 @@ class AdmissionYear(Document):
 			if getdate(cycle.start_date) < getdate(self.application_start_date) or \
 			   getdate(cycle.end_date) > getdate(self.application_end_date):
 				frappe.throw(_("Cycle {0} dates must be within Admission Year dates ({1} to {2})").format(
-					cycle.cycle_name, self.application_start_date, self.application_end_date
+					cycle.cycle_name, frappe.utils.format_date(self.application_start_date), frappe.utils.format_date(self.application_end_date)
 				))
 			
 			if getdate(cycle.end_date) <= getdate(cycle.start_date):
@@ -57,6 +59,31 @@ class AdmissionYear(Document):
 			if existing_open_year:
 				frappe.throw(_("Admission Year {0} is already Open. Only one Admission Year can be Open at a time.").format(existing_open_year))
 
+	def validate_campus_duplicates(self):
+		if not self.participating_campuses:
+			return
+		
+		campuses = {}
+		for row in self.participating_campuses:
+			if row.campus in campuses:
+				frappe.throw(
+					_("Campus {0} Already exist in row {1}. Remove the duplicate entry.".format(row.campus, campuses[row.campus])),
+					title="Duplicate Entry")
+			campuses[row.campus] = row.idx
+
+	def validate_cycles_duplicates(self):
+		if not self.cycles:
+			return
+
+		cycles = {}
+		for row in self.cycles:
+			if row.cycle_name in cycles:
+				frappe.throw(
+					_("Cycle {0} is already exist in {1}. remove duplicate"
+					.format(row.cycle_name, cycles[row.cycle_name])),
+					title="Duplicate Entry"
+				)
+			cycles[row.cycle_name] = row.idx
 
 @frappe.whitelist()
 def activate_admission_year(admission_year):

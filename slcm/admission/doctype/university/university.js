@@ -6,6 +6,13 @@ frappe.ui.form.on("University", {
 
     },
 
+    validate: function (frm) {
+        const regex = /^[1-9][0-9]{5}$/;
+        if (frm.doc.zip_code && !regex.test(frm.doc.zip_code)) {
+            frappe.throw("Please enter a valid 6-digit PIN code.");
+        }
+    },
+
     university_name: function (frm) {
         if (!frm.doc.university_name) {
             frm.set_value("abbr", "");
