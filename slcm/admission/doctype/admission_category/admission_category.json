@@ -1,11 +1,13 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "hash",
+ "autoname": "field:category_name",
  "creation": "2026-02-17 12:56:19.550469",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "admission_category_details_section",
+  "campus",
   "category_name",
   "category_code",
   "column_break_guxi",
@@ -15,7 +17,8 @@
   {
    "fieldname": "category_name",
    "fieldtype": "Data",
-   "label": "Category Name "
+   "label": "Category Name ",
+   "unique": 1
   },
   {
    "fieldname": "category_code",
@@ -31,16 +34,27 @@
   {
    "fieldname": "column_break_guxi",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "admission_category_details_section",
+   "fieldtype": "Section Break",
+   "label": "Admission Category details "
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 20:47:47.602115",
+ "modified": "2026-02-20 14:37:56.487076",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Category",
- "naming_rule": "Random",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
