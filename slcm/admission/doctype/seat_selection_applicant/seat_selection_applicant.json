@@ -12,7 +12,8 @@
         "total_score",
         "category_rank",
         "selection_status",
-        "overall_rank"
+        "overall_rank",
+        "allocation_type"
     ],
     "fields": [
         {
@@ -55,6 +56,13 @@
             "in_list_view": 1,
             "label": "Selection Status",
             "options": "Draft\nSelected\nWaitlisted\nRejected"
+        },
+        {
+            "fieldname": "allocation_type",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Allocation Type",
+            "options": "Open\nReserved"
         },
         {
             "fieldname": "overall_rank",

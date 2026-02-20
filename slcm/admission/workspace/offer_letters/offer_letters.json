@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "Offer Letters",
  "links": [],
- "modified": "2026-02-20 01:08:30.648237",
+ "modified": "2026-02-20 09:52:00.488162",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",
@@ -32,7 +32,7 @@
    "role": "System Manager"
   }
  ],
- "sequence_id": 4.0,
+ "sequence_id": 5.0,
  "shortcuts": [
   {
    "color": "Green",

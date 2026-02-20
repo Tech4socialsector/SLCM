@@ -3,8 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import now_datetime
-
+			
 
 class MeritRuleMapping(Document):
 
@@ -39,7 +38,4 @@ class MeritRuleMapping(Document):
 		cycle = self.admission_cycle.replace(" ", "").upper()
 		campus = self.campus.replace(" ", "").upper()
 		level = self.program_level.upper()
-
-		# Use timestamp suffix to guarantee uniqueness even after deletions
-		ts = now_datetime().strftime("%Y%m%d%H%M%S")
-		self.name = f"MRM-{cycle}-{campus}-{level}-{ts}"
+		self.name = f"MRM-{cycle}-{campus}-{level}"
