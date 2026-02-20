@@ -1,5 +1,6 @@
 import frappe
 from frappe.model.document import Document
+from frappe.utils import now_datetime
 from slcm.admission.doctype.merit_rule.merit_service import generate_merit_for_level
 
 
@@ -72,32 +73,56 @@ class MeritGeneration(Document):
             as_dict=True
         )
         if existing:
-            self.status = "Completed"
-            self.generated_on = frappe.db.get_value("Merit List", existing.name, "generated_on")
-            self.save()
-            frappe.msgprint(
-                f"Merit List '{existing.name}' already exists for {program_level}. "
-                f"<a href='/app/merit-list/{existing.name}'>Click here to view it</a>.",
-                title="Merit List Already Exists",
-                indicator="blue"
-            )
-            return
+            merit = frappe.get_doc("Merit List", existing.get("name"))
+            if merit.docstatus == 1 and merit.get("merit_applicants"):
+                self.status = "Completed"
+                self.generated_on = merit.generated_on
+                self.save()
+                frappe.msgprint(
+                    f"Merit List '{merit.name}' already exists for {program_level}. "
+                    f"<a href='/app/merit-list/{merit.name}'>Click here to view it</a>.",
+                    title="Merit List Already Exists",
+                    indicator="blue"
+                )
+                return
 
         # 4. All validations passed — enqueue background job
         self.status = "In Progress"
         self.save()
         frappe.db.commit()
 
-        frappe.enqueue(
-            "slcm.admission.doctype.merit_generation.merit_generation.run_generation",
-            docname=self.name,
-            now=frappe.flags.in_test
-        )
+        mode = (frappe.conf.get("slcm_merit_generation_mode") or "sync").lower()
 
-        frappe.msgprint(
-            f"Merit generation for {program_level} started in the background. "
-            f"Please check back in a few moments."
-        )
+        # In production, background workers/redis may be misconfigured. To avoid a stuck
+        # 'In Progress' state, allow a synchronous fallback via site_config.
+        if mode == "sync":
+            run_generation(self.name)
+            frappe.msgprint(
+                f"Merit generation for {program_level} completed. "
+                f"Please refresh the Merit List."
+            )
+            return
+
+        try:
+            frappe.enqueue(
+                "slcm.admission.doctype.merit_generation.merit_generation.run_generation",
+                docname=self.name,
+                now=frappe.flags.in_test,
+                queue="long",
+                enqueue_after_commit=True
+            )
+
+            frappe.msgprint(
+                f"Merit generation for {program_level} started in the background. "
+                f"Please check back in a few moments."
+            )
+        except Exception:
+            # If enqueue fails (redis/worker issues), run inline so hosted setups still work.
+            run_generation(self.name)
+            frappe.msgprint(
+                f"Merit generation for {program_level} completed. "
+                f"Please refresh the Merit List."
+            )
 
 
 def run_generation(docname):
@@ -111,7 +136,7 @@ def run_generation(docname):
         merit_list = generate_merit_for_level(doc.admission_cycle, doc.campus, program_level)
 
         doc.status = "Completed"
-        doc.generated_on = merit_list.generated_on if merit_list.docstatus == 1 else frappe.utils.now_datetime()
+        doc.generated_on = merit_list.generated_on if merit_list.docstatus == 1 else now_datetime()
         doc.save()
         frappe.db.commit()
 
