@@ -9,8 +9,29 @@ class ProgramOffering(Document):
 		self.validate_unique_offering()
 		self.validate_programme_level_matches_cycle()
 		self.validate_seat_counts()
+		self.calculate_derived_seats()
 		self.validate_campus_active()
 		self.validate_cycle_not_closed()
+
+
+	def calculate_derived_seats(self):
+		if not self.is_reservation_applicable or not self.reservations:
+			return
+		for row in self.reservations:
+			if row.reservation_percentage:
+				row.seats = int((self.total_available_seats * row.reservation_percentage) / 100)
+
+	def validate_seat_counts(self):
+		if self.total_available_seats <= 0:
+			frappe.throw(_("Total Available Seats must be greater than 0. Please set Government or Management Quota."))
+		
+		if self.is_reservation_applicable and self.reservations:
+			total_res_seats = sum(row.seats or 0 for row in self.reservations)
+			if total_res_seats > self.total_available_seats:
+				frappe.throw(
+					_("Total Reserved Seats ({0}) exceeds Total Available Seats ({1}).")
+					.format(total_res_seats, self.total_available_seats)
+				)
 
 	def validate_unique_offering(self):
 		existing = frappe.db.get_value(
@@ -38,16 +59,6 @@ class ProgramOffering(Document):
 				_("Programme Level '{0}' does not match the Admission Cycle's level '{1}'.")
 				.format(self.programme_level, cycle_level)
 			)
-
-	def validate_seat_counts(self):
-		if self.total_seats is not None and self.total_seats <= 0:
-			frappe.throw(_("Total Seats must be greater than 0."))
-		if self.open_seats is not None and self.total_seats is not None:
-			if self.open_seats > self.total_seats:
-				frappe.throw(
-					_("Open Category Seats ({0}) cannot exceed Total Seats ({1}).")
-					.format(self.open_seats, self.total_seats)
-				)
 
 	def validate_campus_active(self):
 		if not self.campus:
@@ -84,35 +95,22 @@ class ProgramOffering(Document):
 					.format(self.name)
 				)
 
-	def on_update(self):
-		self.sync_with_admission_year()
+	# def on_update(self):
+	# 	self.sync_with_admission_year()
 
-	def sync_with_admission_year(self):
-		"""Keep backward compatibility with Admission Year sync."""
-		admission_year_name = frappe.db.get_value(
-			"Admission Year", {"is_active": 1}, "name"
-		)
-		if not admission_year_name:
-			return
+	# def sync_with_admission_year(self):
+	# 	"""Keep backward compatibility with Admission Year sync (refined)."""
+	# 	admission_year_name = frappe.db.get_value(
+	# 		"Admission Year", {"is_active": 1}, "name"
+	# 	)
+	# 	if not admission_year_name:
+	# 		return
 
-		admission_year = frappe.get_doc("Admission Year", admission_year_name)
-
-		current_academic_year = frappe.db.get_single_value(
-			"Admission Settings", "current_academic_year"
-		)
-
-		if admission_year.academic_year != current_academic_year:
-			return
-
-		campus_to_match = self.campus
-		for row in admission_year.participating_campuses:
-			if row.campus == campus_to_match:
-				row.eligibility_criteria = self.eligibility_based
-				row.entrence_test = self.need_entrence_test
-				row.schedule_interview = self.interview_required
-				row.merit_list = self.merit_list
-				row.offer_scholarship = self.scholarship_applicable
-				row.reservation_applied = self.is_reservation_applicable
-				row.is_active = self.is_available_for_admission
-				admission_year.save(ignore_permissions=True)
-				break
+	# 	admission_year = frappe.get_doc("Admission Year", admission_year_name)
+	# 	campus_to_match = self.campus
+	# 	for row in admission_year.participating_campuses:
+	# 		if row.campus == campus_to_match:
+	# 			row.reservation_applied = self.is_reservation_applicable
+	# 			row.is_active = self.is_available_for_admission
+	# 			admission_year.save(ignore_permissions=True)
+	# 			break

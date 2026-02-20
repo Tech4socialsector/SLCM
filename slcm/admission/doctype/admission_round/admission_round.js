@@ -35,7 +35,7 @@ frappe.ui.form.on("Admission Round", {
 });
 
 function set_date_readonly(frm) {
-    if (frm.doc.is_locked) {
+    if (frm.doc.stage_locked) {
         ["start_date", "end_date", "fee_payment_deadline", "doc_verification_deadline"].forEach(f => {
             frm.set_df_property(f, "read_only", 1);
         });

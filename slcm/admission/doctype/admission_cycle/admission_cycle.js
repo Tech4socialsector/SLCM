@@ -10,62 +10,62 @@ const STAGE_CONFIG_FIELDS = [
 frappe.ui.form.on("Admission Cycle", {
 
     onload(frm) {
-        set_lock_state(frm);
-        show_override_warning(frm);
+        // set_lock_state(frm);
+        // show_override_warning(frm);
     },
 
     refresh(frm) {
-        set_lock_state(frm);
-        show_override_warning(frm);
+        // set_lock_state(frm);
+        // show_override_warning(frm);
 
-        // Filter: Admission Cycle should filter by admission_year if available
-        frm.set_query("admission_year", function () {
-            return { filters: { is_active: 1 } };
-        });
+        // // Filter: Admission Cycle should filter by admission_year if available
+        // frm.set_query("admission_year", function () {
+        //     return { filters: { is_active: 1 } };
+        // });
     },
 
     admission_year(frm) {
-        if (!frm.doc.admission_year) return;
-        // Auto-populate stage config from Admission Year
-        frappe.db.get_value(
-            "Admission Year",
-            frm.doc.admission_year,
-            STAGE_CONFIG_FIELDS,
-            function (r) {
-                if (r) {
-                    STAGE_CONFIG_FIELDS.forEach(f => frm.set_value(f, r[f]));
-                }
-            }
-        );
+        // if (!frm.doc.admission_year) return;
+        // // Auto-populate stage config from Admission Year
+        // frappe.db.get_value(
+        //     "Admission Year",
+        //     frm.doc.admission_year,
+        //     STAGE_CONFIG_FIELDS,
+        //     function (r) {
+        //         if (r) {
+        //             STAGE_CONFIG_FIELDS.forEach(f => frm.set_value(f, r[f]));
+        //         }
+        //     }
+        // );
     },
 
     before_save(frm) {
-        if (!frm.doc.is_locked) return;
-        // Detect if any stage config field changed
-        const changed = STAGE_CONFIG_FIELDS.filter(f => frm.doc[f] !== frm.doc.__onload?.[f]);
-        if (!changed.length) return;
-        // If user is System Manager, prompt for override reason
-        if (frappe.user.has_role("System Manager")) {
-            frappe.prompt(
-                [{ fieldname: "reason", fieldtype: "Small Text", label: "Lock Override Reason", reqd: 1 }],
-                function (values) {
-                    frm.set_value("lock_override_reason", values.reason);
-                    frm.save();
-                },
-                __("Stage Config Override"),
-                __("Submit Override")
-            );
-            frappe.validated = false;
-        }
+        // if (!frm.doc.stage_locked) return;
+        // // Detect if any stage config field changed
+        // const changed = STAGE_CONFIG_FIELDS.filter(f => frm.doc[f] !== frm.doc.__onload?.[f]);
+        // if (!changed.length) return;
+        // // If user is System Manager, prompt for override reason
+        // if (frappe.user.has_role("System Manager")) {
+        //     frappe.prompt(
+        //         [{ fieldname: "reason", fieldtype: "Small Text", label: "Lock Override Reason", reqd: 1 }],
+        //         function (values) {
+        //             frm.set_value("lock_override_reason", values.reason);
+        //             frm.save();
+        //         },
+        //         __("Stage Config Override"),
+        //         __("Submit Override")
+        //     );
+        //     frappe.validated = false;
+        // }
     }
 });
 
 function set_lock_state(frm) {
-    const readonly = frm.doc.is_locked ? 1 : 0;
+    const readonly = frm.doc.stage_locked ? 1 : 0;
     [...STAGE_CONFIG_FIELDS, "stage_config_overridden"].forEach(f => {
         frm.set_df_property(f, "read_only", readonly);
     });
-    if (frm.doc.is_locked) {
+    if (frm.doc.stage_locked) {
         frm.set_df_property("lock_override_reason", "hidden", 1);
     }
 }

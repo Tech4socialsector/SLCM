@@ -43,21 +43,37 @@ frappe.ui.form.on("Program Offering", {
         });
     },
 
-    total_seats(frm) {
-        check_seat_counts(frm);
+    is_reservation_applicable(frm) {
+        if (!frm.doc.is_reservation_applicable) {
+            frm.clear_table("reservations");
+            frm.refresh_field("reservations");
+        }
     },
-
-    open_seats(frm) {
-        check_seat_counts(frm);
+    total_available_seats(frm) {
+        calculate_total_seats(frm);
     }
 });
 
-function check_seat_counts(frm) {
-    if (frm.doc.open_seats && frm.doc.total_seats && frm.doc.open_seats > frm.doc.total_seats) {
-        frappe.msgprint({
-            title: __("Seat Count Error"),
-            message: __("Open Category Seats ({0}) cannot exceed Total Seats ({1}).", [frm.doc.open_seats, frm.doc.total_seats]),
-            indicator: "red"
+frappe.ui.form.on("Program Offering Reservation", {
+    reservation_percentage(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        if (row.reservation_percentage && frm.doc.total_available_seats) {
+            row.seats = Math.floor((frm.doc.total_available_seats * row.reservation_percentage) / 100);
+            frm.refresh_field("reservations");
+        }
+    }
+});
+
+function calculate_total_seats(frm) {
+    let total = (frm.doc.total_available_seats || 0);
+
+    // Recalculate all reservation seats if total available seats changes
+    if (frm.doc.reservations) {
+        frm.doc.reservations.forEach(row => {
+            if (row.reservation_percentage) {
+                row.seats = Math.floor((total * row.reservation_percentage) / 100);
+            }
         });
+        frm.refresh_field("reservations");
     }
 }

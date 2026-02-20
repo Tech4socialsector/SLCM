@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"Rx91p7Q4Dr\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Admission</span>\",\"col\":12}},{\"id\":\"aCO5OfLHWZ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"University\",\"col\":3}},{\"id\":\"RoVozhkrna\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Campus\",\"col\":3}},{\"id\":\"Cz0nOxJQwT\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Configure\",\"col\":4}},{\"id\":\"z6nG0_cmMi\",\"type\":\"card\",\"data\":{\"card_name\":\"Program\",\"col\":4}}]",
+ "content": "[{\"id\":\"Rx91p7Q4Dr\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Admission</span>\",\"col\":12}},{\"id\":\"VMSh97b5NX\",\"type\":\"card\",\"data\":{\"card_name\":\"Campus\",\"col\":4}},{\"id\":\"YTfaHndZj4\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission\",\"col\":4}},{\"id\":\"aNpR59_3E-\",\"type\":\"card\",\"data\":{\"card_name\":\"Configure\",\"col\":4}}]",
  "creation": "2026-02-16 19:10:20.000968",
  "custom_blocks": [],
  "docstatus": 0,
@@ -14,10 +14,9 @@
  "label": "Admission",
  "links": [
   {
-   "description": "Configure your admission proccess for the academic year",
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Admission Configure",
+   "label": "Campus",
    "link_count": 2,
    "link_type": "DocType",
    "onboard": 0,
@@ -26,12 +25,31 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Admission Settings",
+   "label": "University",
    "link_count": 0,
-   "link_to": "Admission Settings",
+   "link_to": "University",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campus",
+   "link_count": 0,
+   "link_to": "Campus",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Admission",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
   },
   {
    "hidden": 0,
@@ -44,11 +62,40 @@
    "type": "Link"
   },
   {
-   "description": "Configure your programs for the admission year",
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Program",
-   "link_count": 1,
+   "label": "Admission Cycle",
+   "link_count": 0,
+   "link_to": "Admission Cycle",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Admission Round",
+   "link_count": 0,
+   "link_to": "Admission Round",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Admission Cycle Audit Log",
+   "link_count": 0,
+   "link_to": "Admission Cycle Audit Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Configure",
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -56,15 +103,35 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Program offering",
+   "label": "Admission Round",
+   "link_count": 0,
+   "link_to": "Admission Round",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program Offering",
    "link_count": 0,
    "link_to": "Program Offering",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campus Seat Matrix",
+   "link_count": 0,
+   "link_to": "Campus Seat Matrix",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-02-19 21:36:48.563834",
+ "modified": "2026-02-20 12:00:56.992166",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission",
@@ -75,23 +142,6 @@
  "quick_lists": [],
  "roles": [],
  "sequence_id": 1.0,
- "shortcuts": [
-  {
-   "color": "Green",
-   "doc_view": "List",
-   "label": "University",
-   "link_to": "University",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Green",
-   "doc_view": "List",
-   "label": "Campus",
-   "link_to": "Campus",
-   "stats_filter": "[]",
-   "type": "DocType"
-  }
- ],
+ "shortcuts": [],
  "title": "Admission"
 }

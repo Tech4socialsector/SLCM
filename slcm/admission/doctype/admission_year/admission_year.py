@@ -16,28 +16,24 @@ class AdmissionYear(Document):
 			else:
 				self.name = f"AY-{self.academic_year}"
 
-	def validate(self):
-		self.set_admission_cycle_type_for_single()
-		self.validate_dates()
-		self.validate_unique_year_cycle_type()
-		self.validate_one_active_per_cycle_type()
-		self.validate_stage_lock()
-		self.validate_campus_duplicates()
-		self.validate_status()
-		self.validate_one_open_year()
+	# def validate(self):
+		# self.set_admission_cycle_type_for_single()
+		# self.validate_dates()
+		# self.validate_unique_year_cycle_type()
+		# self.validate_one_active_per_cycle_type()
+		# self.validate_campus_duplicates()
+		# self.validate_status()
+		# self.validate_one_open_year()
 
-	def set_admission_cycle_type_for_single(self):
-		"""If multi_cycle is off, force Regular cycle type."""
-		if not self.multi_cycle:
-			self.admission_cycle_type = "Regular"
+	# def set_admission_cycle_type_for_single(self):
+	# 	"""If multi_cycle is off, force Regular cycle type."""
+	# 	if not self.multi_cycle:
+	# 		self.admission_cycle_type = "Regular"
 
 	def validate_dates(self):
 		if self.start_date and self.end_date:
 			if getdate(self.end_date) <= getdate(self.start_date):
 				frappe.throw(_("Admission End Date must be after Admission Start Date."))
-		if self.counselling_start_date and self.counselling_end_date:
-			if getdate(self.counselling_end_date) <= getdate(self.counselling_start_date):
-				frappe.throw(_("Counselling End Date must be after Counselling Start Date."))
 		# Check dates fall within linked Academic Year dates
 		if self.academic_year and self.start_date and self.end_date:
 			ay = frappe.get_doc("Academic Year", self.academic_year)
@@ -48,57 +44,38 @@ class AdmissionYear(Document):
 				if getdate(self.end_date) > getdate(ay.year_end_date):
 					frappe.throw(_("Admission End Date must be within the Academic Year end date ({0}).").format(ay.year_end_date))
 
-	def validate_unique_year_cycle_type(self):
-		existing = frappe.db.get_value(
-			"Admission Year",
-			{
-				"academic_year": self.academic_year,
-				"admission_cycle_type": self.admission_cycle_type,
-				"name": ["!=", self.name]
-			},
-			"name"
-		)
-		if existing:
-			frappe.throw(
-				_("An Admission Year for Academic Year '{0}' with Cycle Type '{1}' already exists: {2}")
-				.format(self.academic_year, self.admission_cycle_type, existing)
-			)
+	# def validate_unique_year_cycle_type(self):
+	# 	existing = frappe.db.get_value(
+	# 		"Admission Year",
+	# 		{
+	# 			"academic_year": self.academic_year,
+	# 			"admission_cycle_type": self.admission_cycle_type,
+	# 			"name": ["!=", self.name]
+	# 		},
+	# 		"name"
+	# 	)
+	# 	if existing:
+	# 		frappe.throw(
+	# 			_("An Admission Year for Academic Year '{0}' with Cycle Type '{1}' already exists: {2}")
+	# 			.format(self.academic_year, self.admission_cycle_type, existing)
+	# 		)
 
-	def validate_one_active_per_cycle_type(self):
-		if self.is_active:
-			existing = frappe.db.get_value(
-				"Admission Year",
-				{
-					"admission_cycle_type": self.admission_cycle_type,
-					"is_active": 1,
-					"name": ["!=", self.name]
-				},
-				"name"
-			)
-			if existing:
-				frappe.throw(
-					_("Another Admission Year ({0}) is already active for Cycle Type '{1}'. Only one can be active at a time.")
-					.format(existing, self.admission_cycle_type)
-				)
-
-	def validate_stage_lock(self):
-		"""If is_locked=1, stage config fields must not have changed."""
-		if not self.is_locked or self.is_new():
-			return
-		old = self.get_doc_before_save()
-		if not old:
-			return
-		stage_fields = [
-			"enable_entrance_test", "enable_interview",
-			"enable_document_verification", "enable_scholarship",
-			"enable_group_discussion"
-		]
-		for field in stage_fields:
-			if self.get(field) != old.get(field):
-				frappe.throw(
-					_("Admission Year is locked. Stage configuration field '{0}' cannot be changed.")
-					.format(field)
-				)
+	# def validate_one_active_per_cycle_type(self):
+	# 	if self.is_active:
+	# 		existing = frappe.db.get_value(
+	# 			"Admission Year",
+	# 			{
+	# 				"admission_cycle_type": self.admission_cycle_type,
+	# 				"is_active": 1,
+	# 				"name": ["!=", self.name]
+	# 			},
+	# 			"name"
+	# 		)
+	# 		if existing:
+	# 			frappe.throw(
+	# 				_("Another Admission Year ({0}) is already active for Cycle Type '{1}'. Only one can be active at a time.")
+	# 				.format(existing, self.admission_cycle_type)
+	# 			)
 
 	def validate_status(self):
 		if self.status == "Active":

@@ -16,27 +16,23 @@
   "is_active",
   "is_available_for_admission",
   "section_break_seats",
-  "total_seats",
-  "open_seats",
-  "column_break_seats2",
-  "min_eligibility_score",
-  "min_clat_rank",
-  "section_break_uxbe",
-  "eligibility_criteria",
+  "total_available_seats",
+  "column_break_jiom",
   "is_reservation_applicable",
-  "reservation_rule",
+  "section_break_uxbe",
+  "reservations",
+  "section_break_opgu",
   "eligibility_based",
   "eligibility_rule",
   "merit_list",
   "merit_rule",
+  "column_break_szjn",
   "scholarship_applicable",
   "scholarship_scheme",
   "section_break_fee",
   "application_fee",
   "section_break_remarks",
-  "remarks",
-  "section_break_djee",
-  "programs"
+  "remarks"
  ],
  "fields": [
   {
@@ -107,54 +103,26 @@
    "label": "Seats"
   },
   {
-   "fieldname": "total_seats",
+   "fieldname": "total_available_seats",
    "fieldtype": "Int",
-   "label": "Total Seats",
-   "reqd": 1
+   "label": "Total Available Seats"
   },
   {
-   "fieldname": "open_seats",
-   "fieldtype": "Int",
-   "label": "Open Category Seats",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_seats2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "min_eligibility_score",
-   "fieldtype": "Float",
-   "label": "Minimum Eligibility Score"
-  },
-  {
-   "fieldname": "min_clat_rank",
-   "fieldtype": "Int",
-   "label": "Minimum CLAT Rank"
+   "depends_on": "eval: doc.is_reservation_applicable",
+   "fieldname": "reservations",
+   "fieldtype": "Table",
+   "label": "Reservations",
+   "options": "Program Offering Reservation"
   },
   {
    "fieldname": "section_break_uxbe",
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "eligibility_criteria",
-   "fieldtype": "Data",
-   "label": "Eligibility Criteria",
-   "options": "Eligibility Criteria"
-  },
-  {
    "default": "0",
    "fieldname": "is_reservation_applicable",
    "fieldtype": "Check",
    "label": "Is Reservation Applicable?"
-  },
-  {
-   "depends_on": "eval: doc.is_reservation_applicable",
-   "fieldname": "reservation_rule",
-   "fieldtype": "Link",
-   "label": "Reservation Rule",
-   "mandatory_depends_on": "eval: doc.is_reservation_applicable",
-   "options": "Reservation Rule"
   },
   {
    "default": "0",
@@ -169,22 +137,6 @@
    "label": "Eligibility Rule",
    "mandatory_depends_on": "eval: doc.eligibility_based",
    "options": "Eligibility Rule"
-  },
-  {
-   "fieldname": "column_break_vkwj",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "need_entrence_test",
-   "fieldtype": "Check",
-   "label": "Need Entrance Test"
-  },
-  {
-   "default": "0",
-   "fieldname": "interview_required",
-   "fieldtype": "Check",
-   "label": "Interview Required"
   },
   {
    "default": "0",
@@ -233,27 +185,22 @@
    "label": "Remarks"
   },
   {
-   "fieldname": "section_break_djee",
-   "fieldtype": "Section Break",
-   "label": "Program Criteria"
+   "fieldname": "column_break_jiom",
+   "fieldtype": "Column Break"
   },
   {
-   "fieldname": "programs",
-   "fieldtype": "Table",
-   "label": "Programs",
-   "options": "Program Offering Criteria"
+   "fieldname": "section_break_opgu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_szjn",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "links": [
-  {
-   "group": "Campus Seat Matrix",
-   "link_doctype": "Campus Seat Matrix",
-   "link_fieldname": "program_offering"
-  }
- ],
- "modified": "2026-02-20 08:01:04.764002",
+ "links": [],
+ "modified": "2026-02-20 14:07:25.274422",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Offering",

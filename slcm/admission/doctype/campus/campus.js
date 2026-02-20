@@ -18,7 +18,7 @@ frappe.ui.form.on("Campus", {
         let r = await frappe.db.get_value(
             "Admission Year",
             { is_active: 1 },
-            ["name", "allow_campus_enrollment", "application_start_date", "academic_year"]
+            ["name", "application_start_date", "academic_year"]
         );
 
         if (!r || !r.message) {
@@ -28,7 +28,7 @@ frappe.ui.form.on("Campus", {
 
         let admission_year = r.message;
 
-        if (admission_year.allow_campus_enrollment) {
+        if (admission_year.is_active) {
             let d = frappe.datetime.str_to_obj(admission_year.application_start_date);
 
             let formatted =

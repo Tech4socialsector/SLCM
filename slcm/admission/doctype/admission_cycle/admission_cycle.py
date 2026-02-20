@@ -23,17 +23,17 @@ AUDITED_FIELDS = [
 class AdmissionCycle(Document):
 
 	def autoname(self):
-		self.name = frappe.generate_hash(length=16)
+		self.name = "AC-{0}-{1}".format(self.admission_year, self.cycle_code)
 
-	def validate(self):
-		self.validate_admission_year_active_for_status()
-		self.validate_unique_active_per_year_level()
-		self.validate_cycle_dates_within_year()
-		self.validate_stage_sequence()
-		self.validate_stage_date_ranges()
-		self.validate_rule_unique_types()
-		self.validate_lock_enforcement()
-		self.detect_stage_config_override()
+	# def validate(self):
+	# 	self.validate_admission_year_active_for_status()
+	# 	self.validate_unique_active_per_year_level()
+	# 	self.validate_cycle_dates_within_year()
+	# 	self.validate_stage_sequence()
+	# 	self.validate_stage_date_ranges()
+	# 	self.validate_rule_unique_types()
+	# 	self.validate_lock_enforcement()
+	# 	self.detect_stage_config_override()
 
 	def validate_admission_year_active_for_status(self):
 		if self.status == "Active":
@@ -174,7 +174,7 @@ class AdmissionCycle(Document):
 					frappe.throw(_("Rule 'Submission Cutoff' must have a valid date as its value."))
 
 	def validate_lock_enforcement(self):
-		if not self.is_locked or self.is_new():
+		if not self.stage_locked or self.is_new():
 			return
 		old = self.get_doc_before_save()
 		if not old:
@@ -223,7 +223,7 @@ class AdmissionCycle(Document):
 			self.db_set(field, ay.get(field), update_modified=False)
 
 		# Lock parent Admission Year
-		frappe.db.set_value("Admission Year", self.admission_year, "is_locked", 1)
+		frappe.db.set_value("Admission Year", self.admission_year, "stage_locked", 1)
 
 	def on_update(self):
 		"""Write audit log for every changed audited field."""
@@ -244,7 +244,7 @@ class AdmissionCycle(Document):
 
 			if field in STAGE_CONFIG_FIELDS:
 				change_type = "Stage Config Change"
-				reason = self.lock_override_reason if (self.is_locked and is_sys_admin) else ""
+				reason = self.lock_override_reason if (self.stage_locked and is_sys_admin) else ""
 			elif field in ("start_date", "end_date"):
 				change_type = "Deadline Change"
 				reason = ""
@@ -267,7 +267,7 @@ class AdmissionCycle(Document):
 			log.insert(ignore_permissions=True)
 
 		# Lock override audit entry
-		if self.is_locked and is_sys_admin and changed_config and self.lock_override_reason:
+		if self.stage_locked and is_sys_admin and changed_config and self.lock_override_reason:
 			log = frappe.new_doc("Admission Cycle Audit Log")
 			log.admission_cycle = self.name
 			log.changed_field = "lock_override"

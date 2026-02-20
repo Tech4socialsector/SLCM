@@ -26,8 +26,6 @@ frappe.ui.form.on("Admission Year", {
             );
             frm.set_value("academic_year", value);
         }
-        // If is_locked, make stage config read-only
-        set_stage_fields_readonly(frm);
     },
 
     refresh(frm) {
@@ -44,7 +42,6 @@ frappe.ui.form.on("Admission Year", {
             };
         });
 
-        set_stage_fields_readonly(frm);
     },
 
     is_active: async function (frm) {
@@ -118,15 +115,6 @@ function toggle_cycle_type(frm) {
     }
 }
 
-function set_stage_fields_readonly(frm) {
-    const stage_fields = [
-        "enable_entrance_test", "enable_interview",
-        "enable_document_verification", "enable_scholarship",
-        "enable_group_discussion"
-    ];
-    const readonly = frm.doc.is_locked ? 1 : 0;
-    stage_fields.forEach(f => frm.set_df_property(f, "read_only", readonly));
-}
 
 function child_duplicate_entry(frm, cdt, cdn, child_table, field_name, label) {
     let row = locals[cdt][cdn];
