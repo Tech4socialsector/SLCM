@@ -190,6 +190,8 @@ class OfferService:
         offer.accepted_on = now_datetime()
         offer.save(ignore_permissions=True)
 
+        OfferService.create_fee_assignment_from_offer(offer)
+
         OfferService.log_action(offer.name, "Accepted")
         return True
 
@@ -534,6 +536,37 @@ class OfferService:
         log.timestamp = now_datetime()
         log.notes = notes
         log.insert(ignore_permissions=True)
+
+    @staticmethod
+    def create_fee_assignment_from_offer(offer):
+        """
+        Creates an Applicant Fee Assignment record from an accepted offer letter.
+        Populates it with frozen fees from the Offer Fee Snapshot.
+        """
+        if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "status": ["!=", "Cancelled"]}):
+            return
+
+        snapshot = frappe.get_doc("Offer Fee Snapshot", {"offer_id": offer.name})
+        
+        assignment = frappe.new_doc("Applicant Fee Assignment")
+        assignment.applicant = offer.applicant
+        assignment.offer_letter = offer.name
+        assignment.program = offer.program
+        assignment.academic_year = offer.admission_year # Admission Year is mapped to academic_year field in assignment
+        assignment.assignment_date = frappe.utils.today()
+        
+        for row in snapshot.fee_component:
+            assignment.append("fee_components", {
+                "fee_component": row.fee_component,
+                "amount": row.amount,
+                "is_taxable": row.is_taxable,
+                "tax_rate": row.tax_rate
+            })
+        
+        assignment.insert(ignore_permissions=True)
+        assignment.submit()
+        
+        return assignment.name
 
 
 
