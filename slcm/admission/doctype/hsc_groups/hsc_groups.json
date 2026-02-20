@@ -20,7 +20,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 10:54:58.256800",
+ "modified": "2026-02-20 16:00:06.047570",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "HSC Groups",
@@ -36,6 +36,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Eligibility Admin",
    "share": 1,
    "write": 1
   }
