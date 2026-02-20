@@ -6,6 +6,70 @@ from frappe.utils import now
 
 class SeatAllocation(Document):
 
+    def before_save(self):
+        if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
+            return
+
+        before = None
+        try:
+            before = self.get_doc_before_save()
+        except Exception:
+            before = None
+
+        if not before:
+            return
+
+        before_map = {}
+        for row in (before.selection_applicant or []):
+            before_map[row.name] = row.selection_status
+
+        affected_programs = set()
+        for row in (self.selection_applicant or []):
+            old_status = before_map.get(row.name)
+            new_status = row.selection_status
+            if old_status == "Selected" and new_status == "Rejected":
+                affected_programs.add(row.program)
+
+                if self.total_selected is not None:
+                    self.total_selected = max(0, int(self.total_selected or 0) - 1)
+                if self.total_rejected is not None:
+                    self.total_rejected = int(self.total_rejected or 0) + 1
+
+        if not affected_programs:
+            return
+
+        # Run promotion post-save (in on_update) so DB reflects the newly rejected seat.
+        self.flags.slcm_affected_programs_for_waitlist_promotion = sorted(list(affected_programs))
+
+    def on_update(self):
+        if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
+            return
+
+        programs = getattr(self.flags, "slcm_affected_programs_for_waitlist_promotion", None)
+        if not programs:
+            return
+
+        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import process_waitlist
+
+        for program in programs:
+            rule_names = frappe.get_all(
+                "Waitlist Rule",
+                filters={
+                    "status": "Active",
+                    "is_locked": 0,
+                    "admission_cycle": self.admission_cycle,
+                    "campus": self.campus,
+                    "program": program,
+                },
+                pluck="name",
+            )
+            for rule_name in rule_names:
+                frappe.flags.slcm_waitlist_promotion_in_progress = True
+                try:
+                    process_waitlist(frappe.get_doc("Waitlist Rule", rule_name))
+                finally:
+                    frappe.flags.slcm_waitlist_promotion_in_progress = False
+
     @frappe.whitelist()
     def pull_from_merit_list(self):
         """

@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"MRQX9y9hff\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Merit &amp; Seat Allocation</span>\",\"col\":12}},{\"id\":\"jIQLROWQ3z\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit Calculation\",\"col\":4}},{\"id\":\"Moc2oGMIAp\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Tii3g_426K\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "content": "[{\"id\":\"MRQX9y9hff\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Merit &amp; Seat Allocation</span>\",\"col\":12}},{\"id\":\"NtSWWz7jR3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule\",\"col\":4}},{\"id\":\"6Cbfx1mW4E\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":4}},{\"id\":\"xGhl0aPW1i\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"jIQLROWQ3z\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit Calculation\",\"col\":4}},{\"id\":\"Moc2oGMIAp\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Tii3g_426K\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2026-02-20 09:51:44.094533",
  "custom_blocks": [],
  "docstatus": 0,
@@ -112,11 +112,24 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-20 14:14:15.486545",
+ "modified": "2026-02-20 17:31:31.128472",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit & Seat Allocation",
- "number_cards": [],
+ "number_cards": [
+  {
+   "label": "Merit Rule",
+   "number_card_name": "Merit Rule"
+  },
+  {
+   "label": "Merit List",
+   "number_card_name": "Merit Rule"
+  },
+  {
+   "label": "Seat Allocation",
+   "number_card_name": "Seat Allocation"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,

@@ -12,6 +12,8 @@
         "hsc_percentage",
         "entrance_percentage",
         "interview_percentage",
+        "ug_cgpa",
+        "pg_cgpa",
         "total_score",
         "overall_rank",
         "program_rank",
@@ -67,6 +69,18 @@
             "fieldtype": "Float",
             "in_list_view": 1,
             "label": "Interview %"
+        },
+        {
+            "fieldname": "ug_cgpa",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "UG CGPA"
+        },
+        {
+            "fieldname": "pg_cgpa",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "PG CGPA"
         },
         {
             "fieldname": "total_score",

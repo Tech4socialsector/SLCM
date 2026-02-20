@@ -1,0 +1,130 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 0,
+ "module": "Admission",
+ "name": "Waitlist Rule",
+ "naming_rule": "By fieldname",
+ "autoname": "field:rule_name",
+ "field_order": [
+  "rule_name",
+  "admission_cycle",
+  "campus",
+  "program",
+  "upgrade_frequency",
+  "upgrade_cutoff_date",
+  "allow_category_upgrade",
+  "status",
+  "is_locked",
+  "column_break_stats",
+  "execution_log_count",
+  "last_executed_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "rule_name",
+   "fieldtype": "Data",
+   "label": "Rule Name",
+   "in_list_view": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "upgrade_frequency",
+   "fieldtype": "Select",
+   "label": "Upgrade Frequency",
+   "options": "Manual\nDaily\nWeekly",
+   "default": "Manual",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "upgrade_cutoff_date",
+   "fieldtype": "Date",
+   "label": "Upgrade Cutoff Date"
+  },
+  {
+   "fieldname": "allow_category_upgrade",
+   "fieldtype": "Check",
+   "label": "Allow Category Upgrade",
+   "default": "0"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nInactive",
+   "default": "Active",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "is_locked",
+   "fieldtype": "Check",
+   "label": "Is Locked",
+   "default": "0"
+  },
+  {
+   "fieldname": "column_break_stats",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "execution_log_count",
+   "fieldtype": "Int",
+   "label": "Execution Count",
+   "read_only": 1,
+   "default": "0"
+  },
+  {
+   "fieldname": "last_executed_on",
+   "fieldtype": "Datetime",
+   "label": "Last Executed On",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
