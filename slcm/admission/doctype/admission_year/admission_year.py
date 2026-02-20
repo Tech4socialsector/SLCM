@@ -1,150 +1,182 @@
 import frappe
-from frappe.model.document import Document
 from frappe import _
-from frappe.utils import getdate
+from frappe.model.document import Document
+from frappe.utils import getdate, now_datetime
+
 
 class AdmissionYear(Document):
+
 	def autoname(self):
-		self.name = f"AY-{self.academic_year}"
+		if self.academic_year:
+			parts = self.academic_year.split("-")
+			if len(parts) == 2:
+				yr_start = parts[0]
+				yr_end = parts[1][-2:]  # last 2 digits of end year
+				self.name = f"AY-{yr_start}-{yr_end}"
+			else:
+				self.name = f"AY-{self.academic_year}"
 
 	def validate(self):
+		self.set_admission_cycle_type_for_single()
 		self.validate_dates()
-		self.validate_cycles()
+		self.validate_unique_year_cycle_type()
+		self.validate_one_active_per_cycle_type()
+		self.validate_stage_lock()
+		self.validate_campus_duplicates()
 		self.validate_status()
 		self.validate_one_open_year()
-		self.validate_campus_duplicates()
-		self.validate_cycles_duplicates()
+
+	def set_admission_cycle_type_for_single(self):
+		"""If multi_cycle is off, force Regular cycle type."""
+		if not self.multi_cycle:
+			self.admission_cycle_type = "Regular"
 
 	def validate_dates(self):
-		if getdate(self.application_end_date) <= getdate(self.application_start_date):
-			frappe.throw(_("Application End Date must be greater than Application Start Date"))
+		if self.start_date and self.end_date:
+			if getdate(self.end_date) <= getdate(self.start_date):
+				frappe.throw(_("Admission End Date must be after Admission Start Date."))
+		if self.counselling_start_date and self.counselling_end_date:
+			if getdate(self.counselling_end_date) <= getdate(self.counselling_start_date):
+				frappe.throw(_("Counselling End Date must be after Counselling Start Date."))
+		# Check dates fall within linked Academic Year dates
+		if self.academic_year and self.start_date and self.end_date:
+			ay = frappe.get_doc("Academic Year", self.academic_year)
+			if hasattr(ay, "year_start_date") and ay.year_start_date:
+				if getdate(self.start_date) < getdate(ay.year_start_date):
+					frappe.throw(_("Admission Start Date must be within the Academic Year start date ({0}).").format(ay.year_start_date))
+			if hasattr(ay, "year_end_date") and ay.year_end_date:
+				if getdate(self.end_date) > getdate(ay.year_end_date):
+					frappe.throw(_("Admission End Date must be within the Academic Year end date ({0}).").format(ay.year_end_date))
 
-	def validate_cycles(self):
-		if not self.cycles:
+	def validate_unique_year_cycle_type(self):
+		existing = frappe.db.get_value(
+			"Admission Year",
+			{
+				"academic_year": self.academic_year,
+				"admission_cycle_type": self.admission_cycle_type,
+				"name": ["!=", self.name]
+			},
+			"name"
+		)
+		if existing:
+			frappe.throw(
+				_("An Admission Year for Academic Year '{0}' with Cycle Type '{1}' already exists: {2}")
+				.format(self.academic_year, self.admission_cycle_type, existing)
+			)
+
+	def validate_one_active_per_cycle_type(self):
+		if self.is_active:
+			existing = frappe.db.get_value(
+				"Admission Year",
+				{
+					"admission_cycle_type": self.admission_cycle_type,
+					"is_active": 1,
+					"name": ["!=", self.name]
+				},
+				"name"
+			)
+			if existing:
+				frappe.throw(
+					_("Another Admission Year ({0}) is already active for Cycle Type '{1}'. Only one can be active at a time.")
+					.format(existing, self.admission_cycle_type)
+				)
+
+	def validate_stage_lock(self):
+		"""If is_locked=1, stage config fields must not have changed."""
+		if not self.is_locked or self.is_new():
 			return
-
-		for cycle in self.cycles:
-			# Cycle dates must be within admission year dates
-			if getdate(cycle.start_date) < getdate(self.application_start_date) or \
-			   getdate(cycle.end_date) > getdate(self.application_end_date):
-				frappe.throw(_("Cycle {0} dates must be within Admission Year dates ({1} to {2})").format(
-					cycle.cycle_name, frappe.utils.format_date(self.application_start_date), frappe.utils.format_date(self.application_end_date)
-				))
-			
-			if getdate(cycle.end_date) <= getdate(cycle.start_date):
-				frappe.throw(_("Cycle {0}: End Date must be greater than Start Date").format(cycle.cycle_name))
-
-		# Prevent overlapping cycles
-		sorted_cycles = sorted(self.cycles, key=lambda x: x.start_date)
-		for i in range(len(sorted_cycles) - 1):
-			if getdate(sorted_cycles[i].end_date) >= getdate(sorted_cycles[i+1].start_date):
-				frappe.throw(_("Cycles {0} and {1} are overlapping").format(
-					sorted_cycles[i].cycle_name, sorted_cycles[i+1].cycle_name
-				))
+		old = self.get_doc_before_save()
+		if not old:
+			return
+		stage_fields = [
+			"enable_entrance_test", "enable_interview",
+			"enable_document_verification", "enable_scholarship",
+			"enable_group_discussion"
+		]
+		for field in stage_fields:
+			if self.get(field) != old.get(field):
+				frappe.throw(
+					_("Admission Year is locked. Stage configuration field '{0}' cannot be changed.")
+					.format(field)
+				)
 
 	def validate_status(self):
-		if self.status == "Open":
-			# Cannot set status = Open if no campus is active
-			if not any(c.is_active for c in self.participating_campuses):
-				frappe.throw(_("Cannot set status to Open if no campus is active"))
-
-			# Cannot open admission if no program offering exists
-			if not frappe.db.exists("Program Offering", {"admission_year": self.name, "is_available_for_admission": 1}):
-				frappe.throw(_("Cannot open admission if no Program Offering exists for this year"))
+		if self.status == "Active":
+			if not any(c.is_active for c in (self.participating_campuses or [])):
+				frappe.msgprint(
+					_("Warning: No active participating campus found for this Admission Year."),
+					alert=True
+				)
 
 	def validate_one_open_year(self):
-		if self.status == "Open":
-			existing_open_year = frappe.db.get_value("Admission Year", 
-				{"status": "Open", "name": ["!=", self.name]}, "name")
+		if self.status == "Active":
+			existing_open_year = frappe.db.get_value(
+				"Admission Year",
+				{"status": "Active", "name": ["!=", self.name]},
+				"name"
+			)
 			if existing_open_year:
-				frappe.throw(_("Admission Year {0} is already Open. Only one Admission Year can be Open at a time.").format(existing_open_year))
+				frappe.throw(
+					_("Admission Year {0} is already Active. Only one Admission Year can be Active at a time.")
+					.format(existing_open_year)
+				)
 
 	def validate_campus_duplicates(self):
 		if not self.participating_campuses:
 			return
-		
-		campuses = {}
+		seen = {}
 		for row in self.participating_campuses:
-			if row.campus in campuses:
+			if row.campus in seen:
 				frappe.throw(
-					_("Campus {0} Already exist in row {1}. Remove the duplicate entry.".format(row.campus, campuses[row.campus])),
-					title="Duplicate Entry")
-			campuses[row.campus] = row.idx
-
-	def validate_cycles_duplicates(self):
-		if not self.cycles:
-			return
-
-		cycles = {}
-		for row in self.cycles:
-			if row.cycle_name in cycles:
-				frappe.throw(
-					_("Cycle {0} is already exist in {1}. remove duplicate"
-					.format(row.cycle_name, cycles[row.cycle_name])),
-					title="Duplicate Entry"
+					_("Campus '{0}' is duplicated in Participating Campuses (row {1} and {2}). Remove the duplicate.")
+					.format(row.campus, seen[row.campus], row.idx),
+					title=_("Duplicate Entry")
 				)
-			cycles[row.cycle_name] = row.idx
+			seen[row.campus] = row.idx
+
+	def on_trash(self):
+		if frappe.db.exists("Admission Cycle", {"admission_year": self.name}):
+			frappe.throw(
+				_("Cannot delete Admission Year '{0}' as one or more Admission Cycles are linked to it.")
+				.format(self.name)
+			)
+
 
 @frappe.whitelist()
 def activate_admission_year(admission_year):
-
 	try:
 		if not admission_year:
-			return {
-				"status": "Error",
-				"message": _("Admission Year is required.")
-			}
+			return {"status": "Error", "message": _("Admission Year is required.")}
 
 		year = frappe.get_doc("Admission Year", admission_year)
 
 		current_academic_year = frappe.db.get_single_value(
-			"Admission Settings",
-			"current_academic_year"
+			"Admission Settings", "current_academic_year"
 		)
 
 		if year.academic_year != current_academic_year:
 			return {
 				"status": "Error",
-				"message": _("Academic Year {0} is not the current academic year.")
-				.format(year.academic_year)
+				"message": _("Academic Year {0} is not the current academic year.").format(year.academic_year)
 			}
-
 
 		frappe.db.sql("""
 			UPDATE `tabAdmission Year`
 			SET is_active = 0
-			WHERE is_active = 1
-			AND name != %s
+			WHERE is_active = 1 AND name != %s
 		""", (admission_year,))
 
 		year.db_set("is_active", 1)
 
 		return {
 			"status": "success",
-			"message": _("Admission Year {0} has been activated.")
-			.format(year.academic_year)
+			"message": _("Admission Year {0} has been activated.").format(year.academic_year)
 		}
 
 	except frappe.DoesNotExistError:
-		return {
-			"status": "Error",
-			"message": _("Admission Year not found.")
-		}
-
+		return {"status": "Error", "message": _("Admission Year not found.")}
 	except frappe.ValidationError as e:
-		return {
-			"status": "Error",
-			"message": str(e)
-		}
-
-	except Exception as e:
-		frappe.log_error(
-			title="Admission Year Activation Error",
-			message=frappe.get_traceback()
-		)
-		return {
-			"status": "Error",
-			"message": _("Something went wrong while activating the Admission Year.")
-		}
-
-
+		return {"status": "Error", "message": str(e)}
+	except Exception:
+		frappe.log_error(title="Admission Year Activation Error", message=frappe.get_traceback())
+		return {"status": "Error", "message": _("Something went wrong while activating the Admission Year.")}

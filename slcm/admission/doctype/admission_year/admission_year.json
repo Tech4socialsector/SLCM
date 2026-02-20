@@ -1,157 +1,289 @@
 {
- "actions": [],
- "creation": "2026-02-14 20:15:00",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "academic_year",
-  "application_start_date",
-  "application_end_date",
-  "column_break_fvmo",
-  "is_active",
-  "enable_scholarship",
-  "enable_interview",
-  "enable_reservation",
-  "allow_campus_enrollment",
-  "status",
-  "section_break_cycles",
-  "cycles",
-  "section_break_campuses",
-  "participating_campuses"
- ],
- "fields": [
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Year",
-   "options": "Academic Year",
-   "reqd": 1
-  },
-  {
-   "fieldname": "application_start_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Application Start Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "application_end_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Application End Date",
-   "reqd": 1
-  },
-  {
-   "default": "Draft",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Draft\nOpen\nClosed",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_scholarship",
-   "fieldtype": "Check",
-   "label": "Enable Scholarship",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_interview",
-   "fieldtype": "Check",
-   "label": "Enable Interview",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_reservation",
-   "fieldtype": "Check",
-   "label": "Enable Reservation",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_cycles",
-   "fieldtype": "Section Break",
-   "label": "Admission Cycles"
-  },
-  {
-   "fieldname": "cycles",
-   "fieldtype": "Table",
-   "label": "Cycles",
-   "options": "Admission Cycle"
-  },
-  {
-   "fieldname": "section_break_campuses",
-   "fieldtype": "Section Break",
-   "label": "Participating Campuses"
-  },
-  {
-   "fieldname": "participating_campuses",
-   "fieldtype": "Table",
-   "label": "Participating Campuses",
-   "options": "Participating Campus"
-  },
-  {
-   "fieldname": "column_break_fvmo",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "allow_campus_enrollment",
-   "fieldtype": "Check",
-   "label": "Allow Campus Enrollment",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "in_standard_filter": 1,
-   "label": "Is Active"
-  }
- ],
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2026-02-17 18:02:19.953612",
- "modified_by": "Administrator",
- "module": "Admission",
- "name": "Admission Year",
- "naming_rule": "By script",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Admission Officer",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+    "actions": [],
+    "creation": "2026-02-14 20:15:00",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "academic_year",
+        "admission_year_code",
+        "column_break_fvmo",
+        "is_active",
+        "multi_cycle",
+        "admission_cycle_type",
+        "status",
+        "allow_applications",
+        "is_locked",
+        "section_break_dates",
+        "start_date",
+        "end_date",
+        "column_break_dates2",
+        "counselling_start_date",
+        "counselling_end_date",
+        "section_break_exam",
+        "entrance_exam",
+        "governing_regulation",
+        "column_break_exam2",
+        "notification_reference",
+        "notification_date",
+        "section_break_legacy",
+        "application_start_date",
+        "application_end_date",
+        "section_break_stage_config",
+        "enable_entrance_test",
+        "enable_interview",
+        "enable_document_verification",
+        "column_break_stage2",
+        "enable_scholarship",
+        "enable_group_discussion",
+        "section_break_remarks",
+        "remarks",
+        "section_break_campuses",
+        "participating_campuses"
+    ],
+    "fields": [
+        {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Academic Year",
+            "options": "Academic Year",
+            "reqd": 1
+        },
+        {
+            "fieldname": "admission_year_code",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Admission Year Code",
+            "reqd": 1
+        },
+        {
+            "fieldname": "column_break_fvmo",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "0",
+            "fieldname": "is_active",
+            "fieldtype": "Check",
+            "in_standard_filter": 1,
+            "label": "Is Active"
+        },
+        {
+            "default": "0",
+            "fieldname": "multi_cycle",
+            "fieldtype": "Check",
+            "label": "Multi Cycle"
+        },
+        {
+            "default": "Regular",
+            "fieldname": "admission_cycle_type",
+            "fieldtype": "Select",
+            "label": "Admission Cycle Type",
+            "options": "Regular\nCycle-1\nCycle-2",
+            "reqd": 1
+        },
+        {
+            "default": "Draft",
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Status",
+            "options": "Draft\nActive\nClosed",
+            "reqd": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "allow_applications",
+            "fieldtype": "Check",
+            "label": "Allow Applications"
+        },
+        {
+            "default": "0",
+            "fieldname": "is_locked",
+            "fieldtype": "Check",
+            "label": "Is Locked"
+        },
+        {
+            "fieldname": "section_break_dates",
+            "fieldtype": "Section Break",
+            "label": "Admission Dates"
+        },
+        {
+            "fieldname": "start_date",
+            "fieldtype": "Date",
+            "label": "Admission Start Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "end_date",
+            "fieldtype": "Date",
+            "label": "Admission End Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "column_break_dates2",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "counselling_start_date",
+            "fieldtype": "Date",
+            "label": "Counselling Start Date"
+        },
+        {
+            "fieldname": "counselling_end_date",
+            "fieldtype": "Date",
+            "label": "Counselling End Date"
+        },
+        {
+            "fieldname": "section_break_exam",
+            "fieldtype": "Section Break",
+            "label": "Exam & Regulatory Details"
+        },
+        {
+            "fieldname": "entrance_exam",
+            "fieldtype": "Select",
+            "label": "Entrance Examination",
+            "options": "\nCLAT\nUniversity Test"
+        },
+        {
+            "fieldname": "governing_regulation",
+            "fieldtype": "Select",
+            "label": "Governing Regulation",
+            "options": "\nBCI\nUGC\nUniversity Statute"
+        },
+        {
+            "fieldname": "column_break_exam2",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "notification_reference",
+            "fieldtype": "Data",
+            "label": "Notification Reference"
+        },
+        {
+            "fieldname": "notification_date",
+            "fieldtype": "Date",
+            "label": "Notification Date"
+        },
+        {
+            "fieldname": "section_break_legacy",
+            "fieldtype": "Section Break",
+            "label": "Application Window (Legacy)"
+        },
+        {
+            "fieldname": "application_start_date",
+            "fieldtype": "Date",
+            "label": "Application Start Date"
+        },
+        {
+            "fieldname": "application_end_date",
+            "fieldtype": "Date",
+            "label": "Application End Date"
+        },
+        {
+            "fieldname": "section_break_stage_config",
+            "fieldtype": "Section Break",
+            "label": "Stage Configuration"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_entrance_test",
+            "fieldtype": "Check",
+            "label": "Enable Entrance / Written Test"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_interview",
+            "fieldtype": "Check",
+            "label": "Enable Interview"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_document_verification",
+            "fieldtype": "Check",
+            "label": "Enable Document Verification"
+        },
+        {
+            "fieldname": "column_break_stage2",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_scholarship",
+            "fieldtype": "Check",
+            "label": "Enable Scholarship"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_group_discussion",
+            "fieldtype": "Check",
+            "label": "Enable Group Discussion"
+        },
+        {
+            "fieldname": "section_break_remarks",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "remarks",
+            "fieldtype": "Small Text",
+            "label": "Remarks"
+        },
+        {
+            "fieldname": "section_break_campuses",
+            "fieldtype": "Section Break",
+            "label": "Participating Campuses"
+        },
+        {
+            "fieldname": "participating_campuses",
+            "fieldtype": "Table",
+            "label": "Participating Campuses",
+            "options": "Participating Campus"
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [
+        {
+            "group": "Admission Cycles",
+            "link_doctype": "Admission Cycle",
+            "link_fieldname": "admission_year"
+        }
+    ],
+    "modified": "2026-02-20 07:24:00.000000",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Admission Year",
+    "naming_rule": "By script",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Admission Officer",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
 }

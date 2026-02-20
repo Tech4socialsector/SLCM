@@ -271,14 +271,18 @@ scheduler_events = {
 		"*/10 * * * *": [  # Every 10 minutes
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs"
 		]
-	}
+	},
+	"daily": [
+		"slcm.admission.tasks.auto_lock_started_rounds"
+	]
 }
+
 doc_events = {
-    "Student Master": {
-        "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
-    },
-    "Applicant": {
-        "validate":      "slcm.admission.doctype.applicant.applicant.validate_applicant",
-        "before_submit": "slcm.admission.doctype.applicant.applicant.before_submit_applicant"
-    }
+	"Student Master": {
+		"before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
+	},
+	"Applicant": {
+		"validate": "slcm.admission.doctype.applicant.applicant.validate_applicant",
+		"before_submit": "slcm.admission.doctype.applicant.applicant.before_submit_applicant"
+	}
 }

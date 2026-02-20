@@ -50,6 +50,22 @@ frappe.ui.form.on("Campus", {
             );
 
         }
+    },
+
+    is_active: function (frm) {
+        // Spec requirement: show confirmation dialog when deactivating
+        if (frm.doc.is_active == 0 && !frm.is_new()) {
+            frappe.confirm(
+                __("Deactivating this campus will hide it from the applicant portal. Are you sure?"),
+                function () {
+                    // confirmed — proceed
+                },
+                function () {
+                    // cancelled — revert
+                    frm.set_value("is_active", 1);
+                }
+            );
+        }
     }
 
 });
