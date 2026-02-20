@@ -108,7 +108,7 @@ class MeritGeneration(Document):
                 "slcm.admission.doctype.merit_generation.merit_generation.run_generation",
                 docname=self.name,
                 now=frappe.flags.in_test,
-                queue="long",
+                queue="short",
                 enqueue_after_commit=True
             )
 

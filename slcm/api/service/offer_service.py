@@ -487,3 +487,6 @@ def accept_offer(offer_name):
 @frappe.whitelist()
 def reject_offer(offer_name, reason=None):
     return OfferService.reject_offer(offer_name, reason)
+
+def expire_offers():
+    return OfferService.expire_offers()
