@@ -13,17 +13,16 @@ class Applicant(Document):
     def validate(self):
         self.validate_eligibility()
 
-        # Always create/update evaluation record
+        # create_or_update_evaluation() is called INSIDE validate_eligibility()
+        # for BOTH eligible and ineligible outcomes, so it always runs even
+        # when frappe.throw() is raised for ineligible applicants.
+        # We still call it here as a safety net for the eligible path.
         self.create_or_update_evaluation()
 
-        # Block save if ineligible
-        if self.evaluation_status == "Ineligible":
-            frappe.throw(
-                _("Not Eligible: {0}").format(
-                    self.rejected_reason or "You are not eligible for the selected program."
-                ),
-                title=_("Not Eligible")
-            )
+        # NOTE: DO NOT add another frappe.throw() here.
+        # validate_eligibility() already throws with the full HTML message
+        # (ineligibility reason + program table) in one single call.
+        # A second throw here would override that rich message with a plain one.
 
     def before_submit(self):
         if self.evaluation_status == "Ineligible":
@@ -31,6 +30,30 @@ class Applicant(Document):
                 _("Submission Not Allowed: Applicant is not eligible."),
                 title=_("Submission Not Allowed")
             )
+
+    # ──────────────────────────────────────────────
+    # CHILD TABLE VALUE HELPERS
+    # ──────────────────────────────────────────────
+
+    def _get_ug_cgpa_values(self):
+        """Return a list of all UG CGPA values from the ug_degree_details child table."""
+        rows = getattr(self, "ug_degree_details", None) or []
+        return [flt(row.ug_cgpa) for row in rows if row.ug_cgpa not in (None, "")]
+
+    def _get_pg_cgpa_values(self):
+        """Return a list of all PG CGPA values from the pg_degree_details child table."""
+        rows = getattr(self, "pg_degree_details", None) or []
+        return [flt(row.pg_cgpa) for row in rows if row.pg_cgpa not in (None, "")]
+
+    def _get_ug_programs(self):
+        """Return a list of all UG programs from the ug_degree_details child table."""
+        rows = getattr(self, "ug_degree_details", None) or []
+        return [row.ug_program for row in rows if row.ug_program]
+
+    def _get_pg_programs(self):
+        """Return a list of all PG programs from the pg_degree_details child table."""
+        rows = getattr(self, "pg_degree_details", None) or []
+        return [row.pg_program for row in rows if row.pg_program]
 
     # ──────────────────────────────────────────────
     # CORE ELIGIBILITY LOGIC
@@ -43,23 +66,24 @@ class Applicant(Document):
         Flow:
         ─────
         STEP 0 — National Test Exemption check.
-            • If the applicant has a national test result (national_test_name + percentage)
-              and a matching active National Test Exemption Rule is found for the
-              applicant's program/campus/admission_cycle/academic_year:
+        STEP 1 — Academic Eligibility Rule Mapping checks.
 
-                - Evaluate applicant's percentage against mark_percentage + operator.
+        KEY BEHAVIOUR:
+        ─────────────
+        On ineligibility:
+          1. Sets self.evaluation_status = "Ineligible" and self.rejected_reason.
+          2. Calls create_or_update_evaluation() IMMEDIATELY — so the Ineligible
+             record is persisted to the Eligibility Evaluation doctype BEFORE the
+             throw. Without this, frappe.throw() exits the call stack and the
+             save in validate() never runs, meaning ineligible records are lost.
+          3. Raises a single frappe.throw() containing:
+               • Red reason box  (the specific failure message)
+               • Full program table  (all campus programs + full eligibility check)
 
-                - If PASSED and "Overrides Academic Rule" is checked:
-                    → Mark Eligible immediately. Skip all academic rule checks.
-                    → Store exemption flags (exempts_entrance_test, exempts_interview).
-
-                - If PASSED but "Overrides Academic Rule" is NOT checked:
-                    → Store exemption flags, then continue to academic rule checks.
-
-                - If FAILED (percentage not met):
-                    → Proceed to academic rule checks as normal (no bypass).
-
-        STEP 1 — Academic Eligibility Rule Mapping checks (unchanged).
+        On eligibility:
+          1. Sets self.evaluation_status = "Eligible".
+          2. Returns normally — create_or_update_evaluation() is then called by
+             validate() as usual.
         """
 
         if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
@@ -87,7 +111,7 @@ class Applicant(Document):
                 )
                 return
 
-            # National test passed but does NOT override → store flags, continue academic check
+            # National test passed but does NOT override → store flags, continue
             if national_test_result.get("passed"):
                 self._apply_national_test_flags(national_test_result)
             else:
@@ -109,14 +133,42 @@ class Applicant(Document):
                     self.evaluation_status = "Ineligible"
                     self.rejected_reason   = failure_message
 
-                    frappe.msgprint(
-                        _("Not Eligible: {0}").format(failure_message),
-                        title=_("Not Eligible"),
-                        indicator="red"
-                    )
-                    return
+                    # ── CRITICAL: Save the Ineligible record NOW, before throw ──
+                    # frappe.throw() raises ValidationError which unwinds the stack,
+                    # so create_or_update_evaluation() in validate() never executes
+                    # for ineligible applicants. We must save here explicitly.
+                    self.create_or_update_evaluation()
 
-            # Passed all mappings
+                    # ── Build combined HTML: reason box + program table ────────
+                    program_table_html = self._build_program_eligibility_html()
+
+                    full_message = """
+                        <div style="
+                            background:#fff0f0;
+                            border-left:4px solid #e74c3c;
+                            padding:10px 14px;
+                            border-radius:4px;
+                            margin-bottom:14px;
+                            font-size:13px;
+                        ">
+                            <b style="color:#c0392b;">&#10006;&nbsp;{reason}</b>
+                        </div>
+                        {table}
+                    """.format(
+                        reason=frappe.utils.escape_html(failure_message),
+                        table=program_table_html,
+                    )
+
+                    # ONE single frappe.throw() — contains reason + program table
+                    frappe.throw(
+                        full_message,
+                        title=_("Not Eligible — Program Options for {0}").format(
+                            self.campus or ""
+                        )
+                    )
+                    return  # never reached — throw exits — kept for clarity
+
+            # Passed all mappings → Eligible
             self.evaluation_status = "Eligible"
             self.rejected_reason   = ""
 
@@ -127,6 +179,226 @@ class Applicant(Document):
                 frappe.get_traceback(),
                 "Applicant Eligibility Validation Error"
             )
+
+    # ──────────────────────────────────────────────
+    # PROGRAM ELIGIBILITY TABLE (rendered inside throw)
+    # ──────────────────────────────────────────────
+
+    def _build_program_eligibility_html(self):
+        """
+        Returns styled HTML listing EVERY program on the applicant's
+        campus + admission cycle with a full eligibility check per program.
+
+        Layout:
+          • Summary bar: "✔ X program(s) you qualify for | ✘ Y you don't"
+          • Table: Program | Your Eligibility | Reason (if not eligible)
+
+        The currently selected program is bolded + badged "Selected".
+        """
+        all_programs = frappe.db.sql("""
+            SELECT DISTINCT erm.program
+            FROM `tabEligibility Rule Mapping` erm
+            WHERE erm.is_active       = 1
+              AND erm.campus          = %(campus)s
+              AND erm.admission_cycle = %(admission_cycle)s
+            ORDER BY erm.program ASC
+        """, {
+            "campus":          self.campus,
+            "admission_cycle": self.admission_cycle,
+        }, as_dict=True)
+
+        if not all_programs:
+            return (
+                "<p style='color:#888;font-size:12px;'>{0}</p>".format(
+                    _("No programs found for this campus and admission cycle.")
+                )
+            )
+
+        rows_html        = ""
+        eligible_count   = 0
+        ineligible_count = 0
+
+        for prog_row in all_programs:
+            prog_name = prog_row.get("program")
+            if not prog_name:
+                continue
+
+            is_prog_eligible, reason = self._check_eligibility_for_program(prog_name)
+
+            if is_prog_eligible:
+                eligible_count += 1
+                status_icon  = "&#10004;"
+                status_color = "#27ae60"
+                status_label = _("Eligible")
+                reason_text  = "&#8212;"
+                row_bg       = "#f2fff5"
+                reason_color = "#aaa"
+            else:
+                ineligible_count += 1
+                status_icon  = "&#10006;"
+                status_color = "#e74c3c"
+                status_label = _("Not Eligible")
+                reason_text  = frappe.utils.escape_html(reason or "")
+                row_bg       = "#fff8f8"
+                reason_color = "#c0392b"
+
+            # Bold + badge the currently selected program
+            is_selected = (prog_name == self.program)
+            if is_selected:
+                prog_display = (
+                    "<b>{name}</b>&nbsp;"
+                    "<span style='font-size:10px;background:#ddeeff;"
+                    "color:#2471a3;padding:1px 5px;border-radius:3px;"
+                    "font-weight:normal;border:1px solid #aad4f5;'>"
+                    "{label}</span>"
+                ).format(
+                    name  = frappe.utils.escape_html(prog_name),
+                    label = _("Selected"),
+                )
+                row_font_weight = "bold"
+            else:
+                prog_display    = frappe.utils.escape_html(prog_name)
+                row_font_weight = "normal"
+
+            rows_html += """
+                <tr style="background:{row_bg};font-weight:{fw};">
+                    <td style="padding:7px 10px;border:1px solid #e0e0e0;vertical-align:middle;">
+                        {prog}
+                    </td>
+                    <td style="padding:7px 10px;border:1px solid #e0e0e0;
+                               text-align:center;white-space:nowrap;
+                               color:{status_color};vertical-align:middle;">
+                        <b>{icon}&nbsp;{label}</b>
+                    </td>
+                    <td style="padding:7px 10px;border:1px solid #e0e0e0;
+                               font-size:12px;color:{reason_color};vertical-align:middle;">
+                        {reason}
+                    </td>
+                </tr>
+            """.format(
+                row_bg       = row_bg,
+                fw           = row_font_weight,
+                prog         = prog_display,
+                status_color = status_color,
+                icon         = status_icon,
+                label        = status_label,
+                reason_color = reason_color,
+                reason       = reason_text,
+            )
+
+        summary_bar = """
+            <div style="display:flex;gap:14px;margin-bottom:8px;font-size:13px;
+                        flex-wrap:wrap;align-items:center;">
+                <span style="color:#27ae60;font-weight:bold;">
+                    &#10004;&nbsp;{ec}&nbsp;{el}
+                </span>
+                <span style="color:#ccc;">&nbsp;|&nbsp;</span>
+                <span style="color:#e74c3c;font-weight:bold;">
+                    &#10006;&nbsp;{ic}&nbsp;{il}
+                </span>
+                <span style="color:#aaa;font-size:11px;">
+                    &nbsp;({total}&nbsp;{tl})
+                </span>
+            </div>
+        """.format(
+            ec    = eligible_count,
+            el    = _("program(s) you qualify for"),
+            ic    = ineligible_count,
+            il    = _("program(s) you do not qualify for"),
+            total = eligible_count + ineligible_count,
+            tl    = _("total"),
+        )
+
+        table_html = """
+            <div style="margin-top:4px;">
+                <p style="font-weight:bold;font-size:13px;margin:0 0 6px 0;color:#333;">
+                    {heading}
+                </p>
+                {summary}
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="background:#f0f0f0;">
+                                <th style="padding:7px 10px;border:1px solid #d0d0d0;
+                                           text-align:left;white-space:nowrap;">{col1}</th>
+                                <th style="padding:7px 10px;border:1px solid #d0d0d0;
+                                           text-align:center;white-space:nowrap;">{col2}</th>
+                                <th style="padding:7px 10px;border:1px solid #d0d0d0;
+                                           text-align:left;">{col3}</th>
+                            </tr>
+                        </thead>
+                        <tbody>{rows}</tbody>
+                    </table>
+                </div>
+            </div>
+        """.format(
+            heading = _("Available Programs &mdash; {campus} &nbsp;&middot;&nbsp; {cycle}").format(
+                          campus=frappe.utils.escape_html(self.campus or ""),
+                          cycle =frappe.utils.escape_html(self.admission_cycle or "")
+                      ),
+            summary = summary_bar,
+            col1    = _("Program"),
+            col2    = _("Your Eligibility"),
+            col3    = _("Reason (if not eligible)"),
+            rows    = rows_html,
+        )
+
+        return table_html
+
+    def _check_eligibility_for_program(self, program_name):
+        """
+        Runs the full eligibility engine for a given program using the current
+        applicant's scores, categories, campus, admission_cycle, and academic_year —
+        WITHOUT permanently modifying self.
+
+        Temporarily swaps self.program → runs check → restores original in finally.
+
+        Returns (is_eligible: bool, failure_message: str)
+        """
+        original_program = self.program
+        try:
+            self.program = program_name
+
+            # National test exemption for this program
+            national_test_result = self._evaluate_national_test_exemption()
+            if (national_test_result.get("passed")
+                    and national_test_result.get("overrides_academic_rule")):
+                return True, ""
+
+            # Rule mappings for this program
+            rule_mappings = frappe.db.sql("""
+                SELECT erm.name, erm.rule, erm.failure_message
+                FROM `tabEligibility Rule Mapping` erm
+                WHERE erm.is_active       = 1
+                  AND erm.campus          = %(campus)s
+                  AND erm.admission_cycle = %(admission_cycle)s
+                  AND erm.program         = %(program)s
+            """, {
+                "campus":          self.campus,
+                "admission_cycle": self.admission_cycle,
+                "program":         program_name,
+            }, as_dict=True)
+
+            if not rule_mappings:
+                return True, ""
+
+            for mapping in rule_mappings:
+                is_eligible, failure_message = self._evaluate_mapping_with_category_priority(mapping)
+                if not is_eligible:
+                    return False, failure_message
+
+            return True, ""
+
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                "Program Eligibility Check Error — {0}".format(program_name)
+            )
+            return False, _("Error during eligibility check")
+
+        finally:
+            # Always restore original — even if exception occurs
+            self.program = original_program
 
     # ──────────────────────────────────────────────
     # NATIONAL TEST EXEMPTION
@@ -144,11 +416,6 @@ class Applicant(Document):
             "exempts_interview":       bool,
             "rule_name":               str,
         }
-
-        Returns {"passed": False, ...} when:
-          - Applicant has no national_test_name
-          - No matching active rule found for program/campus/cycle/year/test/date
-          - Applicant's percentage does not satisfy the rule's threshold
         """
         empty = {
             "passed":                  False,
@@ -164,8 +431,6 @@ class Applicant(Document):
         if not national_test:
             return empty
 
-        # Find matching active National Test Exemption Rule.
-        # The rule must have the applicant's program in its Applicable Program child table.
         exemption_rules = frappe.db.sql("""
             SELECT
                 nter.name,
@@ -212,13 +477,11 @@ class Applicant(Document):
         }
 
     def _apply_national_test_flags(self, result):
-        """Store national test exemption flags on the doc (persisted via Eligibility Evaluation)."""
         self.exempts_entrance_test   = 1 if result.get("exempts_entrance_test")   else 0
         self.exempts_interview       = 1 if result.get("exempts_interview")        else 0
         self.national_test_rule_used = result.get("rule_name", "")
 
     def _clear_national_test_flags(self):
-        """Clear national test exemption flags when no exemption applies."""
         self.exempts_entrance_test   = 0
         self.exempts_interview       = 0
         self.national_test_rule_used = ""
@@ -228,10 +491,6 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def _get_rule_mappings_for_applicant(self):
-        """
-        Return all active Eligibility Rule Mappings for the
-        applicant's program + campus + admission_cycle.
-        """
         return frappe.db.sql("""
             SELECT erm.name, erm.rule, erm.failure_message
             FROM `tabEligibility Rule Mapping` erm
@@ -262,7 +521,6 @@ class Applicant(Document):
 
         Returns (is_eligible: bool, failure_message: str)
         """
-
         rule_name    = mapping.get("rule")
         mapping_name = mapping.get("name")
 
@@ -295,14 +553,12 @@ class Applicant(Document):
                 matched.sort(key=lambda r: (r.priority if r.priority is not None else 9999))
                 winning = matched[0]
 
-                applicant_value = self._get_applicant_value(base_rule)
-                required_min    = flt(winning.minimum_percentage)
-                operator        = (base_rule.get("operator") or ">=") if base_rule else ">="
+                required_min = flt(winning.minimum_percentage)
+                operator     = (base_rule.get("operator") or ">=") if base_rule else ">="
 
-                if not self._compare(applicant_value, required_min, operator):
+                if not self._compare_any_academic_value(base_rule, required_min, operator):
                     return False, failure_msg
 
-                # Non-percentage checks (HSC Group, Allowed Degree) still apply
                 if base_rule and not self._evaluate_non_percentage_checks(base_rule):
                     return False, failure_msg
 
@@ -332,10 +588,6 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def _get_base_rule(self, rule_name):
-        """
-        Fetch the active Eligibility Rule matching campus + academic_year + date range.
-        Returns the rule dict or None.
-        """
         if not rule_name:
             return None
 
@@ -363,20 +615,13 @@ class Applicant(Document):
     def _evaluate_non_percentage_checks(self, rule):
         """
         Run only the non-percentage checks from the base rule:
-          - Allowed Degree check
+          - Allowed Degree check  (any matching UG or PG program qualifies)
           - HSC Group check
-
-        Used in CASE A where the percentage threshold is already overridden
-        by the winning reservation category's minimum_percentage, but all
-        other conditions still apply.
-
-        Returns True if all checks pass, False otherwise.
         """
         rule_type           = rule.get("rule_type")
         qualification_level = rule.get("qualification_level")
         rule_name           = rule.get("name")
 
-        # ── Allowed Degree check ─────────────────────────────────────────────
         allowed_degrees = frappe.db.sql("""
             SELECT degree_name
             FROM `tabEligibility Allowed Degree`
@@ -386,15 +631,14 @@ class Applicant(Document):
         allowed_degree_list = [r.degree_name for r in allowed_degrees if r.degree_name]
 
         if allowed_degree_list:
-            applicant_degree = getattr(
-                self,
-                "pg_program" if qualification_level == "PG" else "ug_program",
-                None
-            )
-            if not applicant_degree or applicant_degree not in allowed_degree_list:
+            if qualification_level == "PG":
+                applicant_degrees = self._get_pg_programs()
+            else:
+                applicant_degrees = self._get_ug_programs()
+
+            if not any(deg in allowed_degree_list for deg in applicant_degrees):
                 return False
 
-        # ── HSC Group check ──────────────────────────────────────────────────
         if rule_type == "HSC Group":
             required = rule.get("hsc_group")
             actual   = getattr(self, "hsc_group", None)
@@ -417,7 +661,6 @@ class Applicant(Document):
         operator            = rule.get("operator") or ">="
         rule_name           = rule.get("name")
 
-        # ── Allowed Degree check ─────────────────────────────────────────────
         allowed_degrees = frappe.db.sql("""
             SELECT degree_name
             FROM `tabEligibility Allowed Degree`
@@ -426,28 +669,48 @@ class Applicant(Document):
 
         allowed_degree_list = [r.degree_name for r in allowed_degrees if r.degree_name]
 
-        if allowed_degree_list:
-            applicant_degree = getattr(
-                self,
-                "pg_program" if qualification_level == "PG" else "ug_program",
-                None
-            )
-            if not applicant_degree or applicant_degree not in allowed_degree_list:
-                return False
-
-        # ── HSC Group check ──────────────────────────────────────────────────
         if rule_type == "HSC Group":
             required = rule.get("hsc_group")
             actual   = getattr(self, "hsc_group", None)
             if not actual or actual != required:
                 return False
 
-        # ── Numeric check ────────────────────────────────────────────────────
-        if rule_type in ["HSC Group", "Percentage", "CGPA"]:
-            applicant_value = self.get_applicant_academic_value(qualification_level)
+        if qualification_level in ("UG", "PG"):
+            required_value = self.get_required_academic_value(rule)
+
+            if qualification_level == "UG":
+                child_rows = getattr(self, "ug_degree_details", None) or []
+            else:
+                child_rows = getattr(self, "pg_degree_details", None) or []
+
+            if not child_rows:
+                return False
+
+            for row in child_rows:
+                program_field = "ug_program" if qualification_level == "UG" else "pg_program"
+                cgpa_field    = "ug_cgpa"    if qualification_level == "UG" else "pg_cgpa"
+
+                row_program = getattr(row, program_field, None)
+                row_cgpa    = flt(getattr(row, cgpa_field, None) or 0)
+
+                if allowed_degree_list and row_program not in allowed_degree_list:
+                    continue
+
+                if rule_type in ("CGPA", "Percentage"):
+                    if required_value is None:
+                        continue
+                    if not self._compare(row_cgpa, required_value, operator):
+                        continue
+
+                return True
+
+            return False
+
+        if rule_type in ("HSC Group", "Percentage"):
+            applicant_value = flt(getattr(self, "hsc_percentage", None) or 0)
             required_value  = self.get_required_academic_value(rule)
 
-            if applicant_value is None or required_value is None:
+            if required_value is None:
                 return False
 
             return self._compare(applicant_value, required_value, operator)
@@ -455,13 +718,53 @@ class Applicant(Document):
         return True
 
     # ──────────────────────────────────────────────
+    # MULTI-DEGREE ACADEMIC VALUE CHECK (CASE A)
+    # ──────────────────────────────────────────────
+
+    def _compare_any_academic_value(self, rule, required_min, operator):
+        if not rule:
+            return self._compare(flt(getattr(self, "hsc_percentage", 0) or 0), required_min, operator)
+
+        qualification_level = rule.get("qualification_level")
+
+        if qualification_level == "XII":
+            value = flt(getattr(self, "hsc_percentage", None) or 0)
+            return self._compare(value, required_min, operator)
+
+        elif qualification_level == "UG":
+            values = self._get_ug_cgpa_values()
+            if not values:
+                return False
+            return any(self._compare(v, required_min, operator) for v in values)
+
+        elif qualification_level == "PG":
+            values = self._get_pg_cgpa_values()
+            if not values:
+                return False
+            return any(self._compare(v, required_min, operator) for v in values)
+
+        return False
+
+    # ──────────────────────────────────────────────
     # VALUE HELPERS
     # ──────────────────────────────────────────────
 
     def _get_applicant_value(self, rule):
         if not rule:
-            return flt(self.hsc_percentage or 0)
-        return self.get_applicant_academic_value(rule.get("qualification_level"))
+            return flt(getattr(self, "hsc_percentage", 0) or 0)
+
+        qualification_level = rule.get("qualification_level")
+
+        if qualification_level == "XII":
+            return flt(getattr(self, "hsc_percentage", None) or 0)
+        elif qualification_level == "UG":
+            values = self._get_ug_cgpa_values()
+            return max(values) if values else 0.0
+        elif qualification_level == "PG":
+            values = self._get_pg_cgpa_values()
+            return max(values) if values else 0.0
+
+        return 0.0
 
     def _get_required_value(self, rule):
         if not rule:
@@ -470,11 +773,13 @@ class Applicant(Document):
 
     def get_applicant_academic_value(self, qualification_level):
         if qualification_level == "XII":
-            return flt(self.hsc_percentage or 0)
+            return flt(getattr(self, "hsc_percentage", None) or 0)
         if qualification_level == "UG":
-            return flt(self.ug_cgpa or 0)
+            values = self._get_ug_cgpa_values()
+            return max(values) if values else None
         if qualification_level == "PG":
-            return flt(self.pg_cgpa or 0)
+            values = self._get_pg_cgpa_values()
+            return max(values) if values else None
         return None
 
     def get_required_academic_value(self, rule):
@@ -500,7 +805,6 @@ class Applicant(Document):
             pass
         return False
 
-    # Kept for backward compatibility
     def compare_values(self, actual, required, operator):
         return self._compare(actual, required, operator)
 
@@ -514,6 +818,17 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def create_or_update_evaluation(self):
+        """
+        Saves (insert or update) an Eligibility Evaluation record for this applicant.
+
+        Called in TWO places:
+          1. Inside validate_eligibility() immediately before frappe.throw() when
+             the applicant is INELIGIBLE — so the Ineligible record is persisted
+             even though the throw prevents validate() from completing normally.
+          2. At the end of validate() as a safety net for the ELIGIBLE path.
+
+        This ensures BOTH Eligible and Ineligible outcomes are always recorded.
+        """
         if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
             return
 
@@ -528,7 +843,6 @@ class Applicant(Document):
         current_status = getattr(self, "evaluation_status", None) or "Eligible"
         current_reason = getattr(self, "rejected_reason", None) or ""
 
-        # National test exemption flags (set by _apply_national_test_flags)
         exempts_entrance_test   = getattr(self, "exempts_entrance_test",   0)
         exempts_interview       = getattr(self, "exempts_interview",       0)
         national_test_rule_used = getattr(self, "national_test_rule_used", "")
@@ -542,11 +856,9 @@ class Applicant(Document):
             "campus":                  self.campus,
             "evaluation_status":       current_status,
             "failure_message":         current_reason,
-            # ── National test exemption data ─────────────────────────────────
             "exempts_entrance_test":   exempts_entrance_test,
             "exempts_interview":       exempts_interview,
             "national_test_rule_used": national_test_rule_used,
-            # ── Reservation categories ───────────────────────────────────────
             "reservation_category": [
                 {"category": row.category}
                 for row in (self.categories or [])
@@ -560,7 +872,6 @@ class Applicant(Document):
         doc = frappe.get_doc(doc_data)
         doc.save(ignore_permissions=True)
 
-        # Commit so record persists even if applicant save fails
         frappe.db.commit()
 
 

@@ -6,26 +6,18 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "quota",
+  "category",
   "percentage",
   "seats"
  ],
  "fields": [
-  {
-   "fieldname": "quota",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Quota",
-   "reqd": 1
-  },
   {
    "fieldname": "percentage",
    "fieldtype": "Percent",
    "in_list_view": 1,
    "label": "Percentage",
    "length": 2,
-   "precision": "2",
-   "reqd": 1
+   "precision": "2"
   },
   {
    "fieldname": "seats",
@@ -34,13 +26,21 @@
    "label": "Seats",
    "non_negative": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Category",
+   "options": "Admission Category",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-18 12:56:58.479121",
+ "modified": "2026-02-19 15:58:09.375266",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Reservation Quota",

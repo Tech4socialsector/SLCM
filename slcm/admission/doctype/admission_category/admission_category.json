@@ -1,5 +1,4 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:category_name",
@@ -7,6 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "admission_category_details_section",
   "campus",
   "category_name",
   "category_code",
@@ -40,12 +40,17 @@
    "fieldtype": "Link",
    "label": "Campus",
    "options": "Campus"
+  },
+  {
+   "fieldname": "admission_category_details_section",
+   "fieldtype": "Section Break",
+   "label": "Admission Category details "
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 15:32:10.015958",
+ "modified": "2026-02-20 14:37:56.487076",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Category",

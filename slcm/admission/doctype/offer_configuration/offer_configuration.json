@@ -1,0 +1,126 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-13 18:22:16.905855",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "admission_year",
+  "academic_year",
+  "admission_cycle",
+  "campus",
+  "pdf_format",
+  "email_template",
+  "column_break_sswl",
+  "validity_type",
+  "valid_days",
+  "offer_expiry_date",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "pdf_format",
+   "fieldtype": "Link",
+   "label": "PDF Format",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "column_break_sswl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Templates"
+  },
+  {
+   "description": "Set Offer letter validity type",
+   "fieldname": "validity_type",
+   "fieldtype": "Select",
+   "label": "Validity Type",
+   "options": "Days valid\nFixed due date"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is active"
+  },
+  {
+   "depends_on": "eval:doc.validity_type == \"Fixed due date\"",
+   "fieldname": "offer_expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Offer Expiry Date",
+   "mandatory_depends_on": "eval:doc.validity_type == \"Fixed due date\""
+  },
+  {
+   "depends_on": "eval:doc.validity_type == \"Days valid\"",
+   "description": "Expiry days from offer issued ( Ex : offer issued date + Valid Days = Expiry date ) ",
+   "fieldname": "valid_days",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Valid Days",
+   "mandatory_depends_on": "eval:doc.validity_type == \"Days valid\"",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "admission_year",
+   "fieldtype": "Link",
+   "label": "Admission Year",
+   "options": "Admission Year",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "admission_year.academic_year",
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-18 15:22:14.070993",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Offer Configuration",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

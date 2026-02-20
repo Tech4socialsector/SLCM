@@ -1,0 +1,91 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "OFS-.##",
+ "creation": "2026-02-16 16:09:49.977295",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "offer_id",
+  "base_fee",
+  "scholarship_amount",
+  "tax_amount",
+  "total_payable",
+  "frozen_on",
+  "frozen_by"
+ ],
+ "fields": [
+  {
+   "fieldname": "offer_id",
+   "fieldtype": "Link",
+   "label": "Offer ID",
+   "options": "Offer Letter",
+   "read_only": 1
+  },
+  {
+   "fieldname": "base_fee",
+   "fieldtype": "Currency",
+   "label": "Base Fee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scholarship_amount",
+   "fieldtype": "Currency",
+   "label": "Scholarship Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tax_amount",
+   "fieldtype": "Currency",
+   "label": "Tax Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_payable",
+   "fieldtype": "Currency",
+   "label": "Total Payable",
+   "read_only": 1
+  },
+  {
+   "fieldname": "frozen_on",
+   "fieldtype": "Datetime",
+   "label": "Frozen On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "frozen_by",
+   "fieldtype": "Link",
+   "label": "Frozen By",
+   "options": "User",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-17 17:08:54.462779",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Offer Fee Snapshot",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

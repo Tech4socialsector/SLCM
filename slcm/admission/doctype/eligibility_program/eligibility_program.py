@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class EligibilityMapping(Document):
+class EligibilityProgram(Document):
 	pass

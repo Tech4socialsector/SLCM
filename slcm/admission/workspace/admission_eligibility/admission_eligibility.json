@@ -1,0 +1,213 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"e9GKB8pHAE\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Admission Eligibility</span>\",\"col\":12}},{\"id\":\"NNzktATcgF\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Eligibility Rule \",\"col\":3}},{\"id\":\"WemFdUQZ0G\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Rule Mapping \",\"col\":3}},{\"id\":\"Z5RKNyZA6s\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"External Test Rule \",\"col\":3}},{\"id\":\"ksJX2FlnFj\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Evaluation Result \",\"col\":3}},{\"id\":\"rFMTp7oPYB\",\"type\":\"paragraph\",\"data\":{\"text\":\"&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Admission Eligibility Management\",\"col\":12}},{\"id\":\"CgVwOhG4u7\",\"type\":\"card\",\"data\":{\"card_name\":\"Eligibility Rules\",\"col\":3}},{\"id\":\"o7qpaKPuNX\",\"type\":\"card\",\"data\":{\"card_name\":\"Test & Exemption\",\"col\":3}},{\"id\":\"3QFgt395iC\",\"type\":\"card\",\"data\":{\"card_name\":\"Applicant Configuration\",\"col\":3}},{\"id\":\"3YOa40XXqh\",\"type\":\"card\",\"data\":{\"card_name\":\"Core Admission\",\"col\":3}}]",
+ "creation": "2026-02-20 00:32:06.132967",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "list",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Admission Eligibility",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Eligibility Rules",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Eligibility Rules",
+   "link_count": 0,
+   "link_to": "Eligibility Rule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Eligibility Rule Mapping",
+   "link_count": 0,
+   "link_to": "Eligibility Rule Mapping",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Eligibility Evaluation",
+   "link_count": 0,
+   "link_to": "Eligibility Evaluation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Test & Exemption",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "National Test",
+   "link_count": 0,
+   "link_to": "National Test",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "National Test Exemption Rule",
+   "link_count": 0,
+   "link_to": "National Test Exemption Rule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program",
+   "link_count": 0,
+   "link_to": "Program",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Applicant Configuration",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Applicant Category",
+   "link_count": 0,
+   "link_to": "Applicant Category",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campus",
+   "link_count": 0,
+   "link_to": "Campus",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Academic Year ",
+   "link_count": 0,
+   "link_to": "Academic Year",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Core Admission",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Applicant",
+   "link_count": 0,
+   "link_to": "Applicant",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program",
+   "link_count": 0,
+   "link_to": "Program",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subject",
+   "link_count": 0,
+   "link_to": "Subject",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "HSC Groups",
+   "link_count": 0,
+   "link_to": "HSC Groups",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-20 09:52:00.309956",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission Eligibility",
+ "number_cards": [
+  {
+   "label": "Eligibility Rule ",
+   "number_card_name": "Eligibility Rule"
+  },
+  {
+   "label": "Rule Mapping ",
+   "number_card_name": "Eligibility Rule Mapping"
+  },
+  {
+   "label": "External Test Rule ",
+   "number_card_name": "External Test"
+  },
+  {
+   "label": "Evaluation Result ",
+   "number_card_name": "Evaluation Result"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 1.0,
+ "shortcuts": [],
+ "title": "Admission Eligibility"
+}
