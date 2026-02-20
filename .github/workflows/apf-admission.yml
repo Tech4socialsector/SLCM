@@ -1,0 +1,23 @@
+name: BoscoSoft APF-Admission Deploy
+
+on:
+  push:
+    branches:
+      - bsoft-admission
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+
+      - name: Execute Enterprise Deployment
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            /home/deploy/deploy_slcm.sh
+          EOF
