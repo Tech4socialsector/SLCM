@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <style>
         /* Modern Reset and Base Styles */
@@ -8,14 +9,14 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', 'Helvetica Neue', 'Arial', sans-serif;
             background: #f4f7fa;
             margin: 0;
             padding: 20px;
         }
-        
+
         .offer-letter-container {
             max-width: 900px;
             margin: 0 auto;
@@ -24,7 +25,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
-        
+
         /* Header Section */
         .header {
             background: linear-gradient(135deg, #002244 0%, #003366 100%);
@@ -33,38 +34,38 @@
             text-align: center;
             border-bottom: 4px solid #ffaa00;
         }
-        
+
         .header h1 {
             font-size: 32px;
             font-weight: 600;
             letter-spacing: 1px;
             margin: 0 0 10px 0;
             text-transform: uppercase;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
-        
+
         .header-subtitle {
             font-size: 16px;
             opacity: 0.9;
             font-weight: 300;
         }
-        
+
         .university-badge {
             display: inline-block;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             padding: 8px 20px;
             border-radius: 50px;
             margin-bottom: 20px;
             font-size: 14px;
             font-weight: 500;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         /* Content Sections */
         .content-section {
             padding: 40px 50px;
         }
-        
+
         /* Info Grid */
         .info-grid {
             display: grid;
@@ -76,12 +77,12 @@
             border-radius: 10px;
             border: 1px solid #e1e8f0;
         }
-        
+
         .info-item {
             display: flex;
             flex-direction: column;
         }
-        
+
         .info-label {
             font-size: 12px;
             text-transform: uppercase;
@@ -90,20 +91,20 @@
             font-weight: 600;
             margin-bottom: 4px;
         }
-        
+
         .info-value {
             font-size: 16px;
             font-weight: 500;
             color: #1e2b3a;
             line-height: 1.4;
         }
-        
+
         .info-value.highlight {
             color: #003366;
             font-weight: 600;
             font-size: 18px;
         }
-        
+
         /* Greeting */
         .greeting {
             font-size: 20px;
@@ -113,7 +114,7 @@
             padding-bottom: 15px;
             border-bottom: 2px dashed #e1e8f0;
         }
-        
+
         .greeting span {
             color: #003366;
             background: #e6f0ff;
@@ -121,19 +122,19 @@
             border-radius: 30px;
             font-size: 18px;
         }
-        
+
         /* Content Text */
         .content-text {
             color: #34495e;
             line-height: 1.8;
             margin-bottom: 30px;
         }
-        
+
         .content-text p {
             margin-bottom: 20px;
             font-size: 15px;
         }
-        
+
         .highlight-box {
             background: linear-gradient(135deg, #f6f9fc 0%, #edf2f7 100%);
             border-left: 4px solid #ffaa00;
@@ -142,12 +143,12 @@
             margin: 25px 0;
             font-style: italic;
         }
-        
+
         /* Fee Table */
         .fee-section {
             margin: 35px 0;
         }
-        
+
         .fee-section h3 {
             color: #1e2b3a;
             font-size: 18px;
@@ -156,7 +157,7 @@
             display: flex;
             align-items: center;
         }
-        
+
         .fee-section h3:after {
             content: '';
             flex: 1;
@@ -164,7 +165,7 @@
             background: linear-gradient(90deg, #ffaa00 0%, transparent 100%);
             margin-left: 20px;
         }
-        
+
         .fee-table {
             width: 100%;
             border-collapse: separate;
@@ -174,7 +175,7 @@
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
-        
+
         .fee-table th {
             background: #f0f4fa;
             color: #1e2b3a;
@@ -186,28 +187,28 @@
             text-align: left;
             border-bottom: 2px solid #003366;
         }
-        
+
         .fee-table td {
             padding: 15px 20px;
             border-bottom: 1px solid #eef2f7;
             color: #34495e;
         }
-        
+
         .fee-table tr:last-child td {
             border-bottom: none;
         }
-        
+
         .fee-table tfoot tr {
             background: #f8faff;
         }
-        
+
         .fee-table tfoot td {
             font-weight: 700;
             color: #1e2b3a;
             border-top: 2px solid #003366;
             font-size: 16px;
         }
-        
+
         /* Deadline Box */
         .deadline-box {
             background: linear-gradient(135deg, #fff9e6 0%, #fff2d6 100%);
@@ -220,7 +221,7 @@
             gap: 20px;
             box-shadow: 0 4px 10px rgba(255, 170, 0, 0.1);
         }
-        
+
         .deadline-icon {
             background: #ffaa00;
             width: 50px;
@@ -234,11 +235,11 @@
             font-weight: bold;
             flex-shrink: 0;
         }
-        
+
         .deadline-content {
             flex: 1;
         }
-        
+
         .deadline-label {
             font-size: 12px;
             text-transform: uppercase;
@@ -247,37 +248,37 @@
             letter-spacing: 0.5px;
             margin-bottom: 5px;
         }
-        
+
         .deadline-date {
             font-size: 20px;
             font-weight: 700;
             color: #002244;
         }
-        
+
         .deadline-warning {
             font-size: 14px;
             color: #b37400;
             margin-top: 5px;
         }
-        
+
         /* Signature Section */
         .signature-section {
             margin-top: 50px;
             padding-top: 30px;
             border-top: 1px solid #e1e8f0;
         }
-        
+
         .signature-grid {
             display: flex;
             gap: 30px;
             justify-content: space-between;
         }
-        
+
         .signature-item {
             flex: 1;
             text-align: center;
         }
-        
+
         .signature-line {
             border-bottom: 2px solid #1e2b3a;
             margin-bottom: 12px;
@@ -286,26 +287,26 @@
             margin-left: auto;
             margin-right: auto;
         }
-        
+
         .signature-title {
             font-size: 14px;
             color: #5f6b7a;
             font-weight: 500;
             margin-bottom: 4px;
         }
-        
+
         .signature-name {
             font-weight: 600;
             color: #1e2b3a;
             font-size: 16px;
         }
-        
+
         .signature-date {
             font-size: 12px;
             color: #8a9bb5;
             margin-top: 8px;
         }
-        
+
         /* Footer */
         .footer {
             background: #f0f4fa;
@@ -313,28 +314,28 @@
             text-align: center;
             border-top: 1px solid #dde3ed;
         }
-        
+
         .footer p {
             color: #5f6b7a;
             font-size: 12px;
             line-height: 1.8;
             margin: 0;
         }
-        
+
         .footer-links {
             margin-top: 10px;
             display: flex;
             justify-content: center;
             gap: 20px;
         }
-        
+
         .footer-links a {
             color: #003366;
             text-decoration: none;
             font-size: 12px;
             font-weight: 500;
         }
-        
+
         /* Badge */
         .badge {
             display: inline-block;
@@ -346,13 +347,14 @@
             font-weight: 600;
             letter-spacing: 0.5px;
         }
-        
+
         /* Responsive */
         @media print {
             body {
                 background: white;
                 padding: 0;
             }
+
             .offer-letter-container {
                 box-shadow: none;
                 border-radius: 0;
@@ -360,12 +362,13 @@
         }
     </style>
 </head>
+
 <body>
     {% set applicant = frappe.get_doc("Applicant", doc.applicant) %}
     {% set campus = frappe.get_doc("Campus", doc.campus) %}
     {% set program = frappe.get_doc("Program", doc.program) %}
     {% set admission_cycle = frappe.get_doc("Admission Cycle", doc.admission_cycle) %}
-    
+
     <div class="offer-letter-container">
         <div class="header">
             <div class="university-badge">
@@ -406,20 +409,91 @@
             <!-- Main Content -->
             <div class="content-text">
                 <p>
-                    <strong>Congratulations!</strong> We are delighted to inform you that you have been provisionally selected for admission to the 
-                    <strong>{{ program.program_name }}</strong> program at our <strong>{{ campus.campus_name }}</strong> campus for the 
+                    <strong>Congratulations!</strong> We are delighted to inform you that you have been provisionally
+                    selected for admission to the
+                    <strong>{{ program.program_name }}</strong> program at our <strong>{{ campus.campus_name }}</strong>
+                    campus for the
                     <strong>{{ admission_cycle.cycle_name }}</strong> academic cycle.
                 </p>
-                
+
                 <div class="highlight-box">
-                    Your selection is based on your exceptional academic performance and our comprehensive evaluation process. 
-                    We believe your background and potential align perfectly with the values and standards of our institution.
+                    Your selection is based on your exceptional academic performance and our comprehensive evaluation
+                    process.
+                    We believe your background and potential align perfectly with the values and standards of our
+                    institution.
                 </div>
             </div>
 
             <!-- Fee Section -->
+            <!-- Fee Section -->
             <div class="fee-section">
                 <h3>Fee Structure - First Term</h3>
+                {# Try to get Snapshot first as it contains frozen values #}
+                {% set snapshot = frappe.get_all("Offer Fee Snapshot", filters={"offer_id": doc.name},
+                order_by="creation desc", limit=1) %}
+
+                {% if snapshot %}
+                {% set snapshot_doc = frappe.get_doc("Offer Fee Snapshot", snapshot[0].name) %}
+                <table class="fee-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for component in snapshot_doc.fee_component %}
+                        <tr>
+                            <td>{{ component.component_name or (frappe.get_value("Fee Component",
+                                component.fee_component, "component_name") if component.fee_component else _("Unknown Component")) }}</td>
+                            <td style="text-align: right;">{{ frappe.format(component.total_amount or component.amount
+                                or 0, "Currency") }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td><strong>Total Payable</strong></td>
+                            <td style="text-align: right;"><strong>{{ frappe.format(snapshot_doc.total_payable or 0,
+                                    "Currency") }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                {% elif doc.fee_structure %}
+                {% set fee_structure = frappe.get_doc("Fee Structure", doc.fee_structure) %}
+                <table class="fee-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for component in fee_structure.components %}
+                        <tr>
+                            <td>{{ component.component_name or (frappe.get_value("Fee Component",
+                                component.fee_component, "component_name") if component.fee_component else _("Unknown Component")) }}</td>
+                            <td style="text-align: right;">
+                                {% set row_amount = component.total_amount or component.amount %}
+                                {% if not row_amount and component.fee_component %}
+                                {# Last resort: fetch directly from Fee Component #}
+                                {% set row_amount = frappe.db.get_value("Fee Component", component.fee_component,
+                                "amount") %}
+                                {% endif %}
+                                {{ frappe.format(row_amount or 0, "Currency") }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td><strong>Total Payable</strong></td>
+                            <td style="text-align: right;"><strong>{{ frappe.format(fee_structure.total_amount or
+                                    doc.payable_amount or 0, "Currency") }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                {% else %}
                 <table class="fee-table">
                     <thead>
                         <tr>
@@ -430,25 +504,21 @@
                     <tbody>
                         <tr>
                             <td>Program Fee (Base)</td>
-                            <td style="text-align: right;"><strong>{{ frappe.format(doc.payable_amount or 0, "Currency") }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Registration Fee</td>
-                            <td style="text-align: right;">Included in Program Fee</td>
-                        </tr>
-                        <tr>
-                            <td>Student Services Fee</td>
-                            <td style="text-align: right;">Included in Program Fee</td>
+                            <td style="text-align: right;"><strong>{{ frappe.format(doc.payable_amount or 0, "Currency")
+                                    }}</strong></td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
                             <td><strong>Total Payable</strong></td>
-                            <td style="text-align: right;"><strong>{{ frappe.format(doc.payable_amount or 0, "Currency") }}</strong></td>
+                            <td style="text-align: right;"><strong>{{ frappe.format(doc.payable_amount or 0, "Currency")
+                                    }}</strong></td>
                         </tr>
                     </tfoot>
                 </table>
+                {% endif %}
             </div>
+
 
             <!-- Deadline -->
             <div class="deadline-box">
@@ -458,7 +528,8 @@
                 <div class="deadline-content">
                     <div class="deadline-label">Offer Validity Deadline</div>
                     <div class="deadline-date">
-                        {{ frappe.utils.formatdate(doc.payment_deadline, "dd MMMM, yyyy") }} at {{ frappe.utils.format_time(doc.payment_deadline, "hh:mm a") }}
+                        {{ frappe.utils.formatdate(doc.payment_deadline, "dd MMMM, yyyy") }} at {{
+                        frappe.utils.format_time(doc.payment_deadline, "hh:mm a") }}
                     </div>
                     <div class="deadline-warning">
                         This offer will automatically expire if not accepted and paid by the above deadline.
@@ -472,14 +543,18 @@
                     <strong>Next Steps:</strong>
                 </p>
                 <ul style="margin-left: 20px; margin-bottom: 20px; color: #34495e;">
-                    <li style="margin-bottom: 10px;">Log in to your student portal at <strong>portal.university.edu</strong></li>
+                    <li style="margin-bottom: 10px;">Log in to your student portal at
+                        <strong>portal.university.edu</strong>
+                    </li>
                     <li style="margin-bottom: 10px;">Navigate to "Accept Offer" section and confirm your acceptance</li>
-                    <li style="margin-bottom: 10px;">Complete the admission fee payment as per the fee structure above</li>
-                    <li style="margin-bottom: 10px;">Upload required documents for verification within 7 days of acceptance</li>
+                    <li style="margin-bottom: 10px;">Complete the admission fee payment as per the fee structure above
+                    </li>
+                    <li style="margin-bottom: 10px;">Upload required documents for verification within 7 days of
+                        acceptance</li>
                 </ul>
                 <p>
-                    We are excited about the possibility of you joining our academic community and look forward to 
-                    welcoming you to campus. Should you have any questions, please don't hesitate to contact our 
+                    We are excited about the possibility of you joining our academic community and look forward to
+                    welcoming you to campus. Should you have any questions, please don't hesitate to contact our
                     admissions office at <strong>admissions@university.edu</strong>.
                 </p>
             </div>
@@ -515,7 +590,8 @@
                 <a href="#">Contact Us</a>
             </div>
             <p style="margin-top: 15px;">
-                © {% set current_year = frappe.utils.nowdate().split('-')[0] %}{{ current_year }} SLCM System. All Rights Reserved.
+                © {% set current_year = frappe.utils.nowdate().split('-')[0] %}{{ current_year }} SLCM System. All
+                Rights Reserved.
             </p>
             <div class="badge" style="margin-top: 10px;">
                 Document ID: {{ doc.name }} | Version 2.0
@@ -523,4 +599,5 @@
         </div>
     </div>
 </body>
+
 </html>
