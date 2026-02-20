@@ -50,6 +50,10 @@ frappe.ui.form.on("Admission Year", {
     is_active: async function (frm) {
         if (!frm.doc.is_active) return;
 
+        if (!frm.doc.academic_year) {
+            await set_default_academic_year(frm);
+        }
+
         const confirmed = await new Promise((resolve) => {
             frappe.confirm(
                 "Do you want to make this Admission Year Active?",
