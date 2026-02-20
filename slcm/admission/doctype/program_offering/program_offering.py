@@ -1,6 +1,39 @@
+import json
 import frappe
 from frappe import _
 from frappe.model.document import Document
+
+
+@frappe.whitelist()
+def create_merit_rule(program_offering, admission_cycle, programme_level,
+					  rule_name, version, effective_from, effective_to, is_active, components):
+	"""Create a Merit Rule and link it to the Program Offering."""
+	if isinstance(components, str):
+		components = json.loads(components)
+
+	doc = frappe.new_doc("Merit Rule")
+	doc.rule_name = rule_name
+	doc.admission_cycle = admission_cycle
+	doc.program_level = programme_level
+	doc.version = int(version or 1)
+	doc.effective_from = effective_from
+	doc.effective_to = effective_to or None
+	doc.is_active = int(is_active or 0)
+	doc.approval_authority = "Admissions Committee"
+
+	for comp in components:
+		doc.append("components", {
+			"component_type": comp.get("component_type"),
+			"weight": float(comp.get("weight") or 0),
+			"is_active": int(comp.get("is_active") or 1)
+		})
+
+	doc.insert(ignore_permissions=True)
+
+	# Link back to the program offering
+	frappe.db.set_value("Program Offering", program_offering, "merit_rule", doc.name)
+
+	return doc.name
 
 
 class ProgramOffering(Document):

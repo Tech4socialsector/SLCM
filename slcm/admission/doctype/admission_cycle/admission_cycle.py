@@ -8,15 +8,15 @@ STAGE_CONFIG_FIELDS = [
 	"enable_entrance_test",
 	"enable_interview",
 	"enable_document_verification",
+	"enable_merit_list",
 	"enable_scholarship",
-	"enable_group_discussion",
 ]
 
 AUDITED_FIELDS = [
 	"start_date", "end_date", "status", "is_active",
 	"enable_entrance_test", "enable_interview",
-	"enable_document_verification", "enable_scholarship",
-	"enable_group_discussion",
+	"enable_document_verification", "enable_merit_list",
+	"enable_scholarship",
 ]
 
 
@@ -244,7 +244,7 @@ class AdmissionCycle(Document):
 
 			if field in STAGE_CONFIG_FIELDS:
 				change_type = "Stage Config Change"
-				reason = self.lock_override_reason if (self.stage_locked and is_sys_admin) else ""
+				reason = getattr(self, 'lock_override_reason', '') if (self.stage_locked and is_sys_admin) else ""
 			elif field in ("start_date", "end_date"):
 				change_type = "Deadline Change"
 				reason = ""
@@ -267,7 +267,8 @@ class AdmissionCycle(Document):
 			log.insert(ignore_permissions=True)
 
 		# Lock override audit entry
-		if self.stage_locked and is_sys_admin and changed_config and self.lock_override_reason:
+		lock_override_reason = getattr(self, 'lock_override_reason', '')
+		if self.stage_locked and is_sys_admin and changed_config and lock_override_reason:
 			log = frappe.new_doc("Admission Cycle Audit Log")
 			log.admission_cycle = self.name
 			log.changed_field = "lock_override"
@@ -276,7 +277,7 @@ class AdmissionCycle(Document):
 			log.changed_by = frappe.session.user
 			log.change_timestamp = now_datetime()
 			log.change_type = "Lock Override"
-			log.reason = self.lock_override_reason
+			log.reason = lock_override_reason
 			log.insert(ignore_permissions=True)
 
 	def on_submit(self):
