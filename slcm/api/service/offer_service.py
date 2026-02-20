@@ -121,11 +121,26 @@ class OfferService:
         offer.offer_status = "Draft"
         offer.issued_on = now_datetime()
         
-        # Set validity/deadline
-        offer.payment_deadline = OfferService._calculate_deadline(config)
+        # Find matching Fee Structure from Configuration
+        fee_structure_name = None
+        for row in config.fee_structure:
+            fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
+            if fs_program == program:
+                fee_structure_name = row.fee_structure
+                break
         
-        # Freeze Fees
-        fee_data = OfferService._calculate_and_freeze_fees(applicant, program, campus, resolved_cycle)
+        if not fee_structure_name:
+            throw(_("No Fee Structure found for program {0} in Offer Configuration {1}").format(
+                frappe.bold(program), frappe.bold(config.name)
+            ))
+
+        offer.fee_structure = fee_structure_name
+        
+        # Set validity/deadline from Fee Structure
+        offer.payment_deadline = OfferService._calculate_deadline(fee_structure_name)
+        
+        # Freeze Fees from Fee Structure
+        fee_data = OfferService._calculate_and_freeze_fees(fee_structure_name)
         offer.payable_amount = fee_data.get("total_payable")
         
         # Snapshot Content
@@ -297,33 +312,84 @@ class OfferService:
     # --- Internal Utilities ---
 
     @staticmethod
-    def _calculate_deadline(config):
-        """Determines payment deadline based on configuration."""
-        if config.validity_type == "Days valid":
-            return add_days(now_datetime(), config.valid_days or 0)
-        elif config.validity_type == "Fixed due date":
-            return get_datetime(config.offer_expiry_date)
-        return None
+    def _calculate_deadline(fee_structure_name):
+        """Determines payment deadline based on Fee Structure."""
+        if not fee_structure_name:
+            return None
+            
+        valid_until = frappe.db.get_value("Fee Structure", fee_structure_name, "valid_until")
+        # Ensure it's returned as a datetime/date object for the field
+        return get_datetime(valid_until) if valid_until else None
 
     @staticmethod
-    def _calculate_and_freeze_fees(applicant, program, campus, cycle):
+    def extended_fee_deadline(fee_structure_name):
+        """Updates payment deadline for all active Offer Letters linked to this Fee Structure."""
+        if not fee_structure_name:
+            return
+            
+        valid_until = frappe.db.get_value("Fee Structure", fee_structure_name, "valid_until")
+        if not valid_until:
+            return
+
+        new_deadline = get_datetime(valid_until)
+        
+        # Find all active offers linked to this Fee Structure
+        offers = frappe.get_all("Offer Letter", filters={
+            "fee_structure": fee_structure_name,
+            "offer_status": ["in", ["Draft", "Issued"]]
+        }, fields=["name"])
+        
+        for entry in offers:
+            doc = frappe.get_doc("Offer Letter", entry.name)
+            if doc.payment_deadline != new_deadline:
+                doc.payment_deadline = new_deadline
+                doc.ignore_lock = True
+                doc.edit_reason = _("Bulk extension due to Fee Structure ({0}) update.").format(fee_structure_name)
+                doc.add_comment("Comment", _("Payment deadline automatically syncronized to {0} due to Fee Structure update.").format(
+                    frappe.utils.format_datetime(new_deadline)
+                ))
+                doc.save(ignore_permissions=True)
+
+    
+    @staticmethod
+    def _calculate_and_freeze_fees(fee_structure_name):
         """
         Financial Logic: Calculates fees and returns a structured dict.
-        Place for actual fee calculation logic integrations.
+        Fetches data from the linked Fee Structure and its components.
         """
-        # Placeholder integration with Fee Engine
-        # In production, this would look up Fee Structure for the Program/Cycle
-        # For demonstration, we assume standard calculation.
+        if not fee_structure_name:
+            return {}
+
+        fs_doc = frappe.get_doc("Fee Structure", fee_structure_name)
         
-        # Example lookup:
-        # fee_doc = frappe.get_doc("Fee Schedule", {"program": program, ...})
-        
+        base_fee = 0
+        tax_amount = 0
+        breakdown = {}
+        components = []
+        for component in fs_doc.components:
+            base_fee += component.amount
+            tax_amount += component.tax_amount
+            # Use component name or the link name if name not set
+            label = component.component_name or component.fee_component 
+            breakdown[label] = component.total_amount
+            
+            components.append({
+                "fee_component": component.fee_component,
+                "component_name": component.component_name,
+                "amount": component.amount,
+                "is_taxable": component.is_taxable,
+                "tax_rate": component.tax_rate,
+                "tax_amount": component.tax_amount,
+                "total_amount": component.total_amount
+            })
+
         return {
-            "base_fee": 100000, 
-            "scholarship_amount": 10000,
-            "tax_amount": 16200,
-            "total_payable": 106200,
-            "breakdown": {"Base": 100000, "Tax": 16200, "Scholarship": -10000}
+            "base_fee": base_fee, 
+            "scholarship_amount": 0, # Could be extended later if scholarships are handled
+            "tax_amount": tax_amount,
+            "total_payable": fs_doc.total_amount,
+            "breakdown": breakdown,
+            "components": components
         }
 
     @staticmethod
@@ -370,17 +436,19 @@ class OfferService:
 
     @staticmethod
     def _create_snapshot_record(offer_name, fee_data):
-        """Creates the Offer Fee Snapshot record."""
+        """Creates the Offer Fee Snapshot record with full component breakdown."""
         snapshot = frappe.new_doc("Offer Fee Snapshot")
         snapshot.offer_id = offer_name
-        snapshot.base_fee = fee_data.get("base_fee")
         snapshot.scholarship_amount = fee_data.get("scholarship_amount")
-        snapshot.tax_amount = fee_data.get("tax_amount")
         snapshot.total_payable = fee_data.get("total_payable")
         snapshot.frozen_on = now_datetime()
         snapshot.frozen_by = frappe.session.user
-        # Note: If breakdown_json field exists:
-        # snapshot.breakdown_json = json.dumps(fee_data.get("breakdown"))
+        
+        # Populate components child table
+        if fee_data.get("components"):
+            for comp in fee_data.get("components"):
+                snapshot.append("fee_component", comp)
+                
         snapshot.insert(ignore_permissions=True)
 
     @staticmethod
@@ -468,6 +536,11 @@ class OfferService:
         log.insert(ignore_permissions=True)
 
 
+
+@frappe.whitelist()
+def extended_fee_deadline():
+	return OfferService.extended_fee_deadline()
+
 @frappe.whitelist(allow_guest=True)
 def generate_offer(applicant, campus, program, cycle, admission_year=None):
     return OfferService.generate_offer(applicant, campus, program, cycle, admission_year)
@@ -487,3 +560,7 @@ def accept_offer(offer_name):
 @frappe.whitelist()
 def reject_offer(offer_name, reason=None):
     return OfferService.reject_offer(offer_name, reason)
+
+@frappe.whitelist()
+def expire_offers():
+    return OfferService.expire_offers()

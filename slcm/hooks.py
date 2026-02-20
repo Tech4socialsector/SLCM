@@ -273,7 +273,7 @@ scheduler_events = {
 		]
 	},
 	"daily": [
-		"slcm.api.service.offer_service.OfferService.expire_offers"
+		"slcm.api.service.offer_service.expire_offers"
 	]
 }
 

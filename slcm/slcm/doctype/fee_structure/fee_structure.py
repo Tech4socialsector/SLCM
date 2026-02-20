@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-
+from slcm.api.service.offer_service import OfferService
 
 class FeeStructure(Document):
 	def validate(self):
@@ -19,5 +19,18 @@ class FeeStructure(Document):
 	def calculate_total(self):
 		total = 0
 		for component in self.components:
-			total += component.amount or 0
+			# Calculate row level totals if missing or for consistency
+			amount = component.amount or 0
+			tax_rate = component.tax_rate or 0
+			
+			component.tax_amount = (amount * tax_rate) / 100
+			component.total_amount = amount + component.tax_amount
+			
+			total += component.total_amount
 		self.total_amount = total
+
+	def on_update(self):
+		if self.has_value_changed("valid_until") and self.valid_until:
+			OfferService.extended_fee_deadline(self.name)
+			frappe.msgprint(_("Fee Structure Valid Until date & Extended Fee Deadline for offer letter updated successfully."), 
+				indicator="green")

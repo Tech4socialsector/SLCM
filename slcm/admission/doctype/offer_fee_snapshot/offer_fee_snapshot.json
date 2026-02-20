@@ -1,4 +1,5 @@
 {
+ "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "autoname": "OFS-.##",
@@ -7,12 +8,11 @@
  "engine": "InnoDB",
  "field_order": [
   "offer_id",
-  "base_fee",
   "scholarship_amount",
-  "tax_amount",
   "total_payable",
   "frozen_on",
-  "frozen_by"
+  "frozen_by",
+  "fee_component"
  ],
  "fields": [
   {
@@ -23,21 +23,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "base_fee",
-   "fieldtype": "Currency",
-   "label": "Base Fee",
-   "read_only": 1
-  },
-  {
    "fieldname": "scholarship_amount",
    "fieldtype": "Currency",
    "label": "Scholarship Amount",
-   "read_only": 1
-  },
-  {
-   "fieldname": "tax_amount",
-   "fieldtype": "Currency",
-   "label": "Tax Amount",
    "read_only": 1
   },
   {
@@ -58,12 +46,18 @@
    "label": "Frozen By",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "fieldname": "fee_component",
+   "fieldtype": "Table",
+   "label": "Fee Component",
+   "options": "Fee Component Child"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 17:08:54.462779",
+ "modified": "2026-02-20 10:49:53.446051",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Fee Snapshot",

@@ -1,0 +1,45 @@
+import frappe
+from frappe import _
+
+@frappe.whitelist()
+def get_offer_list():
+    """
+    Fetches offer letters. 
+    If admin, fetches all. If applicant, fetches only theirs.
+    """
+    user = frappe.session.user
+    if user == "Guest":
+        return {"error": "Authentication required"}
+
+    roles = frappe.get_roles(user)
+    is_admin = "Administrator" in roles or "System Manager" in roles
+    
+    filters = {}
+    applicant_name = "System View"
+    
+    if not is_admin:
+        # User is an applicant, filter by their record
+        applicant = frappe.db.get_value("Applicant", {"email": user}, "name")
+        if not applicant:
+            if frappe.db.exists("Applicant", user):
+                applicant = user
+            else:
+                return {"error": "Applicant record not found"}
+        
+        filters["applicant"] = applicant
+        applicant_name = frappe.db.get_value("Applicant", applicant, "candidate_name") or applicant
+    
+    # Fetch offers
+    fields = [
+        "name", "program", "issued_on", "offer_status", 
+        "payment_deadline", "payable_amount", "campus", "applicant"
+    ]
+    
+    offers = frappe.get_all("Offer Letter", filters=filters, fields=fields, order_by="creation desc")
+
+    return {
+        "offers": offers,
+        "applicant_name": applicant_name,
+        "is_admin": is_admin,
+        "currency": frappe.defaults.get_global_default("currency") or "INR"
+    }
