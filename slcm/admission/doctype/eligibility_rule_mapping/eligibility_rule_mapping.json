@@ -1,6 +1,9 @@
 {
+ "_comments": "[]",
+ "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
+ "autoname": "prompt",
  "creation": "2026-02-15 12:04:23.155000",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -66,10 +69,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 09:53:21.470370",
+ "modified": "2026-02-20 01:10:58.446960",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",
+ "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {
