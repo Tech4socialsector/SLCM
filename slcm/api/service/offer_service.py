@@ -630,6 +630,11 @@ class OfferService:
 def extended_fee_deadline():
     return OfferService.extended_fee_deadline()
 
+
+@frappe.whitelist()
+def extended_fee_deadline():
+	return OfferService.extended_fee_deadline()
+
 @frappe.whitelist(allow_guest=True)
 def generate_offer(applicant, campus, program, cycle, admission_year=None):
     return OfferService.generate_offer(applicant, campus, program, cycle, admission_year)

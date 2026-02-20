@@ -48,8 +48,6 @@ class ApplicantOfferLetter {
 
 		if (offer.offer_status === 'Issued') {
 			this.page.set_primary_action(__('Accept Admission Offer'), () => me.handle_accept(), 'octicon octicon-check');
-		} else if (offer.offer_status === 'Accepted') {
-			this.page.set_primary_action(__('Pay Fee'), () => me.handle_pay_fee(), 'octicon octicon-credit-card');
 		} else {
 			this.page.clear_primary_action();
 		}
@@ -67,11 +65,7 @@ class ApplicantOfferLetter {
 									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_accept()">
 										<i class="fa fa-check mr-2"></i> ${__('Accept Admission Offer')}
 									</button>
-									` : offer.offer_status === 'Accepted' ? `
-									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
-										<i class="fa fa-credit-card mr-2"></i> ${__('Pay Fee')}
-									</button>
-                                    ` : ''}
+									` : ''}
 									<button class="btn btn-outline-primary btn-block font-weight-bold" onclick="cur_page.handle_download()">
 										<i class="fa fa-cloud-download mr-2"></i> ${__('Download Letter (PDF)')}
 									</button>
