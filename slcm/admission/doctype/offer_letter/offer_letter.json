@@ -7,6 +7,7 @@
  "field_order": [
   "offer_details_section",
   "applicant",
+  "academic_year",
   "admission_year",
   "admission_cycle",
   "campus",
@@ -140,6 +141,14 @@
    "fieldtype": "Small Text",
    "hidden": 1,
    "label": "Edit Reason",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "applicant.academic_year",
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
    "read_only": 1
   },
   {

@@ -48,6 +48,8 @@ class ApplicantOfferLetter {
 
 		if (offer.offer_status === 'Issued') {
 			this.page.set_primary_action(__('Accept Admission Offer'), () => me.handle_accept(), 'octicon octicon-check');
+		} else if (offer.offer_status === 'Accepted') {
+			this.page.set_primary_action(__('Pay Fee'), () => me.handle_pay_fee(), 'octicon octicon-credit-card');
 		} else {
 			this.page.clear_primary_action();
 		}
@@ -65,7 +67,11 @@ class ApplicantOfferLetter {
 									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_accept()">
 										<i class="fa fa-check mr-2"></i> ${__('Accept Admission Offer')}
 									</button>
-									` : ''}
+									` : offer.offer_status === 'Accepted' ? `
+									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
+										<i class="fa fa-credit-card mr-2"></i> ${__('Pay Fee')}
+									</button>
+                                    ` : ''}
 									<button class="btn btn-outline-primary btn-block font-weight-bold" onclick="cur_page.handle_download()">
 										<i class="fa fa-cloud-download mr-2"></i> ${__('Download Letter (PDF)')}
 									</button>
@@ -265,7 +271,7 @@ class ApplicantOfferLetter {
 	handle_accept() {
 		let me = this;
 		frappe.confirm(
-			__('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions.'),
+			__('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions and your other offer letters will be rejected.'),
 			() => {
 				frappe.dom.freeze(__('Processing Acceptance...'));
 				frappe.call({
@@ -281,10 +287,103 @@ class ApplicantOfferLetter {
 								indicator: 'green'
 							});
 							me.fetch_data();
+							frappe.call({
+								method: 'slcm.api.service.offer_service.reject_applicant_other_offer',
+								args: {
+									applicant: me.data.offer.applicant,
+									reason: 'Applicant accepted another offer ' + me.data.offer.name
+								},
+								callback: function (r) {
+									if (r.message) {
+										frappe.show_alert({
+											message: __('Your other offer letters have been rejected.'),
+											indicator: 'green'
+										});
+										me.fetch_data();
+									}
+								}
+							});
 						}
 					}
 				});
 			}
 		);
+	}
+
+	handle_pay_fee() {
+		let me = this;
+		const { offer, fee_breakdown, currency } = this.data;
+
+		let d = new frappe.ui.Dialog({
+			title: __('Fee Payment Confirmation'),
+			fields: [
+				{
+					fieldname: 'fee_html',
+					fieldtype: 'HTML'
+				},
+				{
+					label: __('Payment Mode'),
+					fieldname: 'payment_mode',
+					fieldtype: 'Select',
+					options: ['Cash', 'Bank Transfer', 'Online Payment', 'Cheque'],
+					default: 'Cash',
+					reqd: 1
+				},
+				{
+					label: __('Reference Number'),
+					fieldname: 'reference_number',
+					fieldtype: 'Data',
+					description: __('Transaction ID, Check Number, etc.')
+				}
+			],
+			primary_action_label: __('Confirm & Pay'),
+			primary_action(values) {
+				d.hide();
+				frappe.dom.freeze(__('Processing Payment...'));
+				frappe.call({
+					method: 'slcm.api.service.offer_service.process_fee_payment',
+					args: {
+						offer_name: offer.name,
+						payment_mode: values.payment_mode,
+						reference_number: values.reference_number
+					},
+					callback: function (r) {
+						frappe.dom.unfreeze();
+						if (r.message && r.message.success) {
+							frappe.show_alert({
+								message: __('Fee payment processed successfully!'),
+								indicator: 'green'
+							});
+							me.fetch_data();
+						}
+					}
+				});
+			}
+		});
+
+		let fee_html = `
+			<div class="fee-receipt-preview mb-4 p-3 border rounded bg-light">
+				<h6 class="text-muted text-uppercase small font-weight-bold mb-3">${__('Payment Summary')}</h6>
+				<table class="table table-sm mb-0">
+					<tbody>
+						${fee_breakdown.map(f => `
+							<tr>
+								<td>${f.component}</td>
+								<td class="text-right font-weight-bold">${format_currency(f.amount, currency)}</td>
+							</tr>
+						`).join('')}
+					</tbody>
+					<tfoot>
+						<tr class="table-info">
+							<th class="border-top-0">${__('Total Amount To Pay')}</th>
+							<th class="text-right border-top-0 h5 mb-0">${format_currency(offer.payable_amount, currency)}</th>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+		`;
+
+		d.fields_dict.fee_html.$wrapper.html(fee_html);
+		d.show();
 	}
 }

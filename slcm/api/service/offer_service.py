@@ -196,6 +196,62 @@ class OfferService:
         return True
 
     @staticmethod
+    def reject_applicant_other_offer(applicant , reason):
+        if not applicant:
+            throw(_("Applicant is required"))
+        applicant_other_offers = frappe.get_all("Offer Letter", filters={
+            "applicant": applicant,
+            "offer_status": ["not in", ["Rejected", "Expired", "Withdrawn", "Accepted"]],
+            "name": ["!=", frappe.flags.current_offer or ""]
+        }, fields=["name"])
+        for offer in applicant_other_offers:
+            OfferService.reject_offer(offer.name, reason)
+        return True
+
+    @staticmethod
+    def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None):
+        """
+        Processes the fee payment for an accepted offer.
+        Creates Student Master, Student Enrollment, Fee Invoice and Fee Payment.
+        """
+        # 1. Find the Applicant Fee Assignment
+        assignment_name = frappe.db.get_value("Applicant Fee Assignment", 
+            {"offer_letter": offer_name, "status": ["!=", "Cancelled"]}, "name")
+        
+        if not assignment_name:
+            offer_doc = frappe.get_doc("Offer Letter", offer_name)
+            if offer_doc.offer_status != "Accepted":
+                throw(_("Offer must be 'Accepted' before paying fees."))
+            assignment_name = OfferService.create_fee_assignment_from_offer(offer_doc)
+        
+        if not assignment_name:
+            throw(_("Fee Assignment not found for offer {0}").format(offer_name))
+
+        # 2. Create Invoice (handles Student Master and Enrollment creation)
+        from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import create_invoice, create_payment
+        invoice_name = create_invoice(assignment_name)
+
+        # 3. Create Payment
+        assignment = frappe.get_doc("Applicant Fee Assignment", assignment_name)
+        payment_name = create_payment(
+            docname=assignment_name,
+            amount=assignment.total_amount,
+            payment_mode=payment_mode,
+            reference_number=reference_number
+        )
+
+        # 4. Update Assignment status to 'Paid' explicitly if create_payment didn't
+        assignment.db_set("status", "Paid")
+
+        OfferService.log_action(offer_name, "Fee Paid", _("Fee paid via Payment {0}").format(payment_name))
+        
+        return {
+            "success": True,
+            "invoice": invoice_name,
+            "payment": payment_name
+        }
+    
+    @staticmethod
     def reject_offer(offer_name, reason=None):
         """
         Handles student/admin rejection of an offer.
@@ -552,7 +608,7 @@ class OfferService:
         assignment.applicant = offer.applicant
         assignment.offer_letter = offer.name
         assignment.program = offer.program
-        assignment.academic_year = offer.admission_year # Admission Year is mapped to academic_year field in assignment
+        assignment.academic_year = offer.academic_year or frappe.db.get_value("Applicant", offer.applicant, "academic_year")
         assignment.assignment_date = frappe.utils.today()
         
         for row in snapshot.fee_component:
@@ -572,7 +628,7 @@ class OfferService:
 
 @frappe.whitelist()
 def extended_fee_deadline():
-	return OfferService.extended_fee_deadline()
+    return OfferService.extended_fee_deadline()
 
 @frappe.whitelist(allow_guest=True)
 def generate_offer(applicant, campus, program, cycle, admission_year=None):
@@ -588,7 +644,17 @@ def bulk_update_status(offer_names, action, notes=None):
 
 @frappe.whitelist()
 def accept_offer(offer_name):
+    # Set a flag so reject_applicant_other_offer knows which offer was just accepted
+    frappe.flags.current_offer = offer_name
     return OfferService.accept_offer(offer_name)
+
+@frappe.whitelist()
+def reject_applicant_other_offer(applicant, reason):
+    return OfferService.reject_applicant_other_offer(applicant, reason)
+
+@frappe.whitelist()
+def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None):
+    return OfferService.process_fee_payment(offer_name, payment_mode, reference_number)
 
 @frappe.whitelist()
 def reject_offer(offer_name, reason=None):

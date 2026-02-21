@@ -1,4 +1,5 @@
 {
+ "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "autoname": "format:APP-{YYYY}-{#####}",
@@ -177,21 +178,18 @@
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth",
-   "reqd": 1
+   "label": "Date of Birth"
   },
   {
    "fieldname": "gender",
    "fieldtype": "Select",
    "label": "Gender",
-   "options": "\nMale\nFemale\nOthers",
-   "reqd": 1
+   "options": "\nMale\nFemale\nOthers"
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile Number",
-   "reqd": 1
+   "label": "Mobile Number"
   },
   {
    "fieldname": "alternate_contact",
@@ -207,15 +205,13 @@
    "fieldname": "nationality",
    "fieldtype": "Link",
    "label": "Nationality",
-   "options": "Country",
-   "reqd": 1
+   "options": "Country"
   },
   {
    "description": "Max 1MB - Supported formats png, jpeg, jpg",
    "fieldname": "id_proof",
    "fieldtype": "Attach Image",
-   "label": "ID Proof",
-   "reqd": 1
+   "label": "ID Proof"
   },
   {
    "fieldname": "parent_and_guardian_details",
@@ -225,14 +221,12 @@
   {
    "fieldname": "father_name",
    "fieldtype": "Data",
-   "label": "Father Name",
-   "reqd": 1
+   "label": "Father Name"
   },
   {
    "fieldname": "father_mobile",
    "fieldtype": "Phone",
-   "label": "Father Mobile",
-   "reqd": 1
+   "label": "Father Mobile"
   },
   {
    "fieldname": "father_email",
@@ -243,20 +237,17 @@
   {
    "fieldname": "father_occupation",
    "fieldtype": "Data",
-   "label": "Father Occupation",
-   "reqd": 1
+   "label": "Father Occupation"
   },
   {
    "fieldname": "mother_name",
    "fieldtype": "Data",
-   "label": "Mother Name",
-   "reqd": 1
+   "label": "Mother Name"
   },
   {
    "fieldname": "mother_mobile",
    "fieldtype": "Phone",
-   "label": "Mother Mobile",
-   "reqd": 1
+   "label": "Mother Mobile"
   },
   {
    "fieldname": "mother_email",
@@ -267,8 +258,7 @@
   {
    "fieldname": "mother_occupation",
    "fieldtype": "Data",
-   "label": "Mother Occupation",
-   "reqd": 1
+   "label": "Mother Occupation"
   },
   {
    "default": "0",
@@ -299,27 +289,23 @@
   {
    "fieldname": "correspondence_address",
    "fieldtype": "Small Text",
-   "label": "Address",
-   "reqd": 1
+   "label": "Address"
   },
   {
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City",
-   "reqd": 1
+   "label": "City"
   },
   {
    "fieldname": "state",
    "fieldtype": "Data",
-   "label": "State",
-   "reqd": 1
+   "label": "State"
   },
   {
    "fieldname": "pincode",
    "fieldtype": "Int",
    "label": "Pincode",
-   "non_negative": 1,
-   "reqd": 1
+   "non_negative": 1
   },
   {
    "fieldname": "academic_qualification_tab",
@@ -329,28 +315,24 @@
   {
    "fieldname": "class_x_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of Completion (Class X)",
-   "reqd": 1
+   "label": "Year of Completion (Class X)"
   },
   {
    "fieldname": "class_x_school",
    "fieldtype": "Data",
-   "label": "School/College/University (Class X)",
-   "reqd": 1
+   "label": "School/College/University (Class X)"
   },
   {
    "fieldname": "class_x_board",
    "fieldtype": "Data",
-   "label": "Board (Class X)",
-   "reqd": 1
+   "label": "Board (Class X)"
   },
   {
    "fieldname": "class_x_percentage",
    "fieldtype": "Float",
    "label": "Percentage/CGPA obtained (Class X)",
    "non_negative": 1,
-   "precision": "2",
-   "reqd": 1
+   "precision": "2"
   },
   {
    "fieldname": "class_x_cgpa",
@@ -362,40 +344,34 @@
    "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_x_marksheet",
    "fieldtype": "Attach",
-   "label": "Class X Marksheet to be uploaded",
-   "reqd": 1
+   "label": "Class X Marksheet to be uploaded"
   },
   {
    "fieldname": "class_xii_name_of_examination",
    "fieldtype": "Data",
-   "label": "Name of Examination (Class XII/Equivalent - as per marksheet)",
-   "reqd": 1
+   "label": "Name of Examination (Class XII/Equivalent - as per marksheet)"
   },
   {
    "fieldname": "class_xii_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of Completion (Class XII/Equivalent)",
-   "reqd": 1
+   "label": "Year of Completion (Class XII/Equivalent)"
   },
   {
    "fieldname": "class_xii_school",
    "fieldtype": "Data",
-   "label": "School/College/University (Class XII/Equivalent)",
-   "reqd": 1
+   "label": "School/College/University (Class XII/Equivalent)"
   },
   {
    "fieldname": "class_xii_board",
    "fieldtype": "Data",
-   "label": "Board (Class XII/Equivalent)",
-   "reqd": 1
+   "label": "Board (Class XII/Equivalent)"
   },
   {
    "fieldname": "class_xii_percentage",
    "fieldtype": "Float",
    "label": "Percentage/CGPA obtained (Class XII/Equivalent)",
    "non_negative": 1,
-   "precision": "2",
-   "reqd": 1
+   "precision": "2"
   },
   {
    "fieldname": "class_xii_cgpa",
@@ -407,8 +383,7 @@
    "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
-   "label": "Class XII Marksheet/Equivalent documents to be uploaded",
-   "reqd": 1
+   "label": "Class XII Marksheet/Equivalent documents to be uploaded"
   },
   {
    "fieldname": "employment_history_tab",
@@ -419,8 +394,7 @@
    "fieldname": "post_degree_work_experience",
    "fieldtype": "Select",
    "label": "Do you have any Post-Degree work experince?",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "options": "\nYes\nNo"
   },
   {
    "depends_on": "eval:doc.post_degree_work_experience === \"Yes\"",
@@ -462,8 +436,7 @@
    "fieldname": "pwd",
    "fieldtype": "Select",
    "label": "Whether Person with Disability (PWD)",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "options": "\nYes\nNo"
   },
   {
    "depends_on": "eval:doc.pwd === \"Yes\"",
@@ -493,8 +466,7 @@
    "fieldname": "karnataka_category",
    "fieldtype": "Select",
    "label": "Whether Karnataka category",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "options": "\nYes\nNo"
   },
   {
    "default": "0",
@@ -569,8 +541,7 @@
   {
    "fieldname": "first_preference",
    "fieldtype": "Data",
-   "label": "First Preference",
-   "reqd": 1
+   "label": "First Preference"
   },
   {
    "fieldname": "second_preference",
@@ -598,8 +569,7 @@
    "fieldname": "cv",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages",
-   "reqd": 1
+   "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages"
   },
   {
    "default": "0",
@@ -723,8 +693,7 @@
    "fieldtype": "Select",
    "label": "Whether SC/ST/OBC-NCL",
    "options": "\nNA\nOBS-NCL\nSC\nST",
-   "placeholder": "Select Category",
-   "reqd": 1
+   "placeholder": "Select Category"
   },
   {
    "fieldname": "column_break_qnun",
@@ -803,8 +772,7 @@
    "fieldname": "ug_degree_details",
    "fieldtype": "Table",
    "label": "Degree",
-   "options": "UG Degree Detail",
-   "reqd": 1
+   "options": "UG Degree Detail"
   },
   {
    "fieldname": "annual_house_hold_income",
@@ -845,7 +813,7 @@
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 09:58:57.460673",
+ "modified": "2026-02-21 13:28:35.013837",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

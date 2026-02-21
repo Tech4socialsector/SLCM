@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"gN_T3QkX3G\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"ajquph5hTR\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">                                         Offer Letter Management</span>\",\"col\":4}},{\"id\":\"Y6WyK9Y6i1\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"5el_1Nncva\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"D4KKeWhGuv\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Offer Letters\",\"col\":4}},{\"id\":\"hbwSsgQtRS\",\"type\":\"paragraph\",\"data\":{\"text\":\"Master Doctypes\",\"col\":12}},{\"id\":\"j70sH-0Hyo\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Letter Master\",\"col\":3}},{\"id\":\"b0Ixk7azW3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Configuration\",\"col\":3}},{\"id\":\"-75DphSJHR\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Email Templates\",\"col\":3}},{\"id\":\"qxqUNy_n0E\",\"type\":\"paragraph\",\"data\":{\"text\":\"Audit Logs\",\"col\":12}},{\"id\":\"kpI-JT1Ho9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Action Log\",\"col\":3}},{\"id\":\"0f5WulpmiD\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Fee Snapshot\",\"col\":3}}]",
+ "content": "[{\"id\":\"gN_T3QkX3G\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"ajquph5hTR\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">                                         Offer Letter Management</span>\",\"col\":4}},{\"id\":\"Y6WyK9Y6i1\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"5el_1Nncva\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"D4KKeWhGuv\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Offer Letters\",\"col\":4}},{\"id\":\"hbwSsgQtRS\",\"type\":\"paragraph\",\"data\":{\"text\":\"Master Doctypes\",\"col\":12}},{\"id\":\"j70sH-0Hyo\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Letter Master\",\"col\":3}},{\"id\":\"b0Ixk7azW3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Configuration\",\"col\":3}},{\"id\":\"-75DphSJHR\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Email Templates\",\"col\":3}},{\"id\":\"qxqUNy_n0E\",\"type\":\"paragraph\",\"data\":{\"text\":\"Audit Logs\",\"col\":12}},{\"id\":\"BrHqQDhMwi\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Letter List\",\"col\":3}},{\"id\":\"kpI-JT1Ho9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Action Log\",\"col\":3}},{\"id\":\"0f5WulpmiD\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Fee Snapshot\",\"col\":3}}]",
  "creation": "2026-02-17 21:18:13.186540",
  "custom_blocks": [],
  "docstatus": 0,
@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "Offer Letters",
  "links": [],
- "modified": "2026-02-17 22:11:31.194420",
+ "modified": "2026-02-21 13:37:01.769848",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",
@@ -30,6 +30,9 @@
  "roles": [
   {
    "role": "System Manager"
+  },
+  {
+   "role": "Applicant"
   }
  ],
  "sequence_id": 3.0,
@@ -41,6 +44,13 @@
    "link_to": "Email Templates",
    "stats_filter": "[]",
    "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Offer Letter List",
+   "link_to": "offer-letter-list",
+   "type": "Page"
   },
   {
    "color": "Green",
