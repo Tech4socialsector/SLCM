@@ -2,7 +2,7 @@ import frappe
 from frappe.utils import now_datetime, getdate
 
 
-def _get_total_program_seats(campus: str, admission_cycle: str, program: str) -> int:
+def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict:
     admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "parent")
     if not admission_year:
         frappe.throw(f"No Admission Year found for cycle {admission_cycle}")
@@ -24,17 +24,28 @@ def _get_total_program_seats(campus: str, admission_cycle: str, program: str) ->
     quotas = frappe.get_all(
         "Reservation Quota",
         filters={"parent": rule_name},
-        fields=["seats"],
+        fields=["category", "seats"],
     )
 
-    total = 0
-    for q in quotas:
-        try:
-            total += int(q.seats or 0)
-        except Exception:
-            total += 0
+    def get_category_id(cat_name):
+        return frappe.db.sql("""
+            SELECT name FROM `tabAdmission Category`
+            WHERE name = %s OR category_code = %s OR category_name = %s
+            LIMIT 1
+        """, (cat_name, cat_name, cat_name), pluck=True)
 
-    return int(total)
+    gen_cat_name = get_category_id("GEN")
+    if not gen_cat_name:
+        gen_cat_name = get_category_id("General")
+
+    result = {"GEN": 0, "Reserved": {}}
+    for q in quotas:
+        if gen_cat_name and q.category == gen_cat_name[0]:
+            result["GEN"] = int(q.seats or 0)
+        else:
+            result["Reserved"][q.category] = int(q.seats or 0)
+    
+    return result
 
 
 def _get_latest_seat_allocation(admission_cycle: str, campus: str):
@@ -62,43 +73,6 @@ def _lock_seat_allocation(seat_allocation_name: str) -> None:
     )
 
 
-def _resolve_applicant_from_admission_result(admission_result_name: str):
-    # Seat Selection Applicant currently links to Admission Result.
-    # Offer Letter links to Applicant. Try best-effort mapping.
-    if frappe.db.exists("Applicant", admission_result_name):
-        return admission_result_name
-
-    ar = frappe.db.get_value(
-        "Admission Result",
-        admission_result_name,
-        ["applicant_name"],
-        as_dict=True,
-    )
-    if ar and ar.get("applicant_name") and frappe.db.exists("Applicant", ar.get("applicant_name")):
-        return ar.get("applicant_name")
-
-    return None
-
-
-def _create_offer_letter_if_possible(admission_result_name: str, rule_doc) -> None:
-    applicant = _resolve_applicant_from_admission_result(admission_result_name)
-    if not applicant:
-        return
-
-    exists = frappe.db.exists(
-        "Offer Letter",
-        {"applicant": applicant, "admission_cycle": rule_doc.admission_cycle, "program": rule_doc.program},
-    )
-    if exists:
-        return
-
-    offer = frappe.new_doc("Offer Letter")
-    offer.applicant = applicant
-    offer.admission_cycle = rule_doc.admission_cycle
-    offer.campus = rule_doc.campus
-    offer.program = rule_doc.program
-    offer.offer_status = "Draft"
-    offer.insert(ignore_permissions=True)
 
 
 def process_waitlist(rule_doc):
@@ -120,43 +94,83 @@ def process_waitlist(rule_doc):
 
     _lock_seat_allocation(seat_alloc.name)
 
-    total_seats = _get_total_program_seats(rule_doc.campus, rule_doc.admission_cycle, rule_doc.program)
+    # Campus-wide rule: Get all programs in this allocation
+    programs_to_process = list(set([r.program for r in seat_alloc.selection_applicant if r.program]))
 
-    selected_rows = [
-        r
-        for r in seat_alloc.selection_applicant
-        if r.program == rule_doc.program and r.selection_status == "Selected"
-    ]
-    allocated = len(selected_rows)
-    available = int(total_seats) - int(allocated)
+    any_promoted = False
+    for program in programs_to_process:
+        if _process_single_program_waitlist(seat_alloc, program, rule_doc):
+            any_promoted = True
 
-    if available <= 0:
-        return
-
-    waitlisted = [
-        r
-        for r in seat_alloc.selection_applicant
-        if r.program == rule_doc.program and r.selection_status == "Waitlisted"
-    ]
-
-    # Highest merit first
-    waitlisted.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-
-    promoted = 0
-    for row in waitlisted[:available]:
-        row.selection_status = "Selected"
-        promoted += 1
-        _create_offer_letter_if_possible(row.applicant, rule_doc)
-
-    if promoted:
-        seat_alloc.total_selected = int(seat_alloc.total_selected or 0) + promoted
-        seat_alloc.total_waitlisted = max(0, int(seat_alloc.total_waitlisted or 0) - promoted)
+    if any_promoted:
         seat_alloc.save(ignore_permissions=True)
 
     rule_doc.db_set("last_executed_on", now_datetime(), update_modified=False)
     rule_doc.db_set("execution_log_count", int(rule_doc.execution_log_count or 0) + 1, update_modified=False)
 
     frappe.db.commit()
+
+
+def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool:
+    """
+    Core promotion logic for a single program within a seat allocation.
+    Returns True if any promotion occurred.
+    """
+    quotas = _get_program_quotas(rule_doc.campus, rule_doc.admission_cycle, program)
+    
+    selected_rows = [
+        r for r in seat_alloc.selection_applicant
+        if r.program == program and r.selection_status == "Selected"
+    ]
+    
+    waitlisted_rows = [
+        r for r in seat_alloc.selection_applicant
+        if r.program == program and r.selection_status == "Waitlisted"
+    ]
+
+    if not waitlisted_rows:
+        return False
+
+    promoted_total = 0
+
+    # 1. Promote for OPEN seats
+    open_selected = [r for r in selected_rows if r.allocation_type == "Open"]
+    open_vacancies = max(0, quotas["GEN"] - len(open_selected))
+    
+    if open_vacancies > 0:
+        open_waitlist = [r for r in waitlisted_rows if r.allocation_type == "Open"]
+        open_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+        
+        for row in open_waitlist[:open_vacancies]:
+            row.selection_status = "Selected"
+            promoted_total += 1
+
+    # 2. Promote for RESERVED seats
+    for cat_name, cat_quota in quotas["Reserved"].items():
+        # Handle matching by name/code/cat_name for categories
+        cat_doc = frappe.get_cached_value("Admission Category", cat_name, ["name", "category_code", "category_name"], as_dict=1)
+        match_strings = [cat_name]
+        if cat_doc:
+            if cat_doc.get("category_code"): match_strings.append(cat_doc.get("category_code"))
+            if cat_doc.get("category_name"): match_strings.append(cat_doc.get("category_name"))
+
+        cat_selected = [r for r in selected_rows if r.allocation_type == "Reserved" and r.reservation_category in match_strings]
+        cat_vacancies = max(0, cat_quota - len(cat_selected))
+
+        if cat_vacancies > 0:
+            cat_waitlist = [r for r in waitlisted_rows if r.allocation_type == "Reserved" and r.reservation_category in match_strings and r.selection_status == "Waitlisted"]
+            cat_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+            
+            for row in cat_waitlist[:cat_vacancies]:
+                row.selection_status = "Selected"
+                promoted_total += 1
+
+    if promoted_total:
+        seat_alloc.total_selected = int(seat_alloc.total_selected or 0) + promoted_total
+        seat_alloc.total_waitlisted = max(0, int(seat_alloc.total_waitlisted or 0) - promoted_total)
+        return True
+
+    return False
 
 
 @frappe.whitelist()

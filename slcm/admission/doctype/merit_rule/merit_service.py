@@ -20,9 +20,11 @@ def calculate_merit_with_rule(applicant, rule):
         elif row.component_type == "Interview":
             score = applicant.interview_percentage or 0
         elif row.component_type == "UG CGPA":
-            score = (applicant.ug_cgpa or 0) * 10
+            val = applicant.ug_cgpa or 0
+            score = val * 10
         elif row.component_type == "PG CGPA":
-            score = (applicant.pg_cgpa or 0) * 10
+            val = applicant.pg_cgpa or 0
+            score = val * 10
 
         total_score += score * (row.weight / 100)
 
