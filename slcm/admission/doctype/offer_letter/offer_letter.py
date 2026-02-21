@@ -1,6 +1,6 @@
 import frappe
 import json
-from frappe import _, throw
+from frappe import _, throw, msgprint
 from frappe.model.document import Document
 
 class OfferLetter(Document):
@@ -33,6 +33,39 @@ class OfferLetter(Document):
                 print(f"Logged action called: {log_data['action']} for Offer Letter {self.name}")
             # Clear logs to avoid duplicates in same session
             self._audit_logs = []
+
+        self.sync_status_to_seat_allocation()
+
+    def sync_status_to_seat_allocation(self):
+        """
+        If this offer is Rejected or Expired, update the Seat Allocation status
+        for this applicant/program/cycle to 'Rejected'.
+        """
+        if self.offer_status not in ["Rejected", "Expired"]:
+            return
+
+        # Find Seat Allocation
+        sa_records = frappe.get_all("Seat Allocation", filters={
+            "admission_cycle": self.admission_cycle,
+            "campus": self.campus,
+            "docstatus": ["<", 2]
+        }, fields=["name"])
+
+        for sa_rec in sa_records:
+            sa_doc = frappe.get_doc("Seat Allocation", sa_rec.name)
+            updated = False
+            for row in sa_doc.selection_applicant:
+                if row.applicant == self.applicant and row.program == self.program:
+                    if row.selection_status != "Rejected":
+                        row.selection_status = "Rejected"
+                        updated = True
+                        print(f"Sync: Updated {self.applicant} in {sa_rec.name} to Rejected")
+
+            if updated:
+                # Save without permission to trigger the seat_allocation.py hooks
+                sa_doc.save(ignore_permissions=True)
+                # Important: Committing here might be risky if we are in a transaction,
+                # but Frappe's save() inside on_update is generally okay.
 
     def validate_status_transition(self):
         """Ensures that status transitions follow the defined lifecycle."""

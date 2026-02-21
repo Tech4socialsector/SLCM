@@ -7,10 +7,6 @@ def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     
-    # Re-calculate ranks for combined view
-    for i, row in enumerate(data):
-        row[5] = i + 1 # Assign overall rank based on score sorting
-        
     return columns, data
 
 def get_columns():
@@ -83,7 +79,8 @@ def get_data(filters):
     if filters.get("reservation_category"):
         query += " AND mla.reservation_category = %(reservation_category)s"
         
-    query += " ORDER BY mla.total_score DESC"
+    # Standardize tie-breaking with merit_service.py
+    query += " ORDER BY mla.total_score DESC, mla.entrance_percentage DESC, mla.hsc_percentage DESC, mla.interview_percentage DESC"
     
     return frappe.db.sql(query, {
         "cycle": filters.get("admission_cycle"),

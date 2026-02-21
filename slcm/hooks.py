@@ -291,7 +291,8 @@ scheduler_events = {
 		]
 	},
 	"daily": [
-		"slcm.api.service.offer_service.expire_offers"
+		"slcm.api.service.offer_service.expire_offers",
+		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 	]
 }
 doc_events = {
