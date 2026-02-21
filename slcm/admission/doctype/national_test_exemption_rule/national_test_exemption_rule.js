@@ -1,19 +1,38 @@
 frappe.ui.form.on('National Test Exemption Rule', {
 
-    refresh: function(frm) {
+    refresh: function (frm) {
         restrict_dates(frm);
     },
 
-    valid_from: function(frm) {
+    valid_from: function (frm) {
         validate_dates(frm);
     },
 
-    valid_until: function(frm) {
+    valid_until: function (frm) {
         validate_dates(frm);
     },
 
-    validate: function(frm) {
+    mark_percentage: function (frm) {
+        if (frm.doc.mark_percentage && (frm.doc.mark_percentage < 35 || frm.doc.mark_percentage > 100)) {
+            frappe.show_alert({
+                message: __('Percentage should be between 35 and 100'),
+                indicator: 'orange'
+            });
+            frm.set_value('mark_percentage', null);
+        }
+    },
+
+    validate: function (frm) {
         validate_dates(frm);
+
+        if (frm.doc.mark_percentage && (frm.doc.mark_percentage < 35 || frm.doc.mark_percentage > 100)) {
+            frappe.msgprint({
+                title: __("Validation Error"),
+                message: __("Mark Percentage should be between 35 and 100"),
+                indicator: "red"
+            });
+            frappe.validated = false;
+        }
     }
 });
 
@@ -50,7 +69,7 @@ function validate_dates(frm) {
         frm.set_value('valid_from', '');
         frappe.validated = false;
         return;
-    }   
+    }
 
     // Valid Until without Valid From
     if (frm.doc.valid_until && !frm.doc.valid_from) {
