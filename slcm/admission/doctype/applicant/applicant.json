@@ -1,882 +1,893 @@
 {
-    "_liked_by": "[\"Administrator\"]",
-    "actions": [],
-    "allow_rename": 1,
-    "autoname": "format:APP-{YYYY}-{#####}",
-    "creation": "2026-01-07 12:15:38.115590",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "personal_information_tab",
-        "personal_information_section",
-        "candidate_photo",
-        "section_break_otug",
-        "candidate_name",
-        "email",
-        "gender",
-        "alternate_contact",
-        "nationality",
-        "column_break_rrla",
-        "date_of_birth",
-        "mobile_number",
-        "religion",
-        "id_proof",
-        "annual_house_hold_income",
-        "application_info_section",
-        "application_status",
-        "program",
-        "admission_cycle",
-        "column_break_rynw",
-        "academic_year",
-        "application_type",
-        "campus",
-        "section_break_azsq",
-        "title",
-        "categories",
-        "section_break_rnvz",
-        "rejected_reason",
-        "parent_and_guardian_details",
-        "father_details_section",
-        "father_name",
-        "father_email",
-        "column_break_sddq",
-        "father_mobile",
-        "father_occupation",
-        "mother_details_section",
-        "mother_name",
-        "mother_email",
-        "column_break_yojx",
-        "mother_mobile",
-        "mother_occupation",
-        "section_break_xznk",
-        "guardian_required",
-        "guardian_details_section",
-        "guardian_name",
-        "column_break_rbqz",
-        "guardian_mobile",
-        "column_break_kdxw",
-        "guardian_email",
-        "address_for_correspondence_section",
-        "correspondence_address",
-        "section_break_kasp",
-        "city",
-        "column_break_iltt",
-        "state",
-        "column_break_coqt",
-        "pincode",
-        "academic_qualification_tab",
-        "ug_final_year_note",
-        "class_x_details_section",
-        "class_x_school",
-        "class_x_percentage",
-        "column_break_ivlp",
-        "class_x_year_of_completion",
-        "class_x_cgpa",
-        "column_break_bumu",
-        "class_x_board",
-        "class_x_marksheet",
-        "section_break_vpmz",
-        "class_xii_name_of_examination",
-        "class_xii_school",
-        "hsc_group",
-        "hsc_percentage",
-        "column_break_mlet",
-        "class_xii_year_of_completion",
-        "class_xii_cgpa",
-        "column_break_ycmo",
-        "class_xii_board",
-        "class_xii_marksheet",
-        "section_break_cmag",
-        "ug_degree_completion",
-        "section_break_cris",
-        "ug_degree_details_column",
-        "ug_degree_details",
-        "pg_degree_details",
-        "national_test_name",
-        "percentage",
-        "employment_history_tab",
-        "post_degree_work_experience",
-        "years_of_work_experience",
-        "eligibility_for_reservation_tab",
-        "information_relating_to_eligibility_for_reservations_section",
-        "reservation_category",
-        "ews",
-        "ews_certificate",
-        "caste_certificate",
-        "pwd",
-        "pwd_required_test",
-        "scribe_allotment",
-        "pwd_certificate",
-        "karnataka_category",
-        "which_of_the_following_applies_to_you_section",
-        "ka_study_7yrs",
-        "ka_study_7yrs_certificate",
-        "ka_defence_child",
-        "ka_defence_child_certificate",
-        "ka_govt_child",
-        "ka_govt_child_certificate",
-        "ka_ais_child",
-        "ka_ais_child_certificate",
-        "ka_capf_child",
-        "ka_capf_child_certificate",
-        "preference_of_test_center_tab",
-        "first_preference",
-        "column_break_qnun",
-        "second_preference",
-        "column_break_bcdp",
-        "third_preference",
-        "section_break_qbdb",
-        "test_center_allocation_note",
-        "other_information_tab",
-        "source_of_information",
-        "column_break_jgzl",
-        "please_mention",
-        "section_break_quvd",
-        "cv",
-        "declaration_undertaking",
-        "consent_third_party"
-    ],
-    "fields": [
-        {
-            "fieldname": "application_type",
-            "fieldtype": "Select",
-            "label": "Application Type"
-        },
-        {
-            "fieldname": "program",
-            "fieldtype": "Link",
-            "label": "Program",
-            "options": "Program"
-        },
-        {
-            "fieldname": "campus",
-            "fieldtype": "Link",
-            "label": "Campus",
-            "options": "Campus",
-            "reqd": 1
-        },
-        {
-            "fieldname": "academic_year",
-            "fieldtype": "Link",
-            "label": "Academic Year",
-            "options": "Academic Year",
-            "reqd": 1
-        },
-        {
-            "allow_on_submit": 1,
-            "default": "Submitted",
-            "fieldname": "application_status",
-            "fieldtype": "Select",
-            "label": "Application Status",
-            "options": "Submitted\nUnder Verification\nWait listed\nApproved\nRejected",
-            "read_only": 1
-        },
-        {
-            "fieldname": "personal_information_tab",
-            "fieldtype": "Tab Break",
-            "label": "Student Information"
-        },
-        {
-            "fieldname": "candidate_name",
-            "fieldtype": "Data",
-            "label": "Candidate Name"
-        },
-        {
-            "fieldname": "date_of_birth",
-            "fieldtype": "Date",
-            "label": "Date of Birth"
-        },
-        {
-            "fieldname": "gender",
-            "fieldtype": "Select",
-            "label": "Gender",
-            "options": "\nMale\nFemale\nOthers"
-        },
-        {
-            "fieldname": "mobile_number",
-            "fieldtype": "Phone",
-            "label": "Mobile Number"
-        },
-        {
-            "fieldname": "alternate_contact",
-            "fieldtype": "Phone",
-            "label": "Alternate Contact"
-        },
-        {
-            "fieldname": "religion",
-            "fieldtype": "Data",
-            "label": "Religion"
-        },
-        {
-            "fieldname": "nationality",
-            "fieldtype": "Link",
-            "label": "Nationality",
-            "options": "Country"
-        },
-        {
-            "description": "Max 1MB - Supported formats png, jpeg, jpg",
-            "fieldname": "id_proof",
-            "fieldtype": "Attach Image",
-            "label": "ID Proof"
-        },
-        {
-            "fieldname": "parent_and_guardian_details",
-            "fieldtype": "Tab Break",
-            "label": "Parent & Guardian Details"
-        },
-        {
-            "fieldname": "father_name",
-            "fieldtype": "Data",
-            "label": "Father Name"
-        },
-        {
-            "fieldname": "father_mobile",
-            "fieldtype": "Phone",
-            "label": "Father Mobile"
-        },
-        {
-            "fieldname": "father_email",
-            "fieldtype": "Data",
-            "label": "Father Email",
-            "options": "Email"
-        },
-        {
-            "fieldname": "father_occupation",
-            "fieldtype": "Data",
-            "label": "Father Occupation"
-        },
-        {
-            "fieldname": "mother_name",
-            "fieldtype": "Data",
-            "label": "Mother Name"
-        },
-        {
-            "fieldname": "mother_mobile",
-            "fieldtype": "Phone",
-            "label": "Mother Mobile"
-        },
-        {
-            "fieldname": "mother_email",
-            "fieldtype": "Data",
-            "label": "Mother Email",
-            "options": "Email"
-        },
-        {
-            "fieldname": "mother_occupation",
-            "fieldtype": "Data",
-            "label": "Mother Occupation"
-        },
-        {
-            "default": "0",
-            "fieldname": "guardian_required",
-            "fieldtype": "Check",
-            "label": "If contact details of both parents are not available, would you like to enter the details of a legal guardian?"
-        },
-        {
-            "depends_on": "eval:doc.guardian_required",
-            "fieldname": "guardian_name",
-            "fieldtype": "Data",
-            "label": "Guardian Name",
-            "mandatory_depends_on": "eval:doc.guardian_required"
-        },
-        {
-            "depends_on": "eval:doc.guardian_required",
-            "fieldname": "guardian_mobile",
-            "fieldtype": "Phone",
-            "label": "Guardian Mobile",
-            "mandatory_depends_on": "eval:doc.guardian_required"
-        },
-        {
-            "fieldname": "guardian_email",
-            "fieldtype": "Data",
-            "label": "Guardian Email",
-            "options": "Email"
-        },
-        {
-            "fieldname": "correspondence_address",
-            "fieldtype": "Small Text",
-            "label": "Address"
-        },
-        {
-            "fieldname": "city",
-            "fieldtype": "Data",
-            "label": "City"
-        },
-        {
-            "fieldname": "state",
-            "fieldtype": "Data",
-            "label": "State"
-        },
-        {
-            "fieldname": "pincode",
-            "fieldtype": "Int",
-            "label": "Pincode",
-            "non_negative": 1
-        },
-        {
-            "fieldname": "academic_qualification_tab",
-            "fieldtype": "Tab Break",
-            "label": "Academic qualification\t"
-        },
-        {
-            "fieldname": "class_x_year_of_completion",
-            "fieldtype": "Data",
-            "label": "Year of Completion (Class X)"
-        },
-        {
-            "fieldname": "class_x_school",
-            "fieldtype": "Data",
-            "label": "School/College/University (Class X)"
-        },
-        {
-            "fieldname": "class_x_board",
-            "fieldtype": "Data",
-            "label": "Board (Class X)"
-        },
-        {
-            "fieldname": "class_x_percentage",
-            "fieldtype": "Float",
-            "label": "Percentage/CGPA obtained (Class X)",
-            "non_negative": 1,
-            "precision": "2"
-        },
-        {
-            "fieldname": "class_x_cgpa",
-            "fieldtype": "Float",
-            "label": "If CGPA, maximum CPGA (Class X)",
-            "precision": "2"
-        },
-        {
-            "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
-            "fieldname": "class_x_marksheet",
-            "fieldtype": "Attach",
-            "label": "Class X Marksheet to be uploaded"
-        },
-        {
-            "fieldname": "class_xii_name_of_examination",
-            "fieldtype": "Data",
-            "label": "Name of Examination (Class XII/Equivalent - as per marksheet)"
-        },
-        {
-            "fieldname": "class_xii_year_of_completion",
-            "fieldtype": "Data",
-            "label": "Year of Completion (Class XII/Equivalent)"
-        },
-        {
-            "fieldname": "class_xii_school",
-            "fieldtype": "Data",
-            "label": "School/College/University (Class XII/Equivalent)"
-        },
-        {
-            "fieldname": "class_xii_board",
-            "fieldtype": "Data",
-            "label": "Board (Class XII/Equivalent)"
-        },
-        {
-            "fieldname": "class_xii_cgpa",
-            "fieldtype": "Float",
-            "label": "If CGPA, maximum CPGA (Class XII/Equivalent)",
-            "precision": "2"
-        },
-        {
-            "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
-            "fieldname": "class_xii_marksheet",
-            "fieldtype": "Attach",
-            "label": "Class XII Marksheet/Equivalent documents to be uploaded"
-        },
-        {
-            "fieldname": "employment_history_tab",
-            "fieldtype": "Tab Break",
-            "label": "Employment History"
-        },
-        {
-            "fieldname": "post_degree_work_experience",
-            "fieldtype": "Select",
-            "label": "Do you have any Post-Degree work experince?",
-            "options": "\nYes\nNo"
-        },
-        {
-            "depends_on": "eval:doc.post_degree_work_experience === \"Yes\"",
-            "fieldname": "years_of_work_experience",
-            "fieldtype": "Select",
-            "label": "How many years of work experience do you have?",
-            "mandatory_depends_on": "eval:doc.post_degree_work_experience === \"Yes\""
-        },
-        {
-            "fieldname": "eligibility_for_reservation_tab",
-            "fieldtype": "Tab Break",
-            "label": "Eligibility for reservation"
-        },
-        {
-            "depends_on": "eval:doc.reservation_category === \"NA\"",
-            "fieldname": "ews",
-            "fieldtype": "Select",
-            "label": "Whether EWS",
-            "mandatory_depends_on": "eval:doc.reservation_category === \"NA\"",
-            "options": "\nYes\nNo"
-        },
-        {
-            "depends_on": "eval:doc.ews === \"Yes\"",
-            "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
-            "fieldname": "ews_certificate",
-            "fieldtype": "Attach",
-            "label": "EWS Certificate",
-            "mandatory_depends_on": "eval:doc.ews === \"Yes\""
-        },
-        {
-            "depends_on": "eval:doc.reservation_category && doc.reservation_category !== \"NA\"",
-            "description": "Max 5MB - Supported formats png, jpeg, jpg",
-            "fieldname": "caste_certificate",
-            "fieldtype": "Attach",
-            "label": "Caste Certificate",
-            "mandatory_depends_on": "eval:doc.reservation_category && doc.reservation_category !== \"NA\""
-        },
-        {
-            "fieldname": "pwd",
-            "fieldtype": "Select",
-            "label": "Whether Person with Disability (PWD)",
-            "options": "\nYes\nNo"
-        },
-        {
-            "depends_on": "eval:doc.pwd === \"Yes\"",
-            "fieldname": "pwd_required_test",
-            "fieldtype": "Select",
-            "label": "Whether scribe required for the test",
-            "mandatory_depends_on": "eval:doc.pwd === \"Yes\"",
-            "options": "\nYes\nNo"
-        },
-        {
-            "depends_on": "eval:doc.pwd_required_test === \"Yes\"",
-            "fieldname": "scribe_allotment",
-            "fieldtype": "Select",
-            "label": "Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you",
-            "mandatory_depends_on": "eval:doc.pwd_required_test === \"Yes\"",
-            "options": "\nI require NLSIU to arrange a scribe for me\nI will arrange the scribe for myself"
-        },
-        {
-            "depends_on": "eval:doc.pwd === \"Yes\"",
-            "description": "Max 5MB - Supported formats png, jpeg, jpg",
-            "fieldname": "pwd_certificate",
-            "fieldtype": "Attach",
-            "label": "PWD Certificate",
-            "mandatory_depends_on": "eval:doc.pwd === \"Yes\""
-        },
-        {
-            "fieldname": "karnataka_category",
-            "fieldtype": "Select",
-            "label": "Whether Karnataka category",
-            "options": "\nYes\nNo"
-        },
-        {
-            "default": "0",
-            "fieldname": "ka_study_7yrs",
-            "fieldtype": "Check",
-            "label": "Studied for not less than 7 years in a recognized educational institution in Karnataka"
-        },
-        {
-            "depends_on": "eval:doc.ka_study_7yrs",
-            "fieldname": "ka_study_7yrs_certificate",
-            "fieldtype": "Attach Image",
-            "label": "Certificate",
-            "mandatory_depends_on": "eval:doc.ka_study_7yrs"
-        },
-        {
-            "default": "0",
-            "fieldname": "ka_defence_child",
-            "fieldtype": "Check",
-            "label": "Child of Defence / Ex-Serviceman (Karnataka domicile)"
-        },
-        {
-            "depends_on": "eval:doc.ka_defence_child",
-            "fieldname": "ka_defence_child_certificate",
-            "fieldtype": "Attach Image",
-            "label": "Certificate",
-            "mandatory_depends_on": "eval:doc.ka_defence_child"
-        },
-        {
-            "default": "0",
-            "fieldname": "ka_govt_child",
-            "fieldtype": "Check",
-            "label": "Child of Karnataka cadre AIS employee (IAS/IFS/IPS)"
-        },
-        {
-            "depends_on": "eval:doc.ka_govt_child",
-            "fieldname": "ka_govt_child_certificate",
-            "fieldtype": "Attach Image",
-            "label": "Certificate",
-            "mandatory_depends_on": "eval:doc.ka_govt_child"
-        },
-        {
-            "default": "0",
-            "fieldname": "ka_ais_child",
-            "fieldtype": "Check",
-            "label": "Child of CAPF employee with Karnataka domicile"
-        },
-        {
-            "depends_on": "eval:doc.ka_ais_child",
-            "fieldname": "ka_ais_child_certificate",
-            "fieldtype": "Attach Image",
-            "label": "Certificate",
-            "mandatory_depends_on": "eval:doc.ka_ais_child"
-        },
-        {
-            "default": "0",
-            "fieldname": "ka_capf_child",
-            "fieldtype": "Check",
-            "label": "Child of Central Armed Police Force employee (Karnataka domicile)"
-        },
-        {
-            "depends_on": "eval:doc.ka_capf_child",
-            "fieldname": "ka_capf_child_certificate",
-            "fieldtype": "Attach Image",
-            "label": "Certificate",
-            "mandatory_depends_on": "eval:doc.ka_capf_child"
-        },
-        {
-            "fieldname": "preference_of_test_center_tab",
-            "fieldtype": "Tab Break",
-            "label": "Preference of test center"
-        },
-        {
-            "fieldname": "first_preference",
-            "fieldtype": "Data",
-            "label": "First Preference"
-        },
-        {
-            "fieldname": "second_preference",
-            "fieldtype": "Data",
-            "label": "Second Preference"
-        },
-        {
-            "fieldname": "third_preference",
-            "fieldtype": "Data",
-            "label": "Third Preference"
-        },
-        {
-            "fieldname": "other_information_tab",
-            "fieldtype": "Tab Break",
-            "label": "Other Information"
-        },
-        {
-            "fieldname": "source_of_information",
-            "fieldtype": "Select",
-            "label": "Where Did You Hear About the Programme?",
-            "options": "\nOthers"
-        },
-        {
-            "description": "Curriculum Vitae (Max 5MB - Supported formats doc, docx pdf) Declaration.",
-            "fieldname": "cv",
-            "fieldtype": "Attach",
-            "in_list_view": 1,
-            "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages"
-        },
-        {
-            "default": "0",
-            "fieldname": "declaration_undertaking",
-            "fieldtype": "Check",
-            "label": "I declare that the information provided is true and that false information may lead to disqualification."
-        },
-        {
-            "default": "0",
-            "description": "Please Note: The Application Fee is non-refundable.",
-            "fieldname": "consent_third_party",
-            "fieldtype": "Check",
-            "label": "I consent to my details being shared with third party affiliates. Please Note: The Application Fee is non-refundable."
-        },
-        {
-            "fieldname": "personal_information_section",
-            "fieldtype": "Section Break",
-            "label": "Personal Information"
-        },
-        {
-            "fieldname": "section_break_otug",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "column_break_rrla",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "father_details_section",
-            "fieldtype": "Section Break",
-            "label": "Father Details"
-        },
-        {
-            "fieldname": "column_break_sddq",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "mother_details_section",
-            "fieldtype": "Section Break",
-            "label": "Mother Details"
-        },
-        {
-            "fieldname": "column_break_yojx",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "section_break_xznk",
-            "fieldtype": "Section Break"
-        },
-        {
-            "depends_on": "eval:doc.guardian_required",
-            "fieldname": "guardian_details_section",
-            "fieldtype": "Section Break",
-            "label": "Guardian Details"
-        },
-        {
-            "fieldname": "column_break_rbqz",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "column_break_kdxw",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "address_for_correspondence_section",
-            "fieldtype": "Section Break",
-            "label": "Address for Correspondence"
-        },
-        {
-            "fieldname": "section_break_kasp",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "column_break_iltt",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "ug_final_year_note",
-            "fieldtype": "HTML",
-            "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545;\">\n<b>Note:</b> Applicants who are in the final year of their undergraduate programme can also apply.\nThey must upload:\n<ol>\n  <li>Bonafide Certificate from the University/College/Department</li>\n  <li>Transcripts of previous years</li>\n</ol>\nProof of completion must be submitted no later than <b>December 31, 2026</b>.\n</div>\n"
-        },
-        {
-            "fieldname": "class_x_details_section",
-            "fieldtype": "Section Break",
-            "label": "Class X details"
-        },
-        {
-            "fieldname": "column_break_ivlp",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "column_break_bumu",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "section_break_vpmz",
-            "fieldtype": "Section Break",
-            "label": "Class XII/Equivalent details"
-        },
-        {
-            "fieldname": "column_break_mlet",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "column_break_ycmo",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "information_relating_to_eligibility_for_reservations_section",
-            "fieldtype": "Section Break",
-            "label": "Information relating to Eligibility for Reservations"
-        },
-        {
-            "depends_on": "eval:doc.karnataka_category === \"Yes\"",
-            "fieldname": "which_of_the_following_applies_to_you_section",
-            "fieldtype": "Section Break",
-            "label": "Which of the following applies to you"
-        },
-        {
-            "fieldname": "reservation_category",
-            "fieldtype": "Select",
-            "label": "Whether SC/ST/OBC-NCL",
-            "options": "\nNA\nOBS-NCL\nSC\nST",
-            "placeholder": "Select Category"
-        },
-        {
-            "fieldname": "column_break_qnun",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "column_break_bcdp",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "section_break_qbdb",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "test_center_allocation_note",
-            "fieldtype": "HTML",
-            "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545;font-size:13px;line-height:1.5;\">\n  <strong>Note:</strong>\n  The University reserves the right to allot candidates a test centre other than their first, second, or third preference\n  if it is not logistically feasible to conduct the admissions test at the selected centre(s).\n  The application fee is <strong>non-refundable</strong> in such cases.\n</div>\n"
-        },
-        {
-            "depends_on": "eval:doc.source_of_information === \"Others\"",
-            "fieldname": "please_mention",
-            "fieldtype": "Data",
-            "label": "Please Mention",
-            "mandatory_depends_on": "eval:doc.source_of_information === \"Others\""
-        },
-        {
-            "fieldname": "column_break_jgzl",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "section_break_quvd",
-            "fieldtype": "Section Break"
-        },
-        {
-            "description": "Max 1MB - Supported formats png, jpeg, jpg",
-            "fieldname": "candidate_photo",
-            "fieldtype": "Attach Image",
-            "label": "Candidate Photo"
-        },
-        {
-            "fieldname": "email",
-            "fieldtype": "Data",
-            "label": "Email",
-            "options": "Email"
-        },
-        {
-            "fieldname": "application_info_section",
-            "fieldtype": "Section Break",
-            "label": "Application Info"
-        },
-        {
-            "fieldname": "column_break_rynw",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "column_break_coqt",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "section_break_cmag",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "ug_degree_completion",
-            "fieldtype": "Select",
-            "label": "Have you completed your UG degree",
-            "options": "\nFinal year\nCompleted"
-        },
-        {
-            "fieldname": "section_break_cris",
-            "fieldtype": "Section Break",
-            "label": "Completion Degree Details "
-        },
-        {
-            "fieldname": "ug_degree_details",
-            "fieldtype": "Table",
-            "label": "Degree",
-            "options": "UG Degree Detail"
-        },
-        {
-            "fieldname": "annual_house_hold_income",
-            "fieldtype": "Currency",
-            "label": "Annual House Hold Income",
-            "precision": "2"
-        },
-        {
-            "fieldname": "section_break_rnvz",
-            "fieldtype": "Section Break"
-        },
-        {
-            "allow_on_submit": 1,
-            "depends_on": "eval:doc.application_status === \"Rejected\"",
-            "fieldname": "rejected_reason",
-            "fieldtype": "Small Text",
-            "label": "Rejected Reason",
-            "read_only": 1
-        },
-        {
-            "fieldname": "section_break_azsq",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "title",
-            "fieldtype": "Data",
-            "hidden": 1,
-            "label": "Title"
-        },
-        {
-            "fieldname": "admission_cycle",
-            "fieldtype": "Link",
-            "label": "Admission Cycle",
-            "options": "Admission Cycle"
-        },
-        {
-            "fieldname": "categories",
-            "fieldtype": "Table",
-            "label": "Categories",
-            "options": "Applicant Category"
-        },
-        {
-            "fieldname": "hsc_percentage",
-            "fieldtype": "Percent",
-            "label": "Xll Percentage ",
-            "non_negative": 1,
-            "precision": "2"
-        },
-        {
-            "fieldname": "hsc_group",
-            "fieldtype": "Link",
-            "label": "Xll Group ",
-            "options": "HSC Groups"
-        },
-        {
-            "fieldname": "ug_degree_details_column",
-            "fieldtype": "Column Break",
-            "label": "UG Degree Details "
-        },
-        {
-            "fieldname": "pg_degree_details",
-            "fieldtype": "Table",
-            "label": "PG Degree Details ",
-            "options": "PG Degree Details"
-        },
-        {
-            "fieldname": "national_test_name",
-            "fieldtype": "Link",
-            "label": "National Test Name",
-            "options": "National Test"
-        },
-        {
-            "fieldname": "percentage",
-            "fieldtype": "Percent",
-            "label": "Percentage"
-        }
-    ],
-    "grid_page_length": 50,
-    "image_field": "candidate_photo",
-    "index_web_pages_for_search": 1,
-    "links": [],
-    "modified": "2026-02-19 14:23:19.675529",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "Applicant",
-    "naming_rule": "Expression",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "write": 1
-        }
-    ],
-    "row_format": "Dynamic",
-    "rows_threshold_for_grid_search": 20,
-    "show_name_in_global_search": 1,
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": [],
-    "title_field": "title"
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:APP-{YYYY}-{#####}",
+ "creation": "2026-01-07 12:15:38.115590",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "personal_information_tab",
+  "personal_information_section",
+  "candidate_photo",
+  "section_break_otug",
+  "candidate_name",
+  "email",
+  "gender",
+  "alternate_contact",
+  "nationality",
+  "column_break_rrla",
+  "date_of_birth",
+  "mobile_number",
+  "religion",
+  "id_proof",
+  "annual_house_hold_income",
+  "application_info_section",
+  "application_status",
+  "program",
+  "admission_cycle",
+  "column_break_rynw",
+  "academic_year",
+  "application_type",
+  "campus",
+  "section_break_azsq",
+  "title",
+  "categories",
+  "section_break_rnvz",
+  "rejected_reason",
+  "parent_and_guardian_details",
+  "father_details_section",
+  "father_name",
+  "father_email",
+  "column_break_sddq",
+  "father_mobile",
+  "father_occupation",
+  "mother_details_section",
+  "mother_name",
+  "mother_email",
+  "column_break_yojx",
+  "mother_mobile",
+  "mother_occupation",
+  "section_break_xznk",
+  "guardian_required",
+  "guardian_details_section",
+  "guardian_name",
+  "column_break_rbqz",
+  "guardian_mobile",
+  "column_break_kdxw",
+  "guardian_email",
+  "address_for_correspondence_section",
+  "correspondence_address",
+  "section_break_kasp",
+  "city",
+  "column_break_iltt",
+  "state",
+  "column_break_coqt",
+  "pincode",
+  "academic_qualification_tab",
+  "ug_final_year_note",
+  "class_x_details_section",
+  "class_x_school",
+  "class_x_percentage",
+  "column_break_ivlp",
+  "class_x_year_of_completion",
+  "class_x_cgpa",
+  "column_break_bumu",
+  "class_x_board",
+  "class_x_marksheet",
+  "section_break_vpmz",
+  "class_xii_name_of_examination",
+  "class_xii_school",
+  "hsc_group",
+  "hsc_percentage",
+  "column_break_mlet",
+  "class_xii_year_of_completion",
+  "class_xii_cgpa",
+  "column_break_ycmo",
+  "class_xii_board",
+  "class_xii_marksheet",
+  "section_break_cmag",
+  "ug_degree_completion",
+  "section_break_cris",
+  "ug_degree_details_column",
+  "ug_degree_details",
+  "pg_degree_details",
+  "national_test_name",
+  "percentage",
+  "employment_history_tab",
+  "post_degree_work_experience",
+  "years_of_work_experience",
+  "eligibility_for_reservation_tab",
+  "information_relating_to_eligibility_for_reservations_section",
+  "reservation_category",
+  "ews",
+  "ews_certificate",
+  "caste_certificate",
+  "pwd",
+  "pwd_required_test",
+  "scribe_allotment",
+  "pwd_certificate",
+  "karnataka_category",
+  "which_of_the_following_applies_to_you_section",
+  "ka_study_7yrs",
+  "ka_study_7yrs_certificate",
+  "ka_defence_child",
+  "ka_defence_child_certificate",
+  "ka_govt_child",
+  "ka_govt_child_certificate",
+  "ka_ais_child",
+  "ka_ais_child_certificate",
+  "ka_capf_child",
+  "ka_capf_child_certificate",
+  "preference_of_test_center_tab",
+  "first_preference",
+  "column_break_qnun",
+  "second_preference",
+  "column_break_bcdp",
+  "third_preference",
+  "section_break_qbdb",
+  "test_center_allocation_note",
+  "other_information_tab",
+  "source_of_information",
+  "column_break_jgzl",
+  "please_mention",
+  "section_break_quvd",
+  "cv",
+  "declaration_undertaking",
+  "consent_third_party"
+ ],
+ "fields": [
+  {
+   "fieldname": "application_type",
+   "fieldtype": "Select",
+   "label": "Application Type"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Submitted",
+   "fieldname": "application_status",
+   "fieldtype": "Select",
+   "label": "Application Status",
+   "options": "Submitted\nUnder Verification\nWait listed\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "personal_information_tab",
+   "fieldtype": "Tab Break",
+   "label": "Student Information"
+  },
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "label": "Candidate Name"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "Gender",
+   "options": "\nMale\nFemale\nOthers"
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Phone",
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "alternate_contact",
+   "fieldtype": "Phone",
+   "label": "Alternate Contact"
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Country"
+  },
+  {
+   "description": "Max 1MB - Supported formats png, jpeg, jpg",
+   "fieldname": "id_proof",
+   "fieldtype": "Attach Image",
+   "label": "ID Proof"
+  },
+  {
+   "fieldname": "parent_and_guardian_details",
+   "fieldtype": "Tab Break",
+   "label": "Parent & Guardian Details"
+  },
+  {
+   "fieldname": "father_name",
+   "fieldtype": "Data",
+   "label": "Father Name"
+  },
+  {
+   "fieldname": "father_mobile",
+   "fieldtype": "Phone",
+   "label": "Father Mobile"
+  },
+  {
+   "fieldname": "father_email",
+   "fieldtype": "Data",
+   "label": "Father Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "father_occupation",
+   "fieldtype": "Data",
+   "label": "Father Occupation"
+  },
+  {
+   "fieldname": "mother_name",
+   "fieldtype": "Data",
+   "label": "Mother Name"
+  },
+  {
+   "fieldname": "mother_mobile",
+   "fieldtype": "Phone",
+   "label": "Mother Mobile"
+  },
+  {
+   "fieldname": "mother_email",
+   "fieldtype": "Data",
+   "label": "Mother Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "mother_occupation",
+   "fieldtype": "Data",
+   "label": "Mother Occupation"
+  },
+  {
+   "default": "0",
+   "fieldname": "guardian_required",
+   "fieldtype": "Check",
+   "label": "If contact details of both parents are not available, would you like to enter the details of a legal guardian?"
+  },
+  {
+   "depends_on": "eval:doc.guardian_required",
+   "fieldname": "guardian_name",
+   "fieldtype": "Data",
+   "label": "Guardian Name",
+   "mandatory_depends_on": "eval:doc.guardian_required"
+  },
+  {
+   "depends_on": "eval:doc.guardian_required",
+   "fieldname": "guardian_mobile",
+   "fieldtype": "Phone",
+   "label": "Guardian Mobile",
+   "mandatory_depends_on": "eval:doc.guardian_required"
+  },
+  {
+   "fieldname": "guardian_email",
+   "fieldtype": "Data",
+   "label": "Guardian Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "correspondence_address",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Int",
+   "label": "Pincode",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "academic_qualification_tab",
+   "fieldtype": "Tab Break",
+   "label": "Academic qualification\t"
+  },
+  {
+   "fieldname": "class_x_year_of_completion",
+   "fieldtype": "Data",
+   "label": "Year of Completion (Class X)"
+  },
+  {
+   "fieldname": "class_x_school",
+   "fieldtype": "Data",
+   "label": "School/College/University (Class X)"
+  },
+  {
+   "fieldname": "class_x_board",
+   "fieldtype": "Data",
+   "label": "Board (Class X)"
+  },
+  {
+   "fieldname": "class_x_percentage",
+   "fieldtype": "Float",
+   "label": "Percentage/CGPA obtained (Class X)",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "class_x_cgpa",
+   "fieldtype": "Float",
+   "label": "If CGPA, maximum CPGA (Class X)",
+   "precision": "2"
+  },
+  {
+   "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
+   "fieldname": "class_x_marksheet",
+   "fieldtype": "Attach",
+   "label": "Class X Marksheet to be uploaded"
+  },
+  {
+   "fieldname": "class_xii_name_of_examination",
+   "fieldtype": "Data",
+   "label": "Name of Examination (Class XII/Equivalent - as per marksheet)"
+  },
+  {
+   "fieldname": "class_xii_year_of_completion",
+   "fieldtype": "Data",
+   "label": "Year of Completion (Class XII/Equivalent)"
+  },
+  {
+   "fieldname": "class_xii_school",
+   "fieldtype": "Data",
+   "label": "School/College/University (Class XII/Equivalent)"
+  },
+  {
+   "fieldname": "class_xii_board",
+   "fieldtype": "Data",
+   "label": "Board (Class XII/Equivalent)"
+  },
+  {
+   "fieldname": "class_xii_cgpa",
+   "fieldtype": "Float",
+   "label": "If CGPA, maximum CPGA (Class XII/Equivalent)",
+   "precision": "2"
+  },
+  {
+   "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
+   "fieldname": "class_xii_marksheet",
+   "fieldtype": "Attach",
+   "label": "Class XII Marksheet/Equivalent documents to be uploaded"
+  },
+  {
+   "fieldname": "employment_history_tab",
+   "fieldtype": "Tab Break",
+   "label": "Employment History"
+  },
+  {
+   "fieldname": "post_degree_work_experience",
+   "fieldtype": "Select",
+   "label": "Do you have any Post-Degree work experince?",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.post_degree_work_experience === \"Yes\"",
+   "fieldname": "years_of_work_experience",
+   "fieldtype": "Select",
+   "label": "How many years of work experience do you have?",
+   "mandatory_depends_on": "eval:doc.post_degree_work_experience === \"Yes\""
+  },
+  {
+   "fieldname": "eligibility_for_reservation_tab",
+   "fieldtype": "Tab Break",
+   "label": "Eligibility for reservation"
+  },
+  {
+   "depends_on": "eval:doc.reservation_category === \"NA\"",
+   "fieldname": "ews",
+   "fieldtype": "Select",
+   "label": "Whether EWS",
+   "mandatory_depends_on": "eval:doc.reservation_category === \"NA\"",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.ews === \"Yes\"",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
+   "fieldname": "ews_certificate",
+   "fieldtype": "Attach",
+   "label": "EWS Certificate",
+   "mandatory_depends_on": "eval:doc.ews === \"Yes\""
+  },
+  {
+   "depends_on": "eval:doc.reservation_category && doc.reservation_category !== \"NA\"",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg",
+   "fieldname": "caste_certificate",
+   "fieldtype": "Attach",
+   "label": "Caste Certificate",
+   "mandatory_depends_on": "eval:doc.reservation_category && doc.reservation_category !== \"NA\""
+  },
+  {
+   "fieldname": "pwd",
+   "fieldtype": "Select",
+   "label": "Whether Person with Disability (PWD)",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.pwd === \"Yes\"",
+   "fieldname": "pwd_required_test",
+   "fieldtype": "Select",
+   "label": "Whether scribe required for the test",
+   "mandatory_depends_on": "eval:doc.pwd === \"Yes\"",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.pwd_required_test === \"Yes\"",
+   "fieldname": "scribe_allotment",
+   "fieldtype": "Select",
+   "label": "Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you",
+   "mandatory_depends_on": "eval:doc.pwd_required_test === \"Yes\"",
+   "options": "\nI require NLSIU to arrange a scribe for me\nI will arrange the scribe for myself"
+  },
+  {
+   "depends_on": "eval:doc.pwd === \"Yes\"",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg",
+   "fieldname": "pwd_certificate",
+   "fieldtype": "Attach",
+   "label": "PWD Certificate",
+   "mandatory_depends_on": "eval:doc.pwd === \"Yes\""
+  },
+  {
+   "fieldname": "karnataka_category",
+   "fieldtype": "Select",
+   "label": "Whether Karnataka category",
+   "options": "\nYes\nNo"
+  },
+  {
+   "default": "0",
+   "fieldname": "ka_study_7yrs",
+   "fieldtype": "Check",
+   "label": "Studied for not less than 7 years in a recognized educational institution in Karnataka"
+  },
+  {
+   "depends_on": "eval:doc.ka_study_7yrs",
+   "fieldname": "ka_study_7yrs_certificate",
+   "fieldtype": "Attach Image",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_study_7yrs"
+  },
+  {
+   "default": "0",
+   "fieldname": "ka_defence_child",
+   "fieldtype": "Check",
+   "label": "Child of Defence / Ex-Serviceman (Karnataka domicile)"
+  },
+  {
+   "depends_on": "eval:doc.ka_defence_child",
+   "fieldname": "ka_defence_child_certificate",
+   "fieldtype": "Attach Image",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_defence_child"
+  },
+  {
+   "default": "0",
+   "fieldname": "ka_govt_child",
+   "fieldtype": "Check",
+   "label": "Child of Karnataka cadre AIS employee (IAS/IFS/IPS)"
+  },
+  {
+   "depends_on": "eval:doc.ka_govt_child",
+   "fieldname": "ka_govt_child_certificate",
+   "fieldtype": "Attach Image",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_govt_child"
+  },
+  {
+   "default": "0",
+   "fieldname": "ka_ais_child",
+   "fieldtype": "Check",
+   "label": "Child of CAPF employee with Karnataka domicile"
+  },
+  {
+   "depends_on": "eval:doc.ka_ais_child",
+   "fieldname": "ka_ais_child_certificate",
+   "fieldtype": "Attach Image",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_ais_child"
+  },
+  {
+   "default": "0",
+   "fieldname": "ka_capf_child",
+   "fieldtype": "Check",
+   "label": "Child of Central Armed Police Force employee (Karnataka domicile)"
+  },
+  {
+   "depends_on": "eval:doc.ka_capf_child",
+   "fieldname": "ka_capf_child_certificate",
+   "fieldtype": "Attach Image",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_capf_child"
+  },
+  {
+   "fieldname": "preference_of_test_center_tab",
+   "fieldtype": "Tab Break",
+   "label": "Preference of test center"
+  },
+  {
+   "fieldname": "first_preference",
+   "fieldtype": "Data",
+   "label": "First Preference"
+  },
+  {
+   "fieldname": "second_preference",
+   "fieldtype": "Data",
+   "label": "Second Preference"
+  },
+  {
+   "fieldname": "third_preference",
+   "fieldtype": "Data",
+   "label": "Third Preference"
+  },
+  {
+   "fieldname": "other_information_tab",
+   "fieldtype": "Tab Break",
+   "label": "Other Information"
+  },
+  {
+   "fieldname": "source_of_information",
+   "fieldtype": "Select",
+   "label": "Where Did You Hear About the Programme?",
+   "options": "\nOthers"
+  },
+  {
+   "description": "Curriculum Vitae (Max 5MB - Supported formats doc, docx pdf) Declaration.",
+   "fieldname": "cv",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages"
+  },
+  {
+   "default": "0",
+   "fieldname": "declaration_undertaking",
+   "fieldtype": "Check",
+   "label": "I declare that the information provided is true and that false information may lead to disqualification."
+  },
+  {
+   "default": "0",
+   "description": "Please Note: The Application Fee is non-refundable.",
+   "fieldname": "consent_third_party",
+   "fieldtype": "Check",
+   "label": "I consent to my details being shared with third party affiliates. Please Note: The Application Fee is non-refundable."
+  },
+  {
+   "fieldname": "personal_information_section",
+   "fieldtype": "Section Break",
+   "label": "Personal Information"
+  },
+  {
+   "fieldname": "section_break_otug",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_rrla",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "father_details_section",
+   "fieldtype": "Section Break",
+   "label": "Father Details"
+  },
+  {
+   "fieldname": "column_break_sddq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mother_details_section",
+   "fieldtype": "Section Break",
+   "label": "Mother Details"
+  },
+  {
+   "fieldname": "column_break_yojx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_xznk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.guardian_required",
+   "fieldname": "guardian_details_section",
+   "fieldtype": "Section Break",
+   "label": "Guardian Details"
+  },
+  {
+   "fieldname": "column_break_rbqz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_kdxw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "address_for_correspondence_section",
+   "fieldtype": "Section Break",
+   "label": "Address for Correspondence"
+  },
+  {
+   "fieldname": "section_break_kasp",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_iltt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ug_final_year_note",
+   "fieldtype": "HTML",
+   "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545;\">\n<b>Note:</b> Applicants who are in the final year of their undergraduate programme can also apply.\nThey must upload:\n<ol>\n  <li>Bonafide Certificate from the University/College/Department</li>\n  <li>Transcripts of previous years</li>\n</ol>\nProof of completion must be submitted no later than <b>December 31, 2026</b>.\n</div>\n"
+  },
+  {
+   "fieldname": "class_x_details_section",
+   "fieldtype": "Section Break",
+   "label": "Class X details"
+  },
+  {
+   "fieldname": "column_break_ivlp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_bumu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_vpmz",
+   "fieldtype": "Section Break",
+   "label": "Class XII/Equivalent details"
+  },
+  {
+   "fieldname": "column_break_mlet",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_ycmo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "information_relating_to_eligibility_for_reservations_section",
+   "fieldtype": "Section Break",
+   "label": "Information relating to Eligibility for Reservations"
+  },
+  {
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "which_of_the_following_applies_to_you_section",
+   "fieldtype": "Section Break",
+   "label": "Which of the following applies to you"
+  },
+  {
+   "fieldname": "reservation_category",
+   "fieldtype": "Select",
+   "label": "Whether SC/ST/OBC-NCL",
+   "options": "\nNA\nOBS-NCL\nSC\nST",
+   "placeholder": "Select Category"
+  },
+  {
+   "fieldname": "column_break_qnun",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_bcdp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_qbdb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "test_center_allocation_note",
+   "fieldtype": "HTML",
+   "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545;font-size:13px;line-height:1.5;\">\n  <strong>Note:</strong>\n  The University reserves the right to allot candidates a test centre other than their first, second, or third preference\n  if it is not logistically feasible to conduct the admissions test at the selected centre(s).\n  The application fee is <strong>non-refundable</strong> in such cases.\n</div>\n"
+  },
+  {
+   "depends_on": "eval:doc.source_of_information === \"Others\"",
+   "fieldname": "please_mention",
+   "fieldtype": "Data",
+   "label": "Please Mention",
+   "mandatory_depends_on": "eval:doc.source_of_information === \"Others\""
+  },
+  {
+   "fieldname": "column_break_jgzl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_quvd",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Max 1MB - Supported formats png, jpeg, jpg",
+   "fieldname": "candidate_photo",
+   "fieldtype": "Attach Image",
+   "label": "Candidate Photo"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "application_info_section",
+   "fieldtype": "Section Break",
+   "label": "Application Info"
+  },
+  {
+   "fieldname": "column_break_rynw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_coqt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_cmag",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "ug_degree_completion",
+   "fieldtype": "Select",
+   "label": "Have you completed your UG degree",
+   "options": "\nFinal year\nCompleted"
+  },
+  {
+   "fieldname": "section_break_cris",
+   "fieldtype": "Section Break",
+   "label": "Completion Degree Details "
+  },
+  {
+   "fieldname": "ug_degree_details",
+   "fieldtype": "Table",
+   "label": "Degree",
+   "options": "UG Degree Detail"
+  },
+  {
+   "fieldname": "annual_house_hold_income",
+   "fieldtype": "Currency",
+   "label": "Annual House Hold Income",
+   "precision": "2"
+  },
+  {
+   "fieldname": "section_break_rnvz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.application_status === \"Rejected\"",
+   "fieldname": "rejected_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejected Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_azsq",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle"
+  },
+  {
+   "fieldname": "categories",
+   "fieldtype": "Table",
+   "label": "Categories",
+   "options": "Applicant Category"
+  },
+  {
+   "fieldname": "hsc_percentage",
+   "fieldtype": "Percent",
+   "label": "Xll Percentage ",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "hsc_group",
+   "fieldtype": "Link",
+   "label": "Xll Group ",
+   "options": "HSC Groups"
+  },
+  {
+   "fieldname": "ug_degree_details_column",
+   "fieldtype": "Column Break",
+   "label": "UG Degree Details "
+  },
+  {
+   "fieldname": "pg_degree_details",
+   "fieldtype": "Table",
+   "label": "PG Degree Details ",
+   "options": "PG Degree Details"
+  },
+  {
+   "fieldname": "national_test_name",
+   "fieldtype": "Link",
+   "label": "National Test Name",
+   "options": "National Test"
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Percent",
+   "label": "Percentage"
+  }
+ ],
+ "grid_page_length": 50,
+ "image_field": "candidate_photo",
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-20 15:55:10.922798",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Applicant",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Eligibility Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title"
 }

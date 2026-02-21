@@ -94,45 +94,6 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Applicant Configuration",
-   "link_count": 3,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Applicant Category",
-   "link_count": 0,
-   "link_to": "Applicant Category",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Campus",
-   "link_count": 0,
-   "link_to": "Campus",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Academic Year ",
-   "link_count": 0,
-   "link_to": "Academic Year",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "Core Admission",
    "link_count": 4,
    "link_type": "DocType",
@@ -178,9 +139,48 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Applicant Configuration",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Admission Category",
+   "link_count": 0,
+   "link_to": "Admission Category",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campus",
+   "link_count": 0,
+   "link_to": "Campus",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Academic Year ",
+   "link_count": 0,
+   "link_to": "Academic Year",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-02-21 10:49:52.238954",
+ "modified": "2026-02-20 15:49:10.682814",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Eligibility",

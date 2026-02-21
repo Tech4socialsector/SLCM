@@ -1,0 +1,17 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-02-20 15:27:19.761910",
+  "name": "Eligibility Admin",
+  "role_profile": "Eligibility Admin",
+  "roles": [
+   {
+    "parent": "Eligibility Admin",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Eligibility Admin"
+   }
+  ]
+ }
+]

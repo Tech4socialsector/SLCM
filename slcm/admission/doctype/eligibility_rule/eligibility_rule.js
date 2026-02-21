@@ -1,12 +1,12 @@
 frappe.ui.form.on('Eligibility Rule', {
 
-    refresh: function(frm) {
+    refresh: function (frm) {
         apply_qualification_level_logic(frm);
         apply_rule_type_logic(frm);
         apply_unit_type_logic(frm);
     },
 
-    qualification_level: function(frm) {
+    qualification_level: function (frm) {
 
         if (frm.doc.docstatus === 1) return;  // 🚀 STOP if submitted
 
@@ -19,7 +19,7 @@ frappe.ui.form.on('Eligibility Rule', {
         apply_qualification_level_logic(frm);
     },
 
-    rule_type: function(frm) {
+    rule_type: function (frm) {
 
         if (frm.doc.docstatus === 1) return;  // 🚀 STOP if submitted
 
@@ -31,11 +31,31 @@ frappe.ui.form.on('Eligibility Rule', {
         apply_rule_type_logic(frm);
     },
 
-    unit_type: function(frm) {
+    unit_type: function (frm) {
 
         if (frm.doc.docstatus === 1) return;  // 🚀 STOP if submitted
 
         apply_unit_type_logic(frm);
+    },
+
+    required_cgpa: function (frm) {
+        if (frm.doc.required_cgpa && (frm.doc.required_cgpa < 4 || frm.doc.required_cgpa > 10)) {
+            frappe.show_alert({
+                message: __('CGPA should be between 4 and 10'),
+                indicator: 'orange'
+            });
+            frm.set_value('required_cgpa', null);
+        }
+    },
+
+    required_percentage: function (frm) {
+        if (frm.doc.required_percentage && (frm.doc.required_percentage < 35 || frm.doc.required_percentage > 100)) {
+            frappe.show_alert({
+                message: __('Percentage should be between 35 and 100'),
+                indicator: 'orange'
+            });
+            frm.set_value('required_percentage', null);
+        }
     }
 });
 
@@ -45,7 +65,7 @@ function apply_qualification_level_logic(frm) {
 
     if (qualification_level === 'XII') {
 
-        frm.set_df_property('rule_type', 'options', ['', 'HSC Group','Percentage']);
+        frm.set_df_property('rule_type', 'options', ['', 'HSC Group', 'Percentage']);
         frm.set_df_property('unit_type', 'options', ['', 'Percentage']);
 
         frm.set_df_property('allowed_degrees', 'hidden', 1);
@@ -136,20 +156,21 @@ function apply_unit_type_logic(frm) {
 }
 frappe.ui.form.on('Eligibility Rule', {
 
-    refresh: function(frm) {
+    refresh: function (frm) {
         restrict_dates(frm);
     },
 
-    effective_from: function(frm) {
+    effective_from: function (frm) {
         validate_dates(frm);
     },
 
-    effective_to: function(frm) {
+    effective_to: function (frm) {
         validate_dates(frm);
     },
 
-    validate: function(frm) {
+    validate: function (frm) {
         validate_dates(frm);
+        validate_values(frm);
     }
 });
 
@@ -222,6 +243,26 @@ function validate_dates(frm) {
             indicator: "red"
         });
         frm.set_value('effective_to', '');
+        frappe.validated = false;
+    }
+}
+
+function validate_values(frm) {
+    if (frm.doc.required_cgpa && (frm.doc.required_cgpa < 4 || frm.doc.required_cgpa > 10)) {
+        frappe.msgprint({
+            title: __('Validation Error'),
+            message: __('Required CGPA should be between 4 and 10'),
+            indicator: 'red'
+        });
+        frappe.validated = false;
+    }
+
+    if (frm.doc.required_percentage && (frm.doc.required_percentage < 35 || frm.doc.required_percentage > 100)) {
+        frappe.msgprint({
+            title: __('Validation Error'),
+            message: __('Required Percentage should be between 35 and 100'),
+            indicator: 'red'
+        });
         frappe.validated = false;
     }
 }
