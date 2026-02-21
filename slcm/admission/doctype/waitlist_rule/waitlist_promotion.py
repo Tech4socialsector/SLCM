@@ -27,20 +27,9 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
         fields=["category", "seats"],
     )
 
-    def get_category_id(cat_name):
-        return frappe.db.sql("""
-            SELECT name FROM `tabAdmission Category`
-            WHERE name = %s OR category_code = %s OR category_name = %s
-            LIMIT 1
-        """, (cat_name, cat_name, cat_name), pluck=True)
-
-    gen_cat_name = get_category_id("GEN")
-    if not gen_cat_name:
-        gen_cat_name = get_category_id("General")
-
     result = {"GEN": 0, "Reserved": {}}
     for q in quotas:
-        if gen_cat_name and q.category == gen_cat_name[0]:
+        if q.category in ["GEN", "General"]:
             result["GEN"] = int(q.seats or 0)
         else:
             result["Reserved"][q.category] = int(q.seats or 0)

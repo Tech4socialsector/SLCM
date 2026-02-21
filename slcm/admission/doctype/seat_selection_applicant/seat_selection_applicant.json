@@ -55,7 +55,7 @@
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Selection Status",
-            "options": "Draft\nSelected\nWaitlisted\nRejected"
+            "options": "Draft\nSelected\nWaitlisted\nRejected\nOffer Declined\nOffer Expired"
         },
         {
             "fieldname": "allocation_type",

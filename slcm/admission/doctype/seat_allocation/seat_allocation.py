@@ -10,6 +10,21 @@ class SeatAllocation(Document):
         if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
             return
 
+        # Recalculate counters for accuracy
+        self.total_selected = 0
+        self.total_waitlisted = 0
+        self.total_rejected = 0
+        
+        rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired"]
+        
+        for row in (self.selection_applicant or []):
+            if row.selection_status == "Selected":
+                self.total_selected += 1
+            elif row.selection_status == "Waitlisted":
+                self.total_waitlisted += 1
+            elif row.selection_status in rejection_statuses:
+                self.total_rejected += 1
+
         before = None
         try:
             before = self.get_doc_before_save()
@@ -27,13 +42,10 @@ class SeatAllocation(Document):
         for row in (self.selection_applicant or []):
             old_status = before_map.get(row.name)
             new_status = row.selection_status
-            if old_status == "Selected" and new_status == "Rejected":
+            
+            # Trigger promotion if a Selected applicant moves to any rejected status
+            if old_status == "Selected" and new_status in rejection_statuses:
                 affected_programs.add(row.program)
-
-                if self.total_selected is not None:
-                    self.total_selected = max(0, int(self.total_selected or 0) - 1)
-                if self.total_rejected is not None:
-                    self.total_rejected = int(self.total_rejected or 0) + 1
 
         if not affected_programs:
             return
@@ -148,12 +160,16 @@ class SeatAllocation(Document):
             program_to_rule[p.program_of_study] = p.reservation_rule
 
         # Helpers
-        def get_category_seats(rule_name, cat_name):
-            # Resolve all category IDs that match the name or code
-            matching_cats = frappe.db.sql("""
-                SELECT name FROM `tabAdmission Category`
-                WHERE name = %s OR category_code = %s OR category_name = %s
-            """, (cat_name, cat_name, cat_name), pluck=True)
+        def get_category_seats(rule_name, cat_name, literal=False):
+            if literal:
+                # For GEN pool, we ONLY look for literal GEN or General in the rule
+                matching_cats = [cat_name]
+            else:
+                # Resolve all category IDs that match the name or code
+                matching_cats = frappe.db.sql("""
+                    SELECT name FROM `tabAdmission Category`
+                    WHERE name = %s OR category_code = %s OR category_name = %s
+                """, (cat_name, cat_name, cat_name), pluck=True)
             
             for c in matching_cats:
                 val = frappe.db.get_value("Reservation Quota", {"parent": rule_name, "category": c}, "seats")
@@ -201,9 +217,9 @@ class SeatAllocation(Document):
             # -----------------------------------
             # PHASE 1: OPEN (GEN) SELECTION
             # -----------------------------------
-            gen_seats, matched_gen_cat = get_category_seats(rule_name, "GEN")
+            gen_seats, matched_gen_cat = get_category_seats(rule_name, "GEN", literal=True)
             if gen_seats == 0:
-                gen_seats, matched_gen_cat = get_category_seats(rule_name, "General")
+                gen_seats, matched_gen_cat = get_category_seats(rule_name, "General", literal=True)
 
             # Get waitlist percentage from active Waitlist Rule (campus wide)
             waitlist_percent = 50.0
