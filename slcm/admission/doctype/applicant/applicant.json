@@ -373,6 +373,13 @@
    "label": "Board (Class XII/Equivalent)"
   },
   {
+   "fieldname": "class_xii_percentage",
+   "fieldtype": "Float",
+   "label": "Percentage/CGPA obtained (Class XII/Equivalent)",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
    "fieldname": "class_xii_cgpa",
    "fieldtype": "Float",
    "label": "If CGPA, maximum CPGA (Class XII/Equivalent)",
@@ -852,7 +859,7 @@
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 15:55:10.922798",
+ "modified": "2026-02-21 13:28:35.013837",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
