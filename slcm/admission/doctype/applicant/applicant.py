@@ -11,6 +11,7 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def validate(self):
+        self.validate_preferences()
         self.validate_eligibility()
 
         # create_or_update_evaluation() is called INSIDE validate_eligibility()
@@ -30,6 +31,19 @@ class Applicant(Document):
                 _("Submission Not Allowed: Applicant is not eligible."),
                 title=_("Submission Not Allowed")
             )
+
+    def on_update(self):
+        self.pluck_documents()
+
+    def validate_preferences(self):
+        """Ensure preferences are unique and mandatory."""
+        if not self.campus_preference_1:
+            frappe.throw(_("Campus Preference 1 is mandatory."))
+        
+        prefs = [self.campus_preference_1, self.campus_preference_2, self.campus_preference_3]
+        prefs = [p for p in prefs if p]
+        if len(prefs) != len(set(prefs)):
+            frappe.throw(_("Campus preferences must be unique."))
 
     # ──────────────────────────────────────────────
     # CHILD TABLE VALUE HELPERS
@@ -62,31 +76,10 @@ class Applicant(Document):
     def validate_eligibility(self):
         """
         Main eligibility entry point.
-
-        Flow:
-        ─────
-        STEP 0 — National Test Exemption check.
-        STEP 1 — Academic Eligibility Rule Mapping checks.
-
-        KEY BEHAVIOUR:
-        ─────────────
-        On ineligibility:
-          1. Sets self.evaluation_status = "Ineligible" and self.rejected_reason.
-          2. Calls create_or_update_evaluation() IMMEDIATELY — so the Ineligible
-             record is persisted to the Eligibility Evaluation doctype BEFORE the
-             throw. Without this, frappe.throw() exits the call stack and the
-             save in validate() never runs, meaning ineligible records are lost.
-          3. Raises a single frappe.throw() containing:
-               • Red reason box  (the specific failure message)
-               • Full program table  (all campus programs + full eligibility check)
-
-        On eligibility:
-          1. Sets self.evaluation_status = "Eligible".
-          2. Returns normally — create_or_update_evaluation() is then called by
-             validate() as usual.
+        Uses campus_preference_1 as the primary campus for eligibility checks.
         """
 
-        if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
+        if not all([self.program, self.campus_preference_1, self.admission_cycle, self.academic_year]):
             self.evaluation_status = ""
             self.rejected_reason = ""
             self._clear_national_test_flags()
@@ -163,7 +156,7 @@ class Applicant(Document):
                     frappe.throw(
                         full_message,
                         title=_("Not Eligible — Program Options for {0}").format(
-                            self.campus or ""
+                            self.campus_preference_1 or ""
                         )
                     )
                     return  # never reached — throw exits — kept for clarity
@@ -203,7 +196,7 @@ class Applicant(Document):
               AND erm.admission_cycle = %(admission_cycle)s
             ORDER BY erm.program ASC
         """, {
-            "campus":          self.campus,
+            "campus":          self.campus_preference_1,
             "admission_cycle": self.admission_cycle,
         }, as_dict=True)
 
@@ -333,7 +326,7 @@ class Applicant(Document):
             </div>
         """.format(
             heading = _("Available Programs &mdash; {campus} &nbsp;&middot;&nbsp; {cycle}").format(
-                          campus=frappe.utils.escape_html(self.campus or ""),
+                          campus=frappe.utils.escape_html(self.campus_preference_1 or ""),
                           cycle =frappe.utils.escape_html(self.admission_cycle or "")
                       ),
             summary = summary_bar,
@@ -374,7 +367,7 @@ class Applicant(Document):
                   AND erm.admission_cycle = %(admission_cycle)s
                   AND erm.program         = %(program)s
             """, {
-                "campus":          self.campus,
+                "campus":          self.campus_preference_1,
                 "admission_cycle": self.admission_cycle,
                 "program":         program_name,
             }, as_dict=True)
@@ -453,7 +446,7 @@ class Applicant(Document):
             LIMIT 1
         """, {
             "program":         self.program,
-            "campus":          self.campus,
+            "campus":          self.campus_preference_1,
             "admission_cycle": self.admission_cycle,
             "academic_year":   self.academic_year,
             "national_test":   national_test,
@@ -499,7 +492,7 @@ class Applicant(Document):
               AND erm.admission_cycle   = %(admission_cycle)s
               AND erm.program           = %(program)s
         """, {
-            "campus":          self.campus,
+            "campus":          self.campus_preference_1,
             "admission_cycle": self.admission_cycle,
             "program":         self.program,
         }, as_dict=True)
@@ -601,7 +594,7 @@ class Applicant(Document):
               AND %(today)s BETWEEN effective_from AND effective_to
         """, {
             "rule_name":     rule_name,
-            "campus":        self.campus,
+            "campus":        self.campus_preference_1,
             "academic_year": self.academic_year,
             "today":         nowdate(),
         }, as_dict=True)
@@ -959,3 +952,53 @@ def before_submit_applicant(doc, method):
             ),
             title=_("Submission Not Allowed")
         )
+
+    def pluck_documents(self):
+        """
+        Plucks file attachments from Applicant fields and updates Applicant Document.
+        """
+        doc_fields = {
+            "candidate_photo": _("Photograph"),
+            "id_proof": _("ID Proof"),
+            "class_x_marksheet": _("Class X Marksheet"),
+            "class_xii_marksheet": _("Class XII Marksheet"),
+            "ews_certificate": _("EWS Certificate"),
+            "caste_certificate": _("Caste Certificate"),
+            "pwd_certificate": _("PWD Certificate"),
+            "ka_study_7yrs_certificate": _("7 Years Study Certificate"),
+            "ka_defence_child_certificate": _("Defence Child Certificate"),
+            "ka_govt_child_certificate": _("Govt Child Certificate"),
+            "ka_ais_child_certificate": _("AIS Child Certificate"),
+            "ka_capf_child_certificate": _("CAPF Child Certificate"),
+            "cv": _("Curriculum Vitae")
+        }
+
+        # Find or create Applicant Document
+        ad_name = "AD-" + self.name
+        if frappe.db.exists("Applicant Document", ad_name):
+            ad = frappe.get_doc("Applicant Document", ad_name)
+        else:
+            ad = frappe.new_doc("Applicant Document")
+            ad.name = ad_name
+            ad.applicant = self.name
+            ad.insert(ignore_permissions=True)
+
+        existing_docs = {d.document_name: d for d in ad.documents}
+        updated = False
+
+        for field, label in doc_fields.items():
+            val = self.get(field)
+            if val:
+                if label in existing_docs:
+                    if existing_docs[label].file_url != val:
+                        existing_docs[label].file_url = val
+                        updated = True
+                else:
+                    ad.append("documents", {
+                        "document_name": label,
+                        "file_url": val
+                    })
+                    updated = True
+        
+        if updated:
+            ad.save(ignore_permissions=True)
