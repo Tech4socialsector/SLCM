@@ -54,10 +54,9 @@
   },
   {
    "fieldname": "program_fee",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Program Fee",
-   "options": "Fee Structure",
    "reqd": 1
   }
  ],
@@ -65,7 +64,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-18 15:38:18.391719",
+ "modified": "2026-02-19 15:18:55.787096",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Offering Criteria",

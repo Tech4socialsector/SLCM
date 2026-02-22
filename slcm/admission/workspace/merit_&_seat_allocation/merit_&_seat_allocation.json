@@ -1,0 +1,170 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"MRQX9y9hff\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Merit &amp; Seat Allocation</span>\",\"col\":12}},{\"id\":\"NtSWWz7jR3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule\",\"col\":4}},{\"id\":\"6Cbfx1mW4E\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule Mapping\",\"col\":4}},{\"id\":\"xGhl0aPW1i\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"jIQLROWQ3z\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit Calculation\",\"col\":4}},{\"id\":\"Moc2oGMIAp\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Tii3g_426K\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"2kjw0IzcL4\",\"type\":\"card\",\"data\":{\"card_name\":\"TEST\",\"col\":4}}]",
+ "creation": "2026-02-20 09:51:44.094533",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "permission",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Merit & Seat Allocation",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Merit Calculation",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Merit Rule",
+   "link_count": 0,
+   "link_to": "Merit Rule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Merit Rule Mapping",
+   "link_count": 0,
+   "link_to": "Merit Rule Mapping",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Merit Generation",
+   "link_count": 0,
+   "link_to": "Merit Generation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Merit List",
+   "link_count": 0,
+   "link_to": "Merit List",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Seat Allocation",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Seat Allocation",
+   "link_count": 0,
+   "link_to": "Seat Allocation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Overall Merit Report",
+   "link_count": 0,
+   "link_to": "Overall Merit Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Seat Availability Report",
+   "link_count": 0,
+   "link_to": "Seat Availability Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Seat Allocation",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "TEST",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program Offering",
+   "link_count": 0,
+   "link_to": "Program Offering",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Admission Result",
+   "link_count": 0,
+   "link_to": "Admission Result",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-21 12:42:50.590837",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Merit & Seat Allocation",
+ "number_cards": [
+  {
+   "label": "Merit Rule",
+   "number_card_name": "Merit Rule"
+  },
+  {
+   "label": "Merit Rule Mapping",
+   "number_card_name": "Merit Rule Mapping"
+  },
+  {
+   "label": "Seat Allocation",
+   "number_card_name": "Seat Allocation"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 2.0,
+ "shortcuts": [],
+ "title": "Merit & Seat Allocation"
+}

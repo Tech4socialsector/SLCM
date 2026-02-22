@@ -1,0 +1,121 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "field:applicant_name",
+    "creation": "2026-02-16 19:26:12.511089",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "applicant_name",
+        "campus",
+        "program",
+        "program_level",
+        "reservation_category",
+        "column_break_ercs",
+        "admission_cycle",
+        "hsc_percentage",
+        "entrance_percentage",
+        "interview_percentage",
+        "ug_cgpa",
+        "pg_cgpa"
+    ],
+    "fields": [
+        {
+            "fieldname": "reservation_category",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Category",
+            "options": "Admission Category",
+            "reqd": 1
+        },
+        {
+            "fieldname": "applicant_name",
+            "fieldtype": "Data",
+            "label": "Applicant Name",
+            "unique": 1
+        },
+        {
+            "fieldname": "program",
+            "fieldtype": "Link",
+            "label": "Program",
+            "options": "Program"
+        },
+        {
+            "fieldname": "program_level",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Program Level",
+            "options": "UG\nPG\nPhD",
+            "reqd": 1
+        },
+        {
+            "fieldname": "campus",
+            "fieldtype": "Link",
+            "label": "Campus",
+            "options": "Campus"
+        },
+        {
+            "fieldname": "column_break_ercs",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "admission_cycle",
+            "fieldtype": "Link",
+            "label": "Admission Cycle",
+            "options": "Admission Cycle"
+        },
+        {
+            "fieldname": "entrance_percentage",
+            "fieldtype": "Float",
+            "label": "Entrance Test Percentage"
+        },
+        {
+            "fieldname": "interview_percentage",
+            "fieldtype": "Float",
+            "label": "Interview Percentage"
+        },
+        {
+            "fieldname": "hsc_percentage",
+            "fieldtype": "Float",
+            "label": "HSC Percentage"
+        },
+        {
+            "fieldname": "ug_cgpa",
+            "fieldtype": "Float",
+            "label": "UG CGPA"
+        },
+        {
+            "fieldname": "pg_cgpa",
+            "fieldtype": "Float",
+            "label": "PG CGPA"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-02-21 11:30:00.000000",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Admission Result",
+    "naming_rule": "By fieldname",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "rows_threshold_for_grid_search": 20,
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}

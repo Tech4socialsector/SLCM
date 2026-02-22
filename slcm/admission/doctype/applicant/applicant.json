@@ -32,6 +32,7 @@
   "campus",
   "section_break_azsq",
   "title",
+  "categories",
   "section_break_rnvz",
   "rejected_reason",
   "parent_and_guardian_details",
@@ -77,7 +78,8 @@
   "section_break_vpmz",
   "class_xii_name_of_examination",
   "class_xii_school",
-  "class_xii_percentage",
+  "hsc_group",
+  "hsc_percentage",
   "column_break_mlet",
   "class_xii_year_of_completion",
   "class_xii_cgpa",
@@ -87,7 +89,11 @@
   "section_break_cmag",
   "ug_degree_completion",
   "section_break_cris",
+  "ug_degree_details_column",
   "ug_degree_details",
+  "pg_degree_details",
+  "national_test_name",
+  "percentage",
   "employment_history_tab",
   "post_degree_work_experience",
   "years_of_work_experience",
@@ -146,7 +152,8 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
-   "options": "Campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "fieldname": "academic_year",
@@ -172,8 +179,7 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
-   "label": "Candidate Name",
-   "reqd": 1
+   "label": "Candidate Name"
   },
   {
    "fieldname": "date_of_birth",
@@ -365,13 +371,6 @@
    "fieldname": "class_xii_board",
    "fieldtype": "Data",
    "label": "Board (Class XII/Equivalent)"
-  },
-  {
-   "fieldname": "class_xii_percentage",
-   "fieldtype": "Float",
-   "label": "Percentage/CGPA obtained (Class XII/Equivalent)",
-   "non_negative": 1,
-   "precision": "2"
   },
   {
    "fieldname": "class_xii_cgpa",
@@ -731,15 +730,13 @@
    "description": "Max 1MB - Supported formats png, jpeg, jpg",
    "fieldname": "candidate_photo",
    "fieldtype": "Attach Image",
-   "label": "Candidate Photo",
-   "reqd": 1
+   "label": "Candidate Photo"
   },
   {
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Email",
-   "options": "Email",
-   "reqd": 1
+   "options": "Email"
   },
   {
    "fieldname": "application_info_section",
@@ -766,7 +763,8 @@
   },
   {
    "fieldname": "section_break_cris",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Completion Degree Details "
   },
   {
    "fieldname": "ug_degree_details",
@@ -807,17 +805,58 @@
    "fieldtype": "Link",
    "label": "Admission Cycle",
    "options": "Admission Cycle"
+  },
+  {
+   "fieldname": "categories",
+   "fieldtype": "Table",
+   "label": "Categories",
+   "options": "Applicant Category"
+  },
+  {
+   "fieldname": "hsc_percentage",
+   "fieldtype": "Percent",
+   "label": "Xll Percentage ",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "hsc_group",
+   "fieldtype": "Link",
+   "label": "Xll Group ",
+   "options": "HSC Groups"
+  },
+  {
+   "fieldname": "ug_degree_details_column",
+   "fieldtype": "Column Break",
+   "label": "UG Degree Details "
+  },
+  {
+   "fieldname": "pg_degree_details",
+   "fieldtype": "Table",
+   "label": "PG Degree Details ",
+   "options": "PG Degree Details"
+  },
+  {
+   "fieldname": "national_test_name",
+   "fieldtype": "Link",
+   "label": "National Test Name",
+   "options": "National Test"
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Percent",
+   "label": "Percentage"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-21 13:28:35.013837",
+ "modified": "2026-02-20 15:55:10.922798",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -829,6 +868,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Eligibility Admin",
    "share": 1,
    "write": 1
   }
