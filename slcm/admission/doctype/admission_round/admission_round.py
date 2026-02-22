@@ -93,8 +93,5 @@ class AdmissionRound(Document):
 		self.db_set("is_active", 1)
 
 	def on_trash(self):
-		if frappe.db.exists("Campus Seat Matrix", {"admission_round": self.name}):
-			frappe.throw(
-				_("Cannot delete Admission Round '{0}' as it is linked to one or more Campus Seat Matrix records.")
-				.format(self.name)
-			)
+		if self.status == "Active":
+			frappe.throw(_("Cannot delete an Active Admission Round. Change its status first."))
