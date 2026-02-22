@@ -55,10 +55,17 @@ def get_columns():
             "fieldname": "vacant_seats",
             "fieldtype": "Int",
             "width": 100
+        },
+        {
+            "label": _("Utilization %"),
+            "fieldname": "utilization_percent",
+            "fieldtype": "Percent",
+            "width": 120
         }
     ]
 
 def get_data(filters):
+    # ... (rest of get_data logic remains mostly the same, just adding the field)
     # 1. Resolve Admission Cycles from Admission Year
     relevant_cycles = []
     if filters.get("admission_year"):
@@ -106,12 +113,6 @@ def get_data(filters):
                 key = (campus, program, cat)
                 capacities[key] = capacities.get(key, 0) + (seats or 0)
 
-    if filters.get("admission_year") and not relevant_cycles:
-        # If year specified but no cycles found, we should return empty allocations
-        # and probably empty capacities since POs are also tied to year.
-        # But for robustness, let's just ensure we don't fetch wrong SAs.
-        pass
-
     # 3. Fetch allocations (Allocated/Waitlisted)
     sa_filters = {"docstatus": ["<", 2]}
     if filters.get("campus"):
@@ -139,10 +140,6 @@ def get_data(filters):
             fields=["parent", "program", "reservation_category", "selection_status"]
         )
         
-        # Load category codes/names for fallback matching if needed
-        all_categories = frappe.get_all("Admission Category", fields=["name", "category_code", "category_name"])
-        cat_map = {c.name: c for c in all_categories}
-
         for app in applicants:
             campus = sa_campus_map.get(app.parent)
             program = app.program
@@ -163,13 +160,16 @@ def get_data(filters):
     for key in all_keys:
         campus, program, category = key
         
-        # Filtering by program if requested
         if filters.get("program") and program != filters.get("program"):
             continue
 
         total = capacities.get(key, 0)
         stats = allocations.get(key, {"allocated": 0, "waitlisted": 0})
         
+        utilization = 0
+        if total > 0:
+            utilization = (stats["allocated"] / total) * 100
+
         final_data.append(frappe._dict({
             "campus": campus,
             "program": program,
@@ -177,9 +177,29 @@ def get_data(filters):
             "total_seats": total,
             "allocated": stats["allocated"],
             "waitlisted": stats["waitlisted"],
-            "vacant_seats": max(0, total - stats["allocated"])
+            "vacant_seats": max(0, total - stats["allocated"]),
+            "utilization_percent": utilization
         }))
 
-    # Sort for consistent display
     final_data.sort(key=lambda x: (x.campus or "", x.program or "", x.category or ""))
     return final_data
+
+def get_chart_data(columns, data, filters):
+    if not data:
+        return None
+
+    total_seats = sum(d.get("total_seats", 0) for d in data)
+    allocated = sum(d.get("allocated", 0) for d in data)
+    
+    utilization = 0
+    if total_seats > 0:
+        utilization = (allocated / total_seats) * 100
+
+    return {
+        "data": {
+            "labels": ["Utilization"],
+            "datasets": [{"name": "Utilization %", "values": [round(utilization, 2)]}]
+        },
+        "type": "percentage", # Display as Percentage/Gauge in Frappe
+        "colors": ["#42a5f5"]
+    }

@@ -29,6 +29,7 @@ function open_allocation_dialog(frm) {
             </td>
             <td>${row.overall_rank || "-"}</td>
             <td><b>${row.applicant || "-"}</b></td>
+            <td>${row.applicant_id || "-"}</td>
             <td>${row.program || "-"}</td>
             <td>${row.reservation_category || "-"}</td>
             <td>${(row.total_score !== undefined && row.total_score !== null) ? parseFloat(row.total_score).toFixed(3) : "-"}</td>
@@ -66,7 +67,7 @@ function open_allocation_dialog(frm) {
                 fieldtype: "Select",
                 fieldname: "program_level",
                 label: __("Program Level"),
-                options: "UG\nPG\nPhD",
+                options: "UG\nPG\nResearch Cource",
                 read_only: 1,
                 default: frm.doc.program_level
             },
@@ -93,6 +94,7 @@ function open_allocation_dialog(frm) {
                                     <th style="width:40px;"></th>
                                     <th>Rank</th>
                                     <th>Applicant</th>
+                                    <th>Applicant ID</th>
                                     <th>Program</th>
                                     <th>Reservation Category</th>
                                     <th>Total Score</th>

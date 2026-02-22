@@ -68,8 +68,6 @@ def process_waitlist(rule_doc):
     if not rule_doc or rule_doc.doctype != "Waitlist Rule":
         frappe.throw("Invalid Waitlist Rule")
 
-    if rule_doc.is_locked:
-        return
 
     if (rule_doc.status or "").lower() != "active":
         return
@@ -109,7 +107,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
     
     selected_rows = [
         r for r in seat_alloc.selection_applicant
-        if r.program == program and r.selection_status == "Selected"
+        if r.program == program and r.selection_status in ["Selected", "Accepted"]
     ]
     
     waitlisted_rows = [
@@ -120,6 +118,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
     if not waitlisted_rows:
         return False
 
+    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
     promoted_total = 0
 
     # 1. Promote for OPEN seats
@@ -130,9 +129,39 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
         open_waitlist = [r for r in waitlisted_rows if r.allocation_type == "Open"]
         open_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
         
+        # Log that vacancies were identified
+        log_admission_action(
+            reference_doctype="Waitlist Rule",
+            reference_name=rule_doc.name,
+            program=program,
+            action_type="Waitlist Vacated",
+            remarks=f"Automatic promotion engine identified {open_vacancies} vacant OPEN seat(s)."
+        )
+
         for row in open_waitlist[:open_vacancies]:
             row.selection_status = "Selected"
             promoted_total += 1
+            log_admission_action(
+                reference_doctype="Waitlist Rule",
+                reference_name=rule_doc.name,
+                applicant=row.applicant,
+                program=program,
+                action_type="Waitlist Promoted",
+                old_value="Waitlisted",
+                new_value="Selected",
+                remarks=f"Automatically promoted to OPEN seat via {rule_doc.name}."
+            )
+
+            # Send notification for automatic promotion
+            from slcm.admission.notification_service import notify_status_change
+            notify_status_change(
+                applicant=row.applicant,
+                program=program,
+                old_status="Waitlisted",
+                new_status="Selected",
+                allocation_name=seat_alloc.name,
+                admission_cycle=seat_alloc.admission_cycle
+            )
 
     # 2. Promote for RESERVED seats
     for cat_name, cat_quota in quotas["Reserved"].items():
@@ -150,9 +179,39 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
             cat_waitlist = [r for r in waitlisted_rows if r.allocation_type == "Reserved" and r.reservation_category in match_strings and r.selection_status == "Waitlisted"]
             cat_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
+            # Log that vacancies were identified for this category
+            log_admission_action(
+                reference_doctype="Waitlist Rule",
+                reference_name=rule_doc.name,
+                program=program,
+                action_type="Waitlist Vacated",
+                remarks=f"Automatic promotion engine identified {cat_vacancies} vacant RESERVED seat(s) for {cat_name}."
+            )
+
             for row in cat_waitlist[:cat_vacancies]:
                 row.selection_status = "Selected"
                 promoted_total += 1
+                log_admission_action(
+                    reference_doctype="Waitlist Rule",
+                    reference_name=rule_doc.name,
+                    applicant=row.applicant,
+                    program=program,
+                    action_type="Waitlist Promoted",
+                    old_value="Waitlisted",
+                    new_value="Selected",
+                    remarks=f"Automatically promoted to RESERVED ({cat_name}) seat via {rule_doc.name}."
+                )
+
+                # Send notification for automatic promotion
+                from slcm.admission.notification_service import notify_status_change
+                notify_status_change(
+                    applicant=row.applicant,
+                    program=program,
+                    old_status="Waitlisted",
+                    new_status="Selected",
+                    allocation_name=seat_alloc.name,
+                    admission_cycle=seat_alloc.admission_cycle
+                )
 
     if promoted_total:
         seat_alloc.total_selected = int(seat_alloc.total_selected or 0) + promoted_total
@@ -171,7 +230,7 @@ def run_manual_waitlist(rule: str):
 def run_scheduled_waitlist():
     rules = frappe.get_all(
         "Waitlist Rule",
-        filters={"status": "Active", "is_locked": 0},
+        filters={"status": "Active"},
         fields=["name", "upgrade_frequency"],
     )
 
