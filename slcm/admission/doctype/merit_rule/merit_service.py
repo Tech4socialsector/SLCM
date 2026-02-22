@@ -115,19 +115,24 @@ def generate_merit_for_level(cycle, campus, program_level):
 
     rule = frappe.get_doc("Merit Rule", merit_rule_name)
 
-    # Fetch applicants for this program level
-    applicants = frappe.get_all(
-        "Admission Result",
-        filters={
-            "admission_cycle": cycle,
-            "campus": campus,
-            "program_level": program_level
-        },
-        fields=[
-            "name", "program", "program_level", "reservation_category",
-            "hsc_percentage", "entrance_percentage", "interview_percentage"
-        ]
-    )
+    applicants = frappe.db.sql("""
+        SELECT 
+            ar.name, ar.program, ar.program_level, ar.reservation_category,
+            ar.hsc_percentage, ar.entrance_percentage, ar.interview_percentage
+        FROM `tabAdmission Result` ar
+        JOIN `tabApplicant` app ON app.name = ar.applicant_name
+        WHERE ar.admission_cycle = %(cycle)s
+          AND ar.program_level = %(program_level)s
+          AND (
+              app.campus_preference_1 = %(campus)s OR
+              app.campus_preference_2 = %(campus)s OR
+              app.campus_preference_3 = %(campus)s
+          )
+    """, {
+        "cycle": cycle,
+        "campus": campus,
+        "program_level": program_level
+    }, as_dict=True)
     if not applicants:
         frappe.throw(
             f"No applicants found for Program Level '{program_level}', "

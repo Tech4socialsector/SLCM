@@ -293,3 +293,13 @@ class SeatAllocation(Document):
         frappe.db.commit()
 
         frappe.msgprint("Allocation Published.")
+
+    @frappe.whitelist()
+    def reconcile_allocations_across_campuses(self):
+        """
+        PLACEHOLDER: Reconcile allocations for applicants selected in multiple campuses.
+        Logic: If an applicant is selected for multiple campuses, they should be
+        retained in the one with the highest preference and released from others.
+        """
+        frappe.msgprint(_("Multi-campus reconciliation placeholder executed. This would normally release lower-priority seats."))
+        pass
