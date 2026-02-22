@@ -108,3 +108,51 @@ def assert_stage_enabled_and_active(admission_cycle, stage_flag, stage_name):
 		frappe.throw(
 			_("Admission Cycle '{0}' is not currently in the '{1}' stage.").format(admission_cycle, stage_name)
 		)
+
+
+def validate_cycle_deadline(action, admission_cycle, throw=True):
+	"""
+	Central utility to check if an action falls within the configured deadlines.
+	Supported actions: 'Application', 'Interview', 'Offer', 'Payment'
+	"""
+	if not admission_cycle:
+		return True
+
+	cycle = frappe.get_doc("Admission Cycle", admission_cycle)
+	current_date = getdate(today())
+	
+	deadlines = {
+		"Application": ("start_date", "end_date", _("Application window")),
+		"Interview": ("interview_start_date", "interview_end_date", _("Interview window")),
+		"Offer": ("offer_start_date", "offer_end_date", _("Offer window")),
+		"Payment": ("payment_start_date", "payment_end_date", _("Payment/Acceptance window")),
+	}
+
+	if action not in deadlines:
+		return True
+
+	start_f, end_f, label = deadlines[action]
+	start_date = cycle.get(start_f)
+	end_date = cycle.get(end_f)
+
+	# Special check for Application Cutoff Rule
+	if action == "Application":
+		cutoff = get_cycle_rule(admission_cycle, "Submission Cutoff")
+		if cutoff:
+			end_date = cutoff
+
+	if not start_date or not end_date:
+		# Fallback to stage-based check if explicit fields are empty
+		# We assume the 'label' maps roughly to stage names if needed
+		# but for now, we just return True if no dates are configured
+		return True
+
+	if not (getdate(start_date) <= current_date <= getdate(end_date)):
+		if throw:
+			frappe.throw(
+				_("The {0} for Admission Cycle '{1}' is currently closed. (Open from {2} to {3})")
+				.format(label, admission_cycle, start_date, end_date)
+			)
+		return False
+
+	return True
