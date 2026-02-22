@@ -16,19 +16,13 @@ class AdmissionYear(Document):
 			else:
 				self.name = f"AY-{self.academic_year}"
 
-	# def validate(self):
-		# self.set_admission_cycle_type_for_single()
-		# self.validate_dates()
-		# self.validate_unique_year_cycle_type()
-		# self.validate_one_active_per_cycle_type()
-		# self.validate_campus_duplicates()
-		# self.validate_status()
-		# self.validate_one_open_year()
+	def validate(self):
+		self.validate_dates()
+		self.validate_one_active_per_cycle_type()
+		self.validate_campus_duplicates()
+		self.validate_status()
+		self.validate_one_open_year()
 
-	# def set_admission_cycle_type_for_single(self):
-	# 	"""If multi_cycle is off, force Regular cycle type."""
-	# 	if not self.multi_cycle:
-	# 		self.admission_cycle_type = "Regular"
 
 	def validate_dates(self):
 		if self.start_date and self.end_date:
@@ -44,46 +38,33 @@ class AdmissionYear(Document):
 				if getdate(self.end_date) > getdate(ay.year_end_date):
 					frappe.throw(_("Admission End Date must be within the Academic Year end date ({0}).").format(ay.year_end_date))
 
-	# def validate_unique_year_cycle_type(self):
-	# 	existing = frappe.db.get_value(
-	# 		"Admission Year",
-	# 		{
-	# 			"academic_year": self.academic_year,
-	# 			"admission_cycle_type": self.admission_cycle_type,
-	# 			"name": ["!=", self.name]
-	# 		},
-	# 		"name"
-	# 	)
-	# 	if existing:
-	# 		frappe.throw(
-	# 			_("An Admission Year for Academic Year '{0}' with Cycle Type '{1}' already exists: {2}")
-	# 			.format(self.academic_year, self.admission_cycle_type, existing)
-	# 		)
-
-	# def validate_one_active_per_cycle_type(self):
-	# 	if self.is_active:
-	# 		existing = frappe.db.get_value(
-	# 			"Admission Year",
-	# 			{
-	# 				"admission_cycle_type": self.admission_cycle_type,
-	# 				"is_active": 1,
-	# 				"name": ["!=", self.name]
-	# 			},
-	# 			"name"
-	# 		)
-	# 		if existing:
-	# 			frappe.throw(
-	# 				_("Another Admission Year ({0}) is already active for Cycle Type '{1}'. Only one can be active at a time.")
-	# 				.format(existing, self.admission_cycle_type)
-	# 			)
+	def validate_one_active_per_cycle_type(self):
+		"""Ensures only one Admission Year is active at a time."""
+		if self.is_active:
+			existing = frappe.db.get_value(
+				"Admission Year",
+				{
+					"is_active": 1,
+					"name": ["!=", self.name]
+				},
+				"name"
+			)
+			if existing:
+				frappe.throw(
+					_("Another Admission Year ({0}) is already active. Only one can be active at a time.")
+					.format(existing)
+				)
 
 	def validate_status(self):
 		if self.status == "Active":
-			if not any(c.is_active for c in (self.participating_campuses or [])):
-				frappe.msgprint(
-					_("Warning: No active participating campus found for this Admission Year."),
-					alert=True
-				)
+			# Only check participating campuses if the table exists
+			campuses = getattr(self, "participating_campuses", [])
+			if campuses:
+				if not any(c.is_active for c in campuses):
+					frappe.msgprint(
+						_("Warning: No active participating campus found for this Admission Year."),
+						alert=True
+					)
 
 	def validate_one_open_year(self):
 		if self.status == "Active":
@@ -99,7 +80,7 @@ class AdmissionYear(Document):
 				)
 
 	def validate_campus_duplicates(self):
-		if not self.participating_campuses:
+		if not hasattr(self, "participating_campuses") or not self.participating_campuses:
 			return
 		seen = {}
 		for row in self.participating_campuses:
@@ -110,6 +91,39 @@ class AdmissionYear(Document):
 					title=_("Duplicate Entry")
 				)
 			seen[row.campus] = row.idx
+
+	def on_update(self):
+		"""Write audit log for every changed audited field."""
+		if self.is_new():
+			return
+		old = self.get_doc_before_save()
+		if not old:
+			return
+
+		audited_fields = {
+			"start_date": "Date Change",
+			"end_date": "Date Change",
+			"status": "Status Change",
+			"is_active": "Activation Change"
+		}
+
+		for field, change_type in audited_fields.items():
+			old_val = old.get(field)
+			new_val = self.get(field)
+			
+			if str(old_val) == str(new_val):
+				continue
+
+			log = frappe.new_doc("Admission Year Audit Log")
+			log.admission_year = self.name
+			log.changed_field = field
+			log.previous_value = str(old_val) if old_val is not None else ""
+			log.new_value = str(new_val) if new_val is not None else ""
+			log.changed_by = frappe.session.user
+			log.change_timestamp = now_datetime()
+			log.change_type = change_type
+			log.reason = getattr(self, "reason", "") 
+			log.insert(ignore_permissions=True)
 
 	def on_trash(self):
 		if frappe.db.exists("Admission Cycle", {"admission_year": self.name}):
