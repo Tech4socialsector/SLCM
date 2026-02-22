@@ -65,6 +65,7 @@
   "pincode",
   "academic_qualification_tab",
   "ug_final_year_note",
+  "program_level",
   "class_x_details_section",
   "class_x_school",
   "class_x_percentage",
@@ -845,13 +846,19 @@
    "fieldname": "percentage",
    "fieldtype": "Percent",
    "label": "Percentage"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "label": "Program Level",
+   "options": "UG\nPG\nResearch Course"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 15:55:10.922798",
+ "modified": "2026-02-22 14:52:32.605654",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-22 22:04:12.131157",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_basic",
+  "provider_code",
+  "provider_name",
+  "provider_type",
+  "campus",
+  "active",
+  "section_break_contact",
+  "contact_person",
+  "contact_number",
+  "email",
+  "section_break_infra",
+  "center_name",
+  "center_address",
+  "provider_room",
+  "total_capacity",
+  "reserved_seats",
+  "available_capacity"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_basic",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
+  },
+  {
+   "fieldname": "provider_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Provider Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "provider_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Provider Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "provider_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Provider Type",
+   "options": "Internal\nExternal",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "fieldname": "section_break_contact",
+   "fieldtype": "Section Break",
+   "label": "Contact Information"
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Data",
+   "label": "Contact Person"
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "section_break_infra",
+   "fieldtype": "Section Break",
+   "label": "Infrastructure & Capacity"
+  },
+  {
+   "fieldname": "center_name",
+   "fieldtype": "Data",
+   "label": "Center Name"
+  },
+  {
+   "fieldname": "center_address",
+   "fieldtype": "Small Text",
+   "label": "Center Address"
+  },
+  {
+   "fieldname": "total_capacity",
+   "fieldtype": "Int",
+   "label": "Total Capacity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reserved_seats",
+   "fieldtype": "Int",
+   "label": "Reserved Seats"
+  },
+  {
+   "fieldname": "available_capacity",
+   "fieldtype": "Int",
+   "label": "Available Capacity"
+  },
+  {
+   "fieldname": "provider_room",
+   "fieldtype": "Table",
+   "label": "Provider Room",
+   "options": "Provider Room"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-22 22:17:47.813824",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Entrance Test Provider",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,73 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2026-02-22 12:30:24.220148",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "applicant_id",
+        "candidate_name",
+        "program",
+        "program_level",
+        "reservation_category",
+        "email",
+        "gender"
+    ],
+    "fields": [
+        {
+            "fieldname": "program",
+            "fieldtype": "Link",
+            "label": "Program",
+            "options": "Program"
+        },
+        {
+            "fieldname": "program_level",
+            "fieldtype": "Select",
+            "label": "Program Level",
+            "options": "UG\nPG\nResearch Course"
+        },
+        {
+            "fetch_from": "applicant.candidate_name",
+            "fieldname": "candidate_name",
+            "fieldtype": "Data",
+            "label": "Candidate Name"
+        },
+        {
+            "fieldname": "applicant_id",
+            "fieldtype": "Link",
+            "label": "Applicant ID",
+            "options": "Applicant"
+        },
+        {
+            "fieldname": "email",
+            "fieldtype": "Data",
+            "label": "Email"
+        },
+        {
+            "fieldname": "gender",
+            "fieldtype": "Data",
+            "label": "Gender"
+        },
+        {
+            "fieldname": "reservation_category",
+            "fieldtype": "Data",
+            "label": "Category"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "links": [],
+    "modified": "2026-02-22 13:13:51.661248",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Entrance Test Applicant",
+    "owner": "Administrator",
+    "permissions": [],
+    "row_format": "Dynamic",
+    "rows_threshold_for_grid_search": 20,
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}
