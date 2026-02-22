@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"Rx91p7Q4Dr\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Admission</span>\",\"col\":12}},{\"id\":\"VMSh97b5NX\",\"type\":\"card\",\"data\":{\"card_name\":\"Campus\",\"col\":4}},{\"id\":\"YTfaHndZj4\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission\",\"col\":4}},{\"id\":\"aNpR59_3E-\",\"type\":\"card\",\"data\":{\"card_name\":\"Configure\",\"col\":4}}]",
+ "content": "[{\"id\":\"Rx91p7Q4Dr\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Admission</span>\",\"col\":12}},{\"id\":\"gNUWo9vIzw\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Settings\",\"col\":4}},{\"id\":\"oGSrU91WVo\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Program\",\"col\":4}},{\"id\":\"4QqJTcpvqv\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Logs\",\"col\":4}}]",
  "creation": "2026-02-16 19:10:20.000968",
  "custom_blocks": [],
  "docstatus": 0,
@@ -16,37 +16,8 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Campus",
-   "link_count": 2,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "University",
-   "link_count": 0,
-   "link_to": "University",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Campus",
-   "link_count": 0,
-   "link_to": "Campus",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Admission",
-   "link_count": 4,
+   "label": "Admission Settings",
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -84,31 +55,11 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Admission Cycle Audit Log",
-   "link_count": 0,
-   "link_to": "Admission Cycle Audit Log",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Configure",
-   "link_count": 3,
+   "label": "Admission Program",
+   "link_count": 2,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Admission Round",
-   "link_count": 0,
-   "link_to": "Admission Round",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
   },
   {
    "hidden": 0,
@@ -123,15 +74,44 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Campus Seat Matrix",
+   "label": "Program Level",
    "link_count": 0,
-   "link_to": "Campus Seat Matrix",
+   "link_to": "Program Level",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Admission Logs",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Admission Year Log",
+   "link_count": 0,
+   "link_to": "Admission Year Audit Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Admission Cycle Log",
+   "link_count": 0,
+   "link_to": "Admission Cycle Audit Log",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-02-20 12:00:56.992166",
+ "modified": "2026-02-22 10:31:29.398331",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission",

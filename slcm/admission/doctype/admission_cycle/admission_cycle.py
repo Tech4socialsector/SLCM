@@ -25,15 +25,18 @@ class AdmissionCycle(Document):
 	def autoname(self):
 		self.name = "AC-{0}-{1}".format(self.admission_year, self.cycle_code)
 
-	# def validate(self):
-	# 	self.validate_admission_year_active_for_status()
-	# 	self.validate_unique_active_per_year_level()
-	# 	self.validate_cycle_dates_within_year()
-	# 	self.validate_stage_sequence()
-	# 	self.validate_stage_date_ranges()
-	# 	self.validate_rule_unique_types()
-	# 	self.validate_lock_enforcement()
-	# 	self.detect_stage_config_override()
+	def validate(self):
+		self.validate_admission_year_active_for_status()
+		self.validate_unique_active_per_year_level()
+		self.validate_cycle_dates_within_year()
+		self.validate_deadline_windows()
+		self.validate_cross_cycle_overlap()
+		self.validate_stage_sequence()
+		self.validate_stage_date_ranges()
+		self.validate_rule_unique_types()
+		self.validate_lock_enforcement()
+		self.validate_change_reason_post_activation()
+		self.detect_stage_config_override()
 
 	def validate_admission_year_active_for_status(self):
 		if self.status == "Active":
@@ -84,6 +87,62 @@ class AdmissionCycle(Document):
 			)
 		if self.start_date and self.end_date and getdate(self.end_date) <= getdate(self.start_date):
 			frappe.throw(_("Cycle End Date must be after Cycle Start Date."))
+
+	def validate_deadline_windows(self):
+		"""Validate that specific deadline windows fall within cycle dates."""
+		windows = [
+			("offer_start_date", "offer_end_date", "Offer Window"),
+			("payment_start_date", "payment_end_date", "Payment Window"),
+		]
+		for start_f, end_f, label in windows:
+			s_val = self.get(start_f)
+			e_val = self.get(end_f)
+			if s_val and e_val:
+				if getdate(e_val) <= getdate(s_val):
+					frappe.throw(_("{0}: End Date must be after Start Date.").format(label))
+				if self.start_date and getdate(s_val) < getdate(self.start_date):
+					frappe.throw(_("{0}: Start Date must be on or after Cycle Start Date ({1}).").format(label, self.start_date))
+				if self.end_date and getdate(e_val) > getdate(self.end_date):
+					frappe.throw(_("{0}: End Date must be on or before Cycle End Date ({1}).").format(label, self.end_date))
+
+	def validate_cross_cycle_overlap(self):
+		"""Prevents overlapping cycles within the same year and programme level."""
+		if not (self.admission_year and self.programme_level and self.start_date and self.end_date):
+			return
+		
+		# Check for overlapping date ranges
+		overlapping = frappe.db.sql("""
+			SELECT name FROM `tabAdmission Cycle`
+			WHERE admission_year = %s 
+			AND programme_level = %s
+			AND name != %s
+			AND docstatus < 2
+			AND (
+				(start_date <= %s AND end_date >= %s) OR
+				(start_date <= %s AND end_date >= %s) OR
+				(%s <= start_date AND %s >= start_date)
+			)
+		""", (self.admission_year, self.programme_level, self.name, 
+			self.start_date, self.start_date, self.end_date, self.end_date, 
+			self.start_date, self.end_date), as_dict=1)
+
+		if overlapping:
+			frappe.throw(_("This cycle overlaps with another Admission Cycle: {0}").format(overlapping[0].name))
+
+	def validate_change_reason_post_activation(self):
+		"""Requires a reason for change for critical fields after the cycle is Active."""
+		if self.is_new():
+			return
+		
+		old = self.get_doc_before_save()
+		if not old or old.status == "Draft":
+			return
+		
+		critical_fields = ["status", "start_date", "end_date", "is_active", "offer_start_date", "offer_end_date", "payment_start_date", "payment_end_date"]
+		changed = [f for f in critical_fields if str(self.get(f)) != str(old.get(f))]
+		
+		if changed and not getattr(self, "lock_override_reason", None):
+			frappe.throw(_("Please provide a 'Lock Override Reason' for changing critical fields ({0}) after the cycle is no longer in Draft.").format(", ".join(changed)))
 
 	def validate_stage_sequence(self):
 		if not self.stages:
@@ -203,10 +262,12 @@ class AdmissionCycle(Document):
 			ay = frappe.get_doc("Admission Year", self.admission_year)
 		except frappe.DoesNotExistError:
 			return
-		overridden = any(
-			self.get(f) != ay.get(f)
-			for f in STAGE_CONFIG_FIELDS
-		)
+		overridden = False
+		for f in STAGE_CONFIG_FIELDS:
+			ay_val = ay.get(f)
+			if ay_val is not None and self.get(f) != ay_val:
+				overridden = True
+				break
 		self.stage_config_overridden = 1 if overridden else 0
 
 	def after_insert(self):
@@ -218,9 +279,11 @@ class AdmissionCycle(Document):
 		except frappe.DoesNotExistError:
 			return
 
-		# Copy stage flags
+		# Copy stage flags if they exist on Admission Year
 		for field in STAGE_CONFIG_FIELDS:
-			self.db_set(field, ay.get(field), update_modified=False)
+			val = ay.get(field)
+			if val is not None:
+				self.db_set(field, val, update_modified=False)
 
 		# Lock parent Admission Year
 		frappe.db.set_value("Admission Year", self.admission_year, "stage_locked", 1)
