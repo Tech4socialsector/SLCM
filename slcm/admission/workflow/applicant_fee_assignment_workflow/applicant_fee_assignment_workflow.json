@@ -1,0 +1,63 @@
+{
+    "creation": "2026-02-20 18:50:00.000000",
+    "doctype": "Workflow",
+    "document_type": "Applicant Fee Assignment",
+    "is_active": 1,
+    "modified": "2026-02-20 18:50:00.000000",
+    "modified_by": "Administrator",
+    "name": "Applicant Fee Assignment Workflow",
+    "owner": "Administrator",
+    "states": [
+        {
+            "allow_edit": "System Manager",
+            "doc_status": 0,
+            "state": "Draft"
+        },
+        {
+            "allow_edit": "System Manager",
+            "doc_status": 1,
+            "state": "Assigned"
+        },
+        {
+            "allow_edit": "System Manager",
+            "doc_status": 1,
+            "state": "Partially Paid"
+        },
+        {
+            "allow_edit": "System Manager",
+            "doc_status": 1,
+            "state": "Paid"
+        },
+        {
+            "allow_edit": "System Manager",
+            "doc_status": 2,
+            "state": "Cancelled"
+        },
+        {
+            "allow_edit": "System Manager",
+            "doc_status": 1,
+            "state": "Converted"
+        }
+    ],
+    "transitions": [
+        {
+            "action": "Assign Fees",
+            "allowed": "System Manager",
+            "next_state": "Assigned",
+            "state": "Draft"
+        },
+        {
+            "action": "Withdraw",
+            "allowed": "System Manager",
+            "next_state": "Cancelled",
+            "state": "Assigned"
+        },
+        {
+            "action": "Withdraw",
+            "allowed": "System Manager",
+            "next_state": "Cancelled",
+            "state": "Partially Paid"
+        }
+    ],
+    "workflow_state_field": "status"
+}
