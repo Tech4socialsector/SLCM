@@ -9,12 +9,10 @@
   "academic_year",
   "admission_cycle",
   "campus",
+  "column_break_sswl",
   "pdf_format",
   "email_template",
-  "column_break_sswl",
-  "validity_type",
-  "valid_days",
-  "offer_expiry_date",
+  "fee_structure",
   "is_active"
  ],
  "fields": [
@@ -48,36 +46,11 @@
    "options": "Email Templates"
   },
   {
-   "description": "Set Offer letter validity type",
-   "fieldname": "validity_type",
-   "fieldtype": "Select",
-   "label": "Validity Type",
-   "options": "Days valid\nFixed due date"
-  },
-  {
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Is active"
-  },
-  {
-   "depends_on": "eval:doc.validity_type == \"Fixed due date\"",
-   "fieldname": "offer_expiry_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Offer Expiry Date",
-   "mandatory_depends_on": "eval:doc.validity_type == \"Fixed due date\""
-  },
-  {
-   "depends_on": "eval:doc.validity_type == \"Days valid\"",
-   "description": "Expiry days from offer issued ( Ex : offer issued date + Valid Days = Expiry date ) ",
-   "fieldname": "valid_days",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Valid Days",
-   "mandatory_depends_on": "eval:doc.validity_type == \"Days valid\"",
-   "non_negative": 1
   },
   {
    "fieldname": "admission_year",
@@ -93,12 +66,18 @@
    "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
+  },
+  {
+   "fieldname": "fee_structure",
+   "fieldtype": "Table MultiSelect",
+   "label": "Fee Structure",
+   "options": "Fee Structure Child"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 15:22:14.070993",
+ "modified": "2026-02-20 09:33:51.943805",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",

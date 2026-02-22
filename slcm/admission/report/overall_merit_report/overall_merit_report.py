@@ -7,10 +7,6 @@ def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     
-    # Re-calculate ranks for combined view
-    for i, row in enumerate(data):
-        row[5] = i + 1 # Assign overall rank based on score sorting
-        
     return columns, data
 
 def get_columns():
@@ -21,6 +17,12 @@ def get_columns():
             "fieldtype": "Link",
             "options": "Admission Result",
             "width": 150
+        },
+        {
+            "label": "Applicant ID",
+            "fieldname": "applicant_id",
+            "fieldtype": "Data",
+            "width": 120
         },
         {
             "label": "Program",
@@ -61,6 +63,7 @@ def get_data(filters):
     query = """
         SELECT
             mla.applicant,
+            aa.applicant_id,
             mla.program,
             ml.campus,
             mla.reservation_category,
@@ -72,6 +75,10 @@ def get_data(filters):
             `tabMerit List` ml
         ON
             mla.parent = ml.name
+        JOIN
+            `tabAdmission Result` aa
+        ON
+            mla.applicant = aa.name
         WHERE
             ml.admission_cycle = %(cycle)s
             AND ml.campus = %(campus)s
@@ -83,11 +90,37 @@ def get_data(filters):
     if filters.get("reservation_category"):
         query += " AND mla.reservation_category = %(reservation_category)s"
         
-    query += " ORDER BY mla.total_score DESC"
+    # Standardize tie-breaking with merit_service.py
+    query += " ORDER BY mla.total_score DESC, mla.entrance_percentage DESC, mla.hsc_percentage DESC, mla.interview_percentage DESC"
     
     return frappe.db.sql(query, {
         "cycle": filters.get("admission_cycle"),
         "campus": filters.get("campus"),
         "program": filters.get("program"),
         "reservation_category": filters.get("reservation_category")
-    }, as_list=1)
+    }, as_dict=True)
+
+def get_chart_data(columns, data, filters):
+    if not data:
+        return None
+
+    program_scores = {}
+    program_counts = {}
+
+    for d in data:
+        prog = d.get("program")
+        score = d.get("total_score") or 0
+        program_scores[prog] = program_scores.get(prog, 0) + score
+        program_counts[prog] = program_counts.get(prog, 0) + 1
+
+    labels = sorted(program_scores.keys())
+    values = [round(program_scores[l] / program_counts[l], 2) for l in labels]
+
+    return {
+        "data": {
+            "labels": labels,
+            "datasets": [{"name": "Average Score", "values": values}]
+        },
+        "type": "bar",
+        "colors": ["#7cd6fd"]
+    }

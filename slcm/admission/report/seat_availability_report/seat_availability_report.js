@@ -15,6 +15,12 @@ frappe.query_reports["Seat Availability Report"] = {
             "default": frappe.defaults.get_user_default("admission_year")
         },
         {
+            "fieldname": "admission_cycle",
+            "label": __("Admission Cycle"),
+            "fieldtype": "Link",
+            "options": "Admission Cycle",
+        },
+        {
             "fieldname": "program",
             "label": __("Program"),
             "fieldtype": "Link",

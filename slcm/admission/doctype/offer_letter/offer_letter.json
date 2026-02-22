@@ -7,6 +7,7 @@
  "field_order": [
   "offer_details_section",
   "applicant",
+  "academic_year",
   "admission_year",
   "admission_cycle",
   "campus",
@@ -21,6 +22,7 @@
   "issued_on",
   "accepted_on",
   "offer_configrationn",
+  "fee_structure",
   "column_break_hdcy",
   "payment_deadline",
   "offer_status",
@@ -104,8 +106,9 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "fee_structure.valid_until",
    "fieldname": "payment_deadline",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "label": "Payment Deadline"
   },
   {
@@ -128,6 +131,7 @@
    "options": "Email Templates"
   },
   {
+   "fetch_from": "fee_structure.total_amount",
    "fieldname": "payable_amount",
    "fieldtype": "Currency",
    "label": "Payable Amount"
@@ -140,16 +144,30 @@
    "read_only": 1
   },
   {
+   "fetch_from": "applicant.academic_year",
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "read_only": 1
+  },
+  {
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "label": "Admission Year",
    "options": "Admission Year"
+  },
+  {
+   "fieldname": "fee_structure",
+   "fieldtype": "Link",
+   "label": "Fee Structure",
+   "options": "Fee Structure"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 17:01:11.202616",
+ "modified": "2026-02-20 11:11:32.579938",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

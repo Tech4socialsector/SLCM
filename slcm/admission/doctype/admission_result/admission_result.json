@@ -6,16 +6,20 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "applicant_id",
   "applicant_name",
   "campus",
   "program",
   "program_level",
   "reservation_category",
+  "email",
   "column_break_ercs",
   "admission_cycle",
   "hsc_percentage",
   "entrance_percentage",
-  "interview_percentage"
+  "interview_percentage",
+  "ug_cgpa",
+  "pg_cgpa"
  ],
  "fields": [
   {
@@ -76,12 +80,34 @@
    "fieldname": "hsc_percentage",
    "fieldtype": "Float",
    "label": "HSC Percentage"
+  },
+  {
+   "fieldname": "ug_cgpa",
+   "fieldtype": "Float",
+   "label": "UG CGPA"
+  },
+  {
+   "fieldname": "pg_cgpa",
+   "fieldtype": "Float",
+   "label": "PG CGPA"
+  },
+  {
+   "fieldname": "applicant_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant Id"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 12:16:06.841484",
+ "modified": "2026-02-22 12:13:46.508882",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Result",
@@ -103,6 +129,7 @@
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
+ "search_fields": "applicant_id",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

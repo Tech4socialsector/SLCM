@@ -6,12 +6,15 @@
     "engine": "InnoDB",
     "field_order": [
         "applicant",
+        "applicant_id",
         "program",
         "program_level",
         "reservation_category",
         "hsc_percentage",
         "entrance_percentage",
         "interview_percentage",
+        "ug_cgpa",
+        "pg_cgpa",
         "total_score",
         "overall_rank",
         "program_rank",
@@ -28,6 +31,14 @@
             "reqd": 1
         },
         {
+            "fetch_from": "applicant.applicant_id",
+            "fieldname": "applicant_id",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Applicant Id",
+            "read_only": 1
+        },
+        {
             "fetch_from": "applicant.program",
             "fieldname": "program",
             "fieldtype": "Link",
@@ -41,7 +52,7 @@
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Program Level",
-            "options": "UG\nPG\nPhD"
+            "options": "UG\nPG\nResearch Cource"
         },
         {
             "fieldname": "reservation_category",
@@ -67,6 +78,18 @@
             "fieldtype": "Float",
             "in_list_view": 1,
             "label": "Interview %"
+        },
+        {
+            "fieldname": "ug_cgpa",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "UG CGPA"
+        },
+        {
+            "fieldname": "pg_cgpa",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "PG CGPA"
         },
         {
             "fieldname": "total_score",

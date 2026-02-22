@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"MRQX9y9hff\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Merit &amp; Seat Allocation</span>\",\"col\":12}},{\"id\":\"jIQLROWQ3z\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit Calculation\",\"col\":4}},{\"id\":\"Moc2oGMIAp\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Tii3g_426K\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Admission Overview</span>\",\"col\":12}},{\"id\":\"Ah6SyomZpu\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule Mapping\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule Mapping\",\"col\":3}},{\"id\":\"8e3fOzR6cO\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit Calculation\",\"col\":4}},{\"id\":\"Wd3sTfCxAd\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"SSKTXESyOf\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2026-02-20 09:51:44.094533",
  "custom_blocks": [],
  "docstatus": 0,
@@ -85,7 +85,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Reports",
-   "link_count": 2,
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -110,19 +110,38 @@
    "onboard": 0,
    "report_ref_doctype": "Seat Allocation",
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Student Selection Report",
+   "link_count": 0,
+   "link_to": "Student Selection Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-02-20 14:14:15.486545",
+ "modified": "2026-02-22 10:55:05.718471",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit & Seat Allocation",
- "number_cards": [],
+ "number_cards": [
+  {
+   "label": "Merit Rule",
+   "number_card_name": "Merit Rule"
+  },
+  {
+   "label": "Merit Rule Mapping",
+   "number_card_name": "Merit Rule Mapping"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 4.0,
+ "sequence_id": 2.0,
  "shortcuts": [],
  "title": "Merit & Seat Allocation"
 }

@@ -19,6 +19,12 @@ def calculate_merit_with_rule(applicant, rule):
             score = applicant.entrance_percentage or 0
         elif row.component_type == "Interview":
             score = applicant.interview_percentage or 0
+        elif row.component_type == "UG CGPA":
+            val = applicant.ug_cgpa or 0
+            score = val * 10
+        elif row.component_type == "PG CGPA":
+            val = applicant.pg_cgpa or 0
+            score = val * 10
 
         total_score += score * (row.weight / 100)
 
@@ -63,7 +69,7 @@ def _rank_applicants(applicant_rows):
 
 def generate_merit_for_level(cycle, campus, program_level):
     """
-    Generates a Merit List for a specific Program Level (UG / PG / PhD).
+    Generates a Merit List for a specific Program Level (UG / PG / Research Cource).
     Uses the Merit Rule assigned to that program level via Merit Rule Mapping.
     """
     # Check if a Merit List already exists for this program level
@@ -124,8 +130,9 @@ def generate_merit_for_level(cycle, campus, program_level):
             "program_level": program_level
         },
         fields=[
-            "name", "program", "program_level", "reservation_category",
-            "hsc_percentage", "entrance_percentage", "interview_percentage"
+            "name", "applicant_id", "program", "program_level", "reservation_category",
+            "hsc_percentage", "entrance_percentage", "interview_percentage",
+            "ug_cgpa", "pg_cgpa"
         ]
     )
     if not applicants:
@@ -147,12 +154,15 @@ def generate_merit_for_level(cycle, campus, program_level):
         total_score = calculate_merit_with_rule(app, rule)
         merit.append("merit_applicants", {
             "applicant": app.name,
+            "applicant_id": app.applicant_id,
             "program": app.program,
             "program_level": app.program_level,
             "reservation_category": app.reservation_category,
             "hsc_percentage": app.hsc_percentage,
             "entrance_percentage": app.entrance_percentage,
             "interview_percentage": app.interview_percentage,
+            "ug_cgpa": app.ug_cgpa,
+            "pg_cgpa": app.pg_cgpa,
             "total_score": total_score,
             "status": "Selected"
         })
@@ -165,6 +175,20 @@ def generate_merit_for_level(cycle, campus, program_level):
 
     _rank_applicants(merit.merit_applicants)
     merit.insert()
+
+    # Log merit calculation for each applicant
+    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+    for row in merit.merit_applicants:
+        log_admission_action(
+            reference_doctype="Merit List",
+            reference_name=merit.name,
+            applicant=row.applicant,
+            program=row.program,
+            action_type="Merit Calculated",
+            new_value=f"Score: {row.total_score:.3f}",
+            remarks=f"Calculated via Merit Rule: {merit_rule_name}"
+        )
+
     merit.submit()
     frappe.db.commit()
     return merit
