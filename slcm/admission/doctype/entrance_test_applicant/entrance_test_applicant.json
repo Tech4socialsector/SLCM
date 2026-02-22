@@ -12,7 +12,8 @@
         "program_level",
         "reservation_category",
         "email",
-        "gender"
+        "gender",
+        "allocation_status"
     ],
     "fields": [
         {
@@ -53,6 +54,13 @@
             "fieldname": "reservation_category",
             "fieldtype": "Data",
             "label": "Category"
+        },
+        {
+            "default": "Not Allocated",
+            "fieldname": "allocation_status",
+            "fieldtype": "Select",
+            "label": "Allocation Status",
+            "options": "Not Allocated\nAllocated"
         }
     ],
     "grid_page_length": 50,
