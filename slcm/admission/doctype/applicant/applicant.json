@@ -29,7 +29,9 @@
         "column_break_rynw",
         "academic_year",
         "application_type",
-        "campus",
+        "campus_preference_1",
+        "campus_preference_2",
+        "campus_preference_3",
         "section_break_azsq",
         "title",
         "categories",
@@ -149,11 +151,23 @@
             "options": "Program"
         },
         {
-            "fieldname": "campus",
+            "fieldname": "campus_preference_1",
             "fieldtype": "Link",
-            "label": "Campus",
+            "label": "Campus Preference 1",
             "options": "Campus",
             "reqd": 1
+        },
+        {
+            "fieldname": "campus_preference_2",
+            "fieldtype": "Link",
+            "label": "Campus Preference 2",
+            "options": "Campus"
+        },
+        {
+            "fieldname": "campus_preference_3",
+            "fieldtype": "Link",
+            "label": "Campus Preference 3",
+            "options": "Campus"
         },
         {
             "fieldname": "academic_year",
@@ -179,28 +193,32 @@
         {
             "fieldname": "candidate_name",
             "fieldtype": "Data",
-            "label": "Candidate Name"
+            "label": "Full Name (As per Secondary School Certificate)",
+            "reqd": 1
         },
         {
             "fieldname": "date_of_birth",
             "fieldtype": "Date",
-            "label": "Date of Birth"
+            "label": "Date of Birth",
+            "reqd": 1
         },
         {
             "fieldname": "gender",
             "fieldtype": "Select",
             "label": "Gender",
-            "options": "\nMale\nFemale\nOthers"
+            "options": "\nMale\nFemale\nOthers",
+            "reqd": 1
         },
         {
             "fieldname": "mobile_number",
             "fieldtype": "Phone",
-            "label": "Mobile Number"
+            "label": "Mobile Number",
+            "reqd": 1
         },
         {
             "fieldname": "alternate_contact",
             "fieldtype": "Phone",
-            "label": "Alternate Contact"
+            "label": "Alternate Mobile Number"
         },
         {
             "fieldname": "religion",
@@ -217,7 +235,7 @@
             "description": "Max 1MB - Supported formats png, jpeg, jpg",
             "fieldname": "id_proof",
             "fieldtype": "Attach Image",
-            "label": "ID Proof"
+            "label": "Identification Proof (Aadhar/Voter ID/Passport)"
         },
         {
             "fieldname": "parent_and_guardian_details",
@@ -287,6 +305,7 @@
             "mandatory_depends_on": "eval:doc.guardian_required"
         },
         {
+            "depends_on": "eval:doc.guardian_required",
             "fieldname": "guardian_email",
             "fieldtype": "Data",
             "label": "Guardian Email",
@@ -336,7 +355,7 @@
         {
             "fieldname": "class_x_percentage",
             "fieldtype": "Float",
-            "label": "Percentage/CGPA obtained (Class X)",
+            "label": "Percentage of Marks (Class X)",
             "non_negative": 1,
             "precision": "2"
         },
@@ -355,7 +374,7 @@
         {
             "fieldname": "class_xii_name_of_examination",
             "fieldtype": "Data",
-            "label": "Name of Examination (Class XII/Equivalent - as per marksheet)"
+            "label": "Name of Examination (Class XII)"
         },
         {
             "fieldname": "class_xii_year_of_completion",
@@ -691,7 +710,7 @@
             "fieldname": "reservation_category",
             "fieldtype": "Select",
             "label": "Whether SC/ST/OBC-NCL",
-            "options": "\nNA\nOBS-NCL\nSC\nST",
+            "options": "\nNA\nOBC-NCL\nSC\nST",
             "placeholder": "Select Category"
         },
         {
