@@ -20,7 +20,25 @@ app_description = "Student Life Cycle Management"
 app_email = "tech4socialsector@azimpremjifoundation.org"
 app_license = "mit"
 
-
+fixtures = [
+    "Role",
+    "Module Profile",
+    "Role Profile"
+]
+fixtures = [
+    {
+        "doctype": "Role",
+        "filters": [["name", "=", "Eligibility Admin"]]
+    },
+    {
+        "doctype": "Module Profile",
+        "filters": [["name", "=", "Eligibility Admin"]]
+    },
+    {
+        "doctype": "Role Profile",
+        "filters": [["name", "=", "Eligibility Admin"]]
+    }
+]
 # Apps
 # ------------------
 
@@ -273,7 +291,8 @@ scheduler_events = {
 		]
 	},
 	"daily": [
-		"slcm.api.service.offer_service.expire_offers"
+		"slcm.api.service.offer_service.expire_offers",
+		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 	]
 }
 

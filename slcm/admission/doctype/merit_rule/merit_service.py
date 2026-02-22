@@ -19,6 +19,12 @@ def calculate_merit_with_rule(applicant, rule):
             score = applicant.entrance_percentage or 0
         elif row.component_type == "Interview":
             score = applicant.interview_percentage or 0
+        elif row.component_type == "UG CGPA":
+            val = applicant.ug_cgpa or 0
+            score = val * 10
+        elif row.component_type == "PG CGPA":
+            val = applicant.pg_cgpa or 0
+            score = val * 10
 
         total_score += score * (row.weight / 100)
 
@@ -158,6 +164,8 @@ def generate_merit_for_level(cycle, campus, program_level):
             "hsc_percentage": app.hsc_percentage,
             "entrance_percentage": app.entrance_percentage,
             "interview_percentage": app.interview_percentage,
+            "ug_cgpa": app.ug_cgpa,
+            "pg_cgpa": app.pg_cgpa,
             "total_score": total_score,
             "status": "Selected"
         })
