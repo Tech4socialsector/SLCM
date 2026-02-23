@@ -24,16 +24,18 @@ def get_offer_details(offer_name=None):
         check_filters = {"name": offer_name}
         if not is_admin:
             if not applicant:
-                return {"error": "Applicant record not found for the current user"}
+                return {"error": _("We couldn't find an applicant record linked to your account.")}
             check_filters["applicant"] = applicant
 
         if not frappe.db.exists("Offer Letter", check_filters):
-            return {"error": _("Offer Letter {0} not found or access denied.").format(offer_name)}
+            return {"error": _("Offer Letter {0} not found or you don't have permission to view it.").format(offer_name)}
         offer_id = offer_name
     else:
         # User is looking for their own latest offer
         if not applicant:
-            return {"error": "Applicant record not found for the current user"}
+            if is_admin:
+                return {"error": _("Please select an offer to view from the list.")}
+            return {"error": _("We couldn't find an applicant record linked to your account.")}
             
         offers = frappe.get_all("Offer Letter", filters={
             "applicant": applicant,
@@ -41,7 +43,7 @@ def get_offer_details(offer_name=None):
         }, fields=["name"], order_by="creation desc", limit=1)
         
         if not offers:
-            return {"error": "No active admission offer found at this time."}
+            return {"error": _("No active admission offer found for your account at this time.")}
         offer_id = offers[0].name
 
     offer_doc = frappe.get_doc("Offer Letter", offer_id)
