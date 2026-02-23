@@ -17,7 +17,7 @@ class AdmissionYear(Document):
 				self.name = f"AY-{self.academic_year}"
 
 	def validate(self):
-		# self.validate_dates()
+		self.validate_dates()
 		self.validate_one_active_per_cycle_type()
 		self.validate_campus_duplicates()
 		self.validate_status()
@@ -25,19 +25,19 @@ class AdmissionYear(Document):
 		self.validate_lock_enforcement()
 
 
-	# def validate_dates(self):
-	# 	if self.start_date and self.end_date:
-	# 		if getdate(self.end_date) <= getdate(self.start_date):
-	# 			frappe.throw(_("Admission End Date must be after Admission Start Date."))
-	# 	# Check dates fall within linked Academic Year dates
-	# 	if self.academic_year and self.start_date and self.end_date:
-	# 		ay = frappe.get_doc("Academic Year", self.academic_year)
-	# 		if hasattr(ay, "year_start_date") and ay.year_start_date:
-	# 			if getdate(self.start_date) < getdate(ay.year_start_date):
-	# 				frappe.throw(_("Admission Start Date must be within the Academic Year start date ({0}).").format(ay.year_start_date))
-	# 		if hasattr(ay, "year_end_date") and ay.year_end_date:
-	# 			if getdate(self.end_date) > getdate(ay.year_end_date):
-	# 				frappe.throw(_("Admission End Date must be within the Academic Year end date ({0}).").format(ay.year_end_date))
+	def validate_dates(self):
+		if self.start_date and self.end_date:
+			if getdate(self.end_date) <= getdate(self.start_date):
+				frappe.throw(_("Admission End Date must be after Admission Start Date."))
+		# Check dates fall within linked Academic Year dates
+		if self.academic_year and self.start_date and self.end_date:
+			ay = frappe.get_doc("Academic Year", self.academic_year)
+			if hasattr(ay, "year_start_date") and ay.year_start_date:
+				if getdate(self.start_date) < getdate(ay.year_start_date):
+					frappe.throw(_("Admission Start Date must be within the Academic Year start date ({0}).").format(ay.year_start_date))
+			if hasattr(ay, "year_end_date") and ay.year_end_date:
+				if getdate(self.end_date) > getdate(ay.year_end_date):
+					frappe.throw(_("Admission End Date must be within the Academic Year end date ({0}).").format(ay.year_end_date))
 
 	def validate_one_active_per_cycle_type(self):
 		"""Ensures only one Admission Year is active at a time per cycle type."""

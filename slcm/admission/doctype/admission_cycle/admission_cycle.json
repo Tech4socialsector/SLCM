@@ -1,393 +1,416 @@
 {
- "actions": [],
- "autoname": "hash",
- "creation": "2026-02-20 07:24:00",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "admission_year",
-  "cycle_name",
-  "cycle_code",
-  "column_break_1",
-  "is_active",
-  "stage_locked",
-  "programme_level",
-  "admission_mode",
-  "status",
-  "section_break_dates",
-  "start_date",
-  "column_break_bznl",
-  "end_date",
-  "section_break_offer_dates",
-  "offer_start_date",
-  "column_break_offer",
-  "offer_end_date",
-  "section_break_payment_dates",
-  "payment_start_date",
-  "column_break_payment",
-  "payment_end_date",
-  "section_break_approval",
-  "approval_authority",
-  "approval_reference",
-  "column_break_approval2",
-  "lock_override_reason",
-  "remarks",
-  "section_break_stage_config",
-  "enable_entrance_test",
-  "enable_interview",
-  "column_break_stage2",
-  "enable_document_verification",
-  "enable_merit_list",
-  "enable_scholarship",
-  "section_break_interview_dates",
-  "interview_start_date",
-  "interview_end_date",
-  "section_break_docverif_dates",
-  "doc_verification_start_date",
-  "doc_verification_end_date",
-  "section_break_stages",
-  "stages",
-  "section_break_rules",
-  "rules",
-  "section_break_scholarships",
-  "campus_scholarships",
-  "amended_from"
- ],
- "fields": [
-  {
-   "fieldname": "admission_year",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Admission Year",
-   "options": "Admission Year",
-   "reqd": 1
-  },
-  {
-   "fieldname": "cycle_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Cycle Name",
-   "reqd": 1
-  },
-  {
-   "fieldname": "cycle_code",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Cycle Code",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "programme_level",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Programme Level",
-   "options": "UG\nPG\nPhD"
-  },
-  {
-   "fieldname": "admission_mode",
-   "fieldtype": "Select",
-   "label": "Admission Mode",
-   "options": "CLAT\nUniversity Test\nDirect",
-   "reqd": 1
-  },
-  {
-   "default": "Draft",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Draft\nUpcoming\nActive\nClosed",
-   "reqd": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "label": "Is Active"
-  },
-  {
-   "default": "0",
-   "fieldname": "stage_locked",
-   "fieldtype": "Check",
-   "label": "Is Locked"
-  },
-  {
-   "fieldname": "section_break_dates",
-   "fieldtype": "Section Break",
-   "label": "Dates"
-  },
-  {
-   "fieldname": "start_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Cycle Start Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_bznl",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "end_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Cycle End Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "section_break_approval",
-   "fieldtype": "Section Break",
-   "label": "Approval & Lock"
-  },
-  {
-   "fieldname": "approval_authority",
-   "fieldtype": "Select",
-   "label": "Approval Authority",
-   "options": "\nAdmissions Committee\nAcademic Council"
-  },
-  {
-   "fieldname": "approval_reference",
-   "fieldtype": "Data",
-   "label": "Approval Reference"
-  },
-  {
-   "fieldname": "column_break_approval2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "label": "Remarks"
-  },
-  {
-   "fieldname": "section_break_stage_config",
-   "fieldtype": "Section Break",
-   "label": "Stage Configuration"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_entrance_test",
-   "fieldtype": "Check",
-   "label": "Enable Entrance / Written Test"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_interview",
-   "fieldtype": "Check",
-   "label": "Enable Interview"
-  },
-  {
-   "fieldname": "column_break_stage2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_document_verification",
-   "fieldtype": "Check",
-   "label": "Enable Document Verification"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_merit_list",
-   "fieldtype": "Check",
-   "label": "Enable Merit List"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_scholarship",
-   "fieldtype": "Check",
-   "label": "Enable Scholarship"
-  },
-  {
-   "collapsible": 1,
-   "depends_on": "eval: doc.enable_interview",
-   "fieldname": "section_break_interview_dates",
-   "fieldtype": "Section Break",
-   "label": "Interview Dates"
-  },
-  {
-   "depends_on": "eval: doc.enable_interview",
-   "fieldname": "interview_start_date",
-   "fieldtype": "Date",
-   "label": "Interview Start Date",
-   "mandatory_depends_on": "eval: doc.enable_interview"
-  },
-  {
-   "depends_on": "eval: doc.enable_interview",
-   "fieldname": "interview_end_date",
-   "fieldtype": "Date",
-   "label": "Interview End Date",
-   "mandatory_depends_on": "eval: doc.enable_interview"
-  },
-  {
-   "collapsible": 1,
-   "depends_on": "eval: doc.enable_document_verification",
-   "fieldname": "section_break_docverif_dates",
-   "fieldtype": "Section Break",
-   "label": "Document Verification Dates"
-  },
-  {
-   "depends_on": "eval: doc.enable_document_verification",
-   "fieldname": "doc_verification_start_date",
-   "fieldtype": "Date",
-   "label": "Doc Verification Start Date",
-   "mandatory_depends_on": "eval: doc.enable_document_verification"
-  },
-  {
-   "depends_on": "eval: doc.enable_document_verification",
-   "fieldname": "doc_verification_end_date",
-   "fieldtype": "Date",
-   "label": "Doc Verification End Date",
-   "mandatory_depends_on": "eval: doc.enable_document_verification"
-  },
-  {
-   "fieldname": "section_break_stages",
-   "fieldtype": "Section Break",
-   "label": "Stages"
-  },
-  {
-   "fieldname": "stages",
-   "fieldtype": "Table",
-   "label": "Stages",
-   "options": "Admission Cycle Stage",
-   "reqd": 1
-  },
-  {
-   "fieldname": "section_break_rules",
-   "fieldtype": "Section Break",
-   "label": "Rules"
-  },
-  {
-   "fieldname": "rules",
-   "fieldtype": "Table",
-   "label": "Rules",
-   "options": "Admission Cycle Rule"
-  },
-  {
-   "collapsible": 1,
-   "depends_on": "eval: doc.enable_scholarship",
-   "fieldname": "section_break_scholarships",
-   "fieldtype": "Section Break",
-   "label": "Campus Scholarships"
-  },
-  {
-   "depends_on": "eval: doc.enable_scholarship",
-   "fieldname": "campus_scholarships",
-   "fieldtype": "Table",
-   "label": "Campus Scholarships",
-   "options": "Campus Scholarship"
-  },
-  {
-   "fieldname": "section_break_offer_dates",
-   "fieldtype": "Section Break",
-   "label": "Offer Window"
-  },
-  {
-   "fieldname": "offer_start_date",
-   "fieldtype": "Date",
-   "label": "Offer Start Date"
-  },
-  {
-   "fieldname": "column_break_offer",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "offer_end_date",
-   "fieldtype": "Date",
-   "label": "Offer End Date"
-  },
-  {
-   "fieldname": "section_break_payment_dates",
-   "fieldtype": "Section Break",
-   "label": "Payment & Acceptance Window"
-  },
-  {
-   "fieldname": "payment_start_date",
-   "fieldtype": "Date",
-   "label": "Payment Start Date"
-  },
-  {
-   "fieldname": "column_break_payment",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "payment_end_date",
-   "fieldtype": "Date",
-   "label": "Payment End Date"
-  },
-  {
-   "depends_on": "eval: doc.stage_locked",
-   "fieldname": "lock_override_reason",
-   "fieldtype": "Small Text",
-   "label": "Lock Override Reason"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Admission Cycle",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  }
- ],
- "index_web_pages_for_search": 1,
- "links": [
-  {
-   "group": "Admission Rounds",
-   "link_doctype": "Admission Round",
-   "link_fieldname": "admission_cycle"
-  },
-  {
-   "group": "Program Offerings",
-   "link_doctype": "Program Offering",
-   "link_fieldname": "admission_cycle"
-  }
- ],
- "modified": "2026-02-22 12:12:53.630567",
- "modified_by": "Administrator",
- "module": "Admission",
- "name": "Admission Cycle",
- "naming_rule": "By script",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Admission Officer",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+    "actions": [],
+    "autoname": "hash",
+    "creation": "2026-02-20 07:24:00",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "admission_year",
+        "cycle_name",
+        "cycle_code",
+        "column_break_1",
+        "is_active",
+        "stage_locked",
+        "programme_level",
+        "admission_mode",
+        "status",
+        "section_break_dates",
+        "start_date",
+        "column_break_bznl",
+        "end_date",
+        "section_break_offer_dates",
+        "offer_start_date",
+        "column_break_offer",
+        "offer_end_date",
+        "section_break_payment_dates",
+        "payment_start_date",
+        "column_break_payment",
+        "payment_end_date",
+        "section_break_evaluation_dates",
+        "evaluation_start_date",
+        "column_break_evaluation",
+        "evaluation_end_date",
+        "section_break_approval",
+        "approval_authority",
+        "approval_reference",
+        "column_break_approval2",
+        "lock_override_reason",
+        "remarks",
+        "section_break_stage_config",
+        "enable_entrance_test",
+        "enable_interview",
+        "column_break_stage2",
+        "enable_document_verification",
+        "enable_merit_list",
+        "enable_scholarship",
+        "section_break_interview_dates",
+        "interview_start_date",
+        "interview_end_date",
+        "section_break_docverif_dates",
+        "doc_verification_start_date",
+        "doc_verification_end_date",
+        "section_break_stages",
+        "stages",
+        "section_break_rules",
+        "rules",
+        "section_break_scholarships",
+        "campus_scholarships",
+        "amended_from"
+    ],
+    "fields": [
+        {
+            "fieldname": "admission_year",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Admission Year",
+            "options": "Admission Year",
+            "reqd": 1
+        },
+        {
+            "fieldname": "cycle_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Cycle Name",
+            "reqd": 1
+        },
+        {
+            "fieldname": "cycle_code",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Cycle Code",
+            "reqd": 1
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "programme_level",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Programme Level",
+            "options": "UG\nPG\nPhD"
+        },
+        {
+            "fieldname": "admission_mode",
+            "fieldtype": "Select",
+            "label": "Admission Mode",
+            "options": "CLAT\nUniversity Test\nDirect",
+            "reqd": 1
+        },
+        {
+            "default": "Draft",
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Status",
+            "options": "Draft\nUpcoming\nActive\nClosed",
+            "reqd": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "is_active",
+            "fieldtype": "Check",
+            "label": "Is Active"
+        },
+        {
+            "default": "0",
+            "fieldname": "stage_locked",
+            "fieldtype": "Check",
+            "label": "Is Locked"
+        },
+        {
+            "fieldname": "section_break_dates",
+            "fieldtype": "Section Break",
+            "label": "Dates"
+        },
+        {
+            "fieldname": "start_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Cycle Start Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "column_break_bznl",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "end_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Cycle End Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "section_break_approval",
+            "fieldtype": "Section Break",
+            "label": "Approval & Lock"
+        },
+        {
+            "fieldname": "approval_authority",
+            "fieldtype": "Select",
+            "label": "Approval Authority",
+            "options": "\nAdmissions Committee\nAcademic Council"
+        },
+        {
+            "fieldname": "approval_reference",
+            "fieldtype": "Data",
+            "label": "Approval Reference"
+        },
+        {
+            "fieldname": "column_break_approval2",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "remarks",
+            "fieldtype": "Small Text",
+            "label": "Remarks"
+        },
+        {
+            "fieldname": "section_break_stage_config",
+            "fieldtype": "Section Break",
+            "label": "Stage Configuration"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_entrance_test",
+            "fieldtype": "Check",
+            "label": "Enable Entrance / Written Test"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_interview",
+            "fieldtype": "Check",
+            "label": "Enable Interview"
+        },
+        {
+            "fieldname": "column_break_stage2",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_document_verification",
+            "fieldtype": "Check",
+            "label": "Enable Document Verification"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_merit_list",
+            "fieldtype": "Check",
+            "label": "Enable Merit List"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_scholarship",
+            "fieldtype": "Check",
+            "label": "Enable Scholarship"
+        },
+        {
+            "collapsible": 1,
+            "depends_on": "eval: doc.enable_interview",
+            "fieldname": "section_break_interview_dates",
+            "fieldtype": "Section Break",
+            "label": "Interview Dates"
+        },
+        {
+            "depends_on": "eval: doc.enable_interview",
+            "fieldname": "interview_start_date",
+            "fieldtype": "Date",
+            "label": "Interview Start Date",
+            "mandatory_depends_on": "eval: doc.enable_interview"
+        },
+        {
+            "depends_on": "eval: doc.enable_interview",
+            "fieldname": "interview_end_date",
+            "fieldtype": "Date",
+            "label": "Interview End Date",
+            "mandatory_depends_on": "eval: doc.enable_interview"
+        },
+        {
+            "collapsible": 1,
+            "depends_on": "eval: doc.enable_document_verification",
+            "fieldname": "section_break_docverif_dates",
+            "fieldtype": "Section Break",
+            "label": "Document Verification Dates"
+        },
+        {
+            "depends_on": "eval: doc.enable_document_verification",
+            "fieldname": "doc_verification_start_date",
+            "fieldtype": "Date",
+            "label": "Doc Verification Start Date",
+            "mandatory_depends_on": "eval: doc.enable_document_verification"
+        },
+        {
+            "depends_on": "eval: doc.enable_document_verification",
+            "fieldname": "doc_verification_end_date",
+            "fieldtype": "Date",
+            "label": "Doc Verification End Date",
+            "mandatory_depends_on": "eval: doc.enable_document_verification"
+        },
+        {
+            "fieldname": "section_break_stages",
+            "fieldtype": "Section Break",
+            "label": "Stages"
+        },
+        {
+            "fieldname": "stages",
+            "fieldtype": "Table",
+            "label": "Stages",
+            "options": "Admission Cycle Stage",
+            "reqd": 1
+        },
+        {
+            "fieldname": "section_break_rules",
+            "fieldtype": "Section Break",
+            "label": "Rules"
+        },
+        {
+            "fieldname": "rules",
+            "fieldtype": "Table",
+            "label": "Rules",
+            "options": "Admission Cycle Rule"
+        },
+        {
+            "collapsible": 1,
+            "depends_on": "eval: doc.enable_scholarship",
+            "fieldname": "section_break_scholarships",
+            "fieldtype": "Section Break",
+            "label": "Campus Scholarships"
+        },
+        {
+            "depends_on": "eval: doc.enable_scholarship",
+            "fieldname": "campus_scholarships",
+            "fieldtype": "Table",
+            "label": "Campus Scholarships",
+            "options": "Campus Scholarship"
+        },
+        {
+            "fieldname": "section_break_offer_dates",
+            "fieldtype": "Section Break",
+            "label": "Offer Window"
+        },
+        {
+            "fieldname": "offer_start_date",
+            "fieldtype": "Date",
+            "label": "Offer Start Date"
+        },
+        {
+            "fieldname": "column_break_offer",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "offer_end_date",
+            "fieldtype": "Date",
+            "label": "Offer End Date"
+        },
+        {
+            "fieldname": "section_break_payment_dates",
+            "fieldtype": "Section Break",
+            "label": "Payment & Acceptance Window"
+        },
+        {
+            "fieldname": "payment_start_date",
+            "fieldtype": "Date",
+            "label": "Payment Start Date"
+        },
+        {
+            "fieldname": "column_break_payment",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "payment_end_date",
+            "fieldtype": "Date",
+            "label": "Payment End Date"
+        },
+        {
+            "fieldname": "section_break_evaluation_dates",
+            "fieldtype": "Section Break",
+            "label": "Evaluation Window"
+        },
+        {
+            "fieldname": "evaluation_start_date",
+            "fieldtype": "Date",
+            "label": "Evaluation Start Date"
+        },
+        {
+            "fieldname": "column_break_evaluation",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "evaluation_end_date",
+            "fieldtype": "Date",
+            "label": "Evaluation End Date"
+        },
+        {
+            "depends_on": "eval: doc.stage_locked",
+            "fieldname": "lock_override_reason",
+            "fieldtype": "Small Text",
+            "label": "Lock Override Reason"
+        },
+        {
+            "fieldname": "amended_from",
+            "fieldtype": "Link",
+            "hidden": 1,
+            "label": "Amended From",
+            "no_copy": 1,
+            "options": "Admission Cycle",
+            "print_hide": 1,
+            "read_only": 1,
+            "search_index": 1
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [
+        {
+            "group": "Admission Rounds",
+            "link_doctype": "Admission Round",
+            "link_fieldname": "admission_cycle"
+        },
+        {
+            "group": "Program Offerings",
+            "link_doctype": "Program Offering",
+            "link_fieldname": "admission_cycle"
+        }
+    ],
+    "modified": "2026-02-22 12:12:53.630567",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Admission Cycle",
+    "naming_rule": "By script",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Admission Officer",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
 }

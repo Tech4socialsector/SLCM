@@ -17,6 +17,11 @@ AUDITED_FIELDS = [
 	"enable_entrance_test", "enable_interview",
 	"enable_document_verification", "enable_merit_list",
 	"enable_scholarship",
+	"offer_start_date", "offer_end_date",
+	"payment_start_date", "payment_end_date",
+	"interview_start_date", "interview_end_date",
+	"doc_verification_start_date", "doc_verification_end_date",
+	"evaluation_start_date", "evaluation_end_date"
 ]
 
 
@@ -91,8 +96,11 @@ class AdmissionCycle(Document):
 	def validate_deadline_windows(self):
 		"""Validate that specific deadline windows fall within cycle dates."""
 		windows = [
-			("offer_start_date", "offer_end_date", "Offer Window"),
-			("payment_start_date", "payment_end_date", "Payment Window"),
+			("offer_start_date", "offer_end_date", _("Offer Window")),
+			("payment_start_date", "payment_end_date", _("Payment Window")),
+			("interview_start_date", "interview_end_date", _("Interview Window")),
+			("doc_verification_start_date", "doc_verification_end_date", _("Doc Verification Window")),
+			("evaluation_start_date", "evaluation_end_date", _("Evaluation Window")),
 		]
 		for start_f, end_f, label in windows:
 			s_val = self.get(start_f)
@@ -138,7 +146,14 @@ class AdmissionCycle(Document):
 		if not old or old.status == "Draft":
 			return
 		
-		critical_fields = ["status", "start_date", "end_date", "is_active", "offer_start_date", "offer_end_date", "payment_start_date", "payment_end_date"]
+		critical_fields = [
+			"status", "start_date", "end_date", "is_active", 
+			"offer_start_date", "offer_end_date", 
+			"payment_start_date", "payment_end_date",
+			"interview_start_date", "interview_end_date",
+			"doc_verification_start_date", "doc_verification_end_date",
+			"evaluation_start_date", "evaluation_end_date"
+		]
 		changed = [f for f in critical_fields if str(self.get(f)) != str(old.get(f))]
 		
 		if changed and not getattr(self, "lock_override_reason", None):
