@@ -17,8 +17,7 @@ def get_context(context):
 
     applicants = frappe.get_all("Applicant", filters=filters, 
                                 fields=["name", "candidate_name", "program", "application_status", 
-                                        "campus_preference_1", "campus_preference_2", "campus_preference_3",
-                                        "academic_year"])
+                                        "campus", "academic_year"])
     
     if not applicants:
         context.error = _("No application found for the provided details.")

@@ -272,7 +272,7 @@ class OfferService:
         offer.offer_status = "Rejected"
         offer.save(ignore_permissions=True)
 
-        OfferService.log_action(offer.name, "Rejected", reason)
+        OfferService.log_action(offer.name, "Rejected", reason=reason)
         OfferService.update_applicant_status(offer.applicant , application_status = "Offer Declined")
         return True
 
@@ -295,7 +295,7 @@ class OfferService:
                 doc.offer_status = "Expired"
                 doc.save(ignore_permissions=True)
                 OfferService.update_applicant_status(doc.applicant , application_status = "Offer Expired")
-                OfferService.log_action(entry.name, "Expired", _("Automatically expired by system scheduler."))
+                OfferService.log_action(entry.name, "Expired", reason=_("Automatically expired by system scheduler."))
                 OfferService.sync_seat_allocation_status(doc, "Offer Expired")
                 processed += 1
             except Exception:
@@ -324,7 +324,7 @@ class OfferService:
                     applicant_name = data
                     # Fetch details from Applicant record
                     details = frappe.db.get_value("Applicant", applicant_name, 
-                        ["campus_preference_1", "program", "admission_cycle", "academic_year"], as_dict=1)
+                        ["campus", "program", "admission_cycle", "academic_year"], as_dict=1)
                     
                     if not details:
                         raise ValueError(_("Applicant {0} not found").format(applicant_name))
@@ -357,10 +357,10 @@ class OfferService:
 
                     # Fallback to campus preference if not found in Seat Allocation
                     if not campus:
-                        campus = details.campus_preference_1
+                        campus = details.campus
 
                     if not campus:
-                        raise ValueError(_("Campus could not be determined for Applicant {0}. No Seat Allocation found and no Campus Preference 1 set.").format(applicant_name))
+                        raise ValueError(_("Campus could not be determined for Applicant {0}. No Seat Allocation found and no Campus set.").format(applicant_name))
 
                     payload = {
                         "applicant": applicant_name,
@@ -645,7 +645,7 @@ class OfferService:
             frappe.log_error(f"PDF Generation Failed for {offer_doc.name}: {str(e)}")
 
     @staticmethod
-    def log_action(offer_name, action, notes=None):
+    def log_action(offer_name, action, notes=None, reason=None):
         """Utility to log every transition in the lifecycle."""
         log = frappe.new_doc("Offer Action Log")
         log.offer_letter = offer_name
@@ -653,30 +653,62 @@ class OfferService:
         log.performed_by = frappe.session.user  
         log.timestamp = now_datetime()
         log.notes = notes
+        log.reason = reason
         log.insert(ignore_permissions=True)
 
     @staticmethod
     def sync_seat_allocation_status(offer, status):
-        """Synchronizes offer status back to the Seat Allocation child table."""
+        """
+        Synchronizes offer status back to the Seat Allocation child table.
+        Uses Document API to trigger audit logs and waitlist promotions.
+        """
         if not offer or not status:
             return
 
-        # Find the specific row in the Seat Selection Applicant table
-        # We use a join or direct SQL for performance and precision
-        frappe.db.sql("""
-            UPDATE `tabSeat Selection Applicant` 
-            SET selection_status = %s 
-            WHERE 
-                applicant_id = %s 
-                AND program = %s 
-                AND parent IN (
-                    SELECT name FROM `tabSeat Allocation` 
-                    WHERE campus = %s AND admission_cycle = %s
-                )
-        """, (status, offer.applicant, offer.program, offer.campus, offer.admission_cycle))
-        
-        # Also clean up counters in parent if needed (handled in SeatAllocation.before_save if we load/save parent)
-        # But for now, direct SQL is faster and avoids side effects during bulk processing.
+        # Find the specific Seat Allocation parent
+        seat_allocation_name = frappe.db.get_value(
+            "Seat Selection Applicant",
+            {
+                "applicant_id": offer.applicant,
+                "program": offer.program,
+                "parenttype": "Seat Allocation"
+            },
+            "parent"
+        )
+
+        if not seat_allocation_name:
+            return
+
+        try:
+            alloc_doc = frappe.get_doc("Seat Allocation", seat_allocation_name)
+            
+            # Security check: Ensure campus and cycle match (handles multi-program/multi-campus edge cases)
+            if alloc_doc.campus != offer.campus or alloc_doc.admission_cycle != offer.admission_cycle:
+                # Find matching allocation if the first one wasn't correct
+                match = frappe.db.sql("""
+                    SELECT parent FROM `tabSeat Selection Applicant`
+                    WHERE applicant_id = %s AND program = %s AND parenttype = 'Seat Allocation'
+                    AND parent IN (SELECT name FROM `tabSeat Allocation` WHERE campus = %s AND admission_cycle = %s)
+                """, (offer.applicant, offer.program, offer.campus, offer.admission_cycle))
+                if match:
+                    alloc_doc = frappe.get_doc("Seat Allocation", match[0][0])
+                else:
+                    return
+
+            updated = False
+            for row in alloc_doc.selection_applicant:
+                if row.applicant_id == offer.applicant and row.program == offer.program:
+                    row.selection_status = status
+                    updated = True
+                    break
+            
+            if updated:
+                # Saving triggers before_save/on_update which handles Waitlist Promotion
+                alloc_doc.save(ignore_permissions=True)
+                frappe.db.commit()
+                
+        except Exception as e:
+            frappe.log_error(f"Sync Seat Allocation Status Failed for {offer.name}: {str(e)}", "Offer Service")
 
     @staticmethod
     def create_fee_assignment_from_offer(offer):

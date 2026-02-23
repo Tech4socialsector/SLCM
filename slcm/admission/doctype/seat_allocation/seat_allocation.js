@@ -98,18 +98,69 @@ frappe.ui.form.on("Seat Allocation", {
 
         if (frm.doc.status === "Published") {
             frm.add_custom_button(__("Generate Offer Letters"), () => {
-                const selections = frm.doc.selection_applicant
+                const applicants = frm.doc.selection_applicant
                     .filter(row => row.selection_status === "Selected")
-                    .map(row => row.applicant_id);
+                    .map(row => ({
+                        applicant_id: row.applicant_id,
+                        program: row.program,
+                        selection_status: row.selection_status,
+                        name: row.name // childcare record name for internal reference
+                    }));
 
-                if (!selections || selections.length === 0) {
+                if (applicants.length === 0) {
                     frappe.msgprint(__("No applicants with 'Selected' status found to generate offers."));
                     return;
                 }
 
-                frappe.confirm(
-                    __("Generate offer letters for {0} selected applicants?").format(selections.length),
-                    () => {
+                let d = new frappe.ui.Dialog({
+                    title: __("Select Applicants for Offer Letters"),
+                    fields: [
+                        {
+                            label: __("Selected Applicants"),
+                            fieldname: "applicants_grid",
+                            fieldtype: "Table",
+                            cannot_add_rows: true,
+                            cannot_delete_rows: true,
+                            fields: [
+                                {
+                                    fieldname: "applicant_id",
+                                    fieldtype: "Data",
+                                    label: __("Applicant ID"),
+                                    in_list_view: 1,
+                                    read_only: 1
+                                },
+                                {
+                                    fieldname: "program",
+                                    fieldtype: "Link",
+                                    options: "Program",
+                                    label: __("Program"),
+                                    in_list_view: 1,
+                                    read_only: 1
+                                },
+                                {
+                                    fieldname: "selection_status",
+                                    fieldtype: "Select",
+                                    label: __("Status"),
+                                    in_list_view: 1,
+                                    read_only: 1
+                                }
+                            ],
+                            data: applicants,
+                            get_data: () => applicants
+                        }
+                    ],
+                    primary_action_label: __("Generate {0} Offers", [applicants.length]),
+                    primary_action(values) {
+                        const selections = d.fields_dict.applicants_grid.grid.get_selected_children()
+                            .map(row => row.applicant_id);
+
+                        if (selections.length === 0) {
+                            frappe.msgprint(__("Please select at least one applicant."));
+                            return;
+                        }
+
+                        d.hide();
+
                         const total = selections.length;
                         frappe.show_progress(__("Generating Offer Letters"), 0, total, __("Initializing..."));
 
@@ -180,7 +231,20 @@ frappe.ui.form.on("Seat Allocation", {
                         };
                         processNextBatch();
                     }
-                );
+                });
+
+                d.show();
+
+                // Select all by default and hide grid action buttons
+                setTimeout(() => {
+                    const grid = d.fields_dict.applicants_grid.grid;
+                    if (grid) {
+                        grid.wrapper.find('.grid-add-row').hide();
+                        grid.wrapper.find('.grid-remove-rows').hide();
+                        grid.data.forEach(row => row.__checked = 1);
+                        grid.refresh();
+                    }
+                }, 300);
             });
         }
     }
