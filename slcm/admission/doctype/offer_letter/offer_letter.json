@@ -34,15 +34,16 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Applicant",
-   "options": "Applicant"
+   "options": "Applicant",
+   "reqd": 1
   },
   {
-   "fetch_from": "applicant.campus",
    "fieldname": "campus",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Campus",
-   "options": "Campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "fetch_from": "applicant.program",
@@ -50,7 +51,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Program",
-   "options": "Program"
+   "options": "Program",
+   "reqd": 1
   },
   {
    "fetch_from": "applicant.admission_cycle",
@@ -58,7 +60,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Admission Cycle",
-   "options": "Admission Cycle"
+   "options": "Admission Cycle",
+   "reqd": 1
   },
   {
    "fetch_from": "email_template_used.version",
@@ -149,13 +152,15 @@
    "fieldtype": "Link",
    "label": "Academic Year",
    "options": "Academic Year",
-   "read_only": 1
+   "read_only": 1,
+   "reqd": 1
   },
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "label": "Admission Year",
-   "options": "Admission Year"
+   "options": "Admission Year",
+   "reqd": 1
   },
   {
    "fieldname": "fee_structure",
@@ -167,7 +172,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 11:11:32.579938",
+ "modified": "2026-02-23 15:48:39.414604",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

@@ -1,5 +1,4 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "autoname": "OFS-.##",
@@ -18,9 +17,11 @@
   {
    "fieldname": "offer_id",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Offer ID",
    "options": "Offer Letter",
-   "read_only": 1
+   "read_only": 1,
+   "reqd": 1
   },
   {
    "fieldname": "scholarship_amount",
@@ -57,7 +58,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 10:49:53.446051",
+ "modified": "2026-02-23 15:49:25.891445",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Fee Snapshot",

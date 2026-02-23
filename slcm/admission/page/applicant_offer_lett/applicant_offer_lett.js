@@ -44,11 +44,12 @@ class ApplicantOfferLetter {
 		let me = this;
 		window.cur_page = this;
 		this.data = data;
-		const { offer, applicant, fee_breakdown, rendered_content, currency } = data;
+		const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid } = data;
 
 		if (offer.offer_status === 'Issued') {
 			this.page.set_primary_action(__('Accept Admission Offer'), () => me.handle_accept(), 'octicon octicon-check');
-		} else if (offer.offer_status === 'Accepted') {
+			this.page.add_inner_button(__('Reject Admission Offer'), () => me.handle_reject(), __('Actions'));
+		} else if (offer.offer_status === 'Accepted' && !is_fee_paid) {
 			this.page.set_primary_action(__('Pay Fee'), () => me.handle_pay_fee(), 'octicon octicon-credit-card');
 		} else {
 			this.page.clear_primary_action();
@@ -67,7 +68,10 @@ class ApplicantOfferLetter {
 									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_accept()">
 										<i class="fa fa-check mr-2"></i> ${__('Accept Admission Offer')}
 									</button>
-									` : offer.offer_status === 'Accepted' ? `
+									<button class="btn btn-danger btn-block mb-2 font-weight-bold" onclick="cur_page.handle_reject()">
+										<i class="fa fa-times mr-2"></i> ${__('Reject Admission Offer')}
+									</button>
+									` : (offer.offer_status === 'Accepted' && !is_fee_paid) ? `
 									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
 										<i class="fa fa-credit-card mr-2"></i> ${__('Pay Fee')}
 									</button>
@@ -102,7 +106,10 @@ class ApplicantOfferLetter {
 								</div>
 								<div class="summary-item mb-2">
                                     <span class="text-muted text-small">${__('Payable Amount')}:</span>
-                                    <div class="h4 font-weight-bold">${format_currency(offer.payable_amount, currency)}</div>
+                                    <div class="h4 font-weight-bold d-flex align-items-center justify-content-between">
+										<span>${format_currency(offer.payable_amount, currency)}</span>
+										${is_fee_paid ? `<span class="badge badge-pill badge-success small ml-2" style="font-size: 0.7rem;"><i class="fa fa-check mr-1"></i> ${__('Paid')}</span>` : ''}
+									</div>
                                 </div>
 							</div>
 						</div>
@@ -159,9 +166,6 @@ class ApplicantOfferLetter {
 									<h5 class="mb-0 font-weight-bold">${__('Offer Letter Preview')}</h5>
 									<span class="text-muted small">${__('Digitally Verified Document')}</span>
 								</div>
-								<button class="btn btn-sm btn-outline-primary shadow-sm" onclick="window.print()">
-									<i class="fa fa-print mr-1"></i> ${__('Print Preview')}
-								</button>
 							</div>
 							<div class="card-body p-4 preview-scroll-area">
 								<div class="letter-content-container p-5 border rounded bg-light">
@@ -310,6 +314,37 @@ class ApplicantOfferLetter {
 		);
 	}
 
+	handle_reject() {
+		let me = this;
+		frappe.prompt([
+			{
+				label: __('Reason for Rejection'),
+				fieldname: 'reason',
+				fieldtype: 'Small Text',
+				reqd: 1
+			}
+		], (values) => {
+			frappe.dom.freeze(__('Processing Rejection...'));
+			frappe.call({
+				method: 'slcm.api.service.offer_service.reject_offer',
+				args: {
+					offer_name: me.data.offer.name,
+					reason: values.reason
+				},
+				callback: function (r) {
+					frappe.dom.unfreeze();
+					if (r.message) {
+						frappe.show_alert({
+							message: __('You have rejected the admission offer.'),
+							indicator: 'orange'
+						});
+						me.fetch_data();
+					}
+				}
+			});
+		}, __('Confirm Rejection'), __('Reject Offer'));
+	}
+
 	handle_pay_fee() {
 		let me = this;
 		const { offer, fee_breakdown, currency } = this.data;
@@ -339,7 +374,7 @@ class ApplicantOfferLetter {
 			primary_action_label: __('Confirm & Pay'),
 			primary_action(values) {
 				d.hide();
-				frappe.dom.freeze(__('Processing Payment...'));
+				// frappe.dom.freeze(__('Processing Payment...'));
 				frappe.call({
 					method: 'slcm.api.service.offer_service.process_fee_payment',
 					args: {
