@@ -210,12 +210,22 @@ class SeatAllocation(Document):
         if not admission_year_name:
             frappe.throw(f"No Admission Year found for cycle {self.admission_cycle}")
 
-        program_offering = frappe.get_doc("Program Offering", {"campus": self.campus, "admission_year": admission_year_name})
-        if not program_offering:
+        # Use a more reliable way to fetch the Program Offering name and then the document
+        po_name = frappe.db.get_value("Program Offering", 
+            {"campus": self.campus, "admission_year": admission_year_name}, "name")
+        
+        if not po_name:
             frappe.throw(f"No Program Offering found for Campus {self.campus} and Year {admission_year_name}")
 
+        program_offering = frappe.get_doc("Program Offering", po_name)
+        
         program_to_rule = {}
-        for p in program_offering.programs:
+        # Safely access programs attribute
+        programs = getattr(program_offering, "programs", [])
+        if not programs:
+            frappe.throw(f"Program Offering {po_name} has no programs defined.")
+
+        for p in programs:
             program_to_rule[p.program_of_study] = p.reservation_rule
 
         # Helpers
