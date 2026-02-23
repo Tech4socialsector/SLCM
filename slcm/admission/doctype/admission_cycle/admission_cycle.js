@@ -31,11 +31,11 @@ function toggle_stage_dates(frm) {
     frm.refresh_field("doc_verification_end_date");
 
     if (!frm.doc.enable_interview) {
-        frm.set_value("interview_start_date", null);
-        frm.set_value("interview_end_date", null);
+        if (frm.doc.interview_start_date) frm.set_value("interview_start_date", null);
+        if (frm.doc.interview_end_date) frm.set_value("interview_end_date", null);
     }
     if (!frm.doc.enable_document_verification) {
-        frm.set_value("doc_verification_start_date", null);
-        frm.set_value("doc_verification_end_date", null);
+        if (frm.doc.doc_verification_start_date) frm.set_value("doc_verification_start_date", null);
+        if (frm.doc.doc_verification_end_date) frm.set_value("doc_verification_end_date", null);
     }
 }

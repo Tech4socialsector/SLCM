@@ -33,10 +33,10 @@ class AdmissionCycle(Document):
 		self.validate_cross_cycle_overlap()
 		self.validate_stage_sequence()
 		self.validate_stage_date_ranges()
-		self.validate_rule_unique_types()
+		self.validate_rules()
+		self.validate_auto_lock()
 		self.validate_lock_enforcement()
 		self.validate_change_reason_post_activation()
-		self.detect_stage_config_override()
 
 	def validate_admission_year_active_for_status(self):
 		if self.status == "Active":
@@ -200,7 +200,7 @@ class AdmissionCycle(Document):
 						.format(s1.stage_name, s1.idx, s2.stage_name, s2.idx)
 					)
 
-	def validate_rule_unique_types(self):
+	def validate_rules(self):
 		if not self.rules:
 			return
 		seen_types = {}
@@ -253,22 +253,21 @@ class AdmissionCycle(Document):
 					frappe.throw(
 						_("Admission Cycle is locked. Please provide a 'Lock Override Reason' before changing stage configuration.")
 					)
+		
+	def validate_auto_lock(self):
+		"""Automatically set stage_locked if cycle is active or has applications."""
+		if self.stage_locked:
+			return
+		
+		# Lock if Active or Closed
+		if self.status in ["Active", "Closed"]:
+			self.stage_locked = 1
+			return
 
-	def detect_stage_config_override(self):
-		"""Detect if stage config differs from parent Admission Year."""
-		if not self.admission_year:
-			return
-		try:
-			ay = frappe.get_doc("Admission Year", self.admission_year)
-		except frappe.DoesNotExistError:
-			return
-		overridden = False
-		for f in STAGE_CONFIG_FIELDS:
-			ay_val = ay.get(f)
-			if ay_val is not None and self.get(f) != ay_val:
-				overridden = True
-				break
-		self.stage_config_overridden = 1 if overridden else 0
+		# Lock if applications exist
+		if frappe.db.exists("Applicant", {"admission_cycle": self.name}):
+			self.stage_locked = 1
+
 
 	def after_insert(self):
 		"""Copy stage config flags from Admission Year and lock the parent year."""
@@ -279,11 +278,6 @@ class AdmissionCycle(Document):
 		except frappe.DoesNotExistError:
 			return
 
-		# Copy stage flags if they exist on Admission Year
-		for field in STAGE_CONFIG_FIELDS:
-			val = ay.get(field)
-			if val is not None:
-				self.db_set(field, val, update_modified=False)
 
 		# Lock parent Admission Year
 		frappe.db.set_value("Admission Year", self.admission_year, "stage_locked", 1)
@@ -346,6 +340,7 @@ class AdmissionCycle(Document):
 	def on_submit(self):
 		self.db_set("status", "Active")
 		self.db_set("is_active", 1)
+		self.db_set("stage_locked", 1)
 
 	def on_trash(self):
 		if self.status == "Active":

@@ -10,7 +10,10 @@ class AdmissionRound(Document):
 		self.validate_unique_cycle_round_number()
 		self.validate_one_active_per_cycle()
 		self.validate_dates()
+		self.validate_no_round_overlap()
 		self.validate_parent_cycle_active_for_submit()
+		self.validate_auto_lock()
+		self.validate_lock_enforcement()
 
 	def validate_unique_cycle_round_number(self):
 		existing = frappe.db.get_value(
@@ -73,6 +76,57 @@ class AdmissionRound(Document):
 					_("Round End Date ({0}) must be on or before the Admission Cycle end date ({1}).")
 					.format(self.end_date, cycle.end_date)
 				)
+	
+	def validate_no_round_overlap(self):
+		"""Prevents overlapping rounds within the same admission cycle."""
+		if not (self.admission_cycle and self.start_date and self.end_date):
+			return
+		
+		# Check for overlapping date ranges
+		overlapping = frappe.db.sql("""
+			SELECT name FROM `tabAdmission Round`
+			WHERE admission_cycle = %s 
+			AND name != %s
+			AND docstatus < 2
+			AND (
+				(start_date <= %s AND end_date >= %s) OR
+				(start_date <= %s AND end_date >= %s) OR
+				(%s <= start_date AND %s >= start_date)
+			)
+		""", (self.admission_cycle, self.name, 
+			self.start_date, self.start_date, self.end_date, self.end_date, 
+			self.start_date, self.end_date), as_dict=1)
+
+		if overlapping:
+			frappe.throw(_("This round overlaps with another Admission Round: {0}").format(overlapping[0].name))
+
+	def validate_auto_lock(self):
+		"""Automatically set stage_locked if round has started."""
+		if self.stage_locked:
+			return
+		
+		from frappe.utils import today
+		if self.start_date and getdate(today()) >= getdate(self.start_date):
+			self.stage_locked = 1
+
+	def validate_lock_enforcement(self):
+		if not self.stage_locked or self.is_new():
+			return
+		old = self.get_doc_before_save()
+		if not old:
+			return
+		
+		# Fields to lock
+		locked_fields = ["start_date", "end_date", "admission_cycle", "round_number"]
+		changed = [f for f in locked_fields if str(self.get(f)) != str(old.get(f))]
+		
+		if changed:
+			is_sys_admin = "System Manager" in frappe.get_roles(frappe.session.user)
+			if not is_sys_admin:
+				frappe.throw(
+					_("Admission Round is locked. Fields {0} cannot be changed.")
+					.format(", ".join(changed))
+				)
 
 	def validate_parent_cycle_active_for_submit(self):
 		"""Only enforce during actual submit (docstatus = 0 → 1)."""
@@ -95,3 +149,8 @@ class AdmissionRound(Document):
 	def on_trash(self):
 		if self.status == "Active":
 			frappe.throw(_("Cannot delete an Active Admission Round. Change its status first."))
+		
+		if self.stage_locked:
+			is_sys_admin = "System Manager" in frappe.get_roles(frappe.session.user)
+			if not is_sys_admin:
+				frappe.throw(_("Cannot delete a locked Admission Round."))
