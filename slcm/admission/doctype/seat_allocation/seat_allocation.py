@@ -1,7 +1,7 @@
 import frappe
 import math
 from frappe.model.document import Document
-from frappe.utils import now
+from frappe.utils import now, get_link_to_form
 
 
 class SeatAllocation(Document):
@@ -18,12 +18,14 @@ class SeatAllocation(Document):
         rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired"]
         
         for row in (self.selection_applicant or []):
-            if row.selection_status == "Selected":
+            if row.selection_status in ["Selected", "Accepted"]:
                 self.total_selected += 1
             elif row.selection_status == "Waitlisted":
                 self.total_waitlisted += 1
             elif row.selection_status in rejection_statuses:
                 self.total_rejected += 1
+
+        self.validate_uniqueness()
 
         before = None
         try:
@@ -38,13 +40,37 @@ class SeatAllocation(Document):
         for row in (before.selection_applicant or []):
             before_map[row.name] = row.selection_status
 
+        from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
         affected_programs = set()
         for row in (self.selection_applicant or []):
             old_status = before_map.get(row.name)
             new_status = row.selection_status
             
-            # Trigger promotion if a Selected applicant moves to any rejected status
-            if old_status == "Selected" and new_status in rejection_statuses:
+            if old_status and old_status != new_status:
+                log_admission_action(
+                    reference_doctype="Seat Allocation",
+                    reference_name=self.name,
+                    applicant=row.applicant,
+                    program=row.program,
+                    action_type="Manual Status Change",
+                    old_value=old_status,
+                    new_value=new_status,
+                    remarks="Status was manually updated in the Seat Allocation form."
+                )
+
+                # Send notification for manual status change
+                from slcm.admission.notification_service import notify_status_change
+                notify_status_change(
+                    applicant=row.applicant,
+                    program=row.program,
+                    old_status=old_status,
+                    new_status=new_status,
+                    allocation_name=self.name,
+                    admission_cycle=self.admission_cycle
+                )
+
+            # Trigger promotion if a Selected/Accepted applicant moves to any rejected status
+            if old_status in ["Selected", "Accepted"] and new_status in rejection_statuses:
                 affected_programs.add(row.program)
 
         if not affected_programs:
@@ -52,6 +78,27 @@ class SeatAllocation(Document):
 
         # Run promotion post-save (in on_update) so DB reflects the newly rejected seat.
         self.flags.slcm_affected_programs_for_waitlist_promotion = sorted(list(affected_programs))
+
+    def validate_uniqueness(self):
+        """
+        Ensures only one Seat Allocation exists per Campus, Admission Cycle, and Program Level.
+        """
+        filters = {
+            "campus": self.campus,
+            "admission_cycle": self.admission_cycle,
+            "program_level": self.program_level,
+            "name": ["!=", self.name]
+        }
+        
+        existing = frappe.db.exists("Seat Allocation", filters)
+        if existing:
+            link = get_link_to_form("Seat Allocation", existing)
+            frappe.throw(
+                f"A Seat Allocation already exists for Campus '{self.campus}', "
+                f"Admission Cycle '{self.admission_cycle}' and Program Level '{self.program_level or 'All'}'. "
+                f"<br><br>Existing Allocation: {link}",
+                title="Duplicate Seat Allocation"
+            )
 
     def on_update(self):
         if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
@@ -68,7 +115,6 @@ class SeatAllocation(Document):
             "Waitlist Rule",
             filters={
                 "status": "Active",
-                "is_locked": 0,
                 "admission_cycle": self.admission_cycle,
                 "campus": self.campus,
             },
@@ -108,6 +154,7 @@ class SeatAllocation(Document):
         for row in merit.merit_applicants:
             self.append("selection_applicant", {
                 "applicant": row.applicant,
+                "applicant_id": row.applicant_id,
                 "program": row.program,
                 "reservation_category": row.reservation_category,
                 "total_score": row.total_score,
@@ -132,6 +179,18 @@ class SeatAllocation(Document):
             frappe.throw("Merit List is required.")
         if self.status == "Published":
             frappe.throw("Cannot re-run allocation after publish.")
+
+        # Check for active Waitlist Rule
+        if not frappe.db.exists("Waitlist Rule", {
+            "campus": self.campus,
+            "admission_cycle": self.admission_cycle,
+            "status": "Active"
+        }):
+            frappe.throw(
+                f"No active Waitlist Rule found for Campus '{self.campus}' and Admission Cycle '{self.admission_cycle}'. "
+                "Please create an active Waitlist Rule before running allocation.",
+                title="Missing Waitlist Rule"
+            )
 
         # Pull if empty
         if not self.selection_applicant:
@@ -317,6 +376,22 @@ class SeatAllocation(Document):
                 row.allocation_type = ""
                 total_rejected += 1
 
+        # -------------------------
+        # 5️⃣ LOGGING & COMMIT
+        # -------------------------
+        from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+        for row in self.selection_applicant:
+             log_admission_action(
+                reference_doctype="Seat Allocation",
+                reference_name=self.name,
+                applicant=row.applicant,
+                program=row.program,
+                action_type="Outcome Assigned",
+                old_value="Draft",
+                new_value=row.selection_status,
+                remarks=f"Automatic allocation as {row.allocation_type or 'N/A'}"
+            )
+
         self.total_selected = total_selected
         self.total_waitlisted = total_waitlisted
         self.total_rejected = total_rejected
@@ -336,16 +411,19 @@ class SeatAllocation(Document):
         self.published_on = now()
         self.published_by = frappe.session.user
         self.save()
+
+        from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+        log_admission_action(
+            reference_doctype="Seat Allocation",
+            reference_name=self.name,
+            action_type="Allocation Published",
+            remarks=f"Allocation finalized and published by {frappe.session.user}"
+        )
+
         frappe.db.commit()
 
-        frappe.msgprint("Allocation Published.")
+        # Trigger bulk notifications
+        from slcm.admission.notification_service import notify_published_allocation
+        notify_published_allocation(self.name)
 
-    @frappe.whitelist()
-    def reconcile_allocations_across_campuses(self):
-        """
-        PLACEHOLDER: Reconcile allocations for applicants selected in multiple campuses.
-        Logic: If an applicant is selected for multiple campuses, they should be
-        retained in the one with the highest preference and released from others.
-        """
-        frappe.msgprint(_("Multi-campus reconciliation placeholder executed. This would normally release lower-priority seats."))
-        pass
+        frappe.msgprint("Allocation Published and notifications queued.")

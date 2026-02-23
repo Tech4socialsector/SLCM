@@ -6,6 +6,7 @@
     "engine": "InnoDB",
     "field_order": [
         "applicant",
+        "applicant_id",
         "program",
         "program_level",
         "reservation_category",
@@ -30,6 +31,14 @@
             "reqd": 1
         },
         {
+            "fetch_from": "applicant.applicant_id",
+            "fieldname": "applicant_id",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Applicant Id",
+            "read_only": 1
+        },
+        {
             "fetch_from": "applicant.program",
             "fieldname": "program",
             "fieldtype": "Link",
@@ -43,7 +52,7 @@
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Program Level",
-            "options": "UG\nPG\nPhD"
+            "options": "UG\nPG\nResearch Cource"
         },
         {
             "fieldname": "reservation_category",

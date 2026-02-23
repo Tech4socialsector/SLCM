@@ -69,7 +69,7 @@ def _rank_applicants(applicant_rows):
 
 def generate_merit_for_level(cycle, campus, program_level):
     """
-    Generates a Merit List for a specific Program Level (UG / PG / PhD).
+    Generates a Merit List for a specific Program Level (UG / PG / Research Cource).
     Uses the Merit Rule assigned to that program level via Merit Rule Mapping.
     """
     # Check if a Merit List already exists for this program level
@@ -121,24 +121,20 @@ def generate_merit_for_level(cycle, campus, program_level):
 
     rule = frappe.get_doc("Merit Rule", merit_rule_name)
 
-    applicants = frappe.db.sql("""
-        SELECT 
-            ar.name, ar.program, ar.program_level, ar.reservation_category,
-            ar.hsc_percentage, ar.entrance_percentage, ar.interview_percentage
-        FROM `tabAdmission Result` ar
-        JOIN `tabApplicant` app ON app.name = ar.applicant_name
-        WHERE ar.admission_cycle = %(cycle)s
-          AND ar.program_level = %(program_level)s
-          AND (
-              app.campus_preference_1 = %(campus)s OR
-              app.campus_preference_2 = %(campus)s OR
-              app.campus_preference_3 = %(campus)s
-          )
-    """, {
-        "cycle": cycle,
-        "campus": campus,
-        "program_level": program_level
-    }, as_dict=True)
+    # Fetch applicants for this program level
+    applicants = frappe.get_all(
+        "Admission Result",
+        filters={
+            "admission_cycle": cycle,
+            "campus": campus,
+            "program_level": program_level
+        },
+        fields=[
+            "name", "applicant_id", "program", "program_level", "reservation_category",
+            "hsc_percentage", "entrance_percentage", "interview_percentage",
+            "ug_cgpa", "pg_cgpa"
+        ]
+    )
     if not applicants:
         frappe.throw(
             f"No applicants found for Program Level '{program_level}', "
@@ -158,6 +154,7 @@ def generate_merit_for_level(cycle, campus, program_level):
         total_score = calculate_merit_with_rule(app, rule)
         merit.append("merit_applicants", {
             "applicant": app.name,
+            "applicant_id": app.applicant_id,
             "program": app.program,
             "program_level": app.program_level,
             "reservation_category": app.reservation_category,
@@ -178,6 +175,20 @@ def generate_merit_for_level(cycle, campus, program_level):
 
     _rank_applicants(merit.merit_applicants)
     merit.insert()
+
+    # Log merit calculation for each applicant
+    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+    for row in merit.merit_applicants:
+        log_admission_action(
+            reference_doctype="Merit List",
+            reference_name=merit.name,
+            applicant=row.applicant,
+            program=row.program,
+            action_type="Merit Calculated",
+            new_value=f"Score: {row.total_score:.3f}",
+            remarks=f"Calculated via Merit Rule: {merit_rule_name}"
+        )
+
     merit.submit()
     frappe.db.commit()
     return merit

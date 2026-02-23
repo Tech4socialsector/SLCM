@@ -19,6 +19,12 @@ def get_columns():
             "width": 180
         },
         {
+            "label": _("Applicant ID"),
+            "fieldname": "applicant_id",
+            "fieldtype": "Data",
+            "width": 120
+        },
+        {
             "label": _("Program"),
             "fieldname": "program",
             "fieldtype": "Link",
@@ -89,6 +95,7 @@ def get_data(filters):
     sql = f"""
         SELECT
             app.applicant,
+            app.applicant_id,
             app.program,
             app.reservation_category,
             app.selection_status,
@@ -104,3 +111,24 @@ def get_data(filters):
     """
 
     return frappe.db.sql(sql, params, as_dict=True)
+
+def get_chart_data(columns, data, filters):
+    if not data:
+        return None
+
+    status_counts = {}
+    for d in data:
+        status = d.get("selection_status") or "N/A"
+        status_counts[status] = status_counts.get(status, 0) + 1
+
+    labels = sorted(status_counts.keys())
+    values = [status_counts[l] for l in labels]
+
+    return {
+        "data": {
+            "labels": labels,
+            "datasets": [{"name": "Status Count", "values": values}]
+        },
+        "type": "pie",
+        "colors": ["#ffa00a", "#1fb5ad", "#ff5858"]
+    }
