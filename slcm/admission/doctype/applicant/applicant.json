@@ -25,13 +25,10 @@
   "application_status",
   "program",
   "admission_cycle",
-  "admission_year",
   "column_break_rynw",
   "academic_year",
   "application_type",
-  "campus_preference_1",
-  "campus_preference_2",
-  "campus_preference_3",
+  "campus",
   "section_break_azsq",
   "title",
   "categories",
@@ -68,6 +65,7 @@
   "pincode",
   "academic_qualification_tab",
   "ug_final_year_note",
+  "program_level",
   "class_x_details_section",
   "class_x_school",
   "class_x_percentage",
@@ -151,23 +149,11 @@
    "options": "Program"
   },
   {
-   "fieldname": "campus_preference_1",
+   "fieldname": "campus",
    "fieldtype": "Link",
-   "label": "Campus Preference 1",
+   "label": "Campus",
    "options": "Campus",
    "reqd": 1
-  },
-  {
-   "fieldname": "campus_preference_2",
-   "fieldtype": "Link",
-   "label": "Campus Preference 2",
-   "options": "Campus"
-  },
-  {
-   "fieldname": "campus_preference_3",
-   "fieldtype": "Link",
-   "label": "Campus Preference 3",
-   "options": "Campus"
   },
   {
    "fieldname": "academic_year",
@@ -182,7 +168,8 @@
    "fieldname": "application_status",
    "fieldtype": "Select",
    "label": "Application Status",
-   "options": "Submitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired"
+   "options": "Submitted\nSelected\nWaitlisted\nAccepted\nRejected\nOffer Issued\nOffer Declined\nOffer Expired",
+   "read_only": 1
   },
   {
    "fieldname": "personal_information_tab",
@@ -192,32 +179,28 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
-   "label": "Full Name (As per Secondary School Certificate)",
-   "reqd": 1
+   "label": "Candidate Name"
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth",
-   "reqd": 1
+   "label": "Date of Birth"
   },
   {
    "fieldname": "gender",
    "fieldtype": "Select",
    "label": "Gender",
-   "options": "\nMale\nFemale\nOthers",
-   "reqd": 1
+   "options": "\nMale\nFemale\nOthers"
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile Number",
-   "reqd": 1
+   "label": "Mobile Number"
   },
   {
    "fieldname": "alternate_contact",
    "fieldtype": "Phone",
-   "label": "Alternate Mobile Number"
+   "label": "Alternate Contact"
   },
   {
    "fieldname": "religion",
@@ -234,7 +217,7 @@
    "description": "Max 1MB - Supported formats png, jpeg, jpg",
    "fieldname": "id_proof",
    "fieldtype": "Attach Image",
-   "label": "Identification Proof (Aadhar/Voter ID/Passport)"
+   "label": "ID Proof"
   },
   {
    "fieldname": "parent_and_guardian_details",
@@ -304,7 +287,6 @@
    "mandatory_depends_on": "eval:doc.guardian_required"
   },
   {
-   "depends_on": "eval:doc.guardian_required",
    "fieldname": "guardian_email",
    "fieldtype": "Data",
    "label": "Guardian Email",
@@ -354,7 +336,7 @@
   {
    "fieldname": "class_x_percentage",
    "fieldtype": "Float",
-   "label": "Percentage of Marks (Class X)",
+   "label": "Percentage/CGPA obtained (Class X)",
    "non_negative": 1,
    "precision": "2"
   },
@@ -373,7 +355,7 @@
   {
    "fieldname": "class_xii_name_of_examination",
    "fieldtype": "Data",
-   "label": "Name of Examination (Class XII)"
+   "label": "Name of Examination (Class XII/Equivalent - as per marksheet)"
   },
   {
    "fieldname": "class_xii_year_of_completion",
@@ -709,7 +691,7 @@
    "fieldname": "reservation_category",
    "fieldtype": "Select",
    "label": "Whether SC/ST/OBC-NCL",
-   "options": "\nNA\nOBC-NCL\nSC\nST",
+   "options": "\nNA\nOBS-NCL\nSC\nST",
    "placeholder": "Select Category"
   },
   {
@@ -866,17 +848,17 @@
    "label": "Percentage"
   },
   {
-   "fieldname": "admission_year",
-   "fieldtype": "Link",
-   "label": "Admission Year",
-   "options": "Admission Year"
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "label": "Program Level",
+   "options": "UG\nPG\nResearch Course"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-23 15:28:39.549987",
+ "modified": "2026-02-23 10:07:32.504000",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -892,6 +874,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Eligibility Admin",
    "share": 1,
    "write": 1
   }
