@@ -25,13 +25,10 @@
   "application_status",
   "program",
   "admission_cycle",
-  "admission_year",
   "column_break_rynw",
   "academic_year",
   "application_type",
-  "campus_preference_1",
-  "campus_preference_2",
-  "campus_preference_3",
+  "campus",
   "section_break_azsq",
   "title",
   "categories",
@@ -68,6 +65,7 @@
   "pincode",
   "academic_qualification_tab",
   "ug_final_year_note",
+  "program_level",
   "class_x_details_section",
   "class_x_school",
   "class_x_percentage",
@@ -149,25 +147,6 @@
    "fieldtype": "Link",
    "label": "Program",
    "options": "Program"
-  },
-  {
-   "fieldname": "campus_preference_1",
-   "fieldtype": "Link",
-   "label": "Campus Preference 1",
-   "options": "Campus",
-   "reqd": 1
-  },
-  {
-   "fieldname": "campus_preference_2",
-   "fieldtype": "Link",
-   "label": "Campus Preference 2",
-   "options": "Campus"
-  },
-  {
-   "fieldname": "campus_preference_3",
-   "fieldtype": "Link",
-   "label": "Campus Preference 3",
-   "options": "Campus"
   },
   {
    "fieldname": "academic_year",
@@ -866,21 +845,27 @@
    "label": "Percentage"
   },
   {
-   "fieldname": "admission_year",
+   "fieldname": "campus",
    "fieldtype": "Link",
-   "label": "Admission Year",
-   "options": "Admission Year"
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "label": "Program Level",
+   "options": "UG\nPG\nResearch Course"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-23 15:28:39.549987",
+ "modified": "2026-02-23 14:38:37.674316",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

@@ -6,9 +6,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "category",
+  "reservation_quota",
   "religion",
-  "community",
+  "category",
   "column_break_1",
   "reservation_percentage",
   "seats"
@@ -18,21 +18,14 @@
    "fieldname": "category",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Reservation Category",
-   "options": "Reservation Category",
-   "reqd": 1
+   "label": "Category",
+   "options": "Admission Category"
   },
   {
    "fieldname": "religion",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Religion"
-  },
-  {
-   "fieldname": "community",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Community"
   },
   {
    "fieldname": "column_break_1",
@@ -50,12 +43,20 @@
    "in_list_view": 1,
    "label": "Seats",
    "read_only": 1
+  },
+  {
+   "fieldname": "reservation_quota",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reservation Quota",
+   "options": "General\nMagement Quota\nGoverment Quota",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-20 12:58:05.764175",
+ "modified": "2026-02-23 15:31:02.634455",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Offering Reservation",
