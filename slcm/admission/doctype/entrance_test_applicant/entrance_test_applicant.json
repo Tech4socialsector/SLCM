@@ -60,7 +60,7 @@
             "fieldname": "allocation_status",
             "fieldtype": "Select",
             "label": "Allocation Status",
-            "options": "Not Allocated\nAllocated"
+            "options": "Not Allocated\nAllocated\nPreferences Assigned"
         }
     ],
     "grid_page_length": 50,
