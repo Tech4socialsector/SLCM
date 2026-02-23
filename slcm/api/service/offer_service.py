@@ -148,16 +148,8 @@ class OfferService:
         fee_data = OfferService._calculate_and_freeze_fees(fee_structure_name)
         offer.payable_amount = fee_data.get("total_payable")
         
-        # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
-        # if they differ from the applicant's default preferences
+        # Ensure Fetch From doesn't overwrite our resolved cycle if it's different from the applicant
         offer.insert(ignore_permissions=True)
-        if campus:
-            offer.campus = campus
-            offer.db_set('campus', campus)
-        if resolved_cycle:
-            offer.admission_cycle = resolved_cycle
-            offer.db_set('admission_cycle', resolved_cycle)
-            
         OfferService.update_applicant_status(applicant , application_status = "Offer Issued")
 
         # Snapshot Content (Now we have the name/ID)
@@ -282,7 +274,6 @@ class OfferService:
 
         OfferService.log_action(offer.name, "Rejected", reason)
         OfferService.update_applicant_status(offer.applicant , application_status = "Offer Declined")
-        OfferService.sync_seat_allocation_status(offer, "Offer Declined")
         return True
 
     @staticmethod
