@@ -1,0 +1,275 @@
+{% extends "templates/web.html" %}
+
+{% block header %}
+{% endblock %}
+
+{% block page_content %}
+<style>
+    :root {
+        --primary: #2563eb;
+        --secondary: #64748b;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --bg: #f8fafc;
+        --card-bg: #ffffff;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 20px;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        padding: 24px;
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .profile-info {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .profile-info li {
+        margin-bottom: 15px;
+    }
+
+    .profile-info label {
+        display: block;
+        font-size: 0.875rem;
+        color: var(--secondary);
+        margin-bottom: 4px;
+    }
+
+    .profile-info span {
+        font-weight: 500;
+        color: #334155;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .status-selected {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-waitlisted {
+        background: #fef9c3;
+        color: #854d0e;
+    }
+
+    .status-accepted {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-draft {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .result-row {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .result-info h4 {
+        margin: 0;
+        font-size: 1rem;
+        color: #1e293b;
+    }
+
+    .result-info p {
+        margin: 4px 0 0;
+        font-size: 0.875rem;
+        color: var(--secondary);
+    }
+
+    .score-chip {
+        display: inline-block;
+        background: #eff6ff;
+        color: #3b82f6;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 8px;
+        margin-top: 8px;
+    }
+
+    .alert {
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        background: #fee2e2;
+        color: #991b1b;
+        margin: 40px auto;
+        max-width: 600px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--secondary);
+    }
+</style>
+
+<div class="container">
+    {% if unauthorized %}
+    <div class="alert">
+        <h3>Unauthorized Access</h3>
+        <p>Please <a href="/login" style="color: inherit; text-decoration: underline;">login</a> to view your dashboard.
+        </p>
+    </div>
+    {% elif error %}
+    <div class="alert">
+        <h3>Error</h3>
+        <p>{{ error }}</p>
+    </div>
+    {% else %}
+    {% for entry in applicant_data %}
+    <div class="dashboard-grid">
+        <!-- Profile & Scores -->
+        <div class="card">
+            <h3 class="section-title">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                Profile
+            </h3>
+            <ul class="profile-info">
+                <li>
+                    <label>ID</label>
+                    <span>{{ entry.profile.applicant_id or "N/A" }}</span>
+                </li>
+                <li>
+                    <label>Name</label>
+                    <span>{{ entry.profile.applicant_name }}</span>
+                </li>
+                <li>
+                    <label>Campus</label>
+                    <span>{{ entry.profile.campus }}</span>
+                </li>
+                <li>
+                    <label>Cycle</label>
+                    <span>{{ entry.profile.admission_cycle }}</span>
+                </li>
+            </ul>
+
+            <h3 class="section-title" style="margin-top: 30px;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                    </path>
+                </svg>
+                Scores
+            </h3>
+            <div>
+                {% if entry.profile.hsc_percentage %}
+                <div class="score-chip">HSC: {{ entry.profile.hsc_percentage }}%</div>
+                {% endif %}
+                {% if entry.profile.entrance_percentage %}
+                <div class="score-chip">Entrance: {{ entry.profile.entrance_percentage }}%</div>
+                {% endif %}
+                {% if entry.profile.interview_percentage %}
+                <div class="score-chip">Interview: {{ entry.profile.interview_percentage }}%</div>
+                {% endif %}
+                {% if entry.profile.ug_cgpa %}
+                <div class="score-chip">UG CGPA: {{ entry.profile.ug_cgpa }}</div>
+                {% endif %}
+                {% if entry.profile.pg_cgpa %}
+                <div class="score-chip">PG CGPA: {{ entry.profile.pg_cgpa }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Admission Results -->
+        <div class="card">
+            <h3 class="section-title">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Admission Status
+            </h3>
+            {% if entry.results %}
+            {% for res in entry.results %}
+            <div class="result-row">
+                <div class="result-info">
+                    <h4>{{ entry.profile.program }}</h4>
+                    <p>
+                        Rank: #{{ res.overall_rank }}
+                        {% if res.category_rank %}
+                        | Category Rank: #{{ res.category_rank }}
+                        {% endif %}
+                    </p>
+                </div>
+                <span class="status-badge status-{{ res.selection_status.lower().replace(' ', '-') }}">
+                    {{ res.selection_status }}
+                </span>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <p>No results have been published yet. Please check back later.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

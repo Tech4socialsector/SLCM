@@ -93,9 +93,10 @@
   },
   {
    "fieldname": "applicant_id",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Applicant Id"
+   "label": "Applicant Id",
+   "options": "Applicant"
   },
   {
    "fieldname": "email",
@@ -107,7 +108,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-22 12:13:46.508882",
+ "modified": "2026-02-23 10:52:49.920865",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Result",

@@ -25,6 +25,13 @@ class SeatAllocation(Document):
             elif row.selection_status in rejection_statuses:
                 self.total_rejected += 1
 
+        # Always enforce ascending sort by overall rank before saving
+        if self.selection_applicant:
+            from frappe.utils import flt
+            self.selection_applicant.sort(key=lambda x: flt(x.overall_rank or 999999))
+            for i, row in enumerate(self.selection_applicant):
+                row.idx = i + 1
+
         self.validate_uniqueness()
 
         before = None
@@ -58,16 +65,17 @@ class SeatAllocation(Document):
                     remarks="Status was manually updated in the Seat Allocation form."
                 )
 
-                # Send notification for manual status change
-                from slcm.admission.notification_service import notify_status_change
-                notify_status_change(
-                    applicant=row.applicant,
-                    program=row.program,
-                    old_status=old_status,
-                    new_status=new_status,
-                    allocation_name=self.name,
-                    admission_cycle=self.admission_cycle
-                )
+                # Send notification for manual status change only if published
+                if self.status == "Published":
+                    from slcm.admission.notification_service import notify_status_change
+                    notify_status_change(
+                        applicant=row.applicant,
+                        program=row.program,
+                        old_status=old_status,
+                        new_status=new_status,
+                        allocation_name=self.name,
+                        admission_cycle=self.admission_cycle
+                    )
 
             # Trigger promotion if a Selected/Accepted applicant moves to any rejected status
             if old_status in ["Selected", "Accepted"] and new_status in rejection_statuses:
@@ -124,7 +132,8 @@ class SeatAllocation(Document):
         for rule_name in rule_names:
             frappe.flags.slcm_waitlist_promotion_in_progress = True
             try:
-                process_waitlist(frappe.get_doc("Waitlist Rule", rule_name))
+                # Manual triggers (from on_update) should ignore the cutoff date
+                process_waitlist(frappe.get_doc("Waitlist Rule", rule_name), ignore_cutoff=True)
             finally:
                 frappe.flags.slcm_waitlist_promotion_in_progress = False
 
@@ -210,44 +219,7 @@ class SeatAllocation(Document):
         if not admission_year_name:
             frappe.throw(f"No Admission Year found for cycle {self.admission_cycle}")
 
-        program_offering = frappe.get_doc("Program Offering", {"campus": self.campus, "admission_year": admission_year_name})
-        if not program_offering:
-            frappe.throw(f"No Program Offering found for Campus {self.campus} and Year {admission_year_name}")
-
-        program_to_rule = {}
-        for p in program_offering.programs:
-            program_to_rule[p.program_of_study] = p.reservation_rule
-
-        # Helpers
-        def get_category_seats(rule_name, cat_name, literal=False):
-            if literal:
-                # For GEN pool, we ONLY look for literal GEN or General in the rule
-                matching_cats = [cat_name]
-            else:
-                # Resolve all category IDs that match the name or code
-                matching_cats = frappe.db.sql("""
-                    SELECT name FROM `tabAdmission Category`
-                    WHERE name = %s OR category_code = %s OR category_name = %s
-                """, (cat_name, cat_name, cat_name), pluck=True)
-            
-            for c in matching_cats:
-                val = frappe.db.get_value("Reservation Quota", {"parent": rule_name, "category": c}, "seats")
-                if val is not None:
-                    return int(val), c
-
-            return 0, None
-
-        def get_reserved_categories(rule_name, exclude_cats=None):
-            if exclude_cats is None:
-                exclude_cats = []
-            
-            quotas = frappe.get_all("Reservation Quota", filters={"parent": rule_name}, fields=["category"])
-            cats = []
-            for q in quotas:
-                c = q.category
-                if c not in ["GEN", "General"] and c not in exclude_cats and c not in cats:
-                    cats.append(c)
-            return cats
+        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import _get_program_quotas
 
         total_selected = 0
         total_waitlisted = 0
@@ -262,9 +234,7 @@ class SeatAllocation(Document):
 
         for program, applicants in grouped_by_program.items():
 
-            rule_name = program_to_rule.get(program)
-            if not rule_name:
-                frappe.throw(f"No Reservation Rule found for Program {program} in Program Offering")
+            quotas = _get_program_quotas(self.campus, self.admission_cycle, program)
 
             # -----------------------------------
             # Sort by merit
@@ -276,9 +246,7 @@ class SeatAllocation(Document):
             # -----------------------------------
             # PHASE 1: OPEN (GEN) SELECTION
             # -----------------------------------
-            gen_seats, matched_gen_cat = get_category_seats(rule_name, "GEN", literal=True)
-            if gen_seats == 0:
-                gen_seats, matched_gen_cat = get_category_seats(rule_name, "General", literal=True)
+            gen_seats = quotas.get("GEN", 0)
 
             # Get waitlist percentage from active Waitlist Rule (campus wide)
             waitlist_percent = 50.0
@@ -300,17 +268,12 @@ class SeatAllocation(Document):
             # -----------------------------------
             # PHASE 2: RESERVED SELECTION
             # -----------------------------------
-            processed_cats = []
-            if matched_gen_cat:
-                processed_cats.append(matched_gen_cat)
-
-            reserved_categories = get_reserved_categories(rule_name, exclude_cats=processed_cats)
+            reserved_quotas = quotas.get("Reserved", {})
             
             # Store waitlist quotas to process later
             category_waitlist_quotas = {}
 
-            for category in reserved_categories:
-                category_seats, _ = get_category_seats(rule_name, category)
+            for category, category_seats in reserved_quotas.items():
                 category_waitlist_quotas[category] = math.ceil(category_seats * waitlist_factor)
 
                 cat_doc = frappe.get_cached_value("Admission Category", category, ["name", "category_code", "category_name"], as_dict=1)
@@ -345,8 +308,7 @@ class SeatAllocation(Document):
                 total_waitlisted += 1
                 
             # 2. Waitlist Reserved (from category specific pools)
-            for category in reserved_categories:
-                cat_waitlist_cap = category_waitlist_quotas.get(category, 0)
+            for category, cat_waitlist_cap in category_waitlist_quotas.items():
                 if cat_waitlist_cap == 0:
                     continue
                     
@@ -396,6 +358,7 @@ class SeatAllocation(Document):
         self.total_waitlisted = total_waitlisted
         self.total_rejected = total_rejected
         self.status = "Allocated"
+        
         self.save()
         frappe.db.commit()
 

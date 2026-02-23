@@ -7,7 +7,6 @@
  "engine": "InnoDB",
  "field_order": [
   "admission_category_details_section",
-  "campus",
   "category_name",
   "category_code",
   "column_break_guxi",
@@ -36,12 +35,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "label": "Campus",
-   "options": "Campus"
-  },
-  {
    "fieldname": "admission_category_details_section",
    "fieldtype": "Section Break",
    "label": "Admission Category details "
@@ -50,7 +43,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 15:33:08.796614",
+ "modified": "2026-02-23 15:26:11.228927",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Category",
