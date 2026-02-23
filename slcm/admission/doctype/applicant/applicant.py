@@ -1,7 +1,8 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt
+from frappe.utils import nowdate, flt, getdate, today
+from slcm.admission.utils import validate_cycle_deadline, get_cycle_rule
 
 
 class Applicant(Document):
@@ -11,14 +12,14 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def validate(self):
+        self.validate_deadlines()
+        self.validate_modification_lock()
         self.validate_preferences()
         self.validate_eligibility()
 
-        # create_or_update_evaluation() is called INSIDE validate_eligibility()
-        # for BOTH eligible and ineligible outcomes, so it always runs even
-        # when frappe.throw() is raised for ineligible applicants.
-        # We still call it here as a safety net for the eligible path.
-        self.create_or_update_evaluation()
+        # NOTE: create_or_update_evaluation() is now handled in on_update 
+        # for eligible cases to avoid timestamp mismatch during initial save.
+        # It remains in validate_eligibility() for ineligible catch-throws.
 
         # NOTE: DO NOT add another frappe.throw() here.
         # validate_eligibility() already throws with the full HTML message
@@ -33,7 +34,63 @@ class Applicant(Document):
             )
 
     def on_update(self):
-        self.pluck_documents()
+        # Decouple side-effects to avoid TimestampMismatchError during concurrent uploads/saves.
+        # This ensures the main Applicant record save completes immediately.
+        frappe.enqueue(
+            "slcm.admission.doctype.applicant.applicant.sync_side_effects",
+            applicant_name=self.name,
+            now=frappe.flags.in_test
+        )
+
+    def pluck_documents(self):
+        """
+        Plucks file attachments from Applicant fields and updates Applicant Document.
+        """
+        doc_fields = {
+            "candidate_photo": _("Photograph"),
+            "id_proof": _("ID Proof"),
+            "class_x_marksheet": _("Class X Marksheet"),
+            "class_xii_marksheet": _("Class XII Marksheet"),
+            "ews_certificate": _("EWS Certificate"),
+            "caste_certificate": _("Caste Certificate"),
+            "pwd_certificate": _("PWD Certificate"),
+            "ka_study_7yrs_certificate": _("7 Years Study Certificate"),
+            "ka_defence_child_certificate": _("Defence Child Certificate"),
+            "ka_govt_child_certificate": _("Govt Child Certificate"),
+            "ka_ais_child_certificate": _("AIS Child Certificate"),
+            "ka_capf_child_certificate": _("CAPF Child Certificate"),
+            "cv": _("Curriculum Vitae")
+        }
+
+        # Find or create Applicant Document (using Applicant Name exactly as ID)
+        ad_name = self.name
+        if frappe.db.exists("Applicant Document", ad_name):
+            ad = frappe.get_doc("Applicant Document", ad_name)
+        else:
+            ad = frappe.new_doc("Applicant Document")
+            ad.name = ad_name
+            ad.applicant = self.name
+            ad.insert(ignore_permissions=True)
+
+        existing_docs = {d.document_name: d for d in ad.documents}
+        updated = False
+
+        for field, label in doc_fields.items():
+            val = self.get(field)
+            if val:
+                if label in existing_docs:
+                    if existing_docs[label].file_url != val:
+                        existing_docs[label].file_url = val
+                        updated = True
+                else:
+                    ad.append("documents", {
+                        "document_name": label,
+                        "file_url": val
+                    })
+                    updated = True
+        
+        if updated:
+            ad.save(ignore_permissions=True)
 
     def validate_preferences(self):
         """Ensure preferences are unique and mandatory."""
@@ -44,6 +101,24 @@ class Applicant(Document):
         prefs = [p for p in prefs if p]
         if len(prefs) != len(set(prefs)):
             frappe.throw(_("Campus preferences must be unique."))
+
+    def validate_deadlines(self):
+        """Enforce cycle deadlines for application submission/edits."""
+        if self.admission_cycle:
+            validate_cycle_deadline("Application", self.admission_cycle)
+
+    def validate_modification_lock(self):
+        """Enforce 'Modification Lock' rule if active on the cycle."""
+        if not self.admission_cycle or self.is_new():
+            return
+
+        lock_date = get_cycle_rule(self.admission_cycle, "Modification Lock")
+        if lock_date and getdate(today()) > getdate(lock_date):
+            frappe.throw(
+                _("This application is locked for modification as of {0}. Further edits are not permitted.")
+                .format(lock_date),
+                title=_("Modification Locked")
+            )
 
     # ──────────────────────────────────────────────
     # CHILD TABLE VALUE HELPERS
@@ -822,10 +897,10 @@ class Applicant(Document):
 
         This ensures BOTH Eligible and Ineligible outcomes are always recorded.
         """
-        if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
+        if not all([self.program, self.campus_preference_1, self.admission_cycle, self.academic_year]) or self.is_new():
             return
 
-        applicant_name = self.name or "New Applicant"
+        applicant_name = self.name
 
         existing = frappe.db.get_value(
             "Eligibility Evaluation",
@@ -846,7 +921,7 @@ class Applicant(Document):
             "academic_year":           self.academic_year,
             "admission_cycle":         self.admission_cycle,
             "program":                 self.program,
-            "campus":                  self.campus,
+            "campus":                  self.campus_preference_1,
             "evaluation_status":       current_status,
             "failure_message":         current_reason,
             "exempts_entrance_test":   exempts_entrance_test,
@@ -864,8 +939,6 @@ class Applicant(Document):
 
         doc = frappe.get_doc(doc_data)
         doc.save(ignore_permissions=True)
-
-        frappe.db.commit()
 
 
 # ──────────────────────────────────────────────
@@ -933,72 +1006,27 @@ def create_eligibility_evaluation_async(
     doc.save(ignore_permissions=True)
 
 
-# ──────────────────────────────────────────────
-# Hook functions
-# ──────────────────────────────────────────────
-
-
-def validate_applicant(doc, method):
-    """Called via hooks.py doc_events validate"""
-    doc.validate_eligibility()
-
-
-def before_submit_applicant(doc, method):
-    """Called via hooks.py doc_events before_submit"""
-    if doc.evaluation_status == "Ineligible":
-        frappe.throw(
-            _("Not Eligible: {0}").format(
-                doc.rejected_reason or "You are not eligible for the selected program."
-            ),
-            title=_("Submission Not Allowed")
-        )
-
-    def pluck_documents(self):
-        """
-        Plucks file attachments from Applicant fields and updates Applicant Document.
-        """
-        doc_fields = {
-            "candidate_photo": _("Photograph"),
-            "id_proof": _("ID Proof"),
-            "class_x_marksheet": _("Class X Marksheet"),
-            "class_xii_marksheet": _("Class XII Marksheet"),
-            "ews_certificate": _("EWS Certificate"),
-            "caste_certificate": _("Caste Certificate"),
-            "pwd_certificate": _("PWD Certificate"),
-            "ka_study_7yrs_certificate": _("7 Years Study Certificate"),
-            "ka_defence_child_certificate": _("Defence Child Certificate"),
-            "ka_govt_child_certificate": _("Govt Child Certificate"),
-            "ka_ais_child_certificate": _("AIS Child Certificate"),
-            "ka_capf_child_certificate": _("CAPF Child Certificate"),
-            "cv": _("Curriculum Vitae")
-        }
-
-        # Find or create Applicant Document
-        ad_name = "AD-" + self.name
-        if frappe.db.exists("Applicant Document", ad_name):
-            ad = frappe.get_doc("Applicant Document", ad_name)
-        else:
-            ad = frappe.new_doc("Applicant Document")
-            ad.name = ad_name
-            ad.applicant = self.name
-            ad.insert(ignore_permissions=True)
-
-        existing_docs = {d.document_name: d for d in ad.documents}
-        updated = False
-
-        for field, label in doc_fields.items():
-            val = self.get(field)
-            if val:
-                if label in existing_docs:
-                    if existing_docs[label].file_url != val:
-                        existing_docs[label].file_url = val
-                        updated = True
-                else:
-                    ad.append("documents", {
-                        "document_name": label,
-                        "file_url": val
-                    })
-                    updated = True
-        
-        if updated:
-            ad.save(ignore_permissions=True)
+def sync_side_effects(applicant_name):
+    """
+    Background job to sync documents and evaluations.
+    Uses a simple retry mechanism for concurrency.
+    """
+    if not applicant_name:
+        return
+    
+    import time
+    for _ in range(3):
+        try:
+            doc = frappe.get_doc("Applicant", applicant_name)
+            doc.pluck_documents()
+            doc.create_or_update_evaluation()
+            break
+        except frappe.TimestampMismatchError:
+            frappe.db.rollback()
+            time.sleep(1)
+        except Exception:
+            frappe.log_error(
+                title="Applicant Side Effects Sync Error",
+                message=frappe.get_traceback()
+            )
+            break

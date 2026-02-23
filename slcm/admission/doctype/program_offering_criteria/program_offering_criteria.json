@@ -7,35 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "program_of_study",
-  "program_level",
-  "seat_availability",
-  "eligibility_rule",
-  "reservation_rule",
-  "program_fee"
+  "program_level"
  ],
  "fields": [
-  {
-   "fieldname": "seat_availability",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Seat Availability",
-   "non_negative": 1,
-   "reqd": 1
-  },
-  {
-   "fieldname": "eligibility_rule",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Eligibility Rule"
-  },
-  {
-   "fieldname": "reservation_rule",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Reservation Rule",
-   "options": "Reservation Rule",
-   "reqd": 1
-  },
   {
    "fieldname": "program_level",
    "fieldtype": "Link",

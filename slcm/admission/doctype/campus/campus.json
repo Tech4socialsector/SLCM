@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "field:campus_name",
+ "autoname": "format:CAMP-{####}",
  "creation": "2026-02-14 12:22:18.192651",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -12,10 +12,10 @@
   "allow_admission",
   "section_break_location",
   "city",
-  "state",
+  "address",
   "column_break_bgkw",
-  "zip_code",
-  "country",
+  "state",
+  "remarks",
   "conections_tab"
  ],
  "fields": [
@@ -57,10 +57,9 @@
    "label": "State"
   },
   {
-   "fieldname": "country",
-   "fieldtype": "Link",
-   "label": "Country",
-   "options": "Countries"
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Address"
   },
   {
    "fieldname": "column_break_qlnd",
@@ -71,11 +70,9 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Don't use special symbols (@,-,#)",
-   "fieldname": "zip_code",
-   "fieldtype": "Data",
-   "label": "Zip Code",
-   "non_negative": 1
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
   },
   {
    "default": "0",
@@ -86,19 +83,24 @@
   {
    "fieldname": "conections_tab",
    "fieldtype": "Tab Break",
-   "label": "Conections",
+   "label": "Connections",
    "show_dashboard": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2026-02-17 17:12:43.056736",
+ "links": [
+  {
+   "group": "Program Offerings",
+   "link_doctype": "Program Offering",
+   "link_fieldname": "campus"
+  }
+ ],
+ "modified": "2026-02-20 12:03:55.876093",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Campus",
- "naming_rule": "By fieldname",
- "nsm_parent_field": "parent_campus",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -117,5 +119,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
