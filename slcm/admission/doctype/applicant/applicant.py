@@ -1020,6 +1020,13 @@ def sync_side_effects(applicant_name):
             doc = frappe.get_doc("Applicant", applicant_name)
             doc.pluck_documents()
             doc.create_or_update_evaluation()
+
+            # Auto-lock Admission Cycle
+            if doc.admission_cycle:
+                cycle_locked = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "stage_locked")
+                if not cycle_locked:
+                    cycle = frappe.get_doc("Admission Cycle", doc.admission_cycle)
+                    cycle.save(ignore_permissions=True)
             break
         except frappe.TimestampMismatchError:
             frappe.db.rollback()

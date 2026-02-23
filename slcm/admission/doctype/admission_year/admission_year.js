@@ -42,6 +42,8 @@ frappe.ui.form.on("Admission Year", {
             };
         });
 
+        toggle_cycle_type(frm);
+        lock_fields_if_needed(frm);
     },
 
     is_active: async function (frm) {
@@ -145,5 +147,13 @@ function validate_dates(frm) {
     const end_date = frappe.datetime.str_to_obj(frm.doc.application_end_date);
     if (start_date > end_date) {
         frappe.throw(__("Application Start Date cannot be greater than Application End Date"));
+    }
+}
+
+function lock_fields_if_needed(frm) {
+    if (frm.doc.stage_locked) {
+        const fields_to_lock = ["start_date", "end_date", "academic_year", "admission_cycle_type", "multi_cycle"];
+        fields_to_lock.forEach(f => frm.set_df_property(f, "read_only", 1));
+        frm.set_intro(__("This Admission Year is locked as one or more Admission Cycles are linked to it. Key fields are read-only."), "orange");
     }
 }
