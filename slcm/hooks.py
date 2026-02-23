@@ -25,20 +25,20 @@ fixtures = [
     "Module Profile",
     "Role Profile"
 ]
-fixtures = [
-    {
-        "doctype": "Role",
-        "filters": [["name", "=", "Eligibility Admin"]]
-    },
-    {
-        "doctype": "Module Profile",
-        "filters": [["name", "=", "Eligibility Admin"]]
-    },
-    {
-        "doctype": "Role Profile",
-        "filters": [["name", "=", "Eligibility Admin"]]
-    }
-]
+# fixtures = [
+#     {
+#         "doctype": "Role",
+#         "filters": [["name", "=", "Eligibility Admin"]]
+#     },
+#     {
+#         "doctype": "Module Profile",
+#         "filters": [["name", "=", "Eligibility Admin"]]
+#     },
+#     {
+#         "doctype": "Role Profile",
+#         "filters": [["name", "=", "Eligibility Admin"]]
+#     }
+# ]
 # Apps
 # ------------------
 
