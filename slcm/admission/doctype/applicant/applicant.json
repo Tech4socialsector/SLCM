@@ -149,13 +149,6 @@
    "options": "Program"
   },
   {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "label": "Campus",
-   "options": "Campus",
-   "reqd": 1
-  },
-  {
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "label": "Academic Year",
@@ -179,28 +172,32 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
-   "label": "Candidate Name"
+   "label": "Full Name (As per Secondary School Certificate)",
+   "reqd": 1
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth"
+   "label": "Date of Birth",
+   "reqd": 1
   },
   {
    "fieldname": "gender",
    "fieldtype": "Select",
    "label": "Gender",
-   "options": "\nMale\nFemale\nOthers"
+   "options": "\nMale\nFemale\nOthers",
+   "reqd": 1
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile Number"
+   "label": "Mobile Number",
+   "reqd": 1
   },
   {
    "fieldname": "alternate_contact",
    "fieldtype": "Phone",
-   "label": "Alternate Contact"
+   "label": "Alternate Mobile Number"
   },
   {
    "fieldname": "religion",
@@ -217,7 +214,7 @@
    "description": "Max 1MB - Supported formats png, jpeg, jpg",
    "fieldname": "id_proof",
    "fieldtype": "Attach Image",
-   "label": "ID Proof"
+   "label": "Identification Proof (Aadhar/Voter ID/Passport)"
   },
   {
    "fieldname": "parent_and_guardian_details",
@@ -287,6 +284,7 @@
    "mandatory_depends_on": "eval:doc.guardian_required"
   },
   {
+   "depends_on": "eval:doc.guardian_required",
    "fieldname": "guardian_email",
    "fieldtype": "Data",
    "label": "Guardian Email",
@@ -336,7 +334,7 @@
   {
    "fieldname": "class_x_percentage",
    "fieldtype": "Float",
-   "label": "Percentage/CGPA obtained (Class X)",
+   "label": "Percentage of Marks (Class X)",
    "non_negative": 1,
    "precision": "2"
   },
@@ -355,7 +353,7 @@
   {
    "fieldname": "class_xii_name_of_examination",
    "fieldtype": "Data",
-   "label": "Name of Examination (Class XII/Equivalent - as per marksheet)"
+   "label": "Name of Examination (Class XII)"
   },
   {
    "fieldname": "class_xii_year_of_completion",
@@ -691,7 +689,7 @@
    "fieldname": "reservation_category",
    "fieldtype": "Select",
    "label": "Whether SC/ST/OBC-NCL",
-   "options": "\nNA\nOBS-NCL\nSC\nST",
+   "options": "\nNA\nOBC-NCL\nSC\nST",
    "placeholder": "Select Category"
   },
   {
@@ -848,6 +846,12 @@
    "label": "Percentage"
   },
   {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
    "fieldname": "program_level",
    "fieldtype": "Select",
    "label": "Program Level",
@@ -858,11 +862,11 @@
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-23 10:07:32.504000",
+ "modified": "2026-02-23 14:38:37.674316",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -874,18 +878,6 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Eligibility Admin",
    "share": 1,
    "write": 1
   }

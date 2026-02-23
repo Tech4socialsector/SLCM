@@ -7,32 +7,37 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
     if not admission_year:
         frappe.throw(f"No Admission Year found for cycle {admission_cycle}")
 
-    program_offering = frappe.get_doc(
-        "Program Offering",
-        {"campus": campus, "admission_year": admission_year},
-    )
+    po_name = frappe.db.get_value("Program Offering", {
+        "campus": campus, 
+        "admission_year": admission_year,
+        "program": program,
+        "is_active": 1
+    }, "name")
 
-    rule_name = None
-    for p in program_offering.programs:
-        if p.program_of_study == program:
-            rule_name = p.reservation_rule
-            break
+    if not po_name:
+        frappe.throw(f"No active Program Offering found for Campus {campus}, Program {program} and Year {admission_year}")
 
-    if not rule_name:
-        frappe.throw(f"No Reservation Rule found for Program {program} in Program Offering")
-
-    quotas = frappe.get_all(
-        "Reservation Quota",
-        filters={"parent": rule_name},
-        fields=["category", "seats"],
-    )
-
+    po = frappe.get_doc("Program Offering", po_name)
+    
     result = {"GEN": 0, "Reserved": {}}
-    for q in quotas:
-        if q.category in ["GEN", "General"]:
-            result["GEN"] = int(q.seats or 0)
-        else:
-            result["Reserved"][q.category] = int(q.seats or 0)
+    
+    if po.is_reservation_applicable:
+        for q in po.reservations:
+            # Map to GEN pool if category is General OR if community contains GEN/General
+            is_gen = False
+            if q.category in ["General", "General Quota", "GEN"]:
+                is_gen = True
+            elif not q.category and q.community and ("GEN" in q.community or "General" in q.community):
+                is_gen = True
+            
+            if is_gen:
+                result["GEN"] += int(q.seats or 0)
+            else:
+                # Use community as the key for reserved categories
+                cat_key = q.community or q.category or "Other"
+                result["Reserved"][cat_key] = result["Reserved"].get(cat_key, 0) + int(q.seats or 0)
+    else:
+        result["GEN"] = int(po.total_available_seats or 0)
     
     return result
 
@@ -64,7 +69,7 @@ def _lock_seat_allocation(seat_allocation_name: str) -> None:
 
 
 
-def process_waitlist(rule_doc):
+def process_waitlist(rule_doc, ignore_cutoff=False):
     if not rule_doc or rule_doc.doctype != "Waitlist Rule":
         frappe.throw("Invalid Waitlist Rule")
 
@@ -72,7 +77,7 @@ def process_waitlist(rule_doc):
     if (rule_doc.status or "").lower() != "active":
         return
 
-    if rule_doc.upgrade_cutoff_date and getdate(now_datetime()) > getdate(rule_doc.upgrade_cutoff_date):
+    if not ignore_cutoff and rule_doc.upgrade_cutoff_date and getdate(now_datetime()) > getdate(rule_doc.upgrade_cutoff_date):
         return
 
     seat_alloc = _get_latest_seat_allocation(rule_doc.admission_cycle, rule_doc.campus)
@@ -224,7 +229,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
 @frappe.whitelist()
 def run_manual_waitlist(rule: str):
     rule_doc = frappe.get_doc("Waitlist Rule", rule)
-    process_waitlist(rule_doc)
+    process_waitlist(rule_doc, ignore_cutoff=True)
 
 
 def run_scheduled_waitlist():
