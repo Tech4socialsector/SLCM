@@ -148,8 +148,16 @@ class OfferService:
         fee_data = OfferService._calculate_and_freeze_fees(fee_structure_name)
         offer.payable_amount = fee_data.get("total_payable")
         
-        # Ensure Fetch From doesn't overwrite our resolved cycle if it's different from the applicant
+        # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
+        # if they differ from the applicant's default preferences
         offer.insert(ignore_permissions=True)
+        if campus:
+            offer.campus = campus
+            offer.db_set('campus', campus)
+        if resolved_cycle:
+            offer.admission_cycle = resolved_cycle
+            offer.db_set('admission_cycle', resolved_cycle)
+            
         OfferService.update_applicant_status(applicant , application_status = "Offer Issued")
 
         # Snapshot Content (Now we have the name/ID)
@@ -274,6 +282,7 @@ class OfferService:
 
         OfferService.log_action(offer.name, "Rejected", reason)
         OfferService.update_applicant_status(offer.applicant , application_status = "Offer Declined")
+        OfferService.sync_seat_allocation_status(offer, "Offer Declined")
         return True
 
     @staticmethod
@@ -324,7 +333,7 @@ class OfferService:
                     applicant_name = data
                     # Fetch details from Applicant record
                     details = frappe.db.get_value("Applicant", applicant_name, 
-                        ["program", "admission_cycle", "academic_year"], as_dict=1)
+                        ["campus_preference_1", "program", "admission_cycle", "academic_year"], as_dict=1)
                     
                     if not details:
                         raise ValueError(_("Applicant {0} not found").format(applicant_name))
@@ -355,9 +364,9 @@ class OfferService:
                     )
                     campus = frappe.db.get_value("Seat Allocation", seat_allocation_name, "campus") if seat_allocation_name else None
 
-                    # # Fallback to campus preference if not found in Seat Allocation
-                    # if not campus:
-                    #     campus = details.campus_preference_1
+                    # Fallback to campus preference if not found in Seat Allocation
+                    if not campus:
+                        campus = details.campus_preference_1
 
                     if not campus:
                         raise ValueError(_("Campus could not be determined for Applicant {0}. No Seat Allocation found and no Campus Preference 1 set.").format(applicant_name))

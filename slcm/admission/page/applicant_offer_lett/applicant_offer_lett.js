@@ -49,7 +49,7 @@ class ApplicantOfferLetter {
 		if (offer.offer_status === 'Issued') {
 			this.page.set_primary_action(__('Accept Admission Offer'), () => me.handle_accept(), 'octicon octicon-check');
 			this.page.add_inner_button(__('Reject Admission Offer'), () => me.handle_reject(), __('Actions'));
-		} else if (offer.offer_status === 'Accepted') {
+		} else if (offer.offer_status === 'Accepted' && !is_fee_paid) {
 			this.page.set_primary_action(__('Pay Fee'), () => me.handle_pay_fee(), 'octicon octicon-credit-card');
 		} else {
 			this.page.clear_primary_action();
@@ -71,7 +71,7 @@ class ApplicantOfferLetter {
 									<button class="btn btn-danger btn-block mb-2 font-weight-bold" onclick="cur_page.handle_reject()">
 										<i class="fa fa-times mr-2"></i> ${__('Reject Admission Offer')}
 									</button>
-									` : offer.offer_status === 'Accepted' ? `
+									` : (offer.offer_status === 'Accepted' && !is_fee_paid) ? `
 									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
 										<i class="fa fa-credit-card mr-2"></i> ${__('Pay Fee')}
 									</button>
