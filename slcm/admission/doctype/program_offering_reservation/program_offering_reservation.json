@@ -35,7 +35,9 @@
    "fieldname": "reservation_percentage",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "Reservation Percentage"
+   "label": "Reservation Percentage",
+   "precision": "2",
+   "reqd": 1
   },
   {
    "fieldname": "seats",

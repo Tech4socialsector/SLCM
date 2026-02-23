@@ -17,42 +17,44 @@ class AdmissionYear(Document):
 				self.name = f"AY-{self.academic_year}"
 
 	def validate(self):
-		self.validate_dates()
+		# self.validate_dates()
 		self.validate_one_active_per_cycle_type()
 		self.validate_campus_duplicates()
 		self.validate_status()
 		self.validate_one_open_year()
+		self.validate_lock_enforcement()
 
 
-	def validate_dates(self):
-		if self.start_date and self.end_date:
-			if getdate(self.end_date) <= getdate(self.start_date):
-				frappe.throw(_("Admission End Date must be after Admission Start Date."))
-		# Check dates fall within linked Academic Year dates
-		if self.academic_year and self.start_date and self.end_date:
-			ay = frappe.get_doc("Academic Year", self.academic_year)
-			if hasattr(ay, "year_start_date") and ay.year_start_date:
-				if getdate(self.start_date) < getdate(ay.year_start_date):
-					frappe.throw(_("Admission Start Date must be within the Academic Year start date ({0}).").format(ay.year_start_date))
-			if hasattr(ay, "year_end_date") and ay.year_end_date:
-				if getdate(self.end_date) > getdate(ay.year_end_date):
-					frappe.throw(_("Admission End Date must be within the Academic Year end date ({0}).").format(ay.year_end_date))
+	# def validate_dates(self):
+	# 	if self.start_date and self.end_date:
+	# 		if getdate(self.end_date) <= getdate(self.start_date):
+	# 			frappe.throw(_("Admission End Date must be after Admission Start Date."))
+	# 	# Check dates fall within linked Academic Year dates
+	# 	if self.academic_year and self.start_date and self.end_date:
+	# 		ay = frappe.get_doc("Academic Year", self.academic_year)
+	# 		if hasattr(ay, "year_start_date") and ay.year_start_date:
+	# 			if getdate(self.start_date) < getdate(ay.year_start_date):
+	# 				frappe.throw(_("Admission Start Date must be within the Academic Year start date ({0}).").format(ay.year_start_date))
+	# 		if hasattr(ay, "year_end_date") and ay.year_end_date:
+	# 			if getdate(self.end_date) > getdate(ay.year_end_date):
+	# 				frappe.throw(_("Admission End Date must be within the Academic Year end date ({0}).").format(ay.year_end_date))
 
 	def validate_one_active_per_cycle_type(self):
-		"""Ensures only one Admission Year is active at a time."""
+		"""Ensures only one Admission Year is active at a time per cycle type."""
 		if self.is_active:
 			existing = frappe.db.get_value(
 				"Admission Year",
 				{
 					"is_active": 1,
+					"admission_cycle_type": self.admission_cycle_type,
 					"name": ["!=", self.name]
 				},
 				"name"
 			)
 			if existing:
 				frappe.throw(
-					_("Another Admission Year ({0}) is already active. Only one can be active at a time.")
-					.format(existing)
+					_("Another Admission Year ({0}) for cycle type '{1}' is already active. Only one can be active at a time per type.")
+					.format(existing, self.admission_cycle_type)
 				)
 
 	def validate_status(self):
@@ -70,13 +72,36 @@ class AdmissionYear(Document):
 		if self.status == "Active":
 			existing_open_year = frappe.db.get_value(
 				"Admission Year",
-				{"status": "Active", "name": ["!=", self.name]},
+				{
+					"status": "Active", 
+					"admission_cycle_type": self.admission_cycle_type,
+					"name": ["!=", self.name]
+				},
 				"name"
 			)
 			if existing_open_year:
 				frappe.throw(
-					_("Admission Year {0} is already Active. Only one Admission Year can be Active at a time.")
-					.format(existing_open_year)
+					_("Admission Year {0} for cycle type '{1}' is already Active. Only one Admission Year can be Active at a time per type.")
+					.format(existing_open_year, self.admission_cycle_type)
+				)
+
+	def validate_lock_enforcement(self):
+		if not self.stage_locked or self.is_new():
+			return
+		old = self.get_doc_before_save()
+		if not old:
+			return
+		
+		# Fields to lock
+		locked_fields = ["start_date", "end_date", "academic_year", "admission_cycle_type"]
+		changed = [f for f in locked_fields if str(self.get(f)) != str(old.get(f))]
+		
+		if changed:
+			is_sys_admin = "System Manager" in frappe.get_roles(frappe.session.user)
+			if not is_sys_admin:
+				frappe.throw(
+					_("Admission Year is locked. Fields {0} cannot be changed.")
+					.format(", ".join(changed))
 				)
 
 	def validate_campus_duplicates(self):
@@ -154,8 +179,8 @@ def activate_admission_year(admission_year):
 		frappe.db.sql("""
 			UPDATE `tabAdmission Year`
 			SET is_active = 0
-			WHERE is_active = 1 AND name != %s
-		""", (admission_year,))
+			WHERE is_active = 1 AND name != %s AND admission_cycle_type = %s
+		""", (admission_year, year.admission_cycle_type))
 
 		year.db_set("is_active", 1)
 
