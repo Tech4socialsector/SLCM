@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"Rx91p7Q4Dr\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Admission</span>\",\"col\":12}},{\"id\":\"gNUWo9vIzw\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Settings\",\"col\":4}},{\"id\":\"oGSrU91WVo\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Program\",\"col\":4}},{\"id\":\"4QqJTcpvqv\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Logs\",\"col\":4}}]",
+ "content": "[{\"id\":\"Rx91p7Q4Dr\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Admission</span>\",\"col\":12}},{\"id\":\"gNUWo9vIzw\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Settings\",\"col\":4}},{\"id\":\"oGSrU91WVo\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Program\",\"col\":4}},{\"id\":\"4QqJTcpvqv\",\"type\":\"card\",\"data\":{\"card_name\":\"Admission Logs\",\"col\":4}},{\"id\":\"RYWwfpjg0U\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Applicant\",\"col\":3}}]",
  "creation": "2026-02-16 19:10:20.000968",
  "custom_blocks": [],
  "docstatus": 0,
@@ -111,7 +111,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-22 10:31:29.398331",
+ "modified": "2026-02-22 12:25:07.211193",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission",
@@ -122,6 +122,15 @@
  "quick_lists": [],
  "roles": [],
  "sequence_id": 1.0,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Applicant",
+   "link_to": "Applicant",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
  "title": "Admission"
 }

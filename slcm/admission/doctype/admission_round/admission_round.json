@@ -170,7 +170,13 @@
     ],
     "index_web_pages_for_search": 1,
     "is_submittable": 1,
-    "links": [],
+    "links": [
+        {
+            "group": "Seat Management",
+            "link_doctype": "Campus Seat Matrix",
+            "link_fieldname": "admission_cycle"
+        }
+    ],
     "modified": "2026-02-20 12:51:17.169848",
     "modified_by": "Administrator",
     "module": "Admission",
