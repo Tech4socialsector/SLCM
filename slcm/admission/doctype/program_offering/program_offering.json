@@ -1,132 +1,239 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "format:PO-{campus}-{admission_year}",
- "creation": "2026-02-14 19:44:49.093390",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "campus",
-  "academic_year",
-  "admission_year",
-  "application_fee",
-  "column_break_alqx",
-  "is_available_for_admission",
-  "interview_required",
-  "scholarship_applicable",
-  "is_reservation_applicable",
-  "section_break_djee",
-  "programs"
- ],
- "fields": [
-  {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Campus",
-   "options": "Campus",
-   "reqd": 1
-  },
-  {
-   "fieldname": "admission_year",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Admission Year",
-   "options": "Admission Year",
-   "reqd": 1
-  },
-  {
-   "fieldname": "application_fee",
-   "fieldtype": "Currency",
-   "label": "Application Fee"
-  },
-  {
-   "default": "0",
-   "fieldname": "scholarship_applicable",
-   "fieldtype": "Check",
-   "label": "Scholarship Applicable",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "interview_required",
-   "fieldtype": "Check",
-   "label": "Interview Required",
-   "read_only": 1
-  },
-  {
-   "fieldname": "programs",
-   "fieldtype": "Table",
-   "label": "Programs",
-   "options": "Program Offering Criteria"
-  },
-  {
-   "fieldname": "column_break_alqx",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_djee",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "label": "Academic Year",
-   "options": "Academic Year",
-   "read_only": 1,
-   "reqd": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_available_for_admission",
-   "fieldtype": "Check",
-   "label": "Is Available For Admission"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_reservation_applicable",
-   "fieldtype": "Check",
-   "label": "Is Reservation Applicable?",
-   "read_only": 1
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2026-02-17 12:22:49.854464",
- "modified_by": "Administrator",
- "module": "Admission",
- "name": "Program Offering",
- "naming_rule": "Expression",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Admission Officer",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": []
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "format:PO-.{YYYY}.-.{####}",
+    "creation": "2026-02-14 19:44:49.093390",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "admission_cycle",
+        "campus",
+        "program",
+        "column_break_alqx",
+        "programme_level",
+        "academic_year",
+        "admission_year",
+        "is_active",
+        "is_available_for_admission",
+        "section_break_seats",
+        "total_available_seats",
+        "column_break_jiom",
+        "is_reservation_applicable",
+        "section_break_uxbe",
+        "reservations",
+        "section_break_opgu",
+        "eligibility_based",
+        "eligibility_rule",
+        "merit_list",
+        "merit_rule",
+        "column_break_szjn",
+        "scholarship_applicable",
+        "scholarship_scheme",
+        "section_break_fee",
+        "application_fee",
+        "section_break_remarks",
+        "remarks"
+    ],
+    "fields": [
+        {
+            "fieldname": "admission_cycle",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Admission Cycle",
+            "options": "Admission Cycle",
+            "reqd": 1
+        },
+        {
+            "fieldname": "campus",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Campus",
+            "options": "Campus",
+            "reqd": 1
+        },
+        {
+            "fieldname": "program",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Program",
+            "options": "Program",
+            "reqd": 1
+        },
+        {
+            "fieldname": "column_break_alqx",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "programme_level",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Programme Level",
+            "options": "UG\nPG\nPhD",
+            "reqd": 1
+        },
+        {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "label": "Academic Year",
+            "options": "Academic Year",
+            "read_only": 1
+        },
+        {
+            "fieldname": "admission_year",
+            "fieldtype": "Link",
+            "label": "Admission Year",
+            "options": "Admission Year"
+        },
+        {
+            "default": "1",
+            "fieldname": "is_active",
+            "fieldtype": "Check",
+            "label": "Is Active"
+        },
+        {
+            "default": "0",
+            "fieldname": "is_available_for_admission",
+            "fieldtype": "Check",
+            "label": "Is Available For Admission"
+        },
+        {
+            "fieldname": "section_break_seats",
+            "fieldtype": "Section Break",
+            "label": "Seats"
+        },
+        {
+            "fieldname": "total_available_seats",
+            "fieldtype": "Int",
+            "label": "Total Available Seats"
+        },
+        {
+            "depends_on": "eval: doc.is_reservation_applicable",
+            "fieldname": "reservations",
+            "fieldtype": "Table",
+            "label": "Reservations",
+            "options": "Program Offering Reservation"
+        },
+        {
+            "fieldname": "section_break_uxbe",
+            "fieldtype": "Section Break"
+        },
+        {
+            "default": "0",
+            "fieldname": "is_reservation_applicable",
+            "fieldtype": "Check",
+            "label": "Is Reservation Applicable?"
+        },
+        {
+            "default": "0",
+            "fieldname": "eligibility_based",
+            "fieldtype": "Check",
+            "label": "Eligibility Based"
+        },
+        {
+            "depends_on": "eval: doc.eligibility_based",
+            "fieldname": "eligibility_rule",
+            "fieldtype": "Link",
+            "label": "Eligibility Rule",
+            "mandatory_depends_on": "eval: doc.eligibility_based",
+            "options": "Eligibility Rule"
+        },
+        {
+            "default": "0",
+            "fieldname": "merit_list",
+            "fieldtype": "Check",
+            "label": "Merit List"
+        },
+        {
+            "fieldname": "merit_rule",
+            "fieldtype": "Link",
+            "label": "Merit Rule",
+            "options": "Merit Rule",
+            "read_only": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "scholarship_applicable",
+            "fieldtype": "Check",
+            "label": "Scholarship Applicable"
+        },
+        {
+            "depends_on": "eval: doc.scholarship_applicable",
+            "fieldname": "scholarship_scheme",
+            "fieldtype": "Data",
+            "label": "Scholarship Scheme",
+            "mandatory_depends_on": "eval: doc.scholarship_applicable"
+        },
+        {
+            "fieldname": "section_break_fee",
+            "fieldtype": "Section Break",
+            "label": "Fee"
+        },
+        {
+            "fieldname": "application_fee",
+            "fieldtype": "Currency",
+            "label": "Application Fee",
+            "precision": "2"
+        },
+        {
+            "fieldname": "section_break_remarks",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "remarks",
+            "fieldtype": "Small Text",
+            "label": "Remarks"
+        },
+        {
+            "fieldname": "column_break_jiom",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "section_break_opgu",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "column_break_szjn",
+            "fieldtype": "Column Break"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-02-20 14:07:25.274422",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Program Offering",
+    "naming_rule": "Expression (old style)",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Admission Officer",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
 }
