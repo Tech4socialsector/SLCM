@@ -143,12 +143,14 @@ class OfferService:
         fee_data = OfferService._calculate_and_freeze_fees(fee_structure_name)
         offer.payable_amount = fee_data.get("total_payable")
         
-        # Snapshot Content
-        offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
-        
         # Ensure Fetch From doesn't overwrite our resolved cycle if it's different from the applicant
         offer.insert(ignore_permissions=True)
+        OfferService.update_applicant_status(applicant , application_status = "Offer Issued")
 
+        # Snapshot Content (Now we have the name/ID)
+        offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
+        offer.db_set('rendered_content', offer.rendered_content)
+        
         # Create the actual snapshot record
         OfferService._create_snapshot_record(offer.name, fee_data)
 
@@ -209,6 +211,15 @@ class OfferService:
         return True
 
     @staticmethod
+    def update_applicant_status(applicant , application_status):
+        if not applicant:
+            throw(_("Applicant is required"))
+        applicant_doc = frappe.get_doc("Applicant", applicant)
+        applicant_doc.application_status = application_status
+        applicant_doc.save(ignore_permissions=True)
+        return True
+
+    @staticmethod
     def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None):
         """
         Processes the fee payment for an accepted offer.
@@ -265,6 +276,7 @@ class OfferService:
         offer.save(ignore_permissions=True)
 
         OfferService.log_action(offer.name, "Rejected", reason)
+        OfferService.update_applicant_status(offer.applicant , application_status = "Offer Declined")
         return True
 
     @staticmethod
@@ -285,6 +297,7 @@ class OfferService:
                 doc = frappe.get_doc("Offer Letter", entry.name)
                 doc.offer_status = "Expired"
                 doc.save(ignore_permissions=True)
+                OfferService.update_applicant_status(doc.applicant , application_status = "Offer Expired")
                 OfferService.log_action(entry.name, "Expired", _("Automatically expired by system scheduler."))
                 processed += 1
             except Exception:
@@ -513,7 +526,7 @@ class OfferService:
     def _get_template_context(offer):
         """Helper to build rich context for Jinja templates."""
         # Inject virtual fields for template compatibility
-        offer.offer_id = offer.name
+        offer.offer_id = offer.name or _("Draft")
         offer.valid_till = offer.payment_deadline
 
         context = {

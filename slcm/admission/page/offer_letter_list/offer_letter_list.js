@@ -53,7 +53,7 @@ class OfferLetterList {
 					<div class="row">
 						${offers.map(offer => `
 							<div class="col-md-6 mb-4">
-								<div class="card offer-card shadow-sm border-0 h-100 pointer" onclick="frappe.set_route('applicant-offer-lett', {offer: '${offer.name}'})">
+								<div class="card offer-card shadow-sm border-0 h-100 pointer" onclick="frappe.set_route('applicant-offer-lett', '${offer.name}')">
 									<div class="card-body">
 										<div class="d-flex justify-content-between align-items-start mb-3">
 											<div>

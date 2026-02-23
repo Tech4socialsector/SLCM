@@ -1,5 +1,4 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "autoname": "format:APP-{YYYY}-{#####}",
@@ -169,7 +168,7 @@
    "fieldname": "application_status",
    "fieldtype": "Select",
    "label": "Application Status",
-   "options": "Submitted\nUnder Verification\nWait listed\nApproved\nRejected",
+   "options": "Submitted\nSelected\nWaitlisted\nAccepted\nRejected\nOffer Issued\nOffer Declined\nOffer Expired",
    "read_only": 1
   },
   {
@@ -859,11 +858,11 @@
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-22 14:52:32.605654",
+ "modified": "2026-02-23 10:07:32.504000",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

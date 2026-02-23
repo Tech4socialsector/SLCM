@@ -58,6 +58,11 @@ class SeatAllocation(Document):
                     remarks="Status was manually updated in the Seat Allocation form."
                 )
 
+                # Sync status to Applicant
+                if row.applicant_id:
+                    from slcm.api.service.offer_service import OfferService
+                    OfferService.update_applicant_status(row.applicant_id, application_status=new_status)
+
                 # Send notification for manual status change
                 from slcm.admission.notification_service import notify_status_change
                 notify_status_change(
