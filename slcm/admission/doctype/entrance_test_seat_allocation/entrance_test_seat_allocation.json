@@ -1,0 +1,403 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2026-02-22 23:22:48.096478",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "tab_test_reference",
+        "entrance_test_list",
+        "academic_year",
+        "admission_cycle",
+        "campus",
+        "program_level",
+        "tab_applicant_info",
+        "applicant",
+        "candidate_name",
+        "program",
+        "reservation_category",
+        "email",
+        "gender",
+        "tab_allocation",
+        "entrance_test_provider",
+        "center_name",
+        "center_address",
+        "room_code",
+        "room_name",
+        "building",
+        "floor",
+        "seat_number",
+        "allocation_status",
+        "allocation_date",
+        "allocated_by",
+        "tab_reschedule",
+        "is_rescheduled",
+        "previous_room",
+        "previous_seat_number",
+        "reschedule_reason",
+        "rescheduled_on",
+        "rescheduled_by",
+        "tab_rejection",
+        "is_rejected",
+        "rejection_reason",
+        "rejected_on",
+        "rejected_by",
+        "tab_communication",
+        "admit_card_generated",
+        "admit_card_number",
+        "email_sent",
+        "email_sent_on",
+        "sms_sent",
+        "communication_log",
+        "tab_result",
+        "appeared",
+        "attendance_marked_on",
+        "raw_score",
+        "normalized_score",
+        "result_status",
+        "result_published",
+        "tab_locking",
+        "is_locked",
+        "locked_on",
+        "locked_by",
+        "version_number",
+        "remarks"
+    ],
+    "fields": [
+        {
+            "fieldname": "tab_test_reference",
+            "fieldtype": "Tab Break",
+            "label": "Test Reference"
+        },
+        {
+            "fieldname": "entrance_test_list",
+            "fieldtype": "Link",
+            "label": "Entrance Test List",
+            "options": "Entrance Test List",
+            "reqd": 1
+        },
+        {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "label": "Academic Year",
+            "options": "Academic Year",
+            "reqd": 1
+        },
+        {
+            "fieldname": "admission_cycle",
+            "fieldtype": "Link",
+            "label": "Admission Cycle",
+            "options": "Admission Cycle",
+            "reqd": 1
+        },
+        {
+            "fieldname": "campus",
+            "fieldtype": "Link",
+            "label": "Campus",
+            "options": "Campus",
+            "reqd": 1
+        },
+        {
+            "fieldname": "program_level",
+            "fieldtype": "Select",
+            "label": "Program Level",
+            "options": "UG\nPG\nResearch Course",
+            "reqd": 1
+        },
+        {
+            "fieldname": "tab_applicant_info",
+            "fieldtype": "Tab Break",
+            "label": "Applicant Information"
+        },
+        {
+            "fieldname": "applicant",
+            "fieldtype": "Link",
+            "label": "Applicant",
+            "options": "Applicant",
+            "reqd": 1
+        },
+        {
+            "fieldname": "candidate_name",
+            "fieldtype": "Data",
+            "label": "Candidate Name",
+            "reqd": 1
+        },
+        {
+            "fieldname": "program",
+            "fieldtype": "Link",
+            "label": "Program",
+            "options": "Program",
+            "reqd": 1
+        },
+        {
+            "fieldname": "reservation_category",
+            "fieldtype": "Data",
+            "label": "Reservation Category"
+        },
+        {
+            "fieldname": "email",
+            "fieldtype": "Data",
+            "label": "Email"
+        },
+        {
+            "fieldname": "gender",
+            "fieldtype": "Select",
+            "label": "Gender",
+            "options": "Male\nFemale\nOthers"
+        },
+        {
+            "fieldname": "tab_allocation",
+            "fieldtype": "Tab Break",
+            "label": "Seat Allocation"
+        },
+        {
+            "fieldname": "entrance_test_provider",
+            "fieldtype": "Link",
+            "label": "Entrance Test Provider",
+            "options": "Entrance Test Provider"
+        },
+        {
+            "fieldname": "center_name",
+            "fieldtype": "Data",
+            "label": "Center Name"
+        },
+        {
+            "fieldname": "center_address",
+            "fieldtype": "Small Text",
+            "label": "Center Address"
+        },
+        {
+            "fieldname": "room_code",
+            "fieldtype": "Data",
+            "label": "Room Code"
+        },
+        {
+            "fieldname": "room_name",
+            "fieldtype": "Data",
+            "label": "Room Name"
+        },
+        {
+            "fieldname": "building",
+            "fieldtype": "Data",
+            "label": "Building"
+        },
+        {
+            "fieldname": "floor",
+            "fieldtype": "Data",
+            "label": "Floor"
+        },
+        {
+            "fieldname": "seat_number",
+            "fieldtype": "Data",
+            "label": "Seat Number"
+        },
+        {
+            "fieldname": "allocation_status",
+            "fieldtype": "Select",
+            "label": "Allocation Status",
+            "options": "Not Allocated\nAllocated\nReallocated\nCancelled\nRejected"
+        },
+        {
+            "fieldname": "allocation_date",
+            "fieldtype": "Datetime",
+            "label": "Allocation Date"
+        },
+        {
+            "fieldname": "allocated_by",
+            "fieldtype": "Link",
+            "label": "Allocated By",
+            "options": "User"
+        },
+        {
+            "fieldname": "tab_reschedule",
+            "fieldtype": "Tab Break",
+            "label": "Reschedule"
+        },
+        {
+            "fieldname": "is_rescheduled",
+            "fieldtype": "Check",
+            "label": "Is Rescheduled"
+        },
+        {
+            "fieldname": "previous_room",
+            "fieldtype": "Data",
+            "label": "Previous Room"
+        },
+        {
+            "fieldname": "previous_seat_number",
+            "fieldtype": "Data",
+            "label": "Previous Seat Number"
+        },
+        {
+            "fieldname": "reschedule_reason",
+            "fieldtype": "Small Text",
+            "label": "Reschedule Reason"
+        },
+        {
+            "fieldname": "rescheduled_on",
+            "fieldtype": "Datetime",
+            "label": "Rescheduled On"
+        },
+        {
+            "fieldname": "rescheduled_by",
+            "fieldtype": "Link",
+            "label": "Rescheduled By",
+            "options": "User"
+        },
+        {
+            "fieldname": "tab_rejection",
+            "fieldtype": "Tab Break",
+            "label": "Rejection"
+        },
+        {
+            "fieldname": "is_rejected",
+            "fieldtype": "Check",
+            "label": "Is Rejected"
+        },
+        {
+            "fieldname": "rejection_reason",
+            "fieldtype": "Small Text",
+            "label": "Rejection Reason"
+        },
+        {
+            "fieldname": "rejected_on",
+            "fieldtype": "Datetime",
+            "label": "Rejected On"
+        },
+        {
+            "fieldname": "rejected_by",
+            "fieldtype": "Link",
+            "label": "Rejected By",
+            "options": "User"
+        },
+        {
+            "fieldname": "tab_communication",
+            "fieldtype": "Tab Break",
+            "label": "Communication"
+        },
+        {
+            "fieldname": "admit_card_generated",
+            "fieldtype": "Check",
+            "label": "Admit Card Generated"
+        },
+        {
+            "fieldname": "admit_card_number",
+            "fieldtype": "Data",
+            "label": "Admit Card Number"
+        },
+        {
+            "fieldname": "email_sent",
+            "fieldtype": "Check",
+            "label": "Email Sent"
+        },
+        {
+            "fieldname": "email_sent_on",
+            "fieldtype": "Datetime",
+            "label": "Email Sent On"
+        },
+        {
+            "fieldname": "sms_sent",
+            "fieldtype": "Check",
+            "label": "SMS Sent"
+        },
+        {
+            "fieldname": "communication_log",
+            "fieldtype": "Small Text",
+            "label": "Communication Log"
+        },
+        {
+            "fieldname": "tab_result",
+            "fieldtype": "Tab Break",
+            "label": "Result"
+        },
+        {
+            "fieldname": "appeared",
+            "fieldtype": "Check",
+            "label": "Appeared"
+        },
+        {
+            "fieldname": "attendance_marked_on",
+            "fieldtype": "Datetime",
+            "label": "Attendance Marked On"
+        },
+        {
+            "fieldname": "raw_score",
+            "fieldtype": "Float",
+            "label": "Raw Score"
+        },
+        {
+            "fieldname": "normalized_score",
+            "fieldtype": "Float",
+            "label": "Normalized Score"
+        },
+        {
+            "fieldname": "result_status",
+            "fieldtype": "Select",
+            "label": "Result Status",
+            "options": "Pass\nFail\nAbsent\nWithheld\nDisqualified"
+        },
+        {
+            "fieldname": "result_published",
+            "fieldtype": "Check",
+            "label": "Result Published"
+        },
+        {
+            "fieldname": "tab_locking",
+            "fieldtype": "Tab Break",
+            "label": "Locking & Audit"
+        },
+        {
+            "fieldname": "is_locked",
+            "fieldtype": "Check",
+            "label": "Is Locked"
+        },
+        {
+            "fieldname": "locked_on",
+            "fieldtype": "Datetime",
+            "label": "Locked On"
+        },
+        {
+            "fieldname": "locked_by",
+            "fieldtype": "Link",
+            "label": "Locked By",
+            "options": "User"
+        },
+        {
+            "fieldname": "version_number",
+            "fieldtype": "Int",
+            "label": "Version Number"
+        },
+        {
+            "fieldname": "remarks",
+            "fieldtype": "Small Text",
+            "label": "Remarks"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-02-22 23:22:48.096478",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Entrance Test Seat Allocation",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "rows_threshold_for_grid_search": 20,
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}
