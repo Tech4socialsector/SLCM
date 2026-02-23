@@ -26,6 +26,7 @@
   "program",
   "admission_cycle",
   "column_break_rynw",
+  "admission_year",
   "academic_year",
   "application_type",
   "campus",
@@ -855,17 +856,24 @@
    "fieldtype": "Select",
    "label": "Program Level",
    "options": "UG\nPG\nResearch Course"
+  },
+  {
+   "fieldname": "admission_year",
+   "fieldtype": "Link",
+   "label": "Admission Year",
+   "options": "Admission Year",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-23 14:38:37.674316",
+ "modified": "2026-02-23 16:24:20.490612",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
