@@ -5,12 +5,12 @@ from frappe.model.document import Document
 
 class Campus(Document):
 
-	def validate(self):
-		self.validate_intake_capacity()
+	# def validate(self):
+	# 	self.validate_intake_capacity()
 
-	def validate_intake_capacity(self):
-		if self.intake_capacity and self.intake_capacity <= 0:
-			frappe.throw(_("Intake Capacity must be greater than 0."))
+	# def validate_intake_capacity(self):
+	# 	if self.intake_capacity and self.intake_capacity <= 0:
+	# 		frappe.throw(_("Intake Capacity must be greater than 0."))
 
 	def on_trash(self):
 		if frappe.db.exists("Program Offering", {"campus": self.name}):

@@ -48,14 +48,9 @@ class MeritGeneration(Document):
         applicants = frappe.db.sql("""
             SELECT ar.name 
             FROM `tabAdmission Result` ar
-            JOIN `tabApplicant` app ON app.name = ar.applicant_name
             WHERE ar.admission_cycle = %(cycle)s
               AND ar.program_level = %(level)s
-              AND (
-                  app.campus_preference_1 = %(campus)s OR
-                  app.campus_preference_2 = %(campus)s OR
-                  app.campus_preference_3 = %(campus)s
-              )
+              AND ar.campus = %(campus)s
             LIMIT 1
         """, {
             "cycle": self.admission_cycle,

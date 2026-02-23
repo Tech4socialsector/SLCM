@@ -1,8 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt, getdate, today
-from slcm.admission.utils import validate_cycle_deadline, get_cycle_rule
+from frappe.utils import nowdate, flt
 
 
 class Applicant(Document):
@@ -12,14 +11,13 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def validate(self):
-        self.validate_deadlines()
-        self.validate_modification_lock()
-        self.validate_preferences()
         self.validate_eligibility()
 
-        # NOTE: create_or_update_evaluation() is now handled in on_update 
-        # for eligible cases to avoid timestamp mismatch during initial save.
-        # It remains in validate_eligibility() for ineligible catch-throws.
+        # create_or_update_evaluation() is called INSIDE validate_eligibility()
+        # for BOTH eligible and ineligible outcomes, so it always runs even
+        # when frappe.throw() is raised for ineligible applicants.
+        # We still call it here as a safety net for the eligible path.
+        self.create_or_update_evaluation()
 
         # NOTE: DO NOT add another frappe.throw() here.
         # validate_eligibility() already throws with the full HTML message
@@ -31,93 +29,6 @@ class Applicant(Document):
             frappe.throw(
                 _("Submission Not Allowed: Applicant is not eligible."),
                 title=_("Submission Not Allowed")
-            )
-
-    def on_update(self):
-        # Decouple side-effects to avoid TimestampMismatchError during concurrent uploads/saves.
-        # This ensures the main Applicant record save completes immediately.
-        frappe.enqueue(
-            "slcm.admission.doctype.applicant.applicant.sync_side_effects",
-            applicant_name=self.name,
-            now=frappe.flags.in_test
-        )
-
-    def pluck_documents(self):
-        """
-        Plucks file attachments from Applicant fields and updates Applicant Document.
-        """
-        doc_fields = {
-            "candidate_photo": _("Photograph"),
-            "id_proof": _("ID Proof"),
-            "class_x_marksheet": _("Class X Marksheet"),
-            "class_xii_marksheet": _("Class XII Marksheet"),
-            "ews_certificate": _("EWS Certificate"),
-            "caste_certificate": _("Caste Certificate"),
-            "pwd_certificate": _("PWD Certificate"),
-            "ka_study_7yrs_certificate": _("7 Years Study Certificate"),
-            "ka_defence_child_certificate": _("Defence Child Certificate"),
-            "ka_govt_child_certificate": _("Govt Child Certificate"),
-            "ka_ais_child_certificate": _("AIS Child Certificate"),
-            "ka_capf_child_certificate": _("CAPF Child Certificate"),
-            "cv": _("Curriculum Vitae")
-        }
-
-        # Find or create Applicant Document (using Applicant Name exactly as ID)
-        ad_name = self.name
-        if frappe.db.exists("Applicant Document", ad_name):
-            ad = frappe.get_doc("Applicant Document", ad_name)
-        else:
-            ad = frappe.new_doc("Applicant Document")
-            ad.name = ad_name
-            ad.applicant = self.name
-            ad.insert(ignore_permissions=True)
-
-        existing_docs = {d.document_name: d for d in ad.documents}
-        updated = False
-
-        for field, label in doc_fields.items():
-            val = self.get(field)
-            if val:
-                if label in existing_docs:
-                    if existing_docs[label].file_url != val:
-                        existing_docs[label].file_url = val
-                        updated = True
-                else:
-                    ad.append("documents", {
-                        "document_name": label,
-                        "file_url": val
-                    })
-                    updated = True
-        
-        if updated:
-            ad.save(ignore_permissions=True)
-
-    def validate_preferences(self):
-        """Ensure preferences are unique and mandatory."""
-        if not self.campus_preference_1:
-            frappe.throw(_("Campus Preference 1 is mandatory."))
-        
-        prefs = [self.campus_preference_1, self.campus_preference_2, self.campus_preference_3]
-        prefs = [p for p in prefs if p]
-        if len(prefs) != len(set(prefs)):
-            frappe.throw(_("Campus preferences must be unique."))
-
-    def validate_deadlines(self):
-        """Enforce cycle deadlines for application submission/edits."""
-        if self.admission_cycle:
-            validate_cycle_deadline("Application", self.admission_cycle)
-
-    def validate_modification_lock(self):
-        """Enforce 'Modification Lock' rule if active on the cycle."""
-        if not self.admission_cycle or self.is_new():
-            return
-
-        lock_date = get_cycle_rule(self.admission_cycle, "Modification Lock")
-        if lock_date and getdate(today()) > getdate(lock_date):
-            frappe.throw(
-                _("This application is locked for modification as of {0}. Further edits are not permitted.")
-                .format(lock_date),
-                title=_("Modification Locked")
             )
 
     # ──────────────────────────────────────────────
@@ -151,10 +62,31 @@ class Applicant(Document):
     def validate_eligibility(self):
         """
         Main eligibility entry point.
-        Uses campus_preference_1 as the primary campus for eligibility checks.
+
+        Flow:
+        ─────
+        STEP 0 — National Test Exemption check.
+        STEP 1 — Academic Eligibility Rule Mapping checks.
+
+        KEY BEHAVIOUR:
+        ─────────────
+        On ineligibility:
+          1. Sets self.evaluation_status = "Ineligible" and self.rejected_reason.
+          2. Calls create_or_update_evaluation() IMMEDIATELY — so the Ineligible
+             record is persisted to the Eligibility Evaluation doctype BEFORE the
+             throw. Without this, frappe.throw() exits the call stack and the
+             save in validate() never runs, meaning ineligible records are lost.
+          3. Raises a single frappe.throw() containing:
+               • Red reason box  (the specific failure message)
+               • Full program table  (all campus programs + full eligibility check)
+
+        On eligibility:
+          1. Sets self.evaluation_status = "Eligible".
+          2. Returns normally — create_or_update_evaluation() is then called by
+             validate() as usual.
         """
 
-        if not all([self.program, self.campus_preference_1, self.admission_cycle, self.academic_year]):
+        if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
             self.evaluation_status = ""
             self.rejected_reason = ""
             self._clear_national_test_flags()
@@ -231,7 +163,7 @@ class Applicant(Document):
                     frappe.throw(
                         full_message,
                         title=_("Not Eligible — Program Options for {0}").format(
-                            self.campus_preference_1 or ""
+                            self.campus or ""
                         )
                     )
                     return  # never reached — throw exits — kept for clarity
@@ -271,7 +203,7 @@ class Applicant(Document):
               AND erm.admission_cycle = %(admission_cycle)s
             ORDER BY erm.program ASC
         """, {
-            "campus":          self.campus_preference_1,
+            "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
         }, as_dict=True)
 
@@ -401,7 +333,7 @@ class Applicant(Document):
             </div>
         """.format(
             heading = _("Available Programs &mdash; {campus} &nbsp;&middot;&nbsp; {cycle}").format(
-                          campus=frappe.utils.escape_html(self.campus_preference_1 or ""),
+                          campus=frappe.utils.escape_html(self.campus or ""),
                           cycle =frappe.utils.escape_html(self.admission_cycle or "")
                       ),
             summary = summary_bar,
@@ -442,7 +374,7 @@ class Applicant(Document):
                   AND erm.admission_cycle = %(admission_cycle)s
                   AND erm.program         = %(program)s
             """, {
-                "campus":          self.campus_preference_1,
+                "campus":          self.campus,
                 "admission_cycle": self.admission_cycle,
                 "program":         program_name,
             }, as_dict=True)
@@ -521,7 +453,7 @@ class Applicant(Document):
             LIMIT 1
         """, {
             "program":         self.program,
-            "campus":          self.campus_preference_1,
+            "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
             "academic_year":   self.academic_year,
             "national_test":   national_test,
@@ -567,7 +499,7 @@ class Applicant(Document):
               AND erm.admission_cycle   = %(admission_cycle)s
               AND erm.program           = %(program)s
         """, {
-            "campus":          self.campus_preference_1,
+            "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
             "program":         self.program,
         }, as_dict=True)
@@ -669,7 +601,7 @@ class Applicant(Document):
               AND %(today)s BETWEEN effective_from AND effective_to
         """, {
             "rule_name":     rule_name,
-            "campus":        self.campus_preference_1,
+            "campus":        self.campus,
             "academic_year": self.academic_year,
             "today":         nowdate(),
         }, as_dict=True)
@@ -897,10 +829,10 @@ class Applicant(Document):
 
         This ensures BOTH Eligible and Ineligible outcomes are always recorded.
         """
-        if not all([self.program, self.campus_preference_1, self.admission_cycle, self.academic_year]) or self.is_new():
+        if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
             return
 
-        applicant_name = self.name
+        applicant_name = self.name or "New Applicant"
 
         existing = frappe.db.get_value(
             "Eligibility Evaluation",
@@ -921,7 +853,7 @@ class Applicant(Document):
             "academic_year":           self.academic_year,
             "admission_cycle":         self.admission_cycle,
             "program":                 self.program,
-            "campus":                  self.campus_preference_1,
+            "campus":                  self.campus,
             "evaluation_status":       current_status,
             "failure_message":         current_reason,
             "exempts_entrance_test":   exempts_entrance_test,
@@ -939,6 +871,8 @@ class Applicant(Document):
 
         doc = frappe.get_doc(doc_data)
         doc.save(ignore_permissions=True)
+
+        frappe.db.commit()
 
 
 # ──────────────────────────────────────────────
@@ -1006,34 +940,22 @@ def create_eligibility_evaluation_async(
     doc.save(ignore_permissions=True)
 
 
-def sync_side_effects(applicant_name):
-    """
-    Background job to sync documents and evaluations.
-    Uses a simple retry mechanism for concurrency.
-    """
-    if not applicant_name:
-        return
-    
-    import time
-    for _ in range(3):
-        try:
-            doc = frappe.get_doc("Applicant", applicant_name)
-            doc.pluck_documents()
-            doc.create_or_update_evaluation()
+# ──────────────────────────────────────────────
+# Hook functions
+# ──────────────────────────────────────────────
 
-            # Auto-lock Admission Cycle
-            if doc.admission_cycle:
-                cycle_locked = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "stage_locked")
-                if not cycle_locked:
-                    cycle = frappe.get_doc("Admission Cycle", doc.admission_cycle)
-                    cycle.save(ignore_permissions=True)
-            break
-        except frappe.TimestampMismatchError:
-            frappe.db.rollback()
-            time.sleep(1)
-        except Exception:
-            frappe.log_error(
-                title="Applicant Side Effects Sync Error",
-                message=frappe.get_traceback()
-            )
-            break
+
+def validate_applicant(doc, method):
+    """Called via hooks.py doc_events validate"""
+    doc.validate_eligibility()
+
+
+def before_submit_applicant(doc, method):
+    """Called via hooks.py doc_events before_submit"""
+    if doc.evaluation_status == "Ineligible":
+        frappe.throw(
+            _("Not Eligible: {0}").format(
+                doc.rejected_reason or "You are not eligible for the selected program."
+            ),
+            title=_("Submission Not Allowed")
+        )

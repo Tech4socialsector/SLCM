@@ -75,43 +75,41 @@ def get_data(filters):
         )
         relevant_cycles = [c.name for c in cycles]
 
-    # 2. Fetch capacities (Total Seats)
-    po_filters = {}
+    # 2. Fetch capacities (Total Seats) from Program Offering
+    po_filters = {"is_active": 1}
     if filters.get("campus"):
         po_filters["campus"] = filters.get("campus")
     if filters.get("admission_year"):
         po_filters["admission_year"] = filters.get("admission_year")
 
-    program_offerings = frappe.get_all("Program Offering", filters=po_filters, fields=["name", "campus"])
-    po_names = [po.name for po in program_offerings]
-    campus_map = {po.name: po.campus for po in program_offerings}
+    program_offerings = frappe.get_all("Program Offering", 
+        filters=po_filters, 
+        fields=["name", "campus", "program", "total_available_seats", "is_reservation_applicable"]
+    )
 
     capacities = {} # (campus, program, category) -> total_seats
-    if po_names:
-        criteria = frappe.get_all("Program Offering Criteria", 
-            filters={"parent": ["in", po_names]}, 
-            fields=["parent", "program_of_study", "reservation_rule"]
-        )
+    for po_summary in program_offerings:
+        campus = po_summary.campus
+        program = po_summary.program
         
-        rule_names = list(set([c.reservation_rule for c in criteria if c.reservation_rule]))
-        quota_map = {}
-        if rule_names:
-            quotas = frappe.get_all("Reservation Quota", 
-                filters={"parent": ["in", rule_names]}, 
-                fields=["parent", "category", "quota", "seats"]
-            )
-            for q in quotas:
-                cat = q.category or q.quota
-                if cat:
-                    quota_map.setdefault(q.parent, {}).update({cat: q.seats})
-
-        for c in criteria:
-            campus = campus_map.get(c.parent)
-            program = c.program_of_study
-            rule_quotas = quota_map.get(c.reservation_rule, {})
-            for cat, seats in rule_quotas.items():
-                key = (campus, program, cat)
-                capacities[key] = capacities.get(key, 0) + (seats or 0)
+        if po_summary.is_reservation_applicable:
+            po = frappe.get_doc("Program Offering", po_summary.name)
+            for q in po.reservations:
+                # Resolve category key consistent with allocation logic
+                is_gen = False
+                if q.category in ["General", "General Quota", "GEN"]:
+                    is_gen = True
+                elif not q.category and q.community and ("GEN" in q.community or "General" in q.community):
+                    is_gen = True
+                
+                cat_key = "General" if is_gen else (q.community or q.category or "Other")
+                
+                key = (campus, program, cat_key)
+                capacities[key] = capacities.get(key, 0) + (int(q.seats or 0))
+        else:
+            # All seats are General if no reservations
+            key = (campus, program, "General")
+            capacities[key] = capacities.get(key, 0) + (int(po_summary.total_available_seats or 0))
 
     # 3. Fetch allocations (Allocated/Waitlisted)
     sa_filters = {"docstatus": ["<", 2]}
@@ -137,16 +135,19 @@ def get_data(filters):
 
         applicants = frappe.get_all("Seat Selection Applicant", 
             filters=app_params, 
-            fields=["parent", "program", "reservation_category", "selection_status"]
+            fields=["parent", "program", "reservation_category", "selection_status", "allocation_type"]
         )
         
         for app in applicants:
             campus = sa_campus_map.get(app.parent)
             program = app.program
-            cat_link = app.reservation_category
             
-            # Key consistently on Category LINK
-            key = (campus, program, cat_link)
+            # If allocation is Open, count against General pool
+            # Otherwise count against their reservation category
+            cat_key = "General" if app.allocation_type == "Open" else (app.reservation_category or "Other")
+            
+            # Key consistently on Category mapped key
+            key = (campus, program, cat_key)
             stats = allocations.setdefault(key, {"allocated": 0, "waitlisted": 0})
             if app.selection_status == "Selected":
                 stats["allocated"] += 1
