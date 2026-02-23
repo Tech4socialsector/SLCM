@@ -36,6 +36,31 @@ def create_merit_rule(program_offering, admission_cycle, programme_level,
 	return doc.name
 
 
+@frappe.whitelist()
+def get_programs_for_matrix(doctype, txt, searchfield, start, page_len, filters):
+	"""Returns programs linked to active Program Offerings for the given cycle and campus."""
+	if not filters:
+		return []
+	
+	admission_cycle = filters.get("admission_cycle")
+	campus = filters.get("campus")
+	
+	if not admission_cycle or not campus:
+		return []
+
+	# Join with Program to get the name/title if needed, but here we just need the program link
+	return frappe.db.sql("""
+		SELECT DISTINCT program
+		FROM `tabProgram Offering`
+		WHERE admission_cycle = %s
+		AND campus = %s
+		AND is_active = 1
+		AND program LIKE %s
+		ORDER BY program ASC
+		LIMIT %s, %s
+	""", (admission_cycle, campus, f"%{txt}%", start, page_len))
+
+
 class ProgramOffering(Document):
 
 	def validate(self):

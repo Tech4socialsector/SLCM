@@ -16,10 +16,10 @@
  "fields": [
   {
    "fieldname": "category",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Reservation Category",
-   "options": "\nGovernment Quota\nManagement Quota",
+   "options": "Reservation Category",
    "reqd": 1
   },
   {
