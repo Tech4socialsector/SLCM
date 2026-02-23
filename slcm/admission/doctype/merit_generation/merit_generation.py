@@ -45,15 +45,23 @@ class MeritGeneration(Document):
             )
 
         # 2. Check if applicants exist for this program level
-        applicants = frappe.get_all(
-            "Admission Result",
-            filters={
-                "admission_cycle": self.admission_cycle,
-                "campus": self.campus,
-                "program_level": program_level
-            },
-            limit=1
-        )
+        applicants = frappe.db.sql("""
+            SELECT ar.name 
+            FROM `tabAdmission Result` ar
+            JOIN `tabApplicant` app ON app.name = ar.applicant_name
+            WHERE ar.admission_cycle = %(cycle)s
+              AND ar.program_level = %(level)s
+              AND (
+                  app.campus_preference_1 = %(campus)s OR
+                  app.campus_preference_2 = %(campus)s OR
+                  app.campus_preference_3 = %(campus)s
+              )
+            LIMIT 1
+        """, {
+            "cycle": self.admission_cycle,
+            "campus": self.campus,
+            "level": program_level
+        }, as_dict=True)
         if not applicants:
             frappe.throw(
                 f"No applicants found for Program Level '{program_level}', "

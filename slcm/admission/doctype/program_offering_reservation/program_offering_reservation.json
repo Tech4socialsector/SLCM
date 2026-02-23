@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-20 12:25:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "category",
+  "religion",
+  "community",
+  "column_break_1",
+  "reservation_percentage",
+  "seats"
+ ],
+ "fields": [
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reservation Category",
+   "options": "Reservation Category",
+   "reqd": 1
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Religion"
+  },
+  {
+   "fieldname": "community",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Community"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reservation_percentage",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Reservation Percentage"
+  },
+  {
+   "fieldname": "seats",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Seats",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-20 12:58:05.764175",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Program Offering Reservation",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

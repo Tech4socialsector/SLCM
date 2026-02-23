@@ -20,6 +20,7 @@
   "valid_until",
   "status",
   "total_amount",
+  "campus",
   "section_components",
   "components"
  ],

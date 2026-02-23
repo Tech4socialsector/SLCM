@@ -295,12 +295,9 @@ scheduler_events = {
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 	]
 }
+
 doc_events = {
     "Student Master": {
         "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
-    },
-    "Applicant": {
-        "validate":      "slcm.admission.doctype.applicant.applicant.validate_applicant",
-        "before_submit": "slcm.admission.doctype.applicant.applicant.before_submit_applicant"
     }
 }
