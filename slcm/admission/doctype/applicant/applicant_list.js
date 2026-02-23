@@ -5,7 +5,7 @@ frappe.listview_settings['Applicant'] = {
                 doctype: "Applicant",
                 target: listview,
                 setters: {
-                    application_status: "Approved",
+                    application_status: "Selected",
                     academic_year: null,
                     campus: null,
                     admission_cycle: null,

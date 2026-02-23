@@ -48,6 +48,7 @@ class ApplicantOfferLetter {
 
 		if (offer.offer_status === 'Issued') {
 			this.page.set_primary_action(__('Accept Admission Offer'), () => me.handle_accept(), 'octicon octicon-check');
+			this.page.add_inner_button(__('Reject Admission Offer'), () => me.handle_reject(), __('Actions'));
 		} else if (offer.offer_status === 'Accepted') {
 			this.page.set_primary_action(__('Pay Fee'), () => me.handle_pay_fee(), 'octicon octicon-credit-card');
 		} else {
@@ -66,6 +67,9 @@ class ApplicantOfferLetter {
 									${offer.offer_status === 'Issued' ? `
 									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_accept()">
 										<i class="fa fa-check mr-2"></i> ${__('Accept Admission Offer')}
+									</button>
+									<button class="btn btn-danger btn-block mb-2 font-weight-bold" onclick="cur_page.handle_reject()">
+										<i class="fa fa-times mr-2"></i> ${__('Reject Admission Offer')}
 									</button>
 									` : offer.offer_status === 'Accepted' ? `
 									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
@@ -159,9 +163,6 @@ class ApplicantOfferLetter {
 									<h5 class="mb-0 font-weight-bold">${__('Offer Letter Preview')}</h5>
 									<span class="text-muted small">${__('Digitally Verified Document')}</span>
 								</div>
-								<button class="btn btn-sm btn-outline-primary shadow-sm" onclick="window.print()">
-									<i class="fa fa-print mr-1"></i> ${__('Print Preview')}
-								</button>
 							</div>
 							<div class="card-body p-4 preview-scroll-area">
 								<div class="letter-content-container p-5 border rounded bg-light">
@@ -308,6 +309,37 @@ class ApplicantOfferLetter {
 				});
 			}
 		);
+	}
+
+	handle_reject() {
+		let me = this;
+		frappe.prompt([
+			{
+				label: __('Reason for Rejection'),
+				fieldname: 'reason',
+				fieldtype: 'Small Text',
+				reqd: 1
+			}
+		], (values) => {
+			frappe.dom.freeze(__('Processing Rejection...'));
+			frappe.call({
+				method: 'slcm.api.service.offer_service.reject_offer',
+				args: {
+					offer_name: me.data.offer.name,
+					reason: values.reason
+				},
+				callback: function (r) {
+					frappe.dom.unfreeze();
+					if (r.message) {
+						frappe.show_alert({
+							message: __('You have rejected the admission offer.'),
+							indicator: 'orange'
+						});
+						me.fetch_data();
+					}
+				}
+			});
+		}, __('Confirm Rejection'), __('Reject Offer'));
 	}
 
 	handle_pay_fee() {

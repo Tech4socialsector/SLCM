@@ -161,7 +161,7 @@
    "fieldname": "application_status",
    "fieldtype": "Select",
    "label": "Application Status",
-   "options": "Submitted\nUnder Verification\nWait listed\nApproved\nRejected",
+   "options": "Submitted\nSelected\nWaitlisted\nAccepted\nRejected\nOffer Issued\nOffer Declined\nOffer Expired",
    "read_only": 1
   },
   {
@@ -866,7 +866,7 @@
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
