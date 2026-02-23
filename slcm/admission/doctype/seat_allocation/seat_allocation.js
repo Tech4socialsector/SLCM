@@ -95,5 +95,93 @@ frappe.ui.form.on("Seat Allocation", {
                 );
             }, __("Actions"));
         }
+
+        if (frm.doc.status === "Published") {
+            frm.add_custom_button(__("Generate Offer Letters"), () => {
+                const selections = frm.doc.selection_applicant
+                    .filter(row => row.selection_status === "Selected")
+                    .map(row => row.applicant_id);
+
+                if (!selections || selections.length === 0) {
+                    frappe.msgprint(__("No applicants with 'Selected' status found to generate offers."));
+                    return;
+                }
+
+                frappe.confirm(
+                    __("Generate offer letters for {0} selected applicants?").format(selections.length),
+                    () => {
+                        const total = selections.length;
+                        frappe.show_progress(__("Generating Offer Letters"), 0, total, __("Initializing..."));
+
+                        let processed = 0;
+                        let success_count = 0;
+                        let error_count = 0;
+                        let summary_log = [];
+
+                        const processNextBatch = () => {
+                            if (processed >= total) {
+                                frappe.show_progress(__("Generating Offer Letters"), total, total, __("Process Completed."));
+                                setTimeout(() => {
+                                    frappe.hide_progress();
+                                    let message = __("Successfully generated {0} offers.", [success_count]);
+                                    if (error_count > 0) {
+                                        message += "<br><br>" + __("<b>{0} errors encountered:</b>", [error_count]);
+                                        message += '<div style="max-height: 200px; overflow-y: auto; font-size: 11px; margin-top: 10px; background: #fff5f5; border: 1px solid #ffcccc; padding: 10px; border-radius: 4px;">';
+                                        message += summary_log.join("<br>");
+                                        message += '</div>';
+                                    }
+                                    frappe.msgprint({
+                                        title: __("Bulk Offer Generation Report"),
+                                        message: message,
+                                        indicator: error_count > 0 ? 'orange' : 'green',
+                                        primary_action: {
+                                            label: __("Refresh"),
+                                            action: () => frm.reload_doc()
+                                        }
+                                    });
+                                }, 800);
+                                return;
+                            }
+
+                            const current_applicant = selections[processed];
+                            frappe.show_progress(
+                                __("Generating Offer Letters"),
+                                processed + 1,
+                                total,
+                                __("Generating for {0}...", [current_applicant])
+                            );
+
+                            frappe.call({
+                                method: "slcm.api.service.offer_service.bulk_generate_offers",
+                                args: {
+                                    applicants: [current_applicant]
+                                },
+                                callback: function (r) {
+                                    if (r.message) {
+                                        const result = r.message;
+                                        if (result.success && result.success.length > 0) {
+                                            success_count++;
+                                        }
+                                        if (result.errors && result.errors.length > 0) {
+                                            error_count++;
+                                            summary_log.push(`<b>${current_applicant}:</b> ${result.errors[0].error}`);
+                                        }
+                                    }
+                                    processed++;
+                                    processNextBatch();
+                                },
+                                error: function (err) {
+                                    error_count++;
+                                    summary_log.push(`<b>${current_applicant}:</b> Connection or Server Error`);
+                                    processed++;
+                                    processNextBatch();
+                                }
+                            });
+                        };
+                        processNextBatch();
+                    }
+                );
+            });
+        }
     }
 });

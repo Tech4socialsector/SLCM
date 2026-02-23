@@ -25,11 +25,13 @@
   "application_status",
   "program",
   "admission_cycle",
-  "column_break_rynw",
   "admission_year",
+  "column_break_rynw",
   "academic_year",
   "application_type",
-  "campus",
+  "campus_preference_1",
+  "campus_preference_2",
+  "campus_preference_3",
   "section_break_azsq",
   "title",
   "categories",
@@ -148,6 +150,25 @@
    "fieldtype": "Link",
    "label": "Program",
    "options": "Program"
+  },
+  {
+   "fieldname": "campus_preference_1",
+   "fieldtype": "Link",
+   "label": "Campus Preference 1",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus_preference_2",
+   "fieldtype": "Link",
+   "label": "Campus Preference 2",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "campus_preference_3",
+   "fieldtype": "Link",
+   "label": "Campus Preference 3",
+   "options": "Campus"
   },
   {
    "fieldname": "academic_year",

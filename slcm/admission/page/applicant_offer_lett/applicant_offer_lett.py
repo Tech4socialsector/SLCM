@@ -69,11 +69,16 @@ def get_offer_details(offer_name=None):
                 "amount": comp.total_amount or comp.amount
             })
     
+    # Check if Fee is paid
+    fee_paid = frappe.db.get_value("Applicant Fee Assignment", 
+        {"offer_letter": offer_doc.name, "status": "Paid"}, "name")
+
     return {
         "offer": offer_doc.as_dict(),
         "applicant": frappe.get_doc("Applicant", target_applicant).as_dict(),
         "fee_breakdown": fee_data,
         "rendered_content": offer_doc.rendered_content,
         "is_admin": is_admin,
+        "is_fee_paid": True if fee_paid else False,
         "currency": frappe.defaults.get_global_default("currency") or "INR"
     }
