@@ -16,9 +16,7 @@
   "column_break_tzmt",
   "performed_by",
   "timestamp",
-  "notes",
-  "is_payment_deadline_extended",
-  "payment_deadline"
+  "notes"
  ],
  "fields": [
   {
@@ -80,28 +78,16 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "is_payment_deadline_extended",
-   "fieldtype": "Check",
-   "label": "Is payment deadline extended"
-  },
-  {
-   "depends_on": "eval:doc.is_payment_deadline_extended ==1",
-   "fieldname": "payment_deadline",
-   "fieldtype": "Date",
-   "label": "Payment Deadline"
-  },
-  {
    "fieldname": "action",
    "fieldtype": "Select",
    "label": "Action",
-   "options": "Draft\nIssued\nAccepted\nRejected\nExpired\nWithdrawn\nField Updated"
+   "options": "Draft\nIssued\nAccepted\nRejected\nExpired\nWithdrawn\nFee Paid\nField Updated"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-17 17:06:55.626558",
+ "modified": "2026-02-23 15:48:54.610932",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Action Log",

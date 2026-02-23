@@ -364,10 +364,14 @@
 </head>
 
 <body>
-    {% set applicant = frappe.get_doc("Applicant", doc.applicant) %}
-    {% set campus = frappe.get_doc("Campus", doc.campus) %}
-    {% set program = frappe.get_doc("Program", doc.program) %}
-    {% set admission_cycle = frappe.get_doc("Admission Cycle", doc.admission_cycle) %}
+    {% set applicant = frappe.get_doc("Applicant", doc.applicant) if (doc.applicant and doc.applicant != "None") else
+    None %}
+    {% set campus = (frappe.get_doc("Campus", doc.campus) if (doc.campus and doc.campus != "None") else None) or campus
+    %}
+    {% set program = (frappe.get_doc("Program", doc.program) if (doc.program and doc.program != "None") else None) or
+    program %}
+    {% set admission_cycle = (frappe.get_doc("Admission Cycle", doc.admission_cycle) if (doc.admission_cycle and
+    doc.admission_cycle != "None") else None) or admission_cycle %}
 
     <div class="offer-letter-container">
         <div class="header">
@@ -376,7 +380,7 @@
             </div>
             <h1>Admission Offer Letter</h1>
             <div class="header-subtitle">
-                {{ campus.campus_name }} | {{ program.program_name }}
+                {{ campus.campus_name if campus else '' }} | {{ program.program_name if program else '' }}
             </div>
         </div>
 
@@ -398,13 +402,13 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Admission Cycle</span>
-                    <span class="info-value">{{ admission_cycle.cycle_name }}</span>
+                    <span class="info-value">{{ admission_cycle.cycle_name if admission_cycle else '' }}</span>
                 </div>
             </div>
 
             <!-- Greeting -->
             <div class="greeting">
-                Dear <span>{{ applicant.candidate_name }}</span>,
+                Dear <span>{{ (applicant.candidate_name if applicant else '') or (doc.applicant or '') }}</span>,
             </div>
 
             <!-- Main Content -->
@@ -412,9 +416,10 @@
                 <p>
                     <strong>Congratulations!</strong> We are delighted to inform you that you have been provisionally
                     selected for admission to the
-                    <strong>{{ program.program_name }}</strong> program at our <strong>{{ campus.campus_name }}</strong>
+                    <strong>{{ program.program_name if program else '' }}</strong> program at our <strong>{{
+                        campus.campus_name if campus else '' }}</strong>
                     campus for the
-                    <strong>{{ admission_cycle.cycle_name }}</strong> academic cycle.
+                    <strong>{{ admission_cycle.cycle_name if admission_cycle else '' }}</strong> academic cycle.
                 </p>
 
                 <div class="highlight-box">

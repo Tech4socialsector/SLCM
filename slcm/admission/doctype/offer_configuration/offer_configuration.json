@@ -27,13 +27,15 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
-   "options": "Campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "fieldname": "pdf_format",
    "fieldtype": "Link",
    "label": "PDF Format",
-   "options": "Print Format"
+   "options": "Print Format",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_sswl",
@@ -43,7 +45,8 @@
    "fieldname": "email_template",
    "fieldtype": "Link",
    "label": "Email Template",
-   "options": "Email Templates"
+   "options": "Email Templates",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -71,13 +74,14 @@
    "fieldname": "fee_structure",
    "fieldtype": "Table MultiSelect",
    "label": "Fee Structure",
-   "options": "Fee Structure Child"
+   "options": "Fee Structure Child",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 09:33:51.943805",
+ "modified": "2026-02-23 15:47:54.444921",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",

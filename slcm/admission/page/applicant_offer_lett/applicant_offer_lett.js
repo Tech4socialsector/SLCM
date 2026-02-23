@@ -44,12 +44,12 @@ class ApplicantOfferLetter {
 		let me = this;
 		window.cur_page = this;
 		this.data = data;
-		const { offer, applicant, fee_breakdown, rendered_content, currency } = data;
+		const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid } = data;
 
 		if (offer.offer_status === 'Issued') {
 			this.page.set_primary_action(__('Accept Admission Offer'), () => me.handle_accept(), 'octicon octicon-check');
 			this.page.add_inner_button(__('Reject Admission Offer'), () => me.handle_reject(), __('Actions'));
-		} else if (offer.offer_status === 'Accepted') {
+		} else if (offer.offer_status === 'Accepted' && !is_fee_paid) {
 			this.page.set_primary_action(__('Pay Fee'), () => me.handle_pay_fee(), 'octicon octicon-credit-card');
 		} else {
 			this.page.clear_primary_action();
@@ -71,7 +71,7 @@ class ApplicantOfferLetter {
 									<button class="btn btn-danger btn-block mb-2 font-weight-bold" onclick="cur_page.handle_reject()">
 										<i class="fa fa-times mr-2"></i> ${__('Reject Admission Offer')}
 									</button>
-									` : offer.offer_status === 'Accepted' ? `
+									` : (offer.offer_status === 'Accepted' && !is_fee_paid) ? `
 									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
 										<i class="fa fa-credit-card mr-2"></i> ${__('Pay Fee')}
 									</button>
@@ -106,7 +106,10 @@ class ApplicantOfferLetter {
 								</div>
 								<div class="summary-item mb-2">
                                     <span class="text-muted text-small">${__('Payable Amount')}:</span>
-                                    <div class="h4 font-weight-bold">${format_currency(offer.payable_amount, currency)}</div>
+                                    <div class="h4 font-weight-bold d-flex align-items-center justify-content-between">
+										<span>${format_currency(offer.payable_amount, currency)}</span>
+										${is_fee_paid ? `<span class="badge badge-pill badge-success small ml-2" style="font-size: 0.7rem;"><i class="fa fa-check mr-1"></i> ${__('Paid')}</span>` : ''}
+									</div>
                                 </div>
 							</div>
 						</div>
@@ -371,7 +374,7 @@ class ApplicantOfferLetter {
 			primary_action_label: __('Confirm & Pay'),
 			primary_action(values) {
 				d.hide();
-				frappe.dom.freeze(__('Processing Payment...'));
+				// frappe.dom.freeze(__('Processing Payment...'));
 				frappe.call({
 					method: 'slcm.api.service.offer_service.process_fee_payment',
 					args: {

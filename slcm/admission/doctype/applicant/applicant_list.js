@@ -7,7 +7,7 @@ frappe.listview_settings['Applicant'] = {
                 setters: {
                     application_status: "Selected",
                     academic_year: null,
-                    campus: null,
+                    campus_preference_1: null,
                     admission_cycle: null,
                     program: null
                 },
@@ -20,7 +20,7 @@ frappe.listview_settings['Applicant'] = {
                 get_query() {
                     return {
                         filters: {
-                            application_status: "Approved",
+                            application_status: "Selected",
                             docstatus: 0
                         }
                     };

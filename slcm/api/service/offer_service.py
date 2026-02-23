@@ -85,6 +85,11 @@ class OfferService:
         Main entry point for generating an offer letter.
         Ensures idempotency and follows financial snapshotting rules.
         """
+        if not applicant:
+            throw(_("Applicant is required to generate an offer letter."))
+        if not campus:
+            throw(_("Campus is required to generate an offer letter."))
+
         # Resolve the actual Admission Year DocType entry
         admission_year = OfferService.resolve_admission_year(applicant, campus, cycle, admission_year)
 
@@ -143,8 +148,16 @@ class OfferService:
         fee_data = OfferService._calculate_and_freeze_fees(fee_structure_name)
         offer.payable_amount = fee_data.get("total_payable")
         
-        # Ensure Fetch From doesn't overwrite our resolved cycle if it's different from the applicant
+        # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
+        # if they differ from the applicant's default preferences
         offer.insert(ignore_permissions=True)
+        if campus:
+            offer.campus = campus
+            offer.db_set('campus', campus)
+        if resolved_cycle:
+            offer.admission_cycle = resolved_cycle
+            offer.db_set('admission_cycle', resolved_cycle)
+            
         OfferService.update_applicant_status(applicant , application_status = "Offer Issued")
 
         # Snapshot Content (Now we have the name/ID)
@@ -164,6 +177,7 @@ class OfferService:
         # Transition to Issued
         offer.offer_status = "Issued"
         offer.save(ignore_permissions=True)
+        OfferService.sync_seat_allocation_status(offer, "Offer Issued")
 
         frappe.db.commit()
         return {
@@ -195,6 +209,7 @@ class OfferService:
         OfferService.create_fee_assignment_from_offer(offer)
 
         OfferService.log_action(offer.name, "Accepted")
+        OfferService.sync_seat_allocation_status(offer, "Accepted")
         return True
 
     @staticmethod
@@ -238,28 +253,18 @@ class OfferService:
         if not assignment_name:
             throw(_("Fee Assignment not found for offer {0}").format(offer_name))
 
-        # 2. Create Invoice (handles Student Master and Enrollment creation)
-        from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import create_invoice, create_payment
-        invoice_name = create_invoice(assignment_name)
-
-        # 3. Create Payment
+        # Update Assignment status to 'Paid'
         assignment = frappe.get_doc("Applicant Fee Assignment", assignment_name)
-        payment_name = create_payment(
-            docname=assignment_name,
-            amount=assignment.total_amount,
-            payment_mode=payment_mode,
-            reference_number=reference_number
-        )
-
-        # 4. Update Assignment status to 'Paid' explicitly if create_payment didn't
         assignment.db_set("status", "Paid")
-
-        OfferService.log_action(offer_name, "Fee Paid", _("Fee paid via Payment {0}").format(payment_name))
+        
+        # Update Applicant Status to Accepted
+        OfferService.update_applicant_status(assignment.applicant, application_status="Offer Accepted")
+        
+        OfferService.log_action(offer_name, "Fee Paid", _("Fee status updated to Paid via {0}").format(payment_mode))
         
         return {
             "success": True,
-            "invoice": invoice_name,
-            "payment": payment_name
+            "message": "Fee assignment marked as paid"
         }
     
     @staticmethod
@@ -277,6 +282,7 @@ class OfferService:
 
         OfferService.log_action(offer.name, "Rejected", reason)
         OfferService.update_applicant_status(offer.applicant , application_status = "Offer Declined")
+        OfferService.sync_seat_allocation_status(offer, "Offer Declined")
         return True
 
     @staticmethod
@@ -299,6 +305,7 @@ class OfferService:
                 doc.save(ignore_permissions=True)
                 OfferService.update_applicant_status(doc.applicant , application_status = "Offer Expired")
                 OfferService.log_action(entry.name, "Expired", _("Automatically expired by system scheduler."))
+                OfferService.sync_seat_allocation_status(doc, "Offer Expired")
                 processed += 1
             except Exception:
                 frappe.log_error(frappe.get_traceback(), _("Manual Offer Expiry Failed"))
@@ -326,14 +333,47 @@ class OfferService:
                     applicant_name = data
                     # Fetch details from Applicant record
                     details = frappe.db.get_value("Applicant", applicant_name, 
-                        ["campus", "program", "admission_cycle", "academic_year"], as_dict=1)
+                        ["campus_preference_1", "program", "admission_cycle", "academic_year"], as_dict=1)
                     
                     if not details:
                         raise ValueError(_("Applicant {0} not found").format(applicant_name))
                     
+                    if not applicant_name:
+                        raise ValueError(_("Applicant name is required"))
+                    
+                    if not details.program:
+                        raise ValueError(_("Program is required"))
+                    
+                    # Get campus from the Seat Allocation whose child table
+                    # (Seat Selection Applicant) contains this applicant
+                    # We check both 'applicant' (Link to Admission Result) and 'applicant_id'
+                    seat_allocation_name = frappe.db.get_value(
+                        "Seat Selection Applicant",
+                        {
+                            "parenttype": "Seat Allocation",
+                            "applicant": applicant_name 
+                        },
+                        "parent"
+                    ) or frappe.db.get_value(
+                        "Seat Selection Applicant",
+                        {
+                            "parenttype": "Seat Allocation",
+                            "applicant_id": applicant_name
+                        },
+                        "parent"
+                    )
+                    campus = frappe.db.get_value("Seat Allocation", seat_allocation_name, "campus") if seat_allocation_name else None
+
+                    # Fallback to campus preference if not found in Seat Allocation
+                    if not campus:
+                        campus = details.campus_preference_1
+
+                    if not campus:
+                        raise ValueError(_("Campus could not be determined for Applicant {0}. No Seat Allocation found and no Campus Preference 1 set.").format(applicant_name))
+
                     payload = {
                         "applicant": applicant_name,
-                        "campus": details.campus,
+                        "campus": campus,
                         "program": details.program,
                         "cycle": details.admission_cycle,
                         "admission_year": details.academic_year
@@ -529,27 +569,45 @@ class OfferService:
         offer.offer_id = offer.name or _("Draft")
         offer.valid_till = offer.payment_deadline
 
+        # Default values to prevent Jinja UndefinedError
         context = {
             "doc": offer,
-            "frappe": frappe
+            "frappe": frappe,
+            "applicant": None,
+            "applicant_name": None,
+            "applicant_doc": frappe._dict(),
+            "program": frappe._dict(),
+            "campus": frappe._dict(),
+            "admission_cycle": frappe._dict()
         }
         
         if offer.applicant:
-            applicant_doc = frappe.get_doc("Applicant", offer.applicant)
-            context["applicant_doc"] = applicant_doc
-            # Map 'applicant' to the candidate name as per requirement
-            name = applicant_doc.candidate_name or applicant_doc.name
-            context["applicant"] = name
-            context["applicant_name"] = name
+            try:
+                applicant_doc = frappe.get_doc("Applicant", offer.applicant)
+                context["applicant_doc"] = applicant_doc
+                name = applicant_doc.candidate_name or applicant_doc.name
+                context["applicant"] = name
+                context["applicant_name"] = name
+            except Exception:
+                pass
             
         if offer.program:
-            context["program"] = frappe.get_doc("Program", offer.program)
+            try:
+                context["program"] = frappe.get_doc("Program", offer.program)
+            except Exception:
+                pass
             
         if offer.campus:
-            context["campus"] = frappe.get_doc("Campus", offer.campus)
+            try:
+                context["campus"] = frappe.get_doc("Campus", offer.campus)
+            except Exception:
+                pass
             
         if offer.admission_cycle:
-            context["admission_cycle"] = frappe.get_doc("Admission Cycle", offer.admission_cycle)
+            try:
+                context["admission_cycle"] = frappe.get_doc("Admission Cycle", offer.admission_cycle)
+            except Exception:
+                pass
             
         return context
 
@@ -605,6 +663,29 @@ class OfferService:
         log.timestamp = now_datetime()
         log.notes = notes
         log.insert(ignore_permissions=True)
+
+    @staticmethod
+    def sync_seat_allocation_status(offer, status):
+        """Synchronizes offer status back to the Seat Allocation child table."""
+        if not offer or not status:
+            return
+
+        # Find the specific row in the Seat Selection Applicant table
+        # We use a join or direct SQL for performance and precision
+        frappe.db.sql("""
+            UPDATE `tabSeat Selection Applicant` 
+            SET selection_status = %s 
+            WHERE 
+                applicant_id = %s 
+                AND program = %s 
+                AND parent IN (
+                    SELECT name FROM `tabSeat Allocation` 
+                    WHERE campus = %s AND admission_cycle = %s
+                )
+        """, (status, offer.applicant, offer.program, offer.campus, offer.admission_cycle))
+        
+        # Also clean up counters in parent if needed (handled in SeatAllocation.before_save if we load/save parent)
+        # But for now, direct SQL is faster and avoids side effects during bulk processing.
 
     @staticmethod
     def create_fee_assignment_from_offer(offer):
