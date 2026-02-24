@@ -1,0 +1,51 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2026-02-24 00:05:00.000000",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "provider",
+        "center_name",
+        "center_address",
+        "preference_order"
+    ],
+    "fields": [
+        {
+            "fieldname": "provider",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Entrance Test Provider",
+            "options": "Entrance Test Provider",
+            "reqd": 1
+        },
+        {
+            "fieldname": "center_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Center Name"
+        },
+        {
+            "fieldname": "center_address",
+            "fieldtype": "Small Text",
+            "label": "Center Address"
+        },
+        {
+            "fieldname": "preference_order",
+            "fieldtype": "Int",
+            "label": "Preference Order"
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "modified": "2026-02-24 00:10:00.000000",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Entrance Test Preference Assigned",
+    "owner": "Administrator",
+    "permissions": [],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}
