@@ -177,16 +177,15 @@ def generate_merit_for_level(cycle, campus, program_level):
     merit.insert()
 
     # Log merit calculation for each applicant
-    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+    from slcm.admission.doctype.admission_audit_log.audit_service import log_merit_action
     for row in merit.merit_applicants:
-        log_admission_action(
-            reference_doctype="Merit List",
-            reference_name=merit.name,
+        log_merit_action(
+            merit_list=merit.name,
+            admission_cycle=merit.admission_cycle,
             applicant=row.applicant,
             program=row.program,
             action_type="Merit Calculated",
-            new_value=f"Score: {row.total_score:.3f}",
-            remarks=f"Calculated via Merit Rule: {merit_rule_name}"
+            remarks=f"Calculated via Merit Rule: {merit_rule_name}. Total Score: {row.total_score:.3f}"
         )
 
     merit.submit()
