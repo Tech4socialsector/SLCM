@@ -4,13 +4,13 @@
 import frappe
 import json
 from frappe.model.document import Document
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, get_url
 
 
 class EntranceTestList(Document):
 
     @frappe.whitelist()
-    def allocate_seats(self, providers, selected_applicants):
+    def allocate_seats(self, providers, selected_applicants, allocation_date=None):
         """
         Admin selects:
           - providers             : list of Entrance Test Provider names (preferences)
@@ -84,6 +84,13 @@ class EntranceTestList(Document):
                 allocation.gender                = app.gender
                 allocation.allocation_status      = "Not Allocated"
 
+            # If admin provided an allocation_date, set it on the allocation record.
+            if allocation_date:
+                try:
+                    allocation.allocation_date = allocation_date
+                except Exception:
+                    allocation.allocation_date = allocation_date
+
             # Reset / Update preferences in child table
             allocation.set("assigned_preferences", [])
             for idx, pdoc in enumerate(provider_list, start=1):
@@ -95,6 +102,12 @@ class EntranceTestList(Document):
                 })
 
             allocation.save(ignore_permissions=True)
+            # Send allocation notification email to applicant (if email present)
+            try:
+                if allocation.email:
+                    _send_allocation_email(allocation)
+            except Exception:
+                frappe.log_error(f"Failed to send allocation email for {allocation.name}", "Entrance Test Allocation")
 
             # ✅ Mark child row as "Allocated"
             app.allocation_status = "Allocated"
@@ -104,6 +117,73 @@ class EntranceTestList(Document):
         frappe.db.commit()
 
         return created_count
+
+
+def _send_allocation_email(allocation):
+    """Send a simple HTML email to the applicant with their allocation and preference details."""
+    try:
+        url = get_url(f"/app/entrance-test-seat-allocation/{allocation.name}")
+
+        prefs_html = ""
+        if getattr(allocation, 'assigned_preferences', None):
+            prefs_html = "<ul>"
+            for p in allocation.assigned_preferences:
+                prefs_html += f"<li>{getattr(p, 'preference_order', '')}. {p.center_name or p.provider} ({p.provider})</li>"
+            prefs_html += "</ul>"
+
+        applicant_info = f"""
+        <p><strong>Applicant Details</strong><br>
+        Name: {allocation.candidate_name or ''}<br>
+        Application No: {allocation.applicant or ''}<br>
+        Email: {allocation.email or ''}<br>
+        Gender: {allocation.gender or ''}<br>
+        Reservation Category: {allocation.reservation_category or ''}
+        </p>
+        """
+
+        program_info = f"""
+        <p><strong>Program Details</strong><br>
+        Program: {allocation.program or ''}<br>
+        Program Level: {allocation.program_level or ''}<br>
+        Academic Year: {allocation.academic_year or ''}<br>
+        Admission Cycle: {allocation.admission_cycle or ''}<br>
+        Campus: {allocation.campus or ''}
+        </p>
+        """
+
+        allocation_info = f"""
+        <p><strong>Allocation</strong><br>
+        Allocation Date/Time (admin): {allocation.allocation_date or 'Not set'}<br>
+        Current Status: {allocation.allocation_status or 'Not set'}<br>
+        Seat No: {allocation.seat_number or '-'}<br>
+        Room: {allocation.room_name or '-'}<br>
+        Building: {allocation.building or '-'}<br>
+        Floor: {allocation.floor or '-'}<br>
+        Center: {allocation.center_name or '-'}
+        </p>
+        """
+
+        msg = f"""
+        <p>Dear {allocation.candidate_name or allocation.applicant},</p>
+        {applicant_info}
+        {program_info}
+        {allocation_info}
+        <p><strong>Assigned Preferences</strong>{prefs_html}</p>
+        <p>
+            <a href="{url}" style="display:inline-block;padding:10px 14px;background:#1565c0;color:#fff;border-radius:4px;text-decoration:none;">Choose the preferences for Entrance test</a>
+        </p>
+        <p>If the button above does not work, open: {url}</p>
+        """
+
+        frappe.sendmail(
+            recipients=[allocation.email],
+            subject=f"Entrance Test — Seat Allocation for {allocation.candidate_name or allocation.applicant}",
+            message=msg,
+            reference_doctype="Entrance Test Seat Allocation",
+            reference_name=allocation.name
+        )
+    except Exception as e:
+        frappe.log_error(message=str(e), title="Send Allocation Email Error")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -188,7 +268,6 @@ def confirm_applicant_preference(allocation_name, selected_provider):
     allocation.floor                  = assigned_room.floor
     allocation.seat_number            = seat_number
     allocation.allocation_status      = "Allocated"
-    allocation.allocation_date        = now_datetime()
     allocation.allocated_by           = frappe.session.user
     allocation.save(ignore_permissions=True)
 

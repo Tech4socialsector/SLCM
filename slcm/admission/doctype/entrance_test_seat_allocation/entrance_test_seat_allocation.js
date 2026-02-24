@@ -160,6 +160,17 @@ function generate_admit_card_pdf(doc, frm) {
         catch (e) { return new Date().toLocaleDateString("en-IN"); }
     })();
 
+    // Compute profile image URL from 'profile' field (Attach Image)
+    let profile_image_url = null;
+    if (doc.profile) {
+      // If already a full URL, use as is; else, prepend Frappe file URL prefix
+      if (/^(https?:)?\/\//.test(doc.profile)) {
+        profile_image_url = doc.profile;
+      } else {
+        profile_image_url = '/files/' + encodeURIComponent(doc.profile.replace(/^.*[\\\/]/, ""));
+      }
+    }
+
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -564,11 +575,11 @@ function generate_admit_card_pdf(doc, frm) {
   <div class="conf">⬥ &nbsp; Confidential — For Candidate Use Only &nbsp; ⬥</div>
 
   <!-- Candidate Strip -->
-  <div class="cand-strip">
+    <div class="cand-strip">
     <!-- Profile Photo -->
     <div class="photo-section">
       <div class="photo-frame">
-        ${doc.profile_image ? `<img src="${doc.profile_image}" alt="Candidate Photo">` : '<div class="photo-placeholder">📷</div>'}
+        ${profile_image_url ? `<img src="${profile_image_url}" alt="Candidate Photo">` : '<div class="photo-placeholder">📷</div>'}
       </div>
       <div class="photo-label">Photo</div>
     </div>
