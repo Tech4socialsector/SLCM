@@ -157,5 +157,5 @@
  "restrict_to_domain": "",
  "sort_field": "modified",
  "sort_order": "DESC",
- "custom": 1
+ "custom": 0
 }
