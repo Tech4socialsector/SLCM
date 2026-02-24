@@ -169,8 +169,7 @@
    "fieldname": "application_status",
    "fieldtype": "Select",
    "label": "Application Status",
-   "options": "Submitted\nSelected\nWaitlisted\nAccepted\nRejected\nOffer Issued\nOffer Declined\nOffer Expired",
-   "read_only": 1
+   "options": "Submitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired"
   },
   {
    "fieldname": "personal_information_tab",

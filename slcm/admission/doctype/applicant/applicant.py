@@ -940,34 +940,22 @@ def create_eligibility_evaluation_async(
     doc.save(ignore_permissions=True)
 
 
-def sync_side_effects(applicant_name):
-    """
-    Background job to sync documents and evaluations.
-    Uses a simple retry mechanism for concurrency.
-    """
-    if not applicant_name:
-        return
-    
-    import time
-    for _ in range(3):
-        try:
-            doc = frappe.get_doc("Applicant", applicant_name)
-            doc.pluck_documents()
-            doc.create_or_update_evaluation()
+# ──────────────────────────────────────────────
+# Hook functions
+# ──────────────────────────────────────────────
 
-            # Auto-lock Admission Cycle
-            if doc.admission_cycle:
-                cycle_locked = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "stage_locked")
-                if not cycle_locked:
-                    cycle = frappe.get_doc("Admission Cycle", doc.admission_cycle)
-                    cycle.save(ignore_permissions=True)
-            break
-        except frappe.TimestampMismatchError:
-            frappe.db.rollback()
-            time.sleep(1)
-        except Exception:
-            frappe.log_error(
-                title="Applicant Side Effects Sync Error",
-                message=frappe.get_traceback()
-            )
-            break
+
+def validate_applicant(doc, method):
+    """Called via hooks.py doc_events validate"""
+    doc.validate_eligibility()
+
+
+def before_submit_applicant(doc, method):
+    """Called via hooks.py doc_events before_submit"""
+    if doc.evaluation_status == "Ineligible":
+        frappe.throw(
+            _("Not Eligible: {0}").format(
+                doc.rejected_reason or "You are not eligible for the selected program."
+            ),
+            title=_("Submission Not Allowed")
+        )
