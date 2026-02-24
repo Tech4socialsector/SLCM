@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "Attendance",
  "links": [],
- "modified": "2026-02-24 11:41:32.486869",
+ "modified": "2026-02-24 10:29:57.135905",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance",
@@ -23,7 +23,7 @@
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 10.0,
+ "sequence_id": 11.0,
  "shortcuts": [
   {
    "color": "Grey",
