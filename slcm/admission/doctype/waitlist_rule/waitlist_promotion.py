@@ -28,20 +28,22 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
     
     if po.is_reservation_applicable:
         for q in po.reservations:
-            # Map to GEN pool if category is General OR if community contains GEN/General
-            is_gen = False
+            seats = int(q.seats or 0)
+            # If category is not set, treat it as GEN seats (common configuration mistake).
+            if not q.category:
+                result["GEN"] += seats
+                continue
+
+            # Map to GEN pool if category is General
             if q.category in ["General", "General Quota", "GEN"]:
-                is_gen = True
-            elif not q.category and q.community and ("GEN" in q.community or "General" in q.community):
-                is_gen = True
-            
-            if is_gen:
-                result["GEN"] += int(q.seats or 0)
+                result["GEN"] += seats
             else:
-                # Use community as the key for reserved categories
-                cat_key = q.community or q.category or "Other"
-                result["Reserved"][cat_key] = result["Reserved"].get(cat_key, 0) + int(q.seats or 0)
+                result["Reserved"][q.category] = result["Reserved"].get(q.category, 0) + seats
     else:
+        result["GEN"] = int(po.total_available_seats or 0)
+
+    # Safety fallback: if reservation rows exist but total computed seats is 0, fallback to total_available_seats
+    if int(result.get("GEN") or 0) + sum(int(v or 0) for v in (result.get("Reserved") or {}).values()) <= 0:
         result["GEN"] = int(po.total_available_seats or 0)
     
     return result
@@ -72,6 +74,25 @@ def _lock_seat_allocation(seat_allocation_name: str) -> None:
     )
 
 
+def _resolve_applicant_from_admission_result(admission_result_name: str):
+    # Seat Selection Applicant links to Admission Result.
+    # Offer Letter / Applicant status sync expects Applicant. Try best-effort mapping.
+    if not admission_result_name:
+        return None
+
+    if frappe.db.exists("Applicant", admission_result_name):
+        return admission_result_name
+
+    ar = frappe.db.get_value(
+        "Admission Result",
+        admission_result_name,
+        ["applicant_name"],
+        as_dict=True,
+    )
+    if ar and ar.get("applicant_name") and frappe.db.exists("Applicant", ar.get("applicant_name")):
+        return ar.get("applicant_name")
+
+    return None
 
 
 def process_waitlist(rule_doc, ignore_cutoff=False):
@@ -238,18 +259,15 @@ def run_manual_waitlist(rule: str):
 
 
 def run_scheduled_waitlist():
+    """
+    Scheduled daily job: runs waitlist promotion for all 'Automatic' rules.
+    'Manual' rules are skipped — they only run via the 'Run Promotion' button.
+    """
     rules = frappe.get_all(
         "Waitlist Rule",
-        filters={"status": "Active"},
-        fields=["name", "upgrade_frequency"],
+        filters={"status": "Active", "upgrade_frequency": "Automatic"},
+        fields=["name"],
     )
 
-    weekday = now_datetime().weekday()  # Monday=0
-
     for r in rules:
-        freq = (r.upgrade_frequency or "Manual")
-        if freq == "Daily":
-            process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
-        elif freq == "Weekly":
-            if weekday == 0:
-                process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
+        process_waitlist(frappe.get_doc("Waitlist Rule", r.name))

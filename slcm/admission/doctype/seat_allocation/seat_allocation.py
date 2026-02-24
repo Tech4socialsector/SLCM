@@ -76,6 +76,49 @@ class SeatAllocation(Document):
                         allocation_name=self.name,
                         admission_cycle=self.admission_cycle
                     )
+                except Exception:
+                    ar = None
+
+                if ar and ar.get("email"):
+                    applicant_identifier = frappe.db.get_value("Applicant", {"email": ar.get("email")}, "name")
+                if not applicant_identifier and ar and ar.get("applicant_name"):
+                    applicant_identifier = frappe.db.get_value(
+                        "Applicant",
+                        {"candidate_name": ar.get("applicant_name")},
+                        "name",
+                    )
+                if not applicant_identifier and ar and ar.get("applicant_name") and frappe.db.exists(
+                    "Applicant", ar.get("applicant_name")
+                ):
+                    applicant_identifier = ar.get("applicant_name")
+                if not applicant_identifier:
+                    from slcm.admission.doctype.waitlist_rule.waitlist_promotion import (
+                        _resolve_applicant_from_admission_result,
+                    )
+                    applicant_identifier = _resolve_applicant_from_admission_result(row.applicant)
+
+                if applicant_identifier:
+                    try:
+                        from slcm.api.service.offer_service import OfferService
+                        OfferService.update_applicant_status(applicant_identifier, application_status=new_status)
+                    except Exception:
+                        # Don't block seat allocation save if Applicant sync fails.
+                        frappe.log_error(
+                            frappe.get_traceback(),
+                            "Seat Allocation: Failed to sync Applicant status"
+                        )
+
+                    # Send notification for manual status change
+                    if self.status == "Published":
+                        from slcm.admission.notification_service import notify_status_change
+                        notify_status_change(
+                            applicant=row.applicant,
+                            program=row.program,
+                            old_status=old_status,
+                            new_status=new_status,
+                            allocation_name=self.name,
+                            admission_cycle=self.admission_cycle
+                        )
 
             # Trigger promotion if a Selected/Accepted applicant moves to any rejected status
             if old_status in ["Selected", "Accepted"] and new_status in rejection_statuses:
@@ -118,13 +161,16 @@ class SeatAllocation(Document):
 
         from slcm.admission.doctype.waitlist_rule.waitlist_promotion import process_waitlist
 
-        # Find the active automatic rule for this campus/cycle
+        # Only auto-trigger for Daily / Weekly rules.
+        # Rules with upgrade_frequency = "Manual" must be triggered explicitly
+        # by the admin via the "Run Promotion" button — never automatically.
         rule_names = frappe.get_all(
             "Waitlist Rule",
             filters={
                 "status": "Active",
                 "admission_cycle": self.admission_cycle,
                 "campus": self.campus,
+                "upgrade_frequency": ["!=", "Manual"],
             },
             pluck="name",
         )
@@ -132,10 +178,10 @@ class SeatAllocation(Document):
         for rule_name in rule_names:
             frappe.flags.slcm_waitlist_promotion_in_progress = True
             try:
-                # Manual triggers (from on_update) should ignore the cutoff date
                 process_waitlist(frappe.get_doc("Waitlist Rule", rule_name), ignore_cutoff=True)
             finally:
                 frappe.flags.slcm_waitlist_promotion_in_progress = False
+
 
     @frappe.whitelist()
     def pull_from_merit_list(self):
@@ -248,7 +294,11 @@ class SeatAllocation(Document):
             waitlist_percent = 50.0
             rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "status": "Active"}, fields=["waitlist_percentage"])
             if rules:
-                waitlist_percent = rules[0].waitlist_percentage or 50.0
+                # Use explicit None check — `or 50.0` would incorrectly treat 0% as falsy
+                # and fall back to 50%, ignoring the admin's intent to have no waitlist.
+                wp = rules[0].waitlist_percentage
+                waitlist_percent = wp if wp is not None else 50.0
+
             
             waitlist_factor = waitlist_percent / 100.0
             gen_waitlist_cap = math.ceil(gen_seats * waitlist_factor)
@@ -293,28 +343,54 @@ class SeatAllocation(Document):
             # -----------------------------------
             # PHASE 3: WAITLISTS (OPEN THEN RESERVED)
             # -----------------------------------
-            
-            # 1. Waitlist GEN (from highest merit in remaining pool)
-            gen_waitlist_pool = remaining_pool[:gen_waitlist_cap]
-            remaining_pool = remaining_pool[gen_waitlist_cap:]
+
+            # Pre-compute ALL reserved category identifiers so GEN waitlist
+            # never accidentally absorbs reserved-category applicants.
+            all_reserved_match_strings = set()
+            for _cat in category_waitlist_quotas.keys():
+                all_reserved_match_strings.add(_cat)
+                _cat_doc = frappe.get_cached_value(
+                    "Admission Category", _cat,
+                    ["category_code", "category_name"], as_dict=1
+                )
+                if _cat_doc:
+                    if _cat_doc.get("category_code"):
+                        all_reserved_match_strings.add(_cat_doc.get("category_code"))
+                    if _cat_doc.get("category_name"):
+                        all_reserved_match_strings.add(_cat_doc.get("category_name"))
+
+            # 1. Waitlist GEN — only from applicants NOT in any reserved category
+            #    This ensures reserved-category applicants are never consumed here
+            #    and remain available for their own reserved waitlist slots.
+            gen_waitlist_candidates = [
+                r for r in remaining_pool
+                if not r.reservation_category or r.reservation_category not in all_reserved_match_strings
+            ]
+            gen_waitlist_pool = gen_waitlist_candidates[:gen_waitlist_cap]
 
             for row in gen_waitlist_pool:
                 row.selection_status = "Waitlisted"
                 row.allocation_type = "Open"
                 total_waitlisted += 1
-                
-            # 2. Waitlist Reserved (from category specific pools)
+
+            # Remove GEN-waitlisted applicants from remaining pool
+            remaining_pool = [r for r in remaining_pool if r not in gen_waitlist_pool]
+
+            # 2. Waitlist Reserved — only from applicants in that specific category
             for category, cat_waitlist_cap in category_waitlist_quotas.items():
                 if cat_waitlist_cap == 0:
                     continue
-                    
-                cat_doc = frappe.get_cached_value("Admission Category", category, ["name", "category_code", "category_name"], as_dict=1)
+
+                cat_doc = frappe.get_cached_value(
+                    "Admission Category", category,
+                    ["name", "category_code", "category_name"], as_dict=1
+                )
                 match_strings = [category]
                 if cat_doc:
                     if cat_doc.get("category_code"): match_strings.append(cat_doc.get("category_code"))
                     if cat_doc.get("category_name"): match_strings.append(cat_doc.get("category_name"))
 
-                # Re-fetch category pool from the updated remaining pool
+                # Only look at remaining applicants in this exact category
                 waitlist_pool = [r for r in remaining_pool if r.reservation_category in match_strings]
                 waitlist_reserved = waitlist_pool[:cat_waitlist_cap]
 
@@ -323,7 +399,7 @@ class SeatAllocation(Document):
                     row.allocation_type = "Reserved"
                     total_waitlisted += 1
 
-                # Only candidates NOT waitlisted move to rejections
+                # Remove reserved-waitlisted from remaining pool
                 remaining_pool = [r for r in remaining_pool if r not in waitlist_reserved]
 
             # -----------------------------------

@@ -122,7 +122,7 @@ function open_allocation_dialog(frm) {
                 method: "slcm.admission.doctype.merit_list.merit_list.create_seat_allocation",
                 args: {
                     merit_list_name: frm.doc.name,
-                    selected_applicants: selected.map(r => r.applicant)
+                    selected_applicants: selected.map(r => r.applicant_id || r.applicant)
                 },
                 freeze: true,
                 freeze_message: __("Creating Seat Allocation..."),
