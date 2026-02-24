@@ -1,15 +1,39 @@
 {
  "app": "slcm",
- "creation": "2026-02-18 09:56:18.378263",
+ "creation": "2026-02-24 10:55:03.823990",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "header_icon": "liabilities",
+ "header_icon": "clipboard-list",
  "idx": 0,
  "items": [
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "book-copy",
+   "icon": "airplay",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Dashboar",
+   "link_to": "Offer Letter",
+   "link_type": "Dashboard",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "book-check",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offer Letter",
+   "link_to": "Offer Letter",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "folders",
    "indent": 0,
    "keep_closed": 0,
    "label": "Offer Action Log",
@@ -19,14 +43,26 @@
    "type": "Link"
   },
   {
-   "child": 1,
+   "child": 0,
    "collapsible": 1,
-   "icon": "album",
+   "icon": "receipt-indian-rupee",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Offer Letter",
-   "link_to": "Offer Letter",
+   "label": "Offer Fee Snapshot",
+   "link_to": "Offer Fee Snapshot",
    "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "file-check",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offers List",
+   "link_to": "offer-letter-list",
+   "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -41,60 +77,13 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "aperture",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Offer Fee Snapshot",
-   "link_to": "Offer Fee Snapshot",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "layout-dashboard",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Dashboard",
-   "link_to": "Offer Letters",
-   "link_type": "Workspace",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "list",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Reports",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Section Break"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "file-user",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Applicant",
-   "link_to": "Applicant",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
   }
  ],
- "modified": "2026-02-20 18:05:55.880933",
+ "modified": "2026-02-24 11:01:18.812065",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "Admission",
+ "name": "Offer Letter",
  "owner": "Administrator",
  "standard": 1,
- "title": "Admission"
+ "title": "Offer Letter"
 }
