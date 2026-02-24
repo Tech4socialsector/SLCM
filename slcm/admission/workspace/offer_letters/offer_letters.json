@@ -9,12 +9,12 @@
  "for_user": "",
  "hide_custom": 0,
  "icon": "file-check",
- "idx": 0,
+ "idx": 1,
  "indicator_color": "green",
  "is_hidden": 0,
  "label": "Offer Letters",
  "links": [],
- "modified": "2026-02-24 12:46:11.729728",
+ "modified": "2026-02-24 14:14:05.615554",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",
@@ -75,6 +75,12 @@
    "label": "Offer Fee Snapshot",
    "link_to": "Offer Fee Snapshot",
    "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Applicants",
+   "link_to": "Applicant",
    "type": "DocType"
   }
  ],

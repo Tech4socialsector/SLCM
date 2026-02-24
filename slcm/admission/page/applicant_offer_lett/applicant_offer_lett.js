@@ -360,8 +360,8 @@ class ApplicantOfferLetter {
 					label: __('Payment Mode'),
 					fieldname: 'payment_mode',
 					fieldtype: 'Select',
-					options: ['Cash', 'Bank Transfer', 'Online Payment', 'Cheque'],
-					default: 'Cash',
+					options: [__('Online Payment'), __('Cash'), __('Bank Transfer'), __('Cheque')],
+					default: __('Online Payment'),
 					reqd: 1
 				},
 				{
@@ -373,26 +373,49 @@ class ApplicantOfferLetter {
 			],
 			primary_action_label: __('Confirm & Pay'),
 			primary_action(values) {
+				console.log("Payment Mode selected:", values.payment_mode);
 				d.hide();
-				// frappe.dom.freeze(__('Processing Payment...'));
-				frappe.call({
-					method: 'slcm.api.service.offer_service.process_fee_payment',
-					args: {
-						offer_name: offer.name,
-						payment_mode: values.payment_mode,
-						reference_number: values.reference_number
-					},
-					callback: function (r) {
-						frappe.dom.unfreeze();
-						if (r.message && r.message.success) {
-							frappe.show_alert({
-								message: __('Fee payment processed successfully!'),
-								indicator: 'green'
-							});
-							me.fetch_data();
+				if (values.payment_mode === "Online Payment" || values.payment_mode === __("Online Payment")) {
+					console.log("Proceeding with Online Payment flow");
+					frappe.dom.freeze(__('Redirecting to Payment Gateway...'));
+
+					// Get Checkout URL via Offer Service (Gateway resolution handles server-side)
+					frappe.call({
+						method: "slcm.api.service.offer_service.get_online_payment_url",
+						args: {
+							offer_name: offer.name
+						},
+						callback: function (res) {
+							frappe.dom.unfreeze();
+							if (res.message) {
+								window.location.href = res.message;
+							}
+						},
+						error: function () {
+							frappe.dom.unfreeze();
 						}
-					}
-				});
+					});
+				} else {
+					frappe.dom.freeze(__('Processing Payment...'));
+					frappe.call({
+						method: 'slcm.api.service.offer_service.process_fee_payment',
+						args: {
+							offer_name: offer.name,
+							payment_mode: values.payment_mode,
+							reference_number: values.reference_number
+						},
+						callback: function (r) {
+							frappe.dom.unfreeze();
+							if (r.message && r.message.success) {
+								frappe.show_alert({
+									message: __('Fee payment processed successfully!'),
+									indicator: 'green'
+								});
+								me.fetch_data();
+							}
+						}
+					});
+				}
 			}
 		});
 

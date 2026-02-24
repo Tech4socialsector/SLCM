@@ -750,6 +750,63 @@ class OfferService:
         
         return assignment.name
 
+    @staticmethod
+    def get_online_payment_url(offer_name, gateway=None):
+        """
+        Ensures Applicant Fee Assignment and Fee Invoice are created,
+        logs the attempt and returns the checkout URL.
+        """
+        offer = frappe.get_doc("Offer Letter", offer_name)
+        if offer.offer_status != "Accepted":
+            frappe.throw(_("Offer must be 'Accepted' before paying fees."))
+
+        if not gateway:
+            # Find first available gateway
+            gateway = frappe.db.get_value("Payment Gateway", {}, "name")
+            if not gateway:
+                frappe.throw(_("No Payment Gateway configured in the system."))
+
+        # 1. Ensure Fee Assignment exists
+        assignment_name = frappe.db.get_value("Applicant Fee Assignment",
+            {"offer_letter": offer_name, "status": ["!=", "Cancelled"]}, "name")
+
+        if not assignment_name:
+            assignment_name = OfferService.create_fee_assignment_from_offer(offer)
+
+        # 2. Ensure Fee Invoice exists
+        assignment = frappe.get_doc("Applicant Fee Assignment", assignment_name)
+        if not assignment.fee_invoice:
+            from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import create_invoice
+            invoice_name = create_invoice(assignment_name)
+        else:
+            invoice_name = assignment.fee_invoice
+
+        invoice = frappe.get_doc("Fee Invoice", invoice_name)
+
+        # 3. Log the attempt
+        log = frappe.get_doc({
+            "doctype": "Online Payment Log",
+            "fee_invoice": invoice_name,
+            "gateway": gateway,
+            "amount": invoice.outstanding_amount,
+            "status": "Pending"
+        })
+        log.insert(ignore_permissions=True)
+
+        # 4. Get Checkout URL
+        try:
+            from payments.utils.utils import get_checkout_url
+            return get_checkout_url(
+                payment_gateway=gateway,
+                amount=invoice.outstanding_amount,
+                reference_doctype="Fee Invoice",
+                reference_docname=invoice_name,
+                currency=frappe.defaults.get_global_default("currency") or "INR"
+            )
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Payment Gateway Error")
+            raise
+
 
 
 @frappe.whitelist()
@@ -789,3 +846,7 @@ def reject_offer(offer_name, reason=None):
 @frappe.whitelist()
 def expire_offers():
     return OfferService.expire_offers()
+
+@frappe.whitelist()
+def get_online_payment_url(offer_name, gateway=None):
+    return OfferService.get_online_payment_url(offer_name, gateway)
