@@ -69,7 +69,7 @@ def _rank_applicants(applicant_rows):
 
 def generate_merit_for_level(cycle, campus, program_level):
     """
-    Generates a Merit List for a specific Program Level (UG / PG / Research Course).
+    Generates a Merit List for a specific Program Level (UG / PG / Research Cource).
     Uses the Merit Rule assigned to that program level via Merit Rule Mapping.
     """
     # Check if a Merit List already exists for this program level
@@ -177,9 +177,9 @@ def generate_merit_for_level(cycle, campus, program_level):
     merit.insert()
 
     # Log merit calculation for each applicant
-    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+    from slcm.admission.audit_service import log_merit_action
     for row in merit.merit_applicants:
-        log_admission_action(
+        log_merit_action(
             reference_doctype="Merit List",
             reference_name=merit.name,
             applicant=row.applicant,

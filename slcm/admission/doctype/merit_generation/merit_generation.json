@@ -34,7 +34,7 @@
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Program Level",
-            "options": "\nUG\nPG\nResearch Course",
+            "options": "\nUG\nPG\nResearch Cource",
             "reqd": 1
         },
         {

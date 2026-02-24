@@ -49,9 +49,9 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         now=frappe.flags.in_test
     )
 
-    # Log to Admission Audit Log
-    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
-    log_admission_action(
+    # Log to Seat Allocation Audit Log
+    from slcm.admission.audit_service import log_seat_allocation_action
+    log_seat_allocation_action(
         reference_doctype="Seat Allocation",
         reference_name=allocation_name,
         applicant=applicant,

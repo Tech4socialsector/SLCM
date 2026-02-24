@@ -4,18 +4,13 @@ from frappe.utils import now_datetime, getdate
 
 def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict:
     admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "admission_year")
+    
     if not admission_year:
-        # Fallback for legacy data if any
-        res = frappe.db.sql("""
-            SELECT parent FROM `tabAdmission Cycle`
-            WHERE name = %s AND parenttype = 'Admission Year'
-            LIMIT 1
-        """, (admission_cycle,))
-        if res:
-            admission_year = res[0][0]
-
+        # Fallback to parent
+        admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "parent")
+        
     if not admission_year:
-        frappe.throw(f"No Admission Year linked to cycle {admission_cycle}. Please update the Admission Cycle record.")
+        frappe.throw(f"No Admission Year found for Admission Cycle {admission_cycle}. Please ensure the cycle is correctly linked to an Admission Year.")
 
     po_name = frappe.db.get_value("Program Offering", {
         "campus": campus, 
@@ -133,7 +128,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
     if not waitlisted_rows:
         return False
 
-    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+    from slcm.admission.audit_service import log_seat_allocation_action
     promoted_total = 0
 
     # 1. Promote for OPEN seats
@@ -145,7 +140,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
         open_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
         
         # Log that vacancies were identified
-        log_admission_action(
+        log_seat_allocation_action(
             reference_doctype="Waitlist Rule",
             reference_name=rule_doc.name,
             program=program,
@@ -156,7 +151,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
         for row in open_waitlist[:open_vacancies]:
             row.selection_status = "Selected"
             promoted_total += 1
-            log_admission_action(
+            log_seat_allocation_action(
                 reference_doctype="Waitlist Rule",
                 reference_name=rule_doc.name,
                 applicant=row.applicant,
@@ -195,7 +190,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
             cat_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
             # Log that vacancies were identified for this category
-            log_admission_action(
+            log_seat_allocation_action(
                 reference_doctype="Waitlist Rule",
                 reference_name=rule_doc.name,
                 program=program,
@@ -206,7 +201,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
             for row in cat_waitlist[:cat_vacancies]:
                 row.selection_status = "Selected"
                 promoted_total += 1
-                log_admission_action(
+                log_seat_allocation_action(
                     reference_doctype="Waitlist Rule",
                     reference_name=rule_doc.name,
                     applicant=row.applicant,
@@ -258,36 +253,3 @@ def run_scheduled_waitlist():
         elif freq == "Weekly":
             if weekday == 0:
                 process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
-
-
-def process_waitlist_background(seat_allocation_name: str, campus: str, admission_cycle: str):
-    """
-    Background worker entry point — called via frappe.enqueue from SeatAllocation.on_update.
-
-    Runs in a separate worker process with its own DB transaction and a freshly
-    loaded document, completely isolated from the triggering save cycle.
-    This prevents nested saves and optimistic locking conflicts.
-    """
-    # Guard against accidental re-entry
-    if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
-        return
-
-    frappe.flags.slcm_waitlist_promotion_in_progress = True
-    try:
-        rule_names = frappe.get_all(
-            "Waitlist Rule",
-            filters={
-                "status": "Active",
-                "admission_cycle": admission_cycle,
-                "campus": campus,
-            },
-            pluck="name",
-        )
-
-        for rule_name in rule_names:
-            rule_doc = frappe.get_doc("Waitlist Rule", rule_name)
-            # ignore_cutoff=True: manual status changes should trigger immediate promotion
-            process_waitlist(rule_doc, ignore_cutoff=True)
-
-    finally:
-        frappe.flags.slcm_waitlist_promotion_in_progress = False

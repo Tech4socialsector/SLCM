@@ -44,39 +44,39 @@ frappe.ui.form.on("Admission Year", {
 
     },
 
-    // is_active: async function (frm) {
-    //     if (!frm.doc.is_active) return;
+    is_active: async function (frm) {
+        if (!frm.doc.is_active) return;
 
-    //     if (!frm.doc.academic_year) {
-    //         await set_default_academic_year(frm);
-    //     }
+        if (!frm.doc.academic_year) {
+            await set_default_academic_year(frm);
+        }
 
-    //     const confirmed = await new Promise((resolve) => {
-    //         frappe.confirm(
-    //             "Do you want to make this Admission Year Active?",
-    //             () => resolve(true),
-    //             () => resolve(false)
-    //         );
-    //     });
+        const confirmed = await new Promise((resolve) => {
+            frappe.confirm(
+                "Do you want to make this Admission Year Active?",
+                () => resolve(true),
+                () => resolve(false)
+            );
+        });
 
-    //     if (!confirmed) {
-    //         frm.set_value("is_active", 0);
-    //         return;
-    //     }
+        if (!confirmed) {
+            frm.set_value("is_active", 0);
+            return;
+        }
 
-    //     const r = await frappe.call({
-    //         method: "slcm.admission.doctype.admission_year.admission_year.activate_admission_year",
-    //         args: { admission_year: frm.doc.name }
-    //     });
+        const r = await frappe.call({
+            method: "slcm.admission.doctype.admission_year.admission_year.activate_admission_year",
+            args: { admission_year: frm.doc.name }
+        });
 
-    //     if (r.message.status === "success") {
-    //         frappe.msgprint({ title: __(r.message.status), indicator: "green", message: __(r.message.message) });
-    //         frm.reload_doc();
-    //     } else {
-    //         frappe.msgprint({ title: __(r.message.status), indicator: "red", message: __(r.message.message) });
-    //         frm.set_value("is_active", 0);
-    //     }
-    // },
+        if (r.message.status === "success") {
+            frappe.msgprint({ title: __(r.message.status), indicator: "green", message: __(r.message.message) });
+            frm.reload_doc();
+        } else {
+            frappe.msgprint({ title: __(r.message.status), indicator: "red", message: __(r.message.message) });
+            frm.set_value("is_active", 0);
+        }
+    },
 
     multi_cycle(frm) {
         toggle_cycle_type(frm);

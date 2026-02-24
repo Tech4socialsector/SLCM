@@ -62,6 +62,6 @@ def create_seat_allocation(merit_list_name, selected_applicants):
 
     alloc.total_selected = len(selected_applicants)
     alloc.insert()
+    frappe.db.commit()
 
     return alloc.name
-

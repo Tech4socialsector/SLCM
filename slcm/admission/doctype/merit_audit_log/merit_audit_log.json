@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-02-21 19:30:00",
+ "creation": "2026-02-24 11:35:00",
  "default_view": "Report",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -65,7 +65,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Action Type",
-   "options": "Merit Calculated\nOutcome Assigned\nManual Status Change\nWaitlist Vacated\nWaitlist Promoted\nAllocation Published\nNotification Sent",
+   "options": "Merit Calculated\nMerit Published\nMerit Rule Updated",
    "read_only": 1,
    "reqd": 1
   },
@@ -112,10 +112,10 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-23 19:31:52.260705",
+ "modified": "2026-02-24 11:50:13.644346",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "Admission Audit Log",
+ "name": "Merit Audit Log",
  "owner": "Administrator",
  "permissions": [
   {
