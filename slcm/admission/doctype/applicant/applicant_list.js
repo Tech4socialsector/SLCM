@@ -7,7 +7,7 @@ frappe.listview_settings['Applicant'] = {
                 setters: {
                     application_status: "Selected",
                     academic_year: null,
-                    campus_preference_1: null,
+                    campus: null,
                     admission_cycle: null,
                     program: null
                 },
