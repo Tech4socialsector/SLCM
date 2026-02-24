@@ -14,7 +14,7 @@
  "is_hidden": 0,
  "label": "Offer Letters",
  "links": [],
- "modified": "2026-02-24 11:10:47.895004",
+ "modified": "2026-02-24 12:46:11.729728",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",
@@ -26,9 +26,6 @@
  "roles": [
   {
    "role": "System Manager"
-  },
-  {
-   "role": "Applicant"
   }
  ],
  "sequence_id": 5.0,
