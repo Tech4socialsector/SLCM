@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-02-23 10:15:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "trigger_field",
+  "condition",
+  "trigger_value",
+  "target_field",
+  "action"
+ ],
+ "fields": [
+  {
+   "fieldname": "trigger_field",
+   "fieldtype": "Data",
+   "label": "Trigger Field",
+   "reqd": 1
+  },
+  {
+   "fieldname": "condition",
+   "fieldtype": "Select",
+   "label": "Condition",
+   "options": "=\n!=\n>\n<",
+   "reqd": 1
+  },
+  {
+   "fieldname": "trigger_value",
+   "fieldtype": "Data",
+   "label": "Trigger Value",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_field",
+   "fieldtype": "Data",
+   "label": "Target Field",
+   "reqd": 1
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "label": "Action",
+   "options": "Show\nHide\nMandatory",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-02-23 10:15:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Form Condition Rule",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

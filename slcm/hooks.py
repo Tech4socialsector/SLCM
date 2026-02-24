@@ -10,7 +10,21 @@ app_include_js = ["/assets/slcm/js/student_workspace_redirect.js"]
 
 
 doc_events = {
-	"Student Master": {"before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"}
+	"Student Master": {"before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"},
+    "Applicant": {
+        "after_insert": "slcm.admission_managment.utils.regulatory.log_audit_trail",
+        "on_submit": "slcm.admission_managment.events.on_applicant_submit",
+        "on_cancel": "slcm.admission_managment.events.on_applicant_cancel"
+    },
+    "Applicant Document": {
+        "on_submit": "slcm.admission_managment.events.on_document_submit"
+    },
+    "Merit List": {
+        "on_submit": "slcm.admission_managment.events.on_merit_list_publish"
+    },
+    "Campus Seat Matrix": {
+        "on_submit": "slcm.admission_managment.events.on_seat_matrix_lock"
+    }
 }
 
 
@@ -292,8 +306,16 @@ scheduler_events = {
 	},
 	"daily": [
 		"slcm.api.service.offer_service.expire_offers",
-		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
-	]
+		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
+        "slcm.admission_managment.events.send_deadline_reminders"
+	],
+    "hourly": [
+        "slcm.admission_managment.events.auto_update_cycle_status",
+        "slcm.admission_managment.utils.notifications.check_and_send_offer_reminders"
+    ],
+    "all": [
+        "slcm.admission_managment.utils.auto_draft.auto_save_all_drafts"
+    ]
 }
 
 doc_events = {
@@ -301,3 +323,7 @@ doc_events = {
         "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
     }
 }
+
+website_route_rules = [
+    {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"}
+]

@@ -1,0 +1,175 @@
+{% extends "templates/web.html" %}
+{% block page_content %}
+<div class="container" style="max-width: 1100px; margin: 30px auto; font-family: Arial, sans-serif;">
+
+  {% if no_application %}
+  <div class="alert alert-warning text-center">
+    <h4>No Application Found</h4>
+    <p>You have not started an application yet.</p>
+    <a href="/app/applicant/new" class="btn btn-primary">Start Application</a>
+  </div>
+  {% else %}
+
+  <!-- Header -->
+  <div style="background: #1F4E79; color: white; padding: 20px 30px; border-radius: 8px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 style="margin: 0;">{{ applicant.candidate_name }}</h2>
+        <p style="margin: 5px 0; opacity: 0.8;">Application ID: {{ applicant.application_id }}</p>
+        <p style="margin: 5px 0; opacity: 0.8;">{{ applicant.program }} | {{ applicant.application_type }}</p>
+      </div>
+      <div style="text-align: right;">
+        <span style="background: white; color: #1F4E79; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 14px;">
+          {{ applicant.application_status }}
+        </span>
+      </div>
+    </div>
+    <!-- Progress Bar -->
+    <div style="margin-top: 15px;">
+      <p style="margin: 0 0 5px; font-size: 13px;">Application Completion: {{ completion }}%</p>
+      <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 10px;">
+        <div style="background: #4CAF50; width: {{ completion }}%; border-radius: 10px; height: 10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+    <!-- Pending Actions -->
+    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+      <h4 style="color: #1F4E79; border-bottom: 2px solid #1F4E79; padding-bottom: 8px;">
+        Pending Actions
+      </h4>
+      {% if pending_actions %}
+        {% for action in pending_actions %}
+        <div style="border-left: 4px solid
+          {% if action.type == 'warning' %}#FFA500
+          {% elif action.type == 'success' %}#4CAF50
+          {% elif action.type == 'primary' %}#2196F3
+          {% else %}#17a2b8{% endif %};
+          padding: 10px 15px; margin-bottom: 10px; background: #f9f9f9; border-radius: 0 6px 6px 0;">
+          <p style="margin: 0; font-weight: bold; font-size: 14px;">{{ action.action }}</p>
+          <p style="margin: 4px 0; font-size: 13px; color: #666;">{{ action.description }}</p>
+          <a href="{{ action.url }}" class="btn btn-sm btn-primary" style="margin-top: 6px;">
+            Take Action
+          </a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color: green; font-weight: bold;">✓ No pending actions</p>
+      {% endif %}
+    </div>
+
+    <!-- Campus Status -->
+    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+      <h4 style="color: #1F4E79; border-bottom: 2px solid #1F4E79; padding-bottom: 8px;">
+        Campus Status
+      </h4>
+      {% if campus_status %}
+        {% for cs in campus_status %}
+        <div style="padding: 10px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <p style="margin: 0; font-weight: bold;">{{ cs.campus }}</p>
+              <p style="margin: 2px 0; font-size: 12px; color: #888;">
+                Preference {{ cs.preference_order }} | {{ cs.program }}
+              </p>
+            </div>
+            <span style="padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;
+              background:
+              {% if cs.status == 'Offered' %}#E2EFDA
+              {% elif cs.status == 'Accepted' %}#C6EFCE
+              {% elif cs.status == 'Rejected' %}#FFCCCC
+              {% elif cs.status == 'Shortlisted' %}#FFF2CC
+              {% else %}#EBF3FB{% endif %};
+              color:
+              {% if cs.status == 'Offered' %}#375623
+              {% elif cs.status == 'Accepted' %}#276221
+              {% elif cs.status == 'Rejected' %}#9C0006
+              {% elif cs.status == 'Shortlisted' %}#7F6000
+              {% else %}#1F4E79{% endif %};">
+              {{ cs.status }}
+            </span>
+          </div>
+          {% if cs.acceptance_deadline %}
+          <p style="margin: 6px 0 0; font-size: 12px; color: #e65100;">
+            Accept before: {{ cs.acceptance_deadline }}
+          </p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color: #888;">No campus preferences added yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Document Checklist -->
+    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+      <h4 style="color: #1F4E79; border-bottom: 2px solid #1F4E79; padding-bottom: 8px;">
+        Document Checklist
+      </h4>
+      {% for doc in documents %}
+      <div style="display: flex; justify-content: space-between; align-items: center;
+                  padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+        <span style="font-size: 14px;">{{ doc.document_type }}</span>
+        <span style="font-size: 13px; font-weight: bold;
+          color: {% if doc.verified %}#276221{% elif doc.uploaded %}#7F6000{% else %}#9C0006{% endif %};">
+          {% if doc.verified %}✓ Verified
+          {% elif doc.uploaded %}⏳ Uploaded
+          {% else %}✗ Missing{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+      <div style="margin-top: 12px;">
+        <a href="/app/applicant-document/new" class="btn btn-sm btn-primary">
+          Upload Document
+        </a>
+      </div>
+    </div>
+
+    <!-- Deadlines -->
+    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+      <h4 style="color: #1F4E79; border-bottom: 2px solid #1F4E79; padding-bottom: 8px;">
+        Deadlines & Rounds
+      </h4>
+      {% if deadlines %}
+        {% for deadline in deadlines %}
+        <div style="padding: 10px; border-left: 4px solid
+          {% if deadline.status == 'Active' %}#4CAF50{% else %}#2196F3{% endif %};
+          margin-bottom: 10px; background: #f9f9f9; border-radius: 0 6px 6px 0;">
+          <p style="margin: 0; font-weight: bold; font-size: 14px;">
+            {{ deadline.round_name }}
+          </p>
+          <p style="margin: 3px 0; font-size: 12px; color: #666;">
+            {{ deadline.round_type }} |
+            <span style="font-weight: bold;">
+              Ends: {{ deadline.application_end }}
+            </span>
+          </p>
+          <span style="font-size: 12px; color:
+            {% if deadline.status == 'Active' %}green{% else %}blue{% endif %};">
+            {{ deadline.status }}
+          </span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color: #888;">No active deadlines at this time.</p>
+      {% endif %}
+    </div>
+
+  </div>
+  {% endif %}
+</div>
+
+<script>
+// Auto-refresh dashboard every 5 minutes
+setTimeout(function() { location.reload(); }, 300000);
+
+// Session timeout warning at 25 minutes
+let sessionTimer = setTimeout(function() {
+    if (confirm("Your session will expire in 5 minutes. Do you want to stay logged in?")) {
+        frappe.call({ method: "frappe.auth.get_logged_user" });
+        clearTimeout(sessionTimer);
+    }
+}, 1500000);
+</script>

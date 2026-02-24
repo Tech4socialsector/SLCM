@@ -1,0 +1,20 @@
+{
+  "doctype": "DocType",
+  "name": "Form Condition Rule",
+  "module": "Admission Managment",
+  "track_changes": 1,
+  "fields": [
+    {"fieldname": "form_config", "fieldtype": "Link", "label": "Form Config", "options": "Application Form Config", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "trigger_field", "fieldtype": "Data", "label": "Trigger Field", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "condition", "fieldtype": "Select", "label": "Condition", "options": "\n=\n!=\n>\n<\nis set\nis not set", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "trigger_value", "fieldtype": "Data", "label": "Trigger Value"},
+    {"fieldname": "target_field", "fieldtype": "Data", "label": "Target Field", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "action", "fieldtype": "Select", "label": "Action", "options": "\nShow\nHide\nMandatory\nRead Only", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "help_text", "fieldtype": "Text", "label": "Help Text", "description": "Shown to applicant when field is triggered"}
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "Admission Admin", "read": 1, "write": 1, "create": 1},
+    {"role": "Admission Officer", "read": 1}
+  ]
+}

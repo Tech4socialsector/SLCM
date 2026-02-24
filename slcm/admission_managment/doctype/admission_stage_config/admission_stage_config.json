@@ -1,0 +1,20 @@
+{
+  "doctype": "DocType",
+  "name": "Admission Stage Config",
+  "module": "Admission Managment",
+  "track_changes": 1,
+  "fields": [
+    {"fieldname": "admission_cycle", "fieldtype": "Link", "label": "Admission Cycle", "options": "Admission Cycle", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "stage_name", "fieldtype": "Select", "label": "Stage Name", "options": "\nApplication Screening\nCLAT Import\nNLSAT Exam\nShortlisting\nInterview\nPolicy Discussion\nResearch Evaluation\nMerit List\nDocument Verification\nFee Payment\nEnrollment", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "is_enabled", "fieldtype": "Check", "label": "Is Enabled", "default": 1, "in_list_view": 1},
+    {"fieldname": "sequence", "fieldtype": "Int", "label": "Sequence", "reqd": 1},
+    {"fieldname": "is_locked", "fieldtype": "Check", "label": "Is Locked", "read_only": 1},
+    {"fieldname": "applicable_workflow", "fieldtype": "Select", "label": "Applicable Workflow", "options": "\nCLAT\nNLSAT\nPACE\nAll"},
+    {"fieldname": "responsible_role", "fieldtype": "Link", "label": "Responsible Role", "options": "Role"}
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "Admission Admin", "read": 1, "write": 1, "create": 1},
+    {"role": "Admission Officer", "read": 1}
+  ]
+}

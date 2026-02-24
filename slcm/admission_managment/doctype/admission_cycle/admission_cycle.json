@@ -1,0 +1,158 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-02-24 08:10:19.542902",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "cycle_name",
+  "admission_year",
+  "workflow_type",
+  "program",
+  "degree_type",
+  "start_date",
+  "end_date",
+  "status",
+  "clat_consortium_code",
+  "nlsat_exam_date",
+  "total_seats",
+  "reservation_matrix",
+  "naming_series",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "cycle_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Cycle Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "admission_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Admission Year",
+   "options": "Admission Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "workflow_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Workflow Type",
+   "options": "\nCLAT\nNLSAT\nPACE",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "degree_type",
+   "fieldtype": "Select",
+   "label": "Degree Type",
+   "options": "\nBA LLB\nLLM\n3-Year LLB\nMPP\nPhD\nMBL"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nDraft\nActive\nClosed"
+  },
+  {
+   "depends_on": "eval:doc.workflow_type=='CLAT'",
+   "fieldname": "clat_consortium_code",
+   "fieldtype": "Data",
+   "label": "CLAT Consortium Code",
+   "mandatory_depends_on": "eval:doc.workflow_type=='CLAT'"
+  },
+  {
+   "depends_on": "eval:doc.workflow_type=='NLSAT'",
+   "fieldname": "nlsat_exam_date",
+   "fieldtype": "Date",
+   "label": "NLSAT Exam Date",
+   "mandatory_depends_on": "eval:doc.workflow_type=='NLSAT'"
+  },
+  {
+   "fieldname": "total_seats",
+   "fieldtype": "Int",
+   "label": "Total Seats",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reservation_matrix",
+   "fieldtype": "Table",
+   "label": "Reservation Matrix",
+   "options": "Reservation Category"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "CYCLE-.YYYY.-"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Admission Cycle",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-02-24 08:16:21.125402",
+ "modified_by": "Administrator",
+ "module": "Admission Managment",
+ "name": "Admission Cycle",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Admission Admin",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Admission Officer"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

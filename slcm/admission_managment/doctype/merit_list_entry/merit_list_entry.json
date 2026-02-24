@@ -1,0 +1,16 @@
+{
+  "doctype": "DocType",
+  "name": "Merit List Entry",
+  "module": "Admission Managment",
+  "istable": 1,
+  "fields": [
+    {"fieldname": "rank", "fieldtype": "Int", "label": "Rank", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "applicant", "fieldtype": "Link", "label": "Applicant", "options": "Applicant", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "candidate_name", "fieldtype": "Data", "label": "Candidate Name", "fetch_from": "applicant.candidate_name", "read_only": 1, "in_list_view": 1},
+    {"fieldname": "category", "fieldtype": "Select", "label": "Category", "options": "\nGeneral\nSC\nST\nOBC\nEWS\nPwD\nNRI\nKarnataka Domicile", "in_list_view": 1},
+    {"fieldname": "score", "fieldtype": "Float", "label": "Score", "in_list_view": 1},
+    {"fieldname": "clat_rank", "fieldtype": "Int", "label": "CLAT Rank"},
+    {"fieldname": "clat_category_rank", "fieldtype": "Int", "label": "CLAT Category Rank"},
+    {"fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "\nListed\nOffered\nAccepted\nRejected\nWaitlisted", "default": "Listed", "in_list_view": 1}
+  ]
+}
