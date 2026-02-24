@@ -1,83 +1,66 @@
 import frappe
-from frappe import _
 from frappe.model.document import Document
-
+from slcm.admission.utils.regulatory import (
+    log_audit_trail, check_reservation_compliance
+)
 
 class CampusSeatMatrix(Document):
-	def validate(self):
-		self.sync_total_seats_from_offering()
-		self.calculate_total_seats()
-		self.validate_sum_equals_total()
+    def validate(self):
+        if self.is_locked:
+            frappe.throw(
+                "This Seat Matrix is locked and cannot be modified.",
+                title="Matrix Locked"
+            )
+        self.validate_seats()
+        self.validate_reservation_breakdown()
+        self.calculate_available_seats()
 
-	def sync_total_seats_from_offering(self):
-		if not all([self.admission_cycle, self.campus, self.program]):
-			return
-		
-		po_intake = frappe.db.get_value(
-			"Program Offering",
-			{
-				"admission_cycle": self.admission_cycle,
-				"campus": self.campus,
-				"program": self.program,
-				"is_active": 1
-			},
-			"total_available_seats"
-		)
-		
-		if po_intake is not None:
-			self.total_seats = po_intake
+    def validate_seats(self):
+        if self.total_seats <= 0:
+            frappe.throw(
+                "Total Seats must be greater than 0.",
+                title="Invalid Seats"
+            )
+        if self.filled_seats > self.total_seats:
+            frappe.throw(
+                f"Filled Seats ({self.filled_seats}) cannot exceed "
+                f"Total Seats ({self.total_seats}).",
+                title="Seat Overflow"
+            )
 
-	def calculate_total_seats(self):
-		"""Calculates the sum of seats in the child table."""
-		if not self.category_seats:
-			return
-		
-		self.sum_of_category_seats = sum(row.seats or 0 for row in self.category_seats)
+    def validate_reservation_breakdown(self):
+        if self.reservation_breakdown:
+            total = sum(row.total_seats for row in self.reservation_breakdown)
+            if total != self.total_seats:
+                frappe.throw(
+                    f"Sum of reservation seats ({total}) must equal "
+                    f"Total Seats ({self.total_seats}).",
+                    title="Reservation Mismatch"
+                )
+            for row in self.reservation_breakdown:
+                if row.filled_seats > row.total_seats:
+                    frappe.throw(
+                        f"Filled seats for {row.category} exceed total seats.",
+                        title="Category Seat Overflow"
+                    )
 
-	def validate_sum_equals_total(self):
-		if not self.total_seats:
-			return
-		
-		attr_sum = getattr(self, "sum_of_category_seats", 0)
-		if attr_sum != self.total_seats:
-			frappe.throw(
-				_("Total Seats in Category Breakdown ({0}) must equal the Program Offering intake ({1}).")
-				.format(attr_sum, self.total_seats)
-			)
+    def calculate_available_seats(self):
+        self.available_seats = self.total_seats - (self.filled_seats or 0)
 
-	@frappe.whitelist()
-	def fetch_seats_from_offering(self):
-		"""Populates category_seats from Program Offering Reservations."""
-		if not all([self.admission_cycle, self.campus, self.program]):
-			frappe.throw(_("Admission Cycle, Campus, and Program are required."))
+    def on_submit(self):
+        self.db_set("is_locked", 1)
+        log_audit_trail(
+            self.doctype, self.name,
+            "Submitted", "is_locked", 0, 1, "Reservation"
+        )
+        frappe.msgprint(
+            "Seat Matrix submitted and locked. No further edits allowed.",
+            indicator="green",
+            title="Matrix Locked"
+        )
 
-		po = frappe.db.get_value(
-			"Program Offering",
-			{
-				"admission_cycle": self.admission_cycle,
-				"campus": self.campus,
-				"program": self.program,
-				"is_active": 1
-			},
-			["name"],
-			as_dict=1
-		)
-
-		if not po:
-			frappe.throw(_("No active Program Offering found for the selected criteria."))
-
-		po_doc = frappe.get_doc("Program Offering", po.name)
-		self.category_seats = []
-		
-		for row in po_doc.reservations:
-			# Skip if category is not a valid Reservation Category (link)
-			if not row.category:
-				continue
-				
-			self.append("category_seats", {
-				"category": row.category,
-				"seats": row.seats or 0
-			})
-		
-		self.calculate_total_seats()
-		return self
+    def on_cancel(self):
+        frappe.throw(
+            "Seat Matrix cannot be cancelled once submitted.",
+            title="Action Not Allowed"
+        )
