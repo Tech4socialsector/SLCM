@@ -127,37 +127,47 @@ frappe.ready(function () {
 
 	function init_payment_button() {
 		console.log("Initializing payment button...");
-		// Find the payment section or a suitable place to put the button
-		// We'll place it after 'payment_instructions' HTML field
-		let $payment_trigger = $('[data-fieldname="payment_instructions"]');
-		console.log("Payment trigger (field):", $payment_trigger.length);
+		let $payment_trigger = $('.web-form-footer .web-form-actions');
 		if ($payment_trigger.length === 0) {
-			// Fallback if field not found
 			$payment_trigger = $('.web-form-actions');
-			console.log("Payment trigger (actions):", $payment_trigger.length);
 		}
 
 		if ($payment_trigger.length) {
-			let amount = frappe.web_form.doc.amount || 10000;
-			// Button styled like Frappe School 'Proceed to Payment'
-			let $btn = $(`<button class="btn btn-lg btn-primary" style="margin-top: 15px; margin-bottom: 15px;">Proceed to Payment</button>`);
+			// Hide the default standard Frappe "Save" button to enforce payment
+			$('.web-form-actions').find('button.btn-primary').hide();
+			$('.web-form-actions').find('[data-action="save"]').hide();
+
+			// Add a professional Proceed to Payment button
+			let $btn = $(`<button class="btn btn-primary ml-2" style="display: flex; align-items: center; gap: 8px;">
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
+					<line x1="2" y1="10" x2="22" y2="10"></line>
+				</svg>
+				Proceed to Payment
+			</button>`);
 
 			$btn.click(function (e) {
 				console.log("Proceed to Payment clicked");
 				e.preventDefault();
-				// Save form first
+				// Give user feedback while saving
+				let original_html = $btn.html();
+				$btn.prop('disabled', true).html('Processing...');
+
 				frappe.web_form.save().then(() => {
 					console.log("Form saved, initiating payment...");
 					initiate_payment();
+					// Restore button state after some time in case modal closes
+					setTimeout(() => {
+						$btn.prop('disabled', false).html(original_html);
+					}, 3000);
+				}).catch(() => {
+					// On validation error, re-enable
+					$btn.prop('disabled', false).html(original_html);
 				});
 			});
 
-			// Insert after instructions if found, else prepend to actions
-			if ($payment_trigger.hasClass('web-form-actions')) {
-				$payment_trigger.prepend($btn);
-			} else {
-				$payment_trigger.after($btn);
-			}
+			// Append so it sits on the right side next to Discard
+			$payment_trigger.append($btn);
 			console.log("Button added to DOM");
 		} else {
 			console.error("Could not find place to insert payment button");
@@ -238,3 +248,5 @@ frappe.ready(function () {
 		});
 	}
 });
+
+// Added space for git commit as requested

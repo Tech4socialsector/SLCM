@@ -20,6 +20,10 @@ def create_razorpay_order(doc_name):
 		# Use correct controller
 		controller = get_payment_gateway_controller("Razorpay")
 		
+		# Validate API Key to prevent malformed requests and hard-to-trace frontend errors
+		if not controller.api_key or not controller.api_key.startswith("rzp_") or len(controller.api_key) > 50:
+			frappe.throw("Invalid Razorpay API Key configured in Razorpay Settings. Please check your credentials.")
+		
 		payment_details = {
 			"amount": amount, # Controller converts to paise
 			"title": "Application Fee",
@@ -33,16 +37,11 @@ def create_razorpay_order(doc_name):
 			"receipt": doc.name 
 		}
 		
-		# Create order
-		# The controller might wrap create_order or we might need to use its method directly
-		# Standard Razorpay controller in Frappe (payments app) usually has create_order which returns a dict
-		
-		# If the controller is the `RazorpaySettings` (which get_payment_gateway_controller might return an instance of wrapper),
-		# we need to be careful.
-		# Actually, `get_payment_gateway_controller` returns an instance of the Gateway Controller class (e.g. Razorpay)
-		
-		frappe.log_error("Razorpay Payment Details", str(payment_details))
 		order = controller.create_order(**payment_details)
+		
+		if not order or not order.get("id"):
+			frappe.throw("Razorpay order creation did not return a valid order ID.")
+			
 		frappe.log_error("Razorpay Order Created", str(order))
 		
 		return {
@@ -53,7 +52,10 @@ def create_razorpay_order(doc_name):
 		}
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Razorpay Order Creation Failed")
-		frappe.throw("Failed to create payment order. Please try again.")
+		if hasattr(e, "message"):
+			frappe.throw(e.message)
+		else:
+			frappe.throw("Failed to create payment order. Please try again or contact administrator.")
 
 @frappe.whitelist()
 def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, doc_name):
@@ -78,3 +80,5 @@ def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, d
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Razorpay Payment Verification Failed")
 		return {"status": "failed", "message": str(e)}
+
+# Added space for git commit as requested

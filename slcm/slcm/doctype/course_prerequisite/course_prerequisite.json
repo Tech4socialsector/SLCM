@@ -19,5 +19,5 @@
  "row_format": "Dynamic",
  "sort_field": "idx",
  "sort_order": "ASC",
- "custom": 1
+ "custom": 0
 }

@@ -51,5 +51,5 @@
  "sort_order": "DESC",
  "states": [],
  "title_field": "batch_name",
- "custom": 1
+ "custom": 0
 }
