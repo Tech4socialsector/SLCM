@@ -21,7 +21,7 @@ class AdmissionYear(Document):
 		self.validate_one_active_per_cycle_type()
 		self.validate_campus_duplicates()
 		self.validate_status()
-		self.validate_one_open_year()
+		# self.validate_one_open_year()
 		self.validate_lock_enforcement()
 
 
@@ -68,22 +68,22 @@ class AdmissionYear(Document):
 						alert=True
 					)
 
-	def validate_one_open_year(self):
-		if self.status == "Active":
-			existing_open_year = frappe.db.get_value(
-				"Admission Year",
-				{
-					"status": "Active", 
-					"admission_cycle_type": self.admission_cycle_type,
-					"name": ["!=", self.name]
-				},
-				"name"
-			)
-			if existing_open_year:
-				frappe.throw(
-					_("Admission Year {0} for cycle type '{1}' is already Active. Only one Admission Year can be Active at a time per type.")
-					.format(existing_open_year, self.admission_cycle_type)
-				)
+	# def validate_one_open_year(self):
+	# 	if self.status == "Active":
+	# 		existing_open_year = frappe.db.get_value(
+	# 			"Admission Year",
+	# 			{
+	# 				"status": "Active", 
+	# 				"admission_cycle_type": self.admission_cycle_type,
+	# 				"name": ["!=", self.name]
+	# 			},
+	# 			"name"
+	# 		)
+	# 		if existing_open_year:
+	# 			frappe.throw(
+	# 				_("Admission Year {0} for cycle type '{1}' is already Active. Only one Admission Year can be Active at a time per type.")
+	# 				.format(existing_open_year, self.admission_cycle_type)
+	# 			)
 
 	def validate_lock_enforcement(self):
 		if not self.stage_locked or self.is_new():
