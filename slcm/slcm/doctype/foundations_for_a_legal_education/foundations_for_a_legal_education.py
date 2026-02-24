@@ -78,3 +78,5 @@ def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, d
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Razorpay Payment Verification Failed")
 		return {"status": "failed", "message": str(e)}
+
+# Added space for git commit as requested
