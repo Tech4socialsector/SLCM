@@ -324,7 +324,7 @@ class OfferService:
                     applicant_name = data
                     # Fetch details from Applicant record
                     details = frappe.db.get_value("Applicant", applicant_name, 
-                        ["campus_preference_1", "program", "admission_cycle", "academic_year"], as_dict=1)
+                        ["program", "admission_cycle", "academic_year"], as_dict=1)
                     
                     if not details:
                         raise ValueError(_("Applicant {0} not found").format(applicant_name))
@@ -355,9 +355,9 @@ class OfferService:
                     )
                     campus = frappe.db.get_value("Seat Allocation", seat_allocation_name, "campus") if seat_allocation_name else None
 
-                    # Fallback to campus preference if not found in Seat Allocation
-                    if not campus:
-                        campus = details.campus_preference_1
+                    # # Fallback to campus preference if not found in Seat Allocation
+                    # if not campus:
+                    #     campus = details.campus_preference_1
 
                     if not campus:
                         raise ValueError(_("Campus could not be determined for Applicant {0}. No Seat Allocation found and no Campus Preference 1 set.").format(applicant_name))

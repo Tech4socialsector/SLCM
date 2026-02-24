@@ -65,32 +65,19 @@ class SeatAllocation(Document):
                     remarks="Status was manually updated in the Seat Allocation form."
                 )
 
-                # Send notification for manual status change only if published
-                if self.status == "Published":
-                    from slcm.admission.notification_service import notify_status_change
-                    notify_status_change(
-                        applicant=row.applicant,
-                        program=row.program,
-                        old_status=old_status,
-                        new_status=new_status,
-                        allocation_name=self.name,
-                        admission_cycle=self.admission_cycle
-                    )
-                except Exception:
-                    ar = None
+                # Sync status to Applicant (Best effort)
+                applicant_identifier = None
+                ar = frappe.db.get_value(
+                    "Admission Result",
+                    row.applicant,
+                    ["applicant_name"],
+                    as_dict=True,
+                )
 
-                if ar and ar.get("email"):
-                    applicant_identifier = frappe.db.get_value("Applicant", {"email": ar.get("email")}, "name")
-                if not applicant_identifier and ar and ar.get("applicant_name"):
-                    applicant_identifier = frappe.db.get_value(
-                        "Applicant",
-                        {"candidate_name": ar.get("applicant_name")},
-                        "name",
-                    )
-                if not applicant_identifier and ar and ar.get("applicant_name") and frappe.db.exists(
-                    "Applicant", ar.get("applicant_name")
-                ):
-                    applicant_identifier = ar.get("applicant_name")
+                if ar and ar.get("applicant_name"):
+                    if frappe.db.exists("Applicant", ar.get("applicant_name")):
+                        applicant_identifier = ar.get("applicant_name")
+                
                 if not applicant_identifier:
                     from slcm.admission.doctype.waitlist_rule.waitlist_promotion import (
                         _resolve_applicant_from_admission_result,
@@ -108,8 +95,9 @@ class SeatAllocation(Document):
                             "Seat Allocation: Failed to sync Applicant status"
                         )
 
-                    # Send notification for manual status change
-                    if self.status == "Published":
+                # Send notification for manual status change only if published
+                if self.status == "Published":
+                    try:
                         from slcm.admission.notification_service import notify_status_change
                         notify_status_change(
                             applicant=row.applicant,
@@ -118,6 +106,11 @@ class SeatAllocation(Document):
                             new_status=new_status,
                             allocation_name=self.name,
                             admission_cycle=self.admission_cycle
+                        )
+                    except Exception:
+                        frappe.log_error(
+                            frappe.get_traceback(),
+                            "Seat Allocation: Failed to send manual status change notification"
                         )
 
             # Trigger promotion if a Selected/Accepted applicant moves to any rejected status
