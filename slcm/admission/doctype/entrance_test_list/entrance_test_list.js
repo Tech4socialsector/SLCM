@@ -110,6 +110,13 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 label: __("Select Applicants")
             },
             {
+                label: __("Allocation Date"),
+                fieldname: "allocation_date",
+                fieldtype: "Datetime",
+                description: __("Enter the date and time to be recorded as Allocation Date for created records"),
+                reqd: 1
+            },
+            {
                 label: __("Auto-select (Enter Number)"),
                 fieldname: "auto_select_count",
                 fieldtype: "Int",
@@ -167,13 +174,15 @@ function _show_allocation_dialog(frm, applicants, providers) {
 
             const selected_providers = selected_provider_els.map(el => $(el).attr("data-name"));
             const selected_applicants = checked_applicant_els.map(el => $(el).attr("data-name"));
+            const allocation_date = d.get_value("allocation_date");
 
             frappe.call({
                 method: "allocate_seats",
                 doc: frm.doc,
                 args: {
                     providers: selected_providers,
-                    selected_applicants: selected_applicants
+                    selected_applicants: selected_applicants,
+                    allocation_date: allocation_date
                 },
                 freeze: true,
                 freeze_message: __("Allocating Seats..."),

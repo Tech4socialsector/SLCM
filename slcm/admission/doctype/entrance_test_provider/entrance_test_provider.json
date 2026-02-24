@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "field:provider_name",
  "creation": "2026-02-22 22:04:12.131157",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -42,7 +43,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Provider Name",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "provider_type",
@@ -127,10 +129,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-22 22:17:47.813824",
+ "modified": "2026-02-24 10:33:16.869824",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
