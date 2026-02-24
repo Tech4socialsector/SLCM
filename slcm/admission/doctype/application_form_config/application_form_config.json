@@ -62,18 +62,6 @@
    "fieldtype": "Table",
    "label": "Condition Rules",
    "options": "Form Condition Rule"
-  },
-  {
-   "fieldname": "section_break_fields",
-   "fieldtype": "Section Break",
-   "label": "Form Fields"
-  },
-  {
-   "fieldname": "form_fields",
-   "fieldtype": "Table",
-   "label": "Form Fields",
-   "options": "Application Form Field",
-   "description": "Define dynamic fields for this program's application form"
   }
  ],
  "permissions": [

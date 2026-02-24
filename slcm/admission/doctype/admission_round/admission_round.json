@@ -2,15 +2,36 @@
  "doctype": "DocType",
  "name": "Admission Round",
  "module": "Admission",
- "istable": 1,
- "editable_grid": 1,
+ "autoname": "naming_series:",
+ "naming_series": "ROUND-.YYYY.-",
  "track_changes": 1,
  "fields": [
   {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "ROUND-.YYYY.-",
+   "reqd": 1
+  },
+  {
    "fieldname": "round_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Round Name",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "round_number",
+   "fieldtype": "Int",
+   "label": "Round Number",
    "reqd": 1
   },
   {
@@ -18,55 +39,46 @@
    "fieldtype": "Select",
    "label": "Round Type",
    "options": "\nApplication\nCounseling\nInterview\nMerit List\nDocument Verification\nFee Payment",
-   "reqd": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "priority",
-   "fieldtype": "Int",
-   "label": "Priority",
-   "reqd": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "round_start",
-   "fieldtype": "Datetime",
-   "label": "Round Start",
-   "reqd": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "round_end",
-   "fieldtype": "Datetime",
-   "label": "Round End",
-   "reqd": 1,
-   "in_list_view": 1
+   "reqd": 1
   },
   {
    "fieldname": "application_start",
    "fieldtype": "Datetime",
-   "label": "Application Start (Legacy)",
-   "hidden": 1
+   "label": "Application Start",
+   "reqd": 1
   },
   {
    "fieldname": "application_end",
    "fieldtype": "Datetime",
-   "label": "Application End (Legacy)",
-   "hidden": 1
+   "label": "Application End",
+   "reqd": 1
   },
   {
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
    "options": "\nUpcoming\nActive\nClosed",
-   "default": "Upcoming"
+   "default": "Upcoming",
+   "in_list_view": 1
   }
  ],
- "modified": "2026-02-25 12:00:00.000000",
- "modified_by": "Administrator",
- "owner": "Administrator",
- "permissions": [],
- "sort_field": "priority",
- "sort_order": "ASC",
- "states": []
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Admission Admin",
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Admission Officer",
+   "read": 1
+  }
+ ]
 }
