@@ -130,7 +130,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
     if not waitlisted_rows:
         return False
 
-    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+    from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
     promoted_total = 0
 
     # 1. Promote for OPEN seats
@@ -142,26 +142,26 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
         open_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
         
         # Log that vacancies were identified
-        log_admission_action(
-            reference_doctype="Waitlist Rule",
-            reference_name=rule_doc.name,
+        log_seat_allocation_action(
+            seat_allocation=seat_alloc.name,
+            admission_cycle=seat_alloc.admission_cycle,
             program=program,
             action_type="Waitlist Vacated",
-            remarks=f"Automatic promotion engine identified {open_vacancies} vacant OPEN seat(s)."
+            remarks=f"Automatic promotion engine ({rule_doc.name}) identified {open_vacancies} vacant OPEN seat(s)."
         )
 
         for row in open_waitlist[:open_vacancies]:
             row.selection_status = "Selected"
             promoted_total += 1
-            log_admission_action(
-                reference_doctype="Waitlist Rule",
-                reference_name=rule_doc.name,
+            log_seat_allocation_action(
+                seat_allocation=seat_alloc.name,
+                admission_cycle=seat_alloc.admission_cycle,
                 applicant=row.applicant,
                 program=program,
                 action_type="Waitlist Promoted",
                 old_value="Waitlisted",
                 new_value="Selected",
-                remarks=f"Automatically promoted to OPEN seat via {rule_doc.name}."
+                remarks=f"Automatically promoted to OPEN seat via rule {rule_doc.name}."
             )
 
             # Send notification for automatic promotion
@@ -204,26 +204,26 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
             cat_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
             # Log that vacancies were identified for this category
-            log_admission_action(
-                reference_doctype="Waitlist Rule",
-                reference_name=rule_doc.name,
+            log_seat_allocation_action(
+                seat_allocation=seat_alloc.name,
+                admission_cycle=seat_alloc.admission_cycle,
                 program=program,
                 action_type="Waitlist Vacated",
-                remarks=f"Automatic promotion engine identified {cat_vacancies} vacant RESERVED seat(s) for {cat_name}."
+                remarks=f"Automatic promotion engine ({rule_doc.name}) identified {cat_vacancies} vacant RESERVED seat(s) for {cat_name}."
             )
 
             for row in cat_waitlist[:cat_vacancies]:
                 row.selection_status = "Selected"
                 promoted_total += 1
-                log_admission_action(
-                    reference_doctype="Waitlist Rule",
-                    reference_name=rule_doc.name,
+                log_seat_allocation_action(
+                    seat_allocation=seat_alloc.name,
+                    admission_cycle=seat_alloc.admission_cycle,
                     applicant=row.applicant,
                     program=program,
                     action_type="Waitlist Promoted",
                     old_value="Waitlisted",
                     new_value="Selected",
-                    remarks=f"Automatically promoted to RESERVED ({cat_name}) seat via {rule_doc.name}."
+                    remarks=f"Automatically promoted to RESERVED ({cat_name}) seat via rule {rule_doc.name}."
                 )
 
                 # Send notification for automatic promotion
@@ -266,43 +266,17 @@ def run_manual_waitlist(rule: str):
 def run_scheduled_waitlist():
     """
     Scheduled job: runs waitlist promotion based on the 'Upgrade Frequency' setting.
-    - 'Hourly': runs every time the scheduler triggers this method.
-    - 'Daily': runs once every 24 hours (or on the first trigger of the day).
-    - 'Weekly': runs once a week (on Monday).
+    - 'Automatic': runs every time the scheduler triggers this method (every 10 min).
     - 'Manual': skipped.
     """
     rules = frappe.get_all(
         "Waitlist Rule",
-        filters={"status": "Active", "upgrade_frequency": ["!=", "Manual"]},
-        fields=["name", "upgrade_frequency", "last_executed_on"],
+        filters={"status": "Active", "upgrade_frequency": "Automatic"},
+        fields=["name"],
     )
 
-    now = now_datetime()
-    weekday = now.weekday()  # Monday=0
-
     for r in rules:
-        freq = r.upgrade_frequency
-        last_run = r.last_executed_on
-        
-        should_run = False
-        
-        if freq == "Hourly":
-            # If hourly, we check if at least 1 hour has passed to avoid double runs if 
-            # scheduler is misconfigured, but generally we just run.
-            should_run = True
-            
-        elif freq == "Daily":
-            # Run if not run today
-            if not last_run or getdate(last_run) < getdate(now):
-                should_run = True
-                
-        elif freq == "Weekly":
-            # Run if Monday and not run today
-            if weekday == 0 and (not last_run or getdate(last_run) < getdate(now)):
-                should_run = True
-        
-        if should_run:
-            try:
-                process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
-            except Exception as e:
-                frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")
+        try:
+            process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
+        except Exception as e:
+            frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")

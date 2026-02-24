@@ -48,7 +48,7 @@
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Upgrade Frequency",
-            "options": "Manual\nHourly\nDaily\nWeekly",
+            "options": "Manual\nAutomatic",
             "reqd": 1
         },
         {

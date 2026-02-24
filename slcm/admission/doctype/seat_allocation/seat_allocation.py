@@ -47,16 +47,16 @@ class SeatAllocation(Document):
         for row in (before.selection_applicant or []):
             before_map[row.name] = row.selection_status
 
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
         affected_programs = set()
         for row in (self.selection_applicant or []):
             old_status = before_map.get(row.name)
             new_status = row.selection_status
             
             if old_status and old_status != new_status:
-                log_admission_action(
-                    reference_doctype="Seat Allocation",
-                    reference_name=self.name,
+                log_seat_allocation_action(
+                    seat_allocation=self.name,
+                    admission_cycle=self.admission_cycle,
                     applicant=row.applicant,
                     program=row.program,
                     action_type="Manual Status Change",
@@ -130,7 +130,7 @@ class SeatAllocation(Document):
                 "status": "Active",
                 "admission_cycle": self.admission_cycle,
                 "campus": self.campus,
-                "upgrade_frequency": ["!=", "Manual"]
+                "upgrade_frequency": "Automatic"
             },
             pluck="name",
         )
@@ -348,17 +348,17 @@ class SeatAllocation(Document):
         # -------------------------
         # 5️⃣ LOGGING & COMMIT
         # -------------------------
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
         for row in self.selection_applicant:
-             log_admission_action(
-                reference_doctype="Seat Allocation",
-                reference_name=self.name,
+             log_seat_allocation_action(
+                seat_allocation=self.name,
+                admission_cycle=self.admission_cycle,
                 applicant=row.applicant,
                 program=row.program,
-                action_type="Outcome Assigned",
+                action_type="Seat Allocated",
                 old_value="Draft",
                 new_value=row.selection_status,
-                remarks=f"Automatic allocation as {row.allocation_type or 'N/A'}"
+                remarks=f"Initial automatic allocation as {row.allocation_type or 'N/A'}"
             )
 
         self.total_selected = total_selected
@@ -382,10 +382,10 @@ class SeatAllocation(Document):
         self.published_by = frappe.session.user
         self.save()
 
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
-        log_admission_action(
-            reference_doctype="Seat Allocation",
-            reference_name=self.name,
+        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
+        log_seat_allocation_action(
+            seat_allocation=self.name,
+            admission_cycle=self.admission_cycle,
             action_type="Allocation Published",
             remarks=f"Allocation finalized and published by {frappe.session.user}"
         )
