@@ -1,154 +1,19 @@
 {
- "actions": [],
- "creation": "2026-02-14 20:15:00",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "academic_year",
-  "multi_cycle",
-  "admission_cycle_type",
-  "status",
-  "column_break_fvmo",
-  "is_active",
-  "allow_applications",
-  "stage_locked",
-  "section_break_dates",
-  "start_date",
-  "column_break_dates2",
-  "end_date",
-  "section_break_remarks",
-  "remarks"
- ],
- "fields": [
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Year",
-   "options": "Academic Year",
-   "reqd": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "multi_cycle",
-   "fieldtype": "Check",
-   "label": "Multi Cycle Support"
-  },
-  {
-   "fieldname": "admission_cycle_type",
-   "fieldtype": "Select",
-   "label": "Admission Cycle Type",
-   "options": "\nRegular\nPh.D\nPart-time\nExecutive",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_fvmo",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "in_standard_filter": 1,
-   "label": "Is Active"
-  },
-  {
-   "default": "Draft",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Draft\nActive\nClosed",
-   "reqd": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "allow_applications",
-   "fieldtype": "Check",
-   "label": "Allow Applications"
-  },
-  {
-   "default": "0",
-   "fieldname": "stage_locked",
-   "fieldtype": "Check",
-   "label": "Is Locked"
-  },
-  {
-   "fieldname": "section_break_dates",
-   "fieldtype": "Section Break",
-   "label": "Admission Dates"
-  },
-  {
-   "fieldname": "start_date",
-   "fieldtype": "Date",
-   "label": "Admission Start Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "end_date",
-   "fieldtype": "Date",
-   "label": "Admission End Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_dates2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_remarks",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "label": "Remarks"
-  }
- ],
- "index_web_pages_for_search": 1,
- "links": [
-  {
-   "group": "Admission Cycle",
-   "link_doctype": "Admission Cycle",
-   "link_fieldname": "admission_year"
-  }
- ],
- "modified": "2026-02-23 10:51:36.187468",
- "modified_by": "Administrator",
- "module": "Admission",
- "name": "Admission Year",
- "naming_rule": "By script",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Admission Officer",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+  "doctype": "DocType",
+  "name": "Admission Year",
+  "module": "Admission",
+  "naming_rule": "By fieldname",
+  "autoname": "field:year",
+  "is_submittable": 0,
+  "track_changes": 1,
+  "fields": [
+    {"fieldname": "year", "fieldtype": "Data", "label": "Year", "reqd": 1, "in_list_view": 1, "description": "Format: YYYY-YY e.g. 2024-25"},
+    {"fieldname": "is_active", "fieldtype": "Check", "label": "Is Active", "in_list_view": 1},
+    {"fieldname": "description", "fieldtype": "Text", "label": "Description"}
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "Admission Admin", "read": 1, "write": 1, "create": 1},
+    {"role": "Admission Officer", "read": 1}
+  ]
 }

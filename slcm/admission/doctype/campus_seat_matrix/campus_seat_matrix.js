@@ -1,37 +1,27 @@
 frappe.ui.form.on("Campus Seat Matrix", {
-    refresh: function (frm) {
-        if (!frm.is_new()) {
-            frm.add_custom_button(__("Fetch from Program Offering"), function () {
-                frm.call({
-                    doc: frm.doc,
-                    method: "fetch_seats_from_offering",
-                    callback: function (r) {
-                        if (!r.exc) {
-                            frm.refresh_field("category_seats");
-                            frm.refresh_field("total_seats");
-                        }
-                    }
-                });
-            });
+    refresh: function(frm) {
+        if (frm.doc.is_locked) {
+            frm.dashboard.set_headline(
+                `<span style="color: red; font-weight: bold;">
+                🔒 Seat Matrix Locked
+                </span>`
+            );
+            frm.disable_save();
+        }
+        if (frm.doc.total_seats) {
+            const filled = frm.doc.filled_seats || 0;
+            const pct = Math.round((filled / frm.doc.total_seats) * 100);
+            const color = pct >= 90 ? "red" : pct >= 70 ? "orange" : "green";
+            frm.dashboard.add_comment(
+                `Seats Filled: ${filled}/${frm.doc.total_seats} (${pct}%)`,
+                color
+            );
         }
     },
-    admission_cycle: function (frm) {
-        frm.trigger("set_queries");
-    },
-    campus: function (frm) {
-        frm.trigger("set_queries");
-    },
-    set_queries: function (frm) {
-        if (frm.doc.admission_cycle && frm.doc.campus) {
-            frm.set_query("program", function () {
-                return {
-                    query: "slcm.admission.doctype.program_offering.program_offering.get_programs_for_matrix",
-                    filters: {
-                        admission_cycle: frm.doc.admission_cycle,
-                        campus: frm.doc.campus
-                    }
-                };
-            });
-        }
+    total_seats: function(frm) {
+        frm.set_value(
+            "available_seats",
+            frm.doc.total_seats - (frm.doc.filled_seats || 0)
+        );
     }
 });
