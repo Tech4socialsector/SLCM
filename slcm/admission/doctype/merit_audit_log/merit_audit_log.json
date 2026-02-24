@@ -62,7 +62,7 @@
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Action Type",
-            "options": "Merit Calculated\nRank Assigned\nOutcome Assigned\nNotification Sent",
+            "options": "Merit Calculated\nRank Assigned\nOutcome Assigned\nMerit Published\nNotification Sent",
             "read_only": 1,
             "reqd": 1
         },

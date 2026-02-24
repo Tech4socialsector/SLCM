@@ -107,7 +107,8 @@ def process_waitlist(rule_doc, ignore_cutoff=False):
     rule_doc.db_set("last_executed_on", now_datetime(), update_modified=False)
     rule_doc.db_set("execution_log_count", int(rule_doc.execution_log_count or 0) + 1, update_modified=False)
 
-    frappe.db.commit()
+    # Commit is now handled by the caller (scheduled job or manual trigger)
+    # to avoid breaking transactions when called from Seat Allocation hooks.
 
 
 def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool:
@@ -261,6 +262,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
 def run_manual_waitlist(rule: str):
     rule_doc = frappe.get_doc("Waitlist Rule", rule)
     process_waitlist(rule_doc, ignore_cutoff=True)
+    frappe.db.commit()
 
 
 def run_scheduled_waitlist():
@@ -278,5 +280,7 @@ def run_scheduled_waitlist():
     for r in rules:
         try:
             process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
+            frappe.db.commit()
         except Exception as e:
+            frappe.db.rollback()
             frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")
