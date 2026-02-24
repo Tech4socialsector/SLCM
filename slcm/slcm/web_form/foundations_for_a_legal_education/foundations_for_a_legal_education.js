@@ -238,3 +238,5 @@ frappe.ready(function () {
 		});
 	}
 });
+
+
