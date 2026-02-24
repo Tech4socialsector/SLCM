@@ -168,6 +168,18 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
                 admission_cycle=seat_alloc.admission_cycle
             )
 
+            # Automatically generate offer letter for the promoted candidate
+            try:
+                from slcm.api.service.offer_service import OfferService
+                OfferService.generate_offer(
+                    applicant=row.applicant_id,
+                    campus=seat_alloc.campus,
+                    program=program,
+                    cycle=seat_alloc.admission_cycle
+                )
+            except Exception as e:
+                frappe.log_error(f"Auto Offer Generation Failed for {row.applicant_id}: {str(e)}", "Waitlist Promotion")
+
     # 2. Promote for RESERVED seats
     for cat_name, cat_quota in quotas["Reserved"].items():
         # Handle matching by name/code/cat_name for categories
@@ -217,6 +229,18 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
                     allocation_name=seat_alloc.name,
                     admission_cycle=seat_alloc.admission_cycle
                 )
+
+                # Automatically generate offer letter for the promoted candidate
+                try:
+                    from slcm.api.service.offer_service import OfferService
+                    OfferService.generate_offer(
+                        applicant=row.applicant_id,
+                        campus=seat_alloc.campus,
+                        program=program,
+                        cycle=seat_alloc.admission_cycle
+                    )
+                except Exception as e:
+                    frappe.log_error(f"Auto Offer Generation Failed for {row.applicant_id}: {str(e)}", "Waitlist Promotion")
 
     if promoted_total:
         seat_alloc.total_selected = int(seat_alloc.total_selected or 0) + promoted_total
