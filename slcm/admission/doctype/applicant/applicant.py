@@ -1,17 +1,17 @@
 import frappe
-from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt
-
+from frappe.utils import validate_email_address, getdate, date_diff, today, now
+from slcm.admission.utils.regulatory import log_audit_trail
 
 class Applicant(Document):
 
-    # ──────────────────────────────────────────────
-    # VALIDATE
-    # ──────────────────────────────────────────────
-
     def validate(self):
-        self.validate_eligibility()
+        self.validate_email()
+        self.validate_age()
+        self.validate_percentages()
+        self.validate_reservation_documents()
+        self.validate_preferences()
+        self.validate_declaration()
 
         # for BOTH eligible and ineligible outcomes, so it always runs even
         # when frappe.throw() is raised for ineligible applicants.
@@ -31,89 +31,18 @@ class Applicant(Document):
     def before_submit(self):
         if self.evaluation_status == "Ineligible":
             frappe.throw(
-                _("Submission Not Allowed: Applicant is not eligible."),
-                title=_("Submission Not Allowed")
+                f"Invalid email address: {self.email}",
+                title="Invalid Email"
             )
 
-    # ──────────────────────────────────────────────
-    # CHILD TABLE VALUE HELPERS
-    # ──────────────────────────────────────────────
-
-    def _get_ug_cgpa_values(self):
-        """Return a list of all UG CGPA values from the ug_degree_details child table."""
-        rows = getattr(self, "ug_degree_details", None) or []
-        return [flt(row.ug_cgpa) for row in rows if row.ug_cgpa not in (None, "")]
-
-    def _get_pg_cgpa_values(self):
-        """Return a list of all PG CGPA values from the pg_degree_details child table."""
-        rows = getattr(self, "pg_degree_details", None) or []
-        return [flt(row.pg_cgpa) for row in rows if row.pg_cgpa not in (None, "")]
-
-    def _get_ug_programs(self):
-        """Return a list of all UG programs from the ug_degree_details child table."""
-        rows = getattr(self, "ug_degree_details", None) or []
-        return [row.ug_program for row in rows if row.ug_program]
-
-    def _get_pg_programs(self):
-        """Return a list of all PG programs from the pg_degree_details child table."""
-        rows = getattr(self, "pg_degree_details", None) or []
-        return [row.pg_program for row in rows if row.pg_program]
-
-    # ──────────────────────────────────────────────
-    # CORE ELIGIBILITY LOGIC
-    # ──────────────────────────────────────────────
-
-    def validate_eligibility(self):
-        """
-        Main eligibility entry point.
-
-        Flow:
-        ─────
-        STEP 0 — National Test Exemption check.
-        STEP 1 — Academic Eligibility Rule Mapping checks.
-
-        KEY BEHAVIOUR:
-        ─────────────
-        On ineligibility:
-          1. Sets self.evaluation_status = "Ineligible" and self.rejected_reason.
-          2. Calls create_or_update_evaluation() IMMEDIATELY — so the Ineligible
-             record is persisted to the Eligibility Evaluation doctype BEFORE the
-             throw. Without this, frappe.throw() exits the call stack and the
-             save in validate() never runs, meaning ineligible records are lost.
-          3. Raises a single frappe.throw() containing:
-               • Red reason box  (the specific failure message)
-               • Full program table  (all campus programs + full eligibility check)
-
-        On eligibility:
-          1. Sets self.evaluation_status = "Eligible".
-          2. Returns normally — create_or_update_evaluation() is then called by
-             validate() as usual.
-        """
-
-        if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
-            self.evaluation_status = ""
-            self.rejected_reason = ""
-            self._clear_national_test_flags()
-            return
-
-        try:
-            # ── STEP 0: National Test Exemption ─────────────────────────────
-            national_test_result = self._evaluate_national_test_exemption()
-
-            if national_test_result.get("passed") and national_test_result.get("overrides_academic_rule"):
-                # Passed national test AND rule overrides academic checks → Eligible immediately
-                self.evaluation_status = "Eligible"
-                self.rejected_reason   = ""
-                self._apply_national_test_flags(national_test_result)
-
-                frappe.msgprint(
-                    _("Eligible via National Test ({0}). Academic rule check bypassed.").format(
-                        self.national_test_name or ""
-                    ),
-                    title=_("National Test Exemption Applied"),
-                    indicator="green"
+    def validate_age(self):
+        if self.date_of_birth:
+            age = date_diff(today(), self.date_of_birth) / 365
+            if age < 17:
+                frappe.throw(
+                    "Applicant must be at least 17 years old.",
+                    title="Age Restriction"
                 )
-                return
 
             # National test passed but does NOT override → store flags, continue
             if national_test_result.get("passed"):
@@ -443,15 +372,17 @@ class Applicant(Document):
                 frappe.get_traceback(),
                 "Program Eligibility Check Error — {0}".format(program_name)
             )
-            return False, _("Error during eligibility check")
 
-        finally:
-            # Always restore original — even if exception occurs
-            self.program = original_program
+    def validate_declaration(self):
+        if self.docstatus == 1 and not self.declaration_undertaking:
+            frappe.throw(
+                "Declaration Undertaking must be accepted before submission.",
+                title="Declaration Required"
+            )
 
-    # ──────────────────────────────────────────────
-    # NATIONAL TEST EXEMPTION
-    # ──────────────────────────────────────────────
+    def before_save(self):
+        if not self.application_id:
+            self.application_id = frappe.generate_hash(length=8).upper()
 
     def _evaluate_national_test_exemption(self):
         """

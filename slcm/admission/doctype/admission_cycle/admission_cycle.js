@@ -1,41 +1,42 @@
-// Copyright (c) 2026, TFSS and contributors
-// Admission Cycle Client Script
-
 frappe.ui.form.on("Admission Cycle", {
-
-    refresh(frm) {
-        // Filter admission_year to active ones
-        frm.set_query("admission_year", function () {
-            return { filters: { is_active: 1 } };
-        });
-
-        // Show/hide stage date sections based on flags
-        toggle_stage_dates(frm);
+    refresh: function(frm) {
+        const status_colors = {
+            "Draft": "gray",
+            "Active": "green",
+            "Closed": "red"
+        };
+        const color = status_colors[frm.doc.status] || "gray";
+        frm.dashboard.set_headline(
+            `<span style="color: ${color}; font-weight: bold;">
+            Status: ${frm.doc.status}
+            </span>`
+        );
+        if (!frm.is_new()) {
+            frm.add_custom_button("View Rounds", function() {
+                frappe.set_route("List", "Admission Round", {
+                    admission_cycle: frm.doc.name
+                });
+            });
+            frm.add_custom_button("View Applicants", function() {
+                frappe.set_route("List", "Applicant", {
+                    admission_cycle: frm.doc.name
+                });
+            });
+        }
     },
-
-    enable_interview(frm) {
-        toggle_stage_dates(frm);
-    },
-
-    enable_document_verification(frm) {
-        toggle_stage_dates(frm);
+    workflow_type: function(frm) {
+        frm.set_value("clat_consortium_code", "");
+        frm.set_value("nlsat_exam_date", "");
+        const messages = {
+            "CLAT": "CLAT workflow: Seat allotment is driven by Consortium of NLUs.",
+            "NLSAT": "NLSAT workflow: NLSIU conducts exam and interview internally.",
+            "PACE": "PACE workflow: Merit-based admission, no entrance exam required."
+        };
+        if (frm.doc.workflow_type) {
+            frappe.show_alert({
+                message: messages[frm.doc.workflow_type],
+                indicator: "blue"
+            }, 5);
+        }
     }
 });
-
-function toggle_stage_dates(frm) {
-    // Interview date section collapses automatically via depends_on
-    // This is just an extra refresh guard
-    frm.refresh_field("interview_start_date");
-    frm.refresh_field("interview_end_date");
-    frm.refresh_field("doc_verification_start_date");
-    frm.refresh_field("doc_verification_end_date");
-
-    if (!frm.doc.enable_interview) {
-        if (frm.doc.interview_start_date) frm.set_value("interview_start_date", null);
-        if (frm.doc.interview_end_date) frm.set_value("interview_end_date", null);
-    }
-    if (!frm.doc.enable_document_verification) {
-        if (frm.doc.doc_verification_start_date) frm.set_value("doc_verification_start_date", null);
-        if (frm.doc.doc_verification_end_date) frm.set_value("doc_verification_end_date", null);
-    }
-}
