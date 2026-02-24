@@ -3,9 +3,14 @@ from frappe.utils import now_datetime, getdate
 
 
 def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict:
-    admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "parent")
+    admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "admission_year")
+    
     if not admission_year:
-        frappe.throw(f"No Admission Year found for cycle {admission_cycle}")
+        # Fallback to parent
+        admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "parent")
+        
+    if not admission_year:
+        frappe.throw(f"No Admission Year found for Admission Cycle {admission_cycle}. Please ensure the cycle is correctly linked to an Admission Year.")
 
     po_name = frappe.db.get_value("Program Offering", {
         "campus": campus, 
@@ -23,20 +28,22 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
     
     if po.is_reservation_applicable:
         for q in po.reservations:
-            # Map to GEN pool if category is General OR if community contains GEN/General
-            is_gen = False
+            seats = int(q.seats or 0)
+            # If category is not set, treat it as GEN seats (common configuration mistake).
+            if not q.category:
+                result["GEN"] += seats
+                continue
+
+            # Map to GEN pool if category is General
             if q.category in ["General", "General Quota", "GEN"]:
-                is_gen = True
-            elif not q.category and q.community and ("GEN" in q.community or "General" in q.community):
-                is_gen = True
-            
-            if is_gen:
-                result["GEN"] += int(q.seats or 0)
+                result["GEN"] += seats
             else:
-                # Use community as the key for reserved categories
-                cat_key = q.community or q.category or "Other"
-                result["Reserved"][cat_key] = result["Reserved"].get(cat_key, 0) + int(q.seats or 0)
+                result["Reserved"][q.category] = result["Reserved"].get(q.category, 0) + seats
     else:
+        result["GEN"] = int(po.total_available_seats or 0)
+
+    # Safety fallback: if reservation rows exist but total computed seats is 0, fallback to total_available_seats
+    if int(result.get("GEN") or 0) + sum(int(v or 0) for v in (result.get("Reserved") or {}).values()) <= 0:
         result["GEN"] = int(po.total_available_seats or 0)
     
     return result
@@ -257,18 +264,45 @@ def run_manual_waitlist(rule: str):
 
 
 def run_scheduled_waitlist():
+    """
+    Scheduled job: runs waitlist promotion based on the 'Upgrade Frequency' setting.
+    - 'Hourly': runs every time the scheduler triggers this method.
+    - 'Daily': runs once every 24 hours (or on the first trigger of the day).
+    - 'Weekly': runs once a week (on Monday).
+    - 'Manual': skipped.
+    """
     rules = frappe.get_all(
         "Waitlist Rule",
-        filters={"status": "Active"},
-        fields=["name", "upgrade_frequency"],
+        filters={"status": "Active", "upgrade_frequency": ["!=", "Manual"]},
+        fields=["name", "upgrade_frequency", "last_executed_on"],
     )
 
-    weekday = now_datetime().weekday()  # Monday=0
+    now = now_datetime()
+    weekday = now.weekday()  # Monday=0
 
     for r in rules:
-        freq = (r.upgrade_frequency or "Manual")
-        if freq == "Daily":
-            process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
+        freq = r.upgrade_frequency
+        last_run = r.last_executed_on
+        
+        should_run = False
+        
+        if freq == "Hourly":
+            # If hourly, we check if at least 1 hour has passed to avoid double runs if 
+            # scheduler is misconfigured, but generally we just run.
+            should_run = True
+            
+        elif freq == "Daily":
+            # Run if not run today
+            if not last_run or getdate(last_run) < getdate(now):
+                should_run = True
+                
         elif freq == "Weekly":
-            if weekday == 0:
+            # Run if Monday and not run today
+            if weekday == 0 and (not last_run or getdate(last_run) < getdate(now)):
+                should_run = True
+        
+        if should_run:
+            try:
                 process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
+            except Exception as e:
+                frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")

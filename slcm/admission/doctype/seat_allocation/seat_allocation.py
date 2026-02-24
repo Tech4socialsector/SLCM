@@ -130,6 +130,7 @@ class SeatAllocation(Document):
                 "status": "Active",
                 "admission_cycle": self.admission_cycle,
                 "campus": self.campus,
+                "upgrade_frequency": ["!=", "Manual"]
             },
             pluck="name",
         )
@@ -257,7 +258,8 @@ class SeatAllocation(Document):
             waitlist_percent = 50.0
             rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "status": "Active"}, fields=["waitlist_percentage"])
             if rules:
-                waitlist_percent = rules[0].waitlist_percentage or 50.0
+                val = rules[0].waitlist_percentage
+                waitlist_percent = val if val is not None else 50.0
             
             waitlist_factor = waitlist_percent / 100.0
             gen_waitlist_cap = math.ceil(gen_seats * waitlist_factor)
