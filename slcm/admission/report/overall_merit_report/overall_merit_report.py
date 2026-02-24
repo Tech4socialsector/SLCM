@@ -32,6 +32,12 @@ def get_columns():
             "width": 120
         },
         {
+            "label": "Level",
+            "fieldname": "program_level",
+            "fieldtype": "Data",
+            "width": 80
+        },
+        {
             "label": "Campus",
             "fieldname": "campus",
             "fieldtype": "Link",
@@ -52,8 +58,14 @@ def get_columns():
             "width": 100
         },
         {
+            "label": "Status",
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "width": 100
+        },
+        {
             "label": "Overall Rank",
-            "fieldname": "rank",
+            "fieldname": "overall_rank",
             "fieldtype": "Int",
             "width": 100
         }
@@ -65,9 +77,11 @@ def get_data(filters):
             mla.applicant,
             aa.applicant_id,
             mla.program,
+            mla.program_level,
             ml.campus,
             mla.reservation_category,
             mla.total_score,
+            mla.status,
             mla.overall_rank
         FROM
             `tabMerit List Applicant` mla
@@ -84,6 +98,9 @@ def get_data(filters):
             AND ml.campus = %(campus)s
     """
     
+    if filters.get("program_level"):
+        query += " AND mla.program_level = %(program_level)s"
+
     if filters.get("program"):
         query += " AND mla.program = %(program)s"
         
@@ -96,6 +113,7 @@ def get_data(filters):
     return frappe.db.sql(query, {
         "cycle": filters.get("admission_cycle"),
         "campus": filters.get("campus"),
+        "program_level": filters.get("program_level"),
         "program": filters.get("program"),
         "reservation_category": filters.get("reservation_category")
     }, as_dict=True)

@@ -12,11 +12,8 @@ class Applicant(Document):
 
     def validate(self):
         self.validate_eligibility()
-
-        # create_or_update_evaluation() is called INSIDE validate_eligibility()
-        # for BOTH eligible and ineligible outcomes, so it always runs even
-        # when frappe.throw() is raised for ineligible applicants.
-        # We still call it here as a safety net for the eligible path.
+        # Security: Always record outcome. For ineligible cases, validate_eligibility
+        # throws, so this line only executes for successful eligibility.
         self.create_or_update_evaluation()
 
         # NOTE: DO NOT add another frappe.throw() here.
@@ -870,9 +867,8 @@ class Applicant(Document):
             doc_data["name"] = existing
 
         doc = frappe.get_doc(doc_data)
+        doc.flags.ignore_version = True
         doc.save(ignore_permissions=True)
-
-        frappe.db.commit()
 
 
 # ──────────────────────────────────────────────
@@ -937,6 +933,7 @@ def create_eligibility_evaluation_async(
         eval_data["name"] = existing
 
     doc = frappe.get_doc(eval_data)
+    doc.flags.ignore_version = True
     doc.save(ignore_permissions=True)
 
 

@@ -69,7 +69,7 @@
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Programme Level",
-            "options": "UG\nPG\nPhD",
+            "options": "UG\nPG\nResearch Course",
             "reqd": 1
         },
         {

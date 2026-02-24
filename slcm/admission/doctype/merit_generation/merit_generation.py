@@ -23,7 +23,7 @@ class MeritGeneration(Document):
         """
         program_level = self.generation_type
         if not program_level:
-            frappe.throw("Please select a Program Level (UG / PG / PhD) before generating.")
+            frappe.throw("Please select a Program Level (UG / PG / Research Course) before generating.")
 
         # 1. Check if an active Merit Rule Mapping exists for this program level
         mapping = frappe.db.get_value(

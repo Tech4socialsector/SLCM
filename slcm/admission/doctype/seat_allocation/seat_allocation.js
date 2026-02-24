@@ -46,6 +46,8 @@ frappe.ui.form.on("Seat Allocation", {
                             freeze_message: __("Pulling applicants from Merit List..."),
                             callback(r) {
                                 if (!r.exc) {
+                                    // Server-side self.save() handles persistence.
+                                    // reload_doc() syncs the UI with the saved DB state.
                                     frm.reload_doc();
                                     frappe.show_alert({
                                         message: __("Applicants pulled successfully from Merit List."),
@@ -68,6 +70,7 @@ frappe.ui.form.on("Seat Allocation", {
                     freeze_message: __("Allocating seats based on merit and capacity..."),
                     callback(r) {
                         if (!r.exc) {
+                            // Sync the UI with the allocation results saved on the server.
                             frm.reload_doc();
                         }
                     }
@@ -87,6 +90,7 @@ frappe.ui.form.on("Seat Allocation", {
                             freeze_message: __("Publishing allocation..."),
                             callback(r) {
                                 if (!r.exc) {
+                                    // Sync the UI with the published status saved on the server.
                                     frm.reload_doc();
                                 }
                             }

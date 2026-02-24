@@ -14,9 +14,9 @@ class SeatAllocation(Document):
         self.total_selected = 0
         self.total_waitlisted = 0
         self.total_rejected = 0
-        
+
         rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired"]
-        
+
         for row in (self.selection_applicant or []):
             if row.selection_status in ["Selected", "Accepted"]:
                 self.total_selected += 1
@@ -52,7 +52,7 @@ class SeatAllocation(Document):
         for row in (self.selection_applicant or []):
             old_status = before_map.get(row.name)
             new_status = row.selection_status
-            
+
             if old_status and old_status != new_status:
                 log_admission_action(
                     reference_doctype="Seat Allocation",
@@ -65,7 +65,6 @@ class SeatAllocation(Document):
                     remarks="Status was manually updated in the Seat Allocation form."
                 )
 
-                # Send notification for manual status change only if published
                 if self.status == "Published":
                     from slcm.admission.notification_service import notify_status_change
                     notify_status_change(
@@ -77,14 +76,12 @@ class SeatAllocation(Document):
                         admission_cycle=self.admission_cycle
                     )
 
-            # Trigger promotion if a Selected/Accepted applicant moves to any rejected status
             if old_status in ["Selected", "Accepted"] and new_status in rejection_statuses:
                 affected_programs.add(row.program)
 
         if not affected_programs:
             return
 
-        # Run promotion post-save (in on_update) so DB reflects the newly rejected seat.
         self.flags.slcm_affected_programs_for_waitlist_promotion = sorted(list(affected_programs))
 
     def validate_uniqueness(self):
@@ -97,7 +94,7 @@ class SeatAllocation(Document):
             "program_level": self.program_level,
             "name": ["!=", self.name]
         }
-        
+
         existing = frappe.db.exists("Seat Allocation", filters)
         if existing:
             link = get_link_to_form("Seat Allocation", existing)
@@ -116,26 +113,18 @@ class SeatAllocation(Document):
         if not programs:
             return
 
-        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import process_waitlist
-
-        # Find the active automatic rule for this campus/cycle
-        rule_names = frappe.get_all(
-            "Waitlist Rule",
-            filters={
-                "status": "Active",
-                "admission_cycle": self.admission_cycle,
-                "campus": self.campus,
-            },
-            pluck="name",
+        # ✅ Enqueue into background — never modify same document inside on_update.
+        # This prevents nested saves and version conflicts on multi-worker hosted environments.
+        frappe.enqueue(
+            "slcm.admission.doctype.waitlist_rule.waitlist_promotion.process_waitlist_background",
+            seat_allocation_name=self.name,
+            campus=self.campus,
+            admission_cycle=self.admission_cycle,
+            queue="long",
+            now=False,
+            is_async=True,
+            enqueue_after_commit=True
         )
-
-        for rule_name in rule_names:
-            frappe.flags.slcm_waitlist_promotion_in_progress = True
-            try:
-                # Manual triggers (from on_update) should ignore the cutoff date
-                process_waitlist(frappe.get_doc("Waitlist Rule", rule_name), ignore_cutoff=True)
-            finally:
-                frappe.flags.slcm_waitlist_promotion_in_progress = False
 
     @frappe.whitelist()
     def pull_from_merit_list(self):
@@ -143,6 +132,10 @@ class SeatAllocation(Document):
         Copies all applicants from the linked Merit List into the
         Selection Applicant child table, preserving ranking data.
         """
+        # 1. Reload hits the DB for the latest 'modified' timestamp.
+        # This wins over background jobs that might have bumped the version.
+        self.reload()
+
         if not self.merit_list:
             frappe.throw(
                 "Please select a Merit List before pulling data.",
@@ -157,7 +150,7 @@ class SeatAllocation(Document):
                 title="Empty Merit List"
             )
 
-        # Clear existing rows
+        # Clear existing rows and repopulate
         self.selection_applicant = []
 
         for row in merit.merit_applicants:
@@ -172,8 +165,12 @@ class SeatAllocation(Document):
                 "selection_status": "Draft"
             })
 
-        self.save()
-        frappe.db.commit()
+        # 2. Persist immediately on server. 
+        # ignore_version ensures we bypass any collision with the browser's stale timestamp.
+        self.flags.ignore_version = True
+        self.save(ignore_permissions=True)
+        
+        frappe.msgprint("Applicants pulled successfully.")
 
     @frappe.whitelist()
     def allocate_seats(self):
@@ -189,35 +186,38 @@ class SeatAllocation(Document):
         if self.status == "Published":
             frappe.throw("Cannot re-run allocation after publish.")
 
-        # Check for active Waitlist Rule
         if not frappe.db.exists("Waitlist Rule", {
             "campus": self.campus,
             "admission_cycle": self.admission_cycle,
             "status": "Active"
         }):
             frappe.throw(
-                f"No active Waitlist Rule found for Campus '{self.campus}' and Admission Cycle '{self.admission_cycle}'. "
+                f"No active Waitlist Rule found for Campus '{self.campus}' and "
+                f"Admission Cycle '{self.admission_cycle}'. "
                 "Please create an active Waitlist Rule before running allocation.",
                 title="Missing Waitlist Rule"
             )
 
-        # Pull if empty
-        if not self.selection_applicant:
-            self.pull_from_merit_list()
+        # ✅ Sync with DB version before heavy processing
+        self.reload()
 
-        admission_year_name = frappe.db.get_value("Admission Cycle", self.admission_cycle, "parent")
-        if not admission_year_name or frappe.db.get_value("Admission Cycle", self.admission_cycle, "parenttype") != "Admission Year":
-             # Fallback: direct SQL to avoid filter parsing issues with child tables
-             res = frappe.db.sql("""
-                 SELECT parent FROM `tabAdmission Cycle` 
-                 WHERE name = %s AND parenttype = 'Admission Year'
-                 LIMIT 1
-             """, (self.admission_cycle,))
-             if res:
-                 admission_year_name = res[0][0]
-             
+        # Pull applicants if table is empty (inline — no internal save)
+        if not self.selection_applicant:
+            self._pull_applicants_in_memory()
+
+        admission_year_name = frappe.db.get_value("Admission Cycle", self.admission_cycle, "admission_year")
         if not admission_year_name:
-            frappe.throw(f"No Admission Year found for cycle {self.admission_cycle}")
+            # Fallback for legacy data if any
+            res = frappe.db.sql("""
+                SELECT parent FROM `tabAdmission Cycle`
+                WHERE name = %s AND parenttype = 'Admission Year'
+                LIMIT 1
+            """, (self.admission_cycle,))
+            if res:
+                admission_year_name = res[0][0]
+
+        if not admission_year_name:
+            frappe.throw(f"No Admission Year linked to cycle {self.admission_cycle}. Please update the Admission Cycle record.")
 
         from slcm.admission.doctype.waitlist_rule.waitlist_promotion import _get_program_quotas
 
@@ -226,37 +226,30 @@ class SeatAllocation(Document):
         total_rejected = 0
 
         # -------------------------
-        # 2️⃣ GROUP BY PROGRAM ONLY
+        # 2️⃣ GROUP BY PROGRAM
         # -------------------------
         grouped_by_program = {}
         for row in self.selection_applicant:
             grouped_by_program.setdefault(row.program, []).append(row)
 
+        # Get waitlist percentage once
+        waitlist_percent = 50.0
+        rules = frappe.get_all(
+            "Waitlist Rule",
+            filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "status": "Active"},
+            fields=["waitlist_percentage"]
+        )
+        if rules:
+            waitlist_percent = rules[0].waitlist_percentage or 50.0
+        waitlist_factor = waitlist_percent / 100.0
+
         for program, applicants in grouped_by_program.items():
-
             quotas = _get_program_quotas(self.campus, self.admission_cycle, program)
+            applicants.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
 
-            # -----------------------------------
-            # Sort by merit
-            # -----------------------------------
-            applicants.sort(
-                key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999)
-            )
-
-            # -----------------------------------
-            # PHASE 1: OPEN (GEN) SELECTION
-            # -----------------------------------
+            # PHASE 1: OPEN
             gen_seats = quotas.get("GEN", 0)
-
-            # Get waitlist percentage from active Waitlist Rule (campus wide)
-            waitlist_percent = 50.0
-            rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "status": "Active"}, fields=["waitlist_percentage"])
-            if rules:
-                waitlist_percent = rules[0].waitlist_percentage or 50.0
-            
-            waitlist_factor = waitlist_percent / 100.0
             gen_waitlist_cap = math.ceil(gen_seats * waitlist_factor)
-
             selected_open = applicants[:gen_seats]
             remaining_pool = applicants[gen_seats:]
 
@@ -265,17 +258,12 @@ class SeatAllocation(Document):
                 row.allocation_type = "Open"
                 total_selected += 1
 
-            # -----------------------------------
-            # PHASE 2: RESERVED SELECTION
-            # -----------------------------------
+            # PHASE 2: RESERVED
             reserved_quotas = quotas.get("Reserved", {})
-            
-            # Store waitlist quotas to process later
             category_waitlist_quotas = {}
 
             for category, category_seats in reserved_quotas.items():
                 category_waitlist_quotas[category] = math.ceil(category_seats * waitlist_factor)
-
                 cat_doc = frappe.get_cached_value("Admission Category", category, ["name", "category_code", "category_name"], as_dict=1)
                 match_strings = [category]
                 if cat_doc:
@@ -283,67 +271,49 @@ class SeatAllocation(Document):
                     if cat_doc.get("category_name"): match_strings.append(cat_doc.get("category_name"))
 
                 category_pool = [r for r in remaining_pool if r.reservation_category in match_strings]
-
                 selected_reserved = category_pool[:category_seats]
-
                 for row in selected_reserved:
                     row.selection_status = "Selected"
                     row.allocation_type = "Reserved"
                     total_selected += 1
-
-                # Only remaining candidates NOT selected move forward
                 remaining_pool = [r for r in remaining_pool if r not in selected_reserved]
 
-            # -----------------------------------
-            # PHASE 3: WAITLISTS (OPEN THEN RESERVED)
-            # -----------------------------------
-            
-            # 1. Waitlist GEN (from highest merit in remaining pool)
+            # PHASE 3: WAITLISTS
             gen_waitlist_pool = remaining_pool[:gen_waitlist_cap]
             remaining_pool = remaining_pool[gen_waitlist_cap:]
-
             for row in gen_waitlist_pool:
                 row.selection_status = "Waitlisted"
                 row.allocation_type = "Open"
                 total_waitlisted += 1
-                
-            # 2. Waitlist Reserved (from category specific pools)
+
             for category, cat_waitlist_cap in category_waitlist_quotas.items():
-                if cat_waitlist_cap == 0:
-                    continue
-                    
+                if cat_waitlist_cap == 0: continue
                 cat_doc = frappe.get_cached_value("Admission Category", category, ["name", "category_code", "category_name"], as_dict=1)
                 match_strings = [category]
                 if cat_doc:
                     if cat_doc.get("category_code"): match_strings.append(cat_doc.get("category_code"))
                     if cat_doc.get("category_name"): match_strings.append(cat_doc.get("category_name"))
 
-                # Re-fetch category pool from the updated remaining pool
                 waitlist_pool = [r for r in remaining_pool if r.reservation_category in match_strings]
                 waitlist_reserved = waitlist_pool[:cat_waitlist_cap]
-
                 for row in waitlist_reserved:
                     row.selection_status = "Waitlisted"
                     row.allocation_type = "Reserved"
                     total_waitlisted += 1
-
-                # Only candidates NOT waitlisted move to rejections
                 remaining_pool = [r for r in remaining_pool if r not in waitlist_reserved]
 
-            # -----------------------------------
-            # PHASE 4: REJECT REMAINING
-            # -----------------------------------
+            # PHASE 4: REJECT
             for row in remaining_pool:
                 row.selection_status = "Rejected"
                 row.allocation_type = ""
                 total_rejected += 1
 
         # -------------------------
-        # 5️⃣ LOGGING & COMMIT
+        # 3️⃣ SAVE
         # -------------------------
         from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
         for row in self.selection_applicant:
-             log_admission_action(
+            log_admission_action(
                 reference_doctype="Seat Allocation",
                 reference_name=self.name,
                 applicant=row.applicant,
@@ -358,22 +328,42 @@ class SeatAllocation(Document):
         self.total_waitlisted = total_waitlisted
         self.total_rejected = total_rejected
         self.status = "Allocated"
-        
-        self.save()
-        frappe.db.commit()
+
+        # Sync save to prevent data loss
+        self.flags.ignore_version = True
+        self.save(ignore_permissions=True)
 
         frappe.msgprint("Seat Allocation phase completed successfully.")
 
+    def _pull_applicants_in_memory(self):
+        if not self.merit_list: return
+        merit = frappe.get_doc("Merit List", self.merit_list)
+        self.selection_applicant = []
+        for row in merit.merit_applicants:
+            self.append("selection_applicant", {
+                "applicant": row.applicant,
+                "applicant_id": row.applicant_id,
+                "program": row.program,
+                "reservation_category": row.reservation_category,
+                "total_score": row.total_score,
+                "category_rank": row.category_rank,
+                "overall_rank": row.overall_rank,
+                "selection_status": "Draft"
+            })
 
     @frappe.whitelist()
     def publish_allocation(self):
+        self.reload()
+
         if self.status != "Allocated":
             frappe.throw("Run allocation first.")
- 
+
         self.status = "Published"
         self.published_on = now()
         self.published_by = frappe.session.user
-        self.save()
+
+        self.flags.ignore_version = True
+        self.save(ignore_permissions=True)
 
         from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
         log_admission_action(
@@ -383,10 +373,13 @@ class SeatAllocation(Document):
             remarks=f"Allocation finalized and published by {frappe.session.user}"
         )
 
-        frappe.db.commit()
+        frappe.enqueue(
+            "slcm.admission.notification_service.notify_published_allocation",
+            allocation_name=self.name,
+            queue="long",
+            now=False,
+            is_async=True,
+            enqueue_after_commit=True
+        )
 
-        # Trigger bulk notifications
-        from slcm.admission.notification_service import notify_published_allocation
-        notify_published_allocation(self.name)
-
-        frappe.msgprint("Allocation Published and notifications queued.")
+        frappe.msgprint("Allocation Published.")

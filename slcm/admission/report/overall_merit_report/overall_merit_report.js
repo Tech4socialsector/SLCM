@@ -15,6 +15,12 @@ frappe.query_reports["Overall Merit Report"] = {
             "reqd": 1
         },
         {
+            "fieldname": "program_level",
+            "label": __("Program Level"),
+            "fieldtype": "Select",
+            "options": "UG\nPG\nResearch Course"
+        },
+        {
             "fieldname": "program",
             "label": __("Program"),
             "fieldtype": "Link",

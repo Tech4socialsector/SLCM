@@ -69,7 +69,7 @@ def _rank_applicants(applicant_rows):
 
 def generate_merit_for_level(cycle, campus, program_level):
     """
-    Generates a Merit List for a specific Program Level (UG / PG / Research Cource).
+    Generates a Merit List for a specific Program Level (UG / PG / Research Course).
     Uses the Merit Rule assigned to that program level via Merit Rule Mapping.
     """
     # Check if a Merit List already exists for this program level

@@ -3,9 +3,19 @@ from frappe.utils import now_datetime, getdate
 
 
 def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict:
-    admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "parent")
+    admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "admission_year")
     if not admission_year:
-        frappe.throw(f"No Admission Year found for cycle {admission_cycle}")
+        # Fallback for legacy data if any
+        res = frappe.db.sql("""
+            SELECT parent FROM `tabAdmission Cycle`
+            WHERE name = %s AND parenttype = 'Admission Year'
+            LIMIT 1
+        """, (admission_cycle,))
+        if res:
+            admission_year = res[0][0]
+
+    if not admission_year:
+        frappe.throw(f"No Admission Year linked to cycle {admission_cycle}. Please update the Admission Cycle record.")
 
     po_name = frappe.db.get_value("Program Offering", {
         "campus": campus, 
@@ -248,3 +258,36 @@ def run_scheduled_waitlist():
         elif freq == "Weekly":
             if weekday == 0:
                 process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
+
+
+def process_waitlist_background(seat_allocation_name: str, campus: str, admission_cycle: str):
+    """
+    Background worker entry point — called via frappe.enqueue from SeatAllocation.on_update.
+
+    Runs in a separate worker process with its own DB transaction and a freshly
+    loaded document, completely isolated from the triggering save cycle.
+    This prevents nested saves and optimistic locking conflicts.
+    """
+    # Guard against accidental re-entry
+    if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
+        return
+
+    frappe.flags.slcm_waitlist_promotion_in_progress = True
+    try:
+        rule_names = frappe.get_all(
+            "Waitlist Rule",
+            filters={
+                "status": "Active",
+                "admission_cycle": admission_cycle,
+                "campus": campus,
+            },
+            pluck="name",
+        )
+
+        for rule_name in rule_names:
+            rule_doc = frappe.get_doc("Waitlist Rule", rule_name)
+            # ignore_cutoff=True: manual status changes should trigger immediate promotion
+            process_waitlist(rule_doc, ignore_cutoff=True)
+
+    finally:
+        frappe.flags.slcm_waitlist_promotion_in_progress = False
