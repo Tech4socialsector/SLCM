@@ -82,8 +82,8 @@ class SeatAllocation(Document):
                         admission_cycle=self.admission_cycle
                     )
 
-            # Trigger promotion if a Selected/Accepted applicant moves to any rejected status
-            if old_status in ["Selected", "Accepted"] and new_status in rejection_statuses:
+            # Trigger promotion if a Selected/Accepted/Offer Issued applicant moves to any rejected status
+            if old_status in ["Selected", "Accepted", "Offer Issued"] and new_status in rejection_statuses:
                 affected_programs.add(row.program)
 
         if not affected_programs:
@@ -211,16 +211,7 @@ class SeatAllocation(Document):
         if not self.selection_applicant:
             self.pull_from_merit_list()
 
-        admission_year_name = frappe.db.get_value("Admission Cycle", self.admission_cycle, "parent")
-        if not admission_year_name or frappe.db.get_value("Admission Cycle", self.admission_cycle, "parenttype") != "Admission Year":
-             # Fallback: direct SQL to avoid filter parsing issues with child tables
-             res = frappe.db.sql("""
-                 SELECT parent FROM `tabAdmission Cycle` 
-                 WHERE name = %s AND parenttype = 'Admission Year'
-                 LIMIT 1
-             """, (self.admission_cycle,))
-             if res:
-                 admission_year_name = res[0][0]
+        admission_year_name = frappe.db.get_value("Admission Cycle", self.admission_cycle, "admission_year")
              
         if not admission_year_name:
             frappe.throw(f"No Admission Year found for cycle {self.admission_cycle}")

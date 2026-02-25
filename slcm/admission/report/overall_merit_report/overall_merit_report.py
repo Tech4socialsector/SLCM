@@ -53,7 +53,7 @@ def get_columns():
         },
         {
             "label": "Overall Rank",
-            "fieldname": "rank",
+            "fieldname": "overall_rank",
             "fieldtype": "Int",
             "width": 100
         }

@@ -147,9 +147,13 @@ class ProgramOffering(Document):
 
 	def before_save(self):
 		if not self.is_available_for_admission and not self.is_new():
-			if frappe.db.exists("Student Application", {"program_offering": self.name}):
+			if frappe.db.exists("Applicant", {
+				"program": self.program,
+				"campus": self.campus,
+				"admission_cycle": self.admission_cycle
+			}):
 				frappe.throw(
-					_("Cannot disable Program Offering '{0}' as applications have already been submitted.")
+					_("Cannot disable Program Offering '{0}' as applicants have already applied.")
 					.format(self.name)
 				)
 

@@ -13,16 +13,20 @@ class Applicant(Document):
     def validate(self):
         self.validate_eligibility()
 
-        # create_or_update_evaluation() is called INSIDE validate_eligibility()
         # for BOTH eligible and ineligible outcomes, so it always runs even
         # when frappe.throw() is raised for ineligible applicants.
         # We still call it here as a safety net for the eligible path.
-        self.create_or_update_evaluation()
+        program_table_html = self._build_program_eligibility_html()
+        self.create_or_update_evaluation(program_details_html=program_table_html)
 
         # NOTE: DO NOT add another frappe.throw() here.
         # validate_eligibility() already throws with the full HTML message
         # (ineligibility reason + program table) in one single call.
         # A second throw here would override that rich message with a plain one.
+
+    def on_update(self):
+        from slcm.admission.doctype.admission_result.admission_result import sync_applicant_to_admission_result
+        sync_applicant_to_admission_result(self.name)
 
     def before_submit(self):
         if self.evaluation_status == "Ineligible":
@@ -130,17 +134,18 @@ class Applicant(Document):
                 is_eligible, failure_message = self._evaluate_mapping_with_category_priority(mapping)
 
                 if not is_eligible:
-                    self.evaluation_status = "Ineligible"
-                    self.rejected_reason   = failure_message
+                    self.evaluation_status  = "Ineligible"
+                    self.application_status = "Rejected"
+                    self.rejected_reason    = failure_message
+
+                    # ── Build combined HTML: reason box + program table ────────
+                    program_table_html = self._build_program_eligibility_html()
 
                     # ── CRITICAL: Save the Ineligible record NOW, before throw ──
                     # frappe.throw() raises ValidationError which unwinds the stack,
                     # so create_or_update_evaluation() in validate() never executes
                     # for ineligible applicants. We must save here explicitly.
-                    self.create_or_update_evaluation()
-
-                    # ── Build combined HTML: reason box + program table ────────
-                    program_table_html = self._build_program_eligibility_html()
+                    self.create_or_update_evaluation(program_details_html=program_table_html)
 
                     full_message = """
                         <div style="
@@ -817,7 +822,7 @@ class Applicant(Document):
     # CREATE / UPDATE ELIGIBILITY EVALUATION RECORD
     # ──────────────────────────────────────────────
 
-    def create_or_update_evaluation(self):
+    def create_or_update_evaluation(self, program_details_html=None):
         """
         Saves (insert or update) an Eligibility Evaluation record for this applicant.
 
@@ -859,6 +864,7 @@ class Applicant(Document):
             "exempts_entrance_test":   exempts_entrance_test,
             "exempts_interview":       exempts_interview,
             "national_test_rule_used": national_test_rule_used,
+            "program_eligibility_details": program_details_html,
             "reservation_category": [
                 {"category": row.category}
                 for row in (self.categories or [])
@@ -871,6 +877,9 @@ class Applicant(Document):
 
         doc = frappe.get_doc(doc_data)
         doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        frappe.db.commit()
 
         frappe.db.commit()
 
