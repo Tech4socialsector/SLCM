@@ -175,6 +175,11 @@ frappe.ready(function () {
 	}
 
 	function initiate_payment() {
+		// Save to local storage as a bulletproof fallback for the success page
+		if (frappe.web_form.doc && frappe.web_form.doc.name) {
+			localStorage.setItem('recent_fle_payment_doc', frappe.web_form.doc.name);
+		}
+
 		frappe.call({
 			method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.create_razorpay_order",
 			args: {
@@ -235,14 +240,10 @@ frappe.ready(function () {
 			freeze_message: "Verifying Payment...",
 			callback: function (r) {
 				if (r.message && r.message.status === 'success') {
-					frappe.msgprint({
-						title: __('Success'),
-						message: __('Payment Successful!'),
-						indicator: 'green'
-					});
-					setTimeout(function () {
-						window.location.reload();
-					}, 2000);
+					let data = r.message;
+
+					// Redirect to the new custom Payment Success webpage
+					window.location.href = '/fle-success-page?name=' + encodeURIComponent(data.receipt_id) + '&transaction_id=' + encodeURIComponent(data.transaction_id || '');
 				}
 			}
 		});

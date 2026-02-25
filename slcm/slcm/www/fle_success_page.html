@@ -1,0 +1,128 @@
+{% extends "templates/web.html" %}
+
+{% block title %}Payment Success{% endblock %}
+
+{% block page_content %}
+<div class="success-page text-center"
+    style="padding: 40px 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px;">
+    <div class="success-icon" style="margin-bottom: 20px;">
+        <svg width="68" height="68" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+    </div>
+    <h3 class="success-title text-success" style="margin-bottom: 15px; font-weight: 600; font-size: 24px;">Payment
+        Successful!</h3>
+    <p class="success-message" style="font-size: 16px; margin-bottom: 30px; color: #555;">
+        You have successfully completed the registration.
+    </p>
+
+    <div class="payment-details"
+        style="max-width: 500px; margin: 0 auto; text-align: left; background: #fafafa; border: 1px solid #eaeaea; border-radius: 8px;">
+        <div style="padding: 25px;">
+            <h4
+                style="border-bottom: 1px solid #ddd; padding-bottom: 12px; margin-bottom: 20px; font-size: 18px; font-weight: 600; color: #333;">
+                Payment Receipt</h4>
+            <table class="table table-borderless" style="margin-bottom: 0; font-size: 14.5px;">
+                <tbody>
+                    <tr>
+                        <td class="text-muted" style="width: 45%; padding: 8px 0; border: none;">Candidate Name</td>
+                        <td style="padding: 8px 0; border: none;"><strong id="val_candidate_name">Loading...</strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" style="padding: 8px 0; border: none;">Email</td>
+                        <td style="padding: 8px 0; border: none;"><strong id="val_email">Loading...</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" style="padding: 8px 0; border: none;">Receipt ID</td>
+                        <td style="padding: 8px 0; border: none;"><strong id="val_receipt_id">Loading...</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" style="padding: 8px 0; border: none;">Paid Amount</td>
+                        <td style="padding: 8px 0; border: none;"><strong id="val_amount">Loading...</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" style="padding: 8px 0; border: none;">Transaction Date</td>
+                        <td style="padding: 8px 0; border: none;"><strong id="val_date">Loading...</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" style="padding: 8px 0; border: none;">Payment Status</td>
+                        <td style="padding: 8px 0; border: none;"><span id="val_status" class="badge"
+                                style="background-color: #28a745; color: white; padding: 5px 10px; border-radius: 4px; font-weight: 500;">Loading...</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" style="padding: 8px 0; border: none;">Transaction ID</td>
+                        <td style="padding: 8px 0; border: none;"><small id="val_transaction_id"
+                                style="color: #666; font-family: monospace;">Loading...</small></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; margin-bottom: 40px;">
+        <button class="btn btn-primary" onclick="window.print()"
+            style="padding: 8px 24px; font-weight: 500; display: inline-flex; align-items: center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Print Receipt
+        </button>
+    </div>
+</div>
+
+<script>
+    frappe.ready(function () {
+        let urlParams = new URLSearchParams(window.location.search);
+        let receipt_id = urlParams.get('name');
+        let transaction_id = urlParams.get('transaction_id');
+
+        // FALLBACK: If URL params are stripped, try getting the receipt_id we saved to localStorage right before checkout
+        if (!receipt_id) {
+            receipt_id = localStorage.getItem('recent_fle_payment_doc');
+            // Clean up once used so we don't accidentally show it on a fresh visit weeks later
+            if (receipt_id) {
+                localStorage.removeItem('recent_fle_payment_doc');
+            }
+        }
+
+        // Always call the backend, it will fetch the latest 'Paid' record if receipt_id is null
+        frappe.call({
+            method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.get_receipt_details",
+            args: {
+                doc_name: receipt_id
+            },
+            callback: function (r) {
+                if (r.message) {
+                    let doc = r.message;
+                    document.getElementById('val_candidate_name').innerText = doc.candidate_name || "N/A";
+                    document.getElementById('val_email').innerText = doc.email_address || "N/A";
+                    document.getElementById('val_receipt_id').innerText = doc.name || "N/A";
+                    document.getElementById('val_amount').innerText = '₹' + (doc.amount || "0.00");
+
+                    let modified = doc.modified ? doc.modified.substring(0, 16).replace('T', ' ') : 'N/A';
+                    document.getElementById('val_date').innerText = modified;
+
+                    document.getElementById('val_status').innerText = doc.payment_status || "Paid";
+                    document.getElementById('val_transaction_id').innerText = transaction_id || "";
+                } else {
+                    // Document not found or error
+                    document.getElementById('val_candidate_name').innerText = "N/A";
+                    document.getElementById('val_email').innerText = "N/A";
+                    document.getElementById('val_receipt_id').innerText = receipt_id || "N/A";
+                    document.getElementById('val_amount').innerText = "N/A";
+                    document.getElementById('val_date').innerText = "N/A";
+                    document.getElementById('val_status').innerText = "N/A";
+                    document.getElementById('val_transaction_id').innerText = transaction_id || "N/A";
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
