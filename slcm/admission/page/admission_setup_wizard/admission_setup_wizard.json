@@ -1,0 +1,8 @@
+{
+  "doctype": "Page",
+  "name": "admission-setup-wizard",
+  "page_name": "admission-setup-wizard",
+  "title": "Admission Setup Wizard",
+  "module": "Admission",
+  "system_page": 0
+}
