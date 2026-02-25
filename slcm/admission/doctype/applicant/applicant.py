@@ -881,6 +881,8 @@ class Applicant(Document):
 
         frappe.db.commit()
 
+        frappe.db.commit()
+
 
 # ──────────────────────────────────────────────
 # WHITELIST API
