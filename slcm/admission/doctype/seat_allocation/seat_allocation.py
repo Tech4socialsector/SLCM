@@ -82,8 +82,8 @@ class SeatAllocation(Document):
                         admission_cycle=self.admission_cycle
                     )
 
-            # Trigger promotion if a Selected/Accepted applicant moves to any rejected status
-            if old_status in ["Selected", "Accepted"] and new_status in rejection_statuses:
+            # Trigger promotion if a Selected/Accepted/Offer Issued applicant moves to any rejected status
+            if old_status in ["Selected", "Accepted", "Offer Issued"] and new_status in rejection_statuses:
                 affected_programs.add(row.program)
 
         if not affected_programs:

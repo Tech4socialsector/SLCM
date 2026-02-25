@@ -76,6 +76,18 @@ def sync_applicant_to_admission_result(applicant_name):
     res.admission_cycle = app.admission_cycle
     res.hsc_percentage = app.hsc_percentage
     
+    # Fallback: if primary reservation_category is empty, take from the first entry of the Applicant's categories child table
+    if not res.reservation_category and getattr(app, "categories", []):
+        res.reservation_category = app.categories[0].category
+
+    # Sync full categories child table (Safe check if migration hasn't run yet)
+    if res.meta.has_field("categories"):
+        res.set("categories", [])
+        for row in (app.categories or []):
+            res.append("categories", {
+                "category": row.category
+            })
+
     res.flags.ignore_mandatory = True
     res.save(ignore_permissions=True)
     return res.name
@@ -85,22 +97,27 @@ def bulk_sync_from_applicants(admission_cycle, campus, program_level=None):
     """
     Creates Admission Result records for all applicants in a specific cycle and campus.
     """
-    filters = {
+    eval_filters = {
         "admission_cycle": admission_cycle,
         "campus": campus,
-        "application_status": ["in", ["Submitted", "Selected", "Waitlisted", "Offer Issued", "Offer Accepted"]]
+        "evaluation_status": "Eligible"
     }
-    if program_level:
-        filters["program_level"] = program_level
 
-    applicants = frappe.get_all("Applicant", filters=filters, fields=["name"])
+    evaluations = frappe.get_all("Eligibility Evaluation", filters=eval_filters, fields=["applicant_name"])
     
     count = 0
-    for app in applicants:
-        # Check if result already exists to avoid duplicates if we results are cycle specific
-        # (Though current schema keeps applicant_name as unique ID, applicant_id is link)
-        if not frappe.db.exists("Admission Result", {"applicant_id": app.name}):
-            sync_applicant_to_admission_result(app.name)
+    for eval_doc in evaluations:
+        app_name = eval_doc.applicant_name
+        
+        # Security/Consistency: If program_level filter is provided, check it on the Applicant
+        if program_level:
+            app_program_level = frappe.db.get_value("Applicant", app_name, "program_level")
+            if app_program_level != program_level:
+                continue
+
+        # Check if result already exists
+        if not frappe.db.exists("Admission Result", {"applicant_id": app_name}):
+            sync_applicant_to_admission_result(app_name)
             count += 1
         
     frappe.db.commit()

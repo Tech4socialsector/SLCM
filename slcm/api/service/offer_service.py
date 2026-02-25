@@ -63,9 +63,9 @@ class OfferService:
                     return resolved
             return admission_year
 
-        # 2. Try to get from Admission Application (most specific)
-        admission_year = frappe.db.get_value("Admission Application", 
-            {"applicant": applicant, "campus": campus, "admission_cycle": cycle}, 
+        # 2. Try to get from Applicant (most specific)
+        admission_year = frappe.db.get_value("Applicant", 
+            {"name": applicant, "campus": campus, "admission_cycle": cycle}, 
             "admission_year")
         if admission_year:
             return admission_year
@@ -226,12 +226,18 @@ class OfferService:
         return True
 
     @staticmethod
-    def update_applicant_status(applicant , application_status):
+    def update_applicant_status(applicant, application_status):
         if not applicant:
             throw(_("Applicant is required"))
-        applicant_doc = frappe.get_doc("Applicant", applicant)
-        applicant_doc.application_status = application_status
-        applicant_doc.save(ignore_permissions=True)
+        
+        # Use db_set to bypass full validation (validate_eligibility) which may throw 
+        # for ineligible applicants during status synchronization.
+        frappe.db.set_value("Applicant", applicant, "application_status", application_status, update_modified=True)
+        
+        # Ensure 'current_stage' is updated if needed (safety fallback)
+        if application_status == "Offer Accepted":
+            frappe.db.set_value("Applicant", applicant, "current_stage", "Admission Confirmed")
+            
         return True
 
     @staticmethod

@@ -12,6 +12,7 @@
         "program",
         "program_level",
         "reservation_category",
+        "categories",
         "email",
         "column_break_ercs",
         "admission_cycle",
@@ -28,6 +29,12 @@
             "in_list_view": 1,
             "label": "Category",
             "options": "Admission Category"
+        },
+        {
+            "fieldname": "categories",
+            "fieldtype": "Table",
+            "label": "Categories",
+            "options": "Applicant Category"
         },
         {
             "fieldname": "applicant_name",
