@@ -1,0 +1,143 @@
+{
+ "app": "slcm",
+ "creation": "2026-02-25 15:56:18.586643",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "award",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "arrow-big-right",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Merit & SeatAllocation ",
+   "link_to": "Merit & Seat Allocation",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Merit Rule",
+   "link_to": "Merit Rule",
+   "link_type": "DocType",
+   "navigate_to_tab": "",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Merit Rule Mapping",
+   "link_to": "Merit Rule Mapping",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Merit Generation",
+   "link_to": "Merit Generation",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "merit list",
+   "link_to": "Merit List",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "waitlist Rule",
+   "link_to": "Waitlist Rule",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Seat Allocation",
+   "link_to": "Seat Allocation",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "aperture",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Reports",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "app-window",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Over All Merit report",
+   "link_to": "Overall Merit Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "app-window",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Student Selection Report",
+   "link_to": "Student Selection Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "app-window",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Seat Availability Report",
+   "link_to": "Seat Availability Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-25 17:37:51.532855",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Merit & Seat Allocation",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Merit & Seat Allocation"
+}

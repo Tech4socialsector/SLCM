@@ -345,7 +345,7 @@ class AdmissionCycle(Document):
 	def on_trash(self):
 		if self.status == "Active":
 			frappe.throw(_("Cannot delete an Active Admission Cycle. Change its status first."))
-		if frappe.db.exists("Admission Application", {"admission_cycle": self.name}):
+		if frappe.db.exists("Applicant", {"admission_cycle": self.name}):
 			frappe.throw(
 				_("Cannot delete Admission Cycle '{0}' as Admission Applications are linked to it.")
 				.format(self.name)

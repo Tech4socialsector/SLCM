@@ -3,9 +3,10 @@ from frappe.utils import now_datetime, getdate
 
 
 def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict:
-    admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "parent")
+    admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "admission_year")
+        
     if not admission_year:
-        frappe.throw(f"No Admission Year found for cycle {admission_cycle}")
+        frappe.throw(f"No Admission Year found for Admission Cycle {admission_cycle}. Please ensure the cycle is correctly linked to an Admission Year.")
 
     po_name = frappe.db.get_value("Program Offering", {
         "campus": campus, 
@@ -23,20 +24,22 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
     
     if po.is_reservation_applicable:
         for q in po.reservations:
-            # Map to GEN pool if category is General OR if community contains GEN/General
-            is_gen = False
+            seats = int(q.seats or 0)
+            # If category is not set, treat it as GEN seats (common configuration mistake).
+            if not q.category:
+                result["GEN"] += seats
+                continue
+
+            # Map to GEN pool if category is General
             if q.category in ["General", "General Quota", "GEN"]:
-                is_gen = True
-            elif not q.category and q.community and ("GEN" in q.community or "General" in q.community):
-                is_gen = True
-            
-            if is_gen:
-                result["GEN"] += int(q.seats or 0)
+                result["GEN"] += seats
             else:
-                # Use community as the key for reserved categories
-                cat_key = q.community or q.category or "Other"
-                result["Reserved"][cat_key] = result["Reserved"].get(cat_key, 0) + int(q.seats or 0)
+                result["Reserved"][q.category] = result["Reserved"].get(q.category, 0) + seats
     else:
+        result["GEN"] = int(po.total_available_seats or 0)
+
+    # Safety fallback: if reservation rows exist but total computed seats is 0, fallback to total_available_seats
+    if int(result.get("GEN") or 0) + sum(int(v or 0) for v in (result.get("Reserved") or {}).values()) <= 0:
         result["GEN"] = int(po.total_available_seats or 0)
     
     return result
@@ -100,7 +103,8 @@ def process_waitlist(rule_doc, ignore_cutoff=False):
     rule_doc.db_set("last_executed_on", now_datetime(), update_modified=False)
     rule_doc.db_set("execution_log_count", int(rule_doc.execution_log_count or 0) + 1, update_modified=False)
 
-    frappe.db.commit()
+    # Commit is now handled by the caller (scheduled job or manual trigger)
+    # to avoid breaking transactions when called from Seat Allocation hooks.
 
 
 def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool:
@@ -123,7 +127,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
     if not waitlisted_rows:
         return False
 
-    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+    from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
     promoted_total = 0
 
     # 1. Promote for OPEN seats
@@ -135,26 +139,26 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
         open_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
         
         # Log that vacancies were identified
-        log_admission_action(
-            reference_doctype="Waitlist Rule",
-            reference_name=rule_doc.name,
+        log_seat_allocation_action(
+            seat_allocation=seat_alloc.name,
+            admission_cycle=seat_alloc.admission_cycle,
             program=program,
             action_type="Waitlist Vacated",
-            remarks=f"Automatic promotion engine identified {open_vacancies} vacant OPEN seat(s)."
+            remarks=f"Automatic promotion engine ({rule_doc.name}) identified {open_vacancies} vacant OPEN seat(s)."
         )
 
         for row in open_waitlist[:open_vacancies]:
             row.selection_status = "Selected"
             promoted_total += 1
-            log_admission_action(
-                reference_doctype="Waitlist Rule",
-                reference_name=rule_doc.name,
+            log_seat_allocation_action(
+                seat_allocation=seat_alloc.name,
+                admission_cycle=seat_alloc.admission_cycle,
                 applicant=row.applicant,
                 program=program,
                 action_type="Waitlist Promoted",
                 old_value="Waitlisted",
                 new_value="Selected",
-                remarks=f"Automatically promoted to OPEN seat via {rule_doc.name}."
+                remarks=f"Automatically promoted to OPEN seat via rule {rule_doc.name}."
             )
 
             # Send notification for automatic promotion
@@ -197,26 +201,26 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
             cat_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
             # Log that vacancies were identified for this category
-            log_admission_action(
-                reference_doctype="Waitlist Rule",
-                reference_name=rule_doc.name,
+            log_seat_allocation_action(
+                seat_allocation=seat_alloc.name,
+                admission_cycle=seat_alloc.admission_cycle,
                 program=program,
                 action_type="Waitlist Vacated",
-                remarks=f"Automatic promotion engine identified {cat_vacancies} vacant RESERVED seat(s) for {cat_name}."
+                remarks=f"Automatic promotion engine ({rule_doc.name}) identified {cat_vacancies} vacant RESERVED seat(s) for {cat_name}."
             )
 
             for row in cat_waitlist[:cat_vacancies]:
                 row.selection_status = "Selected"
                 promoted_total += 1
-                log_admission_action(
-                    reference_doctype="Waitlist Rule",
-                    reference_name=rule_doc.name,
+                log_seat_allocation_action(
+                    seat_allocation=seat_alloc.name,
+                    admission_cycle=seat_alloc.admission_cycle,
                     applicant=row.applicant,
                     program=program,
                     action_type="Waitlist Promoted",
                     old_value="Waitlisted",
                     new_value="Selected",
-                    remarks=f"Automatically promoted to RESERVED ({cat_name}) seat via {rule_doc.name}."
+                    remarks=f"Automatically promoted to RESERVED ({cat_name}) seat via rule {rule_doc.name}."
                 )
 
                 # Send notification for automatic promotion
@@ -254,21 +258,25 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
 def run_manual_waitlist(rule: str):
     rule_doc = frappe.get_doc("Waitlist Rule", rule)
     process_waitlist(rule_doc, ignore_cutoff=True)
+    frappe.db.commit()
 
 
 def run_scheduled_waitlist():
+    """
+    Scheduled job: runs waitlist promotion based on the 'Upgrade Frequency' setting.
+    - 'Automatic': runs every time the scheduler triggers this method (every 10 min).
+    - 'Manual': skipped.
+    """
     rules = frappe.get_all(
         "Waitlist Rule",
-        filters={"status": "Active"},
-        fields=["name", "upgrade_frequency"],
+        filters={"status": "Active", "upgrade_frequency": "Automatic"},
+        fields=["name"],
     )
 
-    weekday = now_datetime().weekday()  # Monday=0
-
     for r in rules:
-        freq = (r.upgrade_frequency or "Manual")
-        if freq == "Daily":
+        try:
             process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
-        elif freq == "Weekly":
-            if weekday == 0:
-                process_waitlist(frappe.get_doc("Waitlist Rule", r.name))
+            frappe.db.commit()
+        except Exception as e:
+            frappe.db.rollback()
+            frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")

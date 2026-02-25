@@ -1,0 +1,28 @@
+{
+ "app": "slcm",
+ "creation": "2026-02-25 17:32:23.154253",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "album",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "airplay",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Admission Eligibility ",
+   "link_to": "Admission Eligibility",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-25 17:32:23.154253",
+ "modified_by": "Administrator",
+ "name": "Eligibility",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Eligibility"
+}
