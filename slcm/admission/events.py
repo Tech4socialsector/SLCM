@@ -1,6 +1,7 @@
 import frappe
 from frappe.utils import now, getdate, today, add_days
 from slcm.admission.utils.regulatory import log_audit_trail
+from slcm.admission.doctype.email_template_config.email_template_config import EmailTemplateConfig
 
 def on_applicant_submit(doc, method):
     log_audit_trail(
@@ -8,18 +9,15 @@ def on_applicant_submit(doc, method):
         "Submitted", "application_status",
         "Draft", "Submitted", "General"
     )
-    frappe.sendmail(
-        recipients=[doc.email],
-        subject=f"Application Submitted - {doc.application_id}",
-        message=f"""
-        Dear {doc.candidate_name},<br><br>
-        Your NLSIU application <b>{doc.application_id}</b> has been submitted.<br>
-        Program: {doc.program}<br>
-        Application Type: {doc.application_type}<br><br>
-        You will be notified of further updates through this
-        email and your portal.<br><br>
-        NLSIU Admissions Team
-        """
+    EmailTemplateConfig.send(
+        trigger_event="Application Submitted",
+        recipient_email=doc.email,
+        context={
+            "candidate_name": doc.candidate_name,
+            "program": doc.program,
+            "application_id": doc.application_id,
+            "submission_date": now()
+        }
     )
 
 def on_applicant_cancel(doc, method):
@@ -40,6 +38,8 @@ def on_merit_list_publish(doc, method):
         doc.doctype, doc.name,
         "Submitted", "is_published", 0, 1, "Rank"
     )
+    # Status changed trigger usually happens when merit list is published and status updated
+    # But here we send a general update if applicants are listed
     applicants = frappe.get_all(
         "Merit List Entry",
         {"parent": doc.name, "status": "Listed"},
@@ -47,16 +47,17 @@ def on_merit_list_publish(doc, method):
     )
     for entry in applicants:
         applicant = frappe.get_doc("Applicant", entry.applicant)
-        frappe.sendmail(
-            recipients=[applicant.email],
-            subject=f"Merit List Published - {doc.program}",
-            message=f"""
-            Dear {applicant.candidate_name},<br><br>
-            The merit list for <b>{doc.program}</b> at <b>{doc.campus}</b>
-            has been published.<br>
-            Please login to your portal to check your status.<br><br>
-            NLSIU Admissions Team
-            """
+        EmailTemplateConfig.send(
+            trigger_event="Status Changed",
+            recipient_email=applicant.email,
+            context={
+                "candidate_name": applicant.candidate_name,
+                "program": applicant.program,
+                "application_id": applicant.application_id,
+                "status": "Listed in Merit List",
+                "old_status": applicant.application_status,
+                "campus": doc.campus
+            }
         )
 
 def on_seat_matrix_lock(doc, method):
@@ -109,15 +110,13 @@ def send_deadline_reminders():
             ["email", "candidate_name"]
         )
         for applicant in applicants:
-            frappe.sendmail(
-                recipients=[applicant.email],
-                subject=f"Deadline Reminder - {round_doc.round_name}",
-                message=f"""
-                Dear {applicant.candidate_name},<br><br>
-                This is a reminder that the deadline for
-                <b>{round_doc.round_name}</b> is tomorrow.<br>
-                Please complete and submit your application
-                before the deadline.<br><br>
-                NLSIU Admissions Team
-                """
+            EmailTemplateConfig.send(
+                trigger_event="Deadline Reminder",
+                recipient_email=applicant.email,
+                context={
+                    "candidate_name": applicant.candidate_name,
+                    "program": "your selected program",
+                    "deadline": round_doc.application_end,
+                    "action_required": "Application Submission"
+                }
             )
