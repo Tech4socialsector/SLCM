@@ -4,10 +4,6 @@ from frappe.utils import now_datetime, getdate
 
 def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict:
     admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "admission_year")
-    
-    if not admission_year:
-        # Fallback to parent
-        admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "parent")
         
     if not admission_year:
         frappe.throw(f"No Admission Year found for Admission Cycle {admission_cycle}. Please ensure the cycle is correctly linked to an Admission Year.")

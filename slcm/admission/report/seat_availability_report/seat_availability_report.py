@@ -99,10 +99,8 @@ def get_data(filters):
                 is_gen = False
                 if q.category in ["General", "General Quota", "GEN"]:
                     is_gen = True
-                elif not q.category and q.community and ("GEN" in q.community or "General" in q.community):
-                    is_gen = True
                 
-                cat_key = "General" if is_gen else (q.community or q.category or "Other")
+                cat_key = "General" if is_gen else (q.religion or q.category or "Other")
                 
                 key = (campus, program, cat_key)
                 capacities[key] = capacities.get(key, 0) + (int(q.seats or 0))

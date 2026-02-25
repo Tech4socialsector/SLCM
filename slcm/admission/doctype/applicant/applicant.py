@@ -24,6 +24,10 @@ class Applicant(Document):
         # (ineligibility reason + program table) in one single call.
         # A second throw here would override that rich message with a plain one.
 
+    def on_update(self):
+        from slcm.admission.doctype.admission_result.admission_result import sync_applicant_to_admission_result
+        sync_applicant_to_admission_result(self.name)
+
     def before_submit(self):
         if self.evaluation_status == "Ineligible":
             frappe.throw(

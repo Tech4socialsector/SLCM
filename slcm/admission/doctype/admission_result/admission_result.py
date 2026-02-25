@@ -49,3 +49,59 @@ def get_applicant_data():
         })
 
     return combined_data
+@frappe.whitelist()
+def sync_applicant_to_admission_result(applicant_name):
+    """
+    Syncs a single applicant's details to Admission Result.
+    Called by Applicant hooks or via bulk sync.
+    """
+    app = frappe.get_doc("Applicant", applicant_name)
+    
+    # Only sync for specific statuses if needed, but user said "if i create"
+    # Mapping logic
+    res_name = frappe.db.get_value("Admission Result", {"applicant_id": app.name})
+    
+    if res_name:
+        res = frappe.get_doc("Admission Result", res_name)
+    else:
+        res = frappe.new_doc("Admission Result")
+        res.applicant_id = app.name
+
+    res.applicant_name = app.candidate_name
+    res.email = app.email
+    res.campus = app.campus
+    res.program = app.program
+    res.program_level = app.program_level
+    res.reservation_category = app.reservation_category
+    res.admission_cycle = app.admission_cycle
+    res.hsc_percentage = app.hsc_percentage
+    
+    res.flags.ignore_mandatory = True
+    res.save(ignore_permissions=True)
+    return res.name
+
+@frappe.whitelist()
+def bulk_sync_from_applicants(admission_cycle, campus, program_level=None):
+    """
+    Creates Admission Result records for all applicants in a specific cycle and campus.
+    """
+    filters = {
+        "admission_cycle": admission_cycle,
+        "campus": campus,
+        "application_status": ["in", ["Submitted", "Selected", "Waitlisted", "Offer Issued", "Offer Accepted"]]
+    }
+    if program_level:
+        filters["program_level"] = program_level
+
+    applicants = frappe.get_all("Applicant", filters=filters, fields=["name"])
+    
+    count = 0
+    for app in applicants:
+        # Check if result already exists to avoid duplicates if we results are cycle specific
+        # (Though current schema keeps applicant_name as unique ID, applicant_id is link)
+        if not frappe.db.exists("Admission Result", {"applicant_id": app.name}):
+            sync_applicant_to_admission_result(app.name)
+            count += 1
+        
+    frappe.db.commit()
+    return count
