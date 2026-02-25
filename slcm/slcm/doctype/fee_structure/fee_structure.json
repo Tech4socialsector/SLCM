@@ -16,11 +16,11 @@
   "cash",
   "column_break_1",
   "offer_round",
+  "payment_gateway",
   "valid_from",
   "valid_until",
   "status",
   "total_amount",
-  "campus",
   "section_components",
   "components"
  ],
@@ -122,10 +122,18 @@
    "fieldname": "cash",
    "fieldtype": "Check",
    "label": "Cash"
+  },
+  {
+   "depends_on": "eval:doc.online_payment == 1",
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "label": "Payment Gateway",
+   "mandatory_depends_on": "eval:doc.online_payment == 1",
+   "options": "Payment Gateway"
   }
  ],
  "links": [],
- "modified": "2026-02-20 12:00:23.159166",
+ "modified": "2026-02-25 11:07:39.962746",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Structure",

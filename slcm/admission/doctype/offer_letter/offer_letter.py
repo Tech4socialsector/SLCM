@@ -4,6 +4,9 @@ from frappe import _, throw, msgprint
 from frappe.model.document import Document
 
 class OfferLetter(Document):
+
+    def autoname(self):
+        self.name = f"OL-{self.applicant}-{self.program}-{self.campus}"
     def before_insert(self):
         """
         Ensure data integrity before record creation.
@@ -81,7 +84,8 @@ class OfferLetter(Document):
         allowed_transitions = {
             "Draft": ["Issued", "Withdrawn"],
             "Issued": ["Accepted", "Rejected", "Expired", "Withdrawn"],
-            "Accepted": ["Withdrawn"],
+            "Accepted": ["Withdrawn", "Payment Completed"],
+            "Payment Completed": ["Withdrawn"],
             "Rejected": [],
             "Expired": ["Issued"],
             "Withdrawn": ["Draft"]
@@ -179,3 +183,33 @@ class OfferLetter(Document):
         log.performed_by = kwargs.get("performed_by") or frappe.session.user
         log.insert(ignore_permissions=True)
         print(f"Logged action: {action} for Offer Letter {self.name} with log ID {log.name}")
+
+    def on_payment_authorized(self, status):
+        """
+        Called by the payments app when a payment is successful.
+        """
+        if status in ["Authorized", "Completed"]:
+            self.db_set("offer_status", "Payment Completed")
+            
+            # Update any linked Payment Request
+            frappe.db.set_value("Payment Request", 
+                {"reference_doctype": self.doctype, "reference_name": self.name}, 
+                "status", "Paid")
+            
+            from slcm.api.service.offer_service import OfferService
+            # Update Applicant status
+            OfferService.update_applicant_status(self.applicant, application_status="Fee Paid")
+            
+            # Update Seat Allocation child status
+            OfferService.sync_seat_allocation_status(self, status="Fee Paid")
+
+            self._queue_audit_log(
+                action="Fee Paid",
+                notes=_("Payment of {0} {1} received via online portal.").format(
+                    frappe.defaults.get_global_default("currency") or "INR", 
+                    self.payable_amount
+                )
+            )
+            # Trigger log insertion
+            self.on_update()
+

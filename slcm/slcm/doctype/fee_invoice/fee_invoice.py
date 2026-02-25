@@ -4,6 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import flt, getdate, nowdate
 
 
 class FeeInvoice(Document):
@@ -13,38 +14,27 @@ class FeeInvoice(Document):
 
 	def calculate_amounts(self):
 		# Calculate total from components
-		if not self.fee_components:
-			# If no components, get from fee assignment
-			if self.fee_assignment:
-				assignment = frappe.get_doc("Student Fee Assignment", self.fee_assignment)
-				self.total_amount = assignment.total_amount
-				if not self.fee_components:
-					for comp in assignment.fee_components:
-						self.append(
-							"fee_components",
-							{
-								"fee_component": comp.fee_component,
-								"component_name": comp.component_name,
-								"amount": comp.amount,
-								"is_taxable": comp.is_taxable,
-								"tax_rate": comp.tax_rate,
-								"tax_amount": comp.tax_amount,
-								"total_amount": comp.total_amount,
-							},
-						)
-		else:
-			total = 0
-			for component in self.fee_components:
-				total += component.total_amount or 0
-			self.total_amount = total
+		total = 0
+		for row in self.fee_components:
+			# If total_amount isn't set, calculate it now
+			if not row.total_amount:
+				if row.is_taxable:
+					row.tax_amount = flt(row.amount) * flt(row.tax_rate) / 100
+				else:
+					row.tax_amount = 0
+				row.total_amount = flt(row.amount) + flt(row.tax_amount)
+			
+			total += flt(row.total_amount)
+		
+		self.total_amount = total
 
 		# Calculate paid amount from payments
 		paid = 0
 		for payment in self.payments:
-			paid += payment.amount or 0
+			paid += flt(payment.amount)
 		self.paid_amount = paid
 
-		self.outstanding_amount = self.total_amount - self.paid_amount
+		self.outstanding_amount = flt(self.total_amount) - flt(self.paid_amount)
 
 	def update_status(self):
 		if self.outstanding_amount <= 0:
@@ -55,7 +45,7 @@ class FeeInvoice(Document):
 			self.status = "Unpaid"
 
 		# Check if overdue
-		if self.due_date and frappe.utils.today() > self.due_date and self.status != "Paid":
+		if self.due_date and getdate(nowdate()) > getdate(self.due_date) and self.status != "Paid":
 			self.status = "Overdue"
 
 	def on_update_after_submit(self):
@@ -130,6 +120,8 @@ class FeeInvoice(Document):
 		Logs the attempt and returns the checkout URL.
 		Handles gateway resolution server-side to avoid permission issues.
 		"""
+		self.flags.ignore_links = True
+		self.save(ignore_permissions=True) # Ensure amounts are calculated
 		gateway = frappe.db.get_value("Payment Gateway", {}, "name")
 		if not gateway:
 			frappe.throw(_("No Payment Gateway configured in the system."))

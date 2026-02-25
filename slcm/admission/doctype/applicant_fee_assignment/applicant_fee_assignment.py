@@ -72,7 +72,7 @@ def create_invoice(docname):
 		student.programme = doc.program 
 		
 		# For testing: Bypass missing Genders/Links
-		if frappe.db.exists("Genders", applicant.gender):
+		if applicant.gender and frappe.db.exists("Gender", applicant.gender):
 			student.gender = applicant.gender
 
 		student.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
@@ -111,9 +111,12 @@ def create_invoice(docname):
 	for row in doc.fee_components:
 		invoice.append("fee_components", {
 			"fee_component": row.fee_component,
+			"component_name": row.component_name,
 			"amount": row.amount,
 			"is_taxable": row.is_taxable,
-			"tax_rate": row.tax_rate
+			"tax_rate": row.tax_rate,
+			"tax_amount": row.tax_amount,
+			"total_amount": row.total_amount
 		})
 	
 	invoice.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)

@@ -14,7 +14,7 @@
  "is_hidden": 0,
  "label": "Offer Letters",
  "links": [],
- "modified": "2026-02-24 14:14:05.615554",
+ "modified": "2026-02-25 15:33:27.480541",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",
@@ -28,7 +28,7 @@
    "role": "System Manager"
   }
  ],
- "sequence_id": 7.0,
+ "sequence_id": 5.0,
  "shortcuts": [
   {
    "color": "Green",
@@ -81,6 +81,24 @@
    "doc_view": "List",
    "label": "Applicants",
    "link_to": "Applicant",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Fee Structure",
+   "link_to": "Fee Structure",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Payment Request",
+   "link_to": "Payment Request",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Online Payment Log",
+   "link_to": "Online Payment Log",
    "type": "DocType"
   }
  ],

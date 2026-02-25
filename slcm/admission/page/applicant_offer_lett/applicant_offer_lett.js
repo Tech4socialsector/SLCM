@@ -44,50 +44,63 @@ class ApplicantOfferLetter {
 		let me = this;
 		window.cur_page = this;
 		this.data = data;
-		const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid } = data;
+		const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid, online_payment_enabled } = data;
 
 		if (offer.offer_status === 'Issued') {
 			this.page.set_primary_action(__('Accept Admission Offer'), () => me.handle_accept(), 'octicon octicon-check');
 			this.page.add_inner_button(__('Reject Admission Offer'), () => me.handle_reject(), __('Actions'));
-		} else if (offer.offer_status === 'Accepted' && !is_fee_paid) {
+		} else if (offer.offer_status === 'Accepted' && !is_fee_paid && online_payment_enabled) {
 			this.page.set_primary_action(__('Pay Fee'), () => me.handle_pay_fee(), 'octicon octicon-credit-card');
 		} else {
 			this.page.clear_primary_action();
 		}
 		this.page.set_secondary_action(__('Download Letter (PDF)'), () => me.handle_download(), 'octicon octicon-cloud-download');
 
+		if (offer.offer_status === 'Payment Completed' || is_fee_paid || applicant.application_status === 'Fee Paid') {
+			this.page.add_inner_button(__('Download Receipt'), () => me.handle_download_receipt(), __('Actions'));
+		}
+
+
 		let html = `
 			<div class="offer-container">
 				<div class="row">
 					<!-- Statistics & Actions -->
 					<div class="col-md-4">
-						<div class="mobile-action-container">
-							<div class="card shadow-sm border-0">
-								<div class="card-body p-3">
-									${offer.offer_status === 'Issued' ? `
-									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_accept()">
-										<i class="fa fa-check mr-2"></i> ${__('Accept Admission Offer')}
-									</button>
-									<button class="btn btn-danger btn-block mb-2 font-weight-bold" onclick="cur_page.handle_reject()">
-										<i class="fa fa-times mr-2"></i> ${__('Reject Admission Offer')}
-									</button>
-									` : (offer.offer_status === 'Accepted' && !is_fee_paid) ? `
-									<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
-										<i class="fa fa-credit-card mr-2"></i> ${__('Pay Fee')}
-									</button>
-                                    ` : ''}
-									<button class="btn btn-outline-primary btn-block font-weight-bold" onclick="cur_page.handle_download()">
-										<i class="fa fa-cloud-download mr-2"></i> ${__('Download Letter (PDF)')}
-									</button>
-								</div>
-							</div>
-						</div>
+									${offer.offer_status === 'Payment Completed' || is_fee_paid || applicant.application_status === 'Fee Paid' ? `
+									<div class="desktop-buttons-container mb-3">
+										<button class="btn btn-success btn-block mb-2 font-weight-bold" onclick="cur_page.handle_download_receipt()">
+											<i class="fa fa-file-text-o mr-2"></i> ${__('Download Receipt')}
+										</button>
+									</div>
+									` : ''}
+									<div class="mobile-action-container">
+										<div class="card shadow-sm border-0">
+											<div class="card-body p-3">
+												${offer.offer_status === 'Issued' ? `
+												<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_accept()">
+													<i class="fa fa-check mr-2"></i> ${__('Accept Admission Offer')}
+												</button>
+												<button class="btn btn-danger btn-block mb-2 font-weight-bold" onclick="cur_page.handle_reject()">
+													<i class="fa fa-times mr-2"></i> ${__('Reject Admission Offer')}
+												</button>
+												` : (offer.offer_status === 'Accepted' && !is_fee_paid && online_payment_enabled) ? `
+												<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
+													<i class="fa fa-credit-card mr-2"></i> ${__('Pay Fee')}
+												</button>
+												` : ''}
+												<button class="btn btn-outline-primary btn-block font-weight-bold" onclick="cur_page.handle_download()">
+													<i class="fa fa-cloud-download mr-2"></i> ${__('Download Letter (PDF)')}
+												</button>
+											</div>
+										</div>
+									</div>
+
 
 						<div class="card mb-4 shadow-sm border-0">
 							<div class="card-body">
 								<h6 class="text-muted text-uppercase small font-weight-bold mb-3">${__('Offer Status')}</h6>
 								<div class="d-flex align-items-center">
-									<div class="status-indicator ${offer.offer_status.toLowerCase()} mr-3"></div>
+									<div class="status-indicator ${offer.offer_status.toLowerCase().replace(/ /g, '-')} mr-3"></div>
 									<h4 class="mb-0 font-weight-bold">${offer.offer_status}</h4>
 								</div>
 							</div>
@@ -108,32 +121,35 @@ class ApplicantOfferLetter {
                                     <span class="text-muted text-small">${__('Payable Amount')}:</span>
                                     <div class="h4 font-weight-bold d-flex align-items-center justify-content-between">
 										<span>${format_currency(offer.payable_amount, currency)}</span>
-										${is_fee_paid ? `<span class="badge badge-pill badge-success small ml-2" style="font-size: 0.7rem;"><i class="fa fa-check mr-1"></i> ${__('Paid')}</span>` : ''}
+										${is_fee_paid || offer.offer_status === 'Payment Completed' ? `<span class="badge badge-pill badge-success small ml-2" style="font-size: 0.7rem;"><i class="fa fa-check mr-1"></i> ${__('Paid')}</span>` : ''}
 									</div>
                                 </div>
 							</div>
 						</div>
 
+						${offer.offer_status !== 'Payment Completed' ? `
 						<div class="card mb-4 shadow-sm border-0 bg-light-warning">
 							<div class="card-body">
 								<h6 class="text-warning text-uppercase small font-weight-bold mb-3">${__('Important Deadline')}</h6>
 								<div class="h5 mb-1 text-danger font-weight-bold d-flex align-items-center justify-content-between">
 									<span>${frappe.datetime.str_to_user(offer.payment_deadline)}</span>
 									${(function () {
-				if (!offer.payment_deadline) return '';
-				const diff = frappe.datetime.get_day_diff(offer.payment_deadline, frappe.datetime.now_date());
-				if (diff > 0) {
-					return `<span class="badge badge-pill badge-danger animated pulse infinite" style="font-size: 0.7rem; padding: 5px 10px;">${diff} ${__('Days Left')}</span>`;
-				} else if (diff === 0) {
-					return `<span class="badge badge-pill badge-danger" style="font-size: 0.7rem; padding: 5px 10px;">${__('Expires Today')}</span>`;
-				} else {
-					return `<span class="badge badge-pill badge-secondary" style="font-size: 0.7rem; padding: 5px 10px;">${__('Expired')}</span>`;
-				}
-			})()}
+					if (!offer.payment_deadline) return '';
+					const diff = frappe.datetime.get_day_diff(offer.payment_deadline, frappe.datetime.now_date());
+					if (diff > 0) {
+						return `<span class="badge badge-pill badge-danger animated pulse infinite" style="font-size: 0.7rem; padding: 5px 10px;">${diff} ${__('Days Left')}</span>`;
+					} else if (diff === 0) {
+						return `<span class="badge badge-pill badge-danger" style="font-size: 0.7rem; padding: 5px 10px;">${__('Expires Today')}</span>`;
+					} else {
+						return `<span class="badge badge-pill badge-secondary" style="font-size: 0.7rem; padding: 5px 10px;">${__('Expired')}</span>`;
+					}
+				})()}
 								</div>
 								<p class="text-muted small mb-0">${__('Decision and payment must be completed by this date.')}</p>
 							</div>
 						</div>
+						` : ''}
+
 
                         <div class="card shadow-sm border-0">
                             <div class="card-body p-0">
@@ -272,6 +288,28 @@ class ApplicantOfferLetter {
 		}
 	}
 
+	handle_download_receipt() {
+		const offer = this.data.offer;
+		frappe.call({
+			method: 'frappe.client.get_value',
+			args: {
+				doctype: 'Applicant Payment Receipt',
+				filters: { offer_letter: offer.name, docstatus: 1 },
+				fieldname: 'name'
+			},
+			callback: function (r) {
+				if (r.message && r.message.name) {
+					const format = offer.receipt_print_format || 'Applicant Payment Receipt Format';
+					const url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant+Payment+Receipt&name=${encodeURIComponent(r.message.name)}&format=${encodeURIComponent(format)}&no_letterhead=1`;
+					window.open(url, '_blank');
+				} else {
+					frappe.msgprint(__('Payment Receipt not found. It might still be generating, please refresh in a moment.'));
+				}
+			}
+		});
+	}
+
+
 	handle_accept() {
 		let me = this;
 		frappe.confirm(
@@ -347,101 +385,194 @@ class ApplicantOfferLetter {
 
 	handle_pay_fee() {
 		let me = this;
-		const { offer, fee_breakdown, currency } = this.data;
+		const { offer, fee_breakdown, currency, online_payment_enabled } = this.data;
+
+		let fields = [
+			{
+				fieldname: 'fee_html',
+				fieldtype: 'HTML'
+			}
+		];
+
+		// If online payment is NOT the only option or we want to allow other modes, we keep the select
+		// But requirement says "clicking the button show fee brakdown with pay now button as model"
+		// This implies a simpler flow for online payment.
 
 		let d = new frappe.ui.Dialog({
-			title: __('Fee Payment Confirmation'),
-			fields: [
-				{
-					fieldname: 'fee_html',
-					fieldtype: 'HTML'
-				},
-				{
-					label: __('Payment Mode'),
-					fieldname: 'payment_mode',
-					fieldtype: 'Select',
-					options: [__('Online Payment'), __('Cash'), __('Bank Transfer'), __('Cheque')],
-					default: __('Online Payment'),
-					reqd: 1
-				},
-				{
-					label: __('Reference Number'),
-					fieldname: 'reference_number',
-					fieldtype: 'Data',
-					description: __('Transaction ID, Check Number, etc.')
-				}
-			],
-			primary_action_label: __('Confirm & Pay'),
+			title: __('Admission Fee Payment'),
+			fields: fields,
+			primary_action_label: __('Pay Now'),
 			primary_action(values) {
-				console.log("Payment Mode selected:", values.payment_mode);
+				console.log("Proceeding with Online Payment (Razorpay Modal)");
 				d.hide();
-				if (values.payment_mode === "Online Payment" || values.payment_mode === __("Online Payment")) {
-					console.log("Proceeding with Online Payment flow");
-					frappe.dom.freeze(__('Redirecting to Payment Gateway...'));
-
-					// Get Checkout URL via Offer Service (Gateway resolution handles server-side)
-					frappe.call({
-						method: "slcm.api.service.offer_service.get_online_payment_url",
-						args: {
-							offer_name: offer.name
-						},
-						callback: function (res) {
-							frappe.dom.unfreeze();
-							if (res.message) {
-								window.location.href = res.message;
-							}
-						},
-						error: function () {
-							frappe.dom.unfreeze();
-						}
-					});
-				} else {
-					frappe.dom.freeze(__('Processing Payment...'));
-					frappe.call({
-						method: 'slcm.api.service.offer_service.process_fee_payment',
-						args: {
-							offer_name: offer.name,
-							payment_mode: values.payment_mode,
-							reference_number: values.reference_number
-						},
-						callback: function (r) {
-							frappe.dom.unfreeze();
-							if (r.message && r.message.success) {
-								frappe.show_alert({
-									message: __('Fee payment processed successfully!'),
-									indicator: 'green'
-								});
-								me.fetch_data();
-							}
-						}
-					});
-				}
+				me.initiate_razorpay_payment(offer.name);
 			}
 		});
 
 		let fee_html = `
-			<div class="fee-receipt-preview mb-4 p-3 border rounded bg-light">
-				<h6 class="text-muted text-uppercase small font-weight-bold mb-3">${__('Payment Summary')}</h6>
-				<table class="table table-sm mb-0">
-					<tbody>
-						${fee_breakdown.map(f => `
-							<tr>
-								<td>${f.component}</td>
-								<td class="text-right font-weight-bold">${format_currency(f.amount, currency)}</td>
-							</tr>
-						`).join('')}
-					</tbody>
-					<tfoot>
-						<tr class="table-info">
-							<th class="border-top-0">${__('Total Amount To Pay')}</th>
-							<th class="text-right border-top-0 h5 mb-0">${format_currency(offer.payable_amount, currency)}</th>
-						</tr>
-					</tfoot>
-				</table>
+			<div class="fee-receipt-preview mb-4 p-4 border-0 rounded bg-white shadow-sm">
+				<div class="text-center mb-4">
+					<div class="display-4 font-weight-bold text-dark mb-1">${format_currency(offer.payable_amount, currency)}</div>
+					<div class="text-muted small text-uppercase letter-spacing-1">${__('Total Payable Amount')}</div>
+				</div>
+				
+				<div class="border-top pt-3">
+					<h6 class="text-muted text-uppercase tiny-bold mb-3">${__('Fee Components')}</h6>
+					<table class="table table-sm table-borderless mb-0">
+						<tbody>
+							${fee_breakdown.map(f => `
+								<tr>
+									<td class="text-muted">${f.component}</td>
+									<td class="text-right font-weight-bold">${format_currency(f.amount, currency)}</td>
+								</tr>
+							`).join('')}
+						</tbody>
+					</table>
+				</div>
+				
+				<div class="mt-4 p-3 rounded bg-light border d-flex align-items-center">
+					<div class="text-primary mr-3">
+						<i class="fa fa-shield fa-2x"></i>
+					</div>
+					<div class="small text-muted">
+						${__('You will be redirected to a secure payment gateway to complete your transaction.')}
+					</div>
+				</div>
 			</div>
 		`;
+
 
 		d.fields_dict.fee_html.$wrapper.html(fee_html);
 		d.show();
 	}
+
+	initiate_razorpay_payment(offer_name) {
+		let me = this;
+		frappe.dom.freeze(__('Initiating Payment Gateway...'));
+
+		frappe.call({
+			method: "slcm.api.service.offer_service.create_offer_razorpay_order",
+			args: {
+				offer_name: offer_name
+			},
+			callback: function (r) {
+				frappe.dom.unfreeze();
+				if (r.message) {
+					me.open_razorpay_modal(r.message, offer_name);
+				}
+			},
+			error: function () {
+				frappe.dom.unfreeze();
+			}
+		});
+	}
+
+	open_razorpay_modal(data, offer_name, retry_count = 0) {
+		let me = this;
+		const options = {
+			"key": data.key_id,
+			"amount": data.amount,
+			"currency": data.currency,
+			"name": __("Admission Fee"),
+			"description": __("Offer Acceptance Fee Payment"),
+			"order_id": data.order_id,
+			"handler": function (response) {
+				me.verify_razorpay_payment(response, data.order_id, offer_name);
+			},
+			"prefill": {
+				"name": this.data.applicant.candidate_name,
+				"email": this.data.applicant.email || ""
+			},
+			"theme": {
+				"color": "#3399cc"
+			},
+			"modal": {
+				"ondismiss": function () {
+					console.log("Payment modal closed by user");
+					me.log_payment_failure(offer_name, data.order_id, { "message": "User closed the payment modal" });
+				}
+			}
+		};
+
+		if (typeof Razorpay === 'undefined') {
+			frappe.dom.freeze(__('Loading Payment Securely...'));
+			$.getScript('https://checkout.razorpay.com/v1/checkout.js')
+				.done(function () {
+					frappe.dom.unfreeze();
+					const rzp = new Razorpay(options);
+					rzp.on('payment.failed', function (response) {
+						me.log_payment_failure(offer_name, data.order_id, response.error);
+					});
+					rzp.open();
+				})
+				.fail(function (jqxhr, settings, exception) {
+					frappe.dom.unfreeze();
+					console.error("Razorpay SDK load failed:", exception);
+
+					if (retry_count < 2) {
+						frappe.show_alert({
+							message: __('Network issue detected. Retrying to connect to payment gateway...'),
+							indicator: 'orange'
+						});
+						setTimeout(() => me.open_razorpay_modal(data, offer_name, retry_count + 1), 2000);
+					} else {
+						frappe.msgprint({
+							title: __('Connection Error'),
+							message: __('We are having trouble connecting to the payment gateway (Razorpay). Please check your internet connection and try again.'),
+							indicator: 'red'
+						});
+					}
+				});
+		} else {
+			const rzp = new Razorpay(options);
+			rzp.on('payment.failed', function (response) {
+				me.log_payment_failure(offer_name, data.order_id, response.error);
+			});
+			rzp.open();
+		}
+	}
+
+	log_payment_failure(offer_name, order_id, error_data) {
+		frappe.call({
+			method: "slcm.api.service.fee_service.log_payment_failure",
+			args: {
+				offer_name: offer_name,
+				order_id: order_id,
+				error_data: error_data
+			}
+		});
+	}
+
+
+	verify_razorpay_payment(response, order_id, offer_name) {
+		let me = this;
+		frappe.dom.freeze(__('Verifying Payment...'));
+
+		frappe.call({
+			method: "slcm.api.service.offer_service.verify_offer_payment",
+			args: {
+				razorpay_payment_id: response.razorpay_payment_id,
+				razorpay_order_id: response.razorpay_order_id,
+				razorpay_signature: response.razorpay_signature,
+				offer_name: offer_name
+			},
+			callback: function (r) {
+				frappe.dom.unfreeze();
+				if (r.message && r.message.status === 'success') {
+					frappe.show_alert({
+						message: __('Payment Successful! Congratulations.'),
+						indicator: 'green'
+					});
+					me.fetch_data();
+				} else {
+					frappe.msgprint({
+						title: __('Payment Verification Failed'),
+						message: r.message ? r.message.message : __('Verification failed.'),
+						indicator: 'red'
+					});
+				}
+			}
+		});
+	}
+
 }
