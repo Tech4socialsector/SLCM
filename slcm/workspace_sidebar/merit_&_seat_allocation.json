@@ -57,7 +57,7 @@
    "collapsible": 1,
    "indent": 0,
    "keep_closed": 0,
-   "label": "merit list",
+   "label": "Merit List",
    "link_to": "Merit List",
    "link_type": "DocType",
    "show_arrow": 0,
@@ -68,7 +68,7 @@
    "collapsible": 1,
    "indent": 0,
    "keep_closed": 0,
-   "label": "waitlist Rule",
+   "label": "Waitlist Rule",
    "link_to": "Waitlist Rule",
    "link_type": "DocType",
    "show_arrow": 0,
@@ -133,7 +133,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-25 17:37:51.532855",
+ "modified": "2026-02-25 18:40:29.107116",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit & Seat Allocation",
