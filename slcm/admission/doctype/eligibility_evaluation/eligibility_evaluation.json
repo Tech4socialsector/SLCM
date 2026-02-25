@@ -1,7 +1,7 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
+ "autoname": "field:applicant_name",
  "creation": "2026-02-16 16:51:50.987241",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -75,7 +75,8 @@
   {
    "fieldname": "applicant_name",
    "fieldtype": "Data",
-   "label": "Applicant Name"
+   "label": "Applicant Name",
+   "unique": 1
   },
   {
    "default": "0",
@@ -93,10 +94,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 15:56:09.485291",
+ "modified": "2026-02-25 12:05:31.479267",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Evaluation",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
