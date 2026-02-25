@@ -68,13 +68,6 @@ frappe.listview_settings['Applicant'] = {
                                     title: __("Bulk Offer Generation Report"),
                                     message: message,
                                     indicator: error_count > 0 ? 'orange' : 'green',
-                                    primary_action: {
-                                        label: __("Refresh List"),
-                                        action: () => {
-                                            listview.refresh()
-                                            this.dialog.hide()
-                                        }
-                                    }
                                 });
                             }, 800);
                             return;

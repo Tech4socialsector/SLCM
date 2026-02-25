@@ -163,14 +163,7 @@
             "fieldname": "application_status",
             "fieldtype": "Select",
             "label": "Application Status",
-            "options": "Submitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired"
-        },
-        {
-            "fieldname": "evaluation_status",
-            "fieldtype": "Select",
-            "label": "Evaluation Status",
-            "options": "\nEligible\nIneligible",
-            "read_only": 1
+            "options": "Submitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nFee Paid"
         },
         {
             "fieldname": "personal_information_tab",

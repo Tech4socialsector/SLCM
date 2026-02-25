@@ -15,15 +15,36 @@
     border-radius: 50%;
 }
 
+.status-indicator.draft {
+    background-color: #17a2b8;
+    box-shadow: 0 0 0 4px rgba(23, 162, 184, 0.2);
+}
+
 .status-indicator.issued {
     background-color: #ffc107;
     box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.2);
 }
 
 .status-indicator.accepted {
+    background-color: #007bff;
+    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.status-indicator.payment-completed {
     background-color: #28a745;
     box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.2);
 }
+
+.status-indicator.rejected {
+    background-color: #dc3545;
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2);
+}
+
+.status-indicator.expired, .status-indicator.withdrawn {
+    background-color: #6c757d;
+    box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.2);
+}
+
 
 .bg-light-warning {
     background-color: #fff9e6;

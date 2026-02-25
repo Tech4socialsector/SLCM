@@ -1,8 +1,9 @@
 import frappe
 import json
 from frappe import _, throw
-from frappe.utils import add_days, getdate, now_datetime, get_datetime
+from frappe.utils import add_days, getdate, now_datetime, get_datetime, flt
 from frappe.utils.pdf import get_pdf
+from slcm.api.service.fee_service import FeeService
 
 class OfferService:
     """
@@ -142,10 +143,10 @@ class OfferService:
         offer.fee_structure = fee_structure_name
         
         # Set validity/deadline from Fee Structure
-        offer.payment_deadline = OfferService._calculate_deadline(fee_structure_name)
+        offer.payment_deadline = FeeService._calculate_deadline(fee_structure_name)
         
         # Freeze Fees from Fee Structure
-        fee_data = OfferService._calculate_and_freeze_fees(fee_structure_name)
+        fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name)
         offer.payable_amount = fee_data.get("total_payable")
         
         # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
@@ -242,36 +243,7 @@ class OfferService:
 
     @staticmethod
     def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None):
-        """
-        Processes the fee payment for an accepted offer.
-        Creates Student Master, Student Enrollment, Fee Invoice and Fee Payment.
-        """
-        # 1. Find the Applicant Fee Assignment
-        assignment_name = frappe.db.get_value("Applicant Fee Assignment", 
-            {"offer_letter": offer_name, "status": ["!=", "Cancelled"]}, "name")
-        
-        if not assignment_name:
-            offer_doc = frappe.get_doc("Offer Letter", offer_name)
-            if offer_doc.offer_status != "Accepted":
-                throw(_("Offer must be 'Accepted' before paying fees."))
-            assignment_name = OfferService.create_fee_assignment_from_offer(offer_doc)
-        
-        if not assignment_name:
-            throw(_("Fee Assignment not found for offer {0}").format(offer_name))
-
-        # Update Assignment status to 'Paid'
-        assignment = frappe.get_doc("Applicant Fee Assignment", assignment_name)
-        assignment.db_set("status", "Paid")
-        
-        # Update Applicant Status to Accepted
-        OfferService.update_applicant_status(assignment.applicant, application_status="Offer Accepted")
-        
-        OfferService.log_action(offer_name, "Fee Paid", _("Fee status updated to Paid via {0}").format(payment_mode))
-        
-        return {
-            "success": True,
-            "message": "Fee assignment marked as paid"
-        }
+        return FeeService.process_fee_payment(offer_name, payment_mode, reference_number)
     
     @staticmethod
     def reject_offer(offer_name, reason=None):
@@ -430,84 +402,16 @@ class OfferService:
 
     @staticmethod
     def _calculate_deadline(fee_structure_name):
-        """Determines payment deadline based on Fee Structure."""
-        if not fee_structure_name:
-            return None
-            
-        valid_until = frappe.db.get_value("Fee Structure", fee_structure_name, "valid_until")
-        # Ensure it's returned as a datetime/date object for the field
-        return get_datetime(valid_until) if valid_until else None
+        return FeeService._calculate_deadline(fee_structure_name)
 
     @staticmethod
     def extended_fee_deadline(fee_structure_name):
-        """Updates payment deadline for all active Offer Letters linked to this Fee Structure."""
-        if not fee_structure_name:
-            return
-            
-        valid_until = frappe.db.get_value("Fee Structure", fee_structure_name, "valid_until")
-        if not valid_until:
-            return
-
-        new_deadline = get_datetime(valid_until)
-        
-        # Find all active offers linked to this Fee Structure
-        offers = frappe.get_all("Offer Letter", filters={
-            "fee_structure": fee_structure_name,
-            "offer_status": ["in", ["Draft", "Issued"]]
-        }, fields=["name"])
-        
-        for entry in offers:
-            doc = frappe.get_doc("Offer Letter", entry.name)
-            if doc.payment_deadline != new_deadline:
-                doc.payment_deadline = new_deadline
-                doc.ignore_lock = True
-                doc.edit_reason = _("Bulk extension due to Fee Structure ({0}) update.").format(fee_structure_name)
-                doc.add_comment("Comment", _("Payment deadline automatically syncronized to {0} due to Fee Structure update.").format(
-                    frappe.utils.format_datetime(new_deadline)
-                ))
-                doc.save(ignore_permissions=True)
+        return FeeService.extended_fee_deadline(fee_structure_name)
 
     
     @staticmethod
     def _calculate_and_freeze_fees(fee_structure_name):
-        """
-        Financial Logic: Calculates fees and returns a structured dict.
-        Fetches data from the linked Fee Structure and its components.
-        """
-        if not fee_structure_name:
-            return {}
-
-        fs_doc = frappe.get_doc("Fee Structure", fee_structure_name)
-        
-        base_fee = 0
-        tax_amount = 0
-        breakdown = {}
-        components = []
-        for component in fs_doc.components:
-            base_fee += component.amount
-            tax_amount += component.tax_amount
-            # Use component name or the link name if name not set
-            label = component.component_name or component.fee_component 
-            breakdown[label] = component.total_amount
-            
-            components.append({
-                "fee_component": component.fee_component,
-                "component_name": component.component_name,
-                "amount": component.amount,
-                "is_taxable": component.is_taxable,
-                "tax_rate": component.tax_rate,
-                "tax_amount": component.tax_amount,
-                "total_amount": component.total_amount
-            })
-
-        return {
-            "base_fee": base_fee, 
-            "scholarship_amount": 0, # Could be extended later if scholarships are handled
-            "tax_amount": tax_amount,
-            "total_payable": fs_doc.total_amount,
-            "breakdown": breakdown,
-            "components": components
-        }
+        return FeeService._calculate_and_freeze_fees(fee_structure_name)
 
     @staticmethod
     def _send_offer_letter_email(offer, email_template):
@@ -727,34 +631,20 @@ class OfferService:
 
     @staticmethod
     def create_fee_assignment_from_offer(offer):
-        """
-        Creates an Applicant Fee Assignment record from an accepted offer letter.
-        Populates it with frozen fees from the Offer Fee Snapshot.
-        """
-        if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "status": ["!=", "Cancelled"]}):
-            return
+        return FeeService.create_fee_assignment_from_offer(offer)
 
-        snapshot = frappe.get_doc("Offer Fee Snapshot", {"offer_id": offer.name})
-        
-        assignment = frappe.new_doc("Applicant Fee Assignment")
-        assignment.applicant = offer.applicant
-        assignment.offer_letter = offer.name
-        assignment.program = offer.program
-        assignment.academic_year = offer.academic_year or frappe.db.get_value("Applicant", offer.applicant, "academic_year")
-        assignment.assignment_date = frappe.utils.today()
-        
-        for row in snapshot.fee_component:
-            assignment.append("fee_components", {
-                "fee_component": row.fee_component,
-                "amount": row.amount,
-                "is_taxable": row.is_taxable,
-                "tax_rate": row.tax_rate
-            })
-        
-        assignment.insert(ignore_permissions=True)
-        assignment.submit()
-        
-        return assignment.name
+    @staticmethod
+    def get_online_payment_url(offer_name, gateway=None):
+        return FeeService.get_online_payment_url(offer_name, gateway)
+
+    @staticmethod
+    def create_offer_razorpay_order(offer_name):
+        return FeeService.create_offer_razorpay_order(offer_name)
+
+    @staticmethod
+    def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name):
+        return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)
+
 
 
 
@@ -786,7 +676,8 @@ def reject_applicant_other_offer(applicant, reason):
 
 @frappe.whitelist()
 def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None):
-    return OfferService.process_fee_payment(offer_name, payment_mode, reference_number)
+    from slcm.api.service.fee_service import FeeService
+    return FeeService.process_fee_payment(offer_name, payment_mode, reference_number)
 
 @frappe.whitelist()
 def reject_offer(offer_name, reason=None):
@@ -795,3 +686,17 @@ def reject_offer(offer_name, reason=None):
 @frappe.whitelist()
 def expire_offers():
     return OfferService.expire_offers()
+
+@frappe.whitelist()
+def get_online_payment_url(offer_name, gateway=None):
+    return OfferService.get_online_payment_url(offer_name, gateway)
+
+@frappe.whitelist()
+def create_offer_razorpay_order(offer_name):
+    from slcm.api.service.fee_service import FeeService
+    return FeeService.create_offer_razorpay_order(offer_name)
+
+@frappe.whitelist()
+def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name):
+    from slcm.api.service.fee_service import FeeService
+    return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)

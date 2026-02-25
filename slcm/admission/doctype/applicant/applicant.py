@@ -873,12 +873,12 @@ class Applicant(Document):
         }
 
         if existing:
-            doc_data["name"] = existing
+            doc = frappe.get_doc("Eligibility Evaluation", existing)
+            doc.update(doc_data)
+        else:
+            doc = frappe.get_doc(doc_data)
 
-        doc = frappe.get_doc(doc_data)
         doc.save(ignore_permissions=True)
-        frappe.db.commit()
-
         frappe.db.commit()
 
         frappe.db.commit()
@@ -943,9 +943,11 @@ def create_eligibility_evaluation_async(
     }
 
     if existing:
-        eval_data["name"] = existing
+        doc = frappe.get_doc("Eligibility Evaluation", existing)
+        doc.update(eval_data)
+    else:
+        doc = frappe.get_doc(eval_data)
 
-    doc = frappe.get_doc(eval_data)
     doc.save(ignore_permissions=True)
 
 

@@ -45,15 +45,14 @@ fixtures = [
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "slcm",
-# 		"logo": "/assets/slcm/logo.png",
-# 		"title": "SLCM",
-# 		"route": "/slcm",
-# 		"has_permission": "slcm.api.permission.has_app_permission"
-# 	}
-# ]
+add_to_apps_screen = [
+	{
+		"name": "slcm",
+		"logo": "/assets/slcm/logo.png",
+		"title": "SLCM",
+		"route": "/slcm"
+	}
+]
 
 # Includes in <head>
 # ------------------
