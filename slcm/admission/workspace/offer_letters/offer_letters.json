@@ -14,7 +14,7 @@
  "is_hidden": 0,
  "label": "Offer Letters",
  "links": [],
- "modified": "2026-02-25 15:33:27.480541",
+ "modified": "2026-02-25 18:32:44.788445",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",
@@ -99,6 +99,18 @@
    "doc_view": "List",
    "label": "Online Payment Log",
    "link_to": "Online Payment Log",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Razorpay Settings",
+   "link_to": "Razorpay Settings",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Payment Gateway",
+   "link_to": "Payment Gateway",
    "type": "DocType"
   }
  ],
