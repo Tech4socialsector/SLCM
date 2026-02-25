@@ -45,15 +45,14 @@ fixtures = [
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "slcm",
-# 		"logo": "/assets/slcm/logo.png",
-# 		"title": "SLCM",
-# 		"route": "/slcm",
-# 		"has_permission": "slcm.api.permission.has_app_permission"
-# 	}
-# ]
+add_to_apps_screen = [
+	{
+		"name": "slcm",
+		"logo": "/assets/slcm/logo.png",
+		"title": "SLCM",
+		"route": "/slcm"
+	}
+]
 
 # Includes in <head>
 # ------------------
@@ -226,7 +225,7 @@ fixtures = [
 # Ignore links to specified DocTypes when deleting documents
 # -----------------------------------------------------------
 
-# ignore_links_on_delete = ["Communication", "ToDo"]
+ignore_links_on_delete = ["Admission Audit Log", "Merit Audit Log", "Seat Allocation Audit Log", "Communication", "ToDo"]
 
 # Request Events
 # ----------------
@@ -287,7 +286,8 @@ fixtures = [
 scheduler_events = {
 	"cron": {
 		"*/10 * * * *": [  # Every 10 minutes
-			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs"
+			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
+			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		]
 	},
     "all": [

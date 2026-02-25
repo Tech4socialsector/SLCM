@@ -1,0 +1,22 @@
+{
+ "app": "slcm",
+ "bg_color": "gray",
+ "creation": "2026-02-25 15:42:21.184236",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Merit & Seat Allocation",
+ "link_to": "Merit & Seat Allocation",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-02-25 17:29:58.145681",
+ "modified_by": "Administrator",
+ "name": "Merit & Seat Allocation",
+ "owner": "Administrator",
+ "parent_icon": "Admission",
+ "restrict_removal": 0,
+ "roles": [],
+ "sidebar": "Merit & Seat Allocation",
+ "standard": 1
+}

@@ -39,7 +39,8 @@ def get_offer_details(offer_name=None):
             
         offers = frappe.get_all("Offer Letter", filters={
             "applicant": applicant,
-            "offer_status": ["in", ["Issued", "Accepted"]]
+            "offer_status": ["in", ["Issued", "Accepted", "Payment Completed"]]
+
         }, fields=["name"], order_by="creation desc", limit=1)
         
         if not offers:
@@ -71,7 +72,11 @@ def get_offer_details(offer_name=None):
     
     # Check if Fee is paid
     fee_paid = frappe.db.get_value("Applicant Fee Assignment", 
-        {"offer_letter": offer_doc.name, "status": "Paid"}, "name")
+        {"offer_letter": offer_doc.name, "status": ["in", ["Paid", "Fee Paid"]]}, "name")
+
+
+    # Get Online Payment Enabled flag
+    online_payment_enabled = frappe.db.get_value("Fee Structure", offer_doc.fee_structure, "online_payment") if offer_doc.fee_structure else False
 
     return {
         "offer": offer_doc.as_dict(),
@@ -80,5 +85,6 @@ def get_offer_details(offer_name=None):
         "rendered_content": offer_doc.rendered_content,
         "is_admin": is_admin,
         "is_fee_paid": True if fee_paid else False,
+        "online_payment_enabled": online_payment_enabled,
         "currency": frappe.defaults.get_global_default("currency") or "INR"
     }

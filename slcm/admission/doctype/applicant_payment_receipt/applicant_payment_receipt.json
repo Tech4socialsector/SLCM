@@ -1,0 +1,174 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "format:APR-{YYYY}-{#####}",
+    "creation": "2026-02-25 17:30:00",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "receipt_details_section",
+        "applicant",
+        "applicant_name",
+        "program",
+        "academic_year",
+        "offer_letter",
+        "column_break_1",
+        "payment_date",
+        "payment_reference",
+        "transaction_id",
+        "payment_mode",
+        "campus",
+        "fee_breakdown_section",
+        "fee_components",
+        "totals_section",
+        "total_amount",
+        "currency",
+        "amended_from"
+    ],
+    "fields": [
+        {
+            "fieldname": "receipt_details_section",
+            "fieldtype": "Section Break",
+            "label": "Receipt Details"
+        },
+        {
+            "fieldname": "applicant",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Applicant",
+            "options": "Applicant",
+            "reqd": 1
+        },
+        {
+            "fetch_from": "applicant.candidate_name",
+            "fieldname": "applicant_name",
+            "fieldtype": "Data",
+            "label": "Applicant Name",
+            "read_only": 1
+        },
+        {
+            "fieldname": "program",
+            "fieldtype": "Link",
+            "label": "Program",
+            "options": "Program",
+            "read_only": 1
+        },
+        {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "label": "Academic Year",
+            "options": "Academic Year",
+            "read_only": 1
+        },
+        {
+            "fieldname": "offer_letter",
+            "fieldtype": "Link",
+            "label": "Offer Letter",
+            "options": "Offer Letter",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "Today",
+            "fieldname": "payment_date",
+            "fieldtype": "Date",
+            "label": "Payment Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "payment_reference",
+            "fieldtype": "Link",
+            "label": "Payment Reference",
+            "options": "Payment Request"
+        },
+        {
+            "fieldname": "transaction_id",
+            "fieldtype": "Data",
+            "label": "Transaction ID",
+            "read_only": 1
+        },
+        {
+            "fieldname": "payment_mode",
+            "fieldtype": "Data",
+            "label": "Payment Mode",
+            "read_only": 1
+        },
+        {
+            "fieldname": "campus",
+            "fieldtype": "Link",
+            "label": "Campus",
+            "options": "Campus",
+            "read_only": 1
+        },
+        {
+            "fieldname": "fee_breakdown_section",
+            "fieldtype": "Section Break",
+            "label": "Fee Breakdown"
+        },
+        {
+            "fieldname": "fee_components",
+            "fieldtype": "Table",
+            "label": "Fee Components",
+            "options": "Applicant Receipt Component",
+            "reqd": 1
+        },
+        {
+            "fieldname": "totals_section",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "total_amount",
+            "fieldtype": "Currency",
+            "in_list_view": 1,
+            "label": "Total Amount",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "currency",
+            "fieldtype": "Link",
+            "label": "Currency",
+            "options": "Currency"
+        },
+        {
+            "fieldname": "amended_from",
+            "fieldtype": "Link",
+            "label": "Amended From",
+            "options": "Applicant Payment Receipt"
+        }
+    ],
+    "is_submittable": 1,
+    "modified": "2026-02-25 17:30:00",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Applicant Payment Receipt",
+    "naming_rule": "Expression",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "read": 1,
+            "role": "All",
+            "if_owner": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
+}

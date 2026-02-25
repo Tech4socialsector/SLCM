@@ -10,6 +10,24 @@ class FeeStructure(Document):
 	def validate(self):
 		self.validate_dates()
 		self.calculate_total()
+		self.validate_duplicate_active_fee_structure()
+
+	def validate_duplicate_active_fee_structure(self):
+		if self.status == "Active":
+			filters = {
+				"program": self.program,
+				"academic_year": self.academic_year,
+				"academic_term": self.academic_term,
+				"applicable": self.applicable,
+				"offer_round": self.offer_round,
+				"payment_gateway": self.payment_gateway,
+				"status": "Active",
+				"name": ["!=", self.name]
+			}
+			duplicate = frappe.db.exists("Fee Structure", filters)
+			if duplicate:
+				frappe.throw(_("Another active Fee Structure ({0}) already exists for the same Program, Academic Year, Academic Term, Applicable, Offer Round, and Payment Gateway.").format(duplicate))
+
 
 	def validate_dates(self):
 		if self.valid_from and self.valid_until:

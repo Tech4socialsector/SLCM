@@ -17,5 +17,5 @@ class StageMaster(Document):
 
 	def on_trash(self):
 		# Prevent deletion if linked to applications
-		if frappe.db.exists("Admission Application", {"current_stage": self.name}):
+		if frappe.db.exists("Applicant", {"current_stage": self.name}):
 			frappe.throw(_("Cannot delete Stage Master {0} because it is linked to Admission Applications").format(self.name))
