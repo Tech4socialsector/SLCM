@@ -7,29 +7,54 @@ from frappe.utils import flt
 from payments.utils import get_payment_gateway_controller
 
 class FoundationsforaLegalEducation(Document):
-	def on_payment_authorized(self, payment_status):
+	def on_payment_authorized(self, status):
 		"""
-		Called by Frappe's payment gateway controllers (e.g. razorpay_settings) 
-		when a payment is completed. Must return the exact Redirect URL.
+		This hook is called by the Frappe Payments app when a payment is successful, failed, or cancelled.
+		The 'status' parameter is usually 'Completed', 'Authorized', 'Failed', etc.
 		"""
-		if payment_status in ("Authorized", "Completed", "Verified"):
-			# Fetch the transaction ID from the latest Integration Request
-			transaction_id = "pay_authorized"
-			integration_request = frappe.get_all(
-				"Integration Request",
-				filters={"reference_docname": self.name, "integration_request_service": "Razorpay"},
-				order_by="creation desc",
-				limit=1
-			)
-			if integration_request:
-				doc = frappe.get_doc("Integration Request", integration_request[0].name)
-				import json
-				data = json.loads(doc.data) if doc.data else {}
-				transaction_id = data.get("razorpay_payment_id", "pay_authorized")
+		if status in ["Completed", "Authorized"]:
+			self.db_set("payment_status", "Paid")
+			self.db_set("enrollment_status", "Enrolled")
+			
+			self.create_user_on_enrollment()
+			
+			frappe.msgprint("Payment Authorized successfully for " + self.name)
+		elif status in ["Failed", "Cancelled"]:
+			valid_statuses = {"Failed": "Payment Failed", "Cancelled": "Cancelled"}
+			self.db_set("payment_status", valid_statuses.get(status, "Payment Failed"))
 
-			# Ensure we only redirect strictly on success to skip Frappe's generic interstitial
-			return f"/fle-success-page?name={self.name}&transaction_id={transaction_id}"
-		return None
+	def before_insert(self):
+		if not self.enrollment_status or self.enrollment_status == "Enrolled":
+			self.enrollment_status = "In Progress"
+		if not self.payment_status:
+			self.payment_status = "Unpaid"
+
+	def validate_payment(self):
+		"""
+		Fired from the `accept` method inside `payment_webform.py` when a user clicks the framework's native 'Proceed to Pay' button.
+		"""
+		self.db_set("payment_status", "Payment Initiated")
+
+	def create_user_on_enrollment(self):
+		# Check if user already exists
+		if not frappe.db.exists("User", self.email_address):
+			user = frappe.get_doc({
+				"doctype": "User",
+				"email": self.email_address,
+				"first_name": self.candidate_name,
+				"mobile_no": self.candidate_contact_number,
+				"enabled": 1,
+				"send_welcome_email": 1
+			})
+			user.flags.ignore_password_policy = True
+			user.insert(ignore_permissions=True)
+			
+			if "LMS Student" in [r.role.name for r in frappe.get_all("Role")]:
+				user.add_roles("LMS Student")
+			
+			self.db_set("lms_account_created", 1)
+		else:
+			frappe.msgprint("User already exists with this Email ID")
 
 @frappe.whitelist()
 def create_razorpay_order(doc_name):
@@ -56,7 +81,7 @@ def create_razorpay_order(doc_name):
 			"payer_name": doc.candidate_name,
 			"order_id": doc.name,
 			"currency": "INR",
-			"receipt": doc.name 
+			"receipt": doc.name
 		}
 		
 		order = controller.create_order(**payment_details)
@@ -66,15 +91,13 @@ def create_razorpay_order(doc_name):
 			
 		frappe.log_error("Razorpay Order Created", str(order))
 		
-		# Define the precise success URL for Razorpay to redirect to upon approval
-		success_url = f"/fle-success-page?name={doc.name}"
+		doc.db_set("payment_status", "Payment Initiated")
 		
 		return {
 			"order_id": order.get("id"),
 			"key_id": controller.api_key,
 			"amount": order.get("amount"),
-			"currency": order.get("currency"),
-			"redirect_to": success_url
+			"currency": order.get("currency")
 		}
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Razorpay Order Creation Failed")
@@ -82,6 +105,18 @@ def create_razorpay_order(doc_name):
 			frappe.throw(e.message)
 		else:
 			frappe.throw("Failed to create payment order. Please try again or contact administrator.")
+
+@frappe.whitelist()
+def update_payment_status(doc_name, status):
+	try:
+		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
+		valid_statuses = ["Unpaid", "Payment Initiated", "Paid", "Payment Failed", "Refunded", "Cancelled"]
+		if status in valid_statuses:
+			doc.db_set("payment_status", status)
+		return {"status": "success"}
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), f"Payment Status Update to {status} Failed")
+		return {"status": "failed", "message": str(e)}
 
 @frappe.whitelist()
 def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, doc_name):
@@ -101,11 +136,9 @@ def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, d
 		doc.db_set("enrollment_status", "Enrolled")
 		doc.db_set("payment_instructions", f"Payment successful. Reference ID: {razorpay_payment_id}")
 		
-		return {
-			"status": "success",
-			"receipt_id": doc_name,
-			"transaction_id": razorpay_payment_id
-		}
+		doc.create_user_on_enrollment()
+		
+		return {"status": "success"}
 		
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Razorpay Payment Verification Failed")

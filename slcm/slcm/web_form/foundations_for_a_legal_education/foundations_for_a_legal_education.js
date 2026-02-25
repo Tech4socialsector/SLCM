@@ -139,12 +139,12 @@ frappe.ready(function () {
 
 			// Add a professional Proceed to Payment button
 			let $btn = $(`<button class="btn btn-primary ml-2" style="display: flex; align-items: center; gap: 8px;">
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
-					<line x1="2" y1="10" x2="22" y2="10"></line>
-				</svg>
-				Proceed to Payment
-			</button>`);
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="2" y1="10" x2="22" y2="10"></line>
+                </svg>
+                Proceed to Payment
+            </button>`);
 
 			$btn.click(function (e) {
 				console.log("Proceed to Payment clicked");
@@ -175,11 +175,6 @@ frappe.ready(function () {
 	}
 
 	function initiate_payment() {
-		// Save to local storage as a bulletproof fallback for the success page
-		if (frappe.web_form.doc && frappe.web_form.doc.name) {
-			localStorage.setItem('recent_fle_payment_doc', frappe.web_form.doc.name);
-		}
-
 		frappe.call({
 			method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.create_razorpay_order",
 			args: {
@@ -205,7 +200,16 @@ frappe.ready(function () {
 			"description": "Admission Fees",
 			"order_id": data.order_id,
 			"handler": function (response) {
-				verify_payment(response, data.order_id);
+				// Master Tip: Never mark as Paid directly from frontend callback.
+				// The backend webhook (on_payment_authorized) handles the actual status update!
+				frappe.msgprint({
+					title: __('Success'),
+					message: __('Payment authorized! Gathering confirmation from Razorpay...'),
+					indicator: 'green'
+				});
+				setTimeout(function () {
+					window.location.reload();
+				}, 2000);
 			},
 			"prefill": {
 				"name": frappe.web_form.doc.candidate_name,
@@ -214,40 +218,47 @@ frappe.ready(function () {
 			},
 			"theme": {
 				"color": "#3399cc"
+			},
+			"modal": {
+				"ondismiss": function () {
+					frappe.call({
+						method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.update_payment_status",
+						args: {
+							doc_name: frappe.web_form.doc.name,
+							status: "Cancelled"
+						},
+						callback: function (r) {
+							frappe.msgprint({
+								title: __('Payment Cancelled'),
+								message: __('You have cancelled the payment process.'),
+								indicator: 'orange'
+							});
+						}
+					});
+				}
 			}
 		};
 		var rzp1 = new Razorpay(options);
 		rzp1.on('payment.failed', function (response) {
-			frappe.msgprint({
-				title: __('Payment Failed'),
-				message: response.error.description,
-				indicator: 'red'
+			frappe.call({
+				method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.update_payment_status",
+				args: {
+					doc_name: frappe.web_form.doc.name,
+					status: "Payment Failed"
+				},
+				callback: function (r) {
+					frappe.msgprint({
+						title: __('Payment Failed'),
+						message: response.error ? response.error.description : __('Payment process failed.'),
+						indicator: 'red'
+					});
+				}
 			});
 		});
 		rzp1.open();
 	}
 
-	function verify_payment(response, order_id) {
-		frappe.call({
-			method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.verify_payment",
-			args: {
-				razorpay_payment_id: response.razorpay_payment_id,
-				razorpay_order_id: response.razorpay_order_id,
-				razorpay_signature: response.razorpay_signature,
-				doc_name: frappe.web_form.doc.name
-			},
-			freeze: true,
-			freeze_message: "Verifying Payment...",
-			callback: function (r) {
-				if (r.message && r.message.status === 'success') {
-					let data = r.message;
-
-					// Redirect to the new custom Payment Success webpage
-					window.location.href = '/fle-success-page?name=' + encodeURIComponent(data.receipt_id) + '&transaction_id=' + encodeURIComponent(data.transaction_id || '');
-				}
-			}
-		});
-	}
+	// verify_payment function removed to strictly enforce backend-only payment verification (Master Tip)
 });
 
 // Added space for git commit as requested
