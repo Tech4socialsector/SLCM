@@ -17,6 +17,11 @@ class ApplicationFormConfig(Document):
                     title="Form In Use"
                 )
 
-    def before_save(self):
-        if not self.is_new():
-            self.version = (self.version or 1) + 1
+        def before_save(self):
+            if not self.is_new():
+                self.version = (self.version or 1) + 1
+    
+        def get_ordered_fields(self):
+            """Returns form fields sorted by sequence."""
+            return sorted(self.form_fields or [], key=lambda f: f.sequence)
+    

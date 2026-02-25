@@ -1,55 +1,87 @@
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate, today
+from frappe.utils import get_datetime
 
 class AdmissionCycle(Document):
+
     def validate(self):
-        self.validate_dates()
-        self.validate_workflow_fields()
-        self.validate_reservation_matrix()
-        self.auto_set_status()
+        self._validate_exam_type()
+        self._validate_date_order()
+        self._validate_no_overlap()
+        self._validate_rounds()
 
-    def validate_dates(self):
-        if getdate(self.start_date) >= getdate(self.end_date):
+    def _validate_exam_type(self):
+        if not self.exam_type and not self.workflow_type:
+            frappe.throw("Exam Type is required. Please select an Exam Type Config.")
+        # Auto-migrate workflow_type to exam_type if exam_type blank
+        if not self.exam_type and self.workflow_type:
+            mapped = frappe.db.get_value(
+                "Exam Type Config",
+                {"exam_code": self.workflow_type},
+                "name"
+            )
+            if mapped:
+                self.exam_type = mapped
+
+    def _validate_date_order(self):
+        if self.application_start and self.application_end:
+            if get_datetime(self.application_start) >= get_datetime(self.application_end):
+                frappe.throw("Application Start must be before Application End.")
+        if self.offer_start and self.offer_end:
+            if get_datetime(self.offer_start) >= get_datetime(self.offer_end):
+                frappe.throw("Offer Start must be before Offer End.")
+        if self.evaluation_start and self.evaluation_end:
+            if get_datetime(self.evaluation_start) >= get_datetime(self.evaluation_end):
+                frappe.throw("Evaluation Start must be before Evaluation End.")
+        if self.application_end and self.offer_start:
+            if get_datetime(self.offer_start) < get_datetime(self.application_end):
+                frappe.throw("Offer window cannot start before Application window ends.")
+
+    def _validate_no_overlap(self):
+        if not self.application_start or not self.application_end:
+            return
+        overlapping = frappe.db.sql("""
+            SELECT name FROM `tabAdmission Cycle`
+            WHERE admission_year = %s
+            AND name != %s
+            AND status != 'Closed'
+            AND (
+                (application_start <= %s AND application_end >= %s)
+                OR (application_start <= %s AND application_end >= %s)
+                OR (application_start >= %s AND application_end <= %s)
+            )
+        """, (
+            self.admission_year, self.name or "",
+            self.application_end, self.application_start,
+            self.application_start, self.application_start,
+            self.application_start, self.application_end
+        ))
+        if overlapping:
             frappe.throw(
-                "Start Date must be before End Date.",
-                title="Invalid Date Range"
+                f"Application window overlaps with existing cycle "
+                f"'{overlapping[0][0]}' in the same Admission Year."
             )
 
-    def validate_workflow_fields(self):
-        if self.workflow_type == "CLAT" and not self.clat_consortium_code:
+    def _validate_rounds(self):
+        if self.have_multiple_rounds and self.rounds:
+            priorities = [r.priority for r in self.rounds if r.priority]
+            if len(priorities) != len(set(priorities)):
+                frappe.throw("Round priority must be unique within a cycle.")
+            for r in self.rounds:
+                if r.round_start and r.round_end:
+                    if get_datetime(r.round_start) >= get_datetime(r.round_end):
+                        frappe.throw(f"Round '{r.round_name}': Start must be before End.")
+
+    def before_delete(self):
+        applicant_count = frappe.db.count("Applicant", {"admission_cycle": self.name})
+        if applicant_count > 0:
             frappe.throw(
-                "CLAT Consortium Code is mandatory for CLAT workflow.",
-                title="Missing Required Field"
+                f"Cannot delete cycle '{self.name}'. "
+                f"{applicant_count} applicant(s) exist for this cycle."
             )
-        if self.workflow_type == "NLSAT" and not self.nlsat_exam_date:
-            frappe.throw(
-                "NLSAT Exam Date is mandatory for NLSAT workflow.",
-                title="Missing Required Field"
-            )
 
-    def validate_reservation_matrix(self):
-        if self.reservation_matrix:
-            total = sum(row.total_seats for row in self.reservation_matrix)
-            if total != self.total_seats:
-                frappe.throw(
-                    f"Sum of reservation category seats ({total}) "
-                    f"must equal Total Seats ({self.total_seats}).",
-                    title="Seat Matrix Mismatch"
-                )
-
-    def auto_set_status(self):
-        today_date = getdate(today())
-        if getdate(self.start_date) > today_date:
-            self.status = "Draft"
-        elif getdate(self.start_date) <= today_date <= getdate(self.end_date):
-            self.status = "Active"
-        else:
-            self.status = "Closed"
-
-    def on_trash(self):
-        if frappe.db.exists("Applicant", {"admission_cycle": self.name}):
-            frappe.throw(
-                "Cannot delete Admission Cycle linked to Applicants.",
-                title="Deletion Not Allowed"
+    def on_update(self):
+        if self.status == "Active":
+            frappe.db.set_value(
+                "Admission Year", self.admission_year, "status", "Active"
             )

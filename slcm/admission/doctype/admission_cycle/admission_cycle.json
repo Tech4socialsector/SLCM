@@ -1,54 +1,103 @@
 {
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:cycle_name",
+ "creation": "2026-02-17 10:00:00.000000",
  "doctype": "DocType",
- "name": "Admission Cycle",
- "module": "Admission",
- "autoname": "naming_series:",
- "naming_series": "CYCLE-.YYYY.-",
- "is_submittable": 1,
- "track_changes": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_basic",
+  "cycle_name",
+  "admission_year",
+  "exam_type",
+  "col_break_1",
+  "status",
+  "workflow_type",
+  "section_break_legacy",
+  "program",
+  "degree_type",
+  "total_seats",
+  "clat_consortium_code",
+  "nlsat_exam_date",
+  "reservation_matrix",
+  "section_break_application",
+  "application_start",
+  "application_end",
+  "section_break_eval",
+  "evaluation_start",
+  "evaluation_end",
+  "col_break_2",
+  "interview_start",
+  "interview_end",
+  "section_break_offer",
+  "offer_start",
+  "offer_end",
+  "col_break_3",
+  "acceptance_start",
+  "acceptance_end",
+  "section_break_rounds",
+  "have_multiple_rounds",
+  "rounds",
+  "section_break_approval",
+  "approval_reference",
+  "col_break_4",
+  "remarks"
+ ],
  "fields": [
   {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "CYCLE-.YYYY.-",
-   "reqd": 1
+   "fieldname": "section_break_basic",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
   },
   {
    "fieldname": "cycle_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Cycle Name",
-   "reqd": 1,
-   "in_list_view": 1
+   "reqd": 1
   },
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Admission Year",
    "options": "Admission Year",
-   "reqd": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "workflow_type",
-   "fieldtype": "Select",
-   "label": "Workflow Type",
-   "options": "\nCLAT\nNLSAT\nPACE",
-   "reqd": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "program",
-   "fieldtype": "Link",
-   "label": "Program",
-   "options": "Program",
    "reqd": 1
   },
   {
-   "fieldname": "degree_type",
+   "description": "Links to Exam Type Config \u2014 replaces hardcoded workflow_type",
+   "fieldname": "exam_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Exam Type",
+   "options": "Exam Type Config",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
    "fieldtype": "Select",
-   "label": "Degree Type",
-   "options": "\nBA LLB\nLLM\n3-Year LLB\nMPP\nPhD\nMBL"
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nActive\nClosed",
+   "reqd": 1
+  },
+  {
+   "description": "Kept for backward compatibility only. Use exam_type instead.",
+   "fieldname": "workflow_type",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Workflow Type (Legacy \u2014 Hidden)",
+   "options": "CLAT\nNLSAT\nPACE"
+  },
+  {
+   "fieldname": "section_break_legacy",
+   "fieldtype": "Section Break",
+   "label": "Legacy & Other Details"
   },
   {
    "fieldname": "program",
@@ -75,70 +124,151 @@
   {
    "fieldname": "nlsat_exam_date",
    "fieldtype": "Date",
-   "label": "Start Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "end_date",
-   "fieldtype": "Date",
-   "label": "End Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "\nDraft\nActive\nClosed",
-   "default": "Draft",
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "clat_consortium_code",
-   "fieldtype": "Data",
-   "label": "CLAT Consortium Code",
-   "depends_on": "eval:doc.workflow_type=='CLAT'",
-   "mandatory_depends_on": "eval:doc.workflow_type=='CLAT'"
-  },
-  {
-   "fieldname": "nlsat_exam_date",
-   "fieldtype": "Date",
-   "label": "NLSAT Exam Date",
-   "depends_on": "eval:doc.workflow_type=='NLSAT'",
-   "mandatory_depends_on": "eval:doc.workflow_type=='NLSAT'"
-  },
-  {
-   "fieldname": "total_seats",
-   "fieldtype": "Int",
-   "label": "Total Seats",
-   "reqd": 1
+   "label": "NLSAT Exam Date"
   },
   {
    "fieldname": "reservation_matrix",
    "fieldtype": "Table",
    "label": "Reservation Matrix",
    "options": "Reservation Category"
+  },
+  {
+   "fieldname": "section_break_application",
+   "fieldtype": "Section Break",
+   "label": "Application Window"
+  },
+  {
+   "fieldname": "application_start",
+   "fieldtype": "Datetime",
+   "label": "Application Start",
+   "reqd": 1
+  },
+  {
+   "fieldname": "application_end",
+   "fieldtype": "Datetime",
+   "label": "Application End",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_eval",
+   "fieldtype": "Section Break",
+   "label": "Evaluation & Interview Window"
+  },
+  {
+   "fieldname": "evaluation_start",
+   "fieldtype": "Datetime",
+   "label": "Evaluation Start"
+  },
+  {
+   "fieldname": "evaluation_end",
+   "fieldtype": "Datetime",
+   "label": "Evaluation End"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "interview_start",
+   "fieldtype": "Datetime",
+   "label": "Interview Start"
+  },
+  {
+   "fieldname": "interview_end",
+   "fieldtype": "Datetime",
+   "label": "Interview End"
+  },
+  {
+   "fieldname": "section_break_offer",
+   "fieldtype": "Section Break",
+   "label": "Offer & Acceptance Window"
+  },
+  {
+   "fieldname": "offer_start",
+   "fieldtype": "Datetime",
+   "label": "Offer Start"
+  },
+  {
+   "fieldname": "offer_end",
+   "fieldtype": "Datetime",
+   "label": "Offer End"
+  },
+  {
+   "fieldname": "col_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "acceptance_start",
+   "fieldtype": "Datetime",
+   "label": "Acceptance Start"
+  },
+  {
+   "fieldname": "acceptance_end",
+   "fieldtype": "Datetime",
+   "label": "Acceptance End"
+  },
+  {
+   "fieldname": "section_break_rounds",
+   "fieldtype": "Section Break",
+   "label": "Admission Rounds"
+  },
+  {
+   "default": "0",
+   "fieldname": "have_multiple_rounds",
+   "fieldtype": "Check",
+   "label": "Enable Multiple Rounds"
+  },
+  {
+   "depends_on": "eval:doc.have_multiple_rounds==1",
+   "fieldname": "rounds",
+   "fieldtype": "Table",
+   "label": "Rounds",
+   "options": "Admission Round"
+  },
+  {
+   "fieldname": "section_break_approval",
+   "fieldtype": "Section Break",
+   "label": "Approval & Remarks"
+  },
+  {
+   "fieldname": "approval_reference",
+   "fieldtype": "Data",
+   "label": "Approval Reference"
+  },
+  {
+   "fieldname": "col_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
   }
  ],
+ "index_web_pages_for_search": 1,
+ "modified": "2026-02-17 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission Cycle",
+ "owner": "Administrator",
  "permissions": [
   {
-   "role": "System Manager",
-   "read": 1,
-   "write": 1,
    "create": 1,
    "delete": 1,
-   "submit": 1,
-   "cancel": 1
-  },
-  {
-   "role": "Admission Admin",
    "read": 1,
-   "write": 1,
-   "create": 1,
-   "submit": 1
+   "role": "System Manager",
+   "write": 1
   },
   {
-   "role": "Admission Officer",
-   "read": 1
+   "create": 1,
+   "read": 1,
+   "role": "Admission Admin",
+   "write": 1
   }
- ]
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "cycle_name",
+ "track_changes": 1
 }
