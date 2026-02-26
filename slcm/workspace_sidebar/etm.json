@@ -1,0 +1,64 @@
+{
+ "app": "slcm",
+ "creation": "2026-02-26 18:11:25.733693",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "book-audio",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "arrow-right",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Entrance Test List",
+   "link_to": "Entrance Test List",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "arrow-right",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Entrance Test Generation",
+   "link_to": "Entrance Test Generation",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "arrow-right",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Entrance Test Provider",
+   "link_to": "Entrance Test Provider",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "arrow-right",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Entrance Test Seat Allocation",
+   "link_to": "Entrance Test Seat Allocation",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-26 18:11:25.733693",
+ "modified_by": "Administrator",
+ "name": "ETM",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "ETM"
+}
