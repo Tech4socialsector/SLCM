@@ -131,7 +131,7 @@ class FoundationsforaLegalEducation(Document):
 			frappe.db.commit() # Ensure role update is committed
 			frappe.msgprint("User already exists. Password updated and roles verified.")
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_razorpay_order(doc_name):
 	try:
 		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
@@ -185,7 +185,7 @@ def create_razorpay_order(doc_name):
 		else:
 			frappe.throw("Failed to create payment order. Please try again or contact administrator.")
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_payment_status(doc_name, status):
 	try:
 		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
@@ -197,7 +197,7 @@ def update_payment_status(doc_name, status):
 		frappe.log_error(frappe.get_traceback(), f"Payment Status Update to {status} Failed")
 		return {"status": "failed", "message": str(e)}
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, doc_name, amount_paise=None):
 	try:
 		controller = get_payment_gateway_controller("Razorpay")
