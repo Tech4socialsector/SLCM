@@ -12,7 +12,11 @@ doc_events = {
 	"Student Master": {"before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"}
 }
 
-
+doc_events = {
+    "Foundations for a Legal Education": {
+        "before_save": "slcm.lms_automation.handle_payment_paid"
+    }
+}
 # Apps
 # ------------------
 
