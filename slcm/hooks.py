@@ -312,6 +312,9 @@ doc_events = {
     "Student Master": {
         "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
     },
+    "Payment Request": {
+        "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
+    },
     "Applicant": {
         "on_submit": "slcm.admission.events.on_applicant_submit",
         "on_cancel": "slcm.admission.events.on_applicant_cancel"
