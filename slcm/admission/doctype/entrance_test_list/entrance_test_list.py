@@ -9,6 +9,66 @@ from frappe.utils import now_datetime, get_url
 
 class EntranceTestList(Document):
 
+    def autoname(self):
+        """
+        Custom naming series for Entrance Test List records.
+
+        Format: ETL-{academic_year}-###
+
+        The numeric portion is 3 digits and is allocated sequentially per
+        academic year.  If a record is deleted, its number becomes available
+        again so the next created document will reuse the lowest unused
+        index.  This mirrors the behaviour described by the user:
+
+            ETL-2026-2027-001
+            ETL-2026-2027-002  <-- deleted
+            ETL-2026-2027-002  (new record takes the hole)
+
+        We compute the smallest missing positive integer by querying existing
+        document names and scanning for gaps.  If ``academic_year`` is not
+        provided for some reason, fall back to a random hash like the default
+        behaviour in Frappe.
+        """
+
+        # The field is mandatory in the doctype, but guard anyway.
+        if self.academic_year:
+            # prefix includes trailing dash
+            prefix = f"ETL-{self.academic_year}-"
+
+            # get all existing names that start with the prefix
+            rows = frappe.db.sql(
+                """SELECT name
+                   FROM `tabEntrance Test List`
+                   WHERE name LIKE %s""",
+                prefix + "%",
+                as_list=True,
+            )
+
+            used = set()
+            import re
+
+            pattern = re.compile(re.escape(prefix) + r"(\d{1,})$")
+            for r in rows:
+                name = r[0]
+                m = pattern.match(name)
+                if m:
+                    try:
+                        used.add(int(m.group(1)))
+                    except ValueError:
+                        # should not happen, ignore malformed names
+                        pass
+
+            # find first missing positive integer
+            idx = 1
+            while idx in used:
+                idx += 1
+
+            self.name = f"{prefix}{idx:03d}"
+        else:
+            # fallback - generate something unpredictable so document can still
+            # be created without blowing up
+            self.name = frappe.generate_hash(self.doctype, 6)
+
     @frappe.whitelist()
     def allocate_seats(self, providers, selected_applicants, allocation_date=None):
         """
@@ -300,3 +360,4 @@ def _get_remaining_capacity(provider_name):
         return total
     except Exception:
         return 0
+    
