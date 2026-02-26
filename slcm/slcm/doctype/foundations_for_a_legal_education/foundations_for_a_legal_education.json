@@ -29,9 +29,7 @@
   "parent_email_address",
   "parent_occupation",
   "section_break_payment",
-  "amount",
   "payment_instructions",
-  "payment_receipt",
   "section_break_documents",
   "id_card_scan",
   "signature_scan",
@@ -42,9 +40,10 @@
   "section_break_status",
   "enrollment_status",
   "payment_status",
-  "column_break_pjzo",
+  "column_break_fdnb",
   "lms_account_created",
-  "generated_password_temp"
+  "generated_password_temp",
+  "paid_amount"
  ],
  "fields": [
   {
@@ -183,11 +182,6 @@
    "options": "Click this link to pay the admission fees amounting to Rs. 10,000/- along with any applicable payment gateway charges. After payment, proceed to upload the screenshot of the payment receipt. Please be advised that the fees are deemed non-refundable under all circumstances."
   },
   {
-   "fieldname": "payment_receipt",
-   "fieldtype": "Attach Image",
-   "label": "Please upload Payment receipt below in \"Attach\""
-  },
-  {
    "fieldname": "section_break_documents",
    "fieldtype": "Section Break",
    "label": "Documents"
@@ -230,17 +224,15 @@
   {
    "fieldname": "section_break_status",
    "fieldtype": "Section Break",
-   "label": "Status"
+   "label": "Account Status"
   },
   {
-   "default": "In Progress",
    "fieldname": "enrollment_status",
    "fieldtype": "Select",
    "label": "Enrollment Status",
-   "options": "Enrolled\nIn Progress\nCompleted\nFailed\nDropped\nCertificate Issued"
+   "options": "\nSave\nEnrolled\nIn Progress\nCompleted\nFailed\nDropped\nCertificate Issued"
   },
   {
-   "default": "Unpaid",
    "fieldname": "payment_status",
    "fieldtype": "Select",
    "label": "Payment Status",
@@ -260,17 +252,10 @@
    "label": "If Others, Mention here"
   },
   {
-   "fieldname": "amount",
-   "fieldtype": "Currency",
-   "label": "Amount",
-   "read_only": 1
-  },
-  {
    "default": "0",
    "fieldname": "lms_account_created",
    "fieldtype": "Check",
-   "label": "LMS Account Created",
-   "read_only": 1
+   "label": "LMS Account Created"
   },
   {
    "fieldname": "generated_password_temp",
@@ -279,14 +264,19 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_pjzo",
+   "fieldname": "column_break_fdnb",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Paid Amount"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-26 10:33:51.555031",
+ "modified": "2026-02-26 11:04:01.566404",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
