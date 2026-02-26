@@ -43,7 +43,8 @@
   "column_break_fdnb",
   "lms_account_created",
   "generated_password_temp",
-  "paid_amount"
+  "paid_amount",
+  "payment_id"
  ],
  "fields": [
   {
@@ -271,12 +272,17 @@
    "fieldname": "paid_amount",
    "fieldtype": "Currency",
    "label": "Paid Amount"
+  },
+  {
+   "fieldname": "payment_id",
+   "fieldtype": "Data",
+   "label": "Payment Id"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-26 11:04:01.566404",
+ "modified": "2026-02-26 12:30:20.300713",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",

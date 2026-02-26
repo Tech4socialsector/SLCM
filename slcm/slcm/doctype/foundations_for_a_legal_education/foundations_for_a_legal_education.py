@@ -19,11 +19,55 @@ class FoundationsforaLegalEducation(Document):
 			self.create_user_on_enrollment()
 			self.save(ignore_permissions=True)
 			
+			# Read payment_id and amount from the Integration Request
+			try:
+				import json
+				integration_requests = frappe.get_all(
+					"Integration Request",
+					filters={
+						"reference_doctype": "Foundations for a Legal Education",
+						"reference_docname": self.name
+					},
+					fields=["data"],
+					order_by="modified desc",
+					limit=1
+				)
+				if integration_requests:
+					data = json.loads(integration_requests[0].get("data") or "{}")
+					razorpay_payment_id = data.get("razorpay_payment_id")
+					amount_paise = data.get("amount")
+					
+					update_fields = {}
+					if razorpay_payment_id:
+						update_fields["payment_id"] = razorpay_payment_id
+					if amount_paise:
+						update_fields["paid_amount"] = flt(amount_paise) / 100.0
+					
+					if update_fields:
+						frappe.db.set_value("Foundations for a Legal Education", self.name, update_fields)
+						frappe.db.commit()
+			except Exception:
+				frappe.log_error(frappe.get_traceback(), "FLE: Failed to update payment_id/paid_amount from Integration Request")
+			
 			frappe.msgprint("Payment Authorized successfully for " + self.name)
 		elif status in ["Failed", "Cancelled"]:
 			valid_statuses = {"Failed": "Payment Failed", "Cancelled": "Cancelled"}
 			self.payment_status = valid_statuses.get(status, "Payment Failed")
 			self.save(ignore_permissions=True)
+
+
+	def validate(self):
+		# Check for duplicate email address on new submissions
+		if self.is_new():
+			existing = frappe.db.exists(
+				"Foundations for a Legal Education",
+				{"email_address": self.email_address}
+			)
+			if existing:
+				frappe.throw(
+					f"An application with the email address '{self.email_address}' already exists (Reference: {existing}). "
+					"Please use a different email address or contact support."
+				)
 
 	def before_insert(self):
 		if not self.enrollment_status or self.enrollment_status == "Enrolled":
@@ -123,6 +167,10 @@ def create_razorpay_order(doc_name):
 		frappe.log_error("Razorpay Order Created", str(order))
 		
 		doc.db_set("payment_status", "Payment Initiated")
+
+		# Store the INR amount on the doc if not already set
+		if not doc.amount or doc.amount == 0:
+			doc.db_set("amount", amount)
 		
 		return {
 			"order_id": order.get("id"),
@@ -150,31 +198,45 @@ def update_payment_status(doc_name, status):
 		return {"status": "failed", "message": str(e)}
 
 @frappe.whitelist()
-def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, doc_name):
+def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, doc_name, amount_paise=None):
 	try:
 		controller = get_payment_gateway_controller("Razorpay")
 		
 		# Verify signature
-		# RazorpaySettings.verify_signature(body, signature, key)
 		body = razorpay_order_id + "|" + razorpay_payment_id
 		api_secret = controller.get_password("api_secret")
-		
 		controller.verify_signature(body, razorpay_signature, api_secret)
 		
 		# Update Document Status
 		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
 		doc.payment_status = "Paid"
 		doc.enrollment_status = "Enrolled"
-		doc.payment_instructions = f"Payment successful. Reference ID: {razorpay_payment_id}"
+		doc.payment_id = razorpay_payment_id
+		
+		# Convert paise to INR if amount_paise passed from frontend
+		if amount_paise:
+			doc.paid_amount = flt(amount_paise) / 100.0
 		
 		doc.create_user_on_enrollment()
 		doc.save(ignore_permissions=True)
 		
-		return {"status": "success"}
+		# Use db_set as a guaranteed commit for the two key display fields
+		frappe.db.set_value(
+			"Foundations for a Legal Education",
+			doc_name,
+			{
+				"payment_id": razorpay_payment_id,
+				"paid_amount": flt(amount_paise) / 100.0 if amount_paise else doc.paid_amount
+			}
+		)
+		frappe.db.commit()
+		
+		return {"status": "success", "transaction_id": razorpay_payment_id}
 		
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Razorpay Payment Verification Failed")
 		return {"status": "failed", "message": str(e)}
+
 
 @frappe.whitelist(allow_guest=True)
 def get_receipt_details(doc_name=None):
@@ -201,7 +263,9 @@ def get_receipt_details(doc_name=None):
 			"email_address": doc.email_address,
 			"name": doc.name,
 			"amount": doc.amount,
-			"modified": doc.modified,
+			"paid_amount": doc.paid_amount,
+			"payment_id": doc.payment_id,
+			"modified": str(doc.modified),
 			"payment_status": doc.payment_status or "Paid"
 		}
 	except Exception:

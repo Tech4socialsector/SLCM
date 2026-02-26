@@ -54,7 +54,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="text-muted" style="padding: 8px 0; border: none;">Transaction ID</td>
+                        <td class="text-muted" style="padding: 8px 0; border: none;">Payment ID</td>
                         <td style="padding: 8px 0; border: none;"><small id="val_transaction_id"
                                 style="color: #666; font-family: monospace;">Loading...</small></td>
                     </tr>
@@ -92,7 +92,7 @@
             }
         }
 
-        // Always call the backend, it will fetch the latest 'Paid' record if receipt_id is null
+        // Use the custom guest-accessible API to fetch receipt details
         frappe.call({
             method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.get_receipt_details",
             args: {
@@ -104,13 +104,19 @@
                     document.getElementById('val_candidate_name').innerText = doc.candidate_name || "N/A";
                     document.getElementById('val_email').innerText = doc.email_address || "N/A";
                     document.getElementById('val_receipt_id').innerText = doc.name || "N/A";
-                    document.getElementById('val_amount').innerText = '₹' + (doc.amount || "0.00");
+
+                    // Use paid_amount (set by on_payment_authorized), fallback to amount
+                    let amt = parseFloat(doc.paid_amount || doc.amount || 0);
+                    document.getElementById('val_amount').innerText = '₹' + amt.toFixed(2);
 
                     let modified = doc.modified ? doc.modified.substring(0, 16).replace('T', ' ') : 'N/A';
                     document.getElementById('val_date').innerText = modified;
 
                     document.getElementById('val_status').innerText = doc.payment_status || "Paid";
-                    document.getElementById('val_transaction_id').innerText = transaction_id || "";
+
+                    // Use payment_id field (set by on_payment_authorized), fallback to URL param
+                    let txn_id = doc.payment_id || transaction_id || "N/A";
+                    document.getElementById('val_transaction_id').innerText = txn_id;
                 } else {
                     // Document not found or error
                     document.getElementById('val_candidate_name').innerText = "N/A";

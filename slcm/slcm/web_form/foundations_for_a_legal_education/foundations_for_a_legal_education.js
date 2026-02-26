@@ -200,16 +200,35 @@ frappe.ready(function () {
 			"description": "Admission Fees",
 			"order_id": data.order_id,
 			"handler": function (response) {
-				// Master Tip: Never mark as Paid directly from frontend callback.
-				// The backend webhook (on_payment_authorized) handles the actual status update!
-				frappe.msgprint({
-					title: __('Success'),
-					message: __('Payment authorized! Gathering confirmation from Razorpay...'),
-					indicator: 'green'
+				// Verify payment signature on backend and redirect to success page
+				frappe.call({
+					method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.verify_payment",
+					args: {
+						razorpay_payment_id: response.razorpay_payment_id,
+						razorpay_order_id: response.razorpay_order_id,
+						razorpay_signature: response.razorpay_signature,
+						doc_name: frappe.web_form.doc.name,
+						amount_paise: data.amount  // order amount in paise from Razorpay
+					},
+					freeze: true,
+					freeze_message: "Verifying payment...",
+					callback: function (r) {
+						if (r.message && r.message.status === "success") {
+							// Redirect to success page with receipt details
+							let doc_name = frappe.web_form.doc.name;
+							let transaction_id = response.razorpay_payment_id;
+							// Save to localStorage as fallback in case params get stripped
+							localStorage.setItem('recent_fle_payment_doc', doc_name);
+							window.location.href = "/fle-success-page?name=" + encodeURIComponent(doc_name) + "&transaction_id=" + encodeURIComponent(transaction_id);
+						} else {
+							frappe.msgprint({
+								title: __('Verification Failed'),
+								message: r.message ? r.message.message : __('Payment verification failed. Please contact support.'),
+								indicator: 'red'
+							});
+						}
+					}
 				});
-				setTimeout(function () {
-					window.location.reload();
-				}, 2000);
 			},
 			"prefill": {
 				"name": frappe.web_form.doc.candidate_name,
