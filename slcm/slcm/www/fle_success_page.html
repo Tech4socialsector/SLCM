@@ -83,12 +83,13 @@
         let receipt_id = urlParams.get('name');
         let transaction_id = urlParams.get('transaction_id');
 
-        // FALLBACK: If URL params are stripped, try getting the receipt_id we saved to localStorage right before checkout
+        // FALLBACK: If URL params are stripped, try getting the receipt_id saved to localStorage before checkout
         if (!receipt_id) {
             receipt_id = localStorage.getItem('recent_fle_payment_doc');
-            // Clean up once used so we don't accidentally show it on a fresh visit weeks later
+            // Push into URL so page refreshes keep the param (don't remove yet — remove after successful load)
             if (receipt_id) {
-                localStorage.removeItem('recent_fle_payment_doc');
+                let newUrl = window.location.pathname + '?name=' + encodeURIComponent(receipt_id);
+                window.history.replaceState({}, '', newUrl);
             }
         }
 
@@ -101,6 +102,9 @@
             callback: function (r) {
                 if (r.message) {
                     let doc = r.message;
+                    // Data loaded successfully — safe to clear localStorage fallback
+                    localStorage.removeItem('recent_fle_payment_doc');
+
                     document.getElementById('val_candidate_name').innerText = doc.candidate_name || "N/A";
                     document.getElementById('val_email').innerText = doc.email_address || "N/A";
                     document.getElementById('val_receipt_id').innerText = doc.name || "N/A";

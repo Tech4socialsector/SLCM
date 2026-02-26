@@ -184,6 +184,9 @@ frappe.ready(function () {
 			freeze_message: "Creating Order...",
 			callback: function (r) {
 				if (r.message) {
+					// Save doc_name NOW — before modal opens — so the success page
+					// fallback works regardless of how redirect happens
+					localStorage.setItem('recent_fle_payment_doc', frappe.web_form.doc.name);
 					open_razorpay_checkout(r.message);
 				}
 			}
