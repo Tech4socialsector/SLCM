@@ -4,7 +4,7 @@
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "clipboard-list",
- "idx": 0,
+ "idx": 1,
  "items": [
   {
    "child": 0,
@@ -12,9 +12,21 @@
    "icon": "airplay",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Dashboar",
-   "link_to": "Offer Letter",
-   "link_type": "Dashboard",
+   "label": "Dashbord",
+   "link_to": "Offer Letters",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "settings",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offer Configuration",
+   "link_to": "Offer Configuration",
+   "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -57,6 +69,18 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "badge-indian-rupee",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Applicant Fee Assignment",
+   "link_to": "Applicant Fee Assignment",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "file-check",
    "indent": 0,
    "keep_closed": 0,
@@ -69,17 +93,27 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "settings",
+   "icon": "user-round-check",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Offer Configuration",
-   "link_to": "Offer Configuration",
+   "label": "Applicants",
+   "link_to": "Applicant",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Section Break"
   }
  ],
- "modified": "2026-02-24 11:01:18.812065",
+ "modified": "2026-02-26 09:27:35.418602",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
