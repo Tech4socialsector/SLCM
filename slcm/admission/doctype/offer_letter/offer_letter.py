@@ -23,8 +23,17 @@ class OfferLetter(Document):
 
     def validate(self):
         print("VALIDATE TRIGGERED")
+        self.set_notification_receiver()
         self.validate_status_transition()
         self.handle_audit_and_locking()
+
+    def set_notification_receiver(self):
+        if self.applicant:
+            applicant_email = frappe.db.get_value("Applicant", self.applicant, "email")
+            if applicant_email:
+                user_name = frappe.db.get_value("User", {"email": applicant_email}, "name")
+                if user_name:
+                    self.notification_receiver = user_name
 
     def on_update(self):
         # Deterministic logging after successful update

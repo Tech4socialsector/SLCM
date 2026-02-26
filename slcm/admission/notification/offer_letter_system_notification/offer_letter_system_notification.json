@@ -2,7 +2,7 @@
     "attach_files": "",
     "attach_print": 0,
     "channel": "System Notification",
-    "condition": "doc.offer_status == 'Issued'",
+    "condition": "doc.offer_status in ['Issued', 'Accepted', 'Rejected', 'Expired', 'Withdrawn', 'Payment Completed']",
     "condition_type": "Python",
     "creation": "2026-02-20 17:05:38.720151",
     "days_in_advance": 0,
@@ -16,7 +16,7 @@
     "message": "offer_letter_system_notification.md",
     "message_type": "Markdown",
     "minutes_offset": 0,
-    "modified": "2026-02-20 18:05:00.000000",
+    "modified": "2026-02-26 12:00:00.000000",
     "modified_by": "Administrator",
     "module": "Admission",
     "name": "Offer letter system notification",
@@ -30,6 +30,6 @@
     "send_to_all_assignees": 0,
     "sender": "Admission Team",
     "sender_email": "santhoshsanthi9455@gmail.com",
-    "subject": "Admission Offer Letter - {{ doc.name }}",
+    "subject": "Offer Letter {{ doc.offer_status }} - {{ doc.name }}",
     "value_changed": "offer_status"
 }

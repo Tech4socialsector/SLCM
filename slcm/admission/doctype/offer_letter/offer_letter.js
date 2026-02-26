@@ -3,6 +3,13 @@
 
 frappe.ui.form.on("Offer Letter", {
 
+    refresh(frm) {
+        if (frm.fields_dict['rendered_content']) {
+            frm.set_df_property('rendered_content', 'options', frm.doc.rendered_content);
+            // Optional: Set the field to read-only to enforce preview
+            frm.set_df_property('rendered_content', 'read_only', 1);
+        }
+    },
     onload: function (frm) {
         // Disable past dates in the payment_deadline datepicker
         frm.set_df_property('payment_deadline', 'datepicker_options', {

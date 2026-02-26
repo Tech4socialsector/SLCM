@@ -1,0 +1,23 @@
+{
+    "channel": "System Notification",
+    "condition": "doc.docstatus == 1",
+    "condition_type": "Python",
+    "creation": "2026-02-26 12:10:00.000000",
+    "doctype": "Notification",
+    "document_type": "Applicant Fee Assignment",
+    "enabled": 1,
+    "event": "After Submit",
+    "is_standard": 1,
+    "message": "<h4>Fee Allocated</h4><p>Dear {{ doc.applicant_name }},</p><p>A new fee assignment <b>{{ doc.name }}</b> has been created for your {{ doc.program }} admission.</p><p>Total Amount Payable: {{ doc.total_amount }}</p><p>Please log in to the portal to make the payment.</p>",
+    "message_type": "HTML",
+    "module": "Admission",
+    "name": "Applicant Fee Assigned Notification",
+    "owner": "Administrator",
+    "recipients": [
+        {
+            "receiver_by_document_field": "notification_receiver"
+        }
+    ],
+    "send_system_notification": 1,
+    "subject": "New Fee Allocation - {{ doc.name }}"
+}
