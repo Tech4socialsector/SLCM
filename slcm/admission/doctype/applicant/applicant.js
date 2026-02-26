@@ -1,87 +1,109 @@
-frappe.ui.form.on('Applicant', {
-    validate: function (frm) {
-        // Final validation check before saving
-        let errors = [];
+frappe.ui.form.on("Applicant", {
 
-        // HSC Percentage
-        if (frm.doc.hsc_percentage) {
-            if (frm.doc.hsc_percentage < 35) {
-                errors.push(__('HSC percentage should be above 35 %'));
-            } else if (frm.doc.hsc_percentage > 100) {
-                errors.push(__('HSC percentage cannot be more than 100%'));
-            }
-        }
+    refresh: function(frm) {
+        const status_colors = {
+            "Draft": "gray",
+            "Submitted": "blue",
+            "Under Evaluation": "blue",
+            "Shortlisted": "orange",
+            "Interview Scheduled": "purple",
+            "Offered": "green",
+            "Accepted": "darkgreen",
+            "Rejected": "red",
+            "Waitlisted": "yellow"
+        };
+        const color = status_colors[frm.doc.application_status] || "gray";
+        frm.dashboard.set_headline(
+            `<span style="color:${color}; font-weight:bold;">
+            Status: ${frm.doc.application_status}
+            </span>`
+        );
 
-        // UG CGPA
-        if (frm.doc.ug_degree_details) {
-            frm.doc.ug_degree_details.forEach(row => {
-                if (row.ug_cgpa && (row.ug_cgpa < 4 || row.ug_cgpa > 10)) {
-                    errors.push(__('UG CGPA for degree {0} should be between 4 and 10', [row.degree || '']));
-                }
+        const required_fields = [
+            "candidate_name", "email", "mobile_number",
+            "date_of_birth", "first_preference",
+            "class_x_percentage", "class_xii_percentage",
+            "declaration_undertaking"
+        ];
+        const filled = required_fields.filter(f => frm.doc[f]).length;
+        const pct = Math.round((filled / required_fields.length) * 100);
+        frm.dashboard.add_comment(
+            `Application Completion: ${pct}%`,
+            pct === 100 ? "green" : pct >= 50 ? "orange" : "red"
+        );
+
+        if (frm.doc.docstatus === 1) {
+            frm.add_custom_button("View Campus Status", function() {
+                frappe.set_route("List", "Applicant Campus Preference", {
+                    applicant: frm.doc.name
+                });
             });
-        }
-
-        // PG CGPA
-        if (frm.doc.pg_degree_details) {
-            frm.doc.pg_degree_details.forEach(row => {
-                if (row.pg_cgpa && (row.pg_cgpa < 4 || row.pg_cgpa > 10)) {
-                    errors.push(__('PG CGPA for degree {0} should be between 4 and 10', [row.degree || '']));
-                }
+            frm.add_custom_button("View Documents", function() {
+                frappe.set_route("List", "Applicant Document", {
+                    applicant: frm.doc.name
+                });
             });
-        }
-
-        if (errors.length > 0) {
-            frappe.msgprint({
-                title: __('Validation Error'),
-                indicator: 'red',
-                message: errors.join('<br>')
-            });
-            frappe.validated = false;
         }
     },
 
-    hsc_percentage: function (frm) {
-        if (frm.doc.hsc_percentage) {
-            if (frm.doc.hsc_percentage < 35) {
-                frappe.show_alert({
-                    message: __('Your percentage should be above 35 %'),
-                    indicator: 'orange'
-                });
-                frm.set_value('hsc_percentage', null);
-            } else if (frm.doc.hsc_percentage > 100) {
-                frappe.show_alert({
-                    message: __('Percentage cannot be more than 100%'),
-                    indicator: 'orange'
-                });
-                frm.set_value('hsc_percentage', null);
-            }
-        }
-    }
-});
-
-// Field level triggers for immediate feedback in child tables
-frappe.ui.form.on('UG Degree Detail', {
-    ug_cgpa: function (frm, cdt, cdn) {
-        let row = locals[cdt][cdn];
-        if (row.ug_cgpa && (row.ug_cgpa < 4 || row.ug_cgpa > 10)) {
+    application_type: function(frm) {
+        const messages = {
+            "CLAT": "CLAT workflow: Your CLAT rank will be imported from the Consortium.",
+            "NLSAT": "NLSAT workflow: You must appear for the NLSAT exam.",
+            "PACE": "PACE workflow: Admission is based on academic merit only."
+        };
+        if (frm.doc.application_type && messages[frm.doc.application_type]) {
             frappe.show_alert({
-                message: __('CGPA should be between 4 and 10'),
-                indicator: 'orange'
-            });
-            frappe.model.set_value(cdt, cdn, 'ug_cgpa', null);
+                message: messages[frm.doc.application_type],
+                indicator: "blue"
+            }, 6);
         }
-    }
-});
+    },
 
-frappe.ui.form.on('PG Degree Details', {
-    pg_cgpa: function (frm, cdt, cdn) {
-        let row = locals[cdt][cdn];
-        if (row.pg_cgpa && (row.pg_cgpa < 4 || row.pg_cgpa > 10)) {
-            frappe.show_alert({
-                message: __('CGPA should be between 4 and 10'),
-                indicator: 'orange'
+    reservation_category: function(frm) {
+        frm.set_value("ews_certificate", "");
+        frm.set_value("caste_certificate", "");
+        frm.set_value("pwd_certificate", "");
+        frm.set_value("ews", 0);
+        frm.set_value("pwd", 0);
+    },
+
+    guardian_required: function(frm) {
+        frm.toggle_reqd("guardian_name", frm.doc.guardian_required);
+        frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
+    },
+
+    declaration_undertaking: function(frm) {
+        if (!frm.doc.declaration_undertaking) {
+            frappe.msgprint({
+                title: "Declaration Required",
+                indicator: "orange",
+                message: "You must accept the Declaration Undertaking to submit."
             });
-            frappe.model.set_value(cdt, cdn, 'pg_cgpa', null);
+        }
+    },
+
+    first_preference: function(frm) {
+        if (frm.doc.first_preference &&
+            frm.doc.first_preference === frm.doc.second_preference) {
+            frappe.msgprint({
+                title: "Duplicate Preference",
+                indicator: "red",
+                message: "First and Second preference cannot be the same campus."
+            });
+            frm.set_value("second_preference", "");
+        }
+    },
+
+    second_preference: function(frm) {
+        if (frm.doc.second_preference &&
+            frm.doc.second_preference === frm.doc.third_preference) {
+            frappe.msgprint({
+                title: "Duplicate Preference",
+                indicator: "red",
+                message: "Second and Third preference cannot be the same campus."
+            });
+            frm.set_value("third_preference", "");
         }
     }
 });

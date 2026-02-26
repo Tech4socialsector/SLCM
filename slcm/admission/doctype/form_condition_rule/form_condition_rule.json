@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "creation": "2026-02-24 15:01:10.740842",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "trigger_field",
+  "condition",
+  "trigger_value",
+  "target_field",
+  "action",
+  "help_text"
+ ],
+ "fields": [
+  {
+   "fieldname": "trigger_field",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Trigger Field",
+   "reqd": 1
+  },
+  {
+   "fieldname": "condition",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Condition",
+   "options": "\n=\n!=\n>\n<\nis set\nis not set",
+   "reqd": 1
+  },
+  {
+   "fieldname": "trigger_value",
+   "fieldtype": "Data",
+   "label": "Trigger Value"
+  },
+  {
+   "fieldname": "target_field",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Target Field",
+   "reqd": 1
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "\nShow\nHide\nMandatory\nRead Only",
+   "reqd": 1
+  },
+  {
+   "description": "Shown to applicant when field is triggered",
+   "fieldname": "help_text",
+   "fieldtype": "Text",
+   "label": "Help Text"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-24 15:02:32.315240",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Form Condition Rule",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
