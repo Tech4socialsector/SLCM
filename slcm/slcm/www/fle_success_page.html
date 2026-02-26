@@ -80,13 +80,19 @@
 <script>
     frappe.ready(function () {
         let urlParams = new URLSearchParams(window.location.search);
-        let receipt_id = urlParams.get('name');
         let transaction_id = urlParams.get('transaction_id');
 
-        // FALLBACK: If URL params are stripped, try getting the receipt_id saved to localStorage before checkout
+        // Priority 1: server-injected doc name (most reliable — works always)
+        let receipt_id = "{{ fle_doc_name }}";
+
+        // Priority 2: URL param
+        if (!receipt_id) {
+            receipt_id = urlParams.get('name');
+        }
+
+        // Priority 3: localStorage fallback (set before Razorpay modal opens)
         if (!receipt_id) {
             receipt_id = localStorage.getItem('recent_fle_payment_doc');
-            // Push into URL so page refreshes keep the param (don't remove yet — remove after successful load)
             if (receipt_id) {
                 let newUrl = window.location.pathname + '?name=' + encodeURIComponent(receipt_id);
                 window.history.replaceState({}, '', newUrl);
