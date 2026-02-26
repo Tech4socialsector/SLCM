@@ -13,15 +13,17 @@ class FoundationsforaLegalEducation(Document):
 		The 'status' parameter is usually 'Completed', 'Authorized', 'Failed', etc.
 		"""
 		if status in ["Completed", "Authorized"]:
-			self.db_set("payment_status", "Paid")
-			self.db_set("enrollment_status", "Enrolled")
+			self.payment_status = "Paid"
+			self.enrollment_status = "Enrolled"
 			
 			self.create_user_on_enrollment()
+			self.save(ignore_permissions=True)
 			
 			frappe.msgprint("Payment Authorized successfully for " + self.name)
 		elif status in ["Failed", "Cancelled"]:
 			valid_statuses = {"Failed": "Payment Failed", "Cancelled": "Cancelled"}
-			self.db_set("payment_status", valid_statuses.get(status, "Payment Failed"))
+			self.payment_status = valid_statuses.get(status, "Payment Failed")
+			self.save(ignore_permissions=True)
 
 	def before_insert(self):
 		if not self.enrollment_status or self.enrollment_status == "Enrolled":
@@ -36,6 +38,15 @@ class FoundationsforaLegalEducation(Document):
 		self.db_set("payment_status", "Payment Initiated")
 
 	def create_user_on_enrollment(self):
+		from frappe.utils import random_string
+		from frappe.utils.password import update_password
+		
+		# Ensure we only try to create exactly once
+		if self.lms_account_created and self.generated_password_temp:
+			return
+
+		password = random_string(12)
+
 		# Check if user already exists
 		if not frappe.db.exists("User", self.email_address):
 			user = frappe.get_doc({
@@ -44,17 +55,37 @@ class FoundationsforaLegalEducation(Document):
 				"first_name": self.candidate_name,
 				"mobile_no": self.candidate_contact_number,
 				"enabled": 1,
-				"send_welcome_email": 1
+				"send_welcome_email": 0
 			})
 			user.flags.ignore_password_policy = True
+			user.flags.no_welcome_mail = True
 			user.insert(ignore_permissions=True)
 			
-			if "LMS Student" in [r.role.name for r in frappe.get_all("Role")]:
+			# Set the password
+			update_password(self.email_address, password)
+			
+			# Add role if exists
+			if "LMS Student" in [r.name for r in frappe.get_all("Role")]:
 				user.add_roles("LMS Student")
 			
-			self.db_set("lms_account_created", 1)
+			self.generated_password_temp = password
+			self.lms_account_created = 1
+			frappe.db.commit() # Ensure user creation is committed during automated webhook
+			frappe.msgprint("New LMS Student account created successfully.")
 		else:
-			frappe.msgprint("User already exists with this Email ID")
+			# If user already exists, ensure they have the LMS Student role
+			user = frappe.get_doc("User", self.email_address)
+			if "LMS Student" not in [r.role for r in user.roles]:
+				if "LMS Student" in [r.name for r in frappe.get_all("Role")]:
+					user.add_roles("LMS Student")
+			
+			# ALWAYS generate and update the password for this specific flow if we need to send it via notification
+			update_password(self.email_address, password)
+			
+			self.generated_password_temp = password
+			self.lms_account_created = 1
+			frappe.db.commit() # Ensure role update is committed
+			frappe.msgprint("User already exists. Password updated and roles verified.")
 
 @frappe.whitelist()
 def create_razorpay_order(doc_name):
@@ -132,11 +163,12 @@ def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, d
 		
 		# Update Document Status
 		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
-		doc.db_set("payment_status", "Paid")
-		doc.db_set("enrollment_status", "Enrolled")
-		doc.db_set("payment_instructions", f"Payment successful. Reference ID: {razorpay_payment_id}")
+		doc.payment_status = "Paid"
+		doc.enrollment_status = "Enrolled"
+		doc.payment_instructions = f"Payment successful. Reference ID: {razorpay_payment_id}"
 		
 		doc.create_user_on_enrollment()
+		doc.save(ignore_permissions=True)
 		
 		return {"status": "success"}
 		
