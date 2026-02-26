@@ -2,82 +2,43 @@
  {
   "block_modules": [
    {
-    "module": "Contacts",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Contacts"
    },
    {
-    "module": "Core",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Core"
    },
    {
-    "module": "Custom",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Custom"
    },
    {
-    "module": "Automation",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Automation"
    },
    {
-    "module": "Email",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Email"
    },
    {
-    "module": "Geo",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Geo"
    },
    {
-    "module": "Integrations",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Integrations"
    },
    {
-    "module": "Payment Gateways",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Payment Gateways"
    },
    {
-    "module": "Payments",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Payments"
    },
    {
-    "module": "Printing",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Printing"
    },
    {
-    "module": "Workflow",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Workflow"
    },
    {
-    "module": "Website",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Website"
    },
    {
-    "module": "Social",
-    "parent": "Eligibility Admin",
-    "parentfield": "block_modules",
-    "parenttype": "Module Profile"
+    "module": "Social"
    }
   ],
   "docstatus": 0,
