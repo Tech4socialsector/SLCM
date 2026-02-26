@@ -1,0 +1,21 @@
+{
+  "doctype": "DocType",
+  "name": "Document Requirement Config",
+  "module": "Admission",
+  "track_changes": 1,
+  "autoname": "format:DRC-{program}-{quota_category}",
+  "title_field": "program",
+  "fields": [
+    {"fieldname": "program", "fieldtype": "Link", "label": "Program", "options": "Program", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "quota_category", "fieldtype": "Data", "label": "Quota Category", "reqd": 1, "in_list_view": 1, "default": "All", "description": "Enter 'All' to apply to all categories, or a specific category code e.g. SC, ST, OBC"},
+    {"fieldname": "col_break_1", "fieldtype": "Column Break"},
+    {"fieldname": "academic_year", "fieldtype": "Link", "label": "Academic Year", "options": "Admission Year", "in_list_view": 1},
+    {"fieldname": "is_active", "fieldtype": "Check", "label": "Active", "default": "1"},
+    {"fieldname": "section_break_docs", "fieldtype": "Section Break", "label": "Document Requirements"},
+    {"fieldname": "document_requirements", "fieldtype": "Table", "label": "Document Requirements", "options": "Document Requirement Entry"}
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "Admission Admin", "read": 1, "write": 1, "create": 1}
+  ]
+}

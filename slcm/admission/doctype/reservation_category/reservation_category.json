@@ -1,104 +1,40 @@
 {
- "actions": [],
- "autoname": "format:RC-{####}",
- "creation": "2026-02-20 07:24:00",
  "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "category_name",
-  "category_code",
-  "column_break_1",
-  "reservation_pct",
-  "governing_regulation",
-  "is_active",
-  "section_break_remarks",
-  "remarks"
- ],
+ "name": "Reservation Category",
+ "module": "Admission",
+ "istable": 1,
  "fields": [
   {
-   "fieldname": "category_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Category Name",
-   "reqd": 1
-  },
-  {
-   "fieldname": "category_code",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Category Code",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "reservation_pct",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Reservation Percentage",
-   "reqd": 1
-  },
-  {
-   "fieldname": "governing_regulation",
+   "fieldname": "category",
    "fieldtype": "Select",
-   "label": "Governing Regulation",
-   "options": "\nBCI\nUGC\nUniversity Statute"
+   "label": "Category",
+   "options": "\nGeneral\nSC\nST\nOBC\nEWS\nPwD\nNRI\nKarnataka Domicile",
+   "reqd": 1,
+   "in_list_view": 1
   },
   {
-   "default": "1",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "label": "Is Active"
+   "fieldname": "total_seats",
+   "fieldtype": "Int",
+   "label": "Total Seats",
+   "reqd": 1,
+   "in_list_view": 1
   },
   {
-   "fieldname": "section_break_remarks",
-   "fieldtype": "Section Break"
+   "fieldname": "filled_seats",
+   "fieldtype": "Int",
+   "label": "Filled Seats",
+   "default": 0,
+   "in_list_view": 1
   },
   {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "label": "Remarks"
+   "fieldname": "cut_off_rank",
+   "fieldtype": "Int",
+   "label": "Cut Off Rank"
+  },
+  {
+   "fieldname": "cut_off_score",
+   "fieldtype": "Float",
+   "label": "Cut Off Score"
   }
- ],
- "index_web_pages_for_search": 0,
- "links": [],
- "modified": "2026-02-20 07:24:00.000000",
- "modified_by": "Administrator",
- "module": "Admission",
- "name": "Reservation Category",
- "naming_rule": "Expression",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Admission Officer",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+ ]
 }

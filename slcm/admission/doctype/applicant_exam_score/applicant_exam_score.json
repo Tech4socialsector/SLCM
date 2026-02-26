@@ -1,0 +1,21 @@
+{
+  "doctype": "DocType",
+  "name": "Applicant Exam Score",
+  "module": "Admission",
+  "track_changes": 1,
+  "autoname": "format:SCORE-{applicant}-{exam_type}",
+  "fields": [
+    {"fieldname": "applicant", "fieldtype": "Link", "label": "Applicant", "options": "Applicant", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "exam_type", "fieldtype": "Link", "label": "Exam Type", "options": "Exam Type Config", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "admission_cycle", "fieldtype": "Link", "label": "Admission Cycle", "options": "Admission Cycle", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "col_break_1", "fieldtype": "Column Break"},
+    {"fieldname": "total_score", "fieldtype": "Float", "label": "Total Score", "in_list_view": 1},
+    {"fieldname": "air_rank", "fieldtype": "Int", "label": "AIR Rank", "in_list_view": 1},
+    {"fieldname": "category_rank", "fieldtype": "Int", "label": "Category Rank"},
+    {"fieldname": "percentile", "fieldtype": "Float", "label": "Percentile"}
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "Admission Admin", "read": 1, "write": 1, "create": 1}
+  ]
+}

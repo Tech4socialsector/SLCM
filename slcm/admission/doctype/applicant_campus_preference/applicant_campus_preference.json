@@ -1,0 +1,127 @@
+{
+ "doctype": "DocType",
+ "name": "Applicant Campus Preference",
+ "module": "Admission",
+ "track_changes": 1,
+ "fields": [
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "label": "Applicant",
+   "options": "Applicant",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "preference_order",
+   "fieldtype": "Int",
+   "label": "Preference Order",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nPending\nUnder Evaluation\nShortlisted\nInterview Scheduled\nOffered\nAccepted\nRejected\nWaitlisted",
+   "default": "Pending",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "clat_rank",
+   "fieldtype": "Int",
+   "label": "CLAT Rank",
+   "depends_on": "eval:doc.workflow_type=='CLAT'"
+  },
+  {
+   "fieldname": "clat_category_rank",
+   "fieldtype": "Int",
+   "label": "CLAT Category Rank",
+   "depends_on": "eval:doc.workflow_type=='CLAT'"
+  },
+  {
+   "fieldname": "nlsat_score",
+   "fieldtype": "Float",
+   "label": "NLSAT Score",
+   "depends_on": "eval:doc.workflow_type=='NLSAT'"
+  },
+  {
+   "fieldname": "interview_score",
+   "fieldtype": "Float",
+   "label": "Interview Score",
+   "depends_on": "eval:doc.workflow_type=='NLSAT'"
+  },
+  {
+   "fieldname": "workflow_type",
+   "fieldtype": "Select",
+   "label": "Workflow Type",
+   "options": "\nCLAT\nNLSAT\nPACE",
+   "read_only": 1
+  },
+  {
+   "fieldname": "offer_date",
+   "fieldtype": "Date",
+   "label": "Offer Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "acceptance_deadline",
+   "fieldtype": "Date",
+   "label": "Acceptance Deadline",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rejection_reason",
+   "fieldtype": "Text",
+   "label": "Rejection Reason",
+   "depends_on": "eval:doc.status=='Rejected'"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Admission Admin",
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Admission Officer",
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "Applicant",
+   "read": 1
+  }
+ ]
+}

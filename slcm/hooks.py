@@ -290,10 +290,23 @@ scheduler_events = {
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		]
 	},
+    "all": [
+        "slcm.admission.utils.auto_draft.auto_save_all_drafts"
+    ],
+	"hourly": [
+		"slcm.admission.events.auto_update_cycle_status",
+        "slcm.admission.utils.notifications.check_and_send_offer_reminders"
+	],
 	"daily": [
-		"slcm.api.service.offer_service.expire_offers"
+		"slcm.api.service.offer_service.expire_offers",
+		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
+		"slcm.admission.events.send_deadline_reminders"
 	]
 }
+
+website_route_rules = [
+    {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"}
+]
 
 doc_events = {
     "Student Master": {
@@ -301,5 +314,18 @@ doc_events = {
     },
     "Payment Request": {
         "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
+    "Applicant": {
+        "on_submit": "slcm.admission.events.on_applicant_submit",
+        "on_cancel": "slcm.admission.events.on_applicant_cancel"
+    },
+    "Applicant Document": {
+        "on_submit": "slcm.admission.events.on_document_submit"
+    },
+    "Merit List": {
+        "on_submit": "slcm.admission.events.on_merit_list_publish"
+    },
+    "Campus Seat Matrix": {
+        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
+    }
     }
 }

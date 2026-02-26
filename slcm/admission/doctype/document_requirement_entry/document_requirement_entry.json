@@ -1,0 +1,16 @@
+{
+  "doctype": "DocType",
+  "name": "Document Requirement Entry",
+  "module": "Admission",
+  "istable": 1,
+  "fields": [
+    {"fieldname": "document_name", "fieldtype": "Data", "label": "Document Name", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "document_code", "fieldtype": "Data", "label": "Document Code", "reqd": 1, "in_list_view": 1, "description": "Short code e.g. CASTE_CERT, MARKSHEET_10"},
+    {"fieldname": "is_mandatory", "fieldtype": "Check", "label": "Mandatory", "default": "1", "in_list_view": 1},
+    {"fieldname": "col_break_1", "fieldtype": "Column Break"},
+    {"fieldname": "allowed_formats", "fieldtype": "Data", "label": "Allowed Formats", "default": "pdf,jpg,png", "description": "Comma separated e.g. pdf,jpg,png"},
+    {"fieldname": "max_size_mb", "fieldtype": "Float", "label": "Max Size (MB)", "default": "2"},
+    {"fieldname": "verification_required", "fieldtype": "Check", "label": "Verification Required", "default": "0", "description": "Must be verified by officer before enrollment"},
+    {"fieldname": "help_text", "fieldtype": "Text", "label": "Help Text", "description": "Shown to applicant during upload"}
+  ]
+}

@@ -1,16 +1,17 @@
 import frappe
-from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt
-
+from frappe.utils import validate_email_address, getdate, date_diff, today, now
+from slcm.admission.utils.regulatory import log_audit_trail
 
 class Applicant(Document):
 
-    # ──────────────────────────────────────────────
-    # VALIDATE
-    # ──────────────────────────────────────────────
-
     def validate(self):
+        self.validate_email()
+        self.validate_age()
+        self.validate_percentages()
+        self.validate_reservation_documents()
+        self.validate_preferences()
+        self.validate_declaration()
         self.validate_eligibility()
 
         # for BOTH eligible and ineligible outcomes, so it always runs even
@@ -24,9 +25,103 @@ class Applicant(Document):
         # (ineligibility reason + program table) in one single call.
         # A second throw here would override that rich message with a plain one.
 
-    def on_update(self):
-        from slcm.admission.doctype.admission_result.admission_result import sync_applicant_to_admission_result
-        sync_applicant_to_admission_result(self.name)
+    def validate_email(self):
+        if not validate_email_address(self.email):
+            frappe.throw(
+                f"Invalid email address: {self.email}",
+                title="Invalid Email"
+            )
+
+    def validate_age(self):
+        if self.date_of_birth:
+            age = date_diff(today(), self.date_of_birth) / 365
+            if age < 17:
+                frappe.throw(
+                    "Applicant must be at least 17 years old.",
+                    title="Age Restriction"
+                )
+
+    def validate_percentages(self):
+        if self.class_x_percentage:
+            if not 0 <= self.class_x_percentage <= 100:
+                frappe.throw(
+                    "Class X Percentage must be between 0 and 100.",
+                    title="Invalid Percentage"
+                )
+        if self.class_xii_percentage:
+            if not 0 <= self.class_xii_percentage <= 100:
+                frappe.throw(
+                    "Class XII Percentage must be between 0 and 100.",
+                    title="Invalid Percentage"
+                )
+
+    def validate_reservation_documents(self):
+        if self.reservation_category == "EWS" and not self.ews_certificate:
+            frappe.throw(
+                "EWS Certificate is mandatory for EWS category.",
+                title="Missing Document"
+            )
+        if self.reservation_category in ["SC", "ST", "OBC"] and not self.caste_certificate:
+            frappe.throw(
+                f"Caste Certificate is mandatory for {self.reservation_category} category.",
+                title="Missing Document"
+            )
+        if self.reservation_category == "PwD" and not self.pwd_certificate:
+            frappe.throw(
+                "PwD Certificate is mandatory for PwD category.",
+                title="Missing Document"
+            )
+
+    def validate_preferences(self):
+        if not self.first_preference:
+            frappe.throw(
+                "First Campus Preference is mandatory.",
+                title="Missing Preference"
+            )
+        preferences = [
+            self.first_preference,
+            self.second_preference,
+            self.third_preference
+        ]
+        filled = [p for p in preferences if p]
+        if len(filled) != len(set(filled)):
+            frappe.throw(
+                "Duplicate campus preferences are not allowed.",
+                title="Duplicate Preference"
+            )
+
+    def validate_declaration(self):
+        if self.docstatus == 1 and not self.declaration_undertaking:
+            frappe.throw(
+                "Declaration Undertaking must be accepted before submission.",
+                title="Declaration Required"
+            )
+
+    def before_save(self):
+        if not self.application_id:
+            self.application_id = frappe.generate_hash(length=8).upper()
+
+    def on_submit(self):
+        self.db_set("application_status", "Submitted")
+        self.db_set("submitted_on", now())
+        log_audit_trail(
+            self.doctype, self.name,
+            "Submitted", "application_status",
+            "Draft", "Submitted", "General"
+        )
+        frappe.sendmail(
+            recipients=[self.email],
+            subject=f"NLSIU Application Submitted - {self.application_id}",
+            message=f"""
+            Dear {self.candidate_name},<br><br>
+            Your application <b>{self.application_id}</b> has been
+            successfully submitted.<br>
+            Application Type: {self.application_type}<br>
+            Program: {self.program}<br><br>
+            You will be notified of further updates.<br><br>
+            NLSIU Admissions Team
+            """
+        )
 
     def before_submit(self):
         if self.evaluation_status == "Ineligible":
@@ -35,33 +130,18 @@ class Applicant(Document):
                 title=_("Submission Not Allowed")
             )
 
-    # ──────────────────────────────────────────────
-    # CHILD TABLE VALUE HELPERS
-    # ──────────────────────────────────────────────
+    def on_update(self):
+        from slcm.admission.doctype.admission_result.admission_result import sync_applicant_to_admission_result
+        sync_applicant_to_admission_result(self.name)
 
-    def _get_ug_cgpa_values(self):
-        """Return a list of all UG CGPA values from the ug_degree_details child table."""
-        rows = getattr(self, "ug_degree_details", None) or []
-        return [flt(row.ug_cgpa) for row in rows if row.ug_cgpa not in (None, "")]
+    def on_cancel(self):
+        self.db_set("application_status", "Draft")
+        log_audit_trail(
+            self.doctype, self.name,
+            "Cancelled", "application_status",
+            "Submitted", "Draft", "General"
+        )
 
-    def _get_pg_cgpa_values(self):
-        """Return a list of all PG CGPA values from the pg_degree_details child table."""
-        rows = getattr(self, "pg_degree_details", None) or []
-        return [flt(row.pg_cgpa) for row in rows if row.pg_cgpa not in (None, "")]
-
-    def _get_ug_programs(self):
-        """Return a list of all UG programs from the ug_degree_details child table."""
-        rows = getattr(self, "ug_degree_details", None) or []
-        return [row.ug_program for row in rows if row.ug_program]
-
-    def _get_pg_programs(self):
-        """Return a list of all PG programs from the pg_degree_details child table."""
-        rows = getattr(self, "pg_degree_details", None) or []
-        return [row.pg_program for row in rows if row.pg_program]
-
-    # ──────────────────────────────────────────────
-    # CORE ELIGIBILITY LOGIC
-    # ──────────────────────────────────────────────
 
     def validate_eligibility(self):
         """
@@ -147,29 +227,14 @@ class Applicant(Document):
                     # for ineligible applicants. We must save here explicitly.
                     self.create_or_update_evaluation(program_details_html=program_table_html)
 
-                    full_message = """
-                        <div style="
-                            background:#fff0f0;
-                            border-left:4px solid #e74c3c;
-                            padding:10px 14px;
-                            border-radius:4px;
-                            margin-bottom:14px;
-                            font-size:13px;
-                        ">
-                            <b style="color:#c0392b;">&#10006;&nbsp;{reason}</b>
-                        </div>
-                        {table}
-                    """.format(
-                        reason=frappe.utils.escape_html(failure_message),
-                        table=program_table_html,
-                    )
+                    full_message = self._build_ineligibility_message(failure_message, program_table_html)
 
                     # ONE single frappe.throw() — contains reason + program table
                     frappe.throw(
-                        full_message,
-                        title=_("Not Eligible — Program Options for {0}").format(
-                            self.campus or ""
-                        )
+                        msg=full_message,
+                        title=_("Eligibility Evaluation Results"),
+                        wide=True,
+                        is_minimizable=True
                     )
                     return  # never reached — throw exits — kept for clarity
 
@@ -186,6 +251,49 @@ class Applicant(Document):
             )
 
     # ──────────────────────────────────────────────
+    # INELIGIBILITY MESSAGE BUILDER  (Frappe-native)
+    # ──────────────────────────────────────────────
+
+    def _build_ineligibility_message(self, failure_message, program_table_html):
+        """
+        Builds the full ineligibility HTML message using only Frappe's
+        native CSS classes and design tokens — no inline colours.
+
+        Structure:
+          ┌─ Alert banner (indicator-pill red)  ──────────────────┐
+          │  ✕  <failure_message>                                  │
+          └────────────────────────────────────────────────────────┘
+          ┌─ Program table section  ──────────────────────────────┐
+          │  Heading + summary counts + full eligibility table     │
+          └────────────────────────────────────────────────────────┘
+        """
+        escaped_reason = frappe.utils.escape_html(failure_message)
+
+        return """
+        <div class="msgprint-content">
+
+            <!-- ── Ineligibility Alert ───────────────────────────────── -->
+            <div class="alert alert-danger" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;">
+                <span class="indicator-pill red no-margin" style="margin-top:3px;flex-shrink:0;"></span>
+                <div>
+                    <div style="font-weight:600;font-size:var(--text-base);">{reason}</div>
+                    <div class="text-muted" style="font-size:var(--text-sm);margin-top:2px;">
+                        {note}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Program Options ───────────────────────────────────── -->
+            {table}
+
+        </div>
+        """.format(
+            reason=escaped_reason,
+            note=_("The applicant does not meet the eligibility criteria for the selected program."),
+            table=program_table_html,
+        )
+
+    # ──────────────────────────────────────────────
     # PROGRAM ELIGIBILITY TABLE (rendered inside throw)
     # ──────────────────────────────────────────────
 
@@ -195,18 +303,21 @@ class Applicant(Document):
         campus + admission cycle with a full eligibility check per program.
 
         Layout:
-          • Summary bar: "✔ X program(s) you qualify for | ✘ Y you don't"
+          • Section heading with campus · cycle
+          • Summary counts (eligible / ineligible)
           • Table: Program | Your Eligibility | Reason (if not eligible)
 
-        The currently selected program is bolded + badged "Selected".
+        Uses only Frappe's native CSS classes — no custom inline colours.
+        The currently selected program is marked with a "Selected" badge.
         """
         all_programs = frappe.db.sql("""
-            SELECT DISTINCT erm.program
+            SELECT DISTINCT pm.program
             FROM `tabEligibility Rule Mapping` erm
+            INNER JOIN `tabProgram Mapping` pm ON pm.parent = erm.name
             WHERE erm.is_active       = 1
               AND erm.campus          = %(campus)s
               AND erm.admission_cycle = %(admission_cycle)s
-            ORDER BY erm.program ASC
+            ORDER BY pm.program ASC
         """, {
             "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
@@ -214,7 +325,7 @@ class Applicant(Document):
 
         if not all_programs:
             return (
-                "<p style='color:#888;font-size:12px;'>{0}</p>".format(
+                "<p class='text-muted' style='font-size:var(--text-sm);'>{0}</p>".format(
                     _("No programs found for this campus and admission cycle.")
                 )
             )
@@ -229,121 +340,133 @@ class Applicant(Document):
                 continue
 
             is_prog_eligible, reason = self._check_eligibility_for_program(prog_name)
+            is_selected = (prog_name == self.program)
 
             if is_prog_eligible:
                 eligible_count += 1
-                status_icon  = "&#10004;"
-                status_color = "#27ae60"
+                pill_class   = "indicator-pill green no-margin"
                 status_label = _("Eligible")
-                reason_text  = "&#8212;"
-                row_bg       = "#f2fff5"
-                reason_color = "#aaa"
+                reason_html  = "<span class='text-muted'>—</span>"
+                row_class    = ""
             else:
                 ineligible_count += 1
-                status_icon  = "&#10006;"
-                status_color = "#e74c3c"
+                pill_class   = "indicator-pill red no-margin"
                 status_label = _("Not Eligible")
-                reason_text  = frappe.utils.escape_html(reason or "")
-                row_bg       = "#fff8f8"
-                reason_color = "#c0392b"
+                reason_html  = (
+                    "<span style='font-size:var(--text-sm);'>{0}</span>".format(
+                        frappe.utils.escape_html(reason or "")
+                    )
+                )
+                row_class    = ""
 
-            # Bold + badge the currently selected program
-            is_selected = (prog_name == self.program)
+            # Program name cell — bold + "Selected" badge for the active program
             if is_selected:
-                prog_display = (
-                    "<b>{name}</b>&nbsp;"
-                    "<span style='font-size:10px;background:#ddeeff;"
-                    "color:#2471a3;padding:1px 5px;border-radius:3px;"
-                    "font-weight:normal;border:1px solid #aad4f5;'>"
-                    "{label}</span>"
-                ).format(
+                prog_display = """
+                    <strong>{name}</strong>
+                    &nbsp;<span class="indicator-pill blue no-margin"
+                        style="font-size:10px;padding:1px 6px;vertical-align:middle;">
+                        {label}
+                    </span>
+                """.format(
                     name  = frappe.utils.escape_html(prog_name),
                     label = _("Selected"),
                 )
-                row_font_weight = "bold"
             else:
-                prog_display    = frappe.utils.escape_html(prog_name)
-                row_font_weight = "normal"
+                prog_display = frappe.utils.escape_html(prog_name)
 
             rows_html += """
-                <tr style="background:{row_bg};font-weight:{fw};">
-                    <td style="padding:7px 10px;border:1px solid #e0e0e0;vertical-align:middle;">
+                <tr class="{row_class}">
+                    <td class="list-subject" style="padding:8px 10px;vertical-align:middle;">
                         {prog}
                     </td>
-                    <td style="padding:7px 10px;border:1px solid #e0e0e0;
-                               text-align:center;white-space:nowrap;
-                               color:{status_color};vertical-align:middle;">
-                        <b>{icon}&nbsp;{label}</b>
+                    <td style="padding:8px 10px;vertical-align:middle;text-align:center;white-space:nowrap;">
+                        <span class="{pill}" style="vertical-align:middle;"></span>
+                        &nbsp;<span style="font-size:var(--text-sm);font-weight:500;">{status}</span>
                     </td>
-                    <td style="padding:7px 10px;border:1px solid #e0e0e0;
-                               font-size:12px;color:{reason_color};vertical-align:middle;">
+                    <td style="padding:8px 10px;vertical-align:middle;">
                         {reason}
                     </td>
                 </tr>
             """.format(
-                row_bg       = row_bg,
-                fw           = row_font_weight,
-                prog         = prog_display,
-                status_color = status_color,
-                icon         = status_icon,
-                label        = status_label,
-                reason_color = reason_color,
-                reason       = reason_text,
+                row_class = row_class,
+                prog      = prog_display,
+                pill      = pill_class,
+                status    = status_label,
+                reason    = reason_html,
             )
 
-        summary_bar = """
-            <div style="display:flex;gap:14px;margin-bottom:8px;font-size:13px;
-                        flex-wrap:wrap;align-items:center;">
-                <span style="color:#27ae60;font-weight:bold;">
-                    &#10004;&nbsp;{ec}&nbsp;{el}
+        # ── Summary counts ───────────────────────────────────────────────────
+        summary_html = """
+            <div style="display:flex;align-items:center;gap:16px;
+                        margin-bottom:10px;flex-wrap:wrap;">
+                <span>
+                    <span class="indicator-pill green no-margin" style="vertical-align:middle;"></span>
+                    &nbsp;<strong>{ec}</strong>
+                    <span class="text-muted" style="font-size:var(--text-sm);">
+                        &nbsp;{el}
+                    </span>
                 </span>
-                <span style="color:#ccc;">&nbsp;|&nbsp;</span>
-                <span style="color:#e74c3c;font-weight:bold;">
-                    &#10006;&nbsp;{ic}&nbsp;{il}
+                <span class="text-muted">/</span>
+                <span>
+                    <span class="indicator-pill red no-margin" style="vertical-align:middle;"></span>
+                    &nbsp;<strong>{ic}</strong>
+                    <span class="text-muted" style="font-size:var(--text-sm);">
+                        &nbsp;{il}
+                    </span>
                 </span>
-                <span style="color:#aaa;font-size:11px;">
-                    &nbsp;({total}&nbsp;{tl})
+                <span class="text-muted" style="font-size:var(--text-sm);">
+                    ({total}&nbsp;{tl})
                 </span>
             </div>
         """.format(
             ec    = eligible_count,
-            el    = _("program(s) you qualify for"),
+            el    = _("eligible"),
             ic    = ineligible_count,
-            il    = _("program(s) you do not qualify for"),
+            il    = _("not eligible"),
             total = eligible_count + ineligible_count,
             tl    = _("total"),
         )
 
+        # ── Section heading ──────────────────────────────────────────────────
+        heading_html = """
+            <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px;">
+                <span style="font-weight:600;font-size:var(--text-base);">{heading}</span>
+                <span class="text-muted" style="font-size:var(--text-sm);">
+                    &mdash;&nbsp;{campus}&nbsp;&middot;&nbsp;{cycle}
+                </span>
+            </div>
+        """.format(
+            heading = _("Available Programs"),
+            campus  = frappe.utils.escape_html(self.campus or ""),
+            cycle   = frappe.utils.escape_html(self.admission_cycle or ""),
+        )
+
+        # ── Full table ───────────────────────────────────────────────────────
         table_html = """
-            <div style="margin-top:4px;">
-                <p style="font-weight:bold;font-size:13px;margin:0 0 6px 0;color:#333;">
-                    {heading}
-                </p>
+            <div style="margin-top:8px;">
+                {heading}
+                <hr class="divider" style="margin:6px 0 10px 0;">
                 {summary}
                 <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <table class="table table-bordered table-hover" style="margin-bottom:0;">
                         <thead>
-                            <tr style="background:#f0f0f0;">
-                                <th style="padding:7px 10px;border:1px solid #d0d0d0;
-                                           text-align:left;white-space:nowrap;">{col1}</th>
-                                <th style="padding:7px 10px;border:1px solid #d0d0d0;
-                                           text-align:center;white-space:nowrap;">{col2}</th>
-                                <th style="padding:7px 10px;border:1px solid #d0d0d0;
-                                           text-align:left;">{col3}</th>
+                            <tr>
+                                <th style="width:40%;">{col1}</th>
+                                <th style="width:20%;text-align:center;">{col2}</th>
+                                <th>{col3}</th>
                             </tr>
                         </thead>
-                        <tbody>{rows}</tbody>
+                        <tbody>
+                            {rows}
+                        </tbody>
                     </table>
                 </div>
             </div>
         """.format(
-            heading = _("Available Programs &mdash; {campus} &nbsp;&middot;&nbsp; {cycle}").format(
-                          campus=frappe.utils.escape_html(self.campus or ""),
-                          cycle =frappe.utils.escape_html(self.admission_cycle or "")
-                      ),
-            summary = summary_bar,
+            heading = heading_html,
+            summary = summary_html,
             col1    = _("Program"),
-            col2    = _("Your Eligibility"),
+            col2    = _("Eligibility"),
             col3    = _("Reason (if not eligible)"),
             rows    = rows_html,
         )
@@ -374,10 +497,11 @@ class Applicant(Document):
             rule_mappings = frappe.db.sql("""
                 SELECT erm.name, erm.rule, erm.failure_message
                 FROM `tabEligibility Rule Mapping` erm
+                INNER JOIN `tabProgram Mapping` pm ON pm.parent = erm.name
                 WHERE erm.is_active       = 1
                   AND erm.campus          = %(campus)s
                   AND erm.admission_cycle = %(admission_cycle)s
-                  AND erm.program         = %(program)s
+                  AND pm.program          = %(program)s
             """, {
                 "campus":          self.campus,
                 "admission_cycle": self.admission_cycle,
@@ -499,10 +623,11 @@ class Applicant(Document):
         return frappe.db.sql("""
             SELECT erm.name, erm.rule, erm.failure_message
             FROM `tabEligibility Rule Mapping` erm
+            INNER JOIN `tabProgram Mapping` pm ON pm.parent = erm.name
             WHERE erm.is_active         = 1
               AND erm.campus            = %(campus)s
               AND erm.admission_cycle   = %(admission_cycle)s
-              AND erm.program           = %(program)s
+              AND pm.program            = %(program)s
         """, {
             "campus":          self.campus,
             "admission_cycle": self.admission_cycle,

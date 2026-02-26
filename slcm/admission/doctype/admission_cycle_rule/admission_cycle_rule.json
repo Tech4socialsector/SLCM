@@ -1,66 +1,17 @@
 {
-    "actions": [],
-    "creation": "2026-02-20 07:24:00",
-    "doctype": "DocType",
-    "editable_grid": 1,
-    "engine": "InnoDB",
-    "field_order": [
-        "rule_type",
-        "rule_value",
-        "column_break_1",
-        "is_active",
-        "section_break_remarks",
-        "remarks"
-    ],
-    "fields": [
-        {
-            "fieldname": "rule_type",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Rule Type",
-            "options": "Submission Cutoff\nModification Lock\nEvaluation Start Condition\nOffer Validity Days\nMax Campus Preferences\nMin Documents Required",
-            "reqd": 1
-        },
-        {
-            "fieldname": "rule_value",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Rule Value",
-            "reqd": 1
-        },
-        {
-            "fieldname": "column_break_1",
-            "fieldtype": "Column Break"
-        },
-        {
-            "default": "1",
-            "fieldname": "is_active",
-            "fieldtype": "Check",
-            "in_list_view": 1,
-            "label": "Is Active",
-            "reqd": 1
-        },
-        {
-            "fieldname": "section_break_remarks",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "remarks",
-            "fieldtype": "Small Text",
-            "label": "Remarks"
-        }
-    ],
-    "index_web_pages_for_search": 0,
-    "istable": 1,
-    "links": [],
-    "modified": "2026-02-20 07:24:00.000000",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "Admission Cycle Rule",
-    "owner": "Administrator",
-    "permissions": [],
-    "row_format": "Dynamic",
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+  "doctype": "DocType",
+  "name": "Admission Cycle Rule",
+  "module": "Admission",
+  "track_changes": 1,
+  "fields": [
+    {"fieldname": "admission_cycle", "fieldtype": "Link", "label": "Admission Cycle", "options": "Admission Cycle", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "rule_type", "fieldtype": "Select", "label": "Rule Type", "options": "\nsubmission_cutoff\nmodification_lock\nevaluation_start_dependency\noffer_validity_period", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "col_break_1", "column_break": "Column Break"},
+    {"fieldname": "rule_value", "fieldtype": "Data", "label": "Rule Value", "reqd": 1, "description": "e.g. for offer_validity_period enter number of days like 7"},
+    {"fieldname": "is_mandatory", "fieldtype": "Check", "label": "Mandatory Rule", "default": "1"}
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "Admission Admin", "read": 1, "write": 1, "create": 1}
+  ]
 }

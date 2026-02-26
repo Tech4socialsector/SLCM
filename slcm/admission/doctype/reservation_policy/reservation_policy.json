@@ -1,0 +1,79 @@
+{
+ "doctype": "DocType",
+ "name": "Reservation Policy",
+ "module": "Admission",
+ "is_submittable": 1,
+ "track_changes": 1,
+ "fields": [
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Admission Year",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "\nGeneral\nSC\nST\nOBC\nEWS\nPwD\nNRI\nKarnataka Domicile",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "mandated_percentage",
+   "fieldtype": "Float",
+   "label": "Mandated Percentage (%)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mandated_seats",
+   "fieldtype": "Int",
+   "label": "Mandated Seats",
+   "read_only": 1
+  },
+  {
+   "fieldname": "legal_reference",
+   "fieldtype": "Data",
+   "label": "Legal Reference",
+   "description": "e.g. UGC Circular 2024-01"
+  },
+  {
+   "fieldname": "is_locked",
+   "fieldtype": "Check",
+   "label": "Is Locked",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1
+  },
+  {
+   "role": "Admission Admin",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1
+  },
+  {
+   "role": "Admission Officer",
+   "read": 1
+  }
+ ]
+}

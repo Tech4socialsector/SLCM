@@ -1,6 +1,6 @@
 {
  "app": "slcm",
- "creation": "2026-02-24 10:55:03.823990",
+ "creation": "2026-02-24 17:10:57.237799",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "clipboard-list",
@@ -9,7 +9,6 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "airplay",
    "indent": 0,
    "keep_closed": 0,
    "label": "Dashbord",
@@ -115,9 +114,7 @@
  ],
  "modified": "2026-02-26 09:27:35.418602",
  "modified_by": "Administrator",
- "module": "Admission",
- "name": "Offer Letter",
+ "name": "Admission",
  "owner": "Administrator",
- "standard": 1,
- "title": "Offer Letter"
+ "title": "Admission"
 }
