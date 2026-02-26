@@ -27,9 +27,9 @@ frappe.ui.form.on("Email Template Config", {
     },
     trigger_event: function(frm) {
         const placeholders = {
-            "Application Submitted": "{{candidate_name}}, {{program}}, {{campus}}, {{application_id}}, {{submission_date}}",
-            "Status Changed":        "{{candidate_name}}, {{program}}, {{campus}}, {{application_id}}, {{status}}, {{old_status}}",
-            "Offer Sent":            "{{candidate_name}}, {{program}}, {{campus}}, {{application_id}}, {{offer_amount}}, {{deadline}}",
+            "Application Submitted": "{{candidate_name}}, {{program}}, {{campus}}, {{applicant_id}}, {{submission_date}}",
+            "Status Changed":        "{{candidate_name}}, {{program}}, {{campus}}, {{applicant_id}}, {{status}}, {{old_status}}",
+            "Offer Sent":            "{{candidate_name}}, {{program}}, {{campus}}, {{applicant_id}}, {{offer_amount}}, {{deadline}}",
             "Document Rejected":     "{{candidate_name}}, {{program}}, {{document_name}}, {{rejection_reason}}",
             "Deadline Reminder":     "{{candidate_name}}, {{program}}, {{deadline}}, {{action_required}}",
             "Interview Scheduled":   "{{candidate_name}}, {{program}}, {{campus}}, {{interview_date}}, {{interview_time}}, {{location}}",

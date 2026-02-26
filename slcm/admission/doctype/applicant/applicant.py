@@ -1,6 +1,7 @@
 import frappe
+from frappe import _
 from frappe.model.document import Document
-from frappe.utils import validate_email_address, getdate, date_diff, today, now
+from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate
 from slcm.admission.utils.regulatory import log_audit_trail
 
 class Applicant(Document):
@@ -8,7 +9,7 @@ class Applicant(Document):
     def validate(self):
         self.validate_email()
         self.validate_age()
-        self.validate_percentages()
+        # self.validate_percentages()
         self.validate_reservation_documents()
         self.validate_preferences()
         self.validate_declaration()
@@ -41,19 +42,19 @@ class Applicant(Document):
                     title="Age Restriction"
                 )
 
-    def validate_percentages(self):
-        if self.class_x_percentage:
-            if not 0 <= self.class_x_percentage <= 100:
-                frappe.throw(
-                    "Class X Percentage must be between 0 and 100.",
-                    title="Invalid Percentage"
-                )
-        if self.class_xii_percentage:
-            if not 0 <= self.class_xii_percentage <= 100:
-                frappe.throw(
-                    "Class XII Percentage must be between 0 and 100.",
-                    title="Invalid Percentage"
-                )
+    # def validate_percentages(self):
+    #     if self.class_x_percentage:
+    #         if not 0 <= self.class_x_percentage <= 100:
+    #             frappe.throw(
+    #                 "Class X Percentage must be between 0 and 100.",
+    #                 title="Invalid Percentage"
+    #             )
+    #     if self.class_xii_percentage:
+    #         if not 0 <= self.class_xii_percentage <= 100:
+    #             frappe.throw(
+    #                 "Class XII Percentage must be between 0 and 100.",
+    #                 title="Invalid Percentage"
+    #             )
 
     def validate_reservation_documents(self):
         if self.reservation_category == "EWS" and not self.ews_certificate:
@@ -98,8 +99,8 @@ class Applicant(Document):
             )
 
     def before_save(self):
-        if not self.application_id:
-            self.application_id = frappe.generate_hash(length=8).upper()
+        if not self.applicant_id:
+            self.applicant_id = frappe.generate_hash(length=8).upper()
 
     def on_submit(self):
         self.db_set("application_status", "Submitted")
@@ -111,10 +112,10 @@ class Applicant(Document):
         )
         frappe.sendmail(
             recipients=[self.email],
-            subject=f"NLSIU Application Submitted - {self.application_id}",
+            subject=f"NLSIU Application Submitted - {self.applicant_id}",
             message=f"""
             Dear {self.candidate_name},<br><br>
-            Your application <b>{self.application_id}</b> has been
+            Your application <b>{self.applicant_id}</b> has been
             successfully submitted.<br>
             Application Type: {self.application_type}<br>
             Program: {self.program}<br><br>
@@ -141,6 +142,22 @@ class Applicant(Document):
             "Cancelled", "application_status",
             "Submitted", "Draft", "General"
         )
+
+    @frappe.whitelist()
+    def waive_fee(self):
+        """Admin marks fee as waived — records who waived and when."""
+        self.application_fee_status = "Waived"
+        self.fee_waived_by = frappe.session.user
+        self.fee_waived_on = frappe.utils.now()
+        self.save(ignore_permissions=True)
+        frappe.get_doc({
+            "doctype": "Admission Audit Log",
+            "action": "Fee Waived",
+            "reference_doctype": "Applicant",
+            "reference_name": self.name,
+            "performed_by": frappe.session.user,
+            "reason": "Application fee waived by admin"
+        }).insert(ignore_permissions=True)
 
 
     def validate_eligibility(self):

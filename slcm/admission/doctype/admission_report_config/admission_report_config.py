@@ -68,7 +68,7 @@ class AdmissionReportConfig(Document):
             "Applicant",
             filters=filters,
             fields=[
-                "application_id", "candidate_name", "email",
+                "applicant_id", "candidate_name", "email",
                 "application_type", "program", "campus",
                 "application_status", "reservation_category"
             ]
@@ -78,7 +78,7 @@ class AdmissionReportConfig(Document):
         return frappe.db.sql("""
             SELECT
                 a.candidate_name,
-                a.application_id,
+                a.applicant_id,
                 ad.document_type,
                 ad.is_verified,
                 ad.verified_by,

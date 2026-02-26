@@ -51,6 +51,20 @@ frappe.ui.form.on("Admission Cycle", {
 
         // Hide legacy workflow_type field always
         frm.set_df_property("workflow_type", "hidden", 1);
+
+        // Show program count in dashboard
+        const programCount = (frm.doc.programs || []).filter(p => p.is_active).length;
+        if (programCount > 0) {
+            frm.dashboard.set_headline_alert(
+                __("{0} program(s) active on portal", [programCount]),
+                "green"
+            );
+        } else if (frm.doc.status === "Active") {
+            frm.dashboard.set_headline_alert(
+                __("No programs added yet. Applicants will see an empty portal."),
+                "orange"
+            );
+        }
     },
 
     admission_year: function(frm) {

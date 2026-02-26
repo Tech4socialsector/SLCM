@@ -82,6 +82,19 @@ class AdmissionCycle(Document):
 
     def on_update(self):
         if self.status == "Active":
-            frappe.db.set_value(
-                "Admission Year", self.admission_year, "status", "Active"
-            )
+            # Ensure the linked admission year is active
+            if not frappe.db.get_value("Admission Year", self.admission_year, "is_active"):
+                # Deactivate other years first to maintain single active year enforcement
+                frappe.db.sql("""
+                    UPDATE `tabAdmission Year`
+                    SET is_active = 0
+                    WHERE name != %s
+                """, (self.admission_year,))
+                
+                frappe.db.set_value(
+                    "Admission Year", self.admission_year, "is_active", 1
+                )
+
+    def get_active_programs(self):
+        """Returns list of active programs in this cycle."""
+        return [p for p in (self.programs or []) if p.is_active]
