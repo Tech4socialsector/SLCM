@@ -41,7 +41,9 @@
   "section_break_approval",
   "approval_reference",
   "col_break_4",
-  "remarks"
+  "remarks",
+  "section_break_programs",
+  "programs"
  ],
  "fields": [
   {
@@ -244,6 +246,18 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "section_break_programs",
+   "fieldtype": "Section Break",
+   "label": "Programs Offered in this Cycle"
+  },
+  {
+   "description": "Add all programs offered in this admission cycle. These appear on the applicant portal.",
+   "fieldname": "programs",
+   "fieldtype": "Table",
+   "label": "Programs",
+   "options": "Admission Cycle Program"
   }
  ],
  "index_web_pages_for_search": 1,

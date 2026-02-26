@@ -50,6 +50,25 @@ frappe.ui.form.on("Applicant", {
             });
         }
 
+        if (frm.doc.application_fee_status === "Pending") {
+            frm.add_custom_button(__("Waive Application Fee"), function() {
+                frappe.confirm(
+                    __("Mark application fee as Waived for this applicant?"),
+                    function() {
+                        frappe.call({
+                            method: "slcm.admission.doctype.applicant.applicant.waive_fee",
+                            args: { name: frm.doc.name },
+                            callback: function(r) {
+                                frm.reload_doc();
+                                frappe.show_alert({ message: __("Fee marked as Waived"), indicator: "green" }, 5);
+                            }
+                        });
+                    }
+                );
+            }, __("Portal"));
+        }
+    },
+
         // Guardian fields required only when flag is set
         frm.toggle_reqd("guardian_name",   frm.doc.guardian_required);
         frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
