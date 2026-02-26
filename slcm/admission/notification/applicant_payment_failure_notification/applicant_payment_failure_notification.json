@@ -1,0 +1,24 @@
+{
+    "channel": "System Notification",
+    "condition": "doc.status == 'Failed' and doc.reference_doctype == 'Offer Letter'",
+    "condition_type": "Python",
+    "creation": "2026-02-26 12:30:00.000000",
+    "doctype": "Notification",
+    "document_type": "Payment Request",
+    "enabled": 1,
+    "event": "Value Change",
+    "is_standard": 1,
+    "message": "<h4>Payment Failed</h4><p>We're sorry, but your payment attempt for {{ doc.reference_name }} has failed.</p><p>Reason: {{ doc.failure_message or 'Unknown error' }}</p><p>Please try again or contact support if the issue persists.</p>",
+    "message_type": "HTML",
+    "module": "Admission",
+    "name": "Applicant Payment Failure Notification",
+    "owner": "Administrator",
+    "recipients": [
+        {
+            "receiver_by_document_field": "notification_receiver"
+        }
+    ],
+    "send_system_notification": 1,
+    "subject": "Payment Failed - {{ doc.reference_name }}",
+    "value_changed": "status"
+}
