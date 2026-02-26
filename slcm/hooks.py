@@ -314,18 +314,5 @@ doc_events = {
     },
     "Payment Request": {
         "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
-    },
-    "Applicant": {
-        "on_submit": "slcm.admission.events.on_applicant_submit",
-        "on_cancel": "slcm.admission.events.on_applicant_cancel"
-    },
-    "Applicant Document": {
-        "on_submit": "slcm.admission.events.on_document_submit"
-    },
-    "Merit List": {
-        "on_submit": "slcm.admission.events.on_merit_list_publish"
-    },
-    "Campus Seat Matrix": {
-        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
     }
 }
