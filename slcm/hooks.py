@@ -314,6 +314,7 @@ doc_events = {
     },
     "Payment Request": {
         "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
+    },
     "Applicant": {
         "on_submit": "slcm.admission.events.on_applicant_submit",
         "on_cancel": "slcm.admission.events.on_applicant_cancel"
@@ -326,6 +327,5 @@ doc_events = {
     },
     "Campus Seat Matrix": {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
-    }
     }
 }
