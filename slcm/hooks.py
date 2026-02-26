@@ -288,7 +288,10 @@ scheduler_events = {
 		"*/10 * * * *": [  # Every 10 minutes
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
-		]
+		],
+        "*/15 * * * *": [
+            "slcm.admission.utils.scheduler.auto_publish_announcements"
+        ]
 	},
     "all": [
         "slcm.admission.utils.auto_draft.auto_save_all_drafts"

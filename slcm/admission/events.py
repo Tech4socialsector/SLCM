@@ -15,7 +15,7 @@ def on_applicant_submit(doc, method):
         context={
             "candidate_name": doc.candidate_name,
             "program": doc.program,
-            "application_id": doc.application_id,
+            "applicant_id": doc.applicant_id,
             "submission_date": now()
         }
     )
@@ -53,7 +53,7 @@ def on_merit_list_publish(doc, method):
             context={
                 "candidate_name": applicant.candidate_name,
                 "program": applicant.program,
-                "application_id": applicant.application_id,
+                "applicant_id": applicant.applicant_id,
                 "status": "Listed in Merit List",
                 "old_status": applicant.application_status,
                 "campus": doc.campus
