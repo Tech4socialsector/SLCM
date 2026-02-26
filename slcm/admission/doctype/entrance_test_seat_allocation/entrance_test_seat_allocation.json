@@ -19,6 +19,11 @@
   "reservation_category",
   "email",
   "gender",
+  "date_of_birth",
+  "section_break_hynq",
+  "mother_name",
+  "father_name",
+  "father_mobile_number",
   "tab_allocation",
   "entrance_test_provider",
   "assigned_preferences",
@@ -405,12 +410,41 @@
    "fieldname": "profile",
    "fieldtype": "Attach Image",
    "label": "Profile "
+  },
+  {
+   "fetch_from": "applicant.date_of_birth",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "section_break_hynq",
+   "fieldtype": "Section Break",
+   "label": "Guardian Details"
+  },
+  {
+   "fetch_from": "applicant.mother_name",
+   "fieldname": "mother_name",
+   "fieldtype": "Data",
+   "label": "Mother Name "
+  },
+  {
+   "fetch_from": "applicant.father_name",
+   "fieldname": "father_name",
+   "fieldtype": "Data",
+   "label": "Father Name "
+  },
+  {
+   "fetch_from": "applicant.father_mobile",
+   "fieldname": "father_mobile_number",
+   "fieldtype": "Data",
+   "label": "Father Mobile Number "
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-25 12:24:47.616014",
+ "modified": "2026-02-25 23:13:32.122113",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

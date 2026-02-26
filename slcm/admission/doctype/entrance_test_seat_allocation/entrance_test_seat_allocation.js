@@ -5,682 +5,786 @@
 
 frappe.ui.form.on("Entrance Test Seat Allocation", {
 
-    // ─── On form load ─────────────────────────────────────────
-    refresh: function (frm) {
-        frm.set_query("entrance_test_provider", function () {
-            const preferences = (frm.doc.assigned_preferences || []).map(p => p.provider);
-            return { filters: { name: ["in", preferences] } };
-        });
+  refresh: function (frm) {
+    frm.set_query("entrance_test_provider", function () {
+      const preferences = (frm.doc.assigned_preferences || []).map(p => p.provider);
+      return { filters: { name: ["in", preferences] } };
+    });
 
-        if (frm.doc.allocation_status === "Allocated") {
-            frm.set_df_property("entrance_test_provider", "read_only", 1);
-        }
-    },
-
-    // ─── Download Admit Card Button ────────────────────────────
-    download_admit_card: function (frm) {
-
-        // Guard: unsaved changes
-        if (frm.is_dirty()) {
-            frappe.msgprint({
-                title: __("Unsaved Changes"),
-                message: __("Please save the document before downloading the Admit Card."),
-                indicator: "orange"
-            });
-            return;
-        }
-
-        // Guard: allocation status
-        const allowed = ["Allocated", "Reallocated"];
-        if (!allowed.includes(frm.doc.allocation_status)) {
-            frappe.msgprint({
-                title: __("Not Allowed"),
-                message: __("Admit Card can only be downloaded when status is <b>Allocated</b> or <b>Reallocated</b>."),
-                indicator: "red"
-            });
-            return;
-        }
-
-        // Show a simple loading alert (NOT frappe.show_progress — avoids stuck dialog)
-        frappe.show_alert({ message: __("Generating Admit Card…"), indicator: "blue" }, 3);
-
-        frappe.call({
-            method: "frappe.client.get",
-            args: {
-                doctype: "Entrance Test Seat Allocation",
-                name: frm.doc.name
-            },
-            callback: function (r) {
-                if (r.exc || !r.message) {
-                    frappe.msgprint(__("Failed to fetch document. Please try again."));
-                    return;
-                }
-                generate_admit_card_pdf(r.message, frm);
-            }
-        });
-    },
-
-    // ─── When provider is selected ─────────────────────────────
-    entrance_test_provider: function (frm) {
-        const provider = frm.doc.entrance_test_provider;
-
-        if (!provider) {
-            frm.set_value("center_name", "");
-            frm.set_value("center_address", "");
-            return;
-        }
-
-        const assigned_prefs = (frm.doc.assigned_preferences || []);
-        const pref = assigned_prefs.find(p => p.provider === provider);
-
-        if (!pref) {
-            frappe.show_alert({ message: __("Please choose from your assigned preference centers."), indicator: "red" });
-            frm.set_value("entrance_test_provider", "");
-            return;
-        }
-
-        frm.set_value("center_name", pref.center_name || "");
-        frm.set_value("center_address", pref.center_address || "");
-
-        frappe.call({
-            method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences",
-            args: {
-                applicant_id: frm.doc.applicant,
-                entrance_test_list: frm.doc.entrance_test_list
-            },
-            callback: function (r) {
-                if (!r.message) return;
-                const pinfo = r.message.find(p => p.entrance_test_provider === provider);
-                if (pinfo && pinfo.is_full) {
-                    frappe.msgprint({
-                        title: __("Center Full"),
-                        message: __("<b>{0}</b> is currently full. Please choose another center.", [pinfo.center_name || provider]),
-                        indicator: "orange"
-                    });
-                    frm.set_value("entrance_test_provider", "");
-                }
-            }
-        });
-    },
-
-    // ─── Before Save — confirmation flow ──────────────────────
-    before_save: function (frm) {
-        if (frm.doc.entrance_test_provider && frm.doc.allocation_status === "Not Allocated") {
-            frappe.validated = false;
-
-            frappe.confirm(
-                __("Confirm seat allocation at <b>{0}</b>? This action is permanent.",
-                    [frm.doc.center_name || frm.doc.entrance_test_provider]),
-                function () {
-                    frappe.call({
-                        method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.confirm_applicant_preference",
-                        args: {
-                            allocation_name: frm.doc.name,
-                            selected_provider: frm.doc.entrance_test_provider
-                        },
-                        freeze: true,
-                        freeze_message: __("Finalizing your allocation..."),
-                        callback: function (r) {
-                            if (!r.exc && r.message) {
-                                frm.reload_doc();
-                                frappe.show_alert({
-                                    message: __("Seat Successfully Allocated! Seat: <b>{0}</b>", [r.message.seat_number]),
-                                    indicator: "green"
-                                }, 5);
-                            }
-                        }
-                    });
-                }
-            );
-        }
+    if (frm.doc.allocation_status === "Allocated") {
+      frm.set_df_property("entrance_test_provider", "read_only", 1);
     }
+  },
+
+  download_admit_card: function (frm) {
+    if (frm.is_dirty()) {
+      frappe.msgprint({
+        title: __("Unsaved Changes"),
+        message: __("Please save the document before downloading the Admit Card."),
+        indicator: "orange"
+      });
+      return;
+    }
+
+    const allowed = ["Allocated", "Reallocated"];
+    if (!allowed.includes(frm.doc.allocation_status)) {
+      frappe.msgprint({
+        title: __("Not Allowed"),
+        message: __("Admit Card can only be downloaded when status is <b>Allocated</b> or <b>Reallocated</b>."),
+        indicator: "red"
+      });
+      return;
+    }
+
+    frappe.show_alert({ message: __("Generating Admit Card…"), indicator: "blue" }, 3);
+
+    // Fetch Campus Branding
+    frappe.db.get_value("Campus", frm.doc.campus, ["campus_name", "logo"], (r) => {
+      const branding = r || {};
+
+      frappe.call({
+        method: "frappe.client.get",
+        args: { doctype: "Entrance Test Seat Allocation", name: frm.doc.name },
+        callback: function (res) {
+          if (res.exc || !res.message) {
+            frappe.msgprint(__("Failed to fetch document. Please try again."));
+            return;
+          }
+          generate_admit_card_pdf(res.message, frm, branding);
+        }
+      });
+    });
+  },
+
+  entrance_test_provider: function (frm) {
+    const provider = frm.doc.entrance_test_provider;
+    if (!provider) {
+      frm.set_value("center_name", "");
+      frm.set_value("center_address", "");
+      return;
+    }
+
+    const pref = (frm.doc.assigned_preferences || []).find(p => p.provider === provider);
+    if (!pref) {
+      frappe.show_alert({ message: __("Please choose from your assigned preference centers."), indicator: "red" });
+      frm.set_value("entrance_test_provider", "");
+      return;
+    }
+
+    frm.set_value("center_name", pref.center_name || "");
+    frm.set_value("center_address", pref.center_address || "");
+
+    frappe.call({
+      method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences",
+      args: { applicant_id: frm.doc.applicant, entrance_test_list: frm.doc.entrance_test_list },
+      callback: function (r) {
+        if (!r.message) return;
+        const pinfo = r.message.find(p => p.entrance_test_provider === provider);
+        if (pinfo && pinfo.is_full) {
+          frappe.msgprint({
+            title: __("Center Full"),
+            message: __("<b>{0}</b> is currently full. Please choose another center.", [pinfo.center_name || provider]),
+            indicator: "orange"
+          });
+          frm.set_value("entrance_test_provider", "");
+        }
+      }
+    });
+  },
+
+  before_save: function (frm) {
+    if (frm.doc.entrance_test_provider && frm.doc.allocation_status === "Not Allocated") {
+      frappe.validated = false;
+
+      frappe.confirm(
+        __("Confirm seat allocation at <b>{0}</b>? This action is permanent.",
+          [frm.doc.center_name || frm.doc.entrance_test_provider]),
+        function () {
+          frappe.call({
+            method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.confirm_applicant_preference",
+            args: { allocation_name: frm.doc.name, selected_provider: frm.doc.entrance_test_provider },
+            freeze: true,
+            freeze_message: __("Finalizing your allocation..."),
+            callback: function (r) {
+              if (!r.exc && r.message) {
+                frm.reload_doc();
+                frappe.show_alert({
+                  message: __("Seat Successfully Allocated! Seat: <b>{0}</b>", [r.message.seat_number]),
+                  indicator: "green"
+                }, 5);
+              }
+            }
+          });
+        }
+      );
+    }
+  }
 });
 
 
 // ============================================================
 //  generate_admit_card_pdf
-//  Opens a new tab with a clean, professional admit card.
-//  window.print() fires automatically → user saves as PDF.
+//  NLSAT-LLB exact layout: dark-red header + bordered tables
+//  2-page: Page 1 = card, Page 2 = instructions
 // ============================================================
-function generate_admit_card_pdf(doc, frm) {
+function generate_admit_card_pdf(doc, frm, branding = {}) {
 
-    const esc  = (v) => frappe.utils.escape_html(String(v || ""));
-    const val  = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
+  const esc = (v) => frappe.utils.escape_html(String(v || ""));
+  const val = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
 
-    const admit_no = doc.admit_card_number || ("AC-" + doc.name);
+  const admit_no = doc.admit_card_number || ("AC-" + doc.name);
 
-    let alloc_date = "—";
-    if (doc.allocation_date) {
-        try { alloc_date = frappe.datetime.str_to_user(doc.allocation_date); }
-        catch (e) { alloc_date = doc.allocation_date; }
+  let alloc_date = "—";
+  if (doc.allocation_date) {
+    try { alloc_date = frappe.datetime.str_to_user(doc.allocation_date); }
+    catch (e) { alloc_date = doc.allocation_date; }
+  }
+
+  let dob = "—";
+  if (doc.date_of_birth) {
+    try { dob = frappe.datetime.str_to_user(doc.date_of_birth); }
+    catch (e) { dob = doc.date_of_birth; }
+  }
+
+  const issue_date = (() => {
+    try { return frappe.datetime.str_to_user(frappe.datetime.nowdate()); }
+    catch (e) { return new Date().toLocaleDateString("en-IN"); }
+  })();
+
+  const exam_date_time = alloc_date !== "—"
+    ? alloc_date + " &nbsp;|&nbsp; As per schedule"
+    : "As per schedule";
+
+  let profile_image_url = null;
+  if (doc.profile) {
+    if (/^(https?:)?\/\//.test(doc.profile)) {
+      profile_image_url = doc.profile;
+    } else {
+      profile_image_url = '/files/' + encodeURIComponent(doc.profile.replace(/^.*[\\\/]/, ""));
     }
+  }
 
-    const issue_date = (() => {
-        try { return frappe.datetime.str_to_user(frappe.datetime.nowdate()); }
-        catch (e) { return new Date().toLocaleDateString("en-IN"); }
-    })();
+  // Dynamic branding
+  const campus_display_name = branding.campus_name || doc.campus || "Institution of Legal Education";
+  const campus_logo_url = branding.logo ? (branding.logo.startsWith("http") ? branding.logo : '/files/' + encodeURIComponent(branding.logo.replace(/^.*[\\\/]/, ""))) : null;
 
-    // Compute profile image URL from 'profile' field (Attach Image)
-    let profile_image_url = null;
-    if (doc.profile) {
-      // If already a full URL, use as is; else, prepend Frappe file URL prefix
-      if (/^(https?:)?\/\//.test(doc.profile)) {
-        profile_image_url = doc.profile;
-      } else {
-        profile_image_url = '/files/' + encodeURIComponent(doc.profile.replace(/^.*[\\\/]/, ""));
+  const test_list = val(doc.entrance_test_list);
+  const prog_level = val(doc.program_level);
+  const acad_year = val(doc.academic_year);
+  const adm_cycle = val(doc.admission_cycle);
+
+  const centre_parts = [doc.center_name, doc.center_address].filter(v => v && v.trim());
+  const centre_full = centre_parts.length ? centre_parts.map(esc).join(", ") : "—";
+
+  /* ── header snippet (used on both pages) ── */
+  function headerHTML() {
+    return `
+        <div class="header">
+          <div class="logo-box">
+            ${campus_logo_url
+        ? `<img src="${campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`
+        : `<div class="logo-inner">
+                  <span class="logo-icon">⚖</span>
+                  <span class="logo-text">LAW<br>SCHOOL</span>
+                </div>`
       }
-    }
+          </div>
+          <div class="hdr-center">
+            <div class="univ-name">${esc(campus_display_name)}</div>
+            <div class="univ-sub">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
+          </div>
+        </div>`;
+  }
 
-    const html = `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<title>Admit Card — ${esc(doc.candidate_name || doc.name)}</title>
+<title>Admit Card - ${esc(admit_no)}</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: "Segoe UI", Arial, sans-serif;
-    background: #eef0f4;
-    color: #1a1a2e;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
+body {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 13px;
+  background: #c8c8c8;
+  color: #000;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
 
-  /* ── Print button bar ── */
-  .print-bar {
-    background: #1a237e;
-    color: #fff;
-    text-align: center;
-    padding: 10px 16px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-  }
-  .print-btn {
-    background: #ffd600;
-    color: #1a237e;
-    border: none;
-    padding: 7px 22px;
-    font-size: 13px;
-    font-weight: 700;
-    border-radius: 4px;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-  }
-  .print-btn:hover { background: #ffea00; }
+/* ── Print bar ── */
+.print-bar {
+  background: #1a237e;
+  color: #fff;
+  text-align: center;
+  padding: 9px 20px;
+  font-size: 12.5px;
+  font-family: Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.print-btn {
+  background: #ffd600;
+  color: #1a237e;
+  border: none;
+  padding: 6px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+}
+.print-btn:hover { background: #ffeb3b; }
 
-  /* ── Card ── */
-  .page {
-    width: 740px;
-    margin: 20px auto;
-    background: #fff;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 6px 28px rgba(0,0,0,0.15);
-  }
+/* ── Shared page wrapper ── */
+.card-page {
+  width: 710px;
+  margin: 20px auto;
+  background: #fff;
+  border: 1.5px solid #555;
+}
 
-  /* ── Top stripe ── */
-  .stripe {
-    height: 5px;
-    background: linear-gradient(90deg, #1a237e 0%, #1565c0 40%, #c9a84c 70%, #1a237e 100%);
-  }
+/* ══ HEADER ══ */
+.header {
+  background: #7b1c1c;
+  display: flex;
+  align-items: center;
+  padding: 10px 18px;
+  gap: 16px;
+  border-bottom: 3px solid #5a0e0e;
+}
+.logo-box {
+  width: 74px;
+  height: 74px;
+  background: #fff;
+  border: 2px solid rgba(255,255,255,0.6);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.logo-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.logo-icon {
+  font-size: 28px;
+  line-height: 1;
+  color: #7b1c1c;
+}
+.logo-text {
+  font-size: 7.5px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  color: #7b1c1c;
+  text-align: center;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+.hdr-center {
+  flex: 1;
+  text-align: center;
+}
+.univ-name {
+  font-size: 21px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  line-height: 1.2;
+}
+.univ-sub {
+  font-size: 11px;
+  font-family: Arial, sans-serif;
+  color: rgba(255,255,255,0.80);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
 
-  /* ── Header ── */
-  .header {
-    background: linear-gradient(135deg, #1a237e 0%, #1565c0 100%);
-    padding: 22px 30px 18px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    position: relative;
-  }
-  .header::after {
-    content: "";
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, #c9a84c 40%, #c9a84c 60%, transparent);
-    opacity: 0.7;
-  }
-  .logo {
-    width: 62px; height: 62px;
-    border-radius: 50%;
-    border: 2px solid rgba(201,168,76,0.7);
-    background: rgba(255,255,255,0.1);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 26px;
-    flex-shrink: 0;
-  }
-  .hdr-text { flex: 1; }
-  .hdr-title {
-    font-size: 18px; font-weight: 700;
-    color: #fff; letter-spacing: 0.4px;
-    text-transform: uppercase;
-  }
-  .hdr-sub {
-    font-size: 11px; color: rgba(255,255,255,0.6);
-    margin-top: 4px; letter-spacing: 0.8px;
-    text-transform: uppercase;
-  }
-  .hdr-right { text-align: right; flex-shrink: 0; }
-  .badge {
-    display: inline-block;
-    border: 1.5px solid rgba(201,168,76,0.8);
-    color: #c9a84c;
-    padding: 5px 14px;
-    font-size: 11px; font-weight: 700;
-    letter-spacing: 2px;
-    border-radius: 3px;
-    text-transform: uppercase;
-  }
-  .ref-no {
-    font-size: 10px; color: rgba(255,255,255,0.45);
-    margin-top: 6px; letter-spacing: 0.3px;
-  }
+/* ── Title row ── */
+.title-row {
+  text-align: center;
+  padding: 9px 18px 7px;
+  border-bottom: 1.5px solid #bbb;
+}
+.title-row .t1 {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  color: #000;
+}
+.title-row .t2 {
+  font-size: 12.5px;
+  font-family: Arial, sans-serif;
+  color: #111;
+  margin-top: 2px;
+}
 
-  /* ── Confidential band ── */
-  .conf {
-    background: #b71c1c;
-    text-align: center;
-    font-size: 9.5px; font-weight: 700;
-    letter-spacing: 4px;
-    color: rgba(255,255,255,0.92);
-    padding: 4px 0;
-    text-transform: uppercase;
-  }
+/* ══ INFO TABLE SECTION ══ */
+.info-wrap {
+  border: 1.5px solid #888;
+  margin: 12px 14px;
+  display: flex;
+}
+.info-tbl {
+  flex: 1;
+  border-collapse: collapse;
+}
+.info-tbl tr {
+  border-bottom: 1px solid #ccc;
+}
+.info-tbl tr:last-child { border-bottom: none; }
+.info-tbl td {
+  padding: 5.5px 8px;
+  font-size: 12.5px;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+.info-tbl td.lb {
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  width: 36%;
+  white-space: nowrap;
+  color: #000;
+}
+.info-tbl td.sp {
+  width: 14px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  color: #000;
+  text-align: center;
+  padding: 0;
+}
+.info-tbl td.vl {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 13px;
+  color: #000;
+}
 
-  /* ── Candidate strip ── */
-  .cand-strip {
-    background: #0d1b3e;
-    padding: 20px 30px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 30px;
-  }
-  
-  /* ── Profile Photo Section ── */
-  .photo-section {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-  .photo-frame {
-    width: 120px;
-    height: 140px;
-    border: 2.5px solid #c9a84c;
-    border-radius: 3px;
-    overflow: hidden;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    position: relative;
-  }
-  .photo-frame img {
+/* Seat number pill */
+.seat-pill {
+  display: inline-block;
+  background: #1a237e;
+  color: #fff;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  padding: 2px 14px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+}
+
+/* Status pill */
+.status-pill {
+  display: inline-block;
+  border: 1px solid #4caf50;
+  color: #1b5e20;
+  background: #f0fdf0;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 1px 10px;
+  border-radius: 30px;
+}
+
+/* Photo box */
+.photo-col {
+  width: 135px;
+  flex-shrink: 0;
+  border-left: 1.5px solid #888;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 8px;
+  gap: 8px;
+}
+.photo-frame {
+  width: 110px;
+  height: 130px;
+  border: 1.5px solid #555;
+  overflow: hidden;
+  background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+.photo-ph {
+  font-size: 36px;
+  color: #aaa;
+  text-align: center;
+}
+.photo-cap {
+  font-size: 9.5px;
+  font-family: Arial, sans-serif;
+  color: #555;
+  text-align: center;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+/* ══ SIGNATURE STRIP ══ */
+.sig-note {
+  text-align: center;
+  font-style: italic;
+  font-size: 11.5px;
+  font-family: "Times New Roman", Times, serif;
+  padding: 6px 14px 3px;
+  color: #000;
+}
+.sig-tbl {
+  border-collapse: collapse;
+  width: calc(100% - 28px);
+  margin: 0 14px 16px;
+  border: 1.5px solid #888;
+}
+.sig-tbl td {
+  border: 1.5px solid #888;
+  padding: 0;
+  width: 50%;
+}
+.sig-cell-inner {
+  display: flex;
+  flex-direction: column;
+}
+.sig-hdr {
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  color: #000;
+  text-align: center;
+  padding: 5px 8px 4px;
+  border-bottom: 1.5px solid #888;
+  display: block;
+}
+.sig-body {
+  height: 54px;
+  display: block;
+}
+
+/* ══ PAGE 2 — INSTRUCTIONS ══ */
+.inst-outer {
+  border: 1.5px solid #888;
+  margin: 12px 14px 16px;
+  padding: 14px 18px 18px;
+}
+.inst-main-title {
+  font-size: 13.5px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  color: #000;
+  margin-bottom: 10px;
+}
+.sec-title {
+  font-size: 12.5px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  color: #000;
+  margin: 10px 0 3px;
+}
+.il {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.il > li {
+  display: flex;
+  gap: 6px;
+  font-size: 11.5px;
+  font-family: Arial, sans-serif;
+  color: #000;
+  line-height: 1.65;
+  padding-left: 18px;
+}
+.il > li .mk { flex-shrink: 0; min-width: 16px; }
+.sl {
+  list-style: none;
+  margin: 2px 0 2px 52px;
+  padding: 0;
+}
+.sl li {
+  display: flex;
+  gap: 6px;
+  font-size: 11.5px;
+  font-family: Arial, sans-serif;
+  color: #000;
+  line-height: 1.65;
+}
+.sl li .mk { flex-shrink: 0; min-width: 22px; font-style: italic; }
+
+/* ── Footer ── */
+.pg-footer {
+  padding: 6px 14px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #ddd;
+}
+.pg-footer span {
+  font-size: 8.5px;
+  font-family: Arial, sans-serif;
+  color: #888;
+}
+
+/* ── Print ── */
+@media print {
+  body { background: #fff; margin: 0; }
+  .print-bar { display: none !important; }
+  .card-page {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    display: block;
+    margin: 0;
+    box-shadow: none;
+    border: 1.5px solid #555;
   }
-  .photo-placeholder {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #e8dfc4 0%, #f4f0e8 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 42px;
-    color: #c9a84c;
-  }
-  .photo-label {
-    font-size: 8px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: #c9a84c;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-  
-  /* ── Candidate Info Section ── */
-  .cand-info {
-    flex: 1;
-  }
-  .cand-name-lbl {
-    font-size: 9px; font-weight: 600;
-    letter-spacing: 2px; color: #c9a84c;
-    text-transform: uppercase; margin-bottom: 3px;
-  }
-  .cand-name {
-    font-size: 22px; font-weight: 700;
-    color: #fff; letter-spacing: 0.2px;
-  }
-  .cand-meta {
-    display: flex; gap: 20px; margin-top: 6px;
-  }
-  .cand-meta-lbl {
-    font-size: 9px; color: rgba(255,255,255,0.4);
-    letter-spacing: 1px; text-transform: uppercase;
-  }
-  .cand-meta-val {
-    font-size: 12px; color: rgba(255,255,255,0.82);
-    font-weight: 600; margin-top: 1px;
-    font-variant-numeric: tabular-nums;
-  }
-  
-  /* ── Status Section ── */
-  .status-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .status-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 5px 14px;
-    background: #dcfce7; color: #166534;
-    border: 1px solid #bbf7d0;
-    border-radius: 100px;
-    font-size: 11px; font-weight: 700;
-    flex-shrink: 0;
-  }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: #166534; }
-
-  /* ── Body ── */
-  .body {
-    padding: 22px 30px 28px;
-    position: relative;
-  }
-  /* watermark */
-  .body::before {
-    content: "ADMIT CARD";
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%) rotate(-35deg);
-    font-size: 64px; font-weight: 900;
-    color: rgba(26,35,126,0.04);
-    white-space: nowrap; pointer-events: none;
-    letter-spacing: 8px; text-transform: uppercase;
-    user-select: none;
-  }
-  .body > * { position: relative; z-index: 1; }
-
-  /* ── Section label ── */
-  .sec {
-    display: flex; align-items: center; gap: 8px;
-    margin-bottom: 12px; margin-top: 20px;
-  }
-  .sec:first-child { margin-top: 0; }
-  .sec-dot { width: 5px; height: 5px; border-radius: 50%; background: #c9a84c; flex-shrink: 0; }
-  .sec-txt {
-    font-size: 9px; font-weight: 700;
-    letter-spacing: 2.5px; color: #1565c0;
-    text-transform: uppercase; white-space: nowrap;
-  }
-  .sec-line { flex: 1; height: 1px; background: #e2d9c8; }
-
-  /* ── Grid ── */
-  .grid { display: grid; gap: 12px 24px; }
-  .g2 { grid-template-columns: 1fr 1fr; }
-  .g3 { grid-template-columns: 1fr 1fr 1fr; }
-  .g4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
-  .full { grid-column: 1 / -1; }
-
-  .lbl {
-    font-size: 9px; font-weight: 600;
-    letter-spacing: 1.5px; color: #8a96a6;
-    text-transform: uppercase; margin-bottom: 3px;
-  }
-  .fld {
-    font-size: 13px; font-weight: 600; color: #1a1a2e;
-    line-height: 1.4;
-  }
-
-  /* ── Seat highlight ── */
-  .seat-box {
-    display: flex;
-    border: 1.5px solid #1a237e;
-    border-radius: 5px;
-    overflow: hidden;
-    margin-top: 4px;
-  }
-  .seat-left {
-    background: #1a237e;
-    padding: 18px 22px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 4px; min-width: 130px;
-  }
-  .seat-num {
-    font-size: 44px; font-weight: 900;
-    color: #fff; line-height: 1;
-    letter-spacing: 1px;
-  }
-  .seat-lbl {
-    font-size: 8px; font-weight: 600;
-    letter-spacing: 2px; color: #c9a84c;
-    text-transform: uppercase;
-  }
-  .seat-right {
-    flex: 1; padding: 16px 22px;
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 12px 20px; align-content: center;
-    background: linear-gradient(135deg, #f4f0e8, #fff);
-  }
-
-  /* ── Instructions ── */
-  .inst-box {
-    background: #fffdf5;
-    border: 1px solid #e8dfc4;
-    border-left: 3px solid #c9a84c;
-    border-radius: 3px;
-    padding: 13px 16px;
-    margin-top: 4px;
-  }
-  .inst-title {
-    font-size: 9px; font-weight: 700;
-    letter-spacing: 2px; color: #9a7a20;
-    text-transform: uppercase; margin-bottom: 8px;
-  }
-  .inst-list { list-style: none; padding: 0; margin: 0; counter-reset: c; }
-  .inst-list li {
-    counter-increment: c;
-    position: relative; padding: 2.5px 0 2.5px 18px;
-    font-size: 11px; color: #4a5568; line-height: 1.55;
-    border-bottom: 1px solid rgba(0,0,0,0.04);
-  }
-  .inst-list li:last-child { border-bottom: none; }
-  .inst-list li::before {
-    content: counter(c);
-    position: absolute; left: 0; top: 3px;
-    font-size: 9px; font-weight: 700;
-    color: #1565c0; width: 14px;
-  }
-
-  /* ── Signature strip ── */
-  .sig-strip {
-    display: flex; justify-content: space-between;
-    align-items: flex-end; gap: 16px;
-    margin-top: 24px; padding-top: 14px;
-    border-top: 1px dashed #ccc;
-  }
-  .sig-box { text-align: center; flex: 1; }
-  .sig-space { height: 32px; }
-  .sig-line { border-top: 1px solid #333; margin-top: 5px; }
-  .sig-name {
-    font-size: 8.5px; font-weight: 600;
-    letter-spacing: 1px; color: #8a96a6;
-    text-transform: uppercase; margin-top: 4px;
-  }
-
-  /* ── Footer ── */
-  .footer {
-    background: #1a237e;
-    padding: 10px 30px;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .footer-l {
-    font-size: 9px; color: rgba(255,255,255,0.45);
-    letter-spacing: 0.3px;
-  }
-  .footer-l strong { color: rgba(255,255,255,0.7); }
-  .footer-r { font-size: 9px; color: #c9a84c; opacity: 0.75; }
-
-  .bottom-stripe {
-    height: 4px;
-    background: linear-gradient(90deg, #c9a84c, #1565c0, #c9a84c);
-  }
-
-  /* ── Print ── */
-  @media print {
-    body { background: #fff; }
-    .print-bar { display: none !important; }
-    .page { width: 100%; margin: 0; border-radius: 0; box-shadow: none; }
-  }
+  .card-page.p1 { page-break-after: always; }
+  .card-page.p2 { page-break-before: always; }
+}
 </style>
 </head>
 <body>
 
-<!-- Print Bar -->
+<!-- Print bar -->
 <div class="print-bar">
-  <span>Your Admit Card is ready — </span>
+  <span>Your Admit Card is ready —</span>
   <button class="print-btn" onclick="window.print()">⬇ Download / Print PDF</button>
-  <span style="font-size:12px;opacity:0.7;">Select <b>Save as PDF</b> in the dialog</span>
+  <span style="font-size:11.5px;opacity:0.75;">Select <b>Save as PDF</b> in the dialog</span>
 </div>
 
-<div class="page">
-  <div class="stripe"></div>
 
-  <!-- Header -->
-  <div class="header">
-    <div class="logo">🎓</div>
-    <div class="hdr-text">
-      <div class="hdr-title">Entrance Examination</div>
-      <div class="hdr-sub">Office of Admissions &nbsp;·&nbsp; Examination Cell</div>
-    </div>
-    <div class="hdr-right">
-      <div class="badge">Admit Card</div>
-      <div class="ref-no">Ref: ${val(admit_no)} &nbsp;|&nbsp; Issued: ${val(issue_date)}</div>
-    </div>
+<!-- ════════════════════════════════════
+     PAGE 1 — Admit Card
+════════════════════════════════════ -->
+<div class="card-page p1">
+
+  ${headerHTML()}
+
+  <!-- Title -->
+  <div class="title-row">
+    <div class="t1">Admit Card (${test_list !== "—" ? esc(doc.entrance_test_list) : "Entrance Examination"})</div>
+    <div class="t2">Admission to ${prog_level !== "—" ? esc(doc.program_level) : "the Programme"} &nbsp;|&nbsp; ${acad_year} &nbsp;|&nbsp; ${adm_cycle}</div>
   </div>
 
-  <!-- Confidential -->
-  <div class="conf">⬥ &nbsp; Confidential — For Candidate Use Only &nbsp; ⬥</div>
-
-  <!-- Candidate Strip -->
-    <div class="cand-strip">
-    <!-- Profile Photo -->
-    <div class="photo-section">
+  <!-- Candidate info + photo -->
+  <div class="info-wrap">
+    <table class="info-tbl">
+      <tbody>
+        <tr>
+          <td class="lb">Admit Card Number</td>
+          <td class="sp">:</td>
+          <td class="vl"><strong>${val(admit_no)}</strong></td>
+        </tr>
+        <tr>
+          <td class="lb">Candidate's Name</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.candidate_name)}</td>
+        </tr>
+        <tr>
+          <td class="lb">Date of Birth</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(dob)}</td>
+        </tr>
+        <tr>
+          <td class="lb">Father's Name</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.father_name)}</td>
+        </tr>
+        <tr>
+          <td class="lb">Mother's Name</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.mother_name)}</td>
+        </tr>
+        <tr>
+          <td class="lb">Gender</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.gender)}</td>
+        </tr>
+        <tr>
+          <td class="lb">Category / Reservation</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.reservation_category)}</td>
+        </tr>
+        <tr>
+          <td class="lb">Programme Applied</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.program)}</td>
+        </tr>
+        <tr>
+          <td class="lb">Application Number</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.applicant)}</td>
+        </tr>
+        <tr>
+          <td class="lb">Examination Date &amp; Time</td>
+          <td class="sp">:</td>
+          <td class="vl">${exam_date_time}</td>
+        </tr>
+        <tr>
+          <td class="lb">Reporting Time</td>
+          <td class="sp">:</td>
+          <td class="vl">30 minutes before scheduled time</td>
+        </tr>
+        <tr>
+          <td class="lb">Seat Number</td>
+          <td class="sp">:</td>
+          <td class="vl"><span class="seat-pill">${val(doc.seat_number)}</span></td>
+        </tr>
+        <tr>
+          <td class="lb">Room / Hall</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.room_name)}${doc.room_code && doc.room_code.trim() ? "&nbsp; (Code:&nbsp;" + esc(doc.room_code) + ")" : ""}</td>
+        </tr>
+        <tr>
+          <td class="lb">Building / Floor</td>
+          <td class="sp">:</td>
+          <td class="vl">${val(doc.building)}${doc.floor && doc.floor.trim() ? "&nbsp; &middot;&nbsp; Floor:&nbsp;" + esc(doc.floor) : ""}</td>
+        </tr>
+        <tr>
+          <td class="lb">Allocation Status</td>
+          <td class="sp">:</td>
+          <td class="vl"><span class="status-pill">${val(doc.allocation_status)}</span></td>
+        </tr>
+        <tr>
+          <td class="lb">Test Centre Name &amp;&nbsp;Address</td>
+          <td class="sp">:</td>
+          <td class="vl" style="font-size:11.5px;">${centre_full}</td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- Photo -->
+    <div class="photo-col">
       <div class="photo-frame">
-        ${profile_image_url ? `<img src="${profile_image_url}" alt="Candidate Photo">` : '<div class="photo-placeholder">📷</div>'}
+        ${profile_image_url
+      ? `<img src="${profile_image_url}" alt="Candidate Photo">`
+      : `<div class="photo-ph">📷</div>`}
       </div>
-      <div class="photo-label">Photo</div>
-    </div>
-    
-    <!-- Candidate Information -->
-    <div class="cand-info">
-      <div class="cand-name-lbl">Candidate Name</div>
-      <div class="cand-name">${val(doc.candidate_name)}</div>
-      <div class="cand-meta">
-        <div>
-          <div class="cand-meta-lbl">Application No.</div>
-          <div class="cand-meta-val">${val(doc.applicant)}</div>
-        </div>
-        <div>
-          <div class="cand-meta-lbl">Gender</div>
-          <div class="cand-meta-val">${val(doc.gender)}</div>
-        </div>
-        <div>
-          <div class="cand-meta-lbl">Category</div>
-          <div class="cand-meta-val">${val(doc.reservation_category)}</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Status Badge -->
-    <div class="status-section">
-      <div class="status-badge"><div class="dot"></div>${val(doc.allocation_status)}</div>
+      <div class="photo-cap">Candidate's Photograph</div>
     </div>
   </div>
 
-  <!-- Body -->
-  <div class="body">
+  <!-- Signature -->
+  <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>
+  <table class="sig-tbl">
+    <tr>
+      <td>
+        <div class="sig-cell-inner">
+          <span class="sig-hdr">Candidate's Signature</span>
+          <span class="sig-body"></span>
+        </div>
+      </td>
+      <td>
+        <div class="sig-cell-inner">
+          <span class="sig-hdr">Invigilator's Signature</span>
+          <span class="sig-body"></span>
+        </div>
+      </td>
+    </tr>
+  </table>
 
-    <!-- Academic Details -->
-    <div class="sec"><div class="sec-dot"></div><div class="sec-txt">Academic Details</div><div class="sec-line"></div></div>
-    <div class="grid g4">
-      <div><div class="lbl">Academic Year</div><div class="fld">${val(doc.academic_year)}</div></div>
-      <div><div class="lbl">Admission Cycle</div><div class="fld">${val(doc.admission_cycle)}</div></div>
-      <div><div class="lbl">Program Level</div><div class="fld">${val(doc.program_level)}</div></div>
-      <div><div class="lbl">Program</div><div class="fld">${val(doc.program)}</div></div>
-    </div>
+</div><!-- /PAGE 1 -->
 
-    <!-- Venue -->
-    <div class="sec"><div class="sec-dot"></div><div class="sec-txt">Examination Venue</div><div class="sec-line"></div></div>
-    <div class="grid g2">
-      <div><div class="lbl">Test Provider</div><div class="fld">${val(doc.entrance_test_provider)}</div></div>
-      <div><div class="lbl">Allocation Date</div><div class="fld">${val(alloc_date)}</div></div>
-      <div><div class="lbl">Center Name</div><div class="fld">${val(doc.center_name)}</div></div>
-      <div><div class="lbl">Campus</div><div class="fld">${val(doc.campus)}</div></div>
-      <div class="full"><div class="lbl">Center Address</div><div class="fld">${val(doc.center_address)}</div></div>
-    </div>
 
-    <!-- Seat -->
-    <div class="sec"><div class="sec-dot"></div><div class="sec-txt">Seat Allocation</div><div class="sec-line"></div></div>
-    <div class="seat-box">
-      <div class="seat-left">
-        <div style="font-size:22px;">🪑</div>
-        <div class="seat-num">${val(doc.seat_number)}</div>
-        <div class="seat-lbl">Seat No.</div>
-      </div>
-      <div class="seat-right">
-        <div><div class="lbl">Room Code</div><div class="fld">${val(doc.room_code)}</div></div>
-        <div><div class="lbl">Room Name</div><div class="fld">${val(doc.room_name)}</div></div>
-        <div><div class="lbl">Building</div><div class="fld">${val(doc.building)}</div></div>
-        <div><div class="lbl">Floor</div><div class="fld">${val(doc.floor)}</div></div>
-      </div>
-    </div>
+<!-- ════════════════════════════════════
+     PAGE 2 — Instructions
+════════════════════════════════════ -->
+<div class="card-page p2">
 
-    <!-- Instructions -->
-    <div class="sec" style="margin-top:18px;"><div class="sec-dot"></div><div class="sec-txt">Instructions to Candidate</div><div class="sec-line"></div></div>
-    <div class="inst-box">
-      <div class="inst-title">Read carefully before reporting to the examination center</div>
-      <ul class="inst-list">
-        <li>Carry this Admit Card along with a valid Government-issued Photo ID to the examination center.</li>
-        <li>Report at least <strong>30 minutes before</strong> the scheduled start time. Late entry will not be permitted.</li>
-        <li>Mobile phones, smart watches, calculators and Bluetooth devices are strictly prohibited inside the hall.</li>
-        <li>Occupy only your <strong>exact allotted seat</strong>. Exchange of seats is not allowed.</li>
-        <li>This card is non-transferable. Contact the Examination Cell for any discrepancies.</li>
-      </ul>
-    </div>
+  ${headerHTML()}
 
-    <!-- Signatures -->
-    <div class="sig-strip">
-      <div class="sig-box"><div class="sig-space"></div><div class="sig-line"></div><div class="sig-name">Candidate's Signature</div></div>
-      <div class="sig-box"><div class="sig-space"></div><div class="sig-line"></div><div class="sig-name">Invigilator's Signature</div></div>
-      <div class="sig-box"><div class="sig-space"></div><div class="sig-line"></div><div class="sig-name">Controller of Examinations</div></div>
-    </div>
+  <div class="inst-outer">
+    <div class="inst-main-title">Instructions to Candidates</div>
 
-  </div><!-- /body -->
+    <!-- 1 -->
+    <div class="sec-title">1.&nbsp;&nbsp; General Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates should check and review their admit cards carefully and make sure that their Name, Date of Birth, and other personal details mentioned in the admit card are as per the details filled by them in the application form. In case of any discrepancy, please contact the Examination Cell immediately.</span></li>
+      <li><span class="mk">b.</span><span>Please carry a printed copy of this admit card to the test centre.</span></li>
+    </ul>
+
+    <!-- 2 -->
+    <div class="sec-title">2.&nbsp;&nbsp; Reporting to the Test Centre &amp; Test Timings</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates will be allowed to enter the premises of the test centre 30 minutes before the examination start time and should be seated in the examination hall at least 15 minutes before commencement.</span></li>
+      <li><span class="mk">b.</span><span>Candidates should carry a Government-issued photo ID card, preferably the one uploaded with the application form. The ID card will be checked at the time of entry into the centre.</span></li>
+      <li><span class="mk">c.</span><span>Candidates who arrive at the test centre beyond the scheduled entry cut-off time will not be permitted entry.</span></li>
+      <li><span class="mk">d.</span><span>Once the test commences, Candidates will not be permitted to leave the examination hall until the test is completed, and all the Question Booklets and OMR response sheets have been collected by the invigilator/s.</span></li>
+    </ul>
+
+    <!-- 3 -->
+    <div class="sec-title">3.&nbsp;&nbsp; Pre-Test Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates shall be required to follow all directions issued by the Centre Coordinators and the Institution representatives at their respective test centres.</span></li>
+      <li><span class="mk">b.</span><span>Candidates must maintain all protocols in place at their respective test centres.</span></li>
+    </ul>
+
+    <!-- 4 -->
+    <div class="sec-title">4.&nbsp;&nbsp; Permitted Items</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates will only be permitted to carry the following inside the Test Centre:</span></li>
+    </ul>
+    <ul class="sl">
+      <li><span class="mk">i.</span><span>Admit Card (In case the photograph on the Admit Card is not clear, candidates should carry a self-attested passport size photograph).</span></li>
+      <li><span class="mk">ii.</span><span>Government Issued Photo ID (preferably the one uploaded with the application form).</span></li>
+      <li><span class="mk">iii.</span><span>Black or Blue Ballpoint pen.</span></li>
+      <li><span class="mk">iv.</span><span>A transparent water bottle.</span></li>
+      <li><span class="mk">v.</span><span>A face mask (the Candidate may be asked to remove the face mask for ascertainment of identity).</span></li>
+      <li><span class="mk">vi.</span><span>An analogue watch. <strong>Note:</strong> Smart Watches are not permitted.</span></li>
+    </ul>
+
+    <!-- 5 -->
+    <div class="sec-title">5.&nbsp;&nbsp; Admissions Test Related Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>An attendance sheet will be circulated during the admissions test. The requisite details should be filled in the attendance sheet.</span></li>
+      <li><span class="mk">b.</span><span>Candidates will be provided with a Question Booklet and/or answer sheets. Candidates should use black/blue ball point pen <strong>only</strong> to enter the admit card number and other required details.</span></li>
+      <li><span class="mk">c.</span><span>Candidates must read the instructions provided with the Question Booklet before commencing the test.</span></li>
+      <li><span class="mk">d.</span><span>Candidates should write the details required on the cover page of the Question Booklet.</span></li>
+      <li><span class="mk">e.</span><span>No clarifications can be sought about the Question Booklet from anyone.</span></li>
+      <li><span class="mk">f.</span><span>Candidates shall not carry the Question Booklet out of the examination hall under any circumstances.</span></li>
+    </ul>
+
+    <!-- 6 -->
+    <div class="sec-title">6.&nbsp;&nbsp; Documents to be retained by the Candidate after the test</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>The admit card, with the invigilator's signature, should be retained by the candidate and produced at the Institution at the time of admission.</span></li>
+    </ul>
+
+    <!-- 7 -->
+    <div class="sec-title">7.&nbsp;&nbsp; Malpractice</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>The use of any unfair means by a Candidate shall result in their disqualification and cancellation of their test.</span></li>
+      <li><span class="mk">b.</span><span>Impersonation is an offence, and the Candidate, apart from being disqualified, shall be liable to penal action under the law.</span></li>
+      <li><span class="mk">c.</span><span>Possession of electronic devices, including mobile phones, headphones, earphones, smart watches, calculators etc., is strictly prohibited in the examination hall.</span></li>
+    </ul>
+
+  </div><!-- /inst-outer -->
 
   <!-- Footer -->
-  <div class="footer">
-    <div class="footer-l">Doc: <strong>${val(doc.name)}</strong> &nbsp;·&nbsp; Generated: <strong>${val(issue_date)}</strong> &nbsp;·&nbsp; System-generated. No physical signature required.</div>
-    <div class="footer-r">${val(admit_no)}</div>
+  <div class="pg-footer">
+    <span>Doc: <strong>${val(doc.name)}</strong> &nbsp;·&nbsp; Generated: <strong>${val(issue_date)}</strong> &nbsp;·&nbsp; System-generated. No physical signature required.</span>
+    <span>${val(admit_no)}</span>
   </div>
-  <div class="bottom-stripe"></div>
 
-</div><!-- /page -->
+</div><!-- /PAGE 2 -->
+
 
 <script>
-  // Auto-open print dialog once fonts/layout are fully rendered
   window.addEventListener("load", function () {
     setTimeout(function () { window.print(); }, 900);
   });
@@ -688,36 +792,36 @@ function generate_admit_card_pdf(doc, frm) {
 </body>
 </html>`;
 
-    // ── Open popup ────────────────────────────────────────────
-    const win = window.open("", "_blank", "width=900,height=1050,scrollbars=yes,resizable=yes");
-    if (!win) {
-        frappe.msgprint({
-            title: __("Popup Blocked"),
-            message: __("Please allow pop-ups for this site and try again."),
-            indicator: "orange"
-        });
-        return;
-    }
+  // ── Open popup ──
+  const win = window.open("", "_blank", "width=940,height=1100,scrollbars=yes,resizable=yes");
+  if (!win) {
+    frappe.msgprint({
+      title: __("Popup Blocked"),
+      message: __("Please allow pop-ups for this site and try again."),
+      indicator: "orange"
+    });
+    return;
+  }
 
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
 
-    // ── Silently mark admit card as generated ─────────────────
-    if (!doc.admit_card_generated) {
-        frappe.call({
-            method: "frappe.client.set_value",
-            args: {
-                doctype: "Entrance Test Seat Allocation",
-                name: doc.name,
-                fieldname: { admit_card_generated: 1, admit_card_number: admit_no }
-            },
-            callback: function () { if (frm) frm.reload_doc(); }
-        });
-    }
+  // Silently mark admit card as generated
+  if (!doc.admit_card_generated) {
+    frappe.call({
+      method: "frappe.client.set_value",
+      args: {
+        doctype: "Entrance Test Seat Allocation",
+        name: doc.name,
+        fieldname: { admit_card_generated: 1, admit_card_number: admit_no }
+      },
+      callback: function () { if (frm) frm.reload_doc(); }
+    });
+  }
 
-    frappe.show_alert({
-        message: __("Admit Card opened. Select <b>Save as PDF</b> in the print dialog."),
-        indicator: "green"
-    }, 6);
+  frappe.show_alert({
+    message: __("Admit Card opened. Select <b>Save as PDF</b> in the print dialog."),
+    indicator: "green"
+  }, 6);
 }
