@@ -7,7 +7,10 @@ def execute():
 		if not frappe.db.exists('Exam Type Config', et):
 			doc = frappe.get_doc({
 				'doctype': 'Exam Type Config',
-				'exam_name': et
+				'exam_name': et,
+				'exam_code': et,
+				'exam_category': 'National',
+				'score_import_method': 'CSV Upload'
 			})
 			doc.insert(ignore_permissions=True)
 			
