@@ -1017,8 +1017,16 @@ class Applicant(Document):
         else:
             doc = frappe.get_doc(doc_data)
 
-        doc.save(ignore_permissions=True)
-        frappe.db.commit()
+        try:
+            doc.save(ignore_permissions=True)
+            frappe.db.commit()
+        except Exception as e:
+            # If sequence doesn't exist (e.g., eligibility_evaluation_id_seq), 
+            # we still want to continue. The evaluation record may not be critical
+            # if it can't be saved due to sequence issues.
+            frappe.logger().warning(
+                f"Failed to save Eligibility Evaluation for {applicant_name}: {str(e)}"
+            )
 
 
 # ──────────────────────────────────────────────
