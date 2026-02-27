@@ -1,89 +1,84 @@
 frappe.ui.form.on("Admission Cycle", {
+
     refresh: function (frm) {
-        // Status badge headline
-        const colors = { Draft: "gray", Active: "green", Closed: "red" };
-        const color = colors[frm.doc.status] || "gray";
-        if (frm.doc.status) {
-            frm.dashboard.set_headline(
-                `<span style="background:${color};color:white;padding:3px 14px;
-                border-radius:12px;font-size:12px;font-weight:bold;">
-                ${frm.doc.status}</span>`
-            );
+        // Status indicator
+        const colors = { "Draft": "gray", "Active": "green", "Closed": "red" };
+        frm.dashboard.set_headline_alert(
+            __(frm.doc.status),
+            colors[frm.doc.status] || "gray"
+        );
+
+        // Program count warning
+        if (!frm.is_new()) {
+            const active_programs = (frm.doc.programs || [])
+                .filter(p => p.is_active).length;
+            if (frm.doc.status === "Active" && active_programs === 0) {
+                frm.dashboard.set_headline_alert(
+                    __("No programs added. Portal will show empty."),
+                    "orange"
+                );
+            } else if (active_programs > 0) {
+                frm.dashboard.set_headline_alert(
+                    __("{0} program(s) visible on portal", [active_programs]),
+                    "green"
+                );
+            }
         }
 
-        // Show exam type details
-        if (frm.doc.exam_type && !frm.is_new()) {
-            frappe.db.get_value("Exam Type Config", frm.doc.exam_type,
-                ["exam_category", "score_import_method"],
-                function (r) {
-                    if (r) {
-                        frm.dashboard.add_comment(
-                            `Exam: ${frm.doc.exam_type} | Category: ${r.exam_category} | Import: ${r.score_import_method}`,
-                            "blue", true
-                        );
-                    }
-                }
-            );
-        }
-
-        // Quick status change buttons
-        if (!frm.is_new() && frm.doc.docstatus !== 1) {
+        // Quick actions
+        if (!frm.is_new()) {
             if (frm.doc.status === "Draft") {
-                frm.add_custom_button("Activate Cycle", function () {
+                frm.add_custom_button(__("Activate"), function () {
                     frappe.confirm(
-                        "Activate this cycle? Deadlines will be enforced after activation.",
+                        __("Activate this cycle? Only one cycle can be Active at a time."),
                         function () {
-                            frm.set_value("status", "Active");
-                            frm.save();
+                            frappe.call({
+                                method: "frappe.client.set_value",
+                                args: {
+                                    doctype: "Admission Cycle",
+                                    name: frm.doc.name,
+                                    fieldname: "status",
+                                    value: "Active"
+                                },
+                                callback: function () { frm.reload_doc(); }
+                            });
                         }
                     );
-                }, "Actions").addClass("btn-success");
+                }, __("Actions"));
             }
+
             if (frm.doc.status === "Active") {
-                frm.add_custom_button("Close Cycle", function () {
-                    frappe.confirm("Close this cycle? No further changes will be allowed.", function () {
-                        frm.set_value("status", "Closed");
-                        frm.save();
-                    });
-                }, "Actions");
+                frm.add_custom_button(__("Close Cycle"), function () {
+                    frappe.confirm(
+                        __("Close this cycle? No more applications will be accepted."),
+                        function () {
+                            frappe.call({
+                                method: "frappe.client.set_value",
+                                args: {
+                                    doctype: "Admission Cycle",
+                                    name: frm.doc.name,
+                                    fieldname: "status",
+                                    value: "Closed"
+                                },
+                                callback: function () { frm.reload_doc(); }
+                            });
+                        }
+                    );
+                }, __("Actions"));
             }
-        }
 
-        // Hide legacy workflow_type field always
-        frm.set_df_property("workflow_type", "hidden", 1);
-
-        // Show program count in dashboard
-        const programCount = (frm.doc.programs || []).filter(p => p.is_active).length;
-        if (programCount > 0) {
-            frm.dashboard.set_headline_alert(
-                __("{0} program(s) active on portal", [programCount]),
-                "green"
-            );
-        } else if (frm.doc.status === "Active") {
-            frm.dashboard.set_headline_alert(
-                __("No programs added yet. Applicants will see an empty portal."),
-                "orange"
-            );
+            frm.add_custom_button(__("Preview Portal"), function () {
+                window.open("/desk/applicant-portal", "_blank");
+            }, __("Actions"));
         }
     },
 
-
-
-    exam_type: function (frm) {
-        if (frm.doc.exam_type) {
+    status: function (frm) {
+        if (frm.doc.status === "Active") {
             frappe.show_alert({
-                message: `Exam type set to ${frm.doc.exam_type}. Score import and merit calculation will follow this exam's configuration.`,
+                message: __("Cycle activated. Programs will appear on the portal."),
                 indicator: "green"
             }, 5);
         }
-    },
-
-    have_multiple_rounds: function (frm) {
-        frappe.show_alert({
-            message: frm.doc.have_multiple_rounds
-                ? "Multiple rounds enabled. Add rounds below."
-                : "Single round mode. Round table hidden.",
-            indicator: frm.doc.have_multiple_rounds ? "green" : "blue"
-        }, 4);
     }
 });

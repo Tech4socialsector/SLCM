@@ -1,0 +1,131 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-02-27 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "section_break_basic",
+  "admission_cycle", "program",
+  "col_break_basic",
+  "total_seats", "status",
+  "section_break_summary",
+  "total_allocated", "total_filled",
+  "col_break_summary",
+  "total_available",
+  "section_break_categories",
+  "categories"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "PRP-.YYYY.-",
+   "default": "PRP-.YYYY.-"
+  },
+  {
+   "fieldname": "section_break_basic",
+   "fieldtype": "Section Break",
+   "label": "Program and Cycle"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "col_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_seats",
+   "fieldtype": "Int",
+   "label": "Total Seats",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nActive\nLocked",
+   "default": "Draft",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "section_break_summary",
+   "fieldtype": "Section Break",
+   "label": "Seat Summary"
+  },
+  {
+   "fieldname": "total_allocated",
+   "fieldtype": "Int",
+   "label": "Total Allocated",
+   "read_only": 1,
+   "description": "Sum of all category seats"
+  },
+  {
+   "fieldname": "total_filled",
+   "fieldtype": "Int",
+   "label": "Total Filled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_summary",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_available",
+   "fieldtype": "Int",
+   "label": "Total Available",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_categories",
+   "fieldtype": "Section Break",
+   "label": "Category-wise Seats and Fees",
+   "description": "Add one row per category. Each row defines seats allocated and application fee for that category."
+  },
+  {
+   "fieldname": "categories",
+   "fieldtype": "Table",
+   "label": "Categories",
+   "options": "Program Reservation Category",
+   "reqd": 1
+  }
+ ],
+ "modified": "2026-02-27 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Program Reservation Policy",
+ "owner": "Administrator",
+ "permissions": [
+  {"role": "System Manager",  "read": 1, "write": 1, "create": 1, "delete": 1},
+  {"role": "Admission Admin", "read": 1, "write": 1, "create": 1, "delete": 0}
+ ],
+ "sort_field": "admission_cycle",
+ "sort_order": "DESC",
+ "states": [
+  {"color": "Gray",  "title": "Draft"},
+  {"color": "Green", "title": "Active"},
+  {"color": "Red",   "title": "Locked"}
+ ],
+ "title_field": "program",
+ "track_changes": 1
+}
