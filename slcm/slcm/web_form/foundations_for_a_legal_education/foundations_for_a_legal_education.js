@@ -1,9 +1,11 @@
 frappe.ready(function () {
+	// --------------------------------------------------
+	// Sets the declaration consent as mandatory based on the candidate's age (under 18).
+	// --------------------------------------------------
 	function toggle_declaration_section() {
 		try {
 			const dob_val = frappe.web_form.get_value('candidate_dob');
-			// Default to false (hidden) if no DOB or error
-			let show_declaration = false;
+			let is_mandatory = false;
 			let age = null;
 
 			if (dob_val) {
@@ -17,85 +19,19 @@ frappe.ready(function () {
 				}
 
 				if (age < 18) {
-					show_declaration = true;
+					is_mandatory = true;
 				}
 			}
 
-			// --- 1. Toggle Section Break (Declaration) ---
-			// Try standard API first
-			toggle_field('section_break_declaration', show_declaration);
-
-			// MASTER FALLBACK: Find the section header by text 'Declaration'
-			// We search for header elements containing "Declaration" and hide their parent container
-			const $headers = $('.section-head, .section-header, h2, h3, h4, h5, h6').filter(function () {
-				return $(this).text().trim() === 'Declaration';
-			});
-
-			if ($headers.length > 0) {
-				// Determine the container (usually .web-form-section or .section-break)
-				const $section_container = $headers.closest('.web-form-section, .section-break');
-				if ($section_container.length > 0) {
-					$section_container.toggle(show_declaration);
-				} else {
-					// Fallback: hide the header and maybe its next sibling if it's a flat structure
-					$headers.toggle(show_declaration);
-					// This is risky without a container, but better than nothing
-				}
+			if (typeof frappe.web_form.set_df_property === 'function') {
+				frappe.web_form.set_df_property('declaration_consent', 'reqd', is_mandatory ? 1 : 0);
+			} else if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['declaration_consent']) {
+				frappe.web_form.fields_dict['declaration_consent'].df.reqd = is_mandatory ? 1 : 0;
+				frappe.web_form.fields_dict['declaration_consent'].refresh();
 			}
-
-			// --- 2. Toggle HTML Content ---
-			toggle_field('declaration_html', show_declaration);
-
-			// MASTER FALLBACK: Find by content text
-			const unique_text = "This declaration is only for the students below 18 years of age";
-			// Find elements containing this text
-			const $html_content = $(`div:contains("${unique_text}"), p:contains("${unique_text}")`).filter(function () {
-				// Ensure it's the actual content element, not a parent container
-				return $(this).children().length === 0 || $(this).hasClass('control-value') || $(this).hasClass('form-control');
-			});
-			$html_content.closest('.form-group, .web-form-field').toggle(show_declaration);
-
-			// --- 3. Toggle Consent Checkbox ---
-			toggle_field('declaration_consent', show_declaration);
 
 		} catch (e) {
 			// Error handling silently in production or log to system console if available
-		}
-	}
-
-	function toggle_field(fieldname, show) {
-		try {
-			// Method 1: Try toggle_display (v15+)
-			if (typeof frappe.web_form.toggle_display === 'function') {
-				frappe.web_form.toggle_display(fieldname, show);
-				return;
-			}
-
-			// Method 2: Try set_field_property (v13/14)
-			if (typeof frappe.web_form.set_field_property === 'function') {
-				frappe.web_form.set_field_property(fieldname, 'hidden', show ? 0 : 1);
-				return;
-			}
-
-			// Method 3: Direct DOM manipulation via get_field
-			let field = frappe.web_form.get_field(fieldname);
-			if (field && field.$wrapper) {
-				field.$wrapper.toggle(show);
-				return;
-			}
-
-			// Method 4: Data attribute selector
-			let $el = $('[data-fieldname="' + fieldname + '"]');
-			if ($el.length) {
-				// If it's a section break, hide the container
-				if ($el.hasClass('section-break') || $el.hasClass('web-form-section')) {
-					$el.toggle(show);
-				} else {
-					$el.closest('.form-group, .web-form-field').toggle(show);
-				}
-			}
-		} catch (e) {
-			// Error handling silently
 		}
 	}
 
@@ -108,6 +44,10 @@ frappe.ready(function () {
 	toggle_declaration_section();
 	setup_payment();
 
+	// --------------------------------------------------
+	// Initializes the payment flow by loading the Razorpay checkout script if not already loaded.
+	// Required to ensure the Razorpay library is available before creating the payment button.
+	// --------------------------------------------------
 	function setup_payment() {
 		console.log("Setting up payment...");
 		// Load Razorpay Script
@@ -125,6 +65,10 @@ frappe.ready(function () {
 		}
 	}
 
+	// --------------------------------------------------
+	// Replaces the standard Frappe "Save" button with a custom "Proceed to Payment" button.
+	// Required to enforce the payment step explicitly after successfully saving the form.
+	// --------------------------------------------------
 	function init_payment_button() {
 		console.log("Initializing payment button...");
 		let $payment_trigger = $('.web-form-footer .web-form-actions');
@@ -149,12 +93,24 @@ frappe.ready(function () {
 			$btn.click(function (e) {
 				console.log("Proceed to Payment clicked");
 				e.preventDefault();
+
+				// OVERRIDE FRAppe's DEFAULT BEHAVIOR to prevent redirect and form hiding
+				if (typeof frappe.web_form !== 'undefined' && !frappe.web_form._custom_handle_success) {
+					frappe.web_form._original_handle_success = frappe.web_form.handle_success;
+					frappe.web_form.handle_success = function (data) {
+						// Suppress default UI changes (hiding form, redirecting to gateway)
+						frappe.form_dirty = false;
+					};
+					frappe.web_form._custom_handle_success = true;
+				}
+
 				// Give user feedback while saving
 				let original_html = $btn.html();
 				$btn.prop('disabled', true).html('Processing...');
 
 				frappe.web_form.save().then(() => {
 					console.log("Form saved, initiating payment...");
+
 					initiate_payment();
 					// Restore button state after some time in case modal closes
 					setTimeout(() => {
@@ -174,6 +130,10 @@ frappe.ready(function () {
 		}
 	}
 
+	// --------------------------------------------------
+	// Calls the backend to create a new Razorpay order for the submitted web form.
+	// Required to securely fetch the checkout options and order ID from Razorpay to initialize the modal.
+	// --------------------------------------------------
 	function initiate_payment() {
 		frappe.call({
 			method: "slcm.slcm.doctype.foundations_for_a_legal_education.foundations_for_a_legal_education.create_razorpay_order",
@@ -193,6 +153,10 @@ frappe.ready(function () {
 		});
 	}
 
+	// --------------------------------------------------
+	// Configures and opens the Razorpay checkout modal with the order details and handles the callbacks.
+	// Required to securely process the payment client-side and communicate success/failure to the backend.
+	// --------------------------------------------------
 	function open_razorpay_checkout(data) {
 		console.log("Razorpay Data:", data);
 		var options = {
@@ -283,4 +247,3 @@ frappe.ready(function () {
 	// verify_payment function removed to strictly enforce backend-only payment verification (Master Tip)
 });
 
-// Added space for git commit as requested

@@ -7,6 +7,10 @@ from frappe.utils import flt
 from payments.utils import get_payment_gateway_controller
 
 class FoundationsforaLegalEducation(Document):
+	# --------------------------------------------------
+	# Hook called automatically by Frappe upon handling server-to-server payment Webhooks.
+	# Required to update payment status and details if the frontend callback was interrupted or missed.
+	# --------------------------------------------------
 	def on_payment_authorized(self, status):
 		"""
 		This hook is called by the Frappe Payments app when a payment is successful, failed, or cancelled.
@@ -56,6 +60,10 @@ class FoundationsforaLegalEducation(Document):
 			self.save(ignore_permissions=True)
 
 
+	# --------------------------------------------------
+	# Fired before the document is saved. Checks for duplicate email addresses for new submissions.
+	# Required to prevent multiple applications being submitted with the same email address.
+	# --------------------------------------------------
 	def validate(self):
 		# Check for duplicate email address on new submissions
 		if self.is_new():
@@ -69,18 +77,42 @@ class FoundationsforaLegalEducation(Document):
 					"Please use a different email address or contact support."
 				)
 
+		# Validate that students under 18 must agree to the declaration consent
+		if self.candidate_dob:
+			from frappe.utils import getdate
+			from datetime import date
+			
+			dob = getdate(self.candidate_dob)
+			today = date.today()
+			age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+			
+			if age < 18 and not self.declaration_consent:
+				frappe.throw("As the candidate is under 18 years of age, the declaration consent is mandatory.")
+
+	# --------------------------------------------------
+	# Fired right before the new document is inserted into the database.
+	# Required to set default statuses like "In Progress" and "Unpaid".
+	# --------------------------------------------------
 	def before_insert(self):
 		if not self.enrollment_status or self.enrollment_status == "Enrolled":
 			self.enrollment_status = "In Progress"
 		if not self.payment_status:
 			self.payment_status = "Unpaid"
 
+	# --------------------------------------------------
+	# Fired when a user clicks the framework's native 'Proceed to Pay' button.
+	# Required to update the status to "Payment Initiated" before redirecting to gateway.
+	# --------------------------------------------------
 	def validate_payment(self):
 		"""
 		Fired from the `accept` method inside `payment_webform.py` when a user clicks the framework's native 'Proceed to Pay' button.
 		"""
 		self.db_set("payment_status", "Payment Initiated")
 
+	# --------------------------------------------------
+	# Generates a random password and creates a standard ERPNext User account with 'LMS Student' role for the candidate.
+	# Required to grant the student system access automatically upon successful enrollment.
+	# --------------------------------------------------
 	def create_user_on_enrollment(self):
 		from frappe.utils import random_string
 		from frappe.utils.password import update_password
@@ -131,6 +163,10 @@ class FoundationsforaLegalEducation(Document):
 			frappe.db.commit() # Ensure role update is committed
 			frappe.msgprint("User already exists. Password updated and roles verified.")
 
+# --------------------------------------------------
+# API Endpoint called by the frontend to create a Razorpay order before opening the checkout modal.
+# Required because Razorpay checkout needs a server-side generated order ID tied to your API keys.
+# --------------------------------------------------
 @frappe.whitelist(allow_guest=True)
 def create_razorpay_order(doc_name):
 	try:
@@ -185,6 +221,10 @@ def create_razorpay_order(doc_name):
 		else:
 			frappe.throw("Failed to create payment order. Please try again or contact administrator.")
 
+# --------------------------------------------------
+# API Endpoint to update the payment status (e.g., 'Cancelled' or 'Payment Failed') from the frontend.
+# Required to keep track of user-aborted or failed payment attempts in the Frappe document.
+# --------------------------------------------------
 @frappe.whitelist(allow_guest=True)
 def update_payment_status(doc_name, status):
 	try:
@@ -197,6 +237,10 @@ def update_payment_status(doc_name, status):
 		frappe.log_error(frappe.get_traceback(), f"Payment Status Update to {status} Failed")
 		return {"status": "failed", "message": str(e)}
 
+# --------------------------------------------------
+# API Endpoint to verify the Razorpay payment signature after a successful frontend transaction.
+# Required to securely confirm the payment hasn't been tampered with and update the doc as 'Paid'.
+# --------------------------------------------------
 @frappe.whitelist(allow_guest=True)
 def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, doc_name, amount_paise=None):
 	try:
@@ -238,6 +282,10 @@ def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, d
 		return {"status": "failed", "message": str(e)}
 
 
+# --------------------------------------------------
+# API Endpoint to fetch the payment details for a specific document or the latest 'Paid' document of the session.
+# Required to populate the payment success/receipt page for the candidate.
+# --------------------------------------------------
 @frappe.whitelist(allow_guest=True)
 def get_receipt_details(doc_name=None):
 	try:
