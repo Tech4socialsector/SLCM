@@ -1,7 +1,0 @@
-{
- "doctype": "Dashboard Chart Source",
- "source_name": "admission_fee_status_source",
- "py_module": "slcm.admission.utils.dashboard_utils",
- "py_function": "get_fee_status_data",
- "name": "admission_fee_status_source"
-}
