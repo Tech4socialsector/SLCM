@@ -291,7 +291,7 @@ scheduler_events = {
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		],
         "*/15 * * * *": [
-            "slcm.admission.utils.scheduler.auto_publish_announcements"
+            "slcm.admission.utils.scheduler.auto_manage_announcements"
         ]
 	},
     "all": [],
