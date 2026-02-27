@@ -59,6 +59,16 @@ class Applicant(Document):
         rows = getattr(self, "pg_degree_details", None) or []
         return [row.pg_program for row in rows if row.pg_program]
 
+    def _get_applicant_hsc_groups(self):
+        """
+        Return the applicant's HSC group as a set (single value from hsc_group field).
+        This is on the Applicant doctype — we compare against the Rule's allowed groups.
+        """
+        hsc_group = getattr(self, "hsc_group", None)
+        if hsc_group:
+            return {hsc_group.strip()}
+        return set()
+
     # ──────────────────────────────────────────────
     # CORE ELIGIBILITY LOGIC
     # ──────────────────────────────────────────────
@@ -176,28 +186,52 @@ class Applicant(Document):
 
     def _build_ineligibility_message(self, failure_message, program_table_html):
         """
-        Builds the full ineligibility HTML message using only Frappe's
-        native CSS classes and design tokens — no inline colours.
+        Builds the full ineligibility HTML message using Frappe's native CSS
+        classes combined with explicit inline styles as fallback for environments
+        where CSS variables may not resolve (e.g., production vs local).
 
         Structure:
-          ┌─ Alert banner (indicator-pill red)  ──────────────────┐
+          ┌─ Alert banner (red)  ─────────────────────────────────┐
           │  ✕  <failure_message>                                  │
           └────────────────────────────────────────────────────────┘
           ┌─ Program table section  ──────────────────────────────┐
           │  Heading + summary counts + full eligibility table     │
           └────────────────────────────────────────────────────────┘
+
+        NOTE: Inline styles are used as a fallback because on some production
+        Frappe deployments, CSS custom properties (--text-base, --text-sm etc.)
+        are not available inside msgprint/throw dialogs. Explicit pixel values
+        ensure consistent rendering across all environments.
         """
         escaped_reason = frappe.utils.escape_html(failure_message)
 
         return """
-        <div class="msgprint-content">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 
             <!-- ── Ineligibility Alert ───────────────────────────────── -->
-            <div class="alert alert-danger" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;">
-                <span class="indicator-pill red no-margin" style="margin-top:3px;flex-shrink:0;"></span>
+            <div style="
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 16px;
+                padding: 12px 16px;
+                background-color: #fff2f2;
+                border: 1px solid #f5c6cb;
+                border-left: 4px solid #e74c3c;
+                border-radius: 6px;
+            ">
+                <span style="
+                    display: inline-block;
+                    width: 10px;
+                    height: 10px;
+                    background-color: #e74c3c;
+                    border-radius: 50%;
+                    margin-top: 4px;
+                    flex-shrink: 0;
+                "></span>
                 <div>
-                    <div style="font-weight:600;font-size:var(--text-base);">{reason}</div>
-                    <div class="text-muted" style="font-size:var(--text-sm);margin-top:2px;">
+                    <div style="font-weight: 600; font-size: 14px; color: #c0392b;">{reason}</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 3px;">
                         {note}
                     </div>
                 </div>
@@ -222,12 +256,8 @@ class Applicant(Document):
         Returns styled HTML listing EVERY program on the applicant's
         campus + admission cycle with a full eligibility check per program.
 
-        Layout:
-          • Section heading with campus · cycle
-          • Summary counts (eligible / ineligible)
-          • Table: Program | Your Eligibility | Reason (if not eligible)
-
-        Uses only Frappe's native CSS classes — no custom inline colours.
+        Uses explicit inline styles (no CSS variables) to ensure consistent
+        rendering across both local and production Frappe environments.
         The currently selected program is marked with a "Selected" badge.
         """
         all_programs = frappe.db.sql("""
@@ -245,7 +275,7 @@ class Applicant(Document):
 
         if not all_programs:
             return (
-                "<p class='text-muted' style='font-size:var(--text-sm);'>{0}</p>".format(
+                "<p style='color:#888;font-size:12px;'>{0}</p>".format(
                     _("No programs found for this campus and admission cycle.")
                 )
             )
@@ -264,79 +294,90 @@ class Applicant(Document):
 
             if is_prog_eligible:
                 eligible_count += 1
-                pill_class   = "indicator-pill green no-margin"
+                dot_color    = "#27ae60"
                 status_label = _("Eligible")
-                reason_html  = "<span class='text-muted'>—</span>"
-                row_class    = ""
+                status_color = "#27ae60"
+                reason_html  = "<span style='color:#999;'>—</span>"
+                row_bg       = "#fff"
             else:
                 ineligible_count += 1
-                pill_class   = "indicator-pill red no-margin"
+                dot_color    = "#e74c3c"
                 status_label = _("Not Eligible")
+                status_color = "#e74c3c"
                 reason_html  = (
-                    "<span style='font-size:var(--text-sm);'>{0}</span>".format(
+                    "<span style='font-size:12px;color:#555;'>{0}</span>".format(
                         frappe.utils.escape_html(reason or "")
                     )
                 )
-                row_class    = ""
+                row_bg = "#fff"
 
             # Program name cell — bold + "Selected" badge for the active program
             if is_selected:
                 prog_display = """
-                    <strong>{name}</strong>
-                    &nbsp;<span class="indicator-pill blue no-margin"
-                        style="font-size:10px;padding:1px 6px;vertical-align:middle;">
-                        {label}
-                    </span>
+                    <strong style="color:#2c3e50;">{name}</strong>
+                    &nbsp;<span style="
+                        font-size: 10px;
+                        padding: 2px 8px;
+                        background-color: #3498db;
+                        color: #fff;
+                        border-radius: 10px;
+                        font-weight: 600;
+                        vertical-align: middle;
+                    ">{label}</span>
                 """.format(
                     name  = frappe.utils.escape_html(prog_name),
                     label = _("Selected"),
                 )
             else:
-                prog_display = frappe.utils.escape_html(prog_name)
+                prog_display = "<span style='color:#2c3e50;'>{0}</span>".format(
+                    frappe.utils.escape_html(prog_name)
+                )
 
             rows_html += """
-                <tr class="{row_class}">
-                    <td class="list-subject" style="padding:8px 10px;vertical-align:middle;">
+                <tr style="background-color:{row_bg};">
+                    <td style="padding:10px 12px;vertical-align:middle;border-bottom:1px solid #eee;">
                         {prog}
                     </td>
-                    <td style="padding:8px 10px;vertical-align:middle;text-align:center;white-space:nowrap;">
-                        <span class="{pill}" style="vertical-align:middle;"></span>
-                        &nbsp;<span style="font-size:var(--text-sm);font-weight:500;">{status}</span>
+                    <td style="padding:10px 12px;vertical-align:middle;text-align:center;white-space:nowrap;border-bottom:1px solid #eee;">
+                        <span style="
+                            display: inline-block;
+                            width: 8px;
+                            height: 8px;
+                            background-color: {dot};
+                            border-radius: 50%;
+                            vertical-align: middle;
+                            margin-right: 4px;
+                        "></span>
+                        <span style="font-size:13px;font-weight:500;color:{status_color};">{status}</span>
                     </td>
-                    <td style="padding:8px 10px;vertical-align:middle;">
+                    <td style="padding:10px 12px;vertical-align:middle;border-bottom:1px solid #eee;">
                         {reason}
                     </td>
                 </tr>
             """.format(
-                row_class = row_class,
-                prog      = prog_display,
-                pill      = pill_class,
-                status    = status_label,
-                reason    = reason_html,
+                row_bg       = row_bg,
+                prog         = prog_display,
+                dot          = dot_color,
+                status_color = status_color,
+                status       = status_label,
+                reason       = reason_html,
             )
 
         # ── Summary counts ───────────────────────────────────────────────────
         summary_html = """
-            <div style="display:flex;align-items:center;gap:16px;
-                        margin-bottom:10px;flex-wrap:wrap;">
-                <span>
-                    <span class="indicator-pill green no-margin" style="vertical-align:middle;"></span>
-                    &nbsp;<strong>{ec}</strong>
-                    <span class="text-muted" style="font-size:var(--text-sm);">
-                        &nbsp;{el}
-                    </span>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+                <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <span style="display:inline-block;width:8px;height:8px;background:#27ae60;border-radius:50%;"></span>
+                    <strong style="color:#2c3e50;">{ec}</strong>
+                    <span style="font-size:12px;color:#888;">{el}</span>
                 </span>
-                <span class="text-muted">/</span>
-                <span>
-                    <span class="indicator-pill red no-margin" style="vertical-align:middle;"></span>
-                    &nbsp;<strong>{ic}</strong>
-                    <span class="text-muted" style="font-size:var(--text-sm);">
-                        &nbsp;{il}
-                    </span>
+                <span style="color:#ccc;">/</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <span style="display:inline-block;width:8px;height:8px;background:#e74c3c;border-radius:50%;"></span>
+                    <strong style="color:#2c3e50;">{ic}</strong>
+                    <span style="font-size:12px;color:#888;">{il}</span>
                 </span>
-                <span class="text-muted" style="font-size:var(--text-sm);">
-                    ({total}&nbsp;{tl})
-                </span>
+                <span style="font-size:12px;color:#aaa;">({total}&nbsp;{tl})</span>
             </div>
         """.format(
             ec    = eligible_count,
@@ -349,9 +390,9 @@ class Applicant(Document):
 
         # ── Section heading ──────────────────────────────────────────────────
         heading_html = """
-            <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px;">
-                <span style="font-weight:600;font-size:var(--text-base);">{heading}</span>
-                <span class="text-muted" style="font-size:var(--text-sm);">
+            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+                <span style="font-weight:700;font-size:14px;color:#2c3e50;">{heading}</span>
+                <span style="font-size:12px;color:#888;">
                     &mdash;&nbsp;{campus}&nbsp;&middot;&nbsp;{cycle}
                 </span>
             </div>
@@ -365,15 +406,22 @@ class Applicant(Document):
         table_html = """
             <div style="margin-top:8px;">
                 {heading}
-                <hr class="divider" style="margin:6px 0 10px 0;">
+                <hr style="margin:6px 0 12px 0;border:none;border-top:1px solid #eee;">
                 {summary}
                 <div style="overflow-x:auto;">
-                    <table class="table table-bordered table-hover" style="margin-bottom:0;">
+                    <table style="
+                        width: 100%;
+                        border-collapse: collapse;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 6px;
+                        overflow: hidden;
+                        font-size: 13px;
+                    ">
                         <thead>
-                            <tr>
-                                <th style="width:40%;">{col1}</th>
-                                <th style="width:20%;text-align:center;">{col2}</th>
-                                <th>{col3}</th>
+                            <tr style="background-color:#f8f9fa;">
+                                <th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;width:40%;border-bottom:2px solid #e0e0e0;">{col1}</th>
+                                <th style="padding:10px 12px;text-align:center;font-weight:600;color:#555;width:20%;border-bottom:2px solid #e0e0e0;">{col2}</th>
+                                <th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;">{col3}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -666,7 +714,8 @@ class Applicant(Document):
         """
         Run only the non-percentage checks from the base rule:
           - Allowed Degree check  (any matching UG or PG program qualifies)
-          - HSC Group check
+          - HSC Group check       (multi-group: passes if applicant's group is in
+                                   the rule's hsc_group child table)
         """
         rule_type           = rule.get("rule_type")
         qualification_level = rule.get("qualification_level")
@@ -690,12 +739,54 @@ class Applicant(Document):
                 return False
 
         if rule_type == "HSC Group":
-            required = rule.get("hsc_group")
-            actual   = getattr(self, "hsc_group", None)
-            if not actual or actual != required:
+            if not self._check_hsc_group_eligibility(rule_name):
                 return False
 
         return True
+
+    # ──────────────────────────────────────────────
+    # HSC GROUP CHECK — multi-group support
+    # ──────────────────────────────────────────────
+
+    def _check_hsc_group_eligibility(self, rule_name):
+        """
+        Check if the applicant's HSC group is in the list of allowed HSC groups
+        defined in the Eligibility Rule's hsc_group child table (HSC Groups Mapping).
+
+        The rule has a Table field `hsc_group` using child doctype `HSC Groups Mapping`.
+        Each child row has a Link field `hsc_groups` → HSC Groups doctype.
+
+        The applicant has a single field `hsc_group` (Link → HSC Groups).
+
+        Returns True if applicant's group matches any allowed group in the rule,
+        or if the rule has NO groups defined (no restriction).
+        """
+        allowed_groups_rows = frappe.db.sql("""
+            SELECT hsc_groups
+            FROM `tabHSC Groups Mapping`
+            WHERE parent = %(rule_name)s
+              AND parenttype = 'Eligibility Rule'
+              AND hsc_groups IS NOT NULL
+              AND hsc_groups != ''
+        """, {"rule_name": rule_name}, as_dict=True)
+
+        allowed_hsc_groups = [
+            row.hsc_groups.strip()
+            for row in allowed_groups_rows
+            if row.hsc_groups
+        ]
+
+        # If no groups are configured in the rule → no restriction → pass
+        if not allowed_hsc_groups:
+            return True
+
+        # Get applicant's HSC group
+        applicant_hsc_group = (getattr(self, "hsc_group", None) or "").strip()
+
+        if not applicant_hsc_group:
+            return False
+
+        return applicant_hsc_group in allowed_hsc_groups
 
     # ──────────────────────────────────────────────
     # RULE EVALUATION (single base rule — full check)
@@ -704,7 +795,11 @@ class Applicant(Document):
     def evaluate_single_rule(self, rule):
         """
         Full evaluation of a base Eligibility Rule against the applicant.
-        Checks: Allowed Degrees, HSC Group, and numeric threshold (Percentage / CGPA).
+        Checks: Allowed Degrees, HSC Group (multi-group), and numeric threshold
+        (Percentage / CGPA).
+
+        HSC Group check now uses the hsc_group child table (HSC Groups Mapping)
+        with field hsc_groups (Link → HSC Groups), supporting multiple allowed groups.
         """
         rule_type           = rule.get("rule_type")
         qualification_level = rule.get("qualification_level")
@@ -719,10 +814,9 @@ class Applicant(Document):
 
         allowed_degree_list = [r.degree_name for r in allowed_degrees if r.degree_name]
 
+        # ── HSC Group check (multi-group via child table) ────────────────────
         if rule_type == "HSC Group":
-            required = rule.get("hsc_group")
-            actual   = getattr(self, "hsc_group", None)
-            if not actual or actual != required:
+            if not self._check_hsc_group_eligibility(rule_name):
                 return False
 
         if qualification_level in ("UG", "PG"):
@@ -924,8 +1018,6 @@ class Applicant(Document):
             doc = frappe.get_doc(doc_data)
 
         doc.save(ignore_permissions=True)
-        frappe.db.commit()
-
         frappe.db.commit()
 
 
