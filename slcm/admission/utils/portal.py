@@ -108,26 +108,25 @@ def get_active_programs():
     """
     try:
         # Find active cycle
-        active_cycle = frappe.db.get_value(
+        active_cycle_name = frappe.db.get_value(
             "Admission Cycle",
             {"status": "Active"},
-            ["name", "admission_year"],
-            as_dict=True
+            "name"
         )
-        if not active_cycle:
+        if not active_cycle_name:
             return []
 
         # Read programs from cycle's child table
         cycle_programs = frappe.get_all(
             "Admission Cycle Program",
             filters={
-                "parent": active_cycle.name,
-                "parenttype": "Admission Cycle",
+                "parent": active_cycle_name,
                 "is_active": 1
             },
             fields=[
                 "program", "program_name", "campus",
-                "seats", "eligibility_hint", "brochure_url"
+                "seats", "eligibility_hint", "brochure_url",
+                "program_image", "program_media"
             ],
             order_by="program_name asc"
         )
@@ -136,7 +135,7 @@ def get_active_programs():
         for cp in cycle_programs:
             # Get program abbreviation from Program master
             abbr = frappe.db.get_value(
-                "Program", cp.program, "program_abbreviation"
+                "Program", cp.program, "program_shortcode"
             ) or ""
 
             # Get campus name if set
@@ -155,7 +154,9 @@ def get_active_programs():
                 "brochure_url": cp.brochure_url or "",
                 "campus": cp.campus or "",
                 "campus_name": campus_name,
-                "admission_cycle": active_cycle.name
+                "admission_cycle": active_cycle_name,
+                "program_image": cp.program_image or "",
+                "program_media": cp.program_media or ""
             })
 
         return result
@@ -522,7 +523,18 @@ def api_autosave(applicant, form_config, responses):
 @frappe.whitelist()
 def api_submit(applicant, form_config, responses):
     data = json.loads(responses) if isinstance(responses, str) else responses
-    return save_application_response(applicant, form_config, data, is_final=True)
+    res = save_application_response(applicant, form_config, data, is_final=True)
+    if res.get("success"):
+        # Increment application count on the cycle program row
+        try:
+            applicant_doc = frappe.get_doc("Applicant", applicant)
+            increment_application_count(
+                applicant_doc.program,
+                applicant_doc.admission_cycle
+            )
+        except Exception:
+            pass  # non-blocking
+    return res
 
 @frappe.whitelist()
 def api_get_stage_progress(applicant):
@@ -673,3 +685,280 @@ def api_get_program_media(program=None):
     except Exception as e:
         frappe.log_error(f"api_get_program_media failed: {e}", "Portal")
         return []
+
+
+# ── PROGRAM STATUS & SEAT AVAILABILITY ───────────────────────────
+
+@frappe.whitelist(allow_guest=True)
+def api_get_program_status(program, cycle):
+    """
+    Returns open/closed status and seat availability for a program.
+    Reads seat data from Program Reservation Policy.
+    Portal uses this to show Filling Fast / Seats Filled badges
+    and to enable or disable the Apply Now button.
+    """
+    try:
+        from frappe.utils import now, get_datetime
+
+        result = {
+            "program": program,
+            "cycle": cycle,
+            "is_open": True,
+            "close_reason": None,
+            "total_seats": 0,
+            "filled_seats": 0,
+            "available_seats": 0,
+            "seat_pct_filled": 0,
+            "application_count": 0,
+            "max_applications": 0,
+            "show_filling_fast": False,
+            "show_seats_filled": False
+        }
+
+        cycle_doc = frappe.get_doc("Admission Cycle", cycle)
+
+        # Check application end date at cycle level
+        if cycle_doc.application_end:
+            if get_datetime(now()) > get_datetime(cycle_doc.application_end):
+                result["is_open"] = False
+                result["close_reason"] = "application_date_passed"
+                return result
+
+        # Find program row
+        prog_row = None
+        for p in (cycle_doc.programs or []):
+            if p.program == program:
+                prog_row = p
+                break
+
+        if not prog_row:
+            result["is_open"] = False
+            result["close_reason"] = "program_not_in_cycle"
+            return result
+
+        result["application_count"] = prog_row.application_count or 0
+        result["max_applications"] = prog_row.max_applications or 0
+
+        # Check max applications
+        max_app = prog_row.max_applications or 0
+        if max_app > 0 and (prog_row.application_count or 0) >= max_app:
+            result["is_open"] = False
+            result["close_reason"] = "max_applications_reached"
+
+        # Read seat data from Program Reservation Policy
+        reservation_policy = prog_row.get("reservation_policy")
+        if reservation_policy:
+            try:
+                policy = frappe.get_doc(
+                    "Program Reservation Policy", reservation_policy
+                )
+                total = policy.total_seats or 0
+                filled = policy.total_filled or 0
+                available = policy.total_available or 0
+
+                result["total_seats"] = total
+                result["filled_seats"] = filled
+                result["available_seats"] = available
+
+                if total > 0:
+                    pct = (filled / total) * 100
+                    result["seat_pct_filled"] = round(pct, 1)
+                    # Filling Fast: 90% or more filled but not 100%
+                    result["show_filling_fast"] = pct >= 90 and filled < total
+                    result["show_seats_filled"] = filled >= total
+                    if filled >= total:
+                        result["is_open"] = False
+                        result["close_reason"] = "seats_filled"
+            except Exception:
+                pass  # No policy yet — seats info not available
+        else:
+            # Fallback to seats field on program row
+            result["total_seats"] = prog_row.seats or 0
+
+        return result
+
+    except Exception as e:
+        frappe.log_error(f"api_get_program_status failed: {e}", "Portal")
+        return {
+            "is_open": True, "close_reason": None,
+            "show_filling_fast": False, "show_seats_filled": False
+        }
+
+
+@frappe.whitelist(allow_guest=True)
+def api_get_all_program_statuses(cycle):
+    """
+    Returns status for all active programs in the cycle.
+    Called once on portal load to avoid multiple API calls.
+    """
+    try:
+        cycle_doc = frappe.get_doc("Admission Cycle", cycle)
+        statuses = {}
+        for p in (cycle_doc.programs or []):
+            if p.is_active:
+                statuses[p.program] = api_get_program_status(p.program, cycle)
+        return statuses
+    except Exception as e:
+        frappe.log_error(f"api_get_all_program_statuses failed: {e}", "Portal")
+        return {}
+
+
+# ── APPLICATION FEE ───────────────────────────────────────────────
+
+@frappe.whitelist(allow_guest=False)
+def api_get_application_fee(program, cycle, category=None):
+    """
+    Returns application fee for a program based on applicant's declared category.
+    Reads from Program Reservation Policy → categories → application_fee.
+    Falls back to first category row (General) if no match.
+    """
+    try:
+        # Get reservation_policy link from cycle program row
+        cycle_doc = frappe.get_doc("Admission Cycle", cycle)
+        reservation_policy = None
+        for row in (cycle_doc.programs or []):
+            if row.program == program:
+                reservation_policy = row.get("reservation_policy")
+                break
+
+        if not reservation_policy:
+            return {
+                "fee_amount": 0,
+                "fee_label": "Application Fee",
+                "category": None,
+                "category_name": "General"
+            }
+
+        policy = frappe.get_doc("Program Reservation Policy", reservation_policy)
+        fee, label, cat = policy.get_fee_for_category(category)
+
+        cat_name = ""
+        if cat:
+            cat_name = frappe.db.get_value(
+                "Program Reservation Category",
+                {"parent": reservation_policy, "category": cat},
+                "category_name"
+            ) or cat
+
+        return {
+            "fee_amount": fee,
+            "fee_label": label,
+            "category": cat,
+            "category_name": cat_name
+        }
+
+    except Exception as e:
+        frappe.log_error(f"api_get_application_fee failed: {e}", "Portal")
+        return {"fee_amount": 0, "fee_label": "Application Fee",
+                "category": None, "category_name": ""}
+
+
+# ── INCREMENT APPLICATION COUNT ───────────────────────────────────
+
+def increment_application_count(program, cycle):
+    """
+    Called internally when an application is submitted.
+    Increments application_count on the matching Admission Cycle Program row.
+    """
+    try:
+        cycle_doc = frappe.get_doc("Admission Cycle", cycle)
+        for row in (cycle_doc.programs or []):
+            if row.program == program:
+                current = row.application_count or 0
+                frappe.db.set_value(
+                    "Admission Cycle Program",
+                    row.name,
+                    "application_count",
+                    current + 1
+                )
+                frappe.db.commit()
+                return True
+        return False
+    except Exception as e:
+        frappe.log_error(
+            f"increment_application_count failed: {e}", "Portal"
+        )
+        return False
+
+
+@frappe.whitelist(allow_guest=True)
+def api_get_program_images(program_media=None, program_image=None):
+    """
+    Returns image list for a program card carousel.
+    Priority: Program Media gallery images first,
+    fallback to single program_image.
+    """
+    images = []
+
+    if program_media:
+        try:
+            media_doc = frappe.get_doc("Program Media", program_media)
+            for img in media_doc.get("images") or []:
+                if img.get("image"):
+                    images.append({
+                        "url": img.image,
+                        "caption": img.get("caption") or ""
+                    })
+        except Exception:
+            pass
+
+    if not images and program_image:
+        images.append({
+            "url": program_image,
+            "caption": ""
+        })
+
+    return images
+
+
+@frappe.whitelist(allow_guest=True)
+def api_get_hero_slides():
+    """
+    Returns all slides for the hero banner carousel.
+    hero_image is always slide 1.
+    slideshow_images child table provides slides 2, 3, 4...
+    Returns empty list if neither is set — JS shows text-only hero.
+    """
+    try:
+        config = frappe.get_single("Applicant Portal Config")
+        slides = []
+
+        # Slide 1: hero_image (always first if set)
+        hero_image = config.get("hero_image")
+        if hero_image:
+            slides.append({
+                "url": hero_image,
+                "caption": config.get("portal_title") or "",
+                "link_url": ""
+            })
+
+        # Slides 2+: slideshow_images child table
+        for row in config.get("slideshow_images") or []:
+            if row.get("image"):
+                slides.append({
+                    "url": row.image,
+                    "caption": row.get("caption") or "",
+                    "link_url": row.get("link_url") or ""
+                })
+
+        return slides
+
+    except Exception as e:
+        frappe.log_error(f"api_get_hero_slides error: {e}", "Portal API")
+        return []
+
+
+@frappe.whitelist()
+def api_mark_notification_read(notification_id):
+    """Mark a single Applicant Notification as read."""
+    try:
+        if frappe.db.exists("Applicant Notification", notification_id):
+            notif = frappe.get_doc(
+                "Applicant Notification", notification_id
+            )
+            if notif.applicant == frappe.session.user:
+                notif.db_set("is_read", 1)
+                return {"success": True}
+        return {"success": False, "error": "Not found or not authorized"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}

@@ -1,4 +1,4 @@
-frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
+frappe.pages['applicant-portal'].on_page_load = function (wrapper) {
     const page = frappe.ui.make_app_page({
         parent: wrapper,
         title: 'Applicant Portal',
@@ -235,6 +235,14 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                 .portal-hero-carousel { height: 220px; }
                 .portal-drawer { width: 100%; }
             }
+            /* Closed card */
+            .portal-program-card.card-closed {
+                opacity: 0.8;
+                border-color: var(--red-100);
+            }
+            .portal-program-card.card-closed .card-media-area {
+                filter: grayscale(40%);
+            }
         `;
         document.head.appendChild(style);
     }
@@ -273,68 +281,336 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
     }
 
     // ── HERO CAROUSEL ────────────────────────────────────────────
-    function buildHeroCarousel(media) {
-        if (!media || !media.length) {
-            // Fallback to config hero_image or plain colored banner
-            const bg = state.config.hero_image
-                ? `background-image:url('${state.config.hero_image}');background-size:cover;background-position:center;`
-                : `background:var(--portal-primary);`;
-            return `<div class="portal-hero-carousel" style="${bg}">
-                <div class="hero-slide-overlay">
-                    <h2 class="hero-slide-title">${state.config.portal_title || 'Admissions Portal'}</h2>
-                    <p class="hero-slide-caption">${state.config.portal_subtitle || ''}</p>
-                </div>
+    function renderHeroBanner(config) {
+        // Fetch slides from Portal Config slideshow_images
+        frappe.call({
+            method: "slcm.admission.utils.portal.api_get_hero_slides",
+            callback: function (r) {
+                const slides = r.message || [];
+                console.log(slides);
+                const banner = $("#hero-carousel-container"); // Note: I should add this ID to the renderProgramSelection HTML
+                if (!banner.length) return;
+
+                if (!slides.length) {
+                    // No slides — show text-only hero
+                    banner.html(`
+                        <div style="
+                            background: linear-gradient(135deg,
+                                var(--portal-primary, #1a237e),
+                                var(--portal-primary-dark, #283593));
+                            color: white;
+                            padding: 80px 40px;
+                            text-align: center;
+                            border-radius: 12px;
+                            margin-bottom: 32px;">
+                            <h1 style="font-size:2.2rem;font-weight:700;
+                                margin-bottom:12px">
+                                ${config.portal_title || "Admissions Portal"}
+                            </h1>
+                            <p style="font-size:1.1rem;opacity:0.85">
+                                ${config.portal_subtitle || ""}
+                            </p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                // Build carousel
+                let dots = slides.map((s, i) =>
+                    `<span class="hero-dot ${i === 0 ? 'active' : ''}"
+                        onclick="goToHeroSlide(${i})"
+                        style="
+                            display:inline-block;
+                            width:${i === 0 ? '24px' : '8px'};
+                            height:8px;
+                            border-radius:4px;
+                            background:${i === 0 ? 'white' : 'rgba(255,255,255,0.5)'};
+                            margin:0 3px;
+                            cursor:pointer;
+                            transition:all 0.3s;">
+                    </span>`
+                ).join("");
+
+                let slideHtml = slides.map((s, i) =>
+                    `<div class="hero-slide ${i === 0 ? 'active' : ''}"
+                        style="
+                            display:${i === 0 ? 'block' : 'none'};
+                            position:relative;
+                            border-radius:12px;
+                            overflow:hidden;
+                            cursor:${s.link_url ? 'pointer' : 'default'}"
+                        ${s.link_url
+                        ? `onclick="window.open('${s.link_url}','_blank')"` : ""}>
+                        <img src="${s.url}"
+                            style="width:100%;height:380px;
+                                object-fit:cover;display:block"
+                            onerror="this.style.display='none'">
+                        ${s.caption ? `
+                        <div style="
+                            position:absolute;bottom:0;left:0;right:0;
+                            background:linear-gradient(transparent,
+                                rgba(0,0,0,0.6));
+                            color:white;padding:20px 24px;font-size:1rem">
+                            ${s.caption}
+                        </div>` : ""}
+                    </div>`
+                ).join("");
+
+                banner.html(`
+                    <div id="hero-carousel"
+                        style="position:relative;margin-bottom:32px;
+                            border-radius:12px;overflow:hidden;
+                            box-shadow:0 4px 20px rgba(0,0,0,0.12)">
+                        ${slideHtml}
+                        ${slides.length > 1 ? `
+                        <button onclick="prevHeroSlide()"
+                            style="
+                                position:absolute;left:12px;top:50%;
+                                transform:translateY(-50%);
+                                background:rgba(0,0,0,0.4);
+                                color:white;border:none;
+                                border-radius:50%;
+                                width:40px;height:40px;
+                                font-size:18px;cursor:pointer;
+                                display:flex;align-items:center;
+                                justify-content:center;
+                                transition:background 0.2s;
+                                z-index:10"
+                            onmouseover="this.style.background='rgba(0,0,0,0.7)'"
+                            onmouseout="this.style.background='rgba(0,0,0,0.4)'">
+                            &#8249;
+                        </button>
+                        <button onclick="nextHeroSlide()"
+                            style="
+                                position:absolute;right:12px;top:50%;
+                                transform:translateY(-50%);
+                                background:rgba(0,0,0,0.4);
+                                color:white;border:none;
+                                border-radius:50%;
+                                width:40px;height:40px;
+                                font-size:18px;cursor:pointer;
+                                display:flex;align-items:center;
+                                justify-content:center;
+                                transition:background 0.2s;
+                                z-index:10"
+                            onmouseover="this.style.background='rgba(0,0,0,0.7)'"
+                            onmouseout="this.style.background='rgba(0,0,0,0.4)'">
+                            &#8250;
+                        </button>
+                        <div style="
+                            position:absolute;bottom:14px;left:50%;
+                            transform:translateX(-50%);
+                            display:flex;align-items:center;
+                            z-index:10">
+                            ${dots}
+                        </div>` : ""}
+                    </div>
+                `);
+
+                if (slides.length > 1) {
+                    startHeroAutoplay();
+                }
+            }
+        });
+    }
+
+    // Hero carousel controls
+    window.goToHeroSlide = function (index) {
+        const slides = $(".hero-slide");
+        const dots = $(".hero-dot");
+        if (!slides.length) return;
+        slides.hide().removeClass("active");
+        $(slides[index]).show().addClass("active");
+        dots.removeClass("active").each(function (i) {
+            $(this).css({
+                width: i === index ? "24px" : "8px",
+                background: i === index
+                    ? "white" : "rgba(255,255,255,0.5)"
+            });
+            if (i === index) $(this).addClass("active");
+        });
+        state.heroIndex = index;
+    };
+
+    window.nextHeroSlide = function () {
+        const total = $(".hero-slide").length;
+        if (!total) return;
+        goToHeroSlide((state.heroIndex + 1) % total);
+        resetHeroAutoplay();
+    };
+
+    window.prevHeroSlide = function () {
+        const total = $(".hero-slide").length;
+        if (!total) return;
+        goToHeroSlide(
+            (state.heroIndex - 1 + total) % total
+        );
+        resetHeroAutoplay();
+    };
+
+    function startHeroAutoplay() {
+        if (window._heroAutoplayTimer) clearInterval(window._heroAutoplayTimer);
+        window._heroAutoplayTimer = setInterval(() => {
+            const total = $(".hero-slide").length;
+            if (total) {
+                goToHeroSlide((state.heroIndex + 1) % total);
+            }
+        }, 3000);
+        // Pause on hover
+        $("#hero-carousel")
+            .off("mouseenter mouseleave")
+            .on("mouseenter", () => clearInterval(window._heroAutoplayTimer))
+            .on("mouseleave", () => startHeroAutoplay());
+    }
+
+    function resetHeroAutoplay() {
+        clearInterval(window._heroAutoplayTimer);
+        startHeroAutoplay();
+    }
+
+    // ── PROGRAM CARD IMAGES ──────────────────────────────────────
+    function renderProgramCardImage(program) {
+        // program has: program_image, program_media
+        // Fetch images then inject into card
+        if (!program.program_media && !program.program_image) {
+            return `<div class="prog-card-banner prog-card-banner-${program.program.replace(/\W/g, '_')}"
+                style="
+                    height:180px;
+                    background:linear-gradient(135deg,
+                        var(--portal-primary,#1a237e),
+                        var(--portal-accent,#283593));
+                    border-radius:10px 10px 0 0;
+                    display:flex;align-items:center;
+                    justify-content:center;">
+                <span style="color:white;font-size:2rem;opacity:0.4">🎓</span>
             </div>`;
         }
-
-        const slides = media.map((m, i) => `
-            <div class="hero-slide ${i === 0 ? 'active' : ''}"
-                id="hero-slide-${i}"
-                style="background-image:url('${m.image}');background-size:cover;background-position:center;">
-                <div class="hero-slide-overlay">
-                    <h2 class="hero-slide-title">${state.config.portal_title || ''}</h2>
-                    <p class="hero-slide-caption">${m.caption || m.program || ''}</p>
-                </div>
-            </div>`).join('');
-
-        const dots = media.map((_, i) =>
-            `<div class="hero-dot ${i === 0 ? 'active' : ''}" data-slide="${i}"></div>`
-        ).join('');
-
-        return `<div class="portal-hero-carousel" id="hero-carousel">
-            ${slides}
-            <div class="hero-dots">${dots}</div>
+        // Return placeholder — images loaded async below
+        return `<div class="prog-card-banner"
+            id="prog-banner-${program.program.replace(/\W/g, '_')}"
+            style="height:180px;border-radius:10px 10px 0 0;
+                overflow:hidden;position:relative;background:#f0f2f5">
+            <div style="
+                position:absolute;inset:0;display:flex;
+                align-items:center;justify-content:center;
+                color:#ccc;font-size:24px">⏳</div>
         </div>`;
     }
 
-    function startHeroAutoplay(media) {
-        if (!media || media.length < 2) return;
-        if (window._heroTimer) clearInterval(window._heroTimer);
-        window._heroTimer = setInterval(() => {
-            state.heroIndex = (state.heroIndex + 1) % media.length;
-            updateHeroSlide(media);
-        }, 4000);
+    function loadProgramCardImages(program) {
+        if (!program.program_media && !program.program_image) return;
+        frappe.call({
+            method: "slcm.admission.utils.portal.api_get_program_images",
+            args: {
+                program_media: program.program_media || null,
+                program_image: program.program_image || null
+            },
+            callback: function (r) {
+                const images = r.message || [];
+                const bannerId = `prog-banner-${program.program.replace(/\W/g, '_')}`;
+                const banner = $(`#${bannerId}`);
+                if (!banner.length || !images.length) return;
 
-        $body.find('#hero-carousel').on('mouseenter', () => {
-            clearInterval(window._heroTimer);
-        }).on('mouseleave', () => {
-            window._heroTimer = setInterval(() => {
-                state.heroIndex = (state.heroIndex + 1) % media.length;
-                updateHeroSlide(media);
-            }, 4000);
-        });
+                if (images.length === 1) {
+                    banner.html(`
+                        <img src="${images[0].url}"
+                            style="width:100%;height:180px;
+                                object-fit:cover;display:block"
+                            onerror="this.closest('.prog-card-banner')
+                                .style.background='#f0f2f5'">
+                    `);
+                    return;
+                }
 
-        $body.find('.hero-dot').on('click', function() {
-            state.heroIndex = parseInt($(this).data('slide'));
-            updateHeroSlide(media);
+                // Multiple images — build mini carousel
+                let slides = images.map((img, i) =>
+                    `<div class="pc-slide pc-slide-${program.program.replace(/\W/g, '_')}"
+                        style="display:${i === 0 ? 'block' : 'none'};
+                            position:absolute;inset:0">
+                        <img src="${img.url}"
+                            style="width:100%;height:180px;
+                                object-fit:cover"
+                            onerror="this.style.display='none'">
+                        ${img.caption ? `
+                        <div style="
+                            position:absolute;bottom:0;left:0;right:0;
+                            background:linear-gradient(transparent,
+                                rgba(0,0,0,0.55));
+                            color:white;font-size:11px;
+                            padding:8px 10px">
+                            ${img.caption}
+                        </div>` : ""}
+                    </div>`
+                ).join("");
+
+                let dots = images.map((_, i) =>
+                    `<span class="pc-dot pc-dot-${program.program.replace(/\W/g, '_')}"
+                        data-index="${i}"
+                        style="
+                            display:inline-block;
+                            width:${i === 0 ? '16px' : '6px'};
+                            height:6px;border-radius:3px;
+                            background:${i === 0
+                        ? 'white' : 'rgba(255,255,255,0.5)'};
+                            margin:0 2px;cursor:pointer;
+                            transition:all 0.25s">
+                    </span>`
+                ).join("");
+
+                banner.css("position", "relative").html(`
+                    <div style="position:relative;height:180px;
+                        overflow:hidden">
+                        ${slides}
+                        <div style="
+                            position:absolute;bottom:8px;left:50%;
+                            transform:translateX(-50%);
+                            display:flex;align-items:center;z-index:5">
+                            ${dots}
+                        </div>
+                    </div>
+                `);
+
+                // Dot click handlers
+                banner.find(`.pc-dot-${program.program.replace(/\W/g, '_')}`)
+                    .on("click", function () {
+                        const idx = parseInt($(this).data("index"));
+                        goToProgramSlide(program.program, idx, images.length);
+                    });
+
+                // Auto-transition
+                startProgramSlideshow(program.program, images.length);
+            }
         });
     }
 
-    function updateHeroSlide(media) {
-        $body.find('.hero-slide').removeClass('active');
-        $body.find(`#hero-slide-${state.heroIndex}`).addClass('active');
-        $body.find('.hero-dot').removeClass('active');
-        $body.find(`.hero-dot[data-slide="${state.heroIndex}"]`).addClass('active');
+    window._progSlideshows = {};
+
+    window.goToProgramSlide = function (prog, index, total) {
+        const p_id = prog.replace(/\W/g, '_');
+        $(`.pc-slide-${p_id}`).hide().eq(index).show();
+        $(`.pc-dot-${p_id}`).each(function (i) {
+            $(this).css({
+                width: i === index ? "16px" : "6px",
+                background: i === index
+                    ? "white" : "rgba(255,255,255,0.5)"
+            });
+        });
+        window._progSlideshows[prog] = window._progSlideshows[prog] || {};
+        window._progSlideshows[prog].current = index;
+    };
+
+    function startProgramSlideshow(prog, total) {
+        if (window._progSlideshows[prog]
+            && window._progSlideshows[prog].timer) {
+            clearInterval(window._progSlideshows[prog].timer);
+        }
+        window._progSlideshows[prog] = {
+            current: 0,
+            timer: setInterval(() => {
+                const cur = window._progSlideshows[prog].current || 0;
+                goToProgramSlide(prog, (cur + 1) % total, total);
+            }, 3000)
+        };
     }
 
     // ── PROGRAM CARD ─────────────────────────────────────────────
@@ -344,6 +620,42 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         const hasVideo = media.some(m => m.media_type === 'Video');
         const hasBrochure = media.some(m => m.media_type === 'Brochure');
         const brochureUrl = hasBrochure ? media.find(m => m.media_type === 'Brochure').brochure_pdf : null;
+
+        // Seat / status info
+        const ps = state.program_statuses[p.program] || {};
+        const isClosed = !ps.is_open;
+        const showFillingFast = ps.show_filling_fast && !isClosed;
+        const showSeatsFilled = ps.show_seats_filled;
+
+        // Seat badge HTML
+        let seatBadgeHtml = '';
+        if (showSeatsFilled || (isClosed && ps.close_reason === 'seats_filled')) {
+            seatBadgeHtml = `<span class="indicator-pill red" style="font-size:11px">
+                Seats Filled</span>`;
+        } else if (showFillingFast) {
+            seatBadgeHtml = `<span class="indicator-pill orange" style="font-size:11px">
+                Filling Fast</span>`;
+        }
+
+        // Closed badge
+        const closedBadgeHtml = isClosed
+            ? `<span class="indicator-pill red" style="font-size:11px;margin-left:4px">
+                Closed</span>` : '';
+
+        // Apply button
+        let applyBtnHtml = '';
+        if (isClosed) {
+            applyBtnHtml = `<button class="btn btn-default btn-sm" disabled
+                style="cursor:not-allowed;opacity:0.6">
+                Applications Closed
+            </button>`;
+        } else {
+            applyBtnHtml = `<button class="btn btn-primary btn-sm apply-btn"
+                data-program="${p.program}"
+                data-name="${encodeURIComponent(p.program_name)}">
+                Apply Now
+            </button>`;
+        }
 
         let mediaHtml = '';
         if (images.length) {
@@ -355,8 +667,8 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                 ${hasVideo ? `<span class="indicator-pill blue" style="font-size:10px">Video</span>` : ''}
                 ${hasBrochure ? `<span class="indicator-pill gray" style="font-size:10px">Brochure</span>` : ''}
             </div>`;
-            mediaHtml = `<div class="card-media-area" id="card-media-${p.program.replace(/\W/g,'_')}">
-                <img src="${images[0].image}" alt="${p.program_name}" data-images='${JSON.stringify(images.map(i=>i.image))}' data-index="0">
+            mediaHtml = `<div class="card-media-area" id="card-media-${p.program.replace(/\W/g, '_')}">
+                <img src="${images[0].image}" alt="${p.program_name}" data-images='${JSON.stringify(images.map(i => i.image))}' data-index="0">
                 ${imgNavHtml}
                 ${badgeHtml}
             </div>`;
@@ -367,22 +679,35 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
             </div>`;
         }
 
-        const seatsHtml = state.config.show_intake_count && p.total_seats
-            ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">${p.total_seats} seats available</div>` : '';
+        const seatsHtml = (state.config.show_intake_count && ps.total_seats)
+            ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">
+                ${ps.available_seats > 0
+                ? `${ps.available_seats} of ${ps.total_seats} seats available`
+                : `${ps.total_seats} total seats`}
+               </div>`
+            : '';
 
-        return `<div class="portal-program-card">
-            ${mediaHtml}
+        const eligibilityHtml = p.eligibility_hint
+            ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
+                ${p.eligibility_hint}</div>` : '';
+
+        return `<div class="portal-program-card ${isClosed ? 'card-closed' : ''}">
+            ${renderProgramCardImage(p)}
             <div class="card-body">
-                <div class="card-program-name">${p.program_name}</div>
+                <div style="display:flex;align-items:flex-start;
+                    justify-content:space-between;gap:8px;margin-bottom:4px;">
+                    <div class="card-program-name">${p.program_name}</div>
+                    <div style="flex-shrink:0">
+                        ${seatBadgeHtml}${closedBadgeHtml}
+                    </div>
+                </div>
                 ${p.program_abbreviation ? `<div class="text-muted" style="font-size:12px;margin-bottom:6px">${p.program_abbreviation}</div>` : ''}
                 ${seatsHtml}
+                ${eligibilityHtml}
                 <div class="card-actions">
-                    <button class="btn btn-primary btn-sm apply-btn"
-                        data-program="${p.program}" data-name="${encodeURIComponent(p.program_name)}">
-                        Apply Now
-                    </button>
+                    ${applyBtnHtml}
                     ${hasVideo ? `<button class="btn btn-default btn-sm video-btn"
-                        data-url="${media.find(m=>m.media_type==='Video').video_url}">
+                        data-url="${media.find(m => m.media_type === 'Video').video_url}">
                         Watch Video
                     </button>` : ''}
                     ${hasBrochure ? `<a class="btn btn-default btn-sm" href="${brochureUrl}" target="_blank">
@@ -510,7 +835,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         try {
             const read = JSON.parse(localStorage.getItem('portal_ann_read') || '[]');
             return state.announcements.filter(a => !read.includes(a.name)).length;
-        } catch(e) { return 0; }
+        } catch (e) { return 0; }
     }
 
     function markBellRead(name) {
@@ -521,7 +846,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                 localStorage.setItem('portal_ann_read', JSON.stringify(read));
             }
             updateBellBadge();
-        } catch(e) {}
+        } catch (e) { }
     }
 
     function updateBellBadge() {
@@ -549,7 +874,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
     }
 
     function bindBellEvents() {
-        $body.find('#portal-bell-btn').on('click', function() {
+        $body.find('#portal-bell-btn').on('click', function () {
             if (!state.announcements.length) {
                 frappe.show_alert({ message: 'No announcements at this time.', indicator: 'gray' }, 3);
                 return;
@@ -558,15 +883,33 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
             const $existing = $('#portal-bell-dropdown');
             if ($existing.length) { $existing.remove(); return; }
 
-            const items = state.announcements.slice(0, 5).map(a => `
+            const read_list = JSON.parse(localStorage.getItem('portal_ann_read') || '[]');
+            const items = state.announcements.slice(0, 5).map(a => {
+                const is_read = read_list.includes(a.name);
+                return `
                 <div class="ann-bell-item" data-ann="${a.name}"
                     style="padding:10px 14px;border-bottom:1px solid var(--border-color);
-                    cursor:pointer;font-size:13px;">
-                    <div style="font-weight:600">${a.title}</div>
-                    <div style="font-size:11px;color:var(--text-muted)">
-                        ${a.announcement_type}
+                    cursor:pointer;font-size:13px;display:flex;align-items:flex-start;gap:10px;
+                    background:${is_read ? 'white' : 'var(--portal-light)'}">
+                    <div style="flex:1">
+                        <div style="font-weight:600">${a.title}</div>
+                        <div style="font-size:11px;color:var(--text-muted)">
+                            ${a.announcement_type}
+                        </div>
                     </div>
-                </div>`).join('');
+                    <span class="notif-unread-dot"
+                        style="display:${is_read ? 'none' : 'inline-block'};
+                            width:8px;height:8px;border-radius:50%;
+                            background:var(--portal-primary);flex-shrink:0;
+                            margin-top:4px">
+                    </span>
+                    <span class="notif-read-tick"
+                        style="display:${is_read ? 'inline-block' : 'none'};
+                            color:var(--green);font-size:14px;flex-shrink:0">
+                        ✓
+                    </span>
+                </div>`;
+            }).join('');
 
             const $dd = $(`<div id="portal-bell-dropdown"
                 style="position:absolute;z-index:1060;right:0;top:40px;
@@ -586,26 +929,53 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                 </div>
             </div>`);
 
-            $(this).css('position','relative').append($dd);
+            $(this).css('position', 'relative').append($dd);
 
-            $dd.find('.ann-bell-item').on('click', function() {
+            // Notification item click — close dropdown, open drawer, mark read
+            $dd.find('.ann-bell-item').on('click', function () {
+                const ann_name = $(this).data("ann");
+                const notif_id = $(this).data("notif-id");
+
+                // 1. Close dropdown immediately
                 $dd.remove();
-                const name = $(this).data('ann');
-                const ann = state.announcements.find(a => a.name === name);
-                if (ann) openDrawer(ann);
+
+                // 2. Mark as read in UI immediately
+                $(this).find(".notif-unread-dot").hide();
+                $(this).find(".notif-read-tick").show();
+                $(this).css("background", "white");
+
+                // 3. Decrement badge
+                const badge = $("#portal-bell-badge");
+                let count = parseInt(badge.text()) || 0;
+                count = Math.max(0, count - 1);
+                badge.text(count);
+                if (count === 0) badge.hide();
+
+                // 4. Mark as read in DB
+                if (notif_id) {
+                    frappe.call({
+                        method: "slcm.admission.utils.portal.api_mark_notification_read",
+                        args: { notification_id: notif_id }
+                    });
+                }
+
+                // 5. Open side drawer with announcement details
+                if (ann_name) {
+                    openAnnouncementDrawer(ann_name);
+                }
             });
 
-            $('#bell-mark-all').on('click', function(e) {
+            $('#bell-mark-all').on('click', function (e) {
                 e.stopPropagation();
                 try {
                     localStorage.setItem('portal_ann_read',
                         JSON.stringify(state.announcements.map(a => a.name)));
-                } catch(e) {}
+                } catch (e) { }
                 updateBellBadge();
                 $dd.remove();
             });
 
-            $(document).one('click.bell', function(e) {
+            $(document).one('click.bell', function (e) {
                 if (!$(e.target).closest('#portal-bell-btn, #portal-bell-dropdown').length) {
                     $dd.remove();
                 }
@@ -645,6 +1015,10 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
             if (!state.media[m.program]) state.media[m.program] = [];
             state.media[m.program].push(m);
         });
+
+        // Programs and statuses fetched after config so we have the cycle
+        // statuses stored per program in state
+        state.program_statuses = {};  // will be populated in renderProgramSelection
 
         applyTheme(state.config.primary_color, state.config.secondary_color);
         page.set_title(state.config.portal_title || 'Applicant Portal');
@@ -705,6 +1079,18 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         });
         state.programs = programsR.message || [];
 
+        // Fetch all program statuses in one call
+        if (state.programs.length > 0) {
+            const cycle = state.programs[0].admission_cycle;
+            if (cycle) {
+                const statusR = await frappe.call({
+                    method: 'slcm.admission.utils.portal.api_get_all_program_statuses',
+                    args: { cycle: cycle }
+                });
+                state.program_statuses = statusR.message || {};
+            }
+        }
+
         const layoutClass = state.config.program_card_layout === 'List'
             ? 'portal-program-list' : 'portal-program-grid';
 
@@ -717,14 +1103,14 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         $body.html(`
             <div style="max-width:1100px;margin:0 auto;padding:20px;" id="portal-announcements">
                 ${buildHeaderBar()}
-                ${buildHeroCarousel(state.heroMedia)}
+                <div id="hero-carousel-container"></div>
                 ${state.config.show_announcement && state.config.header_announcement
-                    ? `<div class="portal-announcement-banner">${state.config.header_announcement}</div>` : ''}
+                ? `<div class="portal-announcement-banner">${state.config.header_announcement}</div>` : ''}
                 <div class="frappe-card" style="padding:20px;margin-bottom:20px;">
                     <h5 style="color:var(--portal-primary);margin-bottom:4px">Available Programs</h5>
                     <p class="text-muted" style="font-size:13px;margin-bottom:0">
                         ${isLoggedIn() ? 'Select a program to begin your application.'
-                            : 'Browse programs below. Click Apply Now to log in and start your application.'}
+                : 'Browse programs below. Click Apply Now to log in and start your application.'}
                     </p>
                     ${cardsHtml}
                 </div>
@@ -734,17 +1120,22 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         `);
 
         // Bind events
-        startHeroAutoplay(state.heroMedia);
+        renderHeroBanner(state.config);
+
+        state.programs.forEach(p => {
+            loadProgramCardImages(p);
+        });
+
         bindBellEvents();
 
         $body.find('#header-login-btn').on('click', requireLogin);
 
         // Card image navigation
-        $body.find('.card-media-nav').on('click', function(e) {
+        $body.find('.card-media-nav').on('click', function (e) {
             e.stopPropagation();
             const program = $(this).data('program');
             const dir = parseInt($(this).data('dir'));
-            const $img = $body.find(`#card-media-${program.replace(/\W/g,'_')} img`);
+            const $img = $body.find(`#card-media-${program.replace(/\W/g, '_')} img`);
             const images = JSON.parse($img.attr('data-images') || '[]');
             let idx = parseInt($img.attr('data-index') || '0') + dir;
             idx = ((idx % images.length) + images.length) % images.length;
@@ -752,11 +1143,12 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         });
 
         // Video modal
-        $body.find('.video-btn').on('click', function() {
+        $body.find('.video-btn').on('click', function () {
             const url = $(this).data('url');
             const d = new frappe.ui.Dialog({
                 title: 'Program Video',
-                fields: [{ fieldtype: 'HTML', fieldname: 'video',
+                fields: [{
+                    fieldtype: 'HTML', fieldname: 'video',
                     options: `<div style="text-align:center">
                         <iframe width="100%" height="315" src="${url}"
                             frameborder="0" allowfullscreen></iframe>
@@ -766,7 +1158,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         });
 
         // Apply Now
-        $body.find('.apply-btn').on('click', function() {
+        $body.find('.apply-btn').on('click', function () {
             const program = $(this).data('program');
             const programName = decodeURIComponent($(this).data('name'));
             if (!isLoggedIn()) {
@@ -780,7 +1172,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         });
 
         // Announcement cards
-        $body.find('.ann-card').on('click', function() {
+        $body.find('.ann-card').on('click', function () {
             const name = $(this).data('ann');
             const ann = state.announcements.find(a => a.name === name);
             if (ann) openDrawer(ann);
@@ -836,14 +1228,14 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
             ${renderFooter()}
         `);
         $body.find('#back-progs').on('click', renderProgramSelection);
-        $body.find('#confirm-campus').on('click', async function() {
+        $body.find('#confirm-campus').on('click', async function () {
             const checked = $body.find('.campus-check:checked');
             if (!checked.length) {
                 frappe.show_alert({ message: 'Please select at least one campus.', indicator: 'red' }, 4);
                 return;
             }
             state.selected_campuses = [];
-            checked.each(function(i) {
+            checked.each(function (i) {
                 state.selected_campuses.push({ campus: $(this).data('campus'), preference_order: i + 1 });
             });
             await createApplicantAndLoadForm();
@@ -858,10 +1250,27 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         });
         const cycle = cycleR.message && cycleR.message[0] ? cycleR.message[0].name : null;
         if (!cycle) {
-            frappe.msgprint({ title: 'No Active Cycle',
-                message: 'No active admission cycle. Please contact admissions.', indicator: 'red' });
+            frappe.msgprint({
+                title: 'No Active Cycle',
+                message: 'No active admission cycle. Please contact admissions.', indicator: 'red'
+            });
             return;
         }
+
+        // Get categories for fee calculation
+        if (!state.applicant_category) {
+            const feeR = await frappe.call({
+                method: 'slcm.admission.utils.portal.api_get_application_fee',
+                args: {
+                    program: state.selected_program.program,
+                    cycle: cycle,
+                    category: null
+                }
+            });
+            // Only show category selector if fee matrix has multiple categories
+            // Otherwise skip straight to form
+        }
+        state.applicant_cycle = cycle;
 
         const appR = await frappe.call({
             method: 'slcm.admission.utils.portal.get_or_create_applicant',
@@ -883,8 +1292,10 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         state.form = formR.message;
 
         if (!state.form || !state.form.fields || !state.form.fields.length) {
-            frappe.msgprint({ title: 'Form Not Configured',
-                message: 'No application form configured for this program.', indicator: 'orange' });
+            frappe.msgprint({
+                title: 'Form Not Configured',
+                message: 'No application form configured for this program.', indicator: 'orange'
+            });
             return;
         }
 
@@ -933,10 +1344,10 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
             contentHtml = `<h5 style="color:var(--portal-primary)">Document Upload</h5>
                 <div class="alert alert-info" style="font-size:13px">${note}</div>`;
         } else {
-            const rows = Object.entries(state.form_data).filter(([,v]) => v)
-                .map(([k,v]) => `<tr>
+            const rows = Object.entries(state.form_data).filter(([, v]) => v)
+                .map(([k, v]) => `<tr>
                     <td style="padding:8px 12px;font-weight:600;border:1px solid var(--border-color);width:45%">
-                        ${k.replace(/_/g,' ')}</td>
+                        ${k.replace(/_/g, ' ')}</td>
                     <td style="padding:8px 12px;border:1px solid var(--border-color)">${v}</td>
                 </tr>`).join('');
             contentHtml = `<h5 style="color:var(--portal-primary)">Review Your Application</h5>
@@ -967,8 +1378,8 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                     ${state.current_tab > 0 ? '<button class="btn btn-default" id="prev-tab">Previous</button>' : '<div></div>'}
                     <span class="text-muted" style="font-size:11px" id="save-status"></span>
                     ${isLast
-                        ? '<button class="btn btn-success" id="submit-btn">Submit Application</button>'
-                        : '<button class="btn btn-primary" id="next-tab">Save and Continue</button>'}
+                ? '<button class="btn btn-success" id="submit-btn">Submit Application</button>'
+                : '<button class="btn btn-primary" id="next-tab">Save and Continue</button>'}
                 </div>
                 <div class="text-muted text-center" style="font-size:11px;margin-top:8px;">Progress auto-saved every 60 seconds</div>
             </div>
@@ -976,7 +1387,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         `);
 
         $body.find('#back-progs2').on('click', renderProgramSelection);
-        $body.find('[data-tab]').on('click', function(e) {
+        $body.find('[data-tab]').on('click', function (e) {
             e.preventDefault();
             const t = parseInt($(this).data('tab'));
             if (t <= state.current_tab) { collectFormData(); state.current_tab = t; renderFormView(); }
@@ -1013,7 +1424,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
     }
 
     function collectFormData() {
-        $body.find('.form-field').each(function() {
+        $body.find('.form-field').each(function () {
             const f = $(this).data('field');
             if (f) state.form_data[f] = $(this).val();
         });
@@ -1030,7 +1441,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
             }
         });
         if (!silent) {
-            $('#save-status').text('Saved').css('color','var(--green)');
+            $('#save-status').text('Saved').css('color', 'var(--green)');
             setTimeout(() => $('#save-status').text(''), 3000);
         }
     }
@@ -1047,12 +1458,105 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
             clearInterval(window._portalTimer);
             frappe.show_alert({ message: 'Application submitted successfully.', indicator: 'green' }, 6);
             state.applicant = { name, application_status: 'Submitted' };
+
+            // Check if fee is required
+            const cycle = state.applicant_cycle || (state.form && state.form.admission_cycle);
+            if (state.selected_program && cycle) {
+                const feeR = await frappe.call({
+                    method: 'slcm.admission.utils.portal.api_get_application_fee',
+                    args: {
+                        program: state.selected_program.program,
+                        cycle: cycle,
+                        category: state.applicant_category || null
+                    }
+                });
+                const fee = feeR.message || {};
+                if (fee.fee_amount && fee.fee_amount > 0) {
+                    renderFeePayment(fee, name);
+                    return;
+                }
+            }
             renderDashboard();
         } else {
-            frappe.msgprint({ title: 'Submission Failed',
-                message: (r.message && r.message.error) || 'Please try again.', indicator: 'red' });
+            frappe.msgprint({
+                title: 'Submission Failed',
+                message: (r.message && r.message.error) || 'Please try again.', indicator: 'red'
+            });
             $btn.text('Submit Application').prop('disabled', false);
         }
+    }
+
+    function renderFeePayment(fee, applicantName) {
+        $body.html(`
+            <div style="max-width:540px;margin:60px auto;padding:20px;">
+                <div class="frappe-card" style="padding:32px;text-align:center;">
+                    <div style="width:60px;height:60px;border-radius:50%;
+                        background:var(--portal-light);
+                        display:flex;align-items:center;justify-content:center;
+                        margin:0 auto 16px;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                            stroke="var(--portal-primary)" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                            <line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                    </div>
+                    <h4 style="margin-bottom:4px">Application Fee Payment</h4>
+                    <p class="text-muted" style="font-size:13px;margin-bottom:20px">
+                        Your application has been submitted. Please pay the application
+                        fee to complete your registration.
+                    </p>
+                    <div style="background:var(--portal-light);
+                        border-radius:var(--border-radius);
+                        padding:16px;margin-bottom:24px;">
+                        <div style="font-size:13px;color:var(--text-muted);
+                            margin-bottom:4px">
+                            ${fee.fee_label || 'Application Fee'}
+                            ${fee.category_name
+                ? `<span class="indicator-pill blue"
+                                    style="font-size:10px;margin-left:6px">
+                                    ${fee.category_name}</span>`
+                : ''}
+                        </div>
+                        <div style="font-size:28px;font-weight:700;
+                            color:var(--portal-primary)">
+                            &#8377; ${frappe.format(fee.fee_amount, { fieldtype: 'Currency' })}
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:center;">
+                        <button class="btn btn-primary" id="pay-now-btn">
+                            Pay Now
+                        </button>
+                        <button class="btn btn-default" id="pay-later-btn">
+                            Pay Later
+                        </button>
+                    </div>
+                    <p class="text-muted" style="font-size:11px;margin-top:12px">
+                        You can also pay later from your application dashboard.
+                    </p>
+                </div>
+            </div>
+            ${renderFooter()}
+        `);
+
+        $body.find('#pay-now-btn').on('click', function () {
+            // Payment gateway integration — Phase 9 external
+            // For now show placeholder
+            frappe.msgprint({
+                title: 'Payment Gateway',
+                message: 'Payment gateway integration is being configured. ' +
+                    'Please contact admissions office for payment instructions.',
+                indicator: 'blue'
+            });
+        });
+
+        $body.find('#pay-later-btn').on('click', function () {
+            frappe.show_alert({
+                message: 'You can pay the fee from your dashboard.',
+                indicator: 'orange'
+            }, 5);
+            state.applicant = { name: applicantName, application_status: 'Submitted' };
+            renderDashboard();
+        });
     }
 
     // ── DASHBOARD ────────────────────────────────────────────────
@@ -1068,7 +1572,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
         const stages = stageR.message || [];
         const campuses = campusR.message || [];
         const appStatus = state.applicant.application_status || 'Submitted';
-        const statusColors = { Draft:'yellow', Submitted:'blue', Locked:'grey', Accepted:'green', Rejected:'red' };
+        const statusColors = { Draft: 'yellow', Submitted: 'blue', Locked: 'grey', Accepted: 'green', Rejected: 'red' };
 
         const annsHtml = buildAnnouncementsSection(state.announcements);
 
@@ -1082,7 +1586,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                             <div style="font-weight:600;font-size:13px">${s.stage_name}</div>
                             <div style="font-size:11px;color:var(--text-muted)">${s.stage_type}</div>
                         </div>
-                        <span class="indicator-pill ${s.status==='Active'?'blue':s.status==='Completed'?'green':'gray'}"
+                        <span class="indicator-pill ${s.status === 'Active' ? 'blue' : s.status === 'Completed' ? 'green' : 'gray'}"
                             style="font-size:11px">${s.status}</span>
                     </div>`).join('')}
               </div>` : '';
@@ -1097,7 +1601,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                     <tbody>${campuses.map(c => `<tr>
                         <td>#${c.preference_order}</td><td>${c.campus_name}</td>
                         <td>${c.program}</td>
-                        <td><span class="indicator-pill ${c.status==='Offered'?'green':c.status==='Rejected'?'red':'blue'}">${c.status}</span></td>
+                        <td><span class="indicator-pill ${c.status === 'Offered' ? 'green' : c.status === 'Rejected' ? 'red' : 'blue'}">${c.status}</span></td>
                     </tr>`).join('')}</tbody>
                 </table>
               </div>` : '';
@@ -1112,7 +1616,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                             <h4 style="margin:0;color:#fff">${state.config.portal_title || 'My Application'}</h4>
                             <div style="opacity:0.85;font-size:13px;margin-top:4px">ID: ${applicantName}</div>
                         </div>
-                        <span class="indicator-pill ${statusColors[appStatus]||'blue'}"
+                        <span class="indicator-pill ${statusColors[appStatus] || 'blue'}"
                             style="font-size:13px">${appStatus}</span>
                     </div>
                 </div>
@@ -1122,7 +1626,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
                     <h6 style="color:var(--portal-primary);margin-bottom:12px">Quick Actions</h6>
                     <div style="display:flex;flex-wrap:wrap;gap:10px;">
                         ${state.config.allow_pdf_download
-                            ? '<button class="btn btn-default btn-sm" id="dl-pdf">Download Application</button>' : ''}
+                ? '<button class="btn btn-default btn-sm" id="dl-pdf">Download Application</button>' : ''}
                         <button class="btn btn-default btn-sm">My Documents</button>
                     </div>
                 </div>
@@ -1133,7 +1637,7 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
 
         bindBellEvents();
 
-        $body.find('#dl-pdf').on('click', async function() {
+        $body.find('#dl-pdf').on('click', async function () {
             $(this).text('Generating...');
             const r = await frappe.call({
                 method: 'slcm.admission.utils.portal.api_download_pdf',
@@ -1144,10 +1648,68 @@ frappe.pages['applicant-portal'].on_page_load = function(wrapper) {
             $(this).text('Download Application');
         });
 
-        $body.find('.ann-card').on('click', function() {
+        $body.find('.ann-card').on('click', function () {
             const name = $(this).data('ann');
             const ann = state.announcements.find(a => a.name === name);
             if (ann) openDrawer(ann);
+        });
+    }
+
+    // ── OPEN ANNOUNCEMENT DRAWER BY NAME ─────────────────────────
+    function openAnnouncementDrawer(ann_name) {
+        if (!ann_name) return;
+
+        frappe.call({
+            method: "slcm.admission.utils.portal.api_get_announcement_detail",
+            args: { name: ann_name },
+            callback: function (r) {
+                const ann = r.message;
+                if (!ann) return;
+
+                const isEvent = ann.announcement_type === "Event";
+                const countdown = isEvent ? getCountdown(ann.event_date) : null;
+                const imgHtml = ann.featured_image
+                    ? `<img class="drawer-img" src="${ann.featured_image}" alt="${ann.title}">` : "";
+                const eventHtml = isEvent ? `
+                    <div class="frappe-card" style="padding:14px;margin-bottom:16px;font-size:13px;">
+                        ${ann.event_date ? `<div><strong>Date:</strong> ${ann.event_date}</div>` : ""}
+                        ${ann.event_venue ? `<div style="margin-top:4px"><strong>Venue:</strong> ${ann.event_venue}</div>` : ""}
+                        ${countdown ? `<div class="ann-countdown" style="margin-top:8px">${countdown}</div>` : ""}
+                        ${ann.registration_url ? `<a href="${ann.registration_url}" target="_blank"
+                            class="btn btn-primary btn-sm" style="margin-top:12px">Register</a>` : ""}
+                    </div>` : "";
+
+                // Remove any existing drawer
+                $("#portal-drawer-backdrop, #portal-drawer").remove();
+
+                const $backdrop = $('<div class="portal-drawer-backdrop" id="portal-drawer-backdrop"></div>');
+                const $drawer = $(`<div class="portal-drawer" id="portal-drawer">
+                    <div class="drawer-header">
+                        <div>
+                            <div class="ann-type-badge ${isEvent ? "event" : "announcement"}"
+                                style="margin-bottom:6px">
+                                ${isEvent ? "Event" : "Announcement"}
+                            </div>
+                            <h4>${ann.title}</h4>
+                        </div>
+                        <button class="drawer-close-btn" id="drawer-close">&times;</button>
+                    </div>
+                    <div class="drawer-body">
+                        ${imgHtml}
+                        ${eventHtml}
+                        <div style="font-size:14px;line-height:1.7">${ann.content || ""}</div>
+                    </div>
+                </div>`);
+
+                $("body").append($backdrop).append($drawer);
+                setTimeout(() => $drawer.addClass("open"), 20);
+
+                $backdrop.on("click", closeDrawer);
+                $("#drawer-close").on("click", closeDrawer);
+
+                // Mark as read in bell (localStorage)
+                markBellRead(ann_name);
+            }
         });
     }
 
