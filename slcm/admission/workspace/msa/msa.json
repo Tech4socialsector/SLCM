@@ -1,7 +1,7 @@
 {
     "app": "slcm",
     "charts": [],
-    "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Merit &amp; Seat Allocation Overview</span>\",\"col\":12}},{\"id\":\"Ah6SyomZpu\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule Mapping\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"8e3fOzR6cO\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit Calculation\",\"col\":4}},{\"id\":\"Wd3sTfCxAd\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"SSKTXESyOf\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"mFZCE9v6t4\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}}]",
+    "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"Ah6SyomZpu\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule Mapping\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"8e3fOzR6cO\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit Calculation\",\"col\":4}},{\"id\":\"Wd3sTfCxAd\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"SSKTXESyOf\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"mFZCE9v6t4\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}}]",
     "creation": "2026-02-20 09:51:44.094533",
     "custom_blocks": [],
     "docstatus": 0,
@@ -12,7 +12,7 @@
     "idx": 0,
     "indicator_color": "green",
     "is_hidden": 0,
-    "label": "Merit & Seat Allocation",
+    "label": "MSA",
     "links": [
         {
             "hidden": 0,
@@ -175,7 +175,7 @@
     "modified": "2026-02-25 15:58:21.897137",
     "modified_by": "Administrator",
     "module": "Admission",
-    "name": "Merit & Seat Allocation",
+    "name": "MSA",
     "number_cards": [
         {
             "label": "Merit Rule",
@@ -201,6 +201,6 @@
     "roles": [],
     "sequence_id": 4.0,
     "shortcuts": [],
-    "title": "Merit & Seat Allocation",
+    "title": "MSA",
     "type": "Workspace"
 }

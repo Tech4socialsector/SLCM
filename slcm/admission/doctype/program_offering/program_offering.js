@@ -29,18 +29,7 @@ frappe.ui.form.on("Program Offering", {
 
     admission_cycle(frm) {
         if (!frm.doc.admission_cycle) return;
-        // Auto-fetch programme_level from cycle
-        frappe.db.get_value(
-            "Admission Cycle",
-            frm.doc.admission_cycle,
-            ["programme_level", "enable_merit_list"],
-            function (r) {
-                if (r && r.programme_level) {
-                    frm.set_value("programme_level", r.programme_level);
-                }
-                check_and_add_merit_rule_button(frm, r);
-            }
-        );
+        // Auto-fetch programme_level is disabled as it's missing from Admission Cycle
     },
 
     campus(frm) {
@@ -66,6 +55,10 @@ frappe.ui.form.on("Program Offering", {
 
     total_available_seats(frm) {
         calculate_reservation_seats(frm);
+    },
+
+    merit_list(frm) {
+        check_and_add_merit_rule_button(frm);
     }
 });
 
@@ -91,26 +84,14 @@ function calculate_reservation_seats(frm) {
     }
 }
 
-function check_and_add_merit_rule_button(frm, cycle_data) {
+function check_and_add_merit_rule_button(frm) {
     // Remove existing button first to avoid duplicates
     frm.remove_custom_button(__("Set Merit Rule"));
 
-    if (!frm.doc.admission_cycle) return;
-
-    const do_check = (enable_merit_list) => {
-        if (enable_merit_list) {
-            frm.add_custom_button(__("Set Merit Rule"), function () {
-                open_merit_rule_dialog(frm);
-            }, __("Actions"));
-        }
-    };
-
-    if (cycle_data && cycle_data.enable_merit_list !== undefined) {
-        do_check(cycle_data.enable_merit_list);
-    } else {
-        frappe.db.get_value("Admission Cycle", frm.doc.admission_cycle, "enable_merit_list", function (r) {
-            do_check(r && r.enable_merit_list);
-        });
+    if (frm.doc.merit_list) {
+        frm.add_custom_button(__("Set Merit Rule"), function () {
+            open_merit_rule_dialog(frm);
+        }, __("Actions"));
     }
 }
 

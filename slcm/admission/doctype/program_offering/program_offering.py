@@ -65,7 +65,6 @@ class ProgramOffering(Document):
 
 	def validate(self):
 		self.validate_unique_offering()
-		self.validate_programme_level_matches_cycle()
 		self.validate_seat_counts()
 		self.calculate_derived_seats()
 		self.validate_campus_active()
@@ -108,15 +107,6 @@ class ProgramOffering(Document):
 				.format(self.admission_cycle, self.campus, self.program, existing)
 			)
 
-	def validate_programme_level_matches_cycle(self):
-		if not self.admission_cycle or not self.programme_level:
-			return
-		cycle_level = frappe.db.get_value("Admission Cycle", self.admission_cycle, "programme_level")
-		if cycle_level and cycle_level != self.programme_level:
-			frappe.throw(
-				_("Programme Level '{0}' does not match the Admission Cycle's level '{1}'.")
-				.format(self.programme_level, cycle_level)
-			)
 
 	def validate_campus_active(self):
 		if not self.campus:
