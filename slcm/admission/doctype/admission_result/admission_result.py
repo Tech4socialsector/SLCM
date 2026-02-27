@@ -20,7 +20,7 @@ def get_applicant_data():
         filters={"email": user_email},
         fields=[
             "name", "applicant_id", "applicant_name", "campus", "program", 
-            "program_level", "reservation_category", "admission_cycle",
+            "program_level", "admission_cycle",
             "hsc_percentage", "entrance_percentage", "interview_percentage",
             "ug_cgpa", "pg_cgpa"
         ]
@@ -57,39 +57,35 @@ def sync_applicant_to_admission_result(applicant_name):
     """
     app = frappe.get_doc("Applicant", applicant_name)
     
-    # Only sync for specific statuses if needed, but user said "if i create"
-    # Mapping logic
+    sync_data = {
+        "applicant_name": app.candidate_name,
+        "email": app.email,
+        "campus": app.campus,
+        "program": app.program,
+        "program_level": app.program_level,
+        "admission_cycle": app.admission_cycle,
+        "hsc_percentage": app.hsc_percentage
+    }
+
+    # Load existing Admission Result
     res_name = frappe.db.get_value("Admission Result", {"applicant_id": app.name})
-    
     if res_name:
         res = frappe.get_doc("Admission Result", res_name)
     else:
         res = frappe.new_doc("Admission Result")
         res.applicant_id = app.name
 
-    res.applicant_name = app.candidate_name
-    res.email = app.email
-    res.campus = app.campus
-    res.program = app.program
-    res.program_level = app.program_level
-    res.reservation_category = app.reservation_category
-    res.admission_cycle = app.admission_cycle
-    res.hsc_percentage = app.hsc_percentage
+    # Check for changes in main fields
+    has_changes = False
+    for field, value in sync_data.items():
+        if res.get(field) != value:
+            res.set(field, value)
+            has_changes = True
+
+    if has_changes or res.is_new():
+        res.flags.ignore_mandatory = True
+        res.save(ignore_permissions=True)
     
-    # Fallback: if primary reservation_category is empty, take from the first entry of the Applicant's categories child table
-    if not res.reservation_category and getattr(app, "categories", []):
-        res.reservation_category = app.categories[0].category
-
-    # Sync full categories child table (Safe check if migration hasn't run yet)
-    if res.meta.has_field("categories"):
-        res.set("categories", [])
-        for row in (app.categories or []):
-            res.append("categories", {
-                "category": row.category
-            })
-
-    res.flags.ignore_mandatory = True
-    res.save(ignore_permissions=True)
     return res.name
 
 @frappe.whitelist()

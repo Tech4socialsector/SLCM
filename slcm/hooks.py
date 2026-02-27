@@ -290,12 +290,11 @@ scheduler_events = {
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		]
 	},
-    "all": [
-        "slcm.admission.utils.auto_draft.auto_save_all_drafts"
-    ],
+    "all": [],
 	"hourly": [
 		"slcm.admission.events.auto_update_cycle_status",
-        "slcm.admission.utils.notifications.check_and_send_offer_reminders"
+        "slcm.admission.utils.notifications.check_and_send_offer_reminders",
+        "slcm.admission.utils.auto_draft.auto_save_all_drafts"
 	],
 	"daily": [
 		"slcm.api.service.offer_service.expire_offers",
