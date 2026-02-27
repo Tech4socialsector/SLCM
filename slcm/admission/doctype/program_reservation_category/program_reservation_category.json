@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "creation": "2026-02-27 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "category", "category_name", "col_break_1",
+  "seats", "filled_seats", "available_seats",
+  "col_break_2",
+  "application_fee"
+ ],
+ "fields": [
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "label": "Category",
+   "options": "Quota Policy Entry",
+   "in_list_view": 1,
+   "in_grid_view": 1,
+   "description": "Leave blank for General / Unreserved"
+  },
+  {
+   "fieldname": "category_name",
+   "fieldtype": "Data",
+   "label": "Category Name",
+   "fetch_from": "category.category_name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_grid_view": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "seats",
+   "fieldtype": "Int",
+   "label": "Allocated Seats",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_grid_view": 1
+  },
+  {
+   "fieldname": "filled_seats",
+   "fieldtype": "Int",
+   "label": "Filled",
+   "default": "0",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_grid_view": 1
+  },
+  {
+   "fieldname": "available_seats",
+   "fieldtype": "Int",
+   "label": "Available",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_grid_view": 1
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "application_fee",
+   "fieldtype": "Currency",
+   "label": "Application Fee",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_grid_view": 1,
+   "description": "Fee charged to applicants in this category"
+  }
+ ],
+ "modified": "2026-02-27 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Program Reservation Category",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "category_name",
+ "sort_order": "ASC"
+}

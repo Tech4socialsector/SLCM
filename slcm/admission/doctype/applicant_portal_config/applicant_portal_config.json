@@ -11,6 +11,8 @@
   "hero_image",
   "primary_color",
   "secondary_color",
+  "slideshow_section",
+  "slideshow_images",
   "section_break_announcement",
   "show_announcement",
   "header_announcement",
@@ -90,6 +92,18 @@
    "fieldname": "secondary_color",
    "fieldtype": "Color",
    "label": "Secondary Color"
+  },
+  {
+    "fieldname": "slideshow_section",
+    "fieldtype": "Section Break",
+    "label": "Hero Banner Slideshow",
+    "description": "Images for the hero carousel. Auto-transitions every 3 seconds. If empty, hero shows institution name and tagline only."
+  },
+  {
+    "fieldname": "slideshow_images",
+    "fieldtype": "Table",
+    "label": "Slideshow Images",
+    "options": "Portal Slideshow Image"
   },
   {
    "fieldname": "section_break_announcement",
