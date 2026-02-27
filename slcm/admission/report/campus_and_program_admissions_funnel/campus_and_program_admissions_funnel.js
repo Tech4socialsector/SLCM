@@ -8,7 +8,7 @@ frappe.query_reports["Campus and Program Admissions Funnel"] = {
             "default": frappe.defaults.get_user_default("admission_cycle")
         },
         {
-            "fieldname": "campus",
+            "fieldname": "campus", 
             "label": __("Campus"),
             "fieldtype": "Link",
             "options": "Campus"
