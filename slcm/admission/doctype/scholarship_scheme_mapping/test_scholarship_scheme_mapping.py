@@ -13,9 +13,9 @@ IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
 
-class IntegrationTestScholarshipScheme(IntegrationTestCase):
+class IntegrationTestScholarshipSchemeMapping(IntegrationTestCase):
 	"""
-	Integration tests for ScholarshipScheme.
+	Integration tests for ScholarshipSchemeMapping.
 	Use this class for testing interactions between multiple components.
 	"""
 
