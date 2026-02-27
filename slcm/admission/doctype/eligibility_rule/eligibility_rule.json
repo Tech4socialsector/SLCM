@@ -1,5 +1,4 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:rule_name",
@@ -132,15 +131,15 @@
   },
   {
    "fieldname": "hsc_group",
-   "fieldtype": "Link",
+   "fieldtype": "Table",
    "label": "HSC Group ",
-   "options": "HSC Groups"
+   "options": "HSC Groups Mapping"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 15:58:44.474581",
+ "modified": "2026-02-27 12:10:09.486894",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",

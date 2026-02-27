@@ -673,9 +673,11 @@ body {
       <div class="photo-frame">
         ${profile_image_url
       ? `<img src="${profile_image_url}" alt="Candidate Photo">`
-      : `<div class="photo-ph">📷</div>`}
+      : `<div class="photo-ph">👤</div>`}
       </div>
       <div class="photo-cap">Candidate's Photograph</div>
+      <!-- blank area below photo filled with horizontal guide lines -->
+      <div class="photo-gap"></div>
     </div>
   </div>
 
@@ -706,7 +708,7 @@ body {
 ════════════════════════════════════ -->
 <div class="card-page p2">
 
-  ${headerHTML()}
+  <!-- header removed as per new layout -->
 
   <div class="inst-outer">
     <div class="inst-main-title">Instructions to Candidates</div>
