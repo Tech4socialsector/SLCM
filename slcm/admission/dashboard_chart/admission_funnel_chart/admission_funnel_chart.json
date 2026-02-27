@@ -1,0 +1,10 @@
+{
+ "name": "admission_funnel_chart",
+ "label": "Admission Pipeline",
+ "chart_type": "Custom",
+ "source": "admission_pipeline_source",
+ "type": "Bar",
+ "doctype": "Dashboard Chart",
+ "is_standard": 1,
+ "module": "Admission"
+}

@@ -1,0 +1,15 @@
+{
+ "aggregate_function_based_on": "name",
+ "creation": "2026-02-27 12:10:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Applicant",
+ "function": "Sum",
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Selected Applications",
+ "module": "Admission",
+ "name": "admission_selected_count",
+ "type": "Custom",
+ "method": "slcm.admission.utils.dashboard_utils.get_selected_count"
+}

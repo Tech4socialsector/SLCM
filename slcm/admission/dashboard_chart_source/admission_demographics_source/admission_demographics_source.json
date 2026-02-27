@@ -1,0 +1,7 @@
+{
+ "doctype": "Dashboard Chart Source",
+ "source_name": "admission_demographics_source",
+ "py_module": "slcm.admission.utils.dashboard_utils",
+ "py_function": "get_demographics_data",
+ "name": "admission_demographics_source"
+}
