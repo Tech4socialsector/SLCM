@@ -99,11 +99,17 @@ class MeritGeneration(Document):
         # In production, background workers/redis may be misconfigured. To avoid a stuck
         # 'In Progress' state, allow a synchronous fallback via site_config.
         if mode == "sync":
-            run_generation(self.name)
-            frappe.msgprint(
-                f"Merit generation for {program_level} completed. "
-                f"Please refresh the Merit List."
-            )
+            try:
+                run_generation_main(self.name)
+                frappe.msgprint(
+                    f"Merit generation for {program_level} completed. "
+                    f"Please refresh the Merit List."
+                )
+            except Exception as e:
+                frappe.msgprint(
+                    f"Merit generation for {program_level} failed: {str(e)}",
+                    indicator="red"
+                )
             return
 
         try:
@@ -121,16 +127,32 @@ class MeritGeneration(Document):
             )
         except Exception:
             # If enqueue fails (redis/worker issues), run inline so hosted setups still work.
-            run_generation(self.name)
-            frappe.msgprint(
-                f"Merit generation for {program_level} completed. "
-                f"Please refresh the Merit List."
-            )
-
+            try:
+                run_generation_main(self.name)
+                frappe.msgprint(
+                    f"Merit generation for {program_level} completed. "
+                    f"Please refresh the Merit List."
+                )
+            except Exception as e:
+                frappe.msgprint(
+                    f"Merit generation for {program_level} failed: {str(e)}",
+                    indicator="red"
+                )
 
 def run_generation(docname):
     """
-    Background worker function.
+    Background worker function (wrapper for run_generation_main).
+    """
+    try:
+        run_generation_main(docname)
+    except Exception:
+        # Traceback is already logged in run_generation_main
+        pass
+
+
+def run_generation_main(docname):
+    """
+    Core generation logic.
     """
     doc = frappe.get_doc("Merit Generation", docname)
     program_level = doc.generation_type
@@ -148,4 +170,5 @@ def run_generation(docname):
         doc.status = "Failed"
         doc.save()
         frappe.db.commit()
+        raise e
     
