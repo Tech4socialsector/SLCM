@@ -40,6 +40,7 @@
   "section_break_status",
   "enrollment_status",
   "payment_status",
+  "test",
   "column_break_fdnb",
   "lms_account_created",
   "generated_password_temp",
@@ -277,12 +278,17 @@
    "fieldname": "payment_id",
    "fieldtype": "Data",
    "label": "Payment Id"
+  },
+  {
+   "fieldname": "test",
+   "fieldtype": "Data",
+   "label": "test"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-26 12:30:20.300713",
+ "modified": "2026-02-27 13:03:26.235489",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
