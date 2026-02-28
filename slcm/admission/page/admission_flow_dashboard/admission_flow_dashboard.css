@@ -153,6 +153,8 @@
     /* Align labels and reset button properly */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     min-height: 100px;
+    position: relative;
+    z-index: 100;
 }
 
 .filter-bar .form-group {
@@ -203,4 +205,48 @@
     .full-width {
         grid-column: span 1;
     }
+}
+
+/* Performance and Yield Metrics */
+.performance-summary {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
+}
+
+.yield-value {
+    letter-spacing: -2px;
+}
+
+.bg-green {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.bg-blue {
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.vertical-divider {
+    height: 100px;
+    align-self: center;
+}
+
+.metrics-row {
+    margin-bottom: 32px;
+}
+
+.yield-item {
+    transition: transform 0.3s ease;
+}
+
+.yield-item:hover {
+    transform: scale(1.05);
+}
+
+.chart-card {
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.chart-card:hover {
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
 }

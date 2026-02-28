@@ -124,13 +124,17 @@ def get_chart(data: list[dict]) -> dict:
 		program = row.get("program") or _("Not Specified")
 		program_counts[program] = program_counts.get(program, 0) + 1
 
+	# Generate a list of colors for each program
+	colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6610f2', '#e83e8c', '#fd7e14', '#20c997']
+	chart_colors = [colors[i % len(colors)] for i in range(len(program_counts))]
+
 	return {
 		"data": {
 			"labels": list(program_counts.keys()),
 			"datasets": [{"values": list(program_counts.values())}],
 		},
 		"type": "bar",
-		"colors": ["#7cd6fd"]
+		"colors": chart_colors
 	}
 
 

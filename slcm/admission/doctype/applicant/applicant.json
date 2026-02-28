@@ -869,7 +869,7 @@
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 11:52:40.712853",
+ "modified": "2026-02-28 15:19:59.199919",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -895,5 +895,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "title"
+ "title_field": "title",
+ "track_changes": 1
 }

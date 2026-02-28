@@ -22,6 +22,14 @@ def get_dashboard_data(filters=None):
         query_filters.append(f"program = {frappe.db.escape(filters.get('program'))}")
     if filters.get("reservation_category"):
         query_filters.append(f"reservation_category = {frappe.db.escape(filters.get('reservation_category'))}")
+    
+    if filters.get("date_range"):
+        date_range = filters.get("date_range")
+        if isinstance(date_range, str):
+             date_range = json.loads(date_range)
+        if len(date_range) == 2:
+            query_filters.append(f"creation >= {frappe.db.escape(date_range[0])}")
+            query_filters.append(f"creation <= {frappe.db.escape(date_range[1] + ' 23:59:59')}")
 
     where_clause = " WHERE docstatus < 2 " # Exclude cancelled
     if query_filters:
@@ -45,13 +53,29 @@ def get_dashboard_data(filters=None):
     # 6. Category wise
     category_dist = get_distribution(where_clause, "reservation_category")
 
+    # 7. Gender Distribution
+    gender_dist = get_distribution(where_clause, "gender")
+
+    # 8. Geographic Distribution (State)
+    state_dist = get_distribution(where_clause, "state")
+
+    # 9. Offer Status Breakdown
+    offer_breakdown = get_offer_status_breakdown(where_clause)
+
+    # 10. Yield Metrics
+    yield_metrics = get_yield_metrics(summary)
+
     return {
         "summary": summary,
         "funnel": funnel,
         "campus_dist": campus_dist,
         "program_dist": program_dist,
         "trend": trend,
-        "category_dist": category_dist
+        "category_dist": category_dist,
+        "gender_dist": gender_dist,
+        "state_dist": state_dist,
+        "offer_breakdown": offer_breakdown,
+        "yield_metrics": yield_metrics
     }
 
 def get_summary_cards(where_clause):
@@ -126,3 +150,33 @@ def get_application_trend(where_clause):
         ORDER BY date ASC
     """
     return frappe.db.sql(sql, as_dict=1)
+
+def get_offer_status_breakdown(where_clause):
+    sql = f"""
+        SELECT 
+            CASE 
+                WHEN application_status = 'Offer Issued' THEN 'Pending Action'
+                WHEN application_status IN ('Offer Accepted', 'Fee Paid', 'Accepted') THEN 'Accepted'
+                WHEN application_status = 'Offer Declined' THEN 'Declined'
+                WHEN application_status = 'Offer Expired' THEN 'Expired'
+                ELSE 'Other'
+            END as label,
+            COUNT(*) as count
+        FROM `tabApplicant`
+        {where_clause} AND application_status IN ('Offer Issued', 'Offer Accepted', 'Offer Declined', 'Offer Expired', 'Fee Paid', 'Accepted')
+        GROUP BY label
+    """
+    return frappe.db.sql(sql, as_dict=1)
+
+def get_yield_metrics(summary):
+    offers = summary.get("offers", 0)
+    enrolled = summary.get("enrolled", 0)
+    selected = summary.get("selected", 0)
+    
+    yield_rate = (enrolled / offers * 100) if offers > 0 else 0
+    acceptance_rate = (enrolled / selected * 100) if selected > 0 else 0
+    
+    return {
+        "yield_rate": round(yield_rate, 1),
+        "acceptance_rate": round(acceptance_rate, 1)
+    }
