@@ -202,7 +202,8 @@ class FeeService:
                 "payer_email": frappe.db.get_value("Applicant", offer.applicant, "email"),
                 "payer_name": frappe.db.get_value("Applicant", offer.applicant, "candidate_name"),
                 "currency": frappe.defaults.get_global_default("currency") or "INR",
-                "receipt": offer.name
+                # Razorpay receipt limit is 40 characters
+                "receipt": (offer.name[:40]) if offer.name else None
             }
             
             # 4. Create Order via Controller
