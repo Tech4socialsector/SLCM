@@ -82,7 +82,7 @@
   {
    "fieldname": "entrance_test_list",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Entrance Test List",
    "options": "Entrance Test List",
    "reqd": 1
@@ -91,6 +91,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
@@ -99,6 +100,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Admission Cycle",
    "options": "Admission Cycle",
    "reqd": 1
@@ -107,6 +109,7 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
@@ -114,6 +117,7 @@
   {
    "fieldname": "program_level",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Program Level",
    "options": "UG\nPG\nResearch Course",
    "reqd": 1
@@ -126,6 +130,7 @@
   {
    "fieldname": "applicant",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Applicant",
    "options": "Applicant",
    "reqd": 1,
@@ -134,12 +139,14 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Candidate Name",
    "reqd": 1
   },
   {
    "fieldname": "program",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Program",
    "options": "Program",
    "reqd": 1
@@ -147,6 +154,7 @@
   {
    "fieldname": "reservation_category",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Reservation Category"
   },
   {
@@ -157,6 +165,7 @@
   {
    "fieldname": "gender",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Gender",
    "options": "Male\nFemale\nOthers"
   },
@@ -168,6 +177,7 @@
   {
    "fieldname": "entrance_test_provider",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Entrance Test Provider",
    "options": "Entrance Test Provider"
   },
@@ -445,7 +455,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 12:51:34.253841",
+ "modified": "2026-02-27 22:44:50.592365",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
