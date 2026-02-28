@@ -41,12 +41,14 @@ def on_merit_list_publish(doc, method):
     # Status changed trigger usually happens when merit list is published and status updated
     # But here we send a general update if applicants are listed
     applicants = frappe.get_all(
-        "Merit List Entry",
-        {"parent": doc.name, "status": "Listed"},
-        ["applicant"]
+        "Merit List Applicant",
+        {"parent": doc.name, "status": "Selected"},
+        ["applicant_id"]
     )
     for entry in applicants:
-        applicant = frappe.get_doc("Applicant", entry.applicant)
+        if not entry.applicant_id:
+            continue
+        applicant = frappe.get_doc("Applicant", entry.applicant_id)
         EmailTemplateConfig.send(
             trigger_event="Status Changed",
             recipient_email=applicant.email,

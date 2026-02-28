@@ -31,12 +31,6 @@
             "options": "Admission Category"
         },
         {
-            "fieldname": "categories",
-            "fieldtype": "Table",
-            "label": "Categories",
-            "options": "Applicant Category"
-        },
-        {
             "fieldname": "applicant_name",
             "fieldtype": "Data",
             "label": "Applicant Name",

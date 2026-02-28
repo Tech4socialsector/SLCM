@@ -1,119 +1,144 @@
 {
- "app": "slcm",
- "charts": [],
- "content": "[{\"id\":\"gN_T3QkX3G\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"ajquph5hTR\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">                                         Offer Letter Management</span>\",\"col\":4}},{\"id\":\"Y6WyK9Y6i1\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"5el_1Nncva\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"D4KKeWhGuv\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Offer Letters\",\"col\":4}},{\"id\":\"hbwSsgQtRS\",\"type\":\"paragraph\",\"data\":{\"text\":\"Master Doctypes\",\"col\":12}},{\"id\":\"j70sH-0Hyo\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Letter Master\",\"col\":3}},{\"id\":\"b0Ixk7azW3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Configuration\",\"col\":3}},{\"id\":\"-75DphSJHR\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Email Templates\",\"col\":3}},{\"id\":\"qxqUNy_n0E\",\"type\":\"paragraph\",\"data\":{\"text\":\"Audit Logs\",\"col\":12}},{\"id\":\"BrHqQDhMwi\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Letter List\",\"col\":3}},{\"id\":\"kpI-JT1Ho9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Action Log\",\"col\":3}},{\"id\":\"0f5WulpmiD\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Fee Snapshot\",\"col\":3}}]",
- "creation": "2026-02-17 21:18:13.186540",
- "custom_blocks": [],
- "docstatus": 0,
- "doctype": "Workspace",
- "for_user": "",
- "hide_custom": 0,
- "icon": "file-check",
- "idx": 1,
- "indicator_color": "green",
- "is_hidden": 0,
- "label": "Offer Letters",
- "links": [],
- "modified": "2026-02-25 18:32:44.788445",
- "modified_by": "Administrator",
- "module": "Admission",
- "name": "Offer Letters",
- "number_cards": [],
- "owner": "Administrator",
- "parent_page": "Offer Letters",
- "public": 1,
- "quick_lists": [],
- "roles": [
-  {
-   "role": "System Manager"
-  }
- ],
- "sequence_id": 5.0,
- "shortcuts": [
-  {
-   "color": "Green",
-   "doc_view": "List",
-   "label": "Email Templates",
-   "link_to": "Email Templates",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Offer Letter List",
-   "link_to": "offer-letter-list",
-   "type": "Page"
-  },
-  {
-   "color": "Green",
-   "doc_view": "List",
-   "label": "Offer Letter Master",
-   "link_to": "Offer Letter",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Orange",
-   "doc_view": "List",
-   "label": "Offer Action Log",
-   "link_to": "Offer Action Log",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Green",
-   "doc_view": "List",
-   "label": "Offer Configuration",
-   "link_to": "Offer Configuration",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Red",
-   "doc_view": "List",
-   "label": "Offer Fee Snapshot",
-   "link_to": "Offer Fee Snapshot",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "List",
-   "label": "Applicants",
-   "link_to": "Applicant",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "List",
-   "label": "Fee Structure",
-   "link_to": "Fee Structure",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "List",
-   "label": "Payment Request",
-   "link_to": "Payment Request",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "List",
-   "label": "Online Payment Log",
-   "link_to": "Online Payment Log",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "List",
-   "label": "Razorpay Settings",
-   "link_to": "Razorpay Settings",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "List",
-   "label": "Payment Gateway",
-   "link_to": "Payment Gateway",
-   "type": "DocType"
-  }
- ],
- "title": "Offer Letters",
- "type": "Workspace"
+    "charts": [],
+    "content": "[{\"id\":\"gN_T3QkX3G\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"ajquph5hTR\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">                                         Offer Letter Management</span>\",\"col\":4}},{\"id\":\"Y6WyK9Y6i1\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"5el_1Nncva\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hbwSsgQtRS\",\"type\":\"paragraph\",\"data\":{\"text\":\"Master Doctypes\",\"col\":6}},{\"id\":\"BGk4EfXxFd\",\"type\":\"paragraph\",\"data\":{\"text\":\"Setups\",\"col\":6}},{\"id\":\"j70sH-0Hyo\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Letter Master\",\"col\":3}},{\"id\":\"YEm7wGuV8U\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Request\",\"col\":3}},{\"id\":\"-75DphSJHR\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Email Templates\",\"col\":3}},{\"id\":\"b0Ixk7azW3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Configuration\",\"col\":3}},{\"id\":\"b2Ws132kY-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Applicant\",\"col\":3}},{\"id\":\"th9lCtZT6c\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Applicant Fee Assignment\",\"col\":3}},{\"id\":\"T3LxLqgAU8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Razorpay Settings\",\"col\":3}},{\"id\":\"vxO8izMWSN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Gateway\",\"col\":3}},{\"id\":\"u2cez0G2Gy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Structure\",\"col\":3}},{\"id\":\"qxqUNy_n0E\",\"type\":\"paragraph\",\"data\":{\"text\":\"Audit Logs\",\"col\":12}},{\"id\":\"BrHqQDhMwi\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Letter List\",\"col\":3}},{\"id\":\"bffDILfpux\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Online Payment Log\",\"col\":3}},{\"id\":\"kpI-JT1Ho9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Action Log\",\"col\":3}},{\"id\":\"0f5WulpmiD\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer Fee Snapshot\",\"col\":3}},{\"id\":\"nDcLD49gos\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Applicant Payment Receipt\",\"col\":3}}]",
+    "creation": "2026-02-17 21:18:13.186540",
+    "custom_blocks": [],
+    "docstatus": 0,
+    "doctype": "Workspace",
+    "for_user": "",
+    "hide_custom": 0,
+    "icon": "file-check",
+    "idx": 1,
+    "indicator_color": "green",
+    "is_hidden": 0,
+    "label": "Offer Letters",
+    "links": [],
+    "modified": "2026-02-26 09:51:14.658339",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Offer Letters",
+    "number_cards": [],
+    "owner": "Administrator",
+    "parent_page": "Offer Letters",
+    "public": 1,
+    "quick_lists": [],
+    "roles": [
+        {
+            "role": "System Manager"
+        }
+    ],
+    "sequence_id": 5.0,
+    "shortcuts": [
+        {
+            "color": "Green",
+            "doc_view": "List",
+            "label": "Email Templates",
+            "link_to": "Email Templates",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Blue",
+            "doc_view": "List",
+            "label": "Applicant",
+            "link_to": "Applicant",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Applicant Fee Assignment",
+            "link_to": "Applicant Fee Assignment",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Offer Letter List",
+            "link_to": "offer-letter-list",
+            "type": "Page"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Fee Structure",
+            "link_to": "Fee Structure",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Applicant Payment Receipt",
+            "link_to": "Applicant Payment Receipt",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Green",
+            "doc_view": "List",
+            "label": "Offer Letter Master",
+            "link_to": "Offer Letter",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Payment Request",
+            "link_to": "Payment Request",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Orange",
+            "doc_view": "List",
+            "label": "Offer Action Log",
+            "link_to": "Offer Action Log",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Online Payment Log",
+            "link_to": "Online Payment Log",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Green",
+            "doc_view": "List",
+            "label": "Offer Configuration",
+            "link_to": "Offer Configuration",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Razorpay Settings",
+            "link_to": "Razorpay Settings",
+            "type": "DocType"
+        },
+        {
+            "color": "Red",
+            "doc_view": "List",
+            "label": "Offer Fee Snapshot",
+            "link_to": "Offer Fee Snapshot",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Payment Gateway",
+            "link_to": "Payment Gateway",
+            "stats_filter": "[]",
+            "type": "DocType"
+        }
+    ],
+    "title": "Offer Letters"
 }

@@ -65,12 +65,11 @@ def get_columns():
     ]
 
 def get_data(filters):
-    # ... (rest of get_data logic remains mostly the same, just adding the field)
     # 1. Resolve Admission Cycles from Admission Year
     relevant_cycles = []
     if filters.get("admission_year"):
         cycles = frappe.get_all("Admission Cycle", 
-            filters={"parent": filters.get("admission_year")}, 
+            filters={"admission_year": filters.get("admission_year")}, 
             fields=["name"]
         )
         relevant_cycles = [c.name for c in cycles]
@@ -81,6 +80,8 @@ def get_data(filters):
         po_filters["campus"] = filters.get("campus")
     if filters.get("admission_year"):
         po_filters["admission_year"] = filters.get("admission_year")
+    if filters.get("program"):
+        po_filters["program"] = filters.get("program")
 
     program_offerings = frappe.get_all("Program Offering", 
         filters=po_filters, 
@@ -94,20 +95,25 @@ def get_data(filters):
         
         if po_summary.is_reservation_applicable:
             po = frappe.get_doc("Program Offering", po_summary.name)
+            reserved_total = 0
             for q in po.reservations:
-                # Resolve category key consistent with allocation logic
-                is_gen = False
-                if q.category in ["General", "General Quota", "GEN"]:
-                    is_gen = True
-                
-                cat_key = "General" if is_gen else (q.religion or q.category or "Other")
+                # Quota can be "General", "Government Quota", etc.
+                # If Quota is General, map to "General" category
+                cat_key = "General" if q.reservation_quota == "General" else (q.category or "Other")
                 
                 key = (campus, program, cat_key)
                 capacities[key] = capacities.get(key, 0) + (int(q.seats or 0))
+                reserved_total += int(q.seats or 0)
+            
+            # Remaining seats are Open/General
+            open_seats = max(0, po_summary.total_available_seats - reserved_total)
+            if open_seats > 0:
+                gen_key = (campus, program, "General")
+                capacities[gen_key] = capacities.get(gen_key, 0) + open_seats
         else:
             # All seats are General if no reservations
-            key = (campus, program, "General")
-            capacities[key] = capacities.get(key, 0) + (int(po_summary.total_available_seats or 0))
+            gen_key = (campus, program, "General")
+            capacities[gen_key] = capacities.get(gen_key, 0) + (int(po_summary.total_available_seats or 0))
 
     # 3. Fetch allocations (Allocated/Waitlisted)
     sa_filters = {"docstatus": ["<", 2]}
@@ -118,14 +124,14 @@ def get_data(filters):
         sa_filters["admission_cycle"] = filters.get("admission_cycle")
     elif filters.get("admission_year"):
         if not relevant_cycles:
-            return [] # No cycles means no allocations for this year
+            return []
         sa_filters["admission_cycle"] = ["in", relevant_cycles]
 
     seat_allocations = frappe.get_all("Seat Allocation", filters=sa_filters, fields=["name", "campus"])
     sa_names = [sa.name for sa in seat_allocations]
     sa_campus_map = {sa.name: sa.campus for sa in seat_allocations}
 
-    allocations = {} # (campus, program, category) -> {"allocated": X, "waitlisted": Y}
+    allocations = {} # (campus, program, category) -> {"allocated": 0, "waitlisted": 0}
     if sa_names:
         app_params = {"parent": ["in", sa_names]}
         if filters.get("program"):
@@ -140,14 +146,15 @@ def get_data(filters):
             campus = sa_campus_map.get(app.parent)
             program = app.program
             
-            # If allocation is Open, count against General pool
-            # Otherwise count against their reservation category
+            # Allocation Type Open -> General
             cat_key = "General" if app.allocation_type == "Open" else (app.reservation_category or "Other")
             
-            # Key consistently on Category mapped key
             key = (campus, program, cat_key)
             stats = allocations.setdefault(key, {"allocated": 0, "waitlisted": 0})
-            if app.selection_status == "Selected":
+            
+            # Consider all positive selection statuses as allocated
+            allocated_statuses = ["Selected", "Accepted", "Fee Paid", "Offer Issued", "Offer Accepted"]
+            if app.selection_status in allocated_statuses:
                 stats["allocated"] += 1
             elif app.selection_status == "Waitlisted":
                 stats["waitlisted"] += 1
@@ -160,6 +167,8 @@ def get_data(filters):
         campus, program, category = key
         
         if filters.get("program") and program != filters.get("program"):
+            continue
+        if filters.get("campus") and campus != filters.get("campus"):
             continue
 
         total = capacities.get(key, 0)
