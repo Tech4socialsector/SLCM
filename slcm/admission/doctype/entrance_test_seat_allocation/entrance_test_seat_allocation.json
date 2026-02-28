@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "tab_test_reference",
+  "profile",
   "entrance_test_list",
   "academic_year",
   "admission_cycle",
@@ -40,11 +41,25 @@
   "allocation_date",
   "allocated_by",
   "download_admit_card",
-  "profile",
-  "tab_reschedule",
+  "entrance_test_status",
+  "tab_9_tab",
+  "reschedule_seat_allocation_section",
+  "re_entrance_test_provider",
+  "re_assigned_preferences",
+  "re_center_name",
+  "re_center_address",
+  "re_preference_order",
+  "re_room_code",
+  "re_room_name",
+  "re_building",
+  "re_floor",
+  "re_seat_number",
+  "re_allocation_status",
+  "re_allocation_date",
+  "re_allocated_by",
+  "re_download_admit_card",
+  "section_break_axgb",
   "is_rescheduled",
-  "previous_room",
-  "previous_seat_number",
   "reschedule_reason",
   "rescheduled_on",
   "rescheduled_by",
@@ -251,25 +266,10 @@
    "label": "Download Admit Card"
   },
   {
-   "fieldname": "tab_reschedule",
-   "fieldtype": "Tab Break",
-   "label": "Reschedule"
-  },
-  {
    "default": "0",
    "fieldname": "is_rescheduled",
    "fieldtype": "Check",
    "label": "Is Rescheduled"
-  },
-  {
-   "fieldname": "previous_room",
-   "fieldtype": "Data",
-   "label": "Previous Room"
-  },
-  {
-   "fieldname": "previous_seat_number",
-   "fieldtype": "Data",
-   "label": "Previous Seat Number"
   },
   {
    "fieldname": "reschedule_reason",
@@ -450,12 +450,106 @@
    "fieldname": "father_mobile_number",
    "fieldtype": "Data",
    "label": "Father Mobile Number "
+  },
+  {
+   "fieldname": "tab_9_tab",
+   "fieldtype": "Tab Break",
+   "label": "Reschedule Seat Allocation "
+  },
+  {
+   "fieldname": "reschedule_seat_allocation_section",
+   "fieldtype": "Section Break",
+   "label": "Reschedule Seat Allocation "
+  },
+  {
+   "fieldname": "re_entrance_test_provider",
+   "fieldtype": "Link",
+   "label": "Entrance Test Provider ",
+   "options": "Entrance Test Provider"
+  },
+  {
+   "fieldname": "re_assigned_preferences",
+   "fieldtype": "Table",
+   "label": "Assigned Preferences (Admin)",
+   "options": "Entrance Test Preference Assigned"
+  },
+  {
+   "fieldname": "re_center_name",
+   "fieldtype": "Data",
+   "label": "Center Name"
+  },
+  {
+   "fieldname": "re_center_address",
+   "fieldtype": "Small Text",
+   "label": "Center Address"
+  },
+  {
+   "fieldname": "re_preference_order",
+   "fieldtype": "Int",
+   "label": "Preference Order"
+  },
+  {
+   "fieldname": "re_room_code",
+   "fieldtype": "Data",
+   "label": "Room Code"
+  },
+  {
+   "fieldname": "re_room_name",
+   "fieldtype": "Data",
+   "label": "Room Name"
+  },
+  {
+   "fieldname": "re_building",
+   "fieldtype": "Data",
+   "label": "Building"
+  },
+  {
+   "fieldname": "re_floor",
+   "fieldtype": "Data",
+   "label": "Floor"
+  },
+  {
+   "fieldname": "re_seat_number",
+   "fieldtype": "Data",
+   "label": "Seat Number"
+  },
+  {
+   "fieldname": "re_allocation_status",
+   "fieldtype": "Select",
+   "label": "Allocation Status",
+   "options": "Not Allocated\nPreferences Assigned\nAllocated\nReallocated\nCancelled\nRejected"
+  },
+  {
+   "fieldname": "re_allocation_date",
+   "fieldtype": "Datetime",
+   "label": "Allocation Date"
+  },
+  {
+   "fieldname": "re_allocated_by",
+   "fieldtype": "Link",
+   "label": "Allocated By",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_break_axgb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "re_download_admit_card",
+   "fieldtype": "Button",
+   "label": "Download Admit Card"
+  },
+  {
+   "fieldname": "entrance_test_status",
+   "fieldtype": "Select",
+   "label": "Entrance Test Status",
+   "options": "Attended\nAbsent\nRescheduled\nNot Scheduled\nScheduled"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 22:44:50.592365",
+ "modified": "2026-02-28 10:14:59.426213",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
