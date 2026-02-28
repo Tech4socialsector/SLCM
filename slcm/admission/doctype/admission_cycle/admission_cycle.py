@@ -83,5 +83,5 @@ class AdmissionCycle(Document):
     def on_update(self):
         if self.status == "Active":
             frappe.db.set_value(
-                "Admission Year", self.admission_year, "status", "Active"
+                "Admission Year", self.admission_year, "is_active", 1
             )

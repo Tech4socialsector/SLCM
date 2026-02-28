@@ -27,6 +27,13 @@ class OfferService:
         if admission_cycle:
             filters["admission_cycle"] = admission_cycle
             config_name = frappe.db.get_value("Offer Configuration", filters)
+            
+            # Fallback: Try matching admission_year against the Configuration's academic_year field
+            if not config_name:
+                alt_filters = filters.copy()
+                alt_filters["academic_year"] = alt_filters.pop("admission_year")
+                config_name = frappe.db.get_value("Offer Configuration", alt_filters)
+
             if config_name:
                 return frappe.get_doc("Offer Configuration", config_name)
         
@@ -54,12 +61,30 @@ class OfferService:
         """
         Resolves the Admission Year based on direct input, Application, or Academic Year.
         """
-        # 1. If admission_year is provided, check if it's actually an Academic Year
+        # Helper to find by configuration bridge
+        def _resolve_from_config(year_val):
+            # Check if this value is linked to any active configuration as either admission or academic year
+            config_match = frappe.db.get_value("Offer Configuration", {
+                "academic_year": year_val,
+                "is_active": 1
+            }, "admission_year") or frappe.db.get_value("Offer Configuration", {
+                "admission_year": year_val,
+                "is_active": 1
+            }, "admission_year")
+            return config_match
+
+        # 1. If admission_year is provided, check if it exists as a record name
         if admission_year:
             if not frappe.db.exists("Admission Year", admission_year):
-                # Probably an Academic Year name (e.g. 2026-2027), find active Admission Year for it
+                # Probably an Academic Year name (e.g. 2026-2027), find valid Admission Year for it
+                # via explicit year field
                 resolved = frappe.db.get_value("Admission Year", 
-                    {"academic_year": admission_year, "is_active": 1}, "name")
+                    {"year": admission_year, "is_active": 1}, "name")
+                
+                # If still not found, use Offer Configuration as a bridge (common case)
+                if not resolved:
+                    resolved = _resolve_from_config(admission_year)
+                
                 if resolved:
                     return resolved
             return admission_year
@@ -74,8 +99,13 @@ class OfferService:
         # 3. Try to map from Applicant's Academic Year (most common fallback)
         academic_year = frappe.db.get_value("Applicant", applicant, "academic_year")
         if academic_year:
+            # Try to resolve directly via year field
             admission_year = frappe.db.get_value("Admission Year", 
-                {"academic_year": academic_year, "is_active": 1}, "name")
+                {"year": academic_year, "is_active": 1}, "name")
+            
+            # If still not found, use Offer Configuration bridge
+            if not admission_year:
+                admission_year = _resolve_from_config(academic_year)
             
         return admission_year
 
@@ -99,6 +129,34 @@ class OfferService:
 
         config = OfferService.get_active_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
+
+        # Status verification: Only 'Selected' applicants in published Seat Allocations can receive offers
+        sa_filters = {
+            "applicant": applicant,
+            "program": program,
+            "selection_status": "Selected",
+            "parenttype": "Seat Allocation"
+        }
+        status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
+        
+        if not status_check:
+             # Try by applicant_id as fallback
+             sa_filters["applicant_id"] = sa_filters.pop("applicant")
+             status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
+
+        if not status_check:
+             # Check if an offer was ALREADY issued (in which case they would be 'Offer Issued')
+             already_issued = frappe.db.exists("Offer Letter", {
+                "applicant": applicant,
+                "program": program,
+                "offer_status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
+             })
+             if not already_issued:
+                throw(_("Applicant {0} is not in 'Selected' status for Program {1} in any Seat Allocation. Offer letter cannot be generated.").format(applicant, program))
+        else:
+            # Check if parent Seat Allocation is Published
+            if frappe.db.get_value("Seat Allocation", status_check.parent, "status") != "Published":
+                 throw(_("Seat Allocation for Applicant {0} is not yet 'Published'. Please publish the allocation first.").format(applicant))
 
         # Idempotency: Prevent duplicate offers for same campus, cycle, program and admission_year
         existing = frappe.db.exists("Offer Letter", {
@@ -169,11 +227,17 @@ class OfferService:
         OfferService._create_snapshot_record(offer.name, fee_data)
 
         # Generate and Attach PDF
-        if config.pdf_format:
-            OfferService._generate_offer_pdf(offer, config.pdf_format)
+        if getattr(config, "generate_offer_letter_by_system", 0):
+            if config.pdf_format:
+                OfferService._generate_offer_pdf(offer, config.pdf_format)
+        else:
+            if getattr(config, "offer_letter_pdf", None):
+                OfferService._attach_static_pdf(offer, config.offer_letter_pdf)
         
         # Send offer letter email to applicant
-        OfferService._send_offer_letter_email(offer, config.email_template)
+        if getattr(config, "send_email", 0):
+            from_account = getattr(config, "from_email_account", None)
+            OfferService._send_offer_letter_email(offer, config.email_template, from_account)
         
         # Transition to Issued
         offer.offer_status = "Issued"
@@ -309,52 +373,63 @@ class OfferService:
                 # Handle case where only applicant name is passed
                 if isinstance(data, str):
                     applicant_name = data
-                    # Fetch details from Applicant record
+                    # Fetch basic details from Applicant record as fallback
                     details = frappe.db.get_value("Applicant", applicant_name, 
-                        ["campus", "program", "admission_cycle", "academic_year"], as_dict=1)
+                        ["campus", "program", "admission_cycle", "admission_year"], as_dict=1)
                     
                     if not details:
                         raise ValueError(_("Applicant {0} not found").format(applicant_name))
                     
-                    if not applicant_name:
-                        raise ValueError(_("Applicant name is required"))
-                    
-                    if not details.program:
-                        raise ValueError(_("Program is required"))
-                    
-                    # Get campus from the Seat Allocation whose child table
-                    # (Seat Selection Applicant) contains this applicant
-                    # We check both 'applicant' (Link to Admission Result) and 'applicant_id'
-                    seat_allocation_name = frappe.db.get_value(
+                    details = frappe._dict(details)
+
+                    # Try to find the Seat Allocation context
+                    # Search for a row where this applicant is 'Selected' or 'Accepted'
+                    sa_child_filters = {
+                        "parenttype": "Seat Allocation",
+                        "selection_status": ["in", ["Selected", "Accepted"]]
+                    }
+                    if frappe.db.exists("Admission Result", applicant_name):
+                         sa_child_filters["applicant"] = applicant_name
+                    else:
+                         sa_child_filters["applicant_id"] = applicant_name
+
+                    sa_child_data = frappe.db.get_value(
                         "Seat Selection Applicant",
-                        {
-                            "parenttype": "Seat Allocation",
-                            "applicant": applicant_name 
-                        },
-                        "parent"
-                    ) or frappe.db.get_value(
-                        "Seat Selection Applicant",
-                        {
-                            "parenttype": "Seat Allocation",
-                            "applicant_id": applicant_name
-                        },
-                        "parent"
+                        sa_child_filters,
+                        ["parent", "program"],
+                        as_dict=1
                     )
-                    campus = frappe.db.get_value("Seat Allocation", seat_allocation_name, "campus") if seat_allocation_name else None
 
-                    # Fallback to campus preference if not found in Seat Allocation
-                    if not campus:
+                    if sa_child_data:
+                        parent_sa = frappe.db.get_value("Seat Allocation", sa_child_data.parent, 
+                            ["campus", "admission_cycle"], as_dict=1)
+                        if parent_sa:
+                            # Prioritize Seat Allocation data
+                            campus = parent_sa.campus
+                            cycle = parent_sa.admission_cycle
+                            program = sa_child_data.program
+                        else:
+                            campus = details.campus
+                            cycle = details.admission_cycle
+                            program = details.program
+                    else:
                         campus = details.campus
+                        cycle = details.admission_cycle
+                        program = details.program
 
                     if not campus:
-                        raise ValueError(_("Campus could not be determined for Applicant {0}. No Seat Allocation found and no Campus set.").format(applicant_name))
+                        raise ValueError(_("Campus could not be determined for Applicant {0}.").format(applicant_name))
+                    if not cycle:
+                        raise ValueError(_("Admission Cycle could not be determined for Applicant {0}.").format(applicant_name))
+                    if not program:
+                        raise ValueError(_("Program could not be determined for Applicant {0}.").format(applicant_name))
 
                     payload = {
                         "applicant": applicant_name,
                         "campus": campus,
-                        "program": details.program,
-                        "cycle": details.admission_cycle,
-                        "admission_year": details.academic_year
+                        "program": program,
+                        "cycle": cycle,
+                        "admission_year": details.admission_year
                     }
                 else:
                     payload = data
@@ -414,7 +489,7 @@ class OfferService:
         return FeeService._calculate_and_freeze_fees(fee_structure_name)
 
     @staticmethod
-    def _send_offer_letter_email(offer, email_template):
+    def _send_offer_letter_email(offer, email_template, from_email_account=None):
         """Sends the offer letter email to the applicant."""
         if not email_template or not offer.applicant:
             return
@@ -448,7 +523,12 @@ class OfferService:
             except Exception as e:
                 frappe.log_error(f"Failed to attach PDF to email for {offer.name}: {str(e)}")
 
+        sender = None
+        if from_email_account:
+            sender = frappe.db.get_value("Email Account", from_email_account, "email_id")
+
         frappe.sendmail(
+            sender=sender,
             recipients=[applicant_email],
             subject=subject,
             message=message,
@@ -564,6 +644,34 @@ class OfferService:
             frappe.log_error(f"PDF Generation Failed for {offer_doc.name}: {str(e)}")
 
     @staticmethod
+    def _attach_static_pdf(offer_doc, file_url):
+        """Attaches a static PDF from configuration to the Offer Letter record."""
+        try:
+            if not file_url:
+                return
+
+            offer_doc.offer_letter_pdf = file_url
+            
+            # Find the original file record to copy metadata
+            original_files = frappe.get_all("File", filters={"file_url": file_url}, limit=1)
+            if original_files:
+                original_doc = frappe.get_doc("File", original_files[0].name)
+                
+                # Create a new File record linked to this Offer Letter
+                # This ensures it shows in the sidebar and _send_offer_letter_email can find it
+                _file = frappe.new_doc("File")
+                _file.file_name = original_doc.file_name
+                _file.file_url = original_doc.file_url
+                _file.attached_to_doctype = "Offer Letter"
+                _file.attached_to_name = offer_doc.name
+                _file.attached_to_field = "offer_letter_pdf"
+                _file.is_private = original_doc.is_private
+                _file.insert(ignore_permissions=True)
+                
+        except Exception as e:
+            frappe.log_error(f"Static PDF Attachment Failed for {offer_doc.name}: {str(e)}")
+
+    @staticmethod
     def log_action(offer_name, action, notes=None, reason=None):
         """Utility to log every transition in the lifecycle."""
         log = frappe.new_doc("Offer Action Log")
@@ -645,6 +753,114 @@ class OfferService:
     def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name):
         return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)
 
+    @staticmethod
+    @frappe.whitelist()
+    def get_pending_offers_list():
+        """
+        Fetches all Offers with 'Issued' status that haven't passed their deadline.
+        """
+        offers = frappe.db.sql("""
+            SELECT 
+                ol.name,
+                app.candidate_name as applicant_name,
+                ol.program,
+                ol.payment_deadline
+            FROM `tabOffer Letter` ol
+            JOIN `tabApplicant` app ON ol.applicant = app.name
+            WHERE ol.offer_status = 'Issued'
+              AND (ol.payment_deadline >= CURDATE() OR ol.payment_deadline IS NULL)
+            ORDER BY ol.payment_deadline ASC
+        """, as_dict=1)
+        return offers
+
+    @staticmethod
+    @frappe.whitelist()
+    def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
+        """
+        Sends emails and system notifications for selected pending offers.
+        """
+        from frappe.utils import cint
+        
+        # Cast to bool in case strings like "1" or "0" are passed from client
+        send_email = bool(cint(send_email))
+        send_notification = bool(cint(send_notification))
+
+        if not offer_names:
+            frappe.throw(_("Please select at least one offer to send reminders."))
+
+        if isinstance(offer_names, str):
+            try:
+                offer_names = frappe.parse_json(offer_names)
+            except:
+                offer_names = [o.strip() for o in offer_names.split(',')]
+            
+        if not isinstance(offer_names, list):
+            offer_names = [offer_names]
+
+        if not message:
+            frappe.throw(_("Message content is required for reminders."))
+
+        success_count = 0
+        for offer_name in offer_names:
+            if not frappe.db.exists("Offer Letter", offer_name):
+                continue
+                
+            offer = frappe.get_doc("Offer Letter", offer_name)
+            
+            # Context-aware message formatting
+            final_message = message
+            if "[Program]" in final_message:
+                final_message = final_message.replace("[Program]", offer.program or "")
+            if "[Deadline]" in final_message:
+                deadline_str = str(offer.payment_deadline) if offer.payment_deadline else "N/A"
+                final_message = final_message.replace("[Deadline]", deadline_str)
+            
+            # Email Delivery
+            if send_email and offer.applicant:
+                applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
+                if applicant_email:
+                    frappe.sendmail(
+                        recipients=[applicant_email],
+                        subject=_("Admission Reminder: Pending Offer Letter for {0}").format(offer.program),
+                        message=final_message,
+                        reference_doctype="Offer Letter",
+                        reference_name=offer.name,
+                        sender=sender_email
+                    )
+                    frappe.logger().info(f"Offer Reminder Email sent to {applicant_email} for {offer_name}")
+                else:
+                    frappe.logger().warning(f"Skipped Email Reminder for {offer_name}: Applicant has no email.")
+            
+            # System Notification Delivery
+            if send_notification:
+                receiver = offer.notification_receiver
+                
+                # Fallback: Try to find user from applicant email if receiver is not set
+                if not receiver and offer.applicant:
+                    email = frappe.db.get_value("Applicant", offer.applicant, "email")
+                    if email:
+                        receiver = frappe.db.get_value("User", {"email": email}, "name")
+                
+                if receiver:
+                    frappe.get_doc({
+                        "doctype": "Notification Log",
+                        "subject": _("Reminder: Offer Letter for {0} is pending").format(offer.program),
+                        "email_content": final_message,
+                        "for_user": receiver,
+                        "document_type": "Offer Letter",
+                        "document_name": offer.name
+                    }).insert(ignore_permissions=True)
+                    frappe.logger().info(f"Offer Reminder Notification sent to {receiver} for {offer_name}")
+                else:
+                    frappe.logger().warning(f"Skipped System Notification for {offer_name}: No corresponding User found.")
+            
+            success_count += 1
+                
+        return {
+            "status": "success",
+            "message": _("Processed {0} reminders successfully.").format(success_count)
+        }
+
 
 
 
@@ -700,3 +916,11 @@ def create_offer_razorpay_order(offer_name):
 def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name):
     from slcm.api.service.fee_service import FeeService
     return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)
+
+@frappe.whitelist()
+def get_pending_offers_list():
+    return OfferService.get_pending_offers_list()
+
+@frappe.whitelist()
+def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
+    return OfferService.send_bulk_reminders(offer_names, message, send_email, send_notification, sender_email)
