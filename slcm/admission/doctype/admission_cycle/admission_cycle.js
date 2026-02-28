@@ -82,3 +82,539 @@ frappe.ui.form.on("Admission Cycle", {
         }
     }
 });
+
+frappe.ui.form.on("Admission Cycle Program", {
+    add_reservation_policy: function (frm, cdt, cdn) {
+
+        let row = locals[cdt][cdn];
+
+        if (!row.reservation_policy) {
+            open_reservation_policy(frm, row);
+        } else {
+            frappe.msgprint(__("Reservation policy already exists"));
+        }
+    },
+
+    add_program_media: function (frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        if (!row.program_media) {
+            open_program_media(frm, row);
+        } else {
+            frappe.msgprint(__("Program media already exists"));
+        }
+
+
+    }
+});
+
+function open_reservation_policy(frm, row) {
+
+    let table_rows = [];
+
+    function sync_table_rows() {
+        dialog.$wrapper.find("tbody tr").each(function () {
+            const idx = parseInt($(this).find(".category").data("idx"));
+            if (isNaN(idx)) return;
+            table_rows[idx] = {
+                category: $(this).find(".category").val(),
+                category_name: table_rows[idx] ? table_rows[idx].category_name : "",
+                percentage: parseFloat($(this).find(".percentage").val()) || 0,
+                allocated_seats: parseInt($(this).find(".allocated_seats").val()) || 0,
+                application_fee: parseFloat($(this).find(".application_fee").val()) || 0
+            };
+        });
+    }
+
+    function calculate_row_seats(idx) {
+        const total = dialog.get_value("total_seats") || 0;
+        const percentage = parseFloat(
+            dialog.$wrapper.find(`.percentage[data-idx="${idx}"]`).val()
+        ) || 0;
+        const seats = Math.floor((total * percentage) / 100);
+        dialog.$wrapper.find(`.allocated_seats[data-idx="${idx}"]`).val(seats);
+        if (table_rows[idx]) table_rows[idx].allocated_seats = seats;
+    }
+
+    function open_category_picker(idx) {
+        frappe.prompt(
+            [
+                {
+                    fieldtype: "Link",
+                    fieldname: "category_name",
+                    label: __("Category Name"),
+                    options: "Admission Category",
+                    reqd: 1,
+                    default: table_rows[idx] ? table_rows[idx].category_name : ""
+                }
+            ],
+            function (values) {
+                if (values.category_name) {
+                    table_rows[idx].category_name = values.category_name;
+                    dialog.$wrapper
+                        .find(`.category-name-btn[data-idx="${idx}"]`)
+                        .text(values.category_name);
+                }
+            },
+            __("Select Category"),
+            __("Select")
+        );
+    }
+
+    function render_table() {
+        const rows_html = table_rows.map((r, idx) => `
+        <tr>
+            <td>
+                <select class="form-control category" data-idx="${idx}">
+                    <option value="">Select</option>
+                    <option value="Government" ${r.category === "Government" ? "selected" : ""}>Government</option>
+                    <option value="Management" ${r.category === "Management" ? "selected" : ""}>Management</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-default btn-sm category-name-btn" data-idx="${idx}" style="width:100%;">
+                    ${r.category_name ? frappe.utils.escape_html(r.category_name) : __("Pick Category")}
+                </button>
+            </td>
+            <td>
+                <input type="number" class="form-control percentage" data-idx="${idx}"
+                    value="${r.percentage || ""}">
+            </td>
+            <td>
+                <input type="number" class="form-control allocated_seats" data-idx="${idx}"
+                    value="${r.allocated_seats || ""}" readonly>
+            </td>
+            <td>
+                <input type="number" class="form-control application_fee" data-idx="${idx}"
+                    value="${r.application_fee || ""}">
+            </td>
+            <td style="text-align:center;">
+                <button class="btn btn-danger btn-xs remove-row" data-idx="${idx}">Remove</button>
+            </td>
+        </tr>
+        `).join("");
+
+        dialog.fields_dict.policy_table.$wrapper.html(`
+            <div style="overflow-x:auto; margin-bottom:10px;">
+                <table class="table table-bordered" style="table-layout:fixed; width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="width:20%;">Category</th>
+                            <th style="width:20%;">Category Name</th>
+                            <th style="width:10%;">Percentage</th>
+                            <th style="width:10%;">Seats</th>
+                            <th style="width:10%;">Fee</th>
+                            <th style="width:10%; text-align:center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows_html}
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn btn-primary btn-sm" id="add-row-btn">+ Add Row</button>
+        `);
+    }
+
+    const dialog = new frappe.ui.Dialog({
+        title: __("Reservation Policy"),
+        size: "large",
+        fields: [
+            {
+                fieldtype: "Link",
+                fieldname: "admission_cycle",
+                label: __("Admission Cycle"),
+                options: "Admission Cycle",
+                read_only: 1,
+                default: frm.doc.name
+            },
+            { fieldtype: "Column Break" },
+            {
+                fieldtype: "Link",
+                fieldname: "program",
+                label: __("Program"),
+                options: "Program",
+                read_only: 1,
+                default: row.program
+            },
+            { fieldtype: "Column Break" },
+            {
+                fieldtype: "Int",
+                fieldname: "total_seats",
+                label: __("Total Seats"),
+                read_only: 1,
+                default: row.seats
+            },
+            { fieldtype: "Column Break" },
+            {
+                fieldtype: "Select",
+                fieldname: "status",
+                label: __("Status"),
+                options: "Active\nClosed",
+                default: "Active",
+                read_only: 1
+            },
+            { fieldtype: "Column Break" },
+            {
+                fieldtype: "Attach",
+                fieldname: "policy_document",
+                label: __("Policy Document"),
+            },
+            { fieldtype: "Section Break" },
+            {
+                fieldtype: "HTML",
+                fieldname: "policy_table"
+            }
+        ],
+        primary_action_label: __("Save Reservation Policy"),
+        primary_action() {
+            sync_table_rows();
+
+            if (!table_rows.length) {
+                frappe.msgprint(__("Please add at least one category."));
+                return;
+            }
+
+            for (let i = 0; i < table_rows.length; i++) {
+                const r = table_rows[i];
+                const rowNum = i + 1;
+
+                if (!r.category_name || r.category_name.trim() === "") {
+                    frappe.msgprint(__(`Row ${rowNum}: Category Name is mandatory.`));
+                    return;
+                }
+
+                if (!r.percentage || r.percentage <= 0) {
+                    frappe.msgprint(__(`Row ${rowNum}: Percentage must be greater than 0.`));
+                    return;
+                }
+            }
+
+            const total_percent = table_rows.reduce((sum, r) => sum + (parseFloat(r.percentage) || 0), 0);
+            if (total_percent !== 100) {
+                frappe.msgprint(__("Total percentage must be exactly 100%. Current total: " + total_percent + "%"));
+                return;
+            }
+
+            frappe.call({
+                method: "slcm.admission.doctype.admission_cycle_program.admission_cycle_program.save_categories",
+                args: {
+                    admission_cycle: dialog.get_value("admission_cycle"),
+                    program: dialog.get_value("program"),
+                    total_seats: dialog.get_value("total_seats"),
+                    status: dialog.get_value("status"),
+                    policy_document: dialog.get_value("policy_document"),
+                    reservation_rows: table_rows
+                },
+                freeze: true,
+                freeze_message: __("Saving Categories..."),
+                callback(r) {
+                    if (!r.exc && r.message) {
+                        frappe.model.set_value(
+                            row.doctype,
+                            row.name,
+                            "reservation_policy",
+                            r.message
+                        );
+                        frm.refresh_field("programs");
+                        frappe.show_alert({
+                            message: __("Reservation Policy Created: ") + r.message,
+                            indicator: "green"
+                        });
+                        dialog.hide();
+                    }
+                }
+            });
+        }
+    });
+
+    dialog.show();
+    render_table();
+
+    // Open category picker on button click
+    dialog.$wrapper.on("click", ".category-name-btn", function () {
+        sync_table_rows();
+        const idx = parseInt($(this).data("idx"));
+        open_category_picker(idx);
+    });
+
+    // Auto calculate seats when percentage changes
+    dialog.$wrapper.on("input", ".percentage", function () {
+        const idx = parseInt($(this).data("idx"));
+        calculate_row_seats(idx);
+    });
+
+    // Add row
+    dialog.$wrapper.on("click", "#add-row-btn", function () {
+        sync_table_rows();
+        table_rows.push({
+            category: "",
+            category_name: "",
+            percentage: "",
+            allocated_seats: 0,
+            application_fee: ""
+        });
+        render_table();
+    });
+
+    // Remove row
+    dialog.$wrapper.on("click", ".remove-row", function () {
+        sync_table_rows();
+        const idx = parseInt($(this).data("idx"));
+        table_rows.splice(idx, 1);
+        render_table();
+    });
+}
+
+function open_program_media(frm, row) {
+    let table_rows = [];
+
+    function sync_table_rows() {
+        dialog.$wrapper.find("tbody tr").each(function () {
+            const idx = parseInt($(this).find(".media_type").data("idx"));
+            if (isNaN(idx)) return;
+            table_rows[idx] = {
+                media_type: $(this).find(".media_type").val(),
+                file_url: table_rows[idx] ? table_rows[idx].file_url : "",
+                sequence: parseInt($(this).find(".sequence").val()) || 0,
+                caption: $(this).find(".caption").val()
+            };
+        });
+    }
+
+    function open_file_picker(idx) {
+        frappe.prompt(
+            [
+                {
+                    fieldtype: "Attach",
+                    fieldname: "file_url",
+                    label: __("Upload File"),
+                    reqd: 1,
+                    default: table_rows[idx] ? table_rows[idx].file_url : ""
+                }
+            ],
+            function (values) {
+                if (values.file_url) {
+                    table_rows[idx].file_url = values.file_url;
+                    dialog.$wrapper
+                        .find(`.file-btn[data-idx="${idx}"]`)
+                        .text(values.file_url.split("/").pop());
+                }
+            },
+            __("Upload File"),
+            __("Attach")
+        );
+    }
+
+    function render_table() {
+        const rows_html = table_rows.map((r, idx) => `
+        <tr>
+            <td>
+                <select class="form-control media_type" data-idx="${idx}">
+                    <option value="">Select</option>
+                    <option value="Image" ${r.media_type === "Image" ? "selected" : ""}>Image</option>
+                    <option value="Video" ${r.media_type === "Video" ? "selected" : ""}>Video</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-default btn-sm file-btn" data-idx="${idx}"
+                    style="width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${r.file_url ? frappe.utils.escape_html(r.file_url.split("/").pop()) : __("Upload File")}
+                </button>
+            </td>
+            <td>
+                <input type="number" class="form-control sequence" data-idx="${idx}"
+                    value="${r.sequence || ""}">
+            </td>
+            <td>
+                <input type="text" class="form-control caption" data-idx="${idx}"
+                    value="${frappe.utils.escape_html(r.caption || "")}">
+            </td>
+            <td style="text-align:center; vertical-align:middle;">
+                <button class="btn btn-danger btn-xs remove-row" data-idx="${idx}">Remove</button>
+            </td>
+        </tr>
+        `).join("");
+
+        dialog.fields_dict.media_table.$wrapper.html(`
+            <div style="overflow-x:auto; margin-bottom:10px;">
+                <table class="table table-bordered" style="table-layout:fixed; width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="width:20%;">Media Type</th>
+                            <th style="width:20%;">File</th>
+                            <th style="width:15%;">Sequence</th>
+                            <th style="width:25%;">Caption</th>
+                            <th style="width:20%; text-align:center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows_html}
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn btn-primary btn-sm" id="add-media-row-btn">+ Add Row</button>
+        `);
+    }
+
+    const dialog = new frappe.ui.Dialog({
+        title: __("Program Media"),
+        size: "large",
+        fields: [
+            {
+                fieldtype: "Link",
+                fieldname: "program",
+                label: __("Program"),
+                options: "Program",
+                read_only: 1,
+                default: row.program
+            },
+            { fieldtype: "Column Break" },
+            {
+                fieldtype: "Check",
+                fieldname: "active",
+                label: __("Active"),
+                default: 1
+            },
+            { fieldtype: "Column Break" },
+            {
+                fieldtype: "Attach",
+                fieldname: "brochure_pdf",
+                label: __("Brochure PDF"),
+                default: ""
+            },
+            { fieldtype: "Section Break" },
+            {
+                fieldtype: "HTML",
+                fieldname: "media_table"
+            }
+        ],
+        primary_action_label: __("Save Program Media"),
+        primary_action() {
+            sync_table_rows();
+
+            if (!table_rows.length) {
+                frappe.msgprint(__("Please add at least one media item."));
+                return;
+            }
+
+            for (let i = 0; i < table_rows.length; i++) {
+                const r = table_rows[i];
+                const rowNum = i + 1;
+
+                if (!r.media_type) {
+                    frappe.msgprint(__(`Row ${rowNum}: Media Type is mandatory.`));
+                    return;
+                }
+
+                if (!r.file_url || r.file_url.trim() === "") {
+                    frappe.msgprint(__(`Row ${rowNum}: File is mandatory.`));
+                    return;
+                }
+            }
+
+            frappe.call({
+                method: "slcm.admission.doctype.admission_cycle_program.admission_cycle_program.save_program_media",
+                args: {
+                    program: dialog.get_value("program"),
+                    active: dialog.get_value("active"),
+                    brochure_pdf: dialog.get_value("brochure_pdf"),
+                    media_rows: table_rows,
+                    parent_doctype: row.doctype,
+                    parent_name: row.name
+                },
+                freeze: true,
+                freeze_message: __("Saving Program Media..."),
+                callback(r) {
+                    if (!r.exc && r.message) {
+                        frappe.model.set_value(
+                            row.doctype,
+                            row.name,
+                            "program_media",
+                            r.message
+                        );
+                        frm.refresh_field("programs");
+                        frappe.show_alert({
+                            message: __("Program Media Saved: ") + r.message,
+                            indicator: "green"
+                        });
+                        dialog.hide();
+                    }
+                }
+            });
+        }
+    });
+
+    dialog.show();
+    render_table();
+
+    // On dialog open — check if Program Media already exists for this program
+    frappe.call({
+        method: "frappe.client.get_value",
+        args: {
+            doctype: "Program Media",
+            filters: { name: row.program },
+            fieldname: ["name", "is_active", "brochure_pdf"]
+        },
+        callback(res) {
+            if (res.message && res.message.name) {
+                // Existing record found — load it
+                frappe.call({
+                    method: "frappe.client.get",
+                    args: {
+                        doctype: "Program Media",
+                        name: res.message.name
+                    },
+                    callback(r) {
+                        if (r.message) {
+                            const doc = r.message;
+                            dialog.set_value("is_active", doc.active);
+                            dialog.set_value("brochure_pdf", doc.brochure_pdf || "");
+
+                            table_rows = (doc.media_gallery || []).map(item => ({
+                                media_type: item.media_type || "",
+                                file_url: item.file || "",
+                                sequence: item.sequence || 0,
+                                caption: item.caption || ""
+                            }));
+
+                            render_table();
+
+                            frappe.show_alert({
+                                message: __("Loaded existing Program Media for: ") + row.program,
+                                indicator: "blue"
+                            });
+                        }
+                    }
+                });
+            }
+            // If no existing record — dialog stays empty, ready for new entry
+        }
+    });
+
+    // Open file picker on button click
+    dialog.$wrapper.on("click", ".file-btn", function () {
+        sync_table_rows();
+        const idx = parseInt($(this).data("idx"));
+        open_file_picker(idx);
+    });
+
+    // Add row
+    dialog.$wrapper.on("click", "#add-media-row-btn", function () {
+        sync_table_rows();
+        table_rows.push({
+            media_type: "",
+            file_url: "",
+            sequence: "",
+            caption: ""
+        });
+        render_table();
+    });
+
+    // Remove row
+    dialog.$wrapper.on("click", ".remove-row", function () {
+        sync_table_rows();
+        const idx = parseInt($(this).data("idx"));
+        table_rows.splice(idx, 1);
+        render_table();
+    });
+}

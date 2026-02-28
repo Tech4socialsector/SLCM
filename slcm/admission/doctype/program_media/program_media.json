@@ -1,55 +1,103 @@
 {
  "actions": [],
- "autoname": "naming_series:",
- "creation": "2026-02-26 10:00:00.000000",
+ "autoname": "field:program",
+ "creation": "2026-02-26 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "naming_series", "program", "media_type", "col_break_1",
-  "sequence", "is_featured", "is_active",
-  "section_break_media",
-  "image", "caption", "col_break_2",
-  "video_url", "brochure_pdf"
+  "naming_series",
+  "program",
+  "col_break_1",
+  "is_featured",
+  "brochure_pdf",
+  "is_active",
+  "media_section",
+  "media_gallery"
  ],
  "fields": [
-  {"fieldname": "naming_series", "fieldtype": "Select", "label": "Series",
-   "options": "PMEDIA-.YYYY.-", "default": "PMEDIA-.YYYY.-"},
-  {"fieldname": "program", "fieldtype": "Link", "label": "Program",
-   "options": "Program", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "media_type", "fieldtype": "Select", "label": "Media Type",
-   "options": "Image\nVideo\nBrochure", "reqd": 1, "default": "Image",
-   "in_list_view": 1},
-  {"fieldname": "col_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "sequence", "fieldtype": "Int", "label": "Sequence",
-   "default": "1", "description": "Display order (lower = first)"},
-  {"fieldname": "is_featured", "fieldtype": "Check", "label": "Show in Hero Banner",
-   "default": "0", "in_list_view": 1},
-  {"fieldname": "is_active", "fieldtype": "Check", "label": "Active",
-   "default": "1", "in_list_view": 1},
-  {"fieldname": "section_break_media", "fieldtype": "Section Break", "label": "Media"},
-  {"fieldname": "image", "fieldtype": "Attach Image", "label": "Image",
-   "depends_on": "eval:doc.media_type=='Image'"},
-  {"fieldname": "caption", "fieldtype": "Data", "label": "Caption",
-   "description": "Shown below image or as overlay text"},
-  {"fieldname": "col_break_2", "fieldtype": "Column Break"},
-  {"fieldname": "video_url", "fieldtype": "Data", "label": "Video URL",
-   "depends_on": "eval:doc.media_type=='Video'",
-   "description": "YouTube or Vimeo embed URL"},
-  {"fieldname": "brochure_pdf", "fieldtype": "Attach", "label": "Brochure PDF",
-   "depends_on": "eval:doc.media_type=='Brochure'"}
+  {
+   "default": "PMEDIA-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "PMEDIA-.YYYY.-"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_featured",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Show in Hero Banner"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "depends_on": "eval:doc.media_type=='Brochure'",
+   "fieldname": "brochure_pdf",
+   "fieldtype": "Attach",
+   "label": "Brochure PDF"
+  },
+  {
+   "fieldname": "media_section",
+   "fieldtype": "Section Break",
+   "label": "Media"
+  },
+  {
+   "fieldname": "media_gallery",
+   "fieldtype": "Table",
+   "label": "Media Gallery",
+   "options": "Media"
+  }
  ],
- "modified": "2026-02-26 10:00:00.000000",
+ "links": [],
+ "modified": "2026-02-28 16:27:44.080178",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Media",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
-  {"role": "Admission Admin", "read": 1, "write": 1, "create": 1, "delete": 1},
-  {"role": "Applicant", "read": 1}
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Admission Admin",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Applicant"
+  }
  ],
- "sort_field": "sequence",
+ "row_format": "Dynamic",
+ "sort_field": "creation",
  "sort_order": "ASC",
- "title_field": "program",
- "track_changes": 0
+ "states": [],
+ "title_field": "program"
 }
