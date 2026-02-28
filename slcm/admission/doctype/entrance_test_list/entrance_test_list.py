@@ -70,7 +70,7 @@ class EntranceTestList(Document):
             self.name = frappe.generate_hash(self.doctype, 6)
 
     @frappe.whitelist()
-    def allocate_seats(self, providers, selected_applicants, allocation_date=None):
+    def allocate_seats(self, providers, selected_applicants, allocation_date=None, entrance_test_name=None):
         """
         Admin selects:
           - providers             : list of Entrance Test Provider names (preferences)
@@ -134,6 +134,7 @@ class EntranceTestList(Document):
                 allocation.admission_cycle       = self.admission_cycle
                 allocation.campus                = self.campus
                 allocation.program_level         = self.program_level
+                allocation.entrance_test_name    = entrance_test_name
 
                 # Applicant details
                 allocation.applicant             = app.applicant_id
@@ -143,6 +144,10 @@ class EntranceTestList(Document):
                 allocation.email                 = app.email
                 allocation.gender                = app.gender
                 allocation.allocation_status      = "Not Allocated"
+                allocation.entrance_test_status   = "Scheduled"
+            
+            if entrance_test_name:
+                allocation.entrance_test_name = entrance_test_name
 
             # If admin provided an allocation_date, set it on the allocation record.
             if allocation_date:
@@ -162,12 +167,32 @@ class EntranceTestList(Document):
                 })
 
             allocation.save(ignore_permissions=True)
-            # Send allocation notification email to applicant (if email present)
-            try:
-                if allocation.email:
-                    _send_allocation_email(allocation)
-            except Exception:
-                frappe.log_error(f"Failed to send allocation email for {allocation.name}", "Entrance Test Allocation")
+
+            # ── Resolve email: allocation.email → Applicant doctype fallback ──
+            email = allocation.email or ""
+            if not email and allocation.applicant:
+                try:
+                    app_email = frappe.db.get_value("Applicant", allocation.applicant, "email_id")
+                    if app_email:
+                        email = app_email
+                except Exception:
+                    pass
+
+            # Send allocation notification email to applicant (if email resolved)
+            if email:
+                try:
+                    _send_allocation_email(allocation, email)
+                except Exception:
+                    import traceback
+                    frappe.log_error(
+                        message=traceback.format_exc(),
+                        title=f"Allocation Email Failed: {allocation.name}"
+                    )
+            else:
+                frappe.log_error(
+                    message=f"No email for applicant {allocation.applicant} ({allocation.name}). Email skipped.",
+                    title="Allocation Email Skipped"
+                )
 
             # ✅ Mark child row as "Allocated"
             app.allocation_status = "Allocated"
@@ -179,7 +204,7 @@ class EntranceTestList(Document):
         return created_count
 
 
-def _send_allocation_email(allocation):
+def _send_allocation_email(allocation, email):
     """Send a simple HTML email to the applicant with their allocation and preference details."""
     try:
         url = get_url(f"/app/entrance-test-seat-allocation/{allocation.name}")
@@ -195,7 +220,7 @@ def _send_allocation_email(allocation):
         <p><strong>Applicant Details</strong><br>
         Name: {allocation.candidate_name or ''}<br>
         Application No: {allocation.applicant or ''}<br>
-        Email: {allocation.email or ''}<br>
+        Email: {email}<br>
         Gender: {allocation.gender or ''}<br>
         Reservation Category: {allocation.reservation_category or ''}
         </p>
@@ -203,6 +228,7 @@ def _send_allocation_email(allocation):
 
         program_info = f"""
         <p><strong>Program Details</strong><br>
+        Entrance Test Name: {allocation.entrance_test_name or allocation.entrance_test_list or ''}<br>
         Program: {allocation.program or ''}<br>
         Program Level: {allocation.program_level or ''}<br>
         Academic Year: {allocation.academic_year or ''}<br>
@@ -236,14 +262,16 @@ def _send_allocation_email(allocation):
         """
 
         frappe.sendmail(
-            recipients=[allocation.email],
+            recipients=[email],
             subject=f"Entrance Test — Seat Allocation for {allocation.candidate_name or allocation.applicant}",
             message=msg,
             reference_doctype="Entrance Test Seat Allocation",
             reference_name=allocation.name
         )
     except Exception as e:
-        frappe.log_error(message=str(e), title="Send Allocation Email Error")
+        import traceback
+        frappe.log_error(message=traceback.format_exc(), title="Send Allocation Email Error")
+        raise
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -254,6 +282,7 @@ def _send_allocation_email(allocation):
 def get_applicant_preferences(applicant_id, entrance_test_list):
     """
     Returns the preferences from the SINGLE allocation record for this applicant.
+    Priority given to rescheduled preferences if active.
     """
     allocation_name = frappe.db.get_value("Entrance Test Seat Allocation", {
         "applicant": applicant_id,
@@ -265,20 +294,26 @@ def get_applicant_preferences(applicant_id, entrance_test_list):
 
     allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
     
-    # If already allocated, we might just return the chosen one or indicator
-    # But for selection, we need the list.
+    # Check if we should serve rescheduled preferences
+    use_rescheduled = getattr(allocation, "is_rescheduled", 0) == 1 and \
+                      getattr(allocation, "re_allocation_status", "") in ["Preferences Assigned", "Allocated", "Reallocated"]
     
+    pref_field = "re_assigned_preferences" if use_rescheduled else "assigned_preferences"
+    status_field = "re_allocation_status" if use_rescheduled else "allocation_status"
+    seat_field = "re_seat_number" if use_rescheduled else "seat_number"
+    room_field = "re_room_name" if use_rescheduled else "room_name"
+
     preferences = []
-    for p in allocation.assigned_preferences:
+    for p in allocation.get(pref_field):
         preferences.append({
             "entrance_test_provider": p.provider,
             "center_name": p.center_name,
             "center_address": p.center_address,
             "preference_order": p.preference_order,
             "is_full": _get_remaining_capacity(p.provider) <= 0,
-            "allocation_status": allocation.allocation_status,
-            "seat_number": allocation.seat_number,
-            "room_name": allocation.room_name
+            "allocation_status": getattr(allocation, status_field),
+            "seat_number": getattr(allocation, seat_field),
+            "room_name": getattr(allocation, room_field)
         })
 
     return preferences
@@ -288,6 +323,7 @@ def get_applicant_preferences(applicant_id, entrance_test_list):
 def confirm_applicant_preference(allocation_name, selected_provider):
     """
     Called when applicant confirms their chosen provider from the SAME record.
+    Initial allocation path.
     """
     allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
 
@@ -329,6 +365,68 @@ def confirm_applicant_preference(allocation_name, selected_provider):
     allocation.seat_number            = seat_number
     allocation.allocation_status      = "Allocated"
     allocation.allocated_by           = frappe.session.user
+    allocation.save(ignore_permissions=True)
+
+    # Update room reserved count on provider
+    assigned_room.room_reserved_seats     = new_reserved
+    assigned_room.room_available_capacity = (assigned_room.room_capacity or 0) - new_reserved
+    provider.save(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    return {
+        "seat_number":    seat_number,
+        "room_name":      assigned_room.room_name,
+        "center_name":    provider.center_name,
+        "center_address": provider.center_address,
+    }
+
+
+@frappe.whitelist()
+def confirm_rescheduled_preference(allocation_name, selected_provider):
+    """
+    Called when applicant confirms their chosen provider for a RESCHEDULED test.
+    """
+    allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
+
+    if allocation.re_allocation_status == "Allocated":
+        frappe.throw("You have already been allocated a seat for the rescheduled test.")
+
+    provider = frappe.get_doc("Entrance Test Provider", selected_provider)
+
+    # Find first room with available capacity
+    assigned_room = None
+    new_reserved  = None
+    seat_number   = None
+
+    for room in provider.provider_room:
+        if not getattr(room, "active", 1):
+            continue
+        capacity = room.room_capacity or 0
+        reserved = room.room_reserved_seats or 0
+        if (capacity - reserved) > 0:
+            assigned_room = room
+            new_reserved  = reserved + 1
+            seat_number   = f"{room.room_name}-{new_reserved:02d}"
+            break
+
+    if not assigned_room:
+        frappe.throw(
+            f"Sorry, '{provider.center_name}' is now full. "
+            "Please choose another preference center."
+        )
+
+    # Update the RE fields
+    allocation.re_entrance_test_provider = selected_provider
+    allocation.re_center_name            = provider.center_name
+    allocation.re_center_address         = provider.center_address
+    allocation.re_room_code              = assigned_room.room_code
+    allocation.re_room_name              = assigned_room.room_name
+    allocation.re_building               = assigned_room.building
+    allocation.re_floor                  = assigned_room.floor
+    allocation.re_seat_number            = seat_number
+    allocation.re_allocation_status      = "Allocated"
+    allocation.re_allocated_by           = frappe.session.user
     allocation.save(ignore_permissions=True)
 
     # Update room reserved count on provider
