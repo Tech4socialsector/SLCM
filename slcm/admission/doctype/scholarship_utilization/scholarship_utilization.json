@@ -1,0 +1,153 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2026-02-26 17:26:53.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "scholarship_scheme",
+        "admission_cycle",
+        "campus",
+        "program",
+        "category",
+        "total_budget",
+        "allocated_amount",
+        "utilized_amount",
+        "remaining_budget",
+        "max_beneficiaries",
+        "current_beneficiaries",
+        "is_locked",
+        "status",
+        "last_updated_on",
+        "last_updated_by"
+    ],
+    "fields": [
+        {
+            "fieldname": "scholarship_scheme",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Scholarship Scheme",
+            "options": "Scholarship Scheme",
+            "reqd": 1
+        },
+        {
+            "fieldname": "admission_cycle",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Admission Cycle",
+            "options": "Admission Cycle",
+            "reqd": 1
+        },
+        {
+            "fieldname": "campus",
+            "fieldtype": "Link",
+            "label": "Campus",
+            "options": "Campus",
+            "reqd": 1
+        },
+        {
+            "fieldname": "program",
+            "fieldtype": "Link",
+            "label": "Program",
+            "options": "Program",
+            "reqd": 1
+        },
+        {
+            "fieldname": "category",
+            "fieldtype": "Select",
+            "label": "Category",
+            "options": "GEN\nOBC\nSC\nST\nEWS\nPwD"
+        },
+        {
+            "fieldname": "total_budget",
+            "fieldtype": "Currency",
+            "label": "Total Budget",
+            "reqd": 1
+        },
+        {
+            "fieldname": "allocated_amount",
+            "fieldtype": "Currency",
+            "label": "Allocated Amount",
+            "reqd": 1
+        },
+        {
+            "fieldname": "utilized_amount",
+            "fieldtype": "Currency",
+            "label": "Utilized Amount",
+            "reqd": 1
+        },
+        {
+            "fieldname": "remaining_budget",
+            "fieldtype": "Currency",
+            "label": "Remaining Budget",
+            "read_only": 1,
+            "reqd": 1
+        },
+        {
+            "fieldname": "max_beneficiaries",
+            "fieldtype": "Int",
+            "label": "Max Beneficiaries"
+        },
+        {
+            "fieldname": "current_beneficiaries",
+            "fieldtype": "Int",
+            "label": "Current Beneficiaries",
+            "read_only": 1,
+            "reqd": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "is_locked",
+            "fieldtype": "Check",
+            "label": "Is Locked",
+            "reqd": 1
+        },
+        {
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "label": "Status",
+            "options": "Active\nClosed",
+            "reqd": 1
+        },
+        {
+            "fieldname": "last_updated_on",
+            "fieldtype": "Datetime",
+            "label": "Last Updated On",
+            "read_only": 1,
+            "reqd": 1
+        },
+        {
+            "fieldname": "last_updated_by",
+            "fieldtype": "Link",
+            "label": "Last Updated By",
+            "options": "User",
+            "read_only": 1,
+            "reqd": 1
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-02-26 17:26:53.000000",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Scholarship Utilization",
+    "naming_rule": "By script",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}
