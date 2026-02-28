@@ -23,43 +23,38 @@
     "fields": [
         {
             "fieldname": "scholarship_application",
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "in_list_view": 1,
             "label": "Scholarship Application",
-            "options": "Scholarship Application",
             "read_only": 1,
             "reqd": 1
         },
         {
             "fieldname": "scholarship_scheme",
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "in_list_view": 1,
             "label": "Scholarship Scheme",
-            "options": "Scholarship Scheme",
             "read_only": 1,
             "reqd": 1
         },
         {
             "fieldname": "admission_cycle",
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "label": "Admission Cycle",
-            "options": "Admission Cycle",
             "read_only": 1,
             "reqd": 1
         },
         {
             "fieldname": "campus",
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "label": "Campus",
-            "options": "Campus",
             "read_only": 1,
             "reqd": 1
         },
         {
             "fieldname": "program",
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "label": "Program",
-            "options": "Program",
             "read_only": 1,
             "reqd": 1
         },

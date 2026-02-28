@@ -237,39 +237,110 @@
             </div>
         </div>
 
-        <!-- Admission Results -->
-        <div class="card">
-            <h3 class="section-title">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                Admission Status
-            </h3>
-            {% if entry.results %}
-            {% for res in entry.results %}
-            <div class="result-row">
-                <div class="result-info">
-                    <h4>{{ entry.profile.program }}</h4>
-                    <p>
-                        Rank: #{{ res.overall_rank }}
-                        {% if res.category_rank %}
-                        | Category Rank: #{{ res.category_rank }}
-                        {% endif %}
-                    </p>
+        <!-- Right Column wrapper -->
+        <div>
+            <!-- Admission Results -->
+            <div class="card" style="margin-bottom: 30px;">
+                <h3 class="section-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Admission Status
+                </h3>
+                {% if entry.results %}
+                {% for res in entry.results %}
+                <div class="result-row">
+                    <div class="result-info">
+                        <h4>{{ entry.profile.program }}</h4>
+                        <p>
+                            Rank: #{{ res.overall_rank }}
+                            {% if res.category_rank %}
+                            | Category Rank: #{{ res.category_rank }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <span class="status-badge status-{{ res.selection_status.lower().replace(' ', '-') }}">
+                        {{ res.selection_status }}
+                    </span>
                 </div>
-                <span class="status-badge status-{{ res.selection_status.lower().replace(' ', '-') }}">
-                    {{ res.selection_status }}
-                </span>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <p>No results have been published yet. Please check back later.</p>
+                </div>
+                {% endif %}
             </div>
-            {% endfor %}
-            {% else %}
-            <div class="empty-state">
-                <p>No results have been published yet. Please check back later.</p>
+
+            <!-- Scholarships -->
+            <div class="card">
+                <h3 class="section-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222">
+                        </path>
+                    </svg>
+                    Scholarships
+                </h3>
+
+                <!-- Applied Scholarships -->
+                {% if entry.applied_scholarships %}
+                <h4
+                    style="font-size: 0.875rem; color: var(--secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Your Applications</h4>
+                {% for app in entry.applied_scholarships %}
+                <div class="result-row">
+                    <div class="result-info">
+                        <h4>{{ app.scholarship_scheme }}</h4>
+                        <p>Status: <span style="font-weight: 600;"
+                                class="status-badge status-{{ app.status.lower().replace(' ', '-') }}">{{ app.status
+                                }}</span>
+                            {% if app.status == 'Approved' %}
+                            | Amount: <span style="color: var(--success); font-weight: 700;">₹ {{ app.approved_amount or
+                                app.calculated_benefit }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                <!-- Available Scholarships -->
+                {% if entry.available_scholarships %}
+                <h4
+                    style="font-size: 0.875rem; color: var(--secondary); margin-bottom: 10px; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Available Scholarships</h4>
+                {% for scheme in entry.available_scholarships %}
+                <div class="result-row" style="background: #eff6ff; border: 1px solid #bfdbfe;">
+                    <div class="result-info">
+                        <h4>{{ scheme.scheme_name }}</h4>
+                        <p>Coverage: <span style="font-weight: 600;">{{ scheme.coverage_type }} {% if
+                                scheme.coverage_type != 'Component-wise' %}({{ scheme.coverage_value }}){% endif
+                                %}</span> | Applies to: <span style="font-weight: 600;">{{ scheme.apply_on }}</span></p>
+                    </div>
+                    <a href="/scholarship-application/new?scholarship_scheme={{ scheme.name }}&applicant_id={{ entry.profile.applicant_id }}&applicant_name={{ entry.profile.applicant_id }}&admission_cycle={{ entry.profile.admission_cycle }}&campus={{ entry.profile.campus }}&program={{ entry.profile.program }}"
+                        class="btn btn-primary"
+                        style="background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)';"
+                        onmouseout="this.style.transform='none';">
+                        Apply Now
+                    </a>
+                </div>
+                {% endfor %}
+                {% elif not entry.applied_scholarships %}
+                <div class="empty-state">
+                    <p>No scholarships are currently available for your profile and status.</p>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
     </div>
     {% endfor %}
     {% endif %}
 </div>
+
+
 {% endblock %}

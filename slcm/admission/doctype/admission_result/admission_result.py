@@ -43,9 +43,22 @@ def get_applicant_data():
             if s.parent:
                 s.published = frappe.db.get_value("Seat Allocation", s.parent, "status") == "Published"
         
+        published_statuses = [s.selection_status for s in statuses if s.published]
+        
+        available_scholarships = []
+        applied_scholarships = []
+        if res.applicant_id:
+            from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard, get_applied_scholarships_for_dashboard
+            available_scholarships = get_available_scholarships_for_dashboard(
+                res.applicant_id, res.admission_cycle, res.campus, res.program, published_statuses
+            )
+            applied_scholarships = get_applied_scholarships_for_dashboard(res.applicant_id)
+
         combined_data.append({
             "profile": res,
-            "results": [s for s in statuses if s.published] # Only show published results to applicants
+            "results": [s for s in statuses if s.published],
+            "available_scholarships": available_scholarships,
+            "applied_scholarships": applied_scholarships
         })
 
     return combined_data
@@ -118,3 +131,4 @@ def bulk_sync_from_applicants(admission_cycle, campus, program_level=None):
         
     frappe.db.commit()
     return count
+

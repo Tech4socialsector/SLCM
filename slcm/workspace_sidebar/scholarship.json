@@ -9,6 +9,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "",
    "indent": 0,
    "keep_closed": 0,
    "label": "Scholarship Scheme",
@@ -20,6 +21,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "",
    "indent": 0,
    "keep_closed": 0,
    "label": "Scholarship Scheme Mapping",
@@ -49,9 +51,20 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Scholarship Utilization Report",
+   "link_to": "Scholarship Utilization Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-02-28 09:53:37.670386",
+ "modified": "2026-02-28 15:38:13.595418",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship",
