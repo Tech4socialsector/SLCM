@@ -137,7 +137,7 @@
             "options": "Email Templates"
         },
         {
-            "fetch_from": "offer_configrationn.receipt_print_format",
+            "fetch_from": "fee_structure.receipt_print_format",
             "fieldname": "receipt_print_format",
             "fieldtype": "Link",
             "label": "Receipt Print Format",

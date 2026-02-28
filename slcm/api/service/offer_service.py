@@ -27,6 +27,13 @@ class OfferService:
         if admission_cycle:
             filters["admission_cycle"] = admission_cycle
             config_name = frappe.db.get_value("Offer Configuration", filters)
+            
+            # Fallback: Try matching admission_year against the Configuration's academic_year field
+            if not config_name:
+                alt_filters = filters.copy()
+                alt_filters["academic_year"] = alt_filters.pop("admission_year")
+                config_name = frappe.db.get_value("Offer Configuration", alt_filters)
+
             if config_name:
                 return frappe.get_doc("Offer Configuration", config_name)
         
@@ -59,7 +66,7 @@ class OfferService:
             if not frappe.db.exists("Admission Year", admission_year):
                 # Probably an Academic Year name (e.g. 2026-2027), find active Admission Year for it
                 resolved = frappe.db.get_value("Admission Year", 
-                    {"academic_year": admission_year, "is_active": 1}, "name")
+                    {"year": admission_year, "is_active": 1}, "name")
                 if resolved:
                     return resolved
             return admission_year
@@ -75,7 +82,7 @@ class OfferService:
         academic_year = frappe.db.get_value("Applicant", applicant, "academic_year")
         if academic_year:
             admission_year = frappe.db.get_value("Admission Year", 
-                {"academic_year": academic_year, "is_active": 1}, "name")
+                {"year": academic_year, "is_active": 1}, "name")
             
         return admission_year
 
@@ -169,11 +176,16 @@ class OfferService:
         OfferService._create_snapshot_record(offer.name, fee_data)
 
         # Generate and Attach PDF
-        if config.pdf_format:
-            OfferService._generate_offer_pdf(offer, config.pdf_format)
+        if getattr(config, "generate_offer_letter_by_system", 0):
+            if config.pdf_format:
+                OfferService._generate_offer_pdf(offer, config.pdf_format)
+        else:
+            if getattr(config, "offer_letter_pdf", None):
+                OfferService._attach_static_pdf(offer, config.offer_letter_pdf)
         
         # Send offer letter email to applicant
-        OfferService._send_offer_letter_email(offer, config.email_template)
+        if getattr(config, "send_email", 0):
+            OfferService._send_offer_letter_email(offer, config.email_template, getattr(config, "from_email_account", None))
         
         # Transition to Issued
         offer.offer_status = "Issued"
@@ -316,6 +328,8 @@ class OfferService:
                     if not details:
                         raise ValueError(_("Applicant {0} not found").format(applicant_name))
                     
+                    details = frappe._dict(details)
+
                     if not applicant_name:
                         raise ValueError(_("Applicant name is required"))
                     
@@ -414,7 +428,7 @@ class OfferService:
         return FeeService._calculate_and_freeze_fees(fee_structure_name)
 
     @staticmethod
-    def _send_offer_letter_email(offer, email_template):
+    def _send_offer_letter_email(offer, email_template, from_email_account=None):
         """Sends the offer letter email to the applicant."""
         if not email_template or not offer.applicant:
             return
@@ -449,6 +463,7 @@ class OfferService:
                 frappe.log_error(f"Failed to attach PDF to email for {offer.name}: {str(e)}")
 
         frappe.sendmail(
+            sender=from_email_account,
             recipients=[applicant_email],
             subject=subject,
             message=message,
@@ -562,6 +577,34 @@ class OfferService:
             
         except Exception as e:
             frappe.log_error(f"PDF Generation Failed for {offer_doc.name}: {str(e)}")
+
+    @staticmethod
+    def _attach_static_pdf(offer_doc, file_url):
+        """Attaches a static PDF from configuration to the Offer Letter record."""
+        try:
+            if not file_url:
+                return
+
+            offer_doc.offer_letter_pdf = file_url
+            
+            # Find the original file record to copy metadata
+            original_files = frappe.get_all("File", filters={"file_url": file_url}, limit=1)
+            if original_files:
+                original_doc = frappe.get_doc("File", original_files[0].name)
+                
+                # Create a new File record linked to this Offer Letter
+                # This ensures it shows in the sidebar and _send_offer_letter_email can find it
+                _file = frappe.new_doc("File")
+                _file.file_name = original_doc.file_name
+                _file.file_url = original_doc.file_url
+                _file.attached_to_doctype = "Offer Letter"
+                _file.attached_to_name = offer_doc.name
+                _file.attached_to_field = "offer_letter_pdf"
+                _file.is_private = original_doc.is_private
+                _file.insert(ignore_permissions=True)
+                
+        except Exception as e:
+            frappe.log_error(f"Static PDF Attachment Failed for {offer_doc.name}: {str(e)}")
 
     @staticmethod
     def log_action(offer_name, action, notes=None, reason=None):

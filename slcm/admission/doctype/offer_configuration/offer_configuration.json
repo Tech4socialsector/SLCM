@@ -1,117 +1,143 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "creation": "2026-02-13 18:22:16.905855",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "admission_year",
-        "academic_year",
-        "admission_cycle",
-        "campus",
-        "column_break_sswl",
-        "pdf_format",
-        "receipt_print_format",
-        "email_template",
-        "fee_structure",
-        "is_active"
-    ],
-    "fields": [
-        {
-            "fieldname": "admission_cycle",
-            "fieldtype": "Link",
-            "label": "Admission Cycle",
-            "options": "Admission Cycle",
-            "reqd": 1
-        },
-        {
-            "fieldname": "campus",
-            "fieldtype": "Link",
-            "label": "Campus",
-            "options": "Campus",
-            "reqd": 1
-        },
-        {
-            "fieldname": "pdf_format",
-            "fieldtype": "Link",
-            "label": "PDF Format",
-            "options": "Print Format",
-            "reqd": 1
-        },
-        {
-            "fieldname": "receipt_print_format",
-            "fieldtype": "Link",
-            "label": "Receipt Print Format",
-            "options": "Print Format",
-            "reqd": 1
-        },
-        {
-            "fieldname": "column_break_sswl",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "email_template",
-            "fieldtype": "Link",
-            "label": "Email Template",
-            "options": "Email Templates",
-            "reqd": 1
-        },
-        {
-            "default": "0",
-            "fieldname": "is_active",
-            "fieldtype": "Check",
-            "in_list_view": 1,
-            "label": "Is active"
-        },
-        {
-            "fieldname": "admission_year",
-            "fieldtype": "Link",
-            "label": "Admission Year",
-            "options": "Admission Year",
-            "reqd": 1
-        },
-        {
-            "fetch_from": "admission_year.academic_year",
-            "fieldname": "academic_year",
-            "fieldtype": "Link",
-            "label": "Academic Year",
-            "options": "Academic Year",
-            "reqd": 1
-        },
-        {
-            "fieldname": "fee_structure",
-            "fieldtype": "Table MultiSelect",
-            "label": "Fee Structure",
-            "options": "Fee Structure Child",
-            "reqd": 1
-        }
-    ],
-    "grid_page_length": 50,
-    "index_web_pages_for_search": 1,
-    "links": [],
-    "modified": "2026-02-23 15:47:54.444921",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "Offer Configuration",
-    "naming_rule": "By script",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "write": 1
-        }
-    ],
-    "row_format": "Dynamic",
-    "rows_threshold_for_grid_search": 20,
-    "sort_field": "creation",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-13 18:22:16.905855",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "admission_year",
+  "academic_year",
+  "admission_cycle",
+  "campus",
+  "generate_offer_letter_by_system",
+  "send_email",
+  "column_break_sswl",
+  "offer_letter_pdf",
+  "pdf_format",
+  "from_email_account",
+  "email_template",
+  "fee_structure",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.generate_offer_letter_by_system == 1",
+   "fieldname": "pdf_format",
+   "fieldtype": "Link",
+   "label": "PDF Format",
+   "mandatory_depends_on": "eval:doc.generate_offer_letter_by_system == 1",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "column_break_sswl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.send_email ==1",
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "mandatory_depends_on": "eval:doc.send_email ==1",
+   "options": "Email Templates",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is active"
+  },
+  {
+   "fieldname": "admission_year",
+   "fieldtype": "Link",
+   "label": "Admission Year",
+   "options": "Admission Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fee_structure",
+   "fieldtype": "Table MultiSelect",
+   "label": "Fee Structure",
+   "options": "Fee Structure Child",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "generate_offer_letter_by_system",
+   "fieldtype": "Check",
+   "label": "Generate Offer Letter By system"
+  },
+  {
+   "depends_on": "eval:doc.generate_offer_letter_by_system == 0",
+   "fieldname": "offer_letter_pdf",
+   "fieldtype": "Attach",
+   "label": "Offer Letter PDF",
+   "mandatory_depends_on": "eval:doc.generate_offer_letter_by_system == 0"
+  },
+  {
+   "default": "0",
+   "description": "Automatically sent's email when offer generates",
+   "fieldname": "send_email",
+   "fieldtype": "Check",
+   "label": "Send Email"
+  },
+  {
+   "depends_on": "eval:doc.send_email ==1",
+   "fieldname": "from_email_account",
+   "fieldtype": "Link",
+   "label": "From Email Account",
+   "mandatory_depends_on": "eval:doc.send_email ==1",
+   "options": "Email Account"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-28 11:12:39.338085",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Offer Configuration",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
 }
