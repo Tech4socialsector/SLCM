@@ -9,6 +9,21 @@ frappe.ui.form.on("Offer Letter", {
             frm.set_df_property('rendered_content', 'fieldtype', 'HTML');
             frm.set_df_property('rendered_content', 'options', frm.doc.rendered_content);
         }
+
+        if (frm.doc.offer_status === "Issued") {
+            frm.add_custom_button(__('Send Reminder'), function () {
+                const offers = [{
+                    name: frm.doc.name,
+                    applicant_name: frm.doc.applicant,
+                    program: frm.doc.program,
+                    payment_deadline: frm.doc.payment_deadline
+                }];
+
+                frappe.require('offer_letter_list.js', () => {
+                    slcm.utils.show_offer_reminder_dialog(offers);
+                });
+            });
+        }
     },
     onload: function (frm) {
         // Disable past dates in the payment_deadline datepicker

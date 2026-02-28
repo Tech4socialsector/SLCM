@@ -753,6 +753,114 @@ class OfferService:
     def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name):
         return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)
 
+    @staticmethod
+    @frappe.whitelist()
+    def get_pending_offers_list():
+        """
+        Fetches all Offers with 'Issued' status that haven't passed their deadline.
+        """
+        offers = frappe.db.sql("""
+            SELECT 
+                ol.name,
+                app.candidate_name as applicant_name,
+                ol.program,
+                ol.payment_deadline
+            FROM `tabOffer Letter` ol
+            JOIN `tabApplicant` app ON ol.applicant = app.name
+            WHERE ol.offer_status = 'Issued'
+              AND (ol.payment_deadline >= CURDATE() OR ol.payment_deadline IS NULL)
+            ORDER BY ol.payment_deadline ASC
+        """, as_dict=1)
+        return offers
+
+    @staticmethod
+    @frappe.whitelist()
+    def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
+        """
+        Sends emails and system notifications for selected pending offers.
+        """
+        from frappe.utils import cint
+        
+        # Cast to bool in case strings like "1" or "0" are passed from client
+        send_email = bool(cint(send_email))
+        send_notification = bool(cint(send_notification))
+
+        if not offer_names:
+            frappe.throw(_("Please select at least one offer to send reminders."))
+
+        if isinstance(offer_names, str):
+            try:
+                offer_names = frappe.parse_json(offer_names)
+            except:
+                offer_names = [o.strip() for o in offer_names.split(',')]
+            
+        if not isinstance(offer_names, list):
+            offer_names = [offer_names]
+
+        if not message:
+            frappe.throw(_("Message content is required for reminders."))
+
+        success_count = 0
+        for offer_name in offer_names:
+            if not frappe.db.exists("Offer Letter", offer_name):
+                continue
+                
+            offer = frappe.get_doc("Offer Letter", offer_name)
+            
+            # Context-aware message formatting
+            final_message = message
+            if "[Program]" in final_message:
+                final_message = final_message.replace("[Program]", offer.program or "")
+            if "[Deadline]" in final_message:
+                deadline_str = str(offer.payment_deadline) if offer.payment_deadline else "N/A"
+                final_message = final_message.replace("[Deadline]", deadline_str)
+            
+            # Email Delivery
+            if send_email and offer.applicant:
+                applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
+                if applicant_email:
+                    frappe.sendmail(
+                        recipients=[applicant_email],
+                        subject=_("Admission Reminder: Pending Offer Letter for {0}").format(offer.program),
+                        message=final_message,
+                        reference_doctype="Offer Letter",
+                        reference_name=offer.name,
+                        sender=sender_email
+                    )
+                    frappe.logger().info(f"Offer Reminder Email sent to {applicant_email} for {offer_name}")
+                else:
+                    frappe.logger().warning(f"Skipped Email Reminder for {offer_name}: Applicant has no email.")
+            
+            # System Notification Delivery
+            if send_notification:
+                receiver = offer.notification_receiver
+                
+                # Fallback: Try to find user from applicant email if receiver is not set
+                if not receiver and offer.applicant:
+                    email = frappe.db.get_value("Applicant", offer.applicant, "email")
+                    if email:
+                        receiver = frappe.db.get_value("User", {"email": email}, "name")
+                
+                if receiver:
+                    frappe.get_doc({
+                        "doctype": "Notification Log",
+                        "subject": _("Reminder: Offer Letter for {0} is pending").format(offer.program),
+                        "email_content": final_message,
+                        "for_user": receiver,
+                        "document_type": "Offer Letter",
+                        "document_name": offer.name
+                    }).insert(ignore_permissions=True)
+                    frappe.logger().info(f"Offer Reminder Notification sent to {receiver} for {offer_name}")
+                else:
+                    frappe.logger().warning(f"Skipped System Notification for {offer_name}: No corresponding User found.")
+            
+            success_count += 1
+                
+        return {
+            "status": "success",
+            "message": _("Processed {0} reminders successfully.").format(success_count)
+        }
+
 
 
 
@@ -808,3 +916,11 @@ def create_offer_razorpay_order(offer_name):
 def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name):
     from slcm.api.service.fee_service import FeeService
     return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)
+
+@frappe.whitelist()
+def get_pending_offers_list():
+    return OfferService.get_pending_offers_list()
+
+@frappe.whitelist()
+def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
+    return OfferService.send_bulk_reminders(offer_names, message, send_email, send_notification, sender_email)
