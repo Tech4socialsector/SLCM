@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:applicant",
- "creation": "2026-02-22 23:22:48.096478",
+ "creation": "2026-02-28 15:30:47.505686",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -27,6 +27,7 @@
   "father_name",
   "father_mobile_number",
   "tab_allocation",
+  "entrance_test_name",
   "entrance_test_provider",
   "assigned_preferences",
   "center_name",
@@ -41,9 +42,9 @@
   "allocation_date",
   "allocated_by",
   "download_admit_card",
-  "entrance_test_status",
   "tab_9_tab",
   "reschedule_seat_allocation_section",
+  "re_entrance_test_name",
   "re_entrance_test_provider",
   "re_assigned_preferences",
   "re_center_name",
@@ -63,30 +64,17 @@
   "reschedule_reason",
   "rescheduled_on",
   "rescheduled_by",
-  "tab_rejection",
-  "is_rejected",
-  "rejection_reason",
-  "rejected_on",
-  "rejected_by",
+  "tab_result",
+  "entrance_test_status",
+  "attendance_marked_on",
+  "total_score",
+  "score_obtained",
+  "result_status",
+  "entrance_test_rank",
+  "result_published",
   "tab_communication",
   "admit_card_generated",
-  "admit_card_number",
-  "email_sent",
-  "email_sent_on",
-  "sms_sent",
-  "communication_log",
-  "tab_result",
-  "appeared",
-  "attendance_marked_on",
-  "raw_score",
-  "normalized_score",
-  "result_status",
-  "result_published",
-  "tab_locking",
-  "locked_on",
-  "locked_by",
-  "version_number",
-  "remarks"
+  "admit_card_number"
  ],
  "fields": [
   {
@@ -288,33 +276,6 @@
    "options": "User"
   },
   {
-   "fieldname": "tab_rejection",
-   "fieldtype": "Tab Break",
-   "label": "Rejection"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_rejected",
-   "fieldtype": "Check",
-   "label": "Is Rejected"
-  },
-  {
-   "fieldname": "rejection_reason",
-   "fieldtype": "Small Text",
-   "label": "Rejection Reason"
-  },
-  {
-   "fieldname": "rejected_on",
-   "fieldtype": "Datetime",
-   "label": "Rejected On"
-  },
-  {
-   "fieldname": "rejected_by",
-   "fieldtype": "Link",
-   "label": "Rejected By",
-   "options": "User"
-  },
-  {
    "fieldname": "tab_communication",
    "fieldtype": "Tab Break",
    "label": "Communication"
@@ -331,37 +292,9 @@
    "label": "Admit Card Number"
   },
   {
-   "default": "0",
-   "fieldname": "email_sent",
-   "fieldtype": "Check",
-   "label": "Email Sent"
-  },
-  {
-   "fieldname": "email_sent_on",
-   "fieldtype": "Datetime",
-   "label": "Email Sent On"
-  },
-  {
-   "default": "0",
-   "fieldname": "sms_sent",
-   "fieldtype": "Check",
-   "label": "SMS Sent"
-  },
-  {
-   "fieldname": "communication_log",
-   "fieldtype": "Small Text",
-   "label": "Communication Log"
-  },
-  {
    "fieldname": "tab_result",
    "fieldtype": "Tab Break",
    "label": "Result"
-  },
-  {
-   "default": "0",
-   "fieldname": "appeared",
-   "fieldtype": "Check",
-   "label": "Appeared"
   },
   {
    "fieldname": "attendance_marked_on",
@@ -369,52 +302,16 @@
    "label": "Attendance Marked On"
   },
   {
-   "fieldname": "raw_score",
-   "fieldtype": "Float",
-   "label": "Raw Score"
-  },
-  {
-   "fieldname": "normalized_score",
-   "fieldtype": "Float",
-   "label": "Normalized Score"
-  },
-  {
    "fieldname": "result_status",
    "fieldtype": "Select",
    "label": "Result Status",
-   "options": "Pass\nFail\nAbsent\nWithheld\nDisqualified"
+   "options": "\nPass\nFail\nAbsent\nWithheld\nDisqualified"
   },
   {
    "default": "0",
    "fieldname": "result_published",
    "fieldtype": "Check",
    "label": "Result Published"
-  },
-  {
-   "fieldname": "tab_locking",
-   "fieldtype": "Tab Break",
-   "label": "Locking & Audit"
-  },
-  {
-   "fieldname": "locked_on",
-   "fieldtype": "Datetime",
-   "label": "Locked On"
-  },
-  {
-   "fieldname": "locked_by",
-   "fieldtype": "Link",
-   "label": "Locked By",
-   "options": "User"
-  },
-  {
-   "fieldname": "version_number",
-   "fieldtype": "Int",
-   "label": "Version Number"
-  },
-  {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "label": "Remarks"
   },
   {
    "fetch_from": "applicant.candidate_photo",
@@ -542,14 +439,45 @@
   {
    "fieldname": "entrance_test_status",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Entrance Test Status",
-   "options": "Attended\nAbsent\nRescheduled\nNot Scheduled\nScheduled"
+   "options": "\nAttended\nAbsent\nRescheduled\nNot Scheduled\nScheduled"
+  },
+  {
+   "fieldname": "entrance_test_name",
+   "fieldtype": "Link",
+   "label": "Entrance Test Name",
+   "options": "Entrance Test"
+  },
+  {
+   "fieldname": "re_entrance_test_name",
+   "fieldtype": "Link",
+   "label": "Entrance Test Name",
+   "options": "Entrance Test"
+  },
+  {
+   "fieldname": "total_score",
+   "fieldtype": "Int",
+   "label": "Total Score",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "score_obtained",
+   "fieldtype": "Int",
+   "label": "Score Obtained",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "entrance_test_rank",
+   "fieldtype": "Int",
+   "label": "Entrance Test Rank",
+   "non_negative": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-28 10:14:59.426213",
+ "modified": "2026-02-28 15:33:10.034428",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
