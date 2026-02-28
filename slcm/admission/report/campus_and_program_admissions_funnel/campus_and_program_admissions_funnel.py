@@ -12,12 +12,9 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        {"label": _("Admission Cycle"), "fieldname": "admission_cycle", "fieldtype": "Link", "options": "Admission Cycle", "width": 150},
-        {"label": _("Campus"), "fieldname": "campus", "fieldtype": "Link", "options": "Campus", "width": 150},
-        {"label": _("Program"), "fieldname": "program", "fieldtype": "Link", "options": "Program", "width": 150},
-        {"label": _("Stage"), "fieldname": "stage", "fieldtype": "Data", "width": 180},
-        {"label": _("Count"), "fieldname": "count", "fieldtype": "Int", "width": 100},
-        {"label": _("Conversion Rate"), "fieldname": "conversion", "fieldtype": "Percent", "width": 150}
+        {"label": _("Stage"), "fieldname": "stage", "fieldtype": "Data", "width": 250},
+        {"label": _("Count"), "fieldname": "count", "fieldtype": "Int", "width": 120},
+        {"label": _("Conversion Rate (to next stage)"), "fieldname": "conversion", "fieldtype": "Percent", "width": 250}
     ]
 
 def get_data(filters):
@@ -31,41 +28,26 @@ def get_data(filters):
 
     where_clause = " WHERE " + " AND ".join(query_filters) if query_filters else ""
     
-    # Get aggregated counts from DB
+    # Get aggregated counts from DB - Summing everything for a single funnel
     sql = f"""
         SELECT 
-            admission_cycle,
-            campus, 
-            program, 
             application_status, 
             COUNT(*) as count 
         FROM `tabApplicant` 
         {where_clause}
-        GROUP BY admission_cycle, campus, program, application_status
+        GROUP BY application_status
     """
     results = frappe.db.sql(sql, as_dict=1)
 
-    # Dictionary to store status counts per (campus, program)
-    groups = {}
+    # Simplified status map for the whole filtered scope
+    status_map = {}
     for res in results:
-        key = (res.admission_cycle or "Unknown", res.campus or "Unknown", res.program or "Unknown")
-        if key not in groups:
-            groups[key] = {}
-        
         status = res.application_status
         if status == "Draft":
             continue
-        
-        groups[key][status] = groups[key].get(status, 0) + res.count
+        status_map[status] = status_map.get(status, 0) + res.count
 
-    # Define stages and how they are calculated (Cumulative logic for funnel)
-    # Submitted: Any status except Draft
-    # Selected: Selected, Offer Issued, Offer Accepted, Offer Declined, Offer Expired, Fee Paid
-    # Offer Issued: Offer Issued, Offer Accepted, Offer Declined, Offer Expired, Fee Paid
-    # Offer Accepted: Offer Accepted, Fee Paid
-    # Fee Paid: Fee Paid
-    
-    # Stages for the report
+    # Define stages for the report
     report_stages = [
         {"label": "Submitted", "statuses": ["Submitted", "Selected", "Waitlisted", "Rejected", "Offer Accepted", "Offer Issued", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"]},
         {"label": "Selected", "statuses": ["Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"], "parent": "Submitted"},
@@ -78,42 +60,32 @@ def get_data(filters):
         {"label": "Fee Paid", "statuses": ["Fee Paid"], "parent": "Offer Accepted"}
     ]
 
-    data = []
-    for key in sorted(groups.keys()):
-        admission_cycle, campus, program = key
-        status_map = groups[key]
-        
-        # Calculate counts for each report stage
-        calculated_counts = {}
-        for stage in report_stages:
-            total = 0
-            for status in stage["statuses"]:
-                total += status_map.get(status, 0)
-            calculated_counts[stage["label"]] = total
+    # Calculate counts for each report stage
+    calculated_counts = {}
+    for stage in report_stages:
+        total = 0
+        for status in stage["statuses"]:
+            total += status_map.get(status, 0)
+        calculated_counts[stage["label"]] = total
 
-        # Build data rows
-        for stage in report_stages:
-            label = stage["label"]
-            count = calculated_counts[label]
-            parent = stage.get("parent")
-            
-            conversion = None
-            if parent and calculated_counts.get(parent, 0) > 0:
-                conversion = round((count / calculated_counts[parent]) * 100, 1)
-            elif parent:
-                conversion = 0.0
-            
-            row = {
-                "admission_cycle": admission_cycle,
-                "campus": campus,
-                "program": program,
-                "stage": label,
-                "count": count,
-                "conversion": conversion
-            }
-            data.append(row)
+    data = []
+    for stage in report_stages:
+        label = stage["label"]
+        count = calculated_counts[label]
+        parent = stage.get("parent")
         
-        # Add an empty row between groups
-        data.append({})
+        conversion = None
+        if parent and calculated_counts.get(parent, 0) > 0:
+            conversion = (count / calculated_counts[parent]) * 100
+        elif not parent: # Root stage
+             conversion = 100.0
+        else:
+            conversion = 0.0
+        
+        data.append({
+            "stage": label,
+            "count": count,
+            "conversion": conversion
+        })
 
     return data

@@ -61,12 +61,30 @@ class OfferService:
         """
         Resolves the Admission Year based on direct input, Application, or Academic Year.
         """
-        # 1. If admission_year is provided, check if it's actually an Academic Year
+        # Helper to find by configuration bridge
+        def _resolve_from_config(year_val):
+            # Check if this value is linked to any active configuration as either admission or academic year
+            config_match = frappe.db.get_value("Offer Configuration", {
+                "academic_year": year_val,
+                "is_active": 1
+            }, "admission_year") or frappe.db.get_value("Offer Configuration", {
+                "admission_year": year_val,
+                "is_active": 1
+            }, "admission_year")
+            return config_match
+
+        # 1. If admission_year is provided, check if it exists as a record name
         if admission_year:
             if not frappe.db.exists("Admission Year", admission_year):
-                # Probably an Academic Year name (e.g. 2026-2027), find active Admission Year for it
+                # Probably an Academic Year name (e.g. 2026-2027), find valid Admission Year for it
+                # via explicit year field
                 resolved = frappe.db.get_value("Admission Year", 
                     {"year": admission_year, "is_active": 1}, "name")
+                
+                # If still not found, use Offer Configuration as a bridge (common case)
+                if not resolved:
+                    resolved = _resolve_from_config(admission_year)
+                
                 if resolved:
                     return resolved
             return admission_year
@@ -81,8 +99,13 @@ class OfferService:
         # 3. Try to map from Applicant's Academic Year (most common fallback)
         academic_year = frappe.db.get_value("Applicant", applicant, "academic_year")
         if academic_year:
+            # Try to resolve directly via year field
             admission_year = frappe.db.get_value("Admission Year", 
                 {"year": academic_year, "is_active": 1}, "name")
+            
+            # If still not found, use Offer Configuration bridge
+            if not admission_year:
+                admission_year = _resolve_from_config(academic_year)
             
         return admission_year
 
@@ -106,6 +129,34 @@ class OfferService:
 
         config = OfferService.get_active_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
+
+        # Status verification: Only 'Selected' applicants in published Seat Allocations can receive offers
+        sa_filters = {
+            "applicant": applicant,
+            "program": program,
+            "selection_status": "Selected",
+            "parenttype": "Seat Allocation"
+        }
+        status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
+        
+        if not status_check:
+             # Try by applicant_id as fallback
+             sa_filters["applicant_id"] = sa_filters.pop("applicant")
+             status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
+
+        if not status_check:
+             # Check if an offer was ALREADY issued (in which case they would be 'Offer Issued')
+             already_issued = frappe.db.exists("Offer Letter", {
+                "applicant": applicant,
+                "program": program,
+                "offer_status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
+             })
+             if not already_issued:
+                throw(_("Applicant {0} is not in 'Selected' status for Program {1} in any Seat Allocation. Offer letter cannot be generated.").format(applicant, program))
+        else:
+            # Check if parent Seat Allocation is Published
+            if frappe.db.get_value("Seat Allocation", status_check.parent, "status") != "Published":
+                 throw(_("Seat Allocation for Applicant {0} is not yet 'Published'. Please publish the allocation first.").format(applicant))
 
         # Idempotency: Prevent duplicate offers for same campus, cycle, program and admission_year
         existing = frappe.db.exists("Offer Letter", {
@@ -185,7 +236,8 @@ class OfferService:
         
         # Send offer letter email to applicant
         if getattr(config, "send_email", 0):
-            OfferService._send_offer_letter_email(offer, config.email_template, getattr(config, "from_email_account", None))
+            from_account = getattr(config, "from_email_account", None)
+            OfferService._send_offer_letter_email(offer, config.email_template, from_account)
         
         # Transition to Issued
         offer.offer_status = "Issued"
@@ -321,54 +373,63 @@ class OfferService:
                 # Handle case where only applicant name is passed
                 if isinstance(data, str):
                     applicant_name = data
-                    # Fetch details from Applicant record
+                    # Fetch basic details from Applicant record as fallback
                     details = frappe.db.get_value("Applicant", applicant_name, 
-                        ["campus", "program", "admission_cycle", "academic_year"], as_dict=1)
+                        ["campus", "program", "admission_cycle", "admission_year"], as_dict=1)
                     
                     if not details:
                         raise ValueError(_("Applicant {0} not found").format(applicant_name))
                     
                     details = frappe._dict(details)
 
-                    if not applicant_name:
-                        raise ValueError(_("Applicant name is required"))
-                    
-                    if not details.program:
-                        raise ValueError(_("Program is required"))
-                    
-                    # Get campus from the Seat Allocation whose child table
-                    # (Seat Selection Applicant) contains this applicant
-                    # We check both 'applicant' (Link to Admission Result) and 'applicant_id'
-                    seat_allocation_name = frappe.db.get_value(
+                    # Try to find the Seat Allocation context
+                    # Search for a row where this applicant is 'Selected' or 'Accepted'
+                    sa_child_filters = {
+                        "parenttype": "Seat Allocation",
+                        "selection_status": ["in", ["Selected", "Accepted"]]
+                    }
+                    if frappe.db.exists("Admission Result", applicant_name):
+                         sa_child_filters["applicant"] = applicant_name
+                    else:
+                         sa_child_filters["applicant_id"] = applicant_name
+
+                    sa_child_data = frappe.db.get_value(
                         "Seat Selection Applicant",
-                        {
-                            "parenttype": "Seat Allocation",
-                            "applicant": applicant_name 
-                        },
-                        "parent"
-                    ) or frappe.db.get_value(
-                        "Seat Selection Applicant",
-                        {
-                            "parenttype": "Seat Allocation",
-                            "applicant_id": applicant_name
-                        },
-                        "parent"
+                        sa_child_filters,
+                        ["parent", "program"],
+                        as_dict=1
                     )
-                    campus = frappe.db.get_value("Seat Allocation", seat_allocation_name, "campus") if seat_allocation_name else None
 
-                    # Fallback to campus preference if not found in Seat Allocation
-                    if not campus:
+                    if sa_child_data:
+                        parent_sa = frappe.db.get_value("Seat Allocation", sa_child_data.parent, 
+                            ["campus", "admission_cycle"], as_dict=1)
+                        if parent_sa:
+                            # Prioritize Seat Allocation data
+                            campus = parent_sa.campus
+                            cycle = parent_sa.admission_cycle
+                            program = sa_child_data.program
+                        else:
+                            campus = details.campus
+                            cycle = details.admission_cycle
+                            program = details.program
+                    else:
                         campus = details.campus
+                        cycle = details.admission_cycle
+                        program = details.program
 
                     if not campus:
-                        raise ValueError(_("Campus could not be determined for Applicant {0}. No Seat Allocation found and no Campus set.").format(applicant_name))
+                        raise ValueError(_("Campus could not be determined for Applicant {0}.").format(applicant_name))
+                    if not cycle:
+                        raise ValueError(_("Admission Cycle could not be determined for Applicant {0}.").format(applicant_name))
+                    if not program:
+                        raise ValueError(_("Program could not be determined for Applicant {0}.").format(applicant_name))
 
                     payload = {
                         "applicant": applicant_name,
                         "campus": campus,
-                        "program": details.program,
-                        "cycle": details.admission_cycle,
-                        "admission_year": details.academic_year
+                        "program": program,
+                        "cycle": cycle,
+                        "admission_year": details.admission_year
                     }
                 else:
                     payload = data
@@ -462,8 +523,12 @@ class OfferService:
             except Exception as e:
                 frappe.log_error(f"Failed to attach PDF to email for {offer.name}: {str(e)}")
 
+        sender = None
+        if from_email_account:
+            sender = frappe.db.get_value("Email Account", from_email_account, "email_id")
+
         frappe.sendmail(
-            sender=from_email_account,
+            sender=sender,
             recipients=[applicant_email],
             subject=subject,
             message=message,

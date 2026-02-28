@@ -8,7 +8,7 @@ frappe.query_reports["Campus and Program Admissions Funnel"] = {
             "default": frappe.defaults.get_user_default("admission_cycle")
         },
         {
-            "fieldname": "campus", 
+            "fieldname": "campus",
             "label": __("Campus"),
             "fieldtype": "Link",
             "options": "Campus"
@@ -46,13 +46,12 @@ frappe.query_reports["Campus and Program Admissions Funnel"] = {
 
         const labels = Object.keys(summary);
 
-        // Multi-color trick: Create a dataset for each stage.
-        // For each label, only the corresponding dataset will have a non-zero value.
-        // When stacked, this effectively gives each bar a unique color.
+        // To get multi-colored vertical bars in Frappe Charts, we use the multiple-dataset + stacking trick.
+        // We use null instead of 0 to see if the chart engine omits them from the tooltip.
         const datasets = labels.map((label, i) => {
             return {
                 name: label,
-                values: labels.map((l, j) => (i === j ? summary[label] : 0))
+                values: labels.map((l, j) => (i === j ? summary[label] : null))
             };
         });
 
@@ -62,8 +61,9 @@ frappe.query_reports["Campus and Program Admissions Funnel"] = {
                 datasets: datasets
             },
             type: 'bar',
+            height: 300,
             barOptions: {
-                stacked: 1, // Stacking allows different datasets to occupy the same x-axis position
+                stacked: 1,
                 space_between_bars: 20
             },
             colors: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6610f2', '#e83e8c', '#fd7e14', '#20c997']

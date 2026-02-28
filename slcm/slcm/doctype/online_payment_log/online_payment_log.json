@@ -61,9 +61,9 @@
   }
  ],
  "links": [],
- "modified": "2026-02-26 18:01:45.622097",
+ "modified": "2026-02-28 12:58:35.176397",
  "modified_by": "Administrator",
- "module": "SLCM",
+ "module": "slcm",
  "name": "Online Payment Log",
  "owner": "Administrator",
  "permissions": [
@@ -110,5 +110,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

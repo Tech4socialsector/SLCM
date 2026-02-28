@@ -30,11 +30,6 @@ frappe.query_reports["Primary Program Choice"] = {
 			"options": "Program",
 			"get_query": function () {
 				var program_level = frappe.query_report.get_filter_value('program_level');
-				return {
-					filters: {
-						'program_level': program_level
-					}
-				};
 			}
 		},
 		{

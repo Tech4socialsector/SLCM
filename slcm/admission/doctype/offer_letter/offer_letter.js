@@ -4,10 +4,10 @@
 frappe.ui.form.on("Offer Letter", {
 
     refresh(frm) {
-        if (frm.fields_dict['rendered_content']) {
+        if (frm.doc.rendered_content) {
+            // Force the field to display as rendered HTML instead of an editor or raw code
+            frm.set_df_property('rendered_content', 'fieldtype', 'HTML');
             frm.set_df_property('rendered_content', 'options', frm.doc.rendered_content);
-            // Optional: Set the field to read-only to enforce preview
-            frm.set_df_property('rendered_content', 'read_only', 1);
         }
     },
     onload: function (frm) {
