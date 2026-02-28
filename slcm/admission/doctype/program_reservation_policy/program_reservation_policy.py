@@ -53,6 +53,9 @@ class ProgramReservationPolicy(Document):
         self._sync_link_to_cycle_program()
         frappe.cache().delete_key(f"program_status_{self.program}_{self.admission_cycle}")
 
+    def after_insert(self):
+        self._sync_link_to_cycle_program()
+
     def _sync_link_to_cycle_program(self):
         """
         After save, find the matching program row inside

@@ -7,10 +7,4 @@ frappe.ui.form.on("Program Media", {
             window.open("/desk/applicant-portal", "_blank");
         });
     },
-
-    media_type: function (frm) {
-        frm.toggle_display("image", frm.doc.media_type === "Image");
-        frm.toggle_display("video_url", frm.doc.media_type === "Video");
-        frm.toggle_display("brochure_pdf", frm.doc.media_type === "Brochure");
-    }
 });
