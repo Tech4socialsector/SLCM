@@ -12,23 +12,10 @@
   "column_core_2",
   "program",
   "category",
-  "section_eligibility",
-  "min_income",
-  "max_income",
-  "column_eligibility_2",
-  "min_merit_score",
-  "intake_controls_tab",
   "section_intake",
   "intake_limit",
   "column_intake_2",
-  "current_count",
-  "section_availability",
-  "application_start",
-  "status",
-  "column_availability_2",
-  "application_end",
-  "is_active",
-  "remarks"
+  "current_count"
  ],
  "fields": [
   {
@@ -79,30 +66,6 @@
    "options": "Admission Category"
   },
   {
-   "fieldname": "section_eligibility",
-   "fieldtype": "Section Break",
-   "label": "Eligibility Restrictions (Machine Enforced)"
-  },
-  {
-   "fieldname": "min_income",
-   "fieldtype": "Currency",
-   "label": "Minimum Income"
-  },
-  {
-   "fieldname": "max_income",
-   "fieldtype": "Currency",
-   "label": "Maximum Income"
-  },
-  {
-   "fieldname": "column_eligibility_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "min_merit_score",
-   "fieldtype": "Float",
-   "label": "Minimum Merit Score"
-  },
-  {
    "fieldname": "section_intake",
    "fieldtype": "Section Break",
    "label": "Intake Controls"
@@ -123,54 +86,11 @@
    "label": "Current Count",
    "read_only": 1,
    "reqd": 1
-  },
-  {
-   "fieldname": "section_availability",
-   "fieldtype": "Section Break",
-   "label": "Availability Controls"
-  },
-  {
-   "fieldname": "application_start",
-   "fieldtype": "Datetime",
-   "label": "Application Start"
-  },
-  {
-   "fieldname": "column_availability_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "application_end",
-   "fieldtype": "Datetime",
-   "label": "Application End"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "label": "Is Active",
-   "reqd": 1
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "Draft\nActive\nArchived",
-   "reqd": 1
-  },
-  {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "label": "Remarks"
-  },
-  {
-   "fieldname": "intake_controls_tab",
-   "fieldtype": "Tab Break",
-   "label": "Intake Controls"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-26 12:13:05.971722",
+ "modified": "2026-02-28 10:34:39.851360",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme Mapping",

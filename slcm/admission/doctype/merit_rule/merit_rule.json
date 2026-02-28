@@ -1,132 +1,144 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "autoname": "format:MR-{rule_name}-{admission_cycle}-{program_level}",
-    "creation": "2026-02-16 14:19:18.590288",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "rule_name",
-        "admission_cycle",
-        "program_level",
-        "version",
-        "is_active",
-        "amended_from",
-        "column_break_otyc",
-        "approval_authority",
-        "effective_from",
-        "effective_to",
-        "components_section",
-        "components"
-    ],
-    "fields": [
-        {
-            "fieldname": "rule_name",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Rule Name",
-            "reqd": 1,
-            "unique": 1
-        },
-        {
-            "fieldname": "program_level",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Program Level",
-            "options": "UG\nPG\nResearch Cource",
-            "reqd": 1
-        },
-        {
-            "default": "0",
-            "fieldname": "is_active",
-            "fieldtype": "Check",
-            "label": "Is Active",
-            "reqd": 1
-        },
-        {
-            "fieldname": "version",
-            "fieldtype": "Int",
-            "label": "Version",
-            "reqd": 1
-        },
-        {
-            "fieldname": "approval_authority",
-            "fieldtype": "Select",
-            "label": "Approval Authority",
-            "options": "Admissions Committee\nVC",
-            "reqd": 1
-        },
-        {
-            "fieldname": "effective_from",
-            "fieldtype": "Date",
-            "label": "Effective From",
-            "reqd": 1
-        },
-        {
-            "fieldname": "effective_to",
-            "fieldtype": "Date",
-            "label": "Effective To"
-        },
-        {
-            "fieldname": "amended_from",
-            "fieldtype": "Link",
-            "label": "Amended From",
-            "no_copy": 1,
-            "options": "Merit Rule",
-            "print_hide": 1,
-            "read_only": 1,
-            "search_index": 1
-        },
-        {
-            "fieldname": "column_break_otyc",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "admission_cycle",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "label": "Admission Cycle",
-            "options": "Admission Cycle",
-            "reqd": 1
-        },
-        {
-            "fieldname": "components_section",
-            "fieldtype": "Section Break",
-            "label": "Components"
-        },
-        {
-            "fieldname": "components",
-            "fieldtype": "Table",
-            "label": "Components",
-            "options": "Merit Rule Component"
-        }
-    ],
-    "grid_page_length": 50,
-    "index_web_pages_for_search": 1,
-    "links": [],
-    "modified": "2026-02-19 11:21:35.566318",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "Merit Rule",
-    "naming_rule": "Expression (old style)",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "write": 1
-        }
-    ],
-    "row_format": "Dynamic",
-    "rows_threshold_for_grid_search": 20,
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:MR-{rule_name}-{admission_cycle}-{program_level}",
+ "creation": "2026-02-16 14:19:18.590288",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "rule_name",
+  "admission_cycle",
+  "program_level",
+  "version",
+  "is_active",
+  "amended_from",
+  "column_break_otyc",
+  "approval_authority",
+  "effective_from",
+  "effective_to",
+  "components_section",
+  "components"
+ ],
+ "fields": [
+  {
+   "fieldname": "rule_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Rule Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Program Level",
+   "options": "UG\nPG\nResearch Cource",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active",
+   "reqd": 1
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Int",
+   "label": "Version",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approval_authority",
+   "fieldtype": "Select",
+   "label": "Approval Authority",
+   "options": "Admissions Committee\nVC",
+   "reqd": 1
+  },
+  {
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "Effective From",
+   "reqd": 1
+  },
+  {
+   "fieldname": "effective_to",
+   "fieldtype": "Date",
+   "label": "Effective To"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Merit Rule",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_otyc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "components_section",
+   "fieldtype": "Section Break",
+   "label": "Components"
+  },
+  {
+   "fieldname": "components",
+   "fieldtype": "Table",
+   "label": "Components",
+   "options": "Merit Rule Component"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-28 14:42:12.283869",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Merit Rule",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Merit Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
 }
