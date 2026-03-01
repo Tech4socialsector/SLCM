@@ -10,12 +10,19 @@
  "label": "ETM",
  "link_to": "ETM",
  "link_type": "Workspace Sidebar",
- "modified": "2026-02-26 18:13:26.263170",
+ "modified": "2026-03-01 18:04:10.927561",
  "modified_by": "Administrator",
  "name": "ETM",
  "owner": "Administrator",
  "parent_icon": "Admission",
  "restrict_removal": 0,
- "roles": [],
+ "roles": [
+  {
+   "role": "Entrance Test Admin"
+  },
+  {
+   "role": "Applicant"
+  }
+ ],
  "standard": 1
 }

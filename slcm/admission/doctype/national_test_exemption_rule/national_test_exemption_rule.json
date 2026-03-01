@@ -1,5 +1,4 @@
 {
- "_liked_by": "[\"Administrator\"]",
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:exemption_name",
@@ -156,7 +155,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-20 15:56:41.155928",
+ "modified": "2026-03-01 18:36:33.059818",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "National Test Exemption Rule",
@@ -184,6 +183,18 @@
    "read": 1,
    "report": 1,
    "role": "Eligibility Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
    "share": 1,
    "write": 1
   }
