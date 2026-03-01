@@ -2,102 +2,24 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
-  "modified": "2026-02-13 15:47:03.039345",
-  "name": "Inventory",
-  "role_profile": "Inventory",
-  "roles": [
-   {
-    "role": "Stock User"
-   },
-   {
-    "role": "Stock Manager"
-   },
-   {
-    "role": "Item Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-02-13 15:47:03.045422",
-  "name": "Manufacturing",
-  "role_profile": "Manufacturing",
-  "roles": [
-   {
-    "role": "Stock User"
-   },
-   {
-    "role": "Manufacturing User"
-   },
-   {
-    "role": "Manufacturing Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-02-13 15:47:03.050865",
-  "name": "Accounts",
-  "role_profile": "Accounts",
-  "roles": [
-   {
-    "role": "Accounts User"
-   },
-   {
-    "role": "Accounts Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-02-13 15:47:03.054656",
-  "name": "Sales",
-  "role_profile": "Sales",
-  "roles": [
-   {
-    "role": "Sales User"
-   },
-   {
-    "role": "Stock User"
-   },
-   {
-    "role": "Sales Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-02-13 15:47:03.058748",
-  "name": "Purchase",
-  "role_profile": "Purchase",
-  "roles": [
-   {
-    "role": "Item Manager"
-   },
-   {
-    "role": "Stock User"
-   },
-   {
-    "role": "Purchase User"
-   },
-   {
-    "role": "Purchase Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
   "modified": "2026-02-20 15:27:19.761910",
   "name": "Eligibility Admin",
   "role_profile": "Eligibility Admin",
   "roles": [
    {
     "role": "Eligibility Admin"
+   }
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-03-01 13:11:25.478940",
+  "name": "Entrance Test Admin",
+  "role_profile": "Entrance Test Admin",
+  "roles": [
+   {
+    "role": "Entrance Test Admin"
    }
   ]
  }

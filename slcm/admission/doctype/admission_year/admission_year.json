@@ -1,19 +1,99 @@
 {
-  "doctype": "DocType",
-  "name": "Admission Year",
-  "module": "Admission",
-  "naming_rule": "By fieldname",
-  "autoname": "field:year",
-  "is_submittable": 0,
-  "track_changes": 1,
-  "fields": [
-    {"fieldname": "year", "fieldtype": "Data", "label": "Year", "reqd": 1, "in_list_view": 1, "description": "Format: YYYY-YY e.g. 2024-25"},
-    {"fieldname": "is_active", "fieldtype": "Check", "label": "Is Active", "in_list_view": 1},
-    {"fieldname": "description", "fieldtype": "Text", "label": "Description"}
-  ],
-  "permissions": [
-    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
-    {"role": "Admission Admin", "read": 1, "write": 1, "create": 1},
-    {"role": "Admission Officer", "read": 1}
-  ]
+ "actions": [],
+ "autoname": "field:year",
+ "creation": "2026-02-27 21:32:58.135814",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "year",
+  "is_active",
+  "description"
+ ],
+ "fields": [
+  {
+   "description": "Format: YYYY-YY e.g. 2024-25",
+   "fieldname": "year",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Year",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description"
+  }
+ ],
+ "links": [],
+ "modified": "2026-03-01 18:26:28.306688",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission Year",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Admission Admin",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Admission Officer"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Eligibility Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
 }

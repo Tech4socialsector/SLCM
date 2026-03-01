@@ -72,6 +72,18 @@
    "icon": "\u27a1\ufe0f",
    "indent": 0,
    "keep_closed": 0,
+   "label": "Subject",
+   "link_to": "Subject",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "\u27a1\ufe0f",
+   "indent": 0,
+   "keep_closed": 0,
    "label": "Program",
    "link_to": "Program",
    "link_type": "DocType",
@@ -187,7 +199,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-28 12:45:43.875240",
+ "modified": "2026-03-01 12:52:50.483436",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "ETM",

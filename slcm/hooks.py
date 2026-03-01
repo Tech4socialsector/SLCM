@@ -21,25 +21,26 @@ app_email = "tech4socialsector@azimpremjifoundation.org"
 app_license = "mit"
 
 fixtures = [
-    "Role",
-    "Module Profile",
-    "Role Profile"
+    {
+        "doctype": "Role",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+        ]
+    },
+    {
+        "doctype": "Module Profile",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+        ]
+    },
+    {
+        "doctype": "Role Profile",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+        ]
+    }
 ]
-# fixtures = [
-#     {
-#         "doctype": "Role",
-#         "filters": [["name", "=", "Eligibility Admin"]]
-#     },
-#     {
-#         "doctype": "Module Profile",
-#         "filters": [["name", "=", "Eligibility Admin"]]
-#     },
-#     {
-#         "doctype": "Role Profile",
-#         "filters": [["name", "=", "Eligibility Admin"]]
-#     }
-# ]
-# Apps
+# Apps  
 # ------------------
 
 # required_apps = []
@@ -327,4 +328,8 @@ doc_events = {
     "Campus Seat Matrix": {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
     }
+}
+permission_query_conditions = {
+    "Applicant": "slcm.permissions.applicant_query_conditions",
+    "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
 }
