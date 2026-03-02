@@ -24,19 +24,19 @@ fixtures = [
     {
         "doctype": "Role",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider"]]
         ]
     },
     {
         "doctype": "Module Profile",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider"]]
         ]
     },
     {
         "doctype": "Role Profile",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider"]]
         ]
     }
 ]
@@ -332,7 +332,18 @@ doc_events = {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
     }
 }
+# permission_query_conditions = {
+#     "Applicant": "slcm.permissions.applicant_query_conditions",
+#     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
+# }
 permission_query_conditions = {
+
+    # Applicant - see only their own Applicant document
     "Applicant": "slcm.permissions.applicant_query_conditions",
+
+    # Entrance Test Provider - see only their own Provider record
+    "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
+
+    # Seat Allocation - filtered based on role
     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
 }

@@ -10,7 +10,7 @@
  "label": "ETM",
  "link_to": "ETM",
  "link_type": "Workspace Sidebar",
- "modified": "2026-03-01 18:04:10.927561",
+ "modified": "2026-03-02 10:59:21.723586",
  "modified_by": "Administrator",
  "name": "ETM",
  "owner": "Administrator",
@@ -22,6 +22,9 @@
   },
   {
    "role": "Applicant"
+  },
+  {
+   "role": "Entrance Test Provider"
   }
  ],
  "standard": 1

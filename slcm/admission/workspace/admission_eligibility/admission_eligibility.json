@@ -181,7 +181,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-01 18:02:25.449470",
+ "modified": "2026-03-02 10:59:50.998660",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Eligibility",
@@ -210,6 +210,12 @@
  "roles": [
   {
    "role": "Eligibility Admin"
+  },
+  {
+   "role": "Applicant"
+  },
+  {
+   "role": "Entrance Test Provider"
   }
  ],
  "sequence_id": 1.0,

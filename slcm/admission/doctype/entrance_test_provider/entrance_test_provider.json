@@ -16,6 +16,7 @@
   "contact_person",
   "contact_number",
   "email",
+  "user",
   "section_break_infra",
   "center_name",
   "center_address",
@@ -124,12 +125,18 @@
    "fieldtype": "Table",
    "label": "Provider Room",
    "options": "Provider Room"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-01 21:42:44.123180",
+ "modified": "2026-03-02 11:25:37.471800",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",
@@ -168,6 +175,15 @@
    "read": 1,
    "report": 1,
    "role": "Applicant",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Provider",
    "share": 1,
    "write": 1
   }
