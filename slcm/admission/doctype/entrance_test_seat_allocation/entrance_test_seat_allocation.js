@@ -11,49 +11,27 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
       return { filters: { name: ["in", preferences] } };
     });
 
+    frm.set_query("re_entrance_test_provider", function () {
+      const preferences = (frm.doc.re_assigned_preferences || []).map(p => p.provider);
+      return { filters: { name: ["in", preferences] } };
+    });
+
     if (frm.doc.allocation_status === "Allocated") {
       frm.set_df_property("entrance_test_provider", "read_only", 1);
+      frm.set_df_property("entrance_test_name", "read_only", 1);
+    }
+    if (frm.doc.re_allocation_status === "Allocated") {
+      frm.set_df_property("re_entrance_test_provider", "read_only", 1);
+      frm.set_df_property("re_entrance_test_name", "read_only", 1);
     }
   },
 
   download_admit_card: function (frm) {
-    if (frm.is_dirty()) {
-      frappe.msgprint({
-        title: __("Unsaved Changes"),
-        message: __("Please save the document before downloading the Admit Card."),
-        indicator: "orange"
-      });
-      return;
-    }
+    _handle_admit_card_download(frm, false);
+  },
 
-    const allowed = ["Allocated", "Reallocated"];
-    if (!allowed.includes(frm.doc.allocation_status)) {
-      frappe.msgprint({
-        title: __("Not Allowed"),
-        message: __("Admit Card can only be downloaded when status is <b>Allocated</b> or <b>Reallocated</b>."),
-        indicator: "red"
-      });
-      return;
-    }
-
-    frappe.show_alert({ message: __("Generating Admit Card…"), indicator: "blue" }, 3);
-
-    // Fetch Campus Branding
-    frappe.db.get_value("Campus", frm.doc.campus, ["campus_name", "logo"], (r) => {
-      const branding = r || {};
-
-      frappe.call({
-        method: "frappe.client.get",
-        args: { doctype: "Entrance Test Seat Allocation", name: frm.doc.name },
-        callback: function (res) {
-          if (res.exc || !res.message) {
-            frappe.msgprint(__("Failed to fetch document. Please try again."));
-            return;
-          }
-          generate_admit_card_pdf(res.message, frm, branding);
-        }
-      });
-    });
+  re_download_admit_card: function (frm) {
+    _handle_admit_card_download(frm, true);
   },
 
   entrance_test_provider: function (frm) {
@@ -92,10 +70,46 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
     });
   },
 
+  re_entrance_test_provider: function (frm) {
+    const provider = frm.doc.re_entrance_test_provider;
+    if (!provider) {
+      frm.set_value("re_center_name", "");
+      frm.set_value("re_center_address", "");
+      return;
+    }
+
+    const pref = (frm.doc.re_assigned_preferences || []).find(p => p.provider === provider);
+    if (!pref) {
+      frappe.show_alert({ message: __("Please choose from your assigned preference centers."), indicator: "red" });
+      frm.set_value("re_entrance_test_provider", "");
+      return;
+    }
+
+    frm.set_value("re_center_name", pref.center_name || "");
+    frm.set_value("re_center_address", pref.center_address || "");
+
+    frappe.call({
+      method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences",
+      args: { applicant_id: frm.doc.applicant, entrance_test_list: frm.doc.entrance_test_list },
+      callback: function (r) {
+        if (!r.message) return;
+        const pinfo = r.message.find(p => p.entrance_test_provider === provider);
+        if (pinfo && pinfo.is_full) {
+          frappe.msgprint({
+            title: __("Center Full"),
+            message: __("<b>{0}</b> is currently full. Please choose another center.", [pinfo.center_name || provider]),
+            indicator: "orange"
+          });
+          frm.set_value("re_entrance_test_provider", "");
+        }
+      }
+    });
+  },
+
   before_save: function (frm) {
+    // Initial Allocation Confirmation
     if (frm.doc.entrance_test_provider && frm.doc.allocation_status === "Not Allocated") {
       frappe.validated = false;
-
       frappe.confirm(
         __("Confirm seat allocation at <b>{0}</b>? This action is permanent.",
           [frm.doc.center_name || frm.doc.entrance_test_provider]),
@@ -118,26 +132,105 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
         }
       );
     }
+
+    // Rescheduled Allocation Confirmation
+    if (frm.doc.re_entrance_test_provider && frm.doc.re_allocation_status === "Preferences Assigned") {
+      frappe.validated = false;
+      frappe.confirm(
+        __("Confirm rescheduled seat allocation at <b>{0}</b>? This action is permanent.",
+          [frm.doc.re_center_name || frm.doc.re_entrance_test_provider]),
+        function () {
+          frappe.call({
+            method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.confirm_rescheduled_preference",
+            args: { allocation_name: frm.doc.name, selected_provider: frm.doc.re_entrance_test_provider },
+            freeze: true,
+            freeze_message: __("Finalizing your rescheduled allocation..."),
+            callback: function (r) {
+              if (!r.exc && r.message) {
+                frm.reload_doc();
+                frappe.show_alert({
+                  message: __("Rescheduled Seat Successfully Allocated! Seat: <b>{0}</b>", [r.message.seat_number]),
+                  indicator: "green"
+                }, 5);
+              }
+            }
+          });
+        }
+      );
+    }
   }
 });
 
+function _handle_admit_card_download(frm, is_rescheduled) {
+  if (frm.is_dirty()) {
+    frappe.msgprint({
+      title: __("Unsaved Changes"),
+      message: __("Please save the document before downloading the Admit Card."),
+      indicator: "orange"
+    });
+    return;
+  }
+
+  const status = is_rescheduled ? frm.doc.re_allocation_status : frm.doc.allocation_status;
+  const allowed = ["Allocated", "Reallocated"];
+
+  if (!allowed.includes(status)) {
+    frappe.msgprint({
+      title: __("Not Allowed"),
+      message: __("Admit Card can only be downloaded when status is <b>Allocated</b> or <b>Reallocated</b>."),
+      indicator: "red"
+    });
+    return;
+  }
+
+  frappe.show_alert({ message: __("Generating Admit Card…"), indicator: "blue" }, 3);
+
+  // Fetch Campus Branding
+  frappe.db.get_value("Campus", frm.doc.campus, ["campus_name", "logo"], (r) => {
+    const branding = r || {};
+
+    frappe.call({
+      method: "frappe.client.get",
+      args: { doctype: "Entrance Test Seat Allocation", name: frm.doc.name },
+      callback: function (res) {
+        if (res.exc || !res.message) {
+          frappe.msgprint(__("Failed to fetch document. Please try again."));
+          return;
+        }
+        generate_admit_card_pdf(res.message, frm, branding, is_rescheduled);
+      }
+    });
+  });
+}
 
 // ============================================================
 //  generate_admit_card_pdf
 //  NLSAT-LLB exact layout: dark-red header + bordered tables
 //  2-page: Page 1 = card, Page 2 = instructions
 // ============================================================
-function generate_admit_card_pdf(doc, frm, branding = {}) {
+function generate_admit_card_pdf(doc, frm, branding = {}, is_rescheduled = false) {
 
   const esc = (v) => frappe.utils.escape_html(String(v || ""));
   const val = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
 
   const admit_no = doc.admit_card_number || ("AC-" + doc.name);
 
+  // Pick fields based on is_rescheduled
+  const f_date = is_rescheduled ? doc.re_allocation_date : doc.allocation_date;
+  const f_test = is_rescheduled ? (doc.re_entrance_test_name || doc.re_entrance_test_list) : (doc.entrance_test_name || doc.entrance_test_list);
+  const f_seat = is_rescheduled ? doc.re_seat_number : doc.seat_number;
+  const f_room = is_rescheduled ? doc.re_room_name : doc.room_name;
+  const f_code = is_rescheduled ? doc.re_room_code : doc.room_code;
+  const f_building = is_rescheduled ? doc.re_building : doc.building;
+  const f_floor = is_rescheduled ? doc.re_floor : doc.floor;
+  const f_center = is_rescheduled ? doc.re_center_name : doc.center_name;
+  const f_address = is_rescheduled ? doc.re_center_address : doc.center_address;
+  const f_status = is_rescheduled ? doc.re_allocation_status : doc.allocation_status;
+
   let alloc_date = "—";
-  if (doc.allocation_date) {
-    try { alloc_date = frappe.datetime.str_to_user(doc.allocation_date); }
-    catch (e) { alloc_date = doc.allocation_date; }
+  if (f_date) {
+    try { alloc_date = frappe.datetime.str_to_user(f_date); }
+    catch (e) { alloc_date = f_date; }
   }
 
   let dob = "—";
@@ -173,7 +266,7 @@ function generate_admit_card_pdf(doc, frm, branding = {}) {
   const acad_year = val(doc.academic_year);
   const adm_cycle = val(doc.admission_cycle);
 
-  const centre_parts = [doc.center_name, doc.center_address].filter(v => v && v.trim());
+  const centre_parts = [f_center, f_address].filter(v => v && v.trim());
   const centre_full = centre_parts.length ? centre_parts.map(esc).join(", ") : "—";
 
   /* ── header snippet (used on both pages) ── */
@@ -578,7 +671,7 @@ body {
 
   <!-- Title -->
   <div class="title-row">
-    <div class="t1">Admit Card (${test_list !== "—" ? esc(doc.entrance_test_list) : "Entrance Examination"})</div>
+    <div class="t1">Admit Card (${val(f_test)})</div>
     <div class="t2">Admission to ${prog_level !== "—" ? esc(doc.program_level) : "the Programme"} &nbsp;|&nbsp; ${acad_year} &nbsp;|&nbsp; ${adm_cycle}</div>
   </div>
 
@@ -644,22 +737,22 @@ body {
         <tr>
           <td class="lb">Seat Number</td>
           <td class="sp">:</td>
-          <td class="vl"><span class="seat-pill">${val(doc.seat_number)}</span></td>
+          <td class="vl"><span class="seat-pill">${val(f_seat)}</span></td>
         </tr>
         <tr>
           <td class="lb">Room / Hall</td>
           <td class="sp">:</td>
-          <td class="vl">${val(doc.room_name)}${doc.room_code && doc.room_code.trim() ? "&nbsp; (Code:&nbsp;" + esc(doc.room_code) + ")" : ""}</td>
+          <td class="vl">${val(f_room)}${f_code && f_code.trim() ? "&nbsp; (Code:&nbsp;" + esc(f_code) + ")" : ""}</td>
         </tr>
         <tr>
           <td class="lb">Building / Floor</td>
           <td class="sp">:</td>
-          <td class="vl">${val(doc.building)}${doc.floor && doc.floor.trim() ? "&nbsp; &middot;&nbsp; Floor:&nbsp;" + esc(doc.floor) : ""}</td>
+          <td class="vl">${val(f_building)}${f_floor && f_floor.trim() ? "&nbsp; &middot;&nbsp; Floor:&nbsp;" + esc(f_floor) : ""}</td>
         </tr>
         <tr>
           <td class="lb">Allocation Status</td>
           <td class="sp">:</td>
-          <td class="vl"><span class="status-pill">${val(doc.allocation_status)}</span></td>
+          <td class="vl"><span class="status-pill">${val(f_status)}</span></td>
         </tr>
         <tr>
           <td class="lb">Test Centre Name &amp;&nbsp;Address</td>

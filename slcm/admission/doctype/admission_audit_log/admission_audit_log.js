@@ -6,5 +6,6 @@ frappe.ui.form.on("Admission Audit Log", {
             🔒 Read-Only - Legal Audit Record
             </span>`
         );
+        
     }
 });

@@ -1,0 +1,42 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-02-25 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series", "applicant", "admission_cycle", "col_break_1",
+  "form_config", "form_version", "is_draft",
+  "section_break_responses", "responses",
+  "section_break_meta", "submitted_on", "last_saved_on", "ip_address"
+ ],
+ "fields": [
+  {"fieldname": "naming_series", "fieldtype": "Select", "label": "Series", "options": "AFR-.YYYY.-", "default": "AFR-.YYYY.-"},
+  {"fieldname": "applicant", "fieldtype": "Link", "label": "Applicant", "options": "Applicant", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "admission_cycle", "fieldtype": "Link", "label": "Admission Cycle", "options": "Admission Cycle", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "col_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "form_config", "fieldtype": "Link", "label": "Form Config", "options": "Application Form Config", "reqd": 1},
+  {"fieldname": "form_version", "fieldtype": "Int", "label": "Form Version", "read_only": 1},
+  {"fieldname": "is_draft", "fieldtype": "Check", "label": "Is Draft", "default": "1", "in_list_view": 1},
+  {"fieldname": "section_break_responses", "fieldtype": "Section Break", "label": "Form Responses"},
+  {"fieldname": "responses", "fieldtype": "Code", "label": "Responses (JSON)", "options": "JSON"},
+  {"fieldname": "section_break_meta", "fieldtype": "Section Break", "label": "Metadata"},
+  {"fieldname": "submitted_on", "fieldtype": "Datetime", "label": "Submitted On", "read_only": 1},
+  {"fieldname": "last_saved_on", "fieldtype": "Datetime", "label": "Last Auto-Saved", "read_only": 1},
+  {"fieldname": "ip_address", "fieldtype": "Data", "label": "IP Address", "read_only": 1}
+ ],
+ "modified": "2026-02-25 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Application Form Response",
+ "owner": "Administrator",
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1},
+  {"role": "Admission Admin", "read": 1, "write": 1},
+  {"role": "Applicant", "read": 1, "write": 1, "create": 1}
+ ],
+ "sort_field": "submitted_on",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

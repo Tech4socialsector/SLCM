@@ -1,0 +1,28 @@
+{
+  "name": "Portal Slideshow Image",
+  "doctype": "DocType",
+  "module": "Admission",
+  "istable": 1,
+  "editable_grid": 1,
+  "fields": [
+    {
+      "fieldname": "image",
+      "fieldtype": "Attach Image",
+      "label": "Image",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "caption",
+      "fieldtype": "Data",
+      "label": "Caption",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "link_url",
+      "fieldtype": "Data",
+      "label": "Click URL",
+      "description": "Optional. Where to navigate when slide is clicked."
+    }
+  ]
+}

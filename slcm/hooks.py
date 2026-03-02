@@ -21,25 +21,26 @@ app_email = "tech4socialsector@azimpremjifoundation.org"
 app_license = "mit"
 
 fixtures = [
-    "Role",
-    "Module Profile",
-    "Role Profile"
+    {
+        "doctype": "Role",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+        ]
+    },
+    {
+        "doctype": "Module Profile",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+        ]
+    },
+    {
+        "doctype": "Role Profile",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin"]]
+        ]
+    }
 ]
-# fixtures = [
-#     {
-#         "doctype": "Role",
-#         "filters": [["name", "=", "Eligibility Admin"]]
-#     },
-#     {
-#         "doctype": "Module Profile",
-#         "filters": [["name", "=", "Eligibility Admin"]]
-#     },
-#     {
-#         "doctype": "Role Profile",
-#         "filters": [["name", "=", "Eligibility Admin"]]
-#     }
-# ]
-# Apps
+# Apps  
 # ------------------
 
 # required_apps = []
@@ -288,7 +289,10 @@ scheduler_events = {
 		"*/10 * * * *": [  # Every 10 minutes
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
-		]
+		],
+        "*/15 * * * *": [
+            "slcm.admission.utils.scheduler.auto_manage_announcements"
+        ]
 	},
     "all": [],
 	"hourly": [
@@ -327,4 +331,8 @@ doc_events = {
     "Campus Seat Matrix": {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
     }
+}
+permission_query_conditions = {
+    "Applicant": "slcm.permissions.applicant_query_conditions",
+    "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
 }
