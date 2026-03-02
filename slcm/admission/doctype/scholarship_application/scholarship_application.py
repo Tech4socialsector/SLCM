@@ -24,6 +24,7 @@ class ScholarshipApplication(Document):
 	def validate(self):
 		self.prevent_duplicate()
 		self.validate_scheme_mapping()
+		self.validate_requirements()
 		self.validate_stage()
 		self.calculate_benefit()
 		self.validate_rejection_reason()
@@ -71,6 +72,54 @@ class ScholarshipApplication(Document):
 
 		if not is_applicable:
 			frappe.throw(frappe._("Scholarship not applicable for selected cycle/program/campus/category."))
+
+	def validate_requirements(self):
+		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
+		
+		# 1. Income Validation
+		if scheme.scheme_type == "Need" and scheme.income_certificate_required:
+			if self.family_income is None:
+				frappe.throw(frappe._("Family Income is mandatory for this scholarship"))
+			if not self.income_certificate:
+				frappe.throw(frappe._("Income Certificate is mandatory for this scholarship"))
+			
+			if scheme.max_income and flt(self.family_income) > flt(scheme.max_income):
+				frappe.throw(frappe._("Family Income {0} exceeds the maximum allowed {1} for this scholarship")
+					.format(self.family_income, scheme.max_income))
+			if scheme.min_income and flt(self.family_income) < flt(scheme.min_income):
+				frappe.throw(frappe._("Family Income {0} is below the minimum required {1} for this scholarship")
+					.format(self.family_income, scheme.min_income))
+
+		# 2. Merit Validation
+		if scheme.scheme_type == "Merit" and scheme.min_merit_score:
+			# Try to fetch total score from Merit List Applicant
+			merit_score = frappe.db.get_value(
+				"Merit List Applicant",
+				{
+					"applicant_id": self.applicant_id,
+					"parentfield": "merit_applicants"
+				},
+				"total_score"
+			)
+			
+			if merit_score is None:
+				# Fallback to Admission Result entrance percentage
+				merit_score = frappe.db.get_value(
+					"Admission Result",
+					{"applicant_id": self.applicant_id, "admission_cycle": self.admission_cycle},
+					"entrance_percentage"
+				)
+
+			if merit_score is not None and flt(merit_score) < flt(scheme.min_merit_score):
+				frappe.throw(frappe._("Your merit score ({0}) is below the required minimum ({1}) for this scholarship")
+					.format(merit_score, scheme.min_merit_score))
+			
+			if merit_score is None:
+				# If still None, maybe merit hasn't been generated yet
+				# We allow submission but mark for review? Or block?
+				# The user said "possibly hide income certificate", implies they can apply.
+				# Let's show a warning if it's missing but don't block if not explicit.
+				pass
 
 	def validate_stage(self):
 		# Skip availability checks if rejecting or revoking

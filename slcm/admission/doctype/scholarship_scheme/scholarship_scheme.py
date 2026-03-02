@@ -9,16 +9,30 @@ from frappe.utils import flt
 class ScholarshipScheme(Document):
 	def validate(self):
 		self.validate_income_range()
+		self.validate_merit_score()
 		self.validate_coverage()
 		self.validate_limits()
 		self.validate_max_amount()
 
 	def validate_income_range(self):
+		if self.scheme_type == "Need":
+			if self.min_income is None:
+				frappe.throw(frappe._("Minimum Income is mandatory for Need scheme"))
+			if self.max_income is None:
+				frappe.throw(frappe._("Maximum Income is mandatory for Need scheme"))
+		
 		min_income = self.get("min_income")
 		max_income = self.get("max_income")
-		if min_income and max_income:
+		if min_income is not None and max_income is not None:
 			if max_income < min_income:
 				frappe.throw(frappe._("Maximum Income cannot be less than Minimum Income"))
+
+	def validate_merit_score(self):
+		if self.scheme_type == "Merit" and not self.min_merit_score:
+			frappe.throw(frappe._("Minimum Merit Score is mandatory for Merit scheme"))
+		
+		if self.min_merit_score and (flt(self.min_merit_score) < 0 or flt(self.min_merit_score) > 100):
+			frappe.throw(frappe._("Merit score must be between 0 and 100"))
 
 	def validate_coverage(self):
 		coverage_type = self.get("coverage_type")

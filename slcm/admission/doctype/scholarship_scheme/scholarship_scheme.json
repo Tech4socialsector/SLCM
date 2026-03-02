@@ -37,12 +37,13 @@
         "column_conflict_2",
         "min_income",
         "max_income",
+        "min_merit_score",
+        "income_certificate_required",
         "section_availability",
         "stage_availability",
         "application_start",
         "column_availability_2",
         "application_end",
-        "is_active",
         "section_governance",
         "status",
         "approval_authority",
@@ -249,13 +250,6 @@
             "label": "Application End"
         },
         {
-            "default": "0",
-            "fieldname": "is_active",
-            "fieldtype": "Check",
-            "label": "Is Active",
-            "reqd": 1
-        },
-        {
             "fieldname": "section_governance",
             "fieldtype": "Section Break",
             "label": "Governance & Lifecycle"
@@ -302,6 +296,17 @@
             "fieldname": "scholarship_coverage_rule_section",
             "fieldtype": "Section Break",
             "label": "Scholarship Coverage Rule"
+        },
+        {
+            "fieldname": "min_merit_score",
+            "fieldtype": "Float",
+            "label": "Minimum Merit Score"
+        },
+        {
+            "default": "0",
+            "fieldname": "income_certificate_required",
+            "fieldtype": "Check",
+            "label": "Income Certificate Required"
         }
     ],
     "grid_page_length": 50,

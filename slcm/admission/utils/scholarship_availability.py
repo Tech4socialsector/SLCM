@@ -13,7 +13,7 @@ def check_scholarship_availability(scheme_name, applicant_status):
     scheme = frappe.get_doc("Scholarship Scheme", scheme_name)
 
     # 1. Scheme must be active
-    if scheme.status != "Active" or not scheme.is_active:
+    if scheme.status != "Active":
         frappe.throw(frappe._("Scholarship scheme {0} is not active").format(scheme_name))
 
     # 2. Stage check
@@ -114,8 +114,7 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
         "Scholarship Scheme",
         filters={
             "name": ["in", applicable_schemes],
-            "status": "Active",
-            "is_active": 1
+            "status": "Active"
         },
         fields=["name", "scheme_name", "coverage_type", "coverage_value", "apply_on", "stage_availability", "application_start", "application_end", "max_beneficiaries", "current_beneficiaries", "total_budget", "utilized_budget"]
     )
