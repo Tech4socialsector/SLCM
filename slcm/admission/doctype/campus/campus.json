@@ -102,7 +102,7 @@
    "link_fieldname": "campus"
   }
  ],
- "modified": "2026-02-25 23:45:53.463116",
+ "modified": "2026-02-28 11:24:28.285954",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Campus",
@@ -126,5 +126,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "campus_name",
  "track_changes": 1
 }

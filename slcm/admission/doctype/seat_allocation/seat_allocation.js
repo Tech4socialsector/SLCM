@@ -113,14 +113,51 @@ frappe.ui.form.on("Seat Allocation", {
                 }
 
                 let d = new frappe.ui.Dialog({
-                    title: __("Select Applicants for Offer Letters"),
+                    title: __("Generate Offer Letters"),
+                    size: "extra-large",
                     fields: [
+                        {
+                            label: __("Admission Cycle"),
+                            fieldname: "dialog_admission_cycle",
+                            fieldtype: "Link",
+                            options: "Admission Cycle",
+                            read_only: 1,
+                            default: frm.doc.admission_cycle,
+                            columns: 4
+                        },
+                        {
+                            fieldtype: "Column Break",
+                        },
+                        {
+                            label: __("Campus"),
+                            fieldname: "dialog_campus",
+                            fieldtype: "Link",
+                            options: "Campus",
+                            read_only: 1,
+                            default: frm.doc.campus,
+                            columns: 4
+                        },
+                        {
+                            fieldtype: "Column Break",
+                        },
+                        {
+                            label: __("Admission Year"),
+                            fieldname: "dialog_admission_year",
+                            fieldtype: "Link",
+                            options: "Admission Year",
+                            read_only: 1,
+                            columns: 4
+                        },
+                        {
+                            fieldtype: "Section Break",
+                        },
                         {
                             label: __("Selected Applicants"),
                             fieldname: "applicants_grid",
                             fieldtype: "Table",
                             cannot_add_rows: true,
                             cannot_delete_rows: true,
+                            page_length: 20,
                             fields: [
                                 {
                                     fieldname: "applicant_id",
@@ -145,14 +182,18 @@ frappe.ui.form.on("Seat Allocation", {
                                     read_only: 1
                                 }
                             ],
-                            data: applicants,
-                            get_data: () => applicants
+                            data: applicants
                         }
                     ],
                     primary_action_label: __("Generate {0} Offers", [applicants.length]),
                     primary_action(values) {
                         const selections = d.fields_dict.applicants_grid.grid.get_selected_children()
-                            .map(row => row.applicant_id);
+                            .map(row => ({
+                                applicant: row.applicant_id,
+                                campus: frm.doc.campus,
+                                cycle: frm.doc.admission_cycle,
+                                program: row.program
+                            }));
 
                         if (selections.length === 0) {
                             frappe.msgprint(__("Please select at least one applicant."));
@@ -194,7 +235,8 @@ frappe.ui.form.on("Seat Allocation", {
                                 return;
                             }
 
-                            const current_applicant = selections[processed];
+                            const payload = selections[processed];
+                            const current_applicant = payload.applicant;
                             frappe.show_progress(
                                 __("Generating Offer Letters"),
                                 processed + 1,
@@ -205,7 +247,7 @@ frappe.ui.form.on("Seat Allocation", {
                             frappe.call({
                                 method: "slcm.api.service.offer_service.bulk_generate_offers",
                                 args: {
-                                    applicants: [current_applicant]
+                                    applicants: [payload] // Passing the full dict
                                 },
                                 callback: function (r) {
                                     if (r.message) {
@@ -234,6 +276,16 @@ frappe.ui.form.on("Seat Allocation", {
                 });
 
                 d.show();
+
+                // Fetch and set Admission Year from Admission Cycle
+                if (frm.doc.admission_cycle) {
+                    frappe.db.get_value("Admission Cycle", frm.doc.admission_cycle, "admission_year")
+                        .then(r => {
+                            if (r.message && r.message.admission_year) {
+                                d.set_value("dialog_admission_year", r.message.admission_year);
+                            }
+                        });
+                }
 
                 // Select all by default and hide grid action buttons
                 setTimeout(() => {

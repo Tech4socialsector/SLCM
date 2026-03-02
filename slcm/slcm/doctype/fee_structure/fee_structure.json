@@ -21,6 +21,7 @@
   "valid_until",
   "status",
   "total_amount",
+  "receipt_print_format",
   "section_components",
   "components"
  ],
@@ -130,12 +131,20 @@
    "label": "Payment Gateway",
    "mandatory_depends_on": "eval:doc.online_payment == 1",
    "options": "Payment Gateway"
+  },
+  {
+   "depends_on": "eval:doc.online_payment ==1",
+   "fieldname": "receipt_print_format",
+   "fieldtype": "Link",
+   "label": "Receipt Print Format",
+   "mandatory_depends_on": "eval:doc.online_payment ==1",
+   "options": "Print Format"
   }
  ],
  "links": [],
- "modified": "2026-02-25 11:07:39.962746",
+ "modified": "2026-02-28 11:08:03.562127",
  "modified_by": "Administrator",
- "module": "SLCM",
+ "module": "slcm",
  "name": "Fee Structure",
  "naming_rule": "Expression",
  "owner": "Administrator",

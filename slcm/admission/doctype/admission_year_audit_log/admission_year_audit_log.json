@@ -23,6 +23,7 @@
    "fieldname": "admission_year",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Admission Year",
    "options": "Admission Year",
    "reqd": 1
@@ -31,6 +32,7 @@
    "fieldname": "change_type",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Change Type",
    "options": "Status Change\nDate Change\nActivation Change\nOther"
   },
@@ -63,6 +65,7 @@
    "fieldname": "changed_by",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Changed By",
    "options": "User"
   },
@@ -83,11 +86,11 @@
   }
  ],
  "links": [],
- "modified": "2026-02-22 10:53:23.928043",
+ "modified": "2026-02-26 18:25:22.965716",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Year Audit Log",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

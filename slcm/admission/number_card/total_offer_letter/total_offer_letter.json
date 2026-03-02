@@ -1,6 +1,6 @@
 {
  "aggregate_function_based_on": "",
- "color": "#449CF0",
+ "color": "#39E4A5",
  "creation": "2026-02-17 21:26:12.201921",
  "currency": "INR",
  "docstatus": 0,
@@ -13,7 +13,7 @@
  "is_public": 1,
  "is_standard": 1,
  "label": "Total offer letter",
- "modified": "2026-02-18 09:41:35.185271",
+ "modified": "2026-02-27 18:01:01.781742",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Total offer letter",

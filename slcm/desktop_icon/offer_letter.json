@@ -1,39 +1,22 @@
 {
  "app": "slcm",
- "bg_color": "gray",
- "creation": "2026-02-24 10:55:35.607220",
+ "bg_color": "blue",
+ "creation": "2026-02-27 16:05:50.373912",
  "docstatus": 0,
  "doctype": "Desktop Icon",
  "hidden": 0,
- "icon_image": "/files/email_5119719.png",
  "icon_type": "Link",
  "idx": 0,
- "label": "Offer letter",
+ "label": "Offer Letter",
  "link_to": "Offer Letter",
  "link_type": "Workspace Sidebar",
- "modified": "2026-02-25 15:26:17.217846",
+ "modified": "2026-02-27 16:08:32.873679",
  "modified_by": "Administrator",
- "name": "Offer letter",
+ "name": "Offer Letter",
  "owner": "Administrator",
  "parent_icon": "Admission",
  "restrict_removal": 0,
- "roles": [
-  {
-   "role": "System Manager"
-  },
-  {
-   "role": "Applicant"
-  },
-  {
-   "role": "Academic Admin"
-  },
-  {
-   "role": "Academics User"
-  },
-  {
-   "role": "Administrator"
-  }
- ],
- "sidebar": "",
+ "roles": [],
+ "sidebar": "Offer Letter",
  "standard": 1
 }

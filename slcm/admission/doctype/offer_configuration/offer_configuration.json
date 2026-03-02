@@ -9,9 +9,12 @@
   "academic_year",
   "admission_cycle",
   "campus",
+  "generate_offer_letter_by_system",
+  "send_email",
   "column_break_sswl",
+  "offer_letter_pdf",
   "pdf_format",
-  "receipt_print_format",
+  "from_email_account",
   "email_template",
   "fee_structure",
   "is_active"
@@ -32,27 +35,23 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval:doc.generate_offer_letter_by_system == 1",
    "fieldname": "pdf_format",
    "fieldtype": "Link",
    "label": "PDF Format",
-   "options": "Print Format",
-   "reqd": 1
-  },
-  {
-   "fieldname": "receipt_print_format",
-   "fieldtype": "Link",
-   "label": "Receipt Print Format",
-   "options": "Print Format",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.generate_offer_letter_by_system == 1",
+   "options": "Print Format"
   },
   {
    "fieldname": "column_break_sswl",
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.send_email ==1",
    "fieldname": "email_template",
    "fieldtype": "Link",
    "label": "Email Template",
+   "mandatory_depends_on": "eval:doc.send_email ==1",
    "options": "Email Templates",
    "reqd": 1
   },
@@ -83,12 +82,40 @@
    "label": "Fee Structure",
    "options": "Fee Structure Child",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "generate_offer_letter_by_system",
+   "fieldtype": "Check",
+   "label": "Generate Offer Letter By system"
+  },
+  {
+   "depends_on": "eval:doc.generate_offer_letter_by_system == 0",
+   "fieldname": "offer_letter_pdf",
+   "fieldtype": "Attach",
+   "label": "Offer Letter PDF",
+   "mandatory_depends_on": "eval:doc.generate_offer_letter_by_system == 0"
+  },
+  {
+   "default": "0",
+   "description": "Automatically sent's email when offer generates",
+   "fieldname": "send_email",
+   "fieldtype": "Check",
+   "label": "Send Email"
+  },
+  {
+   "depends_on": "eval:doc.send_email ==1",
+   "fieldname": "from_email_account",
+   "fieldtype": "Link",
+   "label": "From Email Account",
+   "mandatory_depends_on": "eval:doc.send_email ==1",
+   "options": "Email Account"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 16:39:59.121733",
+ "modified": "2026-02-28 12:57:31.374301",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",
@@ -112,5 +139,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
