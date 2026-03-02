@@ -1,0 +1,280 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-02-26 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "title",
+  "announcement_type",
+  "col_break_1",
+  "status",
+  "show_on_portal",
+  "is_active",
+  "section_break_content",
+  "summary",
+  "featured_image",
+  "col_break_2",
+  "content",
+  "section_break_publishing",
+  "publish_date",
+  "expiry_date",
+  "col_break_3",
+  "view_count",
+  "created_by_role",
+  "published_on",
+  "section_break_event",
+  "event_date",
+  "event_venue",
+  "col_break_4",
+  "event_registration_url",
+  "section_break_targeting",
+  "target_audience",
+  "target_program",
+  "target_cycle",
+  "col_break_5",
+  "target_campus"
+ ],
+ "fields": [
+  {
+   "default": "ANN-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "ANN-.YYYY.-"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "default": "Announcement",
+   "fieldname": "announcement_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Announcement\nEvent",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nScheduled\nPublished\nArchived",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "show_on_portal",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Show on Portal"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "fieldname": "section_break_content",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "description": "Short preview text shown on card (max 200 characters)",
+   "fieldname": "summary",
+   "fieldtype": "Small Text",
+   "label": "Summary"
+  },
+  {
+   "fieldname": "featured_image",
+   "fieldtype": "Attach Image",
+   "label": "Featured Image"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text Editor",
+   "label": "Full Content",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_publishing",
+   "fieldtype": "Section Break",
+   "label": "Publishing"
+  },
+  {
+   "depends_on": "eval:doc.status != 'Draft'",
+   "description": "System auto-publishes at this date/time",
+   "fieldname": "publish_date",
+   "fieldtype": "Datetime",
+   "label": "Publish Date",
+   "mandatory_depends_on": "eval:in_list(['Scheduled','Published'], doc.status)"
+  },
+  {
+   "depends_on": "eval:doc.status != 'Draft'",
+   "description": "System auto-archives after this date/time",
+   "fieldname": "expiry_date",
+   "fieldtype": "Datetime",
+   "label": "Expiry Date",
+   "mandatory_depends_on": "eval:doc.status == 'Scheduled'"
+  },
+  {
+   "fieldname": "col_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "view_count",
+   "fieldtype": "Int",
+   "label": "Views",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_by_role",
+   "fieldtype": "Data",
+   "label": "Created By Role",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.announcement_type=='Event'",
+   "fieldname": "section_break_event",
+   "fieldtype": "Section Break",
+   "label": "Event Details"
+  },
+  {
+   "depends_on": "eval:doc.announcement_type=='Event'",
+   "fieldname": "event_date",
+   "fieldtype": "Datetime",
+   "label": "Event Date"
+  },
+  {
+   "depends_on": "eval:doc.announcement_type=='Event'",
+   "fieldname": "event_venue",
+   "fieldtype": "Data",
+   "label": "Venue"
+  },
+  {
+   "fieldname": "col_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.announcement_type=='Event'",
+   "description": "Optional external registration link",
+   "fieldname": "event_registration_url",
+   "fieldtype": "Data",
+   "label": "Registration URL"
+  },
+  {
+   "fieldname": "section_break_targeting",
+   "fieldtype": "Section Break",
+   "label": "Targeting"
+  },
+  {
+   "default": "Global",
+   "fieldname": "target_audience",
+   "fieldtype": "Select",
+   "label": "Target Audience",
+   "options": "Global\nBy Program\nBy Cycle\nBy Campus",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.target_audience=='By Program'",
+   "fieldname": "target_program",
+   "fieldtype": "Link",
+   "label": "Target Program",
+   "options": "Program"
+  },
+  {
+   "depends_on": "eval:doc.target_audience=='By Cycle'",
+   "fieldname": "target_cycle",
+   "fieldtype": "Link",
+   "label": "Target Cycle",
+   "options": "Admission Cycle"
+  },
+  {
+   "fieldname": "col_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.target_audience=='By Campus'",
+   "fieldname": "target_campus",
+   "fieldtype": "Link",
+   "label": "Target Campus",
+   "options": "Company"
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Data",
+   "label": "Published On",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-02-27 19:26:51.702668",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Portal Announcement",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Admission Admin",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Staff",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Applicant"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "publish_date",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Gray",
+   "title": "Draft"
+  },
+  {
+   "color": "Green",
+   "title": "Published"
+  },
+  {
+   "color": "Red",
+   "title": "Archived"
+  }
+ ],
+ "title_field": "title",
+ "track_changes": 1
+}

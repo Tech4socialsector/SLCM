@@ -159,5 +159,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "campus_name",
  "track_changes": 1
 }

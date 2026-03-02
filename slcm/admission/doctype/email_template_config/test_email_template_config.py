@@ -7,11 +7,11 @@ class TestEmailTemplateConfig(unittest.TestCase):
         doc.template_name = "Test Template"
         doc.trigger_event = "Application Submitted"
         doc.subject = "Hello {{candidate_name}}"
-        doc.body = "Your application {{application_id}} for {{program}} is received."
+        doc.body = "Your application {{applicant_id}} for {{program}} is received."
         doc.is_active = 1
         rendered = doc.render({
             "candidate_name": "Rahul",
-            "application_id": "APP-001",
+            "applicant_id": "APP-001",
             "program": "BA LLB"
         })
         self.assertEqual(rendered["subject"], "Hello Rahul")
