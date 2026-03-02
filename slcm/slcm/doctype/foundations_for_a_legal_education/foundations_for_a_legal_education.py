@@ -7,6 +7,10 @@ from frappe.utils import flt
 from payments.utils import get_payment_gateway_controller
 
 class FoundationsforaLegalEducation(Document):
+	# --------------------------------------------------
+	# Hook called automatically by Frappe upon handling server-to-server payment Webhooks.
+	# Required to update payment status and details if the frontend callback was interrupted or missed.
+	# --------------------------------------------------
 	def on_payment_authorized(self, status):
 		"""
 		This hook is called by the Frappe Payments app when a payment is successful, failed, or cancelled.
@@ -56,6 +60,10 @@ class FoundationsforaLegalEducation(Document):
 			self.save(ignore_permissions=True)
 
 
+	# --------------------------------------------------
+	# Fired before the document is saved. Checks for duplicate email addresses for new submissions.
+	# Required to prevent multiple applications being submitted with the same email address.
+	# --------------------------------------------------
 	def validate(self):
 		# Check for duplicate email address on new submissions
 		if self.is_new():
@@ -69,18 +77,42 @@ class FoundationsforaLegalEducation(Document):
 					"Please use a different email address or contact support."
 				)
 
+		# Validate that students under 18 must agree to the declaration consent
+		if self.candidate_dob:
+			from frappe.utils import getdate, cint
+			from datetime import date
+			
+			dob = getdate(self.candidate_dob)
+			today = date.today()
+			age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+			
+			if age < 18 and not cint(self.declaration_consent):
+				frappe.throw("As the candidate is under 18 years of age, the declaration consent is mandatory.")
+
+	# --------------------------------------------------
+	# Fired right before the new document is inserted into the database.
+	# Required to set default statuses like "In Progress" and "Unpaid".
+	# --------------------------------------------------
 	def before_insert(self):
 		if not self.enrollment_status or self.enrollment_status == "Enrolled":
 			self.enrollment_status = "In Progress"
 		if not self.payment_status:
 			self.payment_status = "Unpaid"
 
+	# --------------------------------------------------
+	# Fired when a user clicks the framework's native 'Proceed to Pay' button.
+	# Required to update the status to "Payment Initiated" before redirecting to gateway.
+	# --------------------------------------------------
 	def validate_payment(self):
 		"""
 		Fired from the `accept` method inside `payment_webform.py` when a user clicks the framework's native 'Proceed to Pay' button.
 		"""
 		self.db_set("payment_status", "Payment Initiated")
 
+	# --------------------------------------------------
+	# Generates a random password and creates a standard ERPNext User account with 'LMS Student' role for the candidate.
+	# Required to grant the student system access automatically upon successful enrollment.
+	# --------------------------------------------------
 	def create_user_on_enrollment(self):
 		from frappe.utils import random_string
 		from frappe.utils.password import update_password
@@ -131,144 +163,3 @@ class FoundationsforaLegalEducation(Document):
 			frappe.db.commit() # Ensure role update is committed
 			frappe.msgprint("User already exists. Password updated and roles verified.")
 
-@frappe.whitelist(allow_guest=True)
-def create_razorpay_order(doc_name):
-	try:
-		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
-		
-		# Ensure amount is set, default to 10000 if not
-		amount = flt(doc.amount) if doc.amount else 10000.0
-		
-		# Use correct controller
-		controller = get_payment_gateway_controller("Razorpay")
-		
-		# Validate API Key to prevent malformed requests and hard-to-trace frontend errors
-		if not controller.api_key or not controller.api_key.startswith("rzp_") or len(controller.api_key) > 50:
-			frappe.throw("Invalid Razorpay API Key configured in Razorpay Settings. Please check your credentials.")
-		
-		payment_details = {
-			"amount": amount, # Controller converts to paise
-			"title": "Application Fee",
-			"description": f"Application Fee for {doc.name}",
-			"reference_doctype": "Foundations for a Legal Education",
-			"reference_docname": doc.name,
-			"payer_email": doc.email_address,
-			"payer_name": doc.candidate_name,
-			"order_id": doc.name,
-			"currency": "INR",
-			"receipt": doc.name
-		}
-		
-		order = controller.create_order(**payment_details)
-		
-		if not order or not order.get("id"):
-			frappe.throw("Razorpay order creation did not return a valid order ID.")
-			
-		frappe.log_error("Razorpay Order Created", str(order))
-		
-		doc.db_set("payment_status", "Payment Initiated")
-
-		# Store the INR amount on the doc if not already set
-		if not doc.amount or doc.amount == 0:
-			doc.db_set("amount", amount)
-		
-		return {
-			"order_id": order.get("id"),
-			"key_id": controller.api_key,
-			"amount": order.get("amount"),
-			"currency": order.get("currency")
-		}
-	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), "Razorpay Order Creation Failed")
-		if hasattr(e, "message"):
-			frappe.throw(e.message)
-		else:
-			frappe.throw("Failed to create payment order. Please try again or contact administrator.")
-
-@frappe.whitelist(allow_guest=True)
-def update_payment_status(doc_name, status):
-	try:
-		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
-		valid_statuses = ["Unpaid", "Payment Initiated", "Paid", "Payment Failed", "Refunded", "Cancelled"]
-		if status in valid_statuses:
-			doc.db_set("payment_status", status)
-		return {"status": "success"}
-	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), f"Payment Status Update to {status} Failed")
-		return {"status": "failed", "message": str(e)}
-
-@frappe.whitelist(allow_guest=True)
-def verify_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, doc_name, amount_paise=None):
-	try:
-		controller = get_payment_gateway_controller("Razorpay")
-		
-		# Verify signature
-		body = razorpay_order_id + "|" + razorpay_payment_id
-		api_secret = controller.get_password("api_secret")
-		controller.verify_signature(body, razorpay_signature, api_secret)
-		
-		# Update Document Status
-		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
-		doc.payment_status = "Paid"
-		doc.enrollment_status = "Enrolled"
-		doc.payment_id = razorpay_payment_id
-		
-		# Convert paise to INR if amount_paise passed from frontend
-		if amount_paise:
-			doc.paid_amount = flt(amount_paise) / 100.0
-		
-		doc.create_user_on_enrollment()
-		doc.save(ignore_permissions=True)
-		
-		# Use db_set as a guaranteed commit for the two key display fields
-		frappe.db.set_value(
-			"Foundations for a Legal Education",
-			doc_name,
-			{
-				"payment_id": razorpay_payment_id,
-				"paid_amount": flt(amount_paise) / 100.0 if amount_paise else doc.paid_amount
-			}
-		)
-		frappe.db.commit()
-		
-		return {"status": "success", "transaction_id": razorpay_payment_id}
-		
-	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), "Razorpay Payment Verification Failed")
-		return {"status": "failed", "message": str(e)}
-
-
-@frappe.whitelist(allow_guest=True)
-def get_receipt_details(doc_name=None):
-	try:
-		if not doc_name:
-			# If doc_name is not in URL, try to find the latest "Paid" record for this session/user
-			filters = {"payment_status": "Paid"}
-			if frappe.session.user != "Guest":
-				filters["email_address"] = frappe.session.user
-			
-			latest_docs = frappe.get_all(
-				"Foundations for a Legal Education",
-				filters=filters,
-				order_by="modified desc",
-				limit=1
-			)
-			if not latest_docs:
-				return None
-			doc_name = latest_docs[0].name
-			
-		doc = frappe.get_doc("Foundations for a Legal Education", doc_name)
-		return {
-			"candidate_name": doc.candidate_name,
-			"email_address": doc.email_address,
-			"name": doc.name,
-			"amount": doc.amount,
-			"paid_amount": doc.paid_amount,
-			"payment_id": doc.payment_id,
-			"modified": str(doc.modified),
-			"payment_status": doc.payment_status or "Paid"
-		}
-	except Exception:
-		return None
-
-# Added space for git commit as requested
