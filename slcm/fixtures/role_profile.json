@@ -2,6 +2,18 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
+  "modified": "2026-03-02 10:07:54.319245",
+  "name": "Entrance Test Provider",
+  "role_profile": "Entrance Test Provider ",
+  "roles": [
+   {
+    "role": "Entrance Test Provider"
+   }
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
   "modified": "2026-02-20 15:27:19.761910",
   "name": "Eligibility Admin",
   "role_profile": "Eligibility Admin",
