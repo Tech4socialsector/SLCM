@@ -2,9 +2,9 @@ import frappe
 from frappe.model.document import Document
 
 PLACEHOLDER_MAP = {
-    "Application Submitted": "{{candidate_name}}, {{program}}, {{campus}}, {{application_id}}, {{submission_date}}",
-    "Status Changed":        "{{candidate_name}}, {{program}}, {{campus}}, {{application_id}}, {{status}}, {{old_status}}",
-    "Offer Sent":            "{{candidate_name}}, {{program}}, {{campus}}, {{application_id}}, {{offer_amount}}, {{deadline}}",
+    "Application Submitted": "{{candidate_name}}, {{program}}, {{campus}}, {{applicant_id}}, {{submission_date}}",
+    "Status Changed":        "{{candidate_name}}, {{program}}, {{campus}}, {{applicant_id}}, {{status}}, {{old_status}}",
+    "Offer Sent":            "{{candidate_name}}, {{program}}, {{campus}}, {{applicant_id}}, {{offer_amount}}, {{deadline}}",
     "Document Rejected":     "{{candidate_name}}, {{program}}, {{document_name}}, {{rejection_reason}}",
     "Deadline Reminder":     "{{candidate_name}}, {{program}}, {{deadline}}, {{action_required}}",
     "Interview Scheduled":   "{{candidate_name}}, {{program}}, {{campus}}, {{interview_date}}, {{interview_time}}, {{location}}",
@@ -21,7 +21,7 @@ class EmailTemplateConfig(Document):
         if self.trigger_event:
             self.available_placeholders = PLACEHOLDER_MAP.get(
                 self.trigger_event,
-                "{{candidate_name}}, {{program}}, {{application_id}}"
+                "{{candidate_name}}, {{program}}, {{applicant_id}}"
             )
 
     def _validate_no_duplicate_active_trigger(self):
@@ -106,7 +106,7 @@ def send_test_email(template_name, recipient):
         "candidate_name": "Test Candidate",
         "program": "Test Program",
         "campus": "Main Campus",
-        "application_id": "APP-TEST-001",
+        "applicant_id": "APP-TEST-001",
         "status": "Verified",
         "old_status": "Draft",
         "deadline": "2025-12-31",

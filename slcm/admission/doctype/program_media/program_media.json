@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "autoname": "field:program",
+ "creation": "2026-02-26 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "program",
+  "brochure_pdf",
+  "col_break_1",
+  "is_featured",
+  "is_active",
+  "media_section",
+  "media_gallery"
+ ],
+ "fields": [
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_featured",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Show in Hero Banner"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "depends_on": "eval:doc.media_type=='Brochure'",
+   "fieldname": "brochure_pdf",
+   "fieldtype": "Attach",
+   "label": "Brochure PDF"
+  },
+  {
+   "fieldname": "media_section",
+   "fieldtype": "Section Break",
+   "label": "Media"
+  },
+  {
+   "fieldname": "media_gallery",
+   "fieldtype": "Table",
+   "label": "Media Gallery",
+   "options": "Media"
+  }
+ ],
+ "links": [],
+ "modified": "2026-03-01 12:31:26.591087",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Program Media",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Admission Admin",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Applicant"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "program"
+}

@@ -1,87 +1,86 @@
 import frappe
 from frappe.model.document import Document
-from frappe.utils import get_datetime
+from frappe.utils import get_datetime, now
+
 
 class AdmissionCycle(Document):
 
     def validate(self):
-        self._validate_exam_type()
-        self._validate_date_order()
-        self._validate_no_overlap()
-        self._validate_rounds()
+        self._validate_single_active_cycle()
+        self._validate_dates()
+        self._validate_programs()
 
-    def _validate_exam_type(self):
-        if not self.exam_type and not self.workflow_type:
-            frappe.throw("Exam Type is required. Please select an Exam Type Config.")
-        # Auto-migrate workflow_type to exam_type if exam_type blank
-        if not self.exam_type and self.workflow_type:
-            mapped = frappe.db.get_value(
-                "Exam Type Config",
-                {"exam_code": self.workflow_type},
-                "name"
+    def _validate_single_active_cycle(self):
+        """Only one cycle can be Active at a time."""
+        if self.status == "Active":
+            existing = frappe.db.get_value(
+                "Admission Cycle",
+                {"status": "Active", "name": ("!=", self.name)},
+                "cycle_name"
             )
-            if mapped:
-                self.exam_type = mapped
+            if existing:
+                frappe.throw(
+                    f"Cycle <b>{existing}</b> is already Active. "
+                    f"Close it before activating this one."
+                )
 
-    def _validate_date_order(self):
+    def _validate_dates(self):
+        """Application end must be after start."""
         if self.application_start and self.application_end:
-            if get_datetime(self.application_start) >= get_datetime(self.application_end):
-                frappe.throw("Application Start must be before Application End.")
-        if self.offer_start and self.offer_end:
-            if get_datetime(self.offer_start) >= get_datetime(self.offer_end):
-                frappe.throw("Offer Start must be before Offer End.")
-        if self.evaluation_start and self.evaluation_end:
-            if get_datetime(self.evaluation_start) >= get_datetime(self.evaluation_end):
-                frappe.throw("Evaluation Start must be before Evaluation End.")
-        if self.application_end and self.offer_start:
-            if get_datetime(self.offer_start) < get_datetime(self.application_end):
-                frappe.throw("Offer window cannot start before Application window ends.")
+            if get_datetime(self.application_end) <= get_datetime(self.application_start):
+                frappe.throw("Application End must be after Application Start.")
 
-    def _validate_no_overlap(self):
-        if not self.application_start or not self.application_end:
-            return
-        overlapping = frappe.db.sql("""
-            SELECT name FROM `tabAdmission Cycle`
-            WHERE admission_year = %s
-            AND name != %s
-            AND status != 'Closed'
-            AND (
-                (application_start <= %s AND application_end >= %s)
-                OR (application_start <= %s AND application_end >= %s)
-                OR (application_start >= %s AND application_end <= %s)
-            )
-        """, (
-            self.admission_year, self.name or "",
-            self.application_end, self.application_start,
-            self.application_start, self.application_start,
-            self.application_start, self.application_end
-        ))
-        if overlapping:
-            frappe.throw(
-                f"Application window overlaps with existing cycle "
-                f"'{overlapping[0][0]}' in the same Admission Year."
-            )
+    def _validate_programs(self):
+        """No duplicate program+campus combination in the same cycle."""
+        seen = set()
+        for row in (self.programs or []):
+            key = (row.program, row.campus or "")
+            if key in seen:
+                frappe.throw(
+                    f"Program <b>{row.program_name or row.program}</b> "
+                    f"is added more than once in this cycle."
+                )
+            seen.add(key)
 
-    def _validate_rounds(self):
-        if self.have_multiple_rounds and self.rounds:
-            priorities = [r.priority for r in self.rounds if r.priority]
-            if len(priorities) != len(set(priorities)):
-                frappe.throw("Round priority must be unique within a cycle.")
-            for r in self.rounds:
-                if r.round_start and r.round_end:
-                    if get_datetime(r.round_start) >= get_datetime(r.round_end):
-                        frappe.throw(f"Round '{r.round_name}': Start must be before End.")
-
-    def before_delete(self):
-        applicant_count = frappe.db.count("Applicant", {"admission_cycle": self.name})
-        if applicant_count > 0:
-            frappe.throw(
-                f"Cannot delete cycle '{self.name}'. "
-                f"{applicant_count} applicant(s) exist for this cycle."
-            )
+    def get_active_programs(self):
+        """Returns list of active program rows in this cycle."""
+        return [p for p in (self.programs or []) if p.is_active]
 
     def on_update(self):
-        if self.status == "Active":
-            frappe.db.set_value(
-                "Admission Year", self.admission_year, "is_active", 1
-            )
+        if not self.flags.in_reservation_sync:
+            self._sync_reservation_policies()
+
+    def _sync_reservation_policies(self):
+        """
+        Sync total_seats from cycle programs to linked Reservation Policies.
+        Recalculates category seats based on percentage if seats changed.
+        """
+        for row in (self.programs or []):
+            if row.reservation_policy:
+                try:
+                    policy = frappe.get_doc("Program Reservation Policy", row.reservation_policy)
+                    if int(policy.total_seats or 0) != int(row.seats or 0):
+                        policy.total_seats = row.seats
+                        # Recalculate child row seats proportionally
+                        categories = policy.get("categories") or []
+                        if len(categories) == 1:
+                            # Single category: give it all seats even if percentage is missing
+                            categories[0].seats = policy.total_seats
+                            if not categories[0].percentage:
+                                categories[0].percentage = 100.0
+                        else:
+                            for cat in categories:
+                                if cat.percentage:
+                                    cat.seats = int((policy.total_seats * cat.percentage) / 100)
+                        
+                        policy.flags.in_cycle_sync = True
+                        policy.save(ignore_permissions=True)
+                        
+                        # Also update row application_count from policy summary if needed
+                        # (Summary might have updated in policy.save via _recalculate_summary)
+                        if row.application_count != policy.total_filled:
+                            row.application_count = policy.total_filled
+                            row.db_update()
+
+                except Exception as e:
+                    frappe.log_error(f"Failed to sync policy {row.reservation_policy}: {e}", "Admission Cycle")
