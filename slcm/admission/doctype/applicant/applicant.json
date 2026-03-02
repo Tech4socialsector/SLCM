@@ -896,9 +896,8 @@
   },
   {
    "fieldname": "program_level",
-   "fieldtype": "Select",
-   "label": "Program Level",
-   "options": "\nLLB MPP\nPHD\nBA Hons"
+   "fieldtype": "Data",
+   "label": "Program Level"
   },
   {
    "fieldname": "admission_year",
@@ -1011,7 +1010,7 @@
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 20:25:29.110104",
+ "modified": "2026-03-02 20:48:41.558754",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
