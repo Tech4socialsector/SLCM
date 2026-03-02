@@ -78,28 +78,42 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     to apply for. 
     applicant_statuses should be a list of statuses (e.g. from their admission results/preferences).
     """
-    # 1. Get all schemes mapped to this cycle + campus + program
+    # 1. Get all schemes mapped to this cycle + campus
     mappings = frappe.get_all(
         "Scholarship Scheme Mapping",
         filters={
             "admission_cycle": cycle,
             "campus": campus,
-            "program": program
         },
-        fields=["scholarship_scheme"]
+        fields=["scholarship_scheme", "program", "category"]
     )
     
     if not mappings:
         return []
 
-    scheme_names = [m.scholarship_scheme for m in mappings]
-    
+    # Get applicant category for filtering
+    applicant_category = frappe.db.get_value("Applicant", applicant_id, "reservation_category")
+
+    applicable_schemes = []
+    for m in mappings:
+        # Check program match
+        program_match = not m.program or m.program == program
+        
+        # Check category match
+        category_match = not m.category or m.category == applicant_category
+        
+        if program_match and category_match:
+            applicable_schemes.append(m.scholarship_scheme)
+
+    if not applicable_schemes:
+        return []
+
     # 2. Filter schemes that are Active and within application dates
     now = now_datetime()
     schemes = frappe.get_all(
         "Scholarship Scheme",
         filters={
-            "name": ["in", scheme_names],
+            "name": ["in", applicable_schemes],
             "status": "Active",
             "is_active": 1
         },

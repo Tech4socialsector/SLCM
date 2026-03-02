@@ -34,7 +34,6 @@ class ScholarshipSchemeMapping(Document):
 				"name": ["!=", self.name]
 			}
 		)
-
 		if existing:
 			frappe.throw(frappe._("Duplicate scholarship mapping exists."))
 

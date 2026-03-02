@@ -45,18 +45,32 @@ class ScholarshipApplication(Document):
 			frappe.throw(frappe._("You have already applied for this scholarship."))
 
 	def validate_scheme_mapping(self):
-		mapping_exists = frappe.db.exists(
+		mappings = frappe.get_all(
 			"Scholarship Scheme Mapping",
-			{
+			filters={
 				"scholarship_scheme": self.scholarship_scheme,
 				"admission_cycle": self.admission_cycle,
-				"program": self.program,
 				"campus": self.campus
-			}
+			},
+			fields=["program", "category"]
 		)
+		
+		is_applicable = False
+		applicant_category = getattr(self, "category", None)
+		
+		for m in mappings:
+			# Check program match (mapping has specific program or is global)
+			program_match = not m.program or m.program == self.program
+			
+			# Check category match (mapping has specific category or is global)
+			category_match = not m.category or m.category == applicant_category
+			
+			if program_match and category_match:
+				is_applicable = True
+				break
 
-		if not mapping_exists:
-			frappe.throw(frappe._("Scholarship not applicable for selected cycle/program/campus."))
+		if not is_applicable:
+			frappe.throw(frappe._("Scholarship not applicable for selected cycle/program/campus/category."))
 
 	def validate_stage(self):
 		# Skip availability checks if rejecting or revoking
