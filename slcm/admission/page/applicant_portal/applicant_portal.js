@@ -287,7 +287,6 @@ frappe.pages['applicant-portal'].on_page_load = function (wrapper) {
             method: "slcm.admission.utils.portal.api_get_hero_slides",
             callback: function (r) {
                 const slides = r.message || [];
-                console.log(slides);
                 const banner = $("#hero-carousel-container"); // Note: I should add this ID to the renderProgramSelection HTML
                 if (!banner.length) return;
 
@@ -617,6 +616,8 @@ frappe.pages['applicant-portal'].on_page_load = function (wrapper) {
     function buildProgramCard(p) {
         const media = state.media[p.program] || [];
         const images = media.filter(m => m.media_type === 'Image');
+        console.log("media", media);
+        console.log("images", images);
         const hasVideo = media.some(m => m.media_type === 'Video');
         const hasBrochure = media.some(m => m.media_type === 'Brochure');
         const brochureUrl = hasBrochure ? media.find(m => m.media_type === 'Brochure').brochure_pdf : null;

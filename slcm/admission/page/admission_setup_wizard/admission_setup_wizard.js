@@ -17,6 +17,28 @@ frappe.pages['admission-setup-wizard'].on_page_load = function(wrapper) {
     let currentStep = 0;
     const data = {};
 
+    async function init() {
+        // Load initial data
+        const inst = await frappe.db.get_doc('Institution Settings', 'Institution Settings');
+        const portal = await frappe.db.get_doc('Applicant Portal Config', 'Applicant Portal Config');
+        
+        Object.assign(data, {
+            institution_name: inst.institution_name,
+            institution_code: inst.institution_code,
+            compliance_mode: inst.compliance_mode,
+            support_email: inst.support_email,
+            multi_campus: inst.enable_multi_campus === 1,
+            max_campus_preferences: inst.max_campus_preferences || 3,
+            portal_title: portal.portal_title,
+            portal_subtitle: portal.portal_subtitle,
+            primary_color: portal.primary_color || '#1a237e',
+            hero_image: portal.hero_image,
+            footer_text: portal.footer_text
+        });
+        
+        render();
+    }
+
     function render() {
         const step = steps[currentStep];
         const progressPct = Math.round((currentStep / (steps.length - 1)) * 100);
@@ -80,15 +102,23 @@ frappe.pages['admission-setup-wizard'].on_page_load = function(wrapper) {
             </div>
         `);
 
-        // Events
-        $body.find('#btn-next').on('click', () => { if (collectStep()) { currentStep++; render(); } });
-        $body.find('#btn-prev').on('click', () => { currentStep--; render(); });
-        $body.find('#btn-finish').on('click', finishSetup);
-        $body.find('.wizard-step-nav').on('click', function() {
-            currentStep = parseInt($(this).data('step'));
+    // Events
+    $body.find('#btn-next').on('click', async () => { if (await collectStep()) { currentStep++; render(); } });
+    $body.find('#btn-prev').on('click', () => { currentStep--; render(); });
+    $body.find('#btn-finish').on('click', finishSetup);
+    $body.find('.wizard-step-nav').on('click', async function() {
+        const targetStep = parseInt($(this).data('step'));
+        if (targetStep > currentStep) {
+            if (await collectStep()) {
+                currentStep = targetStep;
+                render();
+            }
+        } else {
+            currentStep = targetStep;
             render();
-        });
-    }
+        }
+    });
+}
 
     function renderStepBody(stepId) {
         if (stepId === 'institution') {
@@ -234,7 +264,7 @@ frappe.pages['admission-setup-wizard'].on_page_load = function(wrapper) {
         return '';
     }
 
-    function collectStep() {
+    async function collectStep() {
         const stepId = steps[currentStep].id;
         if (stepId === 'institution') {
             const name = $('#inst-name').val().trim();
@@ -246,7 +276,7 @@ frappe.pages['admission-setup-wizard'].on_page_load = function(wrapper) {
             data.compliance_mode = $('#compliance-mode').val();
             data.support_email = $('#support-email').val();
             // Save to Institution Settings
-            frappe.call({ method: 'frappe.client.set_value', args: {
+            await frappe.call({ method: 'frappe.client.set_value', args: {
                 doctype: 'Institution Settings', name: 'Institution Settings',
                 fieldname: { institution_name: name, institution_code: code,
                     compliance_mode: data.compliance_mode, support_email: data.support_email }
@@ -255,7 +285,7 @@ frappe.pages['admission-setup-wizard'].on_page_load = function(wrapper) {
         if (stepId === 'campus') {
             data.multi_campus = $('input[name="campus-mode"]:checked').val() === '1';
             data.max_campus_preferences = parseInt($('#max-prefs').val()) || 3;
-            frappe.call({ method: 'frappe.client.set_value', args: {
+            await frappe.call({ method: 'frappe.client.set_value', args: {
                 doctype: 'Institution Settings', name: 'Institution Settings',
                 fieldname: { enable_multi_campus: data.multi_campus ? 1 : 0,
                     max_campus_preferences: data.max_campus_preferences }
@@ -269,7 +299,7 @@ frappe.pages['admission-setup-wizard'].on_page_load = function(wrapper) {
             data.primary_color = $('#portal-color').val();
             data.hero_image = $('#portal-hero').val();
             data.footer_text = $('#portal-footer').val();
-            frappe.call({ method: 'frappe.client.set_value', args: {
+            await frappe.call({ method: 'frappe.client.set_value', args: {
                 doctype: 'Applicant Portal Config', name: 'Applicant Portal Config',
                 fieldname: { portal_title: data.portal_title, portal_subtitle: data.portal_subtitle,
                     primary_color: data.primary_color, hero_image: data.hero_image,
@@ -300,5 +330,5 @@ frappe.pages['admission-setup-wizard'].on_page_load = function(wrapper) {
         });
     });
 
-    render();
+    init();
 };

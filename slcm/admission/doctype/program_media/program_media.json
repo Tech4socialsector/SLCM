@@ -5,23 +5,15 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "naming_series",
   "program",
+  "brochure_pdf",
   "col_break_1",
   "is_featured",
-  "brochure_pdf",
   "is_active",
   "media_section",
   "media_gallery"
  ],
  "fields": [
-  {
-   "default": "PMEDIA-.YYYY.-",
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Series",
-   "options": "PMEDIA-.YYYY.-"
-  },
   {
    "fieldname": "program",
    "fieldtype": "Link",
@@ -69,7 +61,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-28 16:27:44.080178",
+ "modified": "2026-03-01 12:31:26.591087",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Media",
