@@ -16,8 +16,61 @@ class FoundationsforaLegalEducation(Document):
 		This hook is called by the Frappe Payments app when a payment is successful, failed, or cancelled.
 		The 'status' parameter is usually 'Completed', 'Authorized', 'Failed', etc.
 		"""
+		razorpay_payment_id = None
+		amount_paise = None
+		paid_amount_logged = 0.0
+
+		try:
+			import json
+			integration_requests = frappe.get_all(
+				"Integration Request",
+				filters={
+					"reference_doctype": "Foundations for a Legal Education",
+					"reference_docname": self.name
+				},
+				fields=["data"],
+				order_by="modified desc",
+				limit=1
+			)
+			if integration_requests:
+				data = json.loads(integration_requests[0].get("data") or "{}")
+				razorpay_payment_id = data.get("razorpay_payment_id")
+				amount_paise = data.get("amount")
+				if amount_paise:
+					paid_amount_logged = flt(amount_paise) / 100.0
+		except Exception:
+			pass
+
+		exact_status = "Pending"
 		if status in ["Completed", "Authorized"]:
-			self.payment_status = "Paid"
+			# The user requested to trigger everything on "Authorized" explicitly
+			exact_status = "Authorized"
+		elif status == "Failed":
+			exact_status = "Failed"
+		elif status == "Cancelled":
+			exact_status = "Cancelled"
+
+		# Log the payment status changes
+		try:
+			payment_log = frappe.new_doc("FLE Payment Log")
+			payment_log.reference_no = self.name
+			payment_log.payment_status = exact_status
+			payment_log.paid_amount = paid_amount_logged
+			payment_log.transaction_id = razorpay_payment_id
+			payment_log.transaction_date = frappe.utils.now_datetime()
+
+			import json
+			if integration_requests:
+				# Store the raw stringified data we fetched earlier
+				payment_log.gateway_response = integration_requests[0].get("data")
+			
+			payment_log.insert(ignore_permissions=True)
+			# Do not commit just yet, as we rely on the parent transaction
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "FLE: Failed to create FLE Payment Log")
+
+		if status in ["Completed", "Authorized"]:
+			self.payment_status = exact_status
 			self.enrollment_status = "Enrolled"
 			
 			self.create_user_on_enrollment()
@@ -25,38 +78,21 @@ class FoundationsforaLegalEducation(Document):
 			
 			# Read payment_id and amount from the Integration Request
 			try:
-				import json
-				integration_requests = frappe.get_all(
-					"Integration Request",
-					filters={
-						"reference_doctype": "Foundations for a Legal Education",
-						"reference_docname": self.name
-					},
-					fields=["data"],
-					order_by="modified desc",
-					limit=1
-				)
-				if integration_requests:
-					data = json.loads(integration_requests[0].get("data") or "{}")
-					razorpay_payment_id = data.get("razorpay_payment_id")
-					amount_paise = data.get("amount")
-					
-					update_fields = {}
-					if razorpay_payment_id:
-						update_fields["payment_id"] = razorpay_payment_id
-					if amount_paise:
-						update_fields["paid_amount"] = flt(amount_paise) / 100.0
-					
-					if update_fields:
-						frappe.db.set_value("Foundations for a Legal Education", self.name, update_fields)
-						frappe.db.commit()
+				update_fields = {}
+				if razorpay_payment_id:
+					update_fields["payment_id"] = razorpay_payment_id
+				if amount_paise:
+					update_fields["paid_amount"] = paid_amount_logged
+				
+				if update_fields:
+					frappe.db.set_value("Foundations for a Legal Education", self.name, update_fields)
+					frappe.db.commit()
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "FLE: Failed to update payment_id/paid_amount from Integration Request")
 			
 			frappe.msgprint("Payment Authorized successfully for " + self.name)
 		elif status in ["Failed", "Cancelled"]:
-			valid_statuses = {"Failed": "Payment Failed", "Cancelled": "Cancelled"}
-			self.payment_status = valid_statuses.get(status, "Payment Failed")
+			self.payment_status = exact_status
 			self.save(ignore_permissions=True)
 
 

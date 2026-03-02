@@ -40,7 +40,6 @@
   "section_break_status",
   "enrollment_status",
   "payment_status",
-  "test",
   "column_break_fdnb",
   "lms_account_created",
   "generated_password_temp",
@@ -238,7 +237,7 @@
    "fieldname": "payment_status",
    "fieldtype": "Select",
    "label": "Payment Status",
-   "options": "Unpaid\nPayment Initiated\nPaid\nPayment Failed\nRefunded\nCancelled"
+   "options": "\nAuthorized\nCaptured\nFailed\nRefunded\nPending\nCancelled\nPayment Initiated"
   },
   {
    "fieldname": "where_did_you_hear_about_the_fle_programme",
@@ -278,17 +277,12 @@
    "fieldname": "payment_id",
    "fieldtype": "Data",
    "label": "Payment Id"
-  },
-  {
-   "fieldname": "test",
-   "fieldtype": "Data",
-   "label": "test"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 13:03:26.235489",
+ "modified": "2026-03-02 18:56:52.064214",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
