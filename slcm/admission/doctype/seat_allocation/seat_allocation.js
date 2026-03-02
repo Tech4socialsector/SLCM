@@ -202,6 +202,27 @@ frappe.ui.form.on("Seat Allocation", {
 
                         d.hide();
 
+                        // --- LARGE BATCH HANDLING (> 10) ---
+                        if (selections.length > 10) {
+                            frappe.dom.freeze(__("Submitting batch to background queue..."));
+                            frappe.call({
+                                method: "slcm.api.service.offer_service.bulk_generate_offers",
+                                args: { applicants: selections },
+                                callback: function (r) {
+                                    frappe.dom.unfreeze();
+                                    if (r.message && r.message.queued) {
+                                        frappe.msgprint({
+                                            title: __("Processing Started"),
+                                            message: r.message.message,
+                                            indicator: 'blue'
+                                        });
+                                    }
+                                }
+                            });
+                            return;
+                        }
+
+                        // --- SMALL BATCH SEQUENTIAL HANDLING (<= 10) ---
                         const total = selections.length;
                         frappe.show_progress(__("Generating Offer Letters"), 0, total, __("Initializing..."));
 
@@ -265,7 +286,20 @@ frappe.ui.form.on("Seat Allocation", {
                                 },
                                 error: function (err) {
                                     error_count++;
-                                    summary_log.push(`<b>${current_applicant}:</b> Connection or Server Error`);
+                                    let server_error = "";
+                                    if (err._server_messages) {
+                                        try {
+                                            const messages = JSON.parse(err._server_messages);
+                                            server_error = messages.map(m => JSON.parse(m).message).join(", ");
+                                        } catch (e) {
+                                            server_error = "Server Error (Check Logs)";
+                                        }
+                                    } else if (err.message) {
+                                        server_error = err.message;
+                                    } else {
+                                        server_error = "Connection or Server Error";
+                                    }
+                                    summary_log.push(`<b>${current_applicant}:</b> ${server_error}`);
                                     processed++;
                                     processNextBatch();
                                 }

@@ -441,6 +441,35 @@ class FeeService:
 
 
 
+    @staticmethod
+    def cancel_linked_fee_assignment(offer_name, reason=None):
+        """
+        Policy: If an offer is terminated (Rejected, Expired, Withdrawn), 
+        any unpaid fee assignment must be cancelled to prevent 'ghost' revenue.
+        """
+        # Find any non-terminal Fee Assignment
+        afa_list = frappe.get_all("Applicant Fee Assignment", 
+            filters={
+                "offer_letter": offer_name,
+                "status": ["not in", ["Cancelled", "Paid", "Converted"]]
+            }, fields=["name", "docstatus"])
+        
+        for entry in afa_list:
+            try:
+                doc = frappe.get_doc("Applicant Fee Assignment", entry.name)
+                # If assigned (submitted), we must use cancel()
+                if doc.docstatus == 1:
+                    # The on_cancel method in AFA handles validation (preventing cancel if paid)
+                    doc.cancel()
+                else:
+                    # Draft or other
+                    doc.db_set("status", "Cancelled")
+                
+                frappe.logger().info(f"Auto-cancelled linked Fee Assignment {entry.name} for Offer {offer_name}")
+            except Exception as e:
+                # We don't want to block the offer status change, but we log the failure
+                frappe.log_error(f"Failed to auto-cancel AFA {entry.name}: {str(e)}", "Fee Service")
+
 @frappe.whitelist()
 def create_offer_razorpay_order(offer_name):
     return FeeService.create_offer_razorpay_order(offer_name)

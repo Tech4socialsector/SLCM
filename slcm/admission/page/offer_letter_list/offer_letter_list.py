@@ -2,9 +2,9 @@ import frappe
 from frappe import _
 
 @frappe.whitelist()
-def get_offer_list():
+def get_offer_list(limit_start=0, limit_page_length=10):
     """
-    Fetches offer letters. 
+    Fetches offer letters with pagination. 
     If admin, fetches all. If applicant, fetches only theirs.
     """
     user = frappe.session.user
@@ -29,16 +29,31 @@ def get_offer_list():
         filters["applicant"] = applicant
         applicant_name = frappe.db.get_value("Applicant", applicant, "candidate_name") or applicant
     
+    # Fetch total count for pagination
+    total_count = frappe.db.count("Offer Letter", filters=filters)
+
     # Fetch offers
     fields = [
         "name", "program", "issued_on", "offer_status", 
         "payment_deadline", "payable_amount", "campus", "applicant"
     ]
     
-    offers = frappe.get_all("Offer Letter", filters=filters, fields=fields, order_by="creation desc")
+    # Ensure integer types for pagination
+    limit_start = int(limit_start)
+    limit_page_length = int(limit_page_length)
+
+    offers = frappe.get_all(
+        "Offer Letter", 
+        filters=filters, 
+        fields=fields, 
+        order_by="creation desc",
+        limit_start=limit_start,
+        limit_page_length=limit_page_length
+    )
 
     return {
         "offers": offers,
+        "total_count": total_count,
         "applicant_name": applicant_name,
         "is_admin": is_admin,
         "currency": frappe.defaults.get_global_default("currency") or "INR"
