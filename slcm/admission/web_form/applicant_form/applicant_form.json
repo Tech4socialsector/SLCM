@@ -22,7 +22,7 @@
  "login_required": 0,
  "max_attachment_size": 0,
  "meta_title": "Application Form",
- "modified": "2026-03-02 20:52:30.074712",
+ "modified": "2026-03-02 21:14:39.988745",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "applicant-form",
@@ -693,7 +693,7 @@
   {
    "allow_read_on_all_link_options": 0,
    "fieldname": "program_level",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "hidden": 0,
    "label": "Program Level",
    "max_length": 0,
