@@ -24,6 +24,9 @@ frappe.ui.form.on("Offer Letter", {
                 });
             });
         }
+        frm.fields_dict.accepted_on.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today()),
+        });
     },
     onload: function (frm) {
         // Disable past dates in the payment_deadline datepicker
