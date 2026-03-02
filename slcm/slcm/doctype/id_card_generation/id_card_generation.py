@@ -475,33 +475,31 @@ class IDCardGeneration(Document):
 		output_path = os.path.join(tempfile.gettempdir(), output_filename)
 
 		try:
-			args = [
-				"/usr/bin/wkhtmltoimage",
-				"--enable-local-file-access",
-				"--width",
-				"1011",
-				"--height",
-				"638",  # This should swap for portrait...
-				# Actually we set container size in CSS, wkhtmltoimage size should match or be larger?
-				# If portrait, we should probably flip these args or rely on CSS size.
-				# Let's check orientation again?
-				# For now, let's just make the window large enough.
-				"--quality",
-				"100",
-				html_path,
-				output_path,
-			]
+			from frappe.utils.print_utils import find_or_download_chromium_executable
+			chrome_path = find_or_download_chromium_executable()
+			if not chrome_path:
+				frappe.throw("Chromium executable not found. Cannot generate ID Card image.")
 
-			# Adjust args for portrait if needed, but since we define container size, maybe just large viewport is enough
-			# But wkhtmltoimage crops? No, defaults to A4 or smart width.
-			# Be safe:
-			if "width: 638px;" in html_content:  # Portrait check hack or pass arg
-				args[3] = "638"
-				args[5] = "1011"
+			window_width = "1011"
+			window_height = "638"
+			if "width: 638px;" in html_content:
+				window_width = "638"
+				window_height = "1011"
+
+			args = [
+				chrome_path,
+				"--headless",
+				"--disable-gpu",
+				"--no-sandbox",
+				f"--window-size={window_width},{window_height}",
+				"--hide-scrollbars",
+				f"--screenshot={output_path}",
+				f"file://{os.path.abspath(html_path)}",
+			]
 
 			result = subprocess.run(args, capture_output=True, text=True)
 			if result.returncode != 0:
-				frappe.throw(f"wkhtmltoimage failed: {result.stderr}")
+				frappe.throw(f"Chromium failed: {result.stderr}")
 
 			with open(output_path, "rb") as f:
 				img_content = f.read()
@@ -586,24 +584,27 @@ class IDCardGeneration(Document):
 		output_path = os.path.join(tempfile.gettempdir(), output_filename)
 
 		try:
-			# Run wkhtmltoimage
+			# Run Chromium
+			from frappe.utils.print_utils import find_or_download_chromium_executable
+			chrome_path = find_or_download_chromium_executable()
+			if not chrome_path:
+				frappe.throw("Chromium executable not found. Cannot generate ID Card image.")
+
 			args = [
-				"/usr/bin/wkhtmltoimage",
-				"--enable-local-file-access",
-				"--width",
-				"1011",
-				"--height",
-				"638",
-				"--quality",
-				"100",
-				html_path,
-				output_path,
+				chrome_path,
+				"--headless",
+				"--disable-gpu",
+				"--no-sandbox",
+				"--window-size=1011,638",
+				"--hide-scrollbars",
+				f"--screenshot={output_path}",
+				f"file://{os.path.abspath(html_path)}",
 			]
 
 			# Capture stderr to debug failures
 			result = subprocess.run(args, capture_output=True, text=True)
 			if result.returncode != 0:
-				frappe.throw(f"wkhtmltoimage failed with code {result.returncode}: {result.stderr}")
+				frappe.throw(f"Chromium failed with code {result.returncode}: {result.stderr}")
 
 			# Read generated image
 			with open(output_path, "rb") as f:
