@@ -94,9 +94,18 @@
   "section_break_cris",
   "ug_degree_details_column",
   "ug_degree_details",
-  "pg_degree_details",
   "national_test_name",
   "percentage",
+  "section_break_vmys",
+  "phd_proposal",
+  "column_break_nkbo",
+  "phd_program_type",
+  "section_break_cmjy",
+  "proposed_phd_topic",
+  "pg_degree_details",
+  "others_section",
+  "other_degree",
+  "other_degree_details",
   "employment_history_tab",
   "post_degree_work_experience",
   "years_of_work_experience",
@@ -142,6 +151,7 @@
   "application_fee_status",
   "fee_waived_by",
   "fee_waived_on",
+  "column_break_fcum",
   "current_stage",
   "portal_last_login"
  ],
@@ -161,8 +171,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "label": "Academic Year",
-   "options": "Academic Year",
-   "reqd": 1
+   "options": "Academic Year"
   },
   {
    "allow_on_submit": 1,
@@ -180,27 +189,23 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
-   "label": "Full Name (As per Secondary School Certificate)",
-   "reqd": 1
+   "label": "Full Name (As per Secondary School Certificate)"
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth",
-   "reqd": 1
+   "label": "Date of Birth"
   },
   {
    "fieldname": "gender",
    "fieldtype": "Select",
    "label": "Gender",
-   "options": "\nMale\nFemale\nOthers",
-   "reqd": 1
+   "options": "\nMale\nFemale\nOthers"
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile Number",
-   "reqd": 1
+   "label": "Mobile Number"
   },
   {
    "fieldname": "alternate_contact",
@@ -762,20 +767,25 @@
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
    "fieldname": "ug_degree_completion",
    "fieldtype": "Select",
    "label": "Have you completed your UG degree",
+   "mandatory_depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
    "options": "\nFinal year\nCompleted"
   },
   {
+   "depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
    "fieldname": "section_break_cris",
    "fieldtype": "Section Break",
-   "label": "Completion Degree Details "
+   "label": "UG Degree Details "
   },
   {
+   "depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
    "fieldname": "ug_degree_details",
    "fieldtype": "Table",
    "label": "Degree",
+   "mandatory_depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
    "options": "UG Degree Detail"
   },
   {
@@ -837,9 +847,11 @@
    "label": "UG Degree Details "
   },
   {
+   "depends_on": "eval:doc.program_level == \"PHD\"",
    "fieldname": "pg_degree_details",
    "fieldtype": "Table",
    "label": "PG Degree Details ",
+   "mandatory_depends_on": "eval:doc.program_level == \"PHD\"",
    "options": "PG Degree Details"
   },
   {
@@ -863,14 +875,13 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "label": "Program Level",
-   "options": "UG\nPG\nResearch Course"
+   "options": "\nLLB MPP\nPHD\nBA Hons"
   },
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "label": "Admission Year",
-   "options": "Admission Year",
-   "reqd": 1
+   "options": "Admission Year"
   },
   {
    "fieldname": "applicant_id",
@@ -918,17 +929,66 @@
    "read_only": 1
   },
   {
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "label": "User",
-   "options": "User"
+   "depends_on": "eval:doc.program_level == \"PHD\"",
+   "fieldname": "section_break_vmys",
+   "fieldtype": "Section Break",
+   "label": "PHD Details"
+  },
+  {
+   "depends_on": "eval:doc.program_level == \"PHD\"",
+   "fieldname": "proposed_phd_topic",
+   "fieldtype": "Small Text",
+   "label": "Proposed PhD Topic ",
+   "mandatory_depends_on": "eval:doc.program_level == \"PHD\""
+  },
+  {
+   "fieldname": "phd_proposal",
+   "fieldtype": "Attach",
+   "label": "PhD Proposal Upload"
+  },
+  {
+   "fieldname": "phd_program_type",
+   "fieldtype": "Select",
+   "label": "PhD Programme Selection",
+   "options": "\nLaw\nInterdisciplinary"
+  },
+  {
+   "fieldname": "column_break_nkbo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.program_level == \"PHD\"",
+   "fieldname": "section_break_cmjy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "others_section",
+   "fieldtype": "Section Break",
+   "label": "Others"
+  },
+  {
+   "fieldname": "other_degree",
+   "fieldtype": "Select",
+   "label": "Do you have any other degrees?",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval: doc.other_degree == \"Yes\"",
+   "fieldname": "other_degree_details",
+   "fieldtype": "Small Text",
+   "label": "Please Specify the names of all other degrees",
+   "mandatory_depends_on": "eval: doc.other_degree == \"Yes\""
+  },
+  {
+   "fieldname": "column_break_fcum",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 10:56:44.899582",
+ "modified": "2026-03-02 20:25:29.110104",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
