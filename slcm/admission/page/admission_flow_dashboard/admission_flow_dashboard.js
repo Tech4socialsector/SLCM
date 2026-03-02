@@ -357,6 +357,9 @@ class AdmissionDashboard {
             },
             type: 'bar',
             height: 300,
+            axisOptions: {
+                xIsSeries: true
+            },
             colors: ['#f43f5e']
         });
     }
@@ -393,6 +396,9 @@ class AdmissionDashboard {
             },
             type: 'bar',
             height: 300,
+            axisOptions: {
+                xIsSeries: true
+            },
             colors: ['#f59e0b']
         });
     }
@@ -407,15 +413,14 @@ class AdmissionDashboard {
         new frappe.Chart("#campus-chart", {
             data: {
                 labels: dist.map(d => d.label),
-                datasets: [
-                    {
-                        values: dist.map(d => d.count)
-                    }
-                ]
+                datasets: [{ values: dist.map(d => d.count) }]
             },
-            type: 'donut',
+            type: 'bar', // Switched to bar for better readability when many campuses exist
             height: 300,
-            colors: ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0']
+            axisOptions: {
+                xIsSeries: true // Horizontal bar
+            },
+            colors: ['#10b981']
         });
     }
 
@@ -426,18 +431,19 @@ class AdmissionDashboard {
             return;
         }
 
+        // Use Horizontal Bar chart for programs. 
+        // Pie charts fail when you have more than 5-7 categories as labels overlap.
         new frappe.Chart("#program-chart", {
             data: {
                 labels: dist.map(d => d.label),
-                datasets: [
-                    {
-                        values: dist.map(d => d.count)
-                    }
-                ]
+                datasets: [{ values: dist.map(d => d.count) }]
             },
-            type: 'pie',
+            type: 'bar',
             height: 300,
-            colors: ['#0ea5e9', '#38bdf8', '#7dd3fc', '#bae6fd']
+            axisOptions: {
+                xIsSeries: true // Makes it a horizontal bar chart
+            },
+            colors: ['#0ea5e9']
         });
     }
 

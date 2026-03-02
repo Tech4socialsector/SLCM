@@ -130,6 +130,19 @@ class OfferService:
         config = OfferService.get_active_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
 
+        # --- PRE-FLIGHT CHECKS (Before Transaction) ---
+        if getattr(config, "send_email", 0):
+            if not config.email_template:
+                throw(_("Email Template is missing in Offer Configuration {0}").format(config.name))
+            
+            applicant_email = frappe.db.get_value("Applicant", applicant, "email")
+            if not applicant_email:
+                throw(_("Applicant {0} does not have a valid email address. Cannot send offer letter.").format(applicant))
+        
+        if getattr(config, "generate_offer_letter_by_system", 0) and not config.pdf_format:
+            throw(_("PDF Print Format is missing in Offer Configuration {0}").format(config.name))
+
+
         # Status verification: Only 'Selected' applicants in published Seat Allocations can receive offers
         sa_filters = {
             "applicant": applicant,
@@ -168,22 +181,32 @@ class OfferService:
             "offer_status": ["not in", ["Expired", "Withdrawn", "Rejected"]]
         })
         if existing:
-            throw(_("An active offer already exists for Applicant {0} in Cycle {1} for Campus {2} and Program {3}.").format(
-                applicant, resolved_cycle, campus, program
+            throw(_("An active offer already exists for Applicant {0} in Cycle {1} for Campus {2} and Program {3}. (Offer: {4})").format(
+                applicant, resolved_cycle, campus, program, existing
             ))
 
         # Start Transaction
         frappe.db.begin()
         
-        offer = frappe.new_doc("Offer Letter")
-        offer.applicant = applicant
-        offer.campus = campus
-        offer.program = program
-        offer.admission_year = admission_year
-        offer.admission_cycle = resolved_cycle
-        offer.offer_configrationn = config.name
-        offer.offer_status = "Draft"
-        offer.issued_on = now_datetime()
+        try:
+            offer = frappe.new_doc("Offer Letter")
+            offer.applicant = applicant
+            offer.campus = campus
+            offer.program = program
+            offer.admission_year = admission_year
+            offer.admission_cycle = resolved_cycle
+            offer.offer_id = f"OFF-{applicant}" # Safe temporary ID for templates
+            offer.offer_configrationn = config.name
+            offer.offer_status = "Draft"
+            offer.issued_on = now_datetime()
+            
+            # Handle possible name duplication if a rejected offer exists with the same ID
+            potential_name = f"OL-{applicant}-{program}-{campus}"
+            if frappe.db.exists("Offer Letter", potential_name):
+                # If it already exists, use standard naming series to avoid SQL Collision
+                offer.naming_series = "OL-RE-."
+                offer.autoname() # Force standard naming
+
         
         # Find matching Fee Structure from Configuration
         fee_structure_name = None
@@ -217,7 +240,7 @@ class OfferService:
             offer.admission_cycle = resolved_cycle
             offer.db_set('admission_cycle', resolved_cycle)
             
-        OfferService.update_applicant_status(applicant , application_status = "Offer Issued")
+        OfferService.update_applicant_status(applicant, application_status="Offer Issued")
 
         # Snapshot Content (Now we have the name/ID)
         offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
@@ -239,19 +262,20 @@ class OfferService:
             from_account = getattr(config, "from_email_account", None)
             OfferService._send_offer_letter_email(offer, config.email_template, from_account)
         
-        # Transition to Issued
-        offer.offer_status = "Issued"
-        offer.save(ignore_permissions=True)
-        OfferService.sync_seat_allocation_status(offer, "Offer Issued")
+            offer.offer_status = "Issued"
+            offer.save(ignore_permissions=True)
+            OfferService.sync_seat_allocation_status(offer, "Offer Issued")
 
-        frappe.db.commit()
-        return {
-            "offer_name": offer.name,
-            "offer_status": offer.offer_status,
-            "payment_deadline": offer.payment_deadline,
-            "payable_amount": offer.payable_amount,
-            "message": "Offer letter generated successfully"
-        }
+            frappe.db.commit()
+            return {
+                "offer_name": offer.name,
+                "offer_status": offer.offer_status,
+                "message": _("Offer letter generated successfully")
+            }
+        except Exception as e:
+            frappe.db.rollback()
+            # If it's a known Frappe exception, keep the message clean
+            raise e
 
     @staticmethod
     def accept_offer(offer_name):
@@ -358,20 +382,44 @@ class OfferService:
     @frappe.whitelist()
     def bulk_generate_offers(applicants):
         """
-        API endpoint for bulk offer generation.
-        Accepts:
-        1. JSON list of dicts: [{"applicant": "...", "campus": "...", "program": "...", "cycle": "...", "admission_year": "..."}]
-        2. JSON list of applicant names: ["APP-2026-00001", "APP-2026-00002"]
+        Entry point for bulk generation.
+        Small batches (< 10) are processed immediately.
+        Large batches are sent to background workers.
         """
         if isinstance(applicants, str):
             applicants = json.loads(applicants)
 
+        if not applicants:
+            return {"message": "No applicants provided"}
+
+        # Threshold for background processing
+        if len(applicants) > 10:
+            frappe.enqueue(
+                method="slcm.api.service.offer_service.OfferService.background_bulk_worker",
+                queue="long",
+                applicants=applicants,
+                user=frappe.session.user,
+                now=frappe.flags.in_test
+            )
+            return {
+                "queued": True,
+                "message": _("Large batch detected ({0} applicants). Processing started in the background. You will receive a notification when finished.").format(len(applicants))
+            }
+
+        # Otherwise, process immediately (standard behavior)
+        return OfferService._process_bulk_batch(applicants)
+
+    @staticmethod
+    def _process_bulk_batch(applicants):
+        """Internal helper to process a batch and return summary."""
         results = {"success": [], "errors": []}
-        
         for data in applicants:
             try:
-                # Handle case where only applicant name is passed
-                if isinstance(data, str):
+                # payload resolution logic...
+                if isinstance(data, dict) and "applicant" in data:
+                    payload = data
+                elif isinstance(data, str):
+                    # Handle case where only applicant name is passed
                     applicant_name = data
                     # Fetch basic details from Applicant record as fallback
                     details = frappe.db.get_value("Applicant", applicant_name, 
@@ -441,11 +489,62 @@ class OfferService:
                     cycle=payload.get("cycle"),
                     admission_year=payload.get("admission_year")
                 )
-                results["success"].append({"applicant": payload.get("applicant"), "offer": name})
+                results["success"].append({
+                    "applicant": payload.get("applicant"), 
+                    "offer": name.get("offer_name") if isinstance(name, dict) else name
+                })
             except Exception as e:
-                results["errors"].append({"applicant": str(data), "error": str(e)})
-                frappe.log_error(f"Bulk Offer Generation Error: {str(e)}")
+                frappe.db.rollback()
+                error_msg = str(e) or "Unknown Server Error"
+                results["errors"].append({"applicant": str(data.get("applicant") if isinstance(data, dict) else data), "error": error_msg})
+                frappe.log_error(f"Bulk Offer Generation Error for {str(data)}: {error_msg}", "Offer Service")
 
+    @staticmethod
+    def background_bulk_worker(applicants, user):
+        """Background task for high-volume generation."""
+        # Switch session user to the requester
+        frappe.set_user(user)
+
+        results = OfferService._process_bulk_batch(applicants)
+
+        # Create a System Notification upon completion
+        success_count = len(results["success"])
+        error_count = len(results["errors"])
+        
+        summary_msg = _("Successfully generated {0} offers.").format(success_count)
+        if error_count > 0:
+            summary_msg += _(" {0} errors encountered.").format(error_count)
+
+        notification_content = f"""
+            <h4>{_('Bulk Offer Generation Finished')}</h4>
+            <p>{summary_msg}</p>
+            <hr>
+            <p><small>{_('Check the Offer Letter list for details.')}</small></p>
+        """
+
+        # Dispatch standard Frappe notification
+        from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+        enqueue_create_notification(
+            [user],
+            {
+                "subject": _("Bulk Offer Generation Report"),
+                "email_content": notification_content,
+                "type": "Alert",
+                "document_type": "Offer Letter"
+            }
+        )
+
+        # Also publish real-time alert if user is still logged in
+        frappe.publish_realtime(
+            "msgprint", 
+            {
+                "message": summary_msg, 
+                "title": _("Background Process Completed"),
+                "indicator": "green" if error_count == 0 else "orange"
+            }, 
+            user=user
+        )
+        
         return results
 
     @staticmethod

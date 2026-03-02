@@ -108,9 +108,11 @@
 }
 
 .chart-card {
-    padding: 24px;
+    padding: 32px;
     background: white;
-    min-height: 400px;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
 }
 
 .full-width {
@@ -121,13 +123,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 16px;
 }
 
 .chart-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    color: var(--text-main);
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* Custom Tooltip/Info */

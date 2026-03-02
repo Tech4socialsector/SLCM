@@ -6,7 +6,11 @@ from frappe.model.document import Document
 class OfferLetter(Document):
 
     def autoname(self):
-        self.name = f"OL-{self.applicant}-{self.program}-{self.campus}"
+        if getattr(self, "naming_series", None):
+            from frappe.model.naming import make_autoname
+            self.name = make_autoname(self.naming_series)
+        else:
+            self.name = f"OL-{self.applicant}-{self.program}-{self.campus}"
     def before_insert(self):
         """
         Ensure data integrity before record creation.
