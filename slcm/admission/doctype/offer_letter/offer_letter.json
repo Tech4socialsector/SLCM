@@ -129,8 +129,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Offer Status",
-   "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn",
-   "read_only": 1
+   "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn"
   },
   {
    "fieldname": "offer_configrationn",
@@ -207,7 +206,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 14:36:41.435135",
+ "modified": "2026-03-02 15:13:20.448830",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
