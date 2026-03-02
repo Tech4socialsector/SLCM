@@ -664,7 +664,7 @@ frappe.pages['applicant-portal'].on_page_load = function (wrapper) {
             const program_name = decodeURIComponent($(this).data("name"));
 
             // Option 1: Simple redirect
-            window.location.href = frappe.urllib.get_full_url("/applicant-form");
+            window.location.href = `/applicant-form/new?`;
 
         });
 
