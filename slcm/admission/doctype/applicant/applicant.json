@@ -26,7 +26,6 @@
   "program",
   "admission_cycle",
   "applicant_id",
-  "user",
   "column_break_rynw",
   "admission_year",
   "academic_year",
@@ -916,19 +915,13 @@
    "fieldtype": "Datetime",
    "label": "Portal Last Login",
    "read_only": 1
-  },
-  {
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "label": "User",
-   "options": "User"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 10:56:44.899582",
+ "modified": "2026-03-02 18:37:03.316109",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -970,16 +963,13 @@
    "write": 1
   },
   {
-   "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Entrance Test Admin",
-   "share": 1,
-   "write": 1
+   "share": 1
   },
   {
    "email": 1,
@@ -987,7 +977,18 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Entrance Test Provider",
+   "role": "Offer Letter Admin",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
    "share": 1,
    "write": 1
   }
