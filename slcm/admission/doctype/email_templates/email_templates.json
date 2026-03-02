@@ -10,6 +10,7 @@
   "use_html",
   "template_for_offer_letter",
   "version",
+  "logo_image",
   "response_html",
   "response",
   "offer_template_help"
@@ -61,12 +62,18 @@
    "label": "Version",
    "mandatory_depends_on": "eval:doc.template_for_offer_letter ==1",
    "non_negative": 1
+  },
+  {
+   "fieldname": "logo_image",
+   "fieldtype": "Attach Image",
+   "label": "Logo Image",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 10:22:13.794175",
+ "modified": "2026-02-28 10:37:40.376377",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Email Templates",
