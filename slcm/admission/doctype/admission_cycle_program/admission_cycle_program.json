@@ -6,6 +6,7 @@
  "field_order": [
   "program",
   "program_name",
+  "brochure_url",
   "col_break_1",
   "campus",
   "seats",
@@ -15,7 +16,7 @@
   "section_break_eligibility",
   "eligibility_hint",
   "col_break_2",
-  "brochure_url",
+  "desciption",
   "section_break_limits",
   "max_applications",
   "application_count",
@@ -85,7 +86,7 @@
    "collapsible": 1,
    "fieldname": "section_break_eligibility",
    "fieldtype": "Section Break",
-   "label": "Eligibility and Brochure"
+   "label": "Eligibility and Description"
   },
   {
    "description": "Short text shown on portal card",
@@ -160,11 +161,16 @@
    "fieldname": "add_program_media",
    "fieldtype": "Button",
    "label": "Add/Update Program Media"
+  },
+  {
+   "fieldname": "desciption",
+   "fieldtype": "Text Editor",
+   "label": "Desciption"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-02-28 16:03:19.323598",
+ "modified": "2026-03-01 12:50:19.012988",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle Program",

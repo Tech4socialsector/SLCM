@@ -8,40 +8,55 @@ class AdmissionCycleProgram(Document):
     pass
 
 @frappe.whitelist()
-def save_categories(admission_cycle,
-                    program,
-                    total_seats,
-                    status,
-                    policy_document,
-                    reservation_rows):
-
+def save_categories(admission_cycle, program, total_seats, status, policy_document, reservation_rows, existing_policy=None):
     if isinstance(reservation_rows, str):
         reservation_rows = json.loads(reservation_rows)
 
-    doc = frappe.new_doc("Program Reservation Policy")
+    # If existing_policy is provided, this is an UPDATE — skip duplicate check
+    if existing_policy:
+        if not frappe.db.exists("Program Reservation Policy", existing_policy):
+            frappe.throw(_("Reservation Policy {0} not found.").format(existing_policy))
+        doc = frappe.get_doc("Program Reservation Policy", existing_policy)
+    else:
+        # NEW record — check for duplicates
+        existing = frappe.db.get_value(
+            "Program Reservation Policy",
+            {"admission_cycle": admission_cycle, "program": program},
+            "name"
+        )
+        if existing:
+            frappe.throw(
+                _("A reservation policy already exists for {0} in Cycle {1}. Only one policy per program per cycle is allowed.").format(program, admission_cycle)
+            )
+        doc = frappe.new_doc("Program Reservation Policy")
+        doc.admission_cycle = admission_cycle
+        doc.program = program
 
-    doc.admission_cycle = admission_cycle
-    doc.program = program
     doc.total_seats = total_seats
     doc.status = status
-    doc.policy_document = policy_document
+    doc.policy_document = policy_document or ""
 
+    # Clear and re-add category rows
     doc.set("categories", [])
 
-    for row in reservation_rows:
+    for r in reservation_rows:
+        if not r.get("category_name"):
+            frappe.throw(_("Category Name is mandatory for all rows."))
         doc.append("categories", {
-            "reservation_quota": row.get("category"),
-            "category_name": row.get("category_name"),
-            "percentage": row.get("percentage"),
-            "application_fee": row.get("application_fee"),
-            "seats": row.get("allocated_seats"),
+            "reservation_quota": r.get("category"),
+            "category_name": r.get("category_name"),
+            "percentage": r.get("percentage"),
+            "seats": r.get("allocated_seats"),
+            "application_fee": r.get("application_fee")
         })
 
-    doc.save(ignore_permissions=True)
+    if doc.is_new():
+        doc.insert(ignore_permissions=True)
+    else:
+        doc.save(ignore_permissions=True)
+
     frappe.db.commit()
-
     return doc.name
-
 
 @frappe.whitelist()
 def save_program_media(program, active, brochure_pdf, media_rows, parent_doctype, parent_name):

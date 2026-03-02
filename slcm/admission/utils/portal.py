@@ -11,10 +11,10 @@ def get_portal_config():
     if cached:
         return cached
     try:
-        config = frappe.get_single("Applicant Portal Config")
+        config = frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True)
         if not config.primary_color:
             try:
-                config.primary_color = frappe.db.get_single_value(
+                config.primary_color = frappe.db.get_value(
                     "Institution Settings", "portal_theme_color") or "#1a237e"
             except Exception:
                 config.primary_color = "#1a237e"
@@ -108,13 +108,16 @@ def get_active_programs():
     """
     try:
         # Find active cycle
-        active_cycle_name = frappe.db.get_value(
+        active_cycles = frappe.get_all(
             "Admission Cycle",
-            {"status": "Active"},
-            "name"
+            filters={"status": "Active"},
+            fields=["name"],
+            limit=1,
+            ignore_permissions=True
         )
-        if not active_cycle_name:
+        if not active_cycles:
             return []
+        active_cycle_name = active_cycles[0].name
 
         # Read programs from cycle's child table
         cycle_programs = frappe.get_all(
@@ -128,7 +131,8 @@ def get_active_programs():
                 "seats", "eligibility_hint", "brochure_url",
                 "program_image", "program_media"
             ],
-            order_by="program_name asc"
+            order_by="program_name asc",
+            ignore_permissions=True
         )
 
         result = []
@@ -142,8 +146,7 @@ def get_active_programs():
             campus_name = ""
             if cp.campus:
                 campus_name = frappe.db.get_value(
-                    "Company", cp.campus, "company_name"
-                ) or cp.campus
+                    "Company", cp.campus, "company_name") or cp.campus
 
             result.append({
                 "program": cp.program,
@@ -177,11 +180,16 @@ def get_campus_options(program):
         if not multi:
             return []
 
-        active_cycle = frappe.db.get_value(
-            "Admission Cycle", {"status": "Active"}, "name"
+        active_cycles = frappe.get_all(
+            "Admission Cycle",
+            filters={"status": "Active"},
+            fields=["name"],
+            limit=1,
+            ignore_permissions=True
         )
-        if not active_cycle:
+        if not active_cycles:
             return []
+        active_cycle = active_cycles[0].name
 
         # Get all campus entries for this program in the active cycle
         entries = frappe.get_all(
@@ -192,7 +200,8 @@ def get_campus_options(program):
                 "program": program,
                 "is_active": 1
             },
-            fields=["campus"]
+            fields=["campus"],
+            ignore_permissions=True
         )
 
         result = []
@@ -200,8 +209,7 @@ def get_campus_options(program):
             if not e.campus:
                 continue
             name = frappe.db.get_value(
-                "Company", e.campus, "company_name"
-            ) or e.campus
+                "Company", e.campus, "company_name") or e.campus
             result.append({"campus": e.campus, "campus_name": name})
 
         return result
@@ -221,7 +229,7 @@ def get_application_form(program, cycle):
         )
         if not form:
             return None
-        form_doc = frappe.get_doc("Application Form Config", form)
+        form_doc = frappe.get_doc("Application Form Config", form, ignore_permissions=True)
         fields = []
         for f in sorted(form_doc.fields or [], key=lambda x: x.sequence or 0):
             fields.append({
@@ -240,6 +248,7 @@ def get_application_form(program, cycle):
     except Exception as e:
         frappe.log_error(f"get_application_form failed: {e}", "Portal")
         return None
+
 
 
 # ── APPLICANT ─────────────────────────────────────────────────────
@@ -596,7 +605,8 @@ def api_get_announcements(program=None, cycle=None, campus=None, limit=20):
                 "target_campus", "view_count"
             ],
             order_by="publish_date desc",
-            limit=int(limit)
+            limit=int(limit),
+            ignore_permissions=True
         )
 
         # Filter by targeting
@@ -621,7 +631,7 @@ def api_get_announcements(program=None, cycle=None, campus=None, limit=20):
 def api_get_announcement_detail(name):
     """Returns full content of a single announcement."""
     try:
-        doc = frappe.get_doc("Portal Announcement", name)
+        doc = frappe.get_doc("Portal Announcement", name, ignore_permissions=True)
         if doc.status != "Published" or not doc.show_on_portal:
             return None
         return {
@@ -671,16 +681,26 @@ def api_get_program_media(program=None):
         else:
             filters["is_featured"] = 1
 
-        media = frappe.get_all(
+        media_gallery = frappe.get_all(
             "Program Media",
             filters=filters,
             fields=[
-                "name", "program", "media_type", "image",
-                "video_url", "brochure_pdf", "caption",
-                "sequence", "is_featured"
+                "name", "program",
+                "brochure_pdf",
+                "is_featured",
+                "media_gallery"
             ],
-            order_by="sequence asc"
+            ignore_permissions=True
         )
+        media = []
+        for item in media_gallery.media_gallery:
+            media.append({
+                "media_type": item.media_type,
+                "file_url": item.file,
+                "sequence": item.sequence,
+                "caption": item.caption
+            })
+
         return media
     except Exception as e:
         frappe.log_error(f"api_get_program_media failed: {e}", "Portal")
@@ -715,7 +735,7 @@ def api_get_program_status(program, cycle):
             "show_seats_filled": False
         }
 
-        cycle_doc = frappe.get_doc("Admission Cycle", cycle)
+        cycle_doc = frappe.get_doc("Admission Cycle", cycle, ignore_permissions=True)
 
         # Check application end date at cycle level
         if cycle_doc.application_end:
@@ -750,7 +770,7 @@ def api_get_program_status(program, cycle):
         if reservation_policy:
             try:
                 policy = frappe.get_doc(
-                    "Program Reservation Policy", reservation_policy
+                    "Program Reservation Policy", reservation_policy, ignore_permissions=True
                 )
                 total = policy.total_seats or 0
                 filled = policy.total_filled or 0
@@ -792,7 +812,7 @@ def api_get_all_program_statuses(cycle):
     Called once on portal load to avoid multiple API calls.
     """
     try:
-        cycle_doc = frappe.get_doc("Admission Cycle", cycle)
+        cycle_doc = frappe.get_doc("Admission Cycle", cycle, ignore_permissions=True)
         statuses = {}
         for p in (cycle_doc.programs or []):
             if p.is_active:
@@ -814,7 +834,7 @@ def api_get_application_fee(program, cycle, category=None):
     """
     try:
         # Get reservation_policy link from cycle program row
-        cycle_doc = frappe.get_doc("Admission Cycle", cycle)
+        cycle_doc = frappe.get_doc("Admission Cycle", cycle, ignore_permissions=True)
         reservation_policy = None
         for row in (cycle_doc.programs or []):
             if row.program == program:
@@ -829,7 +849,7 @@ def api_get_application_fee(program, cycle, category=None):
                 "category_name": "General"
             }
 
-        policy = frappe.get_doc("Program Reservation Policy", reservation_policy)
+        policy = frappe.get_doc("Program Reservation Policy", reservation_policy, ignore_permissions=True)
         fee, label, cat = policy.get_fee_for_category(category)
 
         cat_name = ""
@@ -853,6 +873,7 @@ def api_get_application_fee(program, cycle, category=None):
                 "category": None, "category_name": ""}
 
 
+
 # ── INCREMENT APPLICATION COUNT ───────────────────────────────────
 
 def increment_application_count(program, cycle):
@@ -861,7 +882,7 @@ def increment_application_count(program, cycle):
     Increments application_count on the matching Admission Cycle Program row.
     """
     try:
-        cycle_doc = frappe.get_doc("Admission Cycle", cycle)
+        cycle_doc = frappe.get_doc("Admission Cycle", cycle, ignore_permissions=True)
         for row in (cycle_doc.programs or []):
             if row.program == program:
                 current = row.application_count or 0
@@ -892,7 +913,7 @@ def api_get_program_images(program_media=None, program_image=None):
 
     if program_media:
         try:
-            media_doc = frappe.get_doc("Program Media", program_media)
+            media_doc = frappe.get_doc("Program Media", program_media, ignore_permissions=True)
             for img in media_doc.get("images") or []:
                 if img.get("image"):
                     images.append({

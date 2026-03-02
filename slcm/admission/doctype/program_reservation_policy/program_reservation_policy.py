@@ -72,6 +72,7 @@ class ProgramReservationPolicy(Document):
                         changed = True
                     break
             if changed:
+                cycle_doc.flags.in_reservation_sync = True
                 cycle_doc.flags.ignore_validate = True
                 cycle_doc.save(ignore_permissions=True)
                 frappe.db.commit()

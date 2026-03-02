@@ -162,57 +162,170 @@ function open_reservation_policy(frm, row) {
 
     function render_table() {
         const rows_html = table_rows.map((r, idx) => `
-        <tr>
-            <td>
-                <select class="form-control category" data-idx="${idx}">
-                    <option value="">Select</option>
-                    <option value="Government" ${r.category === "Government" ? "selected" : ""}>Government</option>
-                    <option value="Management" ${r.category === "Management" ? "selected" : ""}>Management</option>
-                </select>
-            </td>
-            <td>
-                <button class="btn btn-default btn-sm category-name-btn" data-idx="${idx}" style="width:100%;">
-                    ${r.category_name ? frappe.utils.escape_html(r.category_name) : __("Pick Category")}
-                </button>
-            </td>
-            <td>
-                <input type="number" class="form-control percentage" data-idx="${idx}"
-                    value="${r.percentage || ""}">
-            </td>
-            <td>
-                <input type="number" class="form-control allocated_seats" data-idx="${idx}"
-                    value="${r.allocated_seats || ""}" readonly>
-            </td>
-            <td>
-                <input type="number" class="form-control application_fee" data-idx="${idx}"
-                    value="${r.application_fee || ""}">
-            </td>
-            <td style="text-align:center;">
-                <button class="btn btn-danger btn-xs remove-row" data-idx="${idx}">Remove</button>
-            </td>
-        </tr>
-        `).join("");
+    <tr>
+        <td>
+            <select class="form-control category" data-idx="${idx}">
+                <option value="">Select</option>
+                <option value="Government" ${r.category === "Government" ? "selected" : ""}>Government</option>
+                <option value="Management" ${r.category === "Management" ? "selected" : ""}>Management</option>
+            </select>
+        </td>
+        <td>
+            <button class="btn btn-default btn-sm category-name-btn" data-idx="${idx}" style="width:100%;">
+                ${r.category_name ? frappe.utils.escape_html(r.category_name) : __("Pick Category")}
+            </button>
+        </td>
+        <td>
+            <input type="number" class="form-control percentage" data-idx="${idx}"
+                value="${r.percentage || ""}">
+        </td>
+        <td>
+            <input type="number" class="form-control allocated_seats" data-idx="${idx}"
+                value="${r.allocated_seats || ""}" readonly>
+        </td>
+        <td>
+            <input type="number" class="form-control application_fee" data-idx="${idx}"
+                value="${r.application_fee || ""}">
+        </td>
+        <td style="text-align:center;">
+            <button class="btn btn-danger btn-xs remove-row" data-idx="${idx}">Remove</button>
+        </td>
+    </tr>
+    `).join("");
 
         dialog.fields_dict.policy_table.$wrapper.html(`
-            <div style="overflow-x:auto; margin-bottom:10px;">
-                <table class="table table-bordered" style="table-layout:fixed; width:100%;">
-                    <thead>
-                        <tr>
-                            <th style="width:20%;">Category</th>
-                            <th style="width:20%;">Category Name</th>
-                            <th style="width:10%;">Percentage</th>
-                            <th style="width:10%;">Seats</th>
-                            <th style="width:10%;">Fee</th>
-                            <th style="width:10%; text-align:center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rows_html}
-                    </tbody>
-                </table>
-            </div>
-            <button class="btn btn-primary btn-sm" id="add-row-btn">+ Add Row</button>
-        `);
+        <div style="overflow-x:auto; margin-bottom:10px;">
+            <table class="table table-bordered" style="table-layout:fixed; width:100%;">
+                <thead>
+                    <tr>
+                        <th style="width:20%;">Category</th>
+                        <th style="width:20%;">Category Name</th>
+                        <th style="width:10%;">Percentage</th>
+                        <th style="width:10%;">Seats</th>
+                        <th style="width:10%;">Fee</th>
+                        <th style="width:10%; text-align:center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows_html}
+                </tbody>
+            </table>
+        </div>
+        <button class="btn btn-primary btn-sm" id="add-row-btn">+ Add Row</button>
+    `);
+    }
+
+    // Tracks whether an existing policy was found
+    let existing_policy_name = null;
+
+    function validate_and_save() {
+        sync_table_rows();
+
+        if (!table_rows.length) {
+            frappe.msgprint(__("Please add at least one category."));
+            return;
+        }
+
+        for (let i = 0; i < table_rows.length; i++) {
+            const r = table_rows[i];
+            const rowNum = i + 1;
+            if (!r.category_name || r.category_name.trim() === "") {
+                frappe.msgprint(__(`Row ${rowNum}: Category Name is mandatory.`));
+                return;
+            }
+            if (!r.percentage || r.percentage <= 0) {
+                frappe.msgprint(__(`Row ${rowNum}: Percentage must be greater than 0.`));
+                return;
+            }
+        }
+
+        const total_percent = table_rows.reduce((sum, r) => sum + (parseFloat(r.percentage) || 0), 0);
+        if (total_percent !== 100) {
+            frappe.msgprint(__("Total percentage must be exactly 100%. Current total: " + total_percent + "%"));
+            return;
+        }
+
+        // If existing record found, confirm update before saving
+        if (existing_policy_name) {
+            frappe.confirm(
+                __(`A Reservation Policy (<strong>${existing_policy_name}</strong>) already exists for this program. Do you want to update it?`),
+                () => do_save(),
+                () => { /* user cancelled — do nothing */ }
+            );
+        } else {
+            do_save();
+        }
+    }
+
+    function do_save() {
+        frappe.call({
+            method: "slcm.admission.doctype.admission_cycle_program.admission_cycle_program.save_categories",
+            args: {
+                admission_cycle: dialog.get_value("admission_cycle"),
+                program: dialog.get_value("program"),
+                total_seats: dialog.get_value("total_seats"),
+                status: dialog.get_value("status"),
+                policy_document: dialog.get_value("policy_document"),
+                reservation_rows: table_rows,
+                existing_policy: existing_policy_name || ""   // empty string, not null — null may not pass cleanly
+            },
+            freeze: true,
+            freeze_message: __("Saving Categories..."),
+            callback(r) {
+                if (!r.exc && r.message) {
+                    frappe.model.set_value(
+                        row.doctype,
+                        row.name,
+                        "reservation_policy",
+                        r.message
+                    );
+                    frm.refresh_field("programs");
+                    frappe.show_alert({
+                        message: existing_policy_name
+                            ? __("Reservation Policy Updated: ") + r.message
+                            : __("Reservation Policy Created: ") + r.message,
+                        indicator: "green"
+                    });
+                    dialog.hide();
+                }
+            }
+        });
+    }
+
+    function link_existing_policy() {
+        if (!existing_policy_name) return;
+
+        frappe.confirm(
+            __(`Do you want to link the existing policy (<strong>${existing_policy_name}</strong>) without making any changes?`),
+            () => {
+                frappe.model.set_value(
+                    row.doctype,
+                    row.name,
+                    "reservation_policy",
+                    existing_policy_name
+                );
+                frm.refresh_field("programs");
+                frappe.show_alert({
+                    message: __("Linked existing Reservation Policy: ") + existing_policy_name,
+                    indicator: "blue"
+                });
+                dialog.hide();
+            }
+        );
+    }
+
+    function update_dialog_buttons() {
+        if (existing_policy_name) {
+            // Change primary label to 'Update Reservation Policy'
+            dialog.set_primary_action(__("Update Reservation Policy"), validate_and_save);
+
+            // Add 'Link Existing' secondary button only if not already added
+            if (!dialog.$wrapper.find(".btn-link-existing").length) {
+                dialog.add_custom_action(__("Link Existing"), link_existing_policy, "btn-link-existing");
+            }
+        } else {
+            dialog.set_primary_action(__("Save Reservation Policy"), validate_and_save);
+        }
     }
 
     const dialog = new frappe.ui.Dialog({
@@ -266,84 +379,88 @@ function open_reservation_policy(frm, row) {
             }
         ],
         primary_action_label: __("Save Reservation Policy"),
-        primary_action() {
-            sync_table_rows();
-
-            if (!table_rows.length) {
-                frappe.msgprint(__("Please add at least one category."));
-                return;
-            }
-
-            for (let i = 0; i < table_rows.length; i++) {
-                const r = table_rows[i];
-                const rowNum = i + 1;
-
-                if (!r.category_name || r.category_name.trim() === "") {
-                    frappe.msgprint(__(`Row ${rowNum}: Category Name is mandatory.`));
-                    return;
-                }
-
-                if (!r.percentage || r.percentage <= 0) {
-                    frappe.msgprint(__(`Row ${rowNum}: Percentage must be greater than 0.`));
-                    return;
-                }
-            }
-
-            const total_percent = table_rows.reduce((sum, r) => sum + (parseFloat(r.percentage) || 0), 0);
-            if (total_percent !== 100) {
-                frappe.msgprint(__("Total percentage must be exactly 100%. Current total: " + total_percent + "%"));
-                return;
-            }
-
-            frappe.call({
-                method: "slcm.admission.doctype.admission_cycle_program.admission_cycle_program.save_categories",
-                args: {
-                    admission_cycle: dialog.get_value("admission_cycle"),
-                    program: dialog.get_value("program"),
-                    total_seats: dialog.get_value("total_seats"),
-                    status: dialog.get_value("status"),
-                    policy_document: dialog.get_value("policy_document"),
-                    reservation_rows: table_rows
-                },
-                freeze: true,
-                freeze_message: __("Saving Categories..."),
-                callback(r) {
-                    if (!r.exc && r.message) {
-                        frappe.model.set_value(
-                            row.doctype,
-                            row.name,
-                            "reservation_policy",
-                            r.message
-                        );
-                        frm.refresh_field("programs");
-                        frappe.show_alert({
-                            message: __("Reservation Policy Created: ") + r.message,
-                            indicator: "green"
-                        });
-                        dialog.hide();
-                    }
-                }
-            });
-        }
+        primary_action: validate_and_save
     });
 
     dialog.show();
     render_table();
 
-    // Open category picker on button click
+    // Load existing policy if any
+    frappe.call({
+        method: "frappe.client.get_value",
+        args: {
+            doctype: "Program Reservation Policy",
+            filters: { admission_cycle: frm.doc.name, program: row.program },
+            fieldname: ["name", "admission_cycle", "status", "total_seats", "policy_document"]
+        },
+        callback(res) {
+            if (res.message && res.message.name) {
+                frappe.call({
+                    method: "frappe.client.get",
+                    args: {
+                        doctype: "Program Reservation Policy",
+                        name: res.message.name
+                    },
+                    callback(r) {
+                        if (r.message) {
+                            const doc = r.message;
+
+                            frappe.model.set_value(
+                                row.doctype,
+                                row.name,
+                                "seats",
+                                doc.total_seats
+                            );
+                            frm.refresh_field("programs");
+
+                            // Store the existing policy name globally
+                            existing_policy_name = doc.name;
+
+                            dialog.set_value("admission_cycle", doc.admission_cycle);
+                            dialog.set_value("program", doc.program);
+                            dialog.set_value("total_seats", doc.total_seats);
+                            dialog.set_value("status", doc.status);
+                            dialog.set_value("policy_document", doc.policy_document);
+
+                            table_rows = (doc.categories || []).map(item => ({
+                                category: item.reservation_quota || "",
+                                category_name: item.category_name || "",
+                                percentage: item.percentage || "",
+                                allocated_seats: item.seats || 0,
+                                application_fee: item.application_fee || ""
+                            }));
+
+                            render_table();
+
+                            // Update buttons to show Update + Link Existing
+                            update_dialog_buttons();
+
+                            frappe.show_alert({
+                                message: __("Loaded existing Reservation Policy for: ") + row.program,
+                                indicator: "blue"
+                            });
+                        }
+                    }
+                });
+            }
+            // No existing record — dialog stays as new entry mode
+        }
+    });
+
+    // Event: Open category picker
     dialog.$wrapper.on("click", ".category-name-btn", function () {
         sync_table_rows();
         const idx = parseInt($(this).data("idx"));
         open_category_picker(idx);
     });
 
-    // Auto calculate seats when percentage changes
+    // Event: Auto calculate seats on percentage input
     dialog.$wrapper.on("input", ".percentage", function () {
         const idx = parseInt($(this).data("idx"));
         calculate_row_seats(idx);
     });
 
-    // Add row
+    // Event: Add row
     dialog.$wrapper.on("click", "#add-row-btn", function () {
         sync_table_rows();
         table_rows.push({
@@ -356,7 +473,7 @@ function open_reservation_policy(frm, row) {
         render_table();
     });
 
-    // Remove row
+    // Event: Remove row
     dialog.$wrapper.on("click", ".remove-row", function () {
         sync_table_rows();
         const idx = parseInt($(this).data("idx"));
@@ -367,6 +484,7 @@ function open_reservation_policy(frm, row) {
 
 function open_program_media(frm, row) {
     let table_rows = [];
+    let existing_media_name = null;
 
     function sync_table_rows() {
         dialog.$wrapper.find("tbody tr").each(function () {
@@ -456,6 +574,110 @@ function open_program_media(frm, row) {
         `);
     }
 
+    function validate_and_save() {
+        sync_table_rows();
+
+        if (!table_rows.length) {
+            frappe.msgprint(__("Please add at least one media item."));
+            return;
+        }
+
+        for (let i = 0; i < table_rows.length; i++) {
+            const r = table_rows[i];
+            const rowNum = i + 1;
+
+            if (!r.media_type) {
+                frappe.msgprint(__(`Row ${rowNum}: Media Type is mandatory.`));
+                return;
+            }
+
+            if (!r.file_url || r.file_url.trim() === "") {
+                frappe.msgprint(__(`Row ${rowNum}: File is mandatory.`));
+                return;
+            }
+        }
+
+        // If existing record, confirm before updating
+        if (existing_media_name) {
+            frappe.confirm(
+                __(`A Program Media record (<strong>${existing_media_name}</strong>) already exists for this program. Do you want to update it?`),
+                () => do_save(),
+                () => { /* user cancelled — do nothing */ }
+            );
+        } else {
+            do_save();
+        }
+    }
+
+    function do_save() {
+        frappe.call({
+            method: "slcm.admission.doctype.admission_cycle_program.admission_cycle_program.save_program_media",
+            args: {
+                program: dialog.get_value("program"),
+                active: dialog.get_value("active"),
+                brochure_pdf: dialog.get_value("brochure_pdf"),
+                media_rows: table_rows,
+                parent_doctype: row.doctype,
+                parent_name: row.name,
+                existing_media: existing_media_name || null  // backend uses this to update vs insert
+            },
+            freeze: true,
+            freeze_message: __("Saving Program Media..."),
+            callback(r) {
+                if (!r.exc && r.message) {
+                    frappe.model.set_value(
+                        row.doctype,
+                        row.name,
+                        "program_media",
+                        r.message
+                    );
+                    frm.refresh_field("programs");
+                    frappe.show_alert({
+                        message: existing_media_name
+                            ? __("Program Media Updated: ") + r.message
+                            : __("Program Media Saved: ") + r.message,
+                        indicator: "green"
+                    });
+                    dialog.hide();
+                }
+            }
+        });
+    }
+
+    function link_existing_media() {
+        if (!existing_media_name) return;
+
+        frappe.confirm(
+            __(`Do you want to link the existing Program Media (<strong>${existing_media_name}</strong>) without making any changes?`),
+            () => {
+                frappe.model.set_value(
+                    row.doctype,
+                    row.name,
+                    "program_media",
+                    existing_media_name
+                );
+                frm.refresh_field("programs");
+                frappe.show_alert({
+                    message: __("Linked existing Program Media: ") + existing_media_name,
+                    indicator: "blue"
+                });
+                dialog.hide();
+            }
+        );
+    }
+
+    function update_dialog_buttons() {
+        if (existing_media_name) {
+            dialog.set_primary_action(__("Update Program Media"), validate_and_save);
+
+            if (!dialog.$wrapper.find(".btn-link-existing-media").length) {
+                dialog.add_custom_action(__("Link Existing"), link_existing_media, "btn-link-existing-media");
+            }
+        } else {
+            dialog.set_primary_action(__("Save Program Media"), validate_and_save);
+        }
+    }
+
     const dialog = new frappe.ui.Dialog({
         title: __("Program Media"),
         size: "large",
@@ -489,59 +711,7 @@ function open_program_media(frm, row) {
             }
         ],
         primary_action_label: __("Save Program Media"),
-        primary_action() {
-            sync_table_rows();
-
-            if (!table_rows.length) {
-                frappe.msgprint(__("Please add at least one media item."));
-                return;
-            }
-
-            for (let i = 0; i < table_rows.length; i++) {
-                const r = table_rows[i];
-                const rowNum = i + 1;
-
-                if (!r.media_type) {
-                    frappe.msgprint(__(`Row ${rowNum}: Media Type is mandatory.`));
-                    return;
-                }
-
-                if (!r.file_url || r.file_url.trim() === "") {
-                    frappe.msgprint(__(`Row ${rowNum}: File is mandatory.`));
-                    return;
-                }
-            }
-
-            frappe.call({
-                method: "slcm.admission.doctype.admission_cycle_program.admission_cycle_program.save_program_media",
-                args: {
-                    program: dialog.get_value("program"),
-                    active: dialog.get_value("active"),
-                    brochure_pdf: dialog.get_value("brochure_pdf"),
-                    media_rows: table_rows,
-                    parent_doctype: row.doctype,
-                    parent_name: row.name
-                },
-                freeze: true,
-                freeze_message: __("Saving Program Media..."),
-                callback(r) {
-                    if (!r.exc && r.message) {
-                        frappe.model.set_value(
-                            row.doctype,
-                            row.name,
-                            "program_media",
-                            r.message
-                        );
-                        frm.refresh_field("programs");
-                        frappe.show_alert({
-                            message: __("Program Media Saved: ") + r.message,
-                            indicator: "green"
-                        });
-                        dialog.hide();
-                    }
-                }
-            });
-        }
+        primary_action: validate_and_save
     });
 
     dialog.show();
@@ -557,7 +727,6 @@ function open_program_media(frm, row) {
         },
         callback(res) {
             if (res.message && res.message.name) {
-                // Existing record found — load it
                 frappe.call({
                     method: "frappe.client.get",
                     args: {
@@ -567,7 +736,11 @@ function open_program_media(frm, row) {
                     callback(r) {
                         if (r.message) {
                             const doc = r.message;
-                            dialog.set_value("is_active", doc.active);
+
+                            // Store existing record name
+                            existing_media_name = doc.name;
+
+                            dialog.set_value("active", doc.is_active);
                             dialog.set_value("brochure_pdf", doc.brochure_pdf || "");
 
                             table_rows = (doc.media_gallery || []).map(item => ({
@@ -579,6 +752,9 @@ function open_program_media(frm, row) {
 
                             render_table();
 
+                            // Swap buttons to Update + Link Existing
+                            update_dialog_buttons();
+
                             frappe.show_alert({
                                 message: __("Loaded existing Program Media for: ") + row.program,
                                 indicator: "blue"
@@ -587,7 +763,7 @@ function open_program_media(frm, row) {
                     }
                 });
             }
-            // If no existing record — dialog stays empty, ready for new entry
+            // No existing record — stays as new entry mode
         }
     });
 
