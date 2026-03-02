@@ -11,18 +11,25 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def validate(self):
+        """
+        FIX — Duplicate Record Issue:
+        ─────────────────────────────
+        Previously, create_or_update_evaluation() was called:
+          1. Inside validate_eligibility() (before throw, for ineligible path)
+          2. Again here in validate() as a "safety net" for the eligible path
+
+        This caused duplicate/double-save calls for both paths when no throw occurred.
+
+        CORRECTED FLOW:
+          - validate_eligibility() handles ALL saves internally:
+              • Ineligible: saves BEFORE throw (required — throw exits the stack)
+              • Eligible:   saves at the END of validate_eligibility()
+          - validate() no longer calls create_or_update_evaluation() at all.
+        """
         self.validate_eligibility()
-
-        # for BOTH eligible and ineligible outcomes, so it always runs even
-        # when frappe.throw() is raised for ineligible applicants.
-        # We still call it here as a safety net for the eligible path.
-        program_table_html = self._build_program_eligibility_html()
-        self.create_or_update_evaluation(program_details_html=program_table_html)
-
-        # NOTE: DO NOT add another frappe.throw() here.
-        # validate_eligibility() already throws with the full HTML message
-        # (ineligibility reason + program table) in one single call.
-        # A second throw here would override that rich message with a plain one.
+        # NOTE: create_or_update_evaluation() is now called exclusively inside
+        # validate_eligibility() for BOTH eligible and ineligible outcomes.
+        # Do NOT add another call here — it would cause duplicate records.
 
     def on_update(self):
         from slcm.admission.doctype.admission_result.admission_result import sync_applicant_to_admission_result
@@ -62,12 +69,46 @@ class Applicant(Document):
     def _get_applicant_hsc_groups(self):
         """
         Return the applicant's HSC group as a set (single value from hsc_group field).
-        This is on the Applicant doctype — we compare against the Rule's allowed groups.
         """
         hsc_group = getattr(self, "hsc_group", None)
         if hsc_group:
             return {hsc_group.strip()}
         return set()
+
+    # ──────────────────────────────────────────────
+    # PROGRAM LEVEL HELPER
+    # ──────────────────────────────────────────────
+
+    def _get_selected_program_level(self):
+        """
+        Returns the program_level ('UG', 'PG', 'Research Course') of the
+        currently selected program by querying the Program doctype.
+
+        Returns None if not found.
+        """
+        if not self.program:
+            return None
+        return frappe.db.get_value("Program", self.program, "program_level")
+
+    def _get_all_programs_for_level(self, program_level):
+        """
+        Returns ALL programs from the Program doctype that match the given
+        program_level (e.g., 'UG', 'PG', 'Research Course').
+
+        This ensures the eligibility table shows EVERY program of the same
+        level — not just those with eligibility rules configured.
+        """
+        if not program_level:
+            return []
+
+        programs = frappe.db.sql("""
+            SELECT name AS program
+            FROM `tabProgram`
+            WHERE program_level = %(program_level)s
+            ORDER BY name ASC
+        """, {"program_level": program_level}, as_dict=True)
+
+        return [row.program for row in programs if row.program]
 
     # ──────────────────────────────────────────────
     # CORE ELIGIBILITY LOGIC
@@ -92,12 +133,12 @@ class Applicant(Document):
              save in validate() never runs, meaning ineligible records are lost.
           3. Raises a single frappe.throw() containing:
                • Red reason box  (the specific failure message)
-               • Full program table  (all campus programs + full eligibility check)
+               • Full program table  (all same-level programs + full eligibility check)
 
         On eligibility:
           1. Sets self.evaluation_status = "Eligible".
-          2. Returns normally — create_or_update_evaluation() is then called by
-             validate() as usual.
+          2. Calls create_or_update_evaluation() here (NOT in validate()).
+             This prevents the double-save duplicate record bug.
         """
 
         if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
@@ -115,6 +156,10 @@ class Applicant(Document):
                 self.evaluation_status = "Eligible"
                 self.rejected_reason   = ""
                 self._apply_national_test_flags(national_test_result)
+
+                # Save the eligible record here (not in validate())
+                program_table_html = self._build_program_eligibility_html()
+                self.create_or_update_evaluation(program_details_html=program_table_html)
 
                 frappe.msgprint(
                     _("Eligible via National Test ({0}). Academic rule check bypassed.").format(
@@ -138,6 +183,9 @@ class Applicant(Document):
                 # No mapping found → no restriction → eligible
                 self.evaluation_status = "Eligible"
                 self.rejected_reason   = ""
+                # Save eligible record here (not in validate())
+                program_table_html = self._build_program_eligibility_html()
+                self.create_or_update_evaluation(program_details_html=program_table_html)
                 return
 
             for mapping in rule_mappings:
@@ -153,8 +201,8 @@ class Applicant(Document):
 
                     # ── CRITICAL: Save the Ineligible record NOW, before throw ──
                     # frappe.throw() raises ValidationError which unwinds the stack,
-                    # so create_or_update_evaluation() in validate() never executes
-                    # for ineligible applicants. We must save here explicitly.
+                    # so create_or_update_evaluation() would never execute after throw.
+                    # We must save here explicitly before throwing.
                     self.create_or_update_evaluation(program_details_html=program_table_html)
 
                     full_message = self._build_ineligibility_message(failure_message, program_table_html)
@@ -171,6 +219,9 @@ class Applicant(Document):
             # Passed all mappings → Eligible
             self.evaluation_status = "Eligible"
             self.rejected_reason   = ""
+            # Save eligible record here (not in validate()) to avoid duplicate saves
+            program_table_html = self._build_program_eligibility_html()
+            self.create_or_update_evaluation(program_details_html=program_table_html)
 
         except frappe.ValidationError:
             raise
@@ -186,22 +237,8 @@ class Applicant(Document):
 
     def _build_ineligibility_message(self, failure_message, program_table_html):
         """
-        Builds the full ineligibility HTML message using Frappe's native CSS
-        classes combined with explicit inline styles as fallback for environments
-        where CSS variables may not resolve (e.g., production vs local).
-
-        Structure:
-          ┌─ Alert banner (red)  ─────────────────────────────────┐
-          │  ✕  <failure_message>                                  │
-          └────────────────────────────────────────────────────────┘
-          ┌─ Program table section  ──────────────────────────────┐
-          │  Heading + summary counts + full eligibility table     │
-          └────────────────────────────────────────────────────────┘
-
-        NOTE: Inline styles are used as a fallback because on some production
-        Frappe deployments, CSS custom properties (--text-base, --text-sm etc.)
-        are not available inside msgprint/throw dialogs. Explicit pixel values
-        ensure consistent rendering across all environments.
+        Builds the full ineligibility HTML message using explicit inline styles
+        for consistent rendering across local and production Frappe environments.
         """
         escaped_reason = frappe.utils.escape_html(failure_message)
 
@@ -253,30 +290,36 @@ class Applicant(Document):
 
     def _build_program_eligibility_html(self):
         """
-        Returns styled HTML listing EVERY program on the applicant's
-        campus + admission cycle with a full eligibility check per program.
+        Returns styled HTML listing EVERY program of the SAME LEVEL as the
+        applicant's selected program (UG / PG / Research Course).
 
-        Uses explicit inline styles (no CSS variables) to ensure consistent
-        rendering across both local and production Frappe environments.
+        FIX — Previously only showed programs that had eligibility rules configured.
+        Now shows ALL programs from the Program doctype with matching program_level:
+          • Programs WITH eligibility rules → full eligibility check (pass/fail + reason)
+          • Programs WITHOUT eligibility rules → shown as "Eligible" (no restriction)
+          • Programs of a DIFFERENT level (e.g., PG when applicant applied for UG)
+            are completely excluded — they are irrelevant to the applicant.
+
         The currently selected program is marked with a "Selected" badge.
         """
-        all_programs = frappe.db.sql("""
-            SELECT DISTINCT pm.program
-            FROM `tabEligibility Rule Mapping` erm
-            INNER JOIN `tabProgram Mapping` pm ON pm.parent = erm.name
-            WHERE erm.is_active       = 1
-              AND erm.campus          = %(campus)s
-              AND erm.admission_cycle = %(admission_cycle)s
-            ORDER BY pm.program ASC
-        """, {
-            "campus":          self.campus,
-            "admission_cycle": self.admission_cycle,
-        }, as_dict=True)
+
+        # Get the level of the selected program (UG / PG / Research Course)
+        selected_program_level = self._get_selected_program_level()
+
+        if not selected_program_level:
+            return (
+                "<p style='color:#888;font-size:12px;'>{0}</p>".format(
+                    _("Could not determine program level for the selected program.")
+                )
+            )
+
+        # Get ALL programs of the same level from Program doctype
+        all_programs = self._get_all_programs_for_level(selected_program_level)
 
         if not all_programs:
             return (
                 "<p style='color:#888;font-size:12px;'>{0}</p>".format(
-                    _("No programs found for this campus and admission cycle.")
+                    _("No programs found for program level: {0}").format(selected_program_level)
                 )
             )
 
@@ -284,11 +327,7 @@ class Applicant(Document):
         eligible_count   = 0
         ineligible_count = 0
 
-        for prog_row in all_programs:
-            prog_name = prog_row.get("program")
-            if not prog_name:
-                continue
-
+        for prog_name in all_programs:
             is_prog_eligible, reason = self._check_eligibility_for_program(prog_name)
             is_selected = (prog_name == self.program)
 
@@ -393,13 +432,14 @@ class Applicant(Document):
             <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
                 <span style="font-weight:700;font-size:14px;color:#2c3e50;">{heading}</span>
                 <span style="font-size:12px;color:#888;">
-                    &mdash;&nbsp;{campus}&nbsp;&middot;&nbsp;{cycle}
+                    &mdash;&nbsp;{campus}&nbsp;&middot;&nbsp;{cycle}&nbsp;&middot;&nbsp;{level}
                 </span>
             </div>
         """.format(
             heading = _("Available Programs"),
             campus  = frappe.utils.escape_html(self.campus or ""),
             cycle   = frappe.utils.escape_html(self.admission_cycle or ""),
+            level   = frappe.utils.escape_html(selected_program_level or ""),
         )
 
         # ── Full table ───────────────────────────────────────────────────────
@@ -449,6 +489,10 @@ class Applicant(Document):
 
         Temporarily swaps self.program → runs check → restores original in finally.
 
+        KEY BEHAVIOUR for programs WITHOUT eligibility rules:
+          If no rule mappings exist for a program, it is treated as Eligible
+          (no restriction configured = open to all applicants of that level).
+
         Returns (is_eligible: bool, failure_message: str)
         """
         original_program = self.program
@@ -476,6 +520,7 @@ class Applicant(Document):
                 "program":         program_name,
             }, as_dict=True)
 
+            # No rule mapping → no restriction → eligible
             if not rule_mappings:
                 return True, ""
 
@@ -753,11 +798,6 @@ class Applicant(Document):
         Check if the applicant's HSC group is in the list of allowed HSC groups
         defined in the Eligibility Rule's hsc_group child table (HSC Groups Mapping).
 
-        The rule has a Table field `hsc_group` using child doctype `HSC Groups Mapping`.
-        Each child row has a Link field `hsc_groups` → HSC Groups doctype.
-
-        The applicant has a single field `hsc_group` (Link → HSC Groups).
-
         Returns True if applicant's group matches any allowed group in the rule,
         or if the rule has NO groups defined (no restriction).
         """
@@ -797,9 +837,6 @@ class Applicant(Document):
         Full evaluation of a base Eligibility Rule against the applicant.
         Checks: Allowed Degrees, HSC Group (multi-group), and numeric threshold
         (Percentage / CGPA).
-
-        HSC Group check now uses the hsc_group child table (HSC Groups Mapping)
-        with field hsc_groups (Link → HSC Groups), supporting multiple allowed groups.
         """
         rule_type           = rule.get("rule_type")
         qualification_level = rule.get("qualification_level")
@@ -965,13 +1002,18 @@ class Applicant(Document):
         """
         Saves (insert or update) an Eligibility Evaluation record for this applicant.
 
-        Called in TWO places:
-          1. Inside validate_eligibility() immediately before frappe.throw() when
-             the applicant is INELIGIBLE — so the Ineligible record is persisted
-             even though the throw prevents validate() from completing normally.
-          2. At the end of validate() as a safety net for the ELIGIBLE path.
+        FIX — Duplicate Record Prevention:
+        ────────────────────────────────────
+        This method is now called ONLY from within validate_eligibility():
+          • Ineligible path: called before frappe.throw() — required because throw
+            exits the call stack before validate() can complete normally.
+          • Eligible path: called at the end of validate_eligibility() directly.
 
-        This ensures BOTH Eligible and Ineligible outcomes are always recorded.
+        It is NO LONGER called separately from validate(). This eliminates the
+        duplicate save that was occurring previously.
+
+        The upsert logic (get existing → update OR insert new) prevents duplicate
+        records even if called more than once for the same applicant.
         """
         if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
             return
@@ -1021,9 +1063,6 @@ class Applicant(Document):
             doc.save(ignore_permissions=True)
             frappe.db.commit()
         except Exception as e:
-            # If sequence doesn't exist (e.g., eligibility_evaluation_id_seq), 
-            # we still want to continue. The evaluation record may not be critical
-            # if it can't be saved due to sequence issues.
             frappe.logger().warning(
                 f"Failed to save Eligibility Evaluation for {applicant_name}: {str(e)}"
             )

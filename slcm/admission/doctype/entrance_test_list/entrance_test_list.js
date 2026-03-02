@@ -106,8 +106,15 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 `
             },
             {
-                fieldtype: "Section Break",
-                label: __("Select Applicants")
+                label: __("Select Applicants"),
+                fieldtype: "Section Break"
+            },
+            {
+                label: __("Entrance Test Name"),
+                fieldname: "entrance_test_name",
+                fieldtype: "Link",
+                options: "Entrance Test",
+                reqd: 1
             },
             {
                 label: __("Allocation Date"),
@@ -182,7 +189,8 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 args: {
                     providers: selected_providers,
                     selected_applicants: selected_applicants,
-                    allocation_date: allocation_date
+                    allocation_date: allocation_date,
+                    entrance_test_name: d.get_value("entrance_test_name")
                 },
                 freeze: true,
                 freeze_message: __("Allocating Seats..."),
@@ -204,6 +212,20 @@ function _show_allocation_dialog(frm, applicants, providers) {
     });
 
     d.show();
+
+    // Set query for entrance_test_name with correct filtering
+    d.set_query("entrance_test_name", () => {
+        return {
+            filters: [
+                ["Entrance Test", "campus", "=", frm.doc.campus],
+                ["Entrance Test", "academic_year", "=", frm.doc.academic_year],
+                ["Entrance Test", "admission_cycle", "=", frm.doc.admission_cycle],
+                ["Entrance Test", "is_active", "=", 1],
+                ["Entrance Test", "valid_from", "<=", frappe.datetime.get_today()],
+                ["Entrance Test", "valid_to", ">=", frappe.datetime.get_today()]
+            ]
+        };
+    });
 
     const $wrapper = d.$wrapper;
 
