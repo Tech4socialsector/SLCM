@@ -3,44 +3,56 @@ from frappe.utils import now_datetime, getdate
 
 
 def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict:
-    admission_year = frappe.db.get_value("Admission Cycle", admission_cycle, "admission_year")
-        
-    if not admission_year:
-        frappe.throw(f"No Admission Year found for Admission Cycle {admission_cycle}. Please ensure the cycle is correctly linked to an Admission Year.")
+    # 1. Try to find the program row from Admission Cycle for campus-specific linking
+    program_row = frappe.db.get_value("Admission Cycle Program", {
+        "parent": admission_cycle,
+        "campus": campus,
+        "program": program
+    }, ["name", "seats", "reservation_policy"], as_dict=True)
 
-    po_name = frappe.db.get_value("Program Offering", {
-        "campus": campus, 
-        "admission_year": admission_year,
-        "program": program,
-        "is_active": 1
-    }, "name")
-
-    if not po_name:
-        frappe.throw(f"No active Program Offering found for Campus {campus}, Program {program} and Year {admission_year}")
-
-    po = frappe.get_doc("Program Offering", po_name)
-    
     result = {"GEN": 0, "Reserved": {}}
-    
-    if po.is_reservation_applicable:
-        for q in po.reservations:
-            seats = int(q.seats or 0)
-            # If category is not set, treat it as GEN seats (common configuration mistake).
-            if not q.category:
-                result["GEN"] += seats
-                continue
+    policy_name = None
+    fallback_seats = 0
 
-            # Map to GEN pool if category is General
-            if q.category in ["General", "General Quota", "GEN"]:
+    if program_row:
+        policy_name = program_row.reservation_policy
+        fallback_seats = int(program_row.seats or 0)
+    
+    # 2. If no policy found via child table, try direct lookup by cycle and program
+    if not policy_name:
+        policy_name = frappe.db.get_value("Program Reservation Policy", {
+            "admission_cycle": admission_cycle,
+            "program": program,
+            "status": ["!=", "Locked"] # Fetch any active or draft policy if not locked
+        }, "name")
+
+    if not policy_name and not fallback_seats:
+        frappe.throw(f"No active Program Reservation Policy or Seats found in cycle '{admission_cycle}' for Campus '{campus}' and Program '{program}'")
+
+    if policy_name:
+        # 2. Fetch quotas from Program Reservation Policy
+        policy = frappe.get_doc("Program Reservation Policy", policy_name)
+        
+        for q in (policy.categories or []):
+            seats = int(q.seats or 0)
+            
+            # Map to GEN pool if quota type is General
+            if q.reservation_quota == "General":
                 result["GEN"] += seats
             else:
-                result["Reserved"][q.category] = result["Reserved"].get(q.category, 0) + seats
+                # Use category_name for Reserved mapping
+                category = q.category_name
+                if not category:
+                    result["GEN"] += seats
+                    continue
+                result["Reserved"][category] = result["Reserved"].get(category, 0) + seats
     else:
-        result["GEN"] = int(po.total_available_seats or 0)
+        # Fallback to total seats if no policy defined
+        result["GEN"] = int(fallback_seats or 0)
 
-    # Safety fallback: if reservation rows exist but total computed seats is 0, fallback to total_available_seats
+    # Safety fallback: if computed seats is 0, fallback to total seats
     if int(result.get("GEN") or 0) + sum(int(v or 0) for v in (result.get("Reserved") or {}).values()) <= 0:
-        result["GEN"] = int(po.total_available_seats or 0)
+        result["GEN"] = int(fallback_seats or 0)
     
     return result
 
@@ -93,12 +105,29 @@ def process_waitlist(rule_doc, ignore_cutoff=False):
     programs_to_process = list(set([r.program for r in seat_alloc.selection_applicant if r.program]))
 
     any_promoted = False
+    promoted_applicants = []
     for program in programs_to_process:
-        if _process_single_program_waitlist(seat_alloc, program, rule_doc):
+        promoted = _process_single_program_waitlist(seat_alloc, program, rule_doc)
+        if promoted:
             any_promoted = True
+            promoted_applicants.extend(promoted)
 
     if any_promoted:
         seat_alloc.save(ignore_permissions=True)
+        # Commit to ensure OfferService sees the "Selected" status in the database
+        frappe.db.commit()
+
+        from slcm.api.service.offer_service import OfferService
+        for app_id, prog in promoted_applicants:
+            try:
+                OfferService.generate_offer(
+                    applicant=app_id,
+                    campus=seat_alloc.campus,
+                    program=prog,
+                    cycle=seat_alloc.admission_cycle
+                )
+            except Exception as e:
+                frappe.log_error(f"Auto Offer Generation Failed for {app_id} (Post-Promotion): {str(e)}", "Waitlist Promotion")
 
     rule_doc.db_set("last_executed_on", now_datetime(), update_modified=False)
     rule_doc.db_set("execution_log_count", int(rule_doc.execution_log_count or 0) + 1, update_modified=False)
@@ -107,10 +136,10 @@ def process_waitlist(rule_doc, ignore_cutoff=False):
     # to avoid breaking transactions when called from Seat Allocation hooks.
 
 
-def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool:
+def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list:
     """
     Core promotion logic for a single program within a seat allocation.
-    Returns True if any promotion occurred.
+    Returns a list of (applicant_id, program) tuples for newly promoted candidates.
     """
     quotas = _get_program_quotas(rule_doc.campus, rule_doc.admission_cycle, program)
     
@@ -129,6 +158,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
 
     from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
     promoted_total = 0
+    promoted_list = []
 
     # 1. Promote for OPEN seats
     open_selected = [r for r in selected_rows if r.allocation_type == "Open"]
@@ -150,6 +180,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
         for row in open_waitlist[:open_vacancies]:
             row.selection_status = "Selected"
             promoted_total += 1
+            promoted_list.append((row.applicant_id, program))
             log_seat_allocation_action(
                 seat_allocation=seat_alloc.name,
                 admission_cycle=seat_alloc.admission_cycle,
@@ -171,18 +202,6 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
                 allocation_name=seat_alloc.name,
                 admission_cycle=seat_alloc.admission_cycle
             )
-
-            # Automatically generate offer letter for the promoted candidate
-            try:
-                from slcm.api.service.offer_service import OfferService
-                OfferService.generate_offer(
-                    applicant=row.applicant_id,
-                    campus=seat_alloc.campus,
-                    program=program,
-                    cycle=seat_alloc.admission_cycle
-                )
-            except Exception as e:
-                frappe.log_error(f"Auto Offer Generation Failed for {row.applicant_id}: {str(e)}", "Waitlist Promotion")
 
     # 2. Promote for RESERVED seats
     for cat_name, cat_quota in quotas["Reserved"].items():
@@ -212,6 +231,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
             for row in cat_waitlist[:cat_vacancies]:
                 row.selection_status = "Selected"
                 promoted_total += 1
+                promoted_list.append((row.applicant_id, program))
                 log_seat_allocation_action(
                     seat_allocation=seat_alloc.name,
                     admission_cycle=seat_alloc.admission_cycle,
@@ -234,24 +254,12 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> bool
                     admission_cycle=seat_alloc.admission_cycle
                 )
 
-                # Automatically generate offer letter for the promoted candidate
-                try:
-                    from slcm.api.service.offer_service import OfferService
-                    OfferService.generate_offer(
-                        applicant=row.applicant_id,
-                        campus=seat_alloc.campus,
-                        program=program,
-                        cycle=seat_alloc.admission_cycle
-                    )
-                except Exception as e:
-                    frappe.log_error(f"Auto Offer Generation Failed for {row.applicant_id}: {str(e)}", "Waitlist Promotion")
-
     if promoted_total:
         seat_alloc.total_selected = int(seat_alloc.total_selected or 0) + promoted_total
         seat_alloc.total_waitlisted = max(0, int(seat_alloc.total_waitlisted or 0) - promoted_total)
-        return True
+        return promoted_list
 
-    return False
+    return []
 
 
 @frappe.whitelist()

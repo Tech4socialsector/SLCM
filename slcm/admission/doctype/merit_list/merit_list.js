@@ -1,9 +1,70 @@
 frappe.ui.form.on("Merit List", {
     refresh(frm) {
         if (frm.doc.docstatus === 1) {
+            // Create Seat Allocation button
             frm.add_custom_button(__("Create Seat Allocation"), function () {
                 open_allocation_dialog(frm);
             });
+
+            // Publish button — shown when status is Generated
+            if (frm.doc.status !== "Published") {
+                frm.add_custom_button(__("Publish Merit List"), function () {
+                    frappe.confirm(
+                        __("Publishing will make merit scores visible to all students on their portal. Continue?"),
+                        function () {
+                            frappe.call({
+                                method: "slcm.admission.doctype.merit_list.merit_list.publish_merit_list",
+                                args: { merit_list_name: frm.doc.name },
+                                freeze: true,
+                                freeze_message: __("Publishing merit list..."),
+                                callback(r) {
+                                    if (!r.exc) {
+                                        frappe.show_alert({
+                                            message: __("Merit list published. Students can now view their scores."),
+                                            indicator: "green"
+                                        });
+                                        frm.reload_doc();
+                                    }
+                                }
+                            });
+                        }
+                    );
+                }, __("Actions"));
+            }
+
+            // Unpublish button — shown only when already Published
+            if (frm.doc.status === "Published") {
+                frm.add_custom_button(__("Unpublish"), function () {
+                    frappe.confirm(
+                        __("This will hide merit scores from students. Continue?"),
+                        function () {
+                            frappe.call({
+                                method: "slcm.admission.doctype.merit_list.merit_list.unpublish_merit_list",
+                                args: { merit_list_name: frm.doc.name },
+                                callback(r) {
+                                    if (!r.exc) {
+                                        frappe.show_alert({
+                                            message: __("Merit list unpublished."),
+                                            indicator: "orange"
+                                        });
+                                        frm.reload_doc();
+                                    }
+                                }
+                            });
+                        }
+                    );
+                }, __("Actions"));
+            }
+
+            // Status indicator
+            if (frm.doc.status === "Published") {
+                frm.set_indicator_formatter && frm.toolbar
+                    && frm.toolbar.set_indicator
+                    && frm.toolbar.set_indicator(["Published", "green"]);
+                frm.page.set_indicator(__("Published"), "green");
+            } else if (frm.doc.status === "Generated") {
+                frm.page.set_indicator(__("Generated"), "blue");
+            }
         }
     }
 });

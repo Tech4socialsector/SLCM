@@ -75,12 +75,12 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Reservation Quota",
-   "options": "Government\nManagement"
+   "options": "General\nGovernment\nManagement"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-02-28 12:01:00.342916",
+ "modified": "2026-03-02 10:55:33.158367",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Category",

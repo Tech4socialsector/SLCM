@@ -211,10 +211,6 @@ class SeatAllocation(Document):
         if not self.selection_applicant:
             self.pull_from_merit_list()
 
-        admission_year_name = frappe.db.get_value("Admission Cycle", self.admission_cycle, "admission_year")
-             
-        if not admission_year_name:
-            frappe.throw(f"No Admission Year found for cycle {self.admission_cycle}")
 
         from slcm.admission.doctype.waitlist_rule.waitlist_promotion import _get_program_quotas
 
@@ -275,10 +271,17 @@ class SeatAllocation(Document):
                 category_waitlist_quotas[category] = math.ceil(category_seats * waitlist_factor)
 
                 cat_doc = frappe.get_cached_value("Admission Category", category, ["name", "category_code", "category_name"], as_dict=1)
+                if not cat_doc:
+                    cat_name = frappe.db.get_value("Admission Category", {"category_name": category}, "name") or \
+                               frappe.db.get_value("Admission Category", {"category_code": category}, "name")
+                    if cat_name:
+                        cat_doc = frappe.get_cached_value("Admission Category", cat_name, ["name", "category_code", "category_name"], as_dict=1)
+
                 match_strings = [category]
                 if cat_doc:
-                    if cat_doc.get("category_code"): match_strings.append(cat_doc.get("category_code"))
-                    if cat_doc.get("category_name"): match_strings.append(cat_doc.get("category_name"))
+                    match_strings.extend([cat_doc.name, cat_doc.category_code, cat_doc.category_name])
+                
+                match_strings = list(set([s for s in match_strings if s]))
 
                 category_pool = [r for r in remaining_pool if r.reservation_category in match_strings]
 
@@ -311,10 +314,17 @@ class SeatAllocation(Document):
                     continue
                     
                 cat_doc = frappe.get_cached_value("Admission Category", category, ["name", "category_code", "category_name"], as_dict=1)
+                if not cat_doc:
+                    cat_name = frappe.db.get_value("Admission Category", {"category_name": category}, "name") or \
+                               frappe.db.get_value("Admission Category", {"category_code": category}, "name")
+                    if cat_name:
+                        cat_doc = frappe.get_cached_value("Admission Category", cat_name, ["name", "category_code", "category_name"], as_dict=1)
+
                 match_strings = [category]
                 if cat_doc:
-                    if cat_doc.get("category_code"): match_strings.append(cat_doc.get("category_code"))
-                    if cat_doc.get("category_name"): match_strings.append(cat_doc.get("category_name"))
+                    match_strings.extend([cat_doc.name, cat_doc.category_code, cat_doc.category_name])
+                
+                match_strings = list(set([s for s in match_strings if s]))
 
                 # Re-fetch category pool from the updated remaining pool
                 waitlist_pool = [r for r in remaining_pool if r.reservation_category in match_strings]
