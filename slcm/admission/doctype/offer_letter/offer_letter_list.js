@@ -21,6 +21,7 @@ frappe.listview_settings['Offer Letter'] = {
                 }
             });
         });
+        
     },
     onload: function (listview) {
         listview.page.add_action_item(__("Pay Fees (Online)"), function () {
