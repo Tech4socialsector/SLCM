@@ -101,8 +101,6 @@
   "section_break_cris",
   "ug_degree_details_column",
   "ug_degree_details",
-  "national_test_name",
-  "percentage",
   "section_break_vmys",
   "phd_proposal",
   "column_break_nkbo",
@@ -775,25 +773,25 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
+   "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "fieldname": "ug_degree_completion",
    "fieldtype": "Select",
    "label": "Have you completed your UG degree",
-   "mandatory_depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
+   "mandatory_depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "options": "\nFinal year\nCompleted"
   },
   {
-   "depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
+   "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "fieldname": "section_break_cris",
    "fieldtype": "Section Break",
    "label": "UG Degree Details "
   },
   {
-   "depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
+   "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "fieldname": "ug_degree_details",
    "fieldtype": "Table",
    "label": "Degree",
-   "mandatory_depends_on": "eval: doc.program_level == \"LLB MPP\" || doc.program_level == \"PHD\"",
+   "mandatory_depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "options": "UG Degree Detail"
   },
   {
@@ -875,7 +873,7 @@
    "label": "UG Degree Details "
   },
   {
-   "depends_on": "eval:doc.program_level == \"PHD\"",
+   "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "pg_degree_details",
    "fieldtype": "Table",
    "label": "PG Degree Details ",
@@ -903,7 +901,7 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "label": "Program Level",
-   "options": "\nPHD\nLLB MPP\nBA Hons"
+   "options": "\nUG\nPG\nResearch Course"
   },
   {
    "fieldname": "admission_year",
@@ -957,13 +955,13 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.program_level == \"PHD\"",
+   "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "section_break_vmys",
    "fieldtype": "Section Break",
    "label": "PHD Details"
   },
   {
-   "depends_on": "eval:doc.program_level == \"PHD\"",
+   "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "proposed_phd_topic",
    "fieldtype": "Small Text",
    "label": "Proposed PhD Topic ",
@@ -985,7 +983,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval:doc.program_level == \"PHD\"",
+   "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "section_break_cmjy",
    "fieldtype": "Section Break"
   },
@@ -1010,13 +1008,21 @@
   {
    "fieldname": "column_break_fcum",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_vokh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_qiha",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 21:21:49.969878",
+ "modified": "2026-03-02 23:03:19.657579",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
