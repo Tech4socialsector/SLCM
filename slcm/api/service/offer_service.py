@@ -296,9 +296,6 @@ class OfferService:
         offer.save(ignore_permissions=True)
 
         OfferService.create_fee_assignment_from_offer(offer)
-
-        OfferService.log_action(offer.name, "Accepted")
-        OfferService.sync_seat_allocation_status(offer, "Accepted")
         return True
 
     @staticmethod
@@ -344,11 +341,9 @@ class OfferService:
             throw(_("Cannot reject offer in status: {0}").format(offer.offer_status))
 
         offer.offer_status = "Rejected"
+        if reason:
+            offer.edit_reason = reason # Passed to the log via model hook
         offer.save(ignore_permissions=True)
-
-        OfferService.log_action(offer.name, "Rejected", reason=reason)
-        OfferService.update_applicant_status(offer.applicant , application_status = "Offer Declined")
-        OfferService.sync_seat_allocation_status(offer, "Offer Declined")
         return True
 
     @staticmethod
@@ -365,13 +360,11 @@ class OfferService:
         processed = 0
         for entry in to_expire:
             try:
-                # We save each individually to trigger any status hooks if needed
+                # We save each individually to trigger the automated status hook
                 doc = frappe.get_doc("Offer Letter", entry.name)
                 doc.offer_status = "Expired"
+                doc.edit_reason = _("Automatically expired by system scheduler.")
                 doc.save(ignore_permissions=True)
-                OfferService.update_applicant_status(doc.applicant , application_status = "Offer Expired")
-                OfferService.log_action(entry.name, "Expired", reason=_("Automatically expired by system scheduler."))
-                OfferService.sync_seat_allocation_status(doc, "Offer Expired")
                 processed += 1
             except Exception:
                 frappe.log_error(frappe.get_traceback(), _("Manual Offer Expiry Failed"))
@@ -1023,3 +1016,6 @@ def get_pending_offers_list():
 @frappe.whitelist()
 def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
     return OfferService.send_bulk_reminders(offer_names, message, send_email, send_notification, sender_email)
+
+def expire_offers():
+    return OfferService.expire_offers()

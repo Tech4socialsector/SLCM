@@ -23,6 +23,7 @@
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Admission Cycle",
    "options": "Admission Cycle",
    "reqd": 1
@@ -30,6 +31,7 @@
   {
    "fieldname": "campus",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
@@ -50,6 +52,7 @@
    "depends_on": "eval:doc.send_email ==1",
    "fieldname": "email_template",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Email Template",
    "mandatory_depends_on": "eval:doc.send_email ==1",
    "options": "Email Templates",
@@ -65,6 +68,7 @@
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Admission Year",
    "options": "Admission Year",
    "reqd": 1
@@ -72,6 +76,7 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
@@ -79,6 +84,7 @@
   {
    "fieldname": "fee_structure",
    "fieldtype": "Table MultiSelect",
+   "in_standard_filter": 1,
    "label": "Fee Structure",
    "options": "Fee Structure Child",
    "reqd": 1
@@ -107,6 +113,7 @@
    "depends_on": "eval:doc.send_email ==1",
    "fieldname": "from_email_account",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "From Email Account",
    "mandatory_depends_on": "eval:doc.send_email ==1",
    "options": "Email Account"
@@ -116,7 +123,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-03-02 09:43:25.221583",
+ "modified": "2026-03-02 14:57:55.843201",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",

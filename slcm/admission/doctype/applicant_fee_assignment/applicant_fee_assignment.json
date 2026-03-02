@@ -35,6 +35,7 @@
    "fieldname": "applicant",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Applicant",
    "options": "Applicant",
    "reqd": 1
@@ -44,6 +45,7 @@
    "fieldname": "applicant_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Applicant Name",
    "read_only": 1
   },
@@ -55,6 +57,7 @@
    "fieldname": "offer_letter",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Offer Letter",
    "options": "Offer Letter",
    "reqd": 1
@@ -63,6 +66,7 @@
    "fetch_from": "offer_letter.program",
    "fieldname": "program",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Program",
    "options": "Program",
    "read_only": 1
@@ -71,6 +75,7 @@
    "fetch_from": "offer_letter.academic_year",
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
    "read_only": 1
@@ -93,6 +98,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nAssigned\nPartially Paid\nPaid\nCancelled\nConverted"
   },
@@ -122,6 +128,7 @@
   {
    "fieldname": "fee_components",
    "fieldtype": "Table",
+   "in_standard_filter": 1,
    "label": "Fee Components",
    "options": "Applicant Fee Component Child",
    "reqd": 1
@@ -146,7 +153,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-02 12:47:05.545585",
+ "modified": "2026-03-02 14:59:55.893156",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",

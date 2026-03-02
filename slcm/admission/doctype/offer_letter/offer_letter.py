@@ -54,38 +54,35 @@ class OfferLetter(Document):
 
     def sync_status_to_seat_allocation(self):
         """
-        If this offer is Rejected, Expired, or Withdrawn, 
-        update the Seat Allocation status and cancel linked fees.
+        Synchronizes legal/admission status changes to linked records 
+        (Seat Allocation, Applicant, and Fee Assignments).
         """
-        if self.offer_status not in ["Rejected", "Expired", "Withdrawn"]:
+        status_map = {
+            "Rejected": ("Offer Declined", "Offer Declined"),
+            "Withdrawn": ("Offer Declined", "Offer Declined"),
+            "Expired": ("Offer Expired", "Offer Expired"),
+            "Accepted": ("Accepted", "Offer Accepted"),
+            "Payment Completed": ("Fee Paid", "Fee Paid"),
+            "Issued": ("Offer Issued", "Offer Issued")
+        }
+
+        if self.offer_status not in status_map:
             return
-        
-        # 1. Cancel Linked Fee Assignment automatically
+            
+        from slcm.api.service.offer_service import OfferService
         from slcm.api.service.fee_service import FeeService
-        FeeService.cancel_linked_fee_assignment(self.name)
 
-        # Find Seat Allocation
-        sa_records = frappe.get_all("Seat Allocation", filters={
-            "admission_cycle": self.admission_cycle,
-            "campus": self.campus,
-            "docstatus": ["<", 2]
-        }, fields=["name"])
+        sa_status, app_status = status_map[self.offer_status]
 
-        for sa_rec in sa_records:
-            sa_doc = frappe.get_doc("Seat Allocation", sa_rec.name)
-            updated = False
-            for row in sa_doc.selection_applicant:
-                if row.applicant == self.applicant and row.program == self.program:
-                    if row.selection_status != "Rejected":
-                        row.selection_status = "Rejected"
-                        updated = True
-                        print(f"Sync: Updated {self.applicant} in {sa_rec.name} to Rejected")
+        # 1. Automatic Fee Cancellation for termination statuses
+        if self.offer_status in ["Rejected", "Expired", "Withdrawn"]:
+            FeeService.cancel_linked_fee_assignment(self.name)
 
-            if updated:
-                # Save without permission to trigger the seat_allocation.py hooks
-                sa_doc.save(ignore_permissions=True)
-                # Important: Committing here might be risky if we are in a transaction,
-                # but Frappe's save() inside on_update is generally okay.
+        # 2. Synchronize Status to Seat Allocation
+        OfferService.sync_seat_allocation_status(self, sa_status)
+
+        # 3. Synchronize Status to Applicant
+        OfferService.update_applicant_status(self.applicant, app_status)
 
     def validate_status_transition(self):
         """Ensures that status transitions follow the defined lifecycle."""
@@ -114,7 +111,8 @@ class OfferLetter(Document):
         # Track status change for audit
         self._queue_audit_log(
             action=self.offer_status,
-            notes=_("Status changed from {0} to {1}").format(db_status, self.offer_status)
+            notes=_("Status changed from {0} to {1}").format(db_status, self.offer_status),
+            reason=self.get("edit_reason") or frappe.flags.edit_reason or ""
         )
 
     def handle_audit_and_locking(self):
@@ -212,22 +210,16 @@ class OfferLetter(Document):
             frappe.db.set_value("Payment Request", 
                 {"reference_doctype": self.doctype, "reference_name": self.name}, 
                 "status", "Paid")
-            
-            from slcm.api.service.offer_service import OfferService
-            # Update Applicant status
-            OfferService.update_applicant_status(self.applicant, application_status="Fee Paid")
-            
             # 3. Update Applicant Fee Assignment status to 'Paid'
             frappe.db.set_value("Applicant Fee Assignment", 
                 {"offer_letter": self.name, "status": ["!=", "Cancelled"]}, 
                 "status", "Paid")
 
-            # 4. Sync Seat Allocation child status
-            OfferService.sync_seat_allocation_status(self, status="Fee Paid")
-
             # Note: We don't queue 'Fee Paid' log here because generate_receipt() 
             # will log 'Payment Received' with the receipt ID shortly after this method returns.
             # This prevents duplicate logs in the Offer Action history.
             
+            # The on_update() call below will trigger sync_status_to_seat_allocation() 
+            # which correctly synchronizes Applicant and Seat Allocation status to 'Fee Paid'.
             self.on_update()
 
