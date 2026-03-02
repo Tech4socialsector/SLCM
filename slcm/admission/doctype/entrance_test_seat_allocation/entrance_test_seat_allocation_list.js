@@ -1,56 +1,63 @@
 frappe.listview_settings['Entrance Test Seat Allocation'] = {
     refresh: function (listview) {
-        listview.page.add_inner_button(__("Update Rank"), function () {
-            let d = new frappe.ui.Dialog({
-                title: __("Update Rank"),
-                fields: [
-                    {
-                        label: __("Academic Year"),
-                        fieldname: "academic_year",
-                        fieldtype: "Link",
-                        options: "Academic Year",
-                        reqd: 1
-                    },
-                    {
-                        label: __("Admission Cycle"),
-                        fieldname: "admission_cycle",
-                        fieldtype: "Link",
-                        options: "Admission Cycle",
-                        reqd: 1
-                    },
-                    {
-                        label: __("Program Level"),
-                        fieldname: "program_level",
-                        fieldtype: "Select",
-                        options: "UG\nPG\nResearch Course",
-                        reqd: 1
-                    }
-                ],
-                primary_action_label: __("Generate"),
-                primary_action(values) {
-                    frappe.call({
-                        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.update_ranks_by_category",
-                        args: {
-                            academic_year: values.academic_year,
-                            admission_cycle: values.admission_cycle,
-                            program_level: values.program_level
-                        },
-                        callback: function (r) {
-                            if (!r.exc) {
-                                frappe.msgprint(__("Successfully generated ranks for {0} applicants.", [r.message]));
-                                d.hide();
-                                listview.refresh();
-                            }
-                        }
-                    });
-                }
-            });
-            d.show();
-        });
+        // Hide "Update Rank" and "Reschedule" only for users with the "Applicant" role
+        // and who are NOT Administrators/System Managers (to ensure admins always have access)
+        const is_applicant = frappe.user_roles.includes("Applicant");
+        const is_admin = frappe.user_roles.includes("Administrator") || frappe.user_roles.includes("System Manager");
 
-        listview.page.add_button(__('Reschedule'), function () {
-            open_reschedule_dialog(listview);
-        }, 'btn-primary');
+        if (!is_applicant || is_admin) {
+            listview.page.add_inner_button(__("Update Rank"), function () {
+                let d = new frappe.ui.Dialog({
+                    title: __("Update Rank"),
+                    fields: [
+                        {
+                            label: __("Academic Year"),
+                            fieldname: "academic_year",
+                            fieldtype: "Link",
+                            options: "Academic Year",
+                            reqd: 1
+                        },
+                        {
+                            label: __("Admission Cycle"),
+                            fieldname: "admission_cycle",
+                            fieldtype: "Link",
+                            options: "Admission Cycle",
+                            reqd: 1
+                        },
+                        {
+                            label: __("Program Level"),
+                            fieldname: "program_level",
+                            fieldtype: "Select",
+                            options: "UG\nPG\nResearch Course",
+                            reqd: 1
+                        }
+                    ],
+                    primary_action_label: __("Generate"),
+                    primary_action(values) {
+                        frappe.call({
+                            method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.update_ranks_by_category",
+                            args: {
+                                academic_year: values.academic_year,
+                                admission_cycle: values.admission_cycle,
+                                program_level: values.program_level
+                            },
+                            callback: function (r) {
+                                if (!r.exc) {
+                                    frappe.msgprint(__("Successfully generated ranks for {0} applicants.", [r.message]));
+                                    d.hide();
+                                    listview.refresh();
+                                }
+                            }
+                        });
+                    }
+                });
+                d.show();
+            });
+
+            listview.page.add_button(__('Reschedule'), function () {
+                open_reschedule_dialog(listview);
+            }, 'btn-primary');
+        }
     }
 };
 

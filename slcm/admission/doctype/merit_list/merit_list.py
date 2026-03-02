@@ -65,3 +65,60 @@ def create_seat_allocation(merit_list_name, selected_applicants):
     frappe.db.commit()
 
     return alloc.name
+
+
+@frappe.whitelist()
+def publish_merit_list(merit_list_name):
+    """
+    Publishes the Merit List so students can view their scores
+    on the applicant results portal page.
+    Sets status to 'Published' and records an audit log.
+    """
+    doc = frappe.get_doc("Merit List", merit_list_name)
+
+    if doc.status == "Published":
+        frappe.throw("Merit List is already published.")
+
+    if doc.docstatus != 1:
+        frappe.throw("Merit List must be submitted before publishing.")
+
+    doc.db_set("status", "Published")
+
+    # Audit log
+    frappe.get_doc({
+        "doctype": "Admission Audit Log",
+        "action": "Modified",
+        "reference_doctype": "Merit List",
+        "reference_name": merit_list_name,
+        "performed_by": frappe.session.user,
+        "reason": f"Merit List {merit_list_name} published by {frappe.session.user}"
+    }).insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"status": "Published"}
+
+
+@frappe.whitelist()
+def unpublish_merit_list(merit_list_name):
+    """
+    Reverts the Merit List status to 'Generated', hiding scores from students.
+    """
+    doc = frappe.get_doc("Merit List", merit_list_name)
+
+    if doc.status != "Published":
+        frappe.throw("Merit List is not currently published.")
+
+    doc.db_set("status", "Generated")
+
+    # Audit log
+    frappe.get_doc({
+        "doctype": "Admission Audit Log",
+        "action": "Modified",
+        "reference_doctype": "Merit List",
+        "reference_name": merit_list_name,
+        "performed_by": frappe.session.user,
+        "reason": f"Merit List {merit_list_name} unpublished by {frappe.session.user}"
+    }).insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"status": "Generated"}

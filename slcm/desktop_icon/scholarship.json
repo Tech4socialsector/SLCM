@@ -1,31 +1,23 @@
 {
  "app": "slcm",
  "bg_color": "gray",
- "creation": "2026-02-26 18:13:26.263170",
+ "creation": "2026-02-27 18:08:49.109624",
  "docstatus": 0,
  "doctype": "Desktop Icon",
  "hidden": 0,
+ "icon_image": "/files/scholarship (1).png",
  "icon_type": "Link",
  "idx": 0,
- "label": "ETM",
- "link_to": "ETM",
+ "label": "Scholarship",
+ "link_to": "Admission",
  "link_type": "Workspace Sidebar",
- "modified": "2026-03-02 10:59:21.723586",
+ "modified": "2026-02-27 18:12:20.427907",
  "modified_by": "Administrator",
- "name": "ETM",
+ "name": "Scholarship",
  "owner": "Administrator",
  "parent_icon": "Admission",
  "restrict_removal": 0,
- "roles": [
-  {
-   "role": "Entrance Test Admin"
-  },
-  {
-   "role": "Applicant"
-  },
-  {
-   "role": "Entrance Test Provider"
-  }
- ],
+ "roles": [],
+ "sidebar": "Scholarship",
  "standard": 1
 }

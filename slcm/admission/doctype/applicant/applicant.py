@@ -1,8 +1,8 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt
-
+from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate
+from slcm.admission.utils.regulatory import log_audit_trail
 
 class Applicant(Document):
 
@@ -31,9 +31,103 @@ class Applicant(Document):
         # validate_eligibility() for BOTH eligible and ineligible outcomes.
         # Do NOT add another call here — it would cause duplicate records.
 
-    def on_update(self):
-        from slcm.admission.doctype.admission_result.admission_result import sync_applicant_to_admission_result
-        sync_applicant_to_admission_result(self.name)
+    def validate_email(self):
+        if not validate_email_address(self.email):
+            frappe.throw(
+                f"Invalid email address: {self.email}",
+                title="Invalid Email"
+            )
+
+    def validate_age(self):
+        if self.date_of_birth:
+            age = date_diff(today(), self.date_of_birth) / 365
+            if age < 17:
+                frappe.throw(
+                    "Applicant must be at least 17 years old.",
+                    title="Age Restriction"
+                )
+
+    # def validate_percentages(self):
+    #     if self.class_x_percentage:
+    #         if not 0 <= self.class_x_percentage <= 100:
+    #             frappe.throw(
+    #                 "Class X Percentage must be between 0 and 100.",
+    #                 title="Invalid Percentage"
+    #             )
+    #     if self.class_xii_percentage:
+    #         if not 0 <= self.class_xii_percentage <= 100:
+    #             frappe.throw(
+    #                 "Class XII Percentage must be between 0 and 100.",
+    #                 title="Invalid Percentage"
+    #             )
+
+    def validate_reservation_documents(self):
+        if self.reservation_category == "EWS" and not self.ews_certificate:
+            frappe.throw(
+                "EWS Certificate is mandatory for EWS category.",
+                title="Missing Document"
+            )
+        if self.reservation_category in ["SC", "ST", "OBC"] and not self.caste_certificate:
+            frappe.throw(
+                f"Caste Certificate is mandatory for {self.reservation_category} category.",
+                title="Missing Document"
+            )
+        if self.reservation_category == "PwD" and not self.pwd_certificate:
+            frappe.throw(
+                "PwD Certificate is mandatory for PwD category.",
+                title="Missing Document"
+            )
+
+    def validate_preferences(self):
+        if not self.first_preference:
+            frappe.throw(
+                "First Campus Preference is mandatory.",
+                title="Missing Preference"
+            )
+        preferences = [
+            self.first_preference,
+            self.second_preference,
+            self.third_preference
+        ]
+        filled = [p for p in preferences if p]
+        if len(filled) != len(set(filled)):
+            frappe.throw(
+                "Duplicate campus preferences are not allowed.",
+                title="Duplicate Preference"
+            )
+
+    def validate_declaration(self):
+        if self.docstatus == 1 and not self.declaration_undertaking:
+            frappe.throw(
+                "Declaration Undertaking must be accepted before submission.",
+                title="Declaration Required"
+            )
+
+    def before_save(self):
+        if not self.applicant_id:
+            self.applicant_id = frappe.generate_hash(length=8).upper()
+
+    def on_submit(self):
+        self.db_set("application_status", "Submitted")
+        self.db_set("submitted_on", now())
+        log_audit_trail(
+            self.doctype, self.name,
+            "Submitted", "application_status",
+            "Draft", "Submitted", "General"
+        )
+        frappe.sendmail(
+            recipients=[self.email],
+            subject=f"NLSIU Application Submitted - {self.applicant_id}",
+            message=f"""
+            Dear {self.candidate_name},<br><br>
+            Your application <b>{self.applicant_id}</b> has been
+            successfully submitted.<br>
+            Application Type: {self.application_type}<br>
+            Program: {self.program}<br><br>
+            You will be notified of further updates.<br><br>
+            NLSIU Admissions Team
+            """
+        )
 
     def before_submit(self):
         if self.evaluation_status == "Ineligible":
@@ -51,10 +145,21 @@ class Applicant(Document):
         rows = getattr(self, "ug_degree_details", None) or []
         return [flt(row.ug_cgpa) for row in rows if row.ug_cgpa not in (None, "")]
 
-    def _get_pg_cgpa_values(self):
-        """Return a list of all PG CGPA values from the pg_degree_details child table."""
-        rows = getattr(self, "pg_degree_details", None) or []
-        return [flt(row.pg_cgpa) for row in rows if row.pg_cgpa not in (None, "")]
+    @frappe.whitelist()
+    def waive_fee(self):
+        """Admin marks fee as waived — records who waived and when."""
+        self.application_fee_status = "Waived"
+        self.fee_waived_by = frappe.session.user
+        self.fee_waived_on = frappe.utils.now()
+        self.save(ignore_permissions=True)
+        frappe.get_doc({
+            "doctype": "Admission Audit Log",
+            "action": "Fee Waived",
+            "reference_doctype": "Applicant",
+            "reference_name": self.name,
+            "performed_by": frappe.session.user,
+            "reason": "Application fee waived by admin"
+        }).insert(ignore_permissions=True)
 
     def _get_ug_programs(self):
         """Return a list of all UG programs from the ug_degree_details child table."""
@@ -207,12 +312,13 @@ class Applicant(Document):
 
                     full_message = self._build_ineligibility_message(failure_message, program_table_html)
 
-                    # ONE single frappe.throw() — contains reason + program table
+                    # ONE single frappe.throw() — contains reason box + program table
+                    # NOTE: is_minimizable=True is intentionally NOT used here — it
+                    # causes a rendering failure on some live Frappe server versions.
                     frappe.throw(
                         msg=full_message,
                         title=_("Eligibility Evaluation Results"),
                         wide=True,
-                        is_minimizable=True
                     )
                     return  # never reached — throw exits — kept for clarity
 

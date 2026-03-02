@@ -207,7 +207,8 @@ class EntranceTestList(Document):
 def _send_allocation_email(allocation, email):
     """Send a simple HTML email to the applicant with their allocation and preference details."""
     try:
-        url = get_url(f"/app/entrance-test-seat-allocation/{allocation.name}")
+        from frappe.utils import get_url_to_form
+        url = get_url_to_form("Entrance Test Seat Allocation", allocation.name)
 
         prefs_html = ""
         if getattr(allocation, 'assigned_preferences', None):

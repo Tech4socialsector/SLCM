@@ -96,15 +96,13 @@
   {
    "fieldname": "family_income",
    "fieldtype": "Currency",
-   "label": "Family Income",
-   "reqd": 1
+   "label": "Family Income"
   },
   {
    "fieldname": "income_certificate",
    "fieldtype": "Attach",
    "label": "Income Certificate",
-   "options": "PDF,JPG,PNG",
-   "reqd": 1
+   "options": "PDF,JPG,PNG"
   },
   {
    "fieldname": "column_financial_2",
@@ -123,9 +121,7 @@
   {
    "fieldname": "original_fee_amount",
    "fieldtype": "Currency",
-   "label": "Original Fee Amount",
-   "read_only": 1,
-   "reqd": 1
+   "label": "Original Fee Amount"
   },
   {
    "fieldname": "calculated_benefit",
@@ -192,7 +188,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-26 16:43:10.167758",
+ "modified": "2026-03-02 14:39:02.283282",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Application",
@@ -208,6 +204,29 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Scholarship Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
    "share": 1,
    "write": 1
   }

@@ -6,31 +6,32 @@
  "engine": "InnoDB",
  "field_order": [
   "section_break_basic",
-  "cycle_name", "admission_year", "col_break_basic",
-  "status", "approval_reference",
-
+  "cycle_name",
+  "admission_year",
+  "col_break_basic",
+  "status",
+  "approval_reference",
   "section_break_programs",
   "programs",
-
   "section_break_stages",
   "stages",
-
   "section_break_application",
-  "application_start", "application_end",
-
+  "application_start",
+  "application_end",
   "section_break_evaluation",
-  "evaluation_start", "evaluation_end",
+  "evaluation_start",
+  "evaluation_end",
   "col_break_eval",
-  "interview_start", "interview_end",
-
+  "interview_start",
+  "interview_end",
   "section_break_offer",
-  "offer_start", "offer_end",
+  "offer_start",
+  "offer_end",
   "col_break_offer",
-  "acceptance_start", "acceptance_end",
-
+  "acceptance_start",
+  "acceptance_end",
   "section_break_rounds",
   "enable_multiple_rounds",
-
   "section_break_remarks",
   "remarks"
  ],
@@ -43,67 +44,64 @@
   {
    "fieldname": "cycle_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Cycle Name",
    "reqd": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1
+   "unique": 1
   },
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Admission Year",
    "options": "Admission Year",
-   "reqd": 1,
-   "in_list_view": 1
+   "reqd": 1
   },
   {
    "fieldname": "col_break_basic",
    "fieldtype": "Column Break"
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nActive\nClosed",
-   "default": "Draft",
-   "reqd": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1
+   "reqd": 1
   },
   {
+   "description": "Reference number for this cycle's approval",
    "fieldname": "approval_reference",
    "fieldtype": "Data",
-   "label": "Approval Reference",
-   "description": "Reference number for this cycle's approval"
+   "label": "Approval Reference"
   },
-
   {
+   "description": "Add all programs offered in this cycle. These appear on the applicant portal.",
    "fieldname": "section_break_programs",
    "fieldtype": "Section Break",
-   "label": "Programs Offered in this Cycle",
-   "description": "Add all programs offered in this cycle. These appear on the applicant portal."
+   "label": "Programs Offered in this Cycle"
   },
   {
    "fieldname": "programs",
    "fieldtype": "Table",
    "label": "Programs",
-   "options": "Admission Cycle Program",
-   "reqd": 0
+   "options": "Admission Cycle Program"
   },
-
   {
    "fieldname": "section_break_stages",
    "fieldtype": "Section Break",
    "label": "Admission Stages"
   },
   {
+   "description": "Stages active in this cycle and their sequence",
    "fieldname": "stages",
    "fieldtype": "Table",
    "label": "Stages",
-   "options": "Admission Cycle Stage",
-   "description": "Stages active in this cycle and their sequence"
+   "options": "Admission Cycle Stage"
   },
-
   {
    "fieldname": "section_break_application",
    "fieldtype": "Section Break",
@@ -121,7 +119,6 @@
    "label": "Application End",
    "reqd": 1
   },
-
   {
    "fieldname": "section_break_evaluation",
    "fieldtype": "Section Break",
@@ -151,7 +148,6 @@
    "fieldtype": "Datetime",
    "label": "Interview End"
   },
-
   {
    "fieldname": "section_break_offer",
    "fieldtype": "Section Break",
@@ -181,19 +177,18 @@
    "fieldtype": "Datetime",
    "label": "Acceptance End"
   },
-
   {
    "fieldname": "section_break_rounds",
    "fieldtype": "Section Break",
    "label": "Admission Rounds"
   },
   {
+   "default": "0",
+   "description": "Configure rounds in the Admission Round DocType",
    "fieldname": "enable_multiple_rounds",
    "fieldtype": "Check",
-   "label": "Enable Multiple Rounds",
-   "description": "Configure rounds in the Admission Round DocType"
+   "label": "Enable Multiple Rounds"
   },
-
   {
    "fieldname": "section_break_remarks",
    "fieldtype": "Section Break",
@@ -205,7 +200,8 @@
    "label": "Remarks"
   }
  ],
- "modified": "2026-02-27 10:00:00.000000",
+ "links": [],
+ "modified": "2026-03-02 14:50:54.285448",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
@@ -213,8 +209,11 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
    "role": "System Manager",
-   "read": 1, "write": 1, "create": 1, "delete": 1
+   "write": 1
   },
   {
    "role": "Admission Admin",
@@ -252,15 +251,34 @@
    "report": 1,
    "role": "Applicant",
    "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Provider",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [
-  {"color": "Gray",  "title": "Draft"},
-  {"color": "Green", "title": "Active"},
-  {"color": "Red",   "title": "Closed"}
+  {
+   "color": "Gray",
+   "title": "Draft"
+  },
+  {
+   "color": "Green",
+   "title": "Active"
+  },
+  {
+   "color": "Red",
+   "title": "Closed"
+  }
  ],
  "title_field": "cycle_name",
  "track_changes": 1
