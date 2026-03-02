@@ -11,27 +11,25 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def validate(self):
-        self.validate_email()
-        self.validate_age()
-        # self.validate_percentages()
-        self.validate_reservation_documents()
-        self.validate_preferences()
-        self.validate_declaration()
+        """
+        FIX — Duplicate Record Issue:
+        ─────────────────────────────
+        Previously, create_or_update_evaluation() was called:
+          1. Inside validate_eligibility() (before throw, for ineligible path)
+          2. Again here in validate() as a "safety net" for the eligible path
+
+        This caused duplicate/double-save calls for both paths when no throw occurred.
+
+        CORRECTED FLOW:
+          - validate_eligibility() handles ALL saves internally:
+              • Ineligible: saves BEFORE throw (required — throw exits the stack)
+              • Eligible:   saves at the END of validate_eligibility()
+          - validate() no longer calls create_or_update_evaluation() at all.
+        """
         self.validate_eligibility()
         # NOTE: create_or_update_evaluation() is now called exclusively inside
         # validate_eligibility() for BOTH eligible and ineligible outcomes.
         # Do NOT add another call here — it would cause duplicate records.
-
-        # for BOTH eligible and ineligible outcomes, so it always runs even
-        # when frappe.throw() is raised for ineligible applicants.
-        # We still call it here as a safety net for the eligible path.
-        program_table_html = self._build_program_eligibility_html()
-        self.create_or_update_evaluation(program_details_html=program_table_html)
-
-        # NOTE: DO NOT add another frappe.throw() here.
-        # validate_eligibility() already throws with the full HTML message
-        # (ineligibility reason + program table) in one single call.
-        # A second throw here would override that rich message with a plain one.
 
     def validate_email(self):
         if not validate_email_address(self.email):
@@ -163,6 +161,63 @@ class Applicant(Document):
             "reason": "Application fee waived by admin"
         }).insert(ignore_permissions=True)
 
+    def _get_ug_programs(self):
+        """Return a list of all UG programs from the ug_degree_details child table."""
+        rows = getattr(self, "ug_degree_details", None) or []
+        return [row.ug_program for row in rows if row.ug_program]
+
+    def _get_pg_programs(self):
+        """Return a list of all PG programs from the pg_degree_details child table."""
+        rows = getattr(self, "pg_degree_details", None) or []
+        return [row.pg_program for row in rows if row.pg_program]
+
+    def _get_applicant_hsc_groups(self):
+        """
+        Return the applicant's HSC group as a set (single value from hsc_group field).
+        """
+        hsc_group = getattr(self, "hsc_group", None)
+        if hsc_group:
+            return {hsc_group.strip()}
+        return set()
+
+    # ──────────────────────────────────────────────
+    # PROGRAM LEVEL HELPER
+    # ──────────────────────────────────────────────
+
+    def _get_selected_program_level(self):
+        """
+        Returns the program_level ('UG', 'PG', 'Research Course') of the
+        currently selected program by querying the Program doctype.
+
+        Returns None if not found.
+        """
+        if not self.program:
+            return None
+        return frappe.db.get_value("Program", self.program, "program_level")
+
+    def _get_all_programs_for_level(self, program_level):
+        """
+        Returns ALL programs from the Program doctype that match the given
+        program_level (e.g., 'UG', 'PG', 'Research Course').
+
+        This ensures the eligibility table shows EVERY program of the same
+        level — not just those with eligibility rules configured.
+        """
+        if not program_level:
+            return []
+
+        programs = frappe.db.sql("""
+            SELECT name AS program
+            FROM `tabProgram`
+            WHERE program_level = %(program_level)s
+            ORDER BY name ASC
+        """, {"program_level": program_level}, as_dict=True)
+
+        return [row.program for row in programs if row.program]
+
+    # ──────────────────────────────────────────────
+    # CORE ELIGIBILITY LOGIC
+    # ──────────────────────────────────────────────
 
     def validate_eligibility(self):
         """

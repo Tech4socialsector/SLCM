@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "field:cycle_name",
- "creation": "2026-02-25 10:00:00.000000",
+ "creation": "2026-02-17 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -218,10 +218,44 @@
   },
   {
    "role": "Admission Admin",
-   "read": 1, "write": 1, "create": 1, "delete": 0
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Eligibility Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
+   "share": 1
   }
  ],
- "sort_field": "admission_year",
+ "row_format": "Dynamic",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [
   {"color": "Gray",  "title": "Draft"},
