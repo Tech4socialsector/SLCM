@@ -658,6 +658,16 @@ frappe.pages['applicant-portal'].on_page_load = function (wrapper) {
             </button>`;
         }
 
+        $(document).on("click", ".apply-btn", function () {
+
+            const program = $(this).data("program");
+            const program_name = decodeURIComponent($(this).data("name"));
+
+            // Option 1: Simple redirect
+            window.location.href = `/applicant-form/new?`;
+
+        });
+
         let mediaHtml = '';
         if (images.length) {
             const imgNavHtml = images.length > 1
