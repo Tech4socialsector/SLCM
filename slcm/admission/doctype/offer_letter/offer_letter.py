@@ -54,11 +54,15 @@ class OfferLetter(Document):
 
     def sync_status_to_seat_allocation(self):
         """
-        If this offer is Rejected or Expired, update the Seat Allocation status
-        for this applicant/program/cycle to 'Rejected'.
+        If this offer is Rejected, Expired, or Withdrawn, 
+        update the Seat Allocation status and cancel linked fees.
         """
-        if self.offer_status not in ["Rejected", "Expired"]:
+        if self.offer_status not in ["Rejected", "Expired", "Withdrawn"]:
             return
+        
+        # 1. Cancel Linked Fee Assignment automatically
+        from slcm.api.service.fee_service import FeeService
+        FeeService.cancel_linked_fee_assignment(self.name)
 
         # Find Seat Allocation
         sa_records = frappe.get_all("Seat Allocation", filters={
@@ -213,16 +217,17 @@ class OfferLetter(Document):
             # Update Applicant status
             OfferService.update_applicant_status(self.applicant, application_status="Fee Paid")
             
-            # Update Seat Allocation child status
+            # 3. Update Applicant Fee Assignment status to 'Paid'
+            frappe.db.set_value("Applicant Fee Assignment", 
+                {"offer_letter": self.name, "status": ["!=", "Cancelled"]}, 
+                "status", "Paid")
+
+            # 4. Sync Seat Allocation child status
             OfferService.sync_seat_allocation_status(self, status="Fee Paid")
 
-            self._queue_audit_log(
-                action="Fee Paid",
-                notes=_("Payment of {0} {1} received via online portal.").format(
-                    frappe.defaults.get_global_default("currency") or "INR", 
-                    self.payable_amount
-                )
-            )
-            # Trigger log insertion
+            # Note: We don't queue 'Fee Paid' log here because generate_receipt() 
+            # will log 'Payment Received' with the receipt ID shortly after this method returns.
+            # This prevents duplicate logs in the Offer Action history.
+            
             self.on_update()
 

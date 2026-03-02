@@ -208,60 +208,60 @@ class OfferService:
                 offer.autoname() # Force standard naming
 
         
-        # Find matching Fee Structure from Configuration
-        fee_structure_name = None
-        for row in config.fee_structure:
-            fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
-            if fs_program == program:
-                fee_structure_name = row.fee_structure
-                break
-        
-        if not fee_structure_name:
-            throw(_("No Fee Structure found for program {0} in Offer Configuration {1}").format(
-                frappe.bold(program), frappe.bold(config.name)
-            ))
-
-        offer.fee_structure = fee_structure_name
-        
-        # Set validity/deadline from Fee Structure
-        offer.payment_deadline = FeeService._calculate_deadline(fee_structure_name)
-        
-        # Freeze Fees from Fee Structure
-        fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name)
-        offer.payable_amount = fee_data.get("total_payable")
-        
-        # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
-        # if they differ from the applicant's default preferences
-        offer.insert(ignore_permissions=True)
-        if campus:
-            offer.campus = campus
-            offer.db_set('campus', campus)
-        if resolved_cycle:
-            offer.admission_cycle = resolved_cycle
-            offer.db_set('admission_cycle', resolved_cycle)
+            # Find matching Fee Structure from Configuration
+            fee_structure_name = None
+            for row in config.fee_structure:
+                fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
+                if fs_program == program:
+                    fee_structure_name = row.fee_structure
+                    break
             
-        OfferService.update_applicant_status(applicant, application_status="Offer Issued")
+            if not fee_structure_name:
+                throw(_("No Fee Structure found for program {0} in Offer Configuration {1}").format(
+                    frappe.bold(program), frappe.bold(config.name)
+                ))
 
-        # Snapshot Content (Now we have the name/ID)
-        offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
-        offer.db_set('rendered_content', offer.rendered_content)
-        
-        # Create the actual snapshot record
-        OfferService._create_snapshot_record(offer.name, fee_data)
+            offer.fee_structure = fee_structure_name
+            
+            # Set validity/deadline from Fee Structure
+            offer.payment_deadline = FeeService._calculate_deadline(fee_structure_name)
+            
+            # Freeze Fees from Fee Structure
+            fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name)
+            offer.payable_amount = fee_data.get("total_payable")
+            
+            # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
+            # if they differ from the applicant's default preferences
+            offer.insert(ignore_permissions=True)
+            if campus:
+                offer.campus = campus
+                offer.db_set('campus', campus)
+            if resolved_cycle:
+                offer.admission_cycle = resolved_cycle
+                offer.db_set('admission_cycle', resolved_cycle)
+                
+            OfferService.update_applicant_status(applicant, application_status="Offer Issued")
 
-        # Generate and Attach PDF
-        if getattr(config, "generate_offer_letter_by_system", 0):
-            if config.pdf_format:
-                OfferService._generate_offer_pdf(offer, config.pdf_format)
-        else:
-            if getattr(config, "offer_letter_pdf", None):
-                OfferService._attach_static_pdf(offer, config.offer_letter_pdf)
-        
-        # Send offer letter email to applicant
-        if getattr(config, "send_email", 0):
-            from_account = getattr(config, "from_email_account", None)
-            OfferService._send_offer_letter_email(offer, config.email_template, from_account)
-        
+            # Snapshot Content (Now we have the name/ID)
+            offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
+            offer.db_set('rendered_content', offer.rendered_content)
+            
+            # Create the actual snapshot record
+            OfferService._create_snapshot_record(offer.name, fee_data)
+
+            # Generate and Attach PDF
+            if getattr(config, "generate_offer_letter_by_system", 0):
+                if config.pdf_format:
+                    OfferService._generate_offer_pdf(offer, config.pdf_format)
+            else:
+                if getattr(config, "offer_letter_pdf", None):
+                    OfferService._attach_static_pdf(offer, config.offer_letter_pdf)
+            
+            # Send offer letter email to applicant
+            if getattr(config, "send_email", 0):
+                from_account = getattr(config, "from_email_account", None)
+                OfferService._send_offer_letter_email(offer, config.email_template, from_account)
+            
             offer.offer_status = "Issued"
             offer.save(ignore_permissions=True)
             OfferService.sync_seat_allocation_status(offer, "Offer Issued")

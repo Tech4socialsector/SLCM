@@ -41,6 +41,11 @@
     color: #383d41;
 }
 
+.status-badge.payment-completed {
+    background: #0357ff;
+    color: #ffffff;
+}
+
 .pointer {
     cursor: pointer;
 }
