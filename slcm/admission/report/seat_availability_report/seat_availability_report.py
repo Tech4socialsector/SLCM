@@ -74,46 +74,78 @@ def get_data(filters):
         )
         relevant_cycles = [c.name for c in cycles]
 
-    # 2. Fetch capacities (Total Seats) from Program Offering
-    po_filters = {"is_active": 1}
+    # 2. Map Cycle + Program to Campus (Admission Cycle Program is the link)
+    # Broaden to all cycles in year to ensure we find any existing mappings for policies
+    acp_filters = {}
+    if relevant_cycles:
+        acp_filters["parent"] = ["in", relevant_cycles]
+    elif filters.get("admission_cycle"):
+        acp_filters["parent"] = filters.get("admission_cycle")
+    
     if filters.get("campus"):
-        po_filters["campus"] = filters.get("campus")
-    if filters.get("admission_year"):
-        po_filters["admission_year"] = filters.get("admission_year")
+        acp_filters["campus"] = filters.get("campus")
     if filters.get("program"):
-        po_filters["program"] = filters.get("program")
+        acp_filters["program"] = filters.get("program")
 
-    program_offerings = frappe.get_all("Program Offering", 
-        filters=po_filters, 
-        fields=["name", "campus", "program", "total_available_seats", "is_reservation_applicable"]
+    acp_records = frappe.get_all("Admission Cycle Program",
+        filters=acp_filters,
+        fields=["parent", "program", "campus", "seats", "reservation_policy"]
+    )
+
+    # Bridge the mapping: policy name -> campuses, and (cycle, program) -> campuses
+    policy_to_campuses = {}
+    cycle_prog_to_campuses = {}
+    
+    for r in acp_records:
+        if r.reservation_policy:
+            policy_to_campuses.setdefault(r.reservation_policy, set()).add(r.campus)
+        cycle_prog_to_campuses.setdefault((r.parent, r.program), set()).add(r.campus)
+
+    # 3. Fetch capacities from Program Reservation Policy
+    prp_filters = {"status": "Active"}
+    if filters.get("admission_cycle"):
+        prp_filters["admission_cycle"] = filters.get("admission_cycle")
+    elif relevant_cycles:
+        prp_filters["admission_cycle"] = ["in", relevant_cycles]
+    if filters.get("program"):
+        prp_filters["program"] = filters.get("program")
+
+    policies = frappe.get_all("Program Reservation Policy",
+        filters=prp_filters,
+        fields=["name", "admission_cycle", "program", "total_seats"]
     )
 
     capacities = {} # (campus, program, category) -> total_seats
-    for po_summary in program_offerings:
-        campus = po_summary.campus
-        program = po_summary.program
+    for p_summary in policies:
+        # Get campuses: prefer explicit policy link, fallback to cycle+program match
+        campuses = list(policy_to_campuses.get(p_summary.name) or 
+                       cycle_prog_to_campuses.get((p_summary.admission_cycle, p_summary.program)) or 
+                       [])
         
-        if po_summary.is_reservation_applicable:
-            po = frappe.get_doc("Program Offering", po_summary.name)
-            reserved_total = 0
-            for q in po.reservations:
-                # Quota can be "General", "Government Quota", etc.
-                # If Quota is General, map to "General" category
-                cat_key = "General" if q.reservation_quota == "General" else (q.category or "Other")
+        if not campuses:
+            continue
+
+        program = p_summary.program
+        policy = frappe.get_doc("Program Reservation Policy", p_summary.name)
+        
+        for campus in campuses:
+            if filters.get("campus") and campus != filters.get("campus"):
+                continue
+
+            total_cat_seats = 0
+            for cat_row in policy.categories:
+                cat_name = cat_row.category_name or cat_row.reservation_quota or "General"
+                cat_key = "General" if cat_name == "General" else cat_name
                 
                 key = (campus, program, cat_key)
-                capacities[key] = capacities.get(key, 0) + (int(q.seats or 0))
-                reserved_total += int(q.seats or 0)
+                capacities[key] = capacities.get(key, 0) + (int(cat_row.seats or 0))
+                total_cat_seats += int(cat_row.seats or 0)
             
-            # Remaining seats are Open/General
-            open_seats = max(0, po_summary.total_available_seats - reserved_total)
-            if open_seats > 0:
+            # Remainder is General
+            remainder = max(0, int(p_summary.total_seats or 0) - total_cat_seats)
+            if remainder > 0:
                 gen_key = (campus, program, "General")
-                capacities[gen_key] = capacities.get(gen_key, 0) + open_seats
-        else:
-            # All seats are General if no reservations
-            gen_key = (campus, program, "General")
-            capacities[gen_key] = capacities.get(gen_key, 0) + (int(po_summary.total_available_seats or 0))
+                capacities[gen_key] = capacities.get(gen_key, 0) + remainder
 
     # 3. Fetch allocations (Allocated/Waitlisted)
     sa_filters = {"docstatus": ["<", 2]}
@@ -146,8 +178,8 @@ def get_data(filters):
             campus = sa_campus_map.get(app.parent)
             program = app.program
             
-            # Allocation Type Open -> General
-            cat_key = "General" if app.allocation_type == "Open" else (app.reservation_category or "Other")
+            # Allocation Type Open/Null -> General
+            cat_key = "General" if app.allocation_type == "Open" or not app.reservation_category else app.reservation_category
             
             key = (campus, program, cat_key)
             stats = allocations.setdefault(key, {"allocated": 0, "waitlisted": 0})
