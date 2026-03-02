@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:applicant",
- "creation": "2026-02-28 15:30:47.505686",
+ "creation": "2026-03-02 11:05:49.615668",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -437,6 +437,7 @@
    "label": "Download Admit Card"
   },
   {
+   "default": "Scheduled",
    "fieldname": "entrance_test_status",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -477,7 +478,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-01 18:31:44.753129",
+ "modified": "2026-03-02 12:57:47.871017",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
@@ -516,6 +517,16 @@
    "read": 1,
    "report": 1,
    "role": "Applicant",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Provider",
    "share": 1,
    "write": 1
   }

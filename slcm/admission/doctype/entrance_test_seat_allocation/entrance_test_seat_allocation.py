@@ -7,16 +7,12 @@ from frappe.utils import now_datetime, get_url, get_datetime
 class EntranceTestSeatAllocation(Document):
     def before_save(self):
         # Update attendance_marked_on if status changes to Attended, Absent, or Rescheduled
+        # This only happens when the status is changed manually (Admin)
         if not self.is_new():
             old_status = frappe.db.get_value("Entrance Test Seat Allocation", self.name, "entrance_test_status")
             if self.entrance_test_status != old_status:
-                if self.entrance_test_status in ["Attended", "Absent", "Rescheduled"]:
+                if self.entrance_test_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
-
-        # If score is entered, ensure status is marked as 'Attended'
-        if self.score_obtained is not None and self.entrance_test_status not in ["Attended", "Absent"]:
-            self.entrance_test_status = "Attended"
-            self.attendance_marked_on = now_datetime()
 
 
 @frappe.whitelist()
@@ -145,7 +141,8 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
 def _send_reschedule_email(doc, email):
     """Send a reschedule notification email to the applicant."""
     try:
-        url = get_url(f"/app/entrance-test-seat-allocation/{doc.name}")
+        from frappe.utils import get_url_to_form
+        url = get_url_to_form("Entrance Test Seat Allocation", doc.name)
 
         prefs_html = "<ul>"
         for p in doc.re_assigned_preferences:

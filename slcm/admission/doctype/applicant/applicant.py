@@ -312,12 +312,13 @@ class Applicant(Document):
 
                     full_message = self._build_ineligibility_message(failure_message, program_table_html)
 
-                    # ONE single frappe.throw() — contains reason + program table
+                    # ONE single frappe.throw() — contains reason box + program table
+                    # NOTE: is_minimizable=True is intentionally NOT used here — it
+                    # causes a rendering failure on some live Frappe server versions.
                     frappe.throw(
                         msg=full_message,
                         title=_("Eligibility Evaluation Results"),
                         wide=True,
-                        is_minimizable=True
                     )
                     return  # never reached — throw exits — kept for clarity
 

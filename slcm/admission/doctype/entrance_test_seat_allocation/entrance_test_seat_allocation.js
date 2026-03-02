@@ -16,13 +16,26 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
       return { filters: { name: ["in", preferences] } };
     });
 
-    if (frm.doc.allocation_status === "Allocated") {
-      frm.set_df_property("entrance_test_provider", "read_only", 1);
-      frm.set_df_property("entrance_test_name", "read_only", 1);
-    }
-    if (frm.doc.re_allocation_status === "Allocated") {
-      frm.set_df_property("re_entrance_test_provider", "read_only", 1);
-      frm.set_df_property("re_entrance_test_name", "read_only", 1);
+    // ── Role based restrictions ──────────────────────────
+    if (frappe.user_roles.includes("Applicant")) {
+      _apply_applicant_permissions(frm);
+
+      // Force status to "Scheduled" for applicants if not already set or invalid
+      if (!frm.doc.entrance_test_status || frm.doc.entrance_test_status === "Not Scheduled" || frm.doc.entrance_test_status === "") {
+        frm.set_value("entrance_test_status", "Scheduled");
+      }
+      // Ensure it remains read-only for applicants at all times
+      frm.set_df_property("entrance_test_status", "read_only", 1);
+    } else {
+      // FOR ADMINS / OTHER ROLES:
+      // Ensure the Reschedule tab and other sections are ALWAYS visible for them
+      frm.set_df_property("tab_9_tab", "hidden", 0);
+      frm.set_df_property("reschedule_seat_allocation_section", "hidden", 0);
+      frm.set_df_property("section_break_axgb", "hidden", 0);
+
+      // Ensure result and status fields are editable for admins
+      frm.set_df_property("entrance_test_status", "read_only", 0);
+      frm.set_df_property("score_obtained", "read_only", 0);
     }
   },
 
@@ -106,6 +119,14 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
     });
   },
 
+  entrance_test_status: function (frm) {
+    // Only automatically set timestamp if status is changed by an authorized user (Admin/Entrance Test Admin)
+    // The field is read-only for Applicants so they can't trigger this manually
+    if (["Attended", "Absent"].includes(frm.doc.entrance_test_status)) {
+      frm.set_value("attendance_marked_on", frappe.datetime.now_datetime());
+    }
+  },
+
   before_save: function (frm) {
     // Initial Allocation Confirmation
     if (frm.doc.entrance_test_provider && frm.doc.allocation_status === "Not Allocated") {
@@ -160,6 +181,90 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
     }
   }
 });
+
+// ============================================================
+//  _apply_applicant_permissions
+//  Called on refresh when the logged-in user has the "Applicant" role.
+//
+//  Rules:
+//   - tab_test_reference  : all fields → read-only
+//   - tab_applicant_info  : all fields → read-only
+//   - tab_allocation      : all fields → read-only EXCEPT "entrance_test_provider"
+//                           "entrance_test_provider" stays editable until
+//                           allocation_status is Allocated / Reallocated,
+//                           after which it also becomes read-only.
+//   - tab_9_tab           : hidden until is_rescheduled == 1
+//                           (rescheduling has been assigned by admin)
+//   - tab_result          : all fields → read-only
+//   - tab_communication   : all fields → read-only
+// ============================================================
+function _apply_applicant_permissions(frm) {
+
+  // ── 1. tab_test_reference — fully read-only ──────────────
+  const test_ref_fields = [
+    "profile", "entrance_test_list", "academic_year",
+    "admission_cycle", "campus", "program_level"
+  ];
+  test_ref_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
+
+  // ── 2. tab_applicant_info — fully read-only ───────────────
+  const applicant_info_fields = [
+    "applicant", "candidate_name", "program", "reservation_category",
+    "email", "gender", "date_of_birth", "section_break_hynq",
+    "mother_name", "father_name", "father_mobile_number"
+  ];
+  applicant_info_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
+
+  // ── 3. tab_allocation — read-only except entrance_test_provider ──
+  const allocation_readonly_fields = [
+    "entrance_test_name", "assigned_preferences",
+    "center_name", "center_address", "preference_order",
+    "room_code", "room_name", "building", "floor",
+    "seat_number", "allocation_status", "allocation_date", "allocated_by"
+    // "download_admit_card" button — leave as-is (button)
+  ];
+  allocation_readonly_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
+
+  // entrance_test_provider: editable only when not yet allocated
+  const allocated_statuses = ["Allocated", "Reallocated", "Cancelled", "Rejected"];
+  const is_allocated = allocated_statuses.includes(frm.doc.allocation_status);
+  frm.set_df_property("entrance_test_provider", "read_only", is_allocated ? 1 : 0);
+
+  // ── 4. tab_9_tab — hide for Applicant until rescheduled ──
+  const is_rescheduled = (frm.doc.is_rescheduled == 1 || frm.doc.entrance_test_status === "Rescheduled");
+
+  frm.set_df_property("tab_9_tab", "hidden", is_rescheduled ? 0 : 1);
+  frm.set_df_property("reschedule_seat_allocation_section", "hidden", is_rescheduled ? 0 : 1);
+  frm.set_df_property("section_break_axgb", "hidden", is_rescheduled ? 0 : 1);
+
+  if (is_rescheduled) {
+    const reschedule_readonly_fields = [
+      "re_entrance_test_name", "re_assigned_preferences",
+      "re_center_name", "re_center_address", "re_preference_order",
+      "re_room_code", "re_room_name", "re_building", "re_floor",
+      "re_seat_number", "re_allocation_status", "re_allocation_date", "re_allocated_by"
+    ];
+    reschedule_readonly_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
+
+    // re_entrance_test_provider: editable only when not yet allocated
+    const is_re_allocated = ["Allocated", "Reallocated", "Cancelled", "Rejected"].includes(frm.doc.re_allocation_status);
+    frm.set_df_property("re_entrance_test_provider", "read_only", is_re_allocated ? 1 : 0);
+  }
+
+  // ── 5. tab_result — fully read-only ──────────────────────
+  const result_fields = [
+    "entrance_test_status", "attendance_marked_on",
+    "total_score", "score_obtained", "result_status",
+    "entrance_test_rank", "result_published"
+  ];
+  result_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
+
+  // ── 6. tab_communication — fully read-only ───────────────
+  const communication_fields = [
+    "admit_card_generated", "admit_card_number"
+  ];
+  communication_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
+}
 
 function _handle_admit_card_download(frm, is_rescheduled) {
   if (frm.is_dirty()) {
