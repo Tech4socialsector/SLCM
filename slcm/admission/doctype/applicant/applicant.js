@@ -5,15 +5,15 @@ frappe.ui.form.on("Applicant", {
 
         // Status badge in dashboard headline
         const status_colors = {
-            "Draft":                "gray",
-            "Submitted":            "blue",
-            "Under Evaluation":     "blue",
-            "Shortlisted":          "orange",
-            "Interview Scheduled":  "purple",
-            "Offered":              "green",
-            "Accepted":             "darkgreen",
-            "Rejected":             "red",
-            "Waitlisted":           "yellow"
+            "Draft": "gray",
+            "Submitted": "blue",
+            "Under Evaluation": "blue",
+            "Shortlisted": "orange",
+            "Interview Scheduled": "purple",
+            "Offered": "green",
+            "Accepted": "darkgreen",
+            "Rejected": "red",
+            "Waitlisted": "yellow"
         };
         const color = status_colors[frm.doc.application_status] || "gray";
         frm.dashboard.set_headline(
@@ -30,7 +30,7 @@ frappe.ui.form.on("Applicant", {
             "declaration_undertaking"
         ];
         const filled = required_fields.filter(f => frm.doc[f]).length;
-        const pct    = Math.round((filled / required_fields.length) * 100);
+        const pct = Math.round((filled / required_fields.length) * 100);
         frm.dashboard.add_comment(
             `Application Completion: ${pct}%`,
             pct === 100 ? "green" : pct >= 50 ? "orange" : "red"
@@ -50,8 +50,25 @@ frappe.ui.form.on("Applicant", {
             });
         }
 
+        if (frm.doc.application_fee_status === "Pending") {
+            frm.add_custom_button(__("Waive Application Fee"), function () {
+                frappe.confirm(
+                    __("Mark application fee as Waived for this applicant?"),
+                    function () {
+                        frappe.call({
+                            method: "slcm.admission.doctype.applicant.applicant.waive_fee",
+                            args: { name: frm.doc.name },
+                            callback: function (r) {
+                                frm.reload_doc();
+                                frappe.show_alert({ message: __("Fee marked as Waived"), indicator: "green" }, 5);
+                            }
+                        });
+                    }
+                );
+            }, __("Portal"));
+        }
         // Guardian fields required only when flag is set
-        frm.toggle_reqd("guardian_name",   frm.doc.guardian_required);
+        frm.toggle_reqd("guardian_name", frm.doc.guardian_required);
         frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
     },
 
@@ -106,9 +123,9 @@ frappe.ui.form.on("Applicant", {
 
         if (errors.length) {
             frappe.msgprint({
-                title:     __("Validation Error"),
+                title: __("Validation Error"),
                 indicator: "red",
-                message:   errors.join("<br>")
+                message: errors.join("<br>")
             });
             frappe.validated = false;
         }
@@ -117,9 +134,9 @@ frappe.ui.form.on("Applicant", {
     // ── APPLICATION TYPE ──────────────────────
     application_type: function (frm) {
         const messages = {
-            "CLAT":  __("CLAT workflow: Your CLAT rank will be imported from the Consortium."),
+            "CLAT": __("CLAT workflow: Your CLAT rank will be imported from the Consortium."),
             "NLSAT": __("NLSAT workflow: You must appear for the NLSAT exam."),
-            "PACE":  __("PACE workflow: Admission is based on academic merit only.")
+            "PACE": __("PACE workflow: Admission is based on academic merit only.")
         };
         if (frm.doc.application_type && messages[frm.doc.application_type]) {
             frappe.show_alert({ message: messages[frm.doc.application_type], indicator: "blue" }, 6);
@@ -128,16 +145,16 @@ frappe.ui.form.on("Applicant", {
 
     // ── RESERVATION CATEGORY ─────────────────
     reservation_category: function (frm) {
-        frm.set_value("ews_certificate",   "");
+        frm.set_value("ews_certificate", "");
         frm.set_value("caste_certificate", "");
-        frm.set_value("pwd_certificate",   "");
-        frm.set_value("ews",  0);
-        frm.set_value("pwd",  0);
+        frm.set_value("pwd_certificate", "");
+        frm.set_value("ews", 0);
+        frm.set_value("pwd", 0);
     },
 
     // ── GUARDIAN REQUIRED ────────────────────
     guardian_required: function (frm) {
-        frm.toggle_reqd("guardian_name",   frm.doc.guardian_required);
+        frm.toggle_reqd("guardian_name", frm.doc.guardian_required);
         frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
     },
 
@@ -145,9 +162,9 @@ frappe.ui.form.on("Applicant", {
     declaration_undertaking: function (frm) {
         if (!frm.doc.declaration_undertaking) {
             frappe.msgprint({
-                title:     __("Declaration Required"),
+                title: __("Declaration Required"),
                 indicator: "orange",
-                message:   __("You must accept the Declaration & Undertaking to submit.")
+                message: __("You must accept the Declaration & Undertaking to submit.")
             });
         }
     },
@@ -171,9 +188,9 @@ frappe.ui.form.on("Applicant", {
         if (frm.doc.first_preference &&
             frm.doc.first_preference === frm.doc.second_preference) {
             frappe.msgprint({
-                title:     __("Duplicate Preference"),
+                title: __("Duplicate Preference"),
                 indicator: "red",
-                message:   __("First and Second preference cannot be the same campus.")
+                message: __("First and Second preference cannot be the same campus.")
             });
             frm.set_value("second_preference", "");
         }
@@ -183,9 +200,9 @@ frappe.ui.form.on("Applicant", {
         if (frm.doc.second_preference &&
             frm.doc.second_preference === frm.doc.first_preference) {
             frappe.msgprint({
-                title:     __("Duplicate Preference"),
+                title: __("Duplicate Preference"),
                 indicator: "red",
-                message:   __("Second preference cannot be the same as First preference.")
+                message: __("Second preference cannot be the same as First preference.")
             });
             frm.set_value("second_preference", "");
             return;
@@ -193,9 +210,9 @@ frappe.ui.form.on("Applicant", {
         if (frm.doc.second_preference &&
             frm.doc.second_preference === frm.doc.third_preference) {
             frappe.msgprint({
-                title:     __("Duplicate Preference"),
+                title: __("Duplicate Preference"),
                 indicator: "red",
-                message:   __("Second and Third preference cannot be the same campus.")
+                message: __("Second and Third preference cannot be the same campus.")
             });
             frm.set_value("third_preference", "");
         }
@@ -207,9 +224,9 @@ frappe.ui.form.on("Applicant", {
             frm.doc.third_preference === frm.doc.second_preference
         )) {
             frappe.msgprint({
-                title:     __("Duplicate Preference"),
+                title: __("Duplicate Preference"),
                 indicator: "red",
-                message:   __("Third preference must differ from First and Second preference.")
+                message: __("Third preference must differ from First and Second preference.")
             });
             frm.set_value("third_preference", "");
         }
