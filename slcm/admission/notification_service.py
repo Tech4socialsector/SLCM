@@ -7,12 +7,12 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     using the 'Seat Allocation Result Notification' template record and logs it.
     """
     try:
-        applicant_doc = frappe.get_doc("Admission Result", applicant)
+        applicant_doc = frappe.get_doc("Eligibility Result", applicant)
     except frappe.DoesNotExistError:
-        frappe.logger().error(f"Notification error: Admission Result '{applicant}' not found.")
+        frappe.logger().error(f"Notification error: Eligibility Result '{applicant}' not found.")
         return
  
-    # Resolve email: Try Admission Result first, then fallback to Applicant
+    # Resolve email: Try Eligibility Result first, then fallback to Applicant
     email = getattr(applicant_doc, "email", None) or getattr(applicant_doc, "email_id", None)
     
     if not email and applicant_doc.applicant_id:
@@ -126,7 +126,7 @@ def notify_published_allocation(allocation_name):
         allocated_status_map[row.applicant] = row.selection_status
         allocated_rows_map[row.applicant] = row
  
-    # 2. Fetch all Admission Results for this cycle and campus
+    # 2. Fetch all Eligibility Results for this cycle and campus
     # This ensures even those NOT in the Merit List (Ineligible etc.) get a notification
     filters = {
         "admission_cycle": allocation.admission_cycle,
@@ -136,7 +136,7 @@ def notify_published_allocation(allocation_name):
     if allocation.program_level:
         filters["program_level"] = allocation.program_level
  
-    all_applicants = frappe.get_all("Admission Result", filters=filters, fields=["name", "program"])
+    all_applicants = frappe.get_all("Eligibility Result", filters=filters, fields=["name", "program"])
  
     frappe.logger().info(f"Notification: Bulk publishing {allocation_name}. Candidates in allocation: {len(allocated_status_map)}, Total applicants to notify: {len(all_applicants)}")
  

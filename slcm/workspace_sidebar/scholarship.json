@@ -9,7 +9,7 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "",
+   "icon": "book-open-text",
    "indent": 0,
    "keep_closed": 0,
    "label": "Scholarship Scheme",
@@ -21,7 +21,7 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "",
+   "icon": "book-open-text",
    "indent": 0,
    "keep_closed": 0,
    "label": "Scholarship Scheme Mapping",
@@ -33,6 +33,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "book-open-text",
    "indent": 0,
    "keep_closed": 0,
    "label": "Scholarship Application",
@@ -44,6 +45,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "book-open-text",
    "indent": 0,
    "keep_closed": 0,
    "label": "Scholarship Audit Log",
@@ -55,6 +57,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "book-open-text",
    "indent": 0,
    "keep_closed": 0,
    "label": "Scholarship Utilization Report",
@@ -64,7 +67,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-28 15:38:13.595418",
+ "modified": "2026-03-03 12:15:36.051046",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship",

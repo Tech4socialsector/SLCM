@@ -81,7 +81,7 @@ def get_data(filters: dict) -> list[dict]:
 			program,
 			scholarship_scheme,
 			COUNT(name) as total_allocated,
-			SUM(COALESCE(approved_amount, calculated_benefit, 0)) as total_utilized
+			SUM(COALESCE(calculated_benefit, 0)) as total_utilized
 		FROM 
 			`tabScholarship Application`
 		WHERE 

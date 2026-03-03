@@ -16,7 +16,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Component Type",
-   "options": "\nHSC Percentage\nEntrance Test\nInterview\nUG CGPA\nPG CGPA",
+   "options": "\nHSC Percentage\nEntrance Score\nInterview Score\nUG CGPA\nPG CGPA",
    "reqd": 1
   },
   {
