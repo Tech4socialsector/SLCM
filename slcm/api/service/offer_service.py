@@ -491,6 +491,8 @@ class OfferService:
                 error_msg = str(e) or "Unknown Server Error"
                 results["errors"].append({"applicant": str(data.get("applicant") if isinstance(data, dict) else data), "error": error_msg})
                 frappe.log_error(f"Bulk Offer Generation Error for {str(data)}: {error_msg}", "Offer Service")
+        
+        return results
 
     @staticmethod
     def background_bulk_worker(applicants, user):

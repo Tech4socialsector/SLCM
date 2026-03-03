@@ -8,9 +8,9 @@ from frappe.model.document import Document
 class OfferConfiguration(Document):
 
     def autoname(self):
-        if self.admission_year and self.admission_cycle:
-            name = "OC-" + self.admission_year + "-" + self.admission_cycle
-            self.name = name
+        """Naming: OC-{Year}-{Cycle}-{Campus}"""
+        if self.admission_year and self.admission_cycle and self.campus:
+            self.name = f"OC-{self.admission_year}-{self.admission_cycle}-{self.campus}"
 
     def validate(self):
         if self.is_active:

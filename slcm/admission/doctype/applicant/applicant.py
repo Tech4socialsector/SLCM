@@ -313,29 +313,34 @@ class Applicant(Document):
                     full_message = self._build_ineligibility_message(failure_message, program_table_html)
 
                     # ONE single frappe.throw() — contains reason box + program table
-                    # NOTE: is_minimizable=True is intentionally NOT used here — it
-                    # causes a rendering failure on some live Frappe server versions.
-                    frappe.throw(
-                        msg=full_message,
-                        title=_("Eligibility Evaluation Results"),
-                        wide=True,
-                    )
-                    return  # never reached — throw exits — kept for clarity
+                    # NOTE: allow_dangerous_html=True is required for modern Frappe versions (v15+)
+                    # to render styles correctly. We check dynamically to avoid TypeError on older versions.
+                    throw_kwargs = {
+                        "msg": full_message,
+                        "title": _("Eligibility Evaluation Results"),
+                        "wide": True,
+                    }
+
+                    import inspect
+                    if "allow_dangerous_html" in inspect.signature(frappe.throw).parameters:
+                        throw_kwargs["allow_dangerous_html"] = True
+
+                    frappe.throw(**throw_kwargs)
+                    return
 
             # Passed all mappings → Eligible
             self.evaluation_status = "Eligible"
             self.rejected_reason   = ""
-            # Save eligible record here (not in validate()) to avoid duplicate saves
             program_table_html = self._build_program_eligibility_html()
             self.create_or_update_evaluation(program_details_html=program_table_html)
 
         except frappe.ValidationError:
+            # Standard validation failure — let it raise naturally for the frontend
             raise
         except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                "Applicant Eligibility Validation Error"
-            )
+            # Unexpected system error — log it to Error Log then raise
+            frappe.log_error(frappe.get_traceback(), "Applicant Eligibility Validation Error")
+            raise
 
     # ──────────────────────────────────────────────
     # INELIGIBILITY MESSAGE BUILDER  (Frappe-native)
@@ -348,43 +353,22 @@ class Applicant(Document):
         """
         escaped_reason = frappe.utils.escape_html(failure_message)
 
-        return """
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-
-            <!-- ── Ineligibility Alert ───────────────────────────────── -->
-            <div style="
-                display: flex;
-                align-items: flex-start;
-                gap: 10px;
-                margin-bottom: 16px;
-                padding: 12px 16px;
-                background-color: #fff2f2;
-                border: 1px solid #f5c6cb;
-                border-left: 4px solid #e74c3c;
-                border-radius: 6px;
-            ">
-                <span style="
-                    display: inline-block;
-                    width: 10px;
-                    height: 10px;
-                    background-color: #e74c3c;
-                    border-radius: 50%;
-                    margin-top: 4px;
-                    flex-shrink: 0;
-                "></span>
-                <div>
-                    <div style="font-weight: 600; font-size: 14px; color: #c0392b;">{reason}</div>
-                    <div style="font-size: 12px; color: #666; margin-top: 3px;">
-                        {note}
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Program Options ───────────────────────────────────── -->
-            {table}
-
-        </div>
-        """.format(
+        return (
+            '<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
+            '<!-- ── Ineligibility Alert ───────────────────────────────── -->'
+            '<div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; padding: 12px 16px; '
+            'background-color: #fff2f2; border: 1px solid #f5c6cb; border-left: 4px solid #e74c3c; border-radius: 6px;">'
+            '<span style="display: inline-block; width: 10px; height: 10px; background-color: #e74c3c; border-radius: 50%; '
+            'margin-top: 4px; flex-shrink: 0;"></span>'
+            '<div>'
+            '<div style="font-weight: 600; font-size: 14px; color: #c0392b;">{reason}</div>'
+            '<div style="font-size: 12px; color: #666; margin-top: 3px;">{note}</div>'
+            '</div>'
+            '</div>'
+            '<!-- ── Program Options ───────────────────────────────────── -->'
+            '{table}'
+            '</div>'
+        ).format(
             reason=escaped_reason,
             note=_("The applicant does not meet the eligibility criteria for the selected program."),
             table=program_table_html,
@@ -509,22 +493,22 @@ class Applicant(Document):
             )
 
         # ── Summary counts ───────────────────────────────────────────────────
-        summary_html = """
-            <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
-                <span style="display:inline-flex;align-items:center;gap:6px;">
-                    <span style="display:inline-block;width:8px;height:8px;background:#27ae60;border-radius:50%;"></span>
-                    <strong style="color:#2c3e50;">{ec}</strong>
-                    <span style="font-size:12px;color:#888;">{el}</span>
-                </span>
-                <span style="color:#ccc;">/</span>
-                <span style="display:inline-flex;align-items:center;gap:6px;">
-                    <span style="display:inline-block;width:8px;height:8px;background:#e74c3c;border-radius:50%;"></span>
-                    <strong style="color:#2c3e50;">{ic}</strong>
-                    <span style="font-size:12px;color:#888;">{il}</span>
-                </span>
-                <span style="font-size:12px;color:#aaa;">({total}&nbsp;{tl})</span>
-            </div>
-        """.format(
+        summary_html = (
+            '<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">'
+            '<span style="display:inline-flex;align-items:center;gap:6px;">'
+            '<span style="display:inline-block;width:8px;height:8px;background:#27ae60;border-radius:50%;"></span>'
+            '<strong style="color:#2c3e50;">{ec}</strong>'
+            '<span style="font-size:12px;color:#888;">{el}</span>'
+            '</span>'
+            '<span style="color:#ccc;">/</span>'
+            '<span style="display:inline-flex;align-items:center;gap:6px;">'
+            '<span style="display:inline-block;width:8px;height:8px;background:#e74c3c;border-radius:50%;"></span>'
+            '<strong style="color:#2c3e50;">{ic}</strong>'
+            '<span style="font-size:12px;color:#888;">{il}</span>'
+            '</span>'
+            '<span style="font-size:12px;color:#aaa;">({total}&nbsp;{tl})</span>'
+            '</div>'
+        ).format(
             ec    = eligible_count,
             el    = _("eligible"),
             ic    = ineligible_count,
@@ -534,14 +518,12 @@ class Applicant(Document):
         )
 
         # ── Section heading ──────────────────────────────────────────────────
-        heading_html = """
-            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
-                <span style="font-weight:700;font-size:14px;color:#2c3e50;">{heading}</span>
-                <span style="font-size:12px;color:#888;">
-                    &mdash;&nbsp;{campus}&nbsp;&middot;&nbsp;{cycle}&nbsp;&middot;&nbsp;{level}
-                </span>
-            </div>
-        """.format(
+        heading_html = (
+            '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">'
+            '<span style="font-weight:700;font-size:14px;color:#2c3e50;">{heading}</span>'
+            '<span style="font-size:12px;color:#888;">&mdash;&nbsp;{campus}&nbsp;&middot;&nbsp;{cycle}&nbsp;&middot;&nbsp;{level}</span>'
+            '</div>'
+        ).format(
             heading = _("Available Programs"),
             campus  = frappe.utils.escape_html(self.campus or ""),
             cycle   = frappe.utils.escape_html(self.admission_cycle or ""),
@@ -549,34 +531,27 @@ class Applicant(Document):
         )
 
         # ── Full table ───────────────────────────────────────────────────────
-        table_html = """
-            <div style="margin-top:8px;">
-                {heading}
-                <hr style="margin:6px 0 12px 0;border:none;border-top:1px solid #eee;">
-                {summary}
-                <div style="overflow-x:auto;">
-                    <table style="
-                        width: 100%;
-                        border-collapse: collapse;
-                        border: 1px solid #e0e0e0;
-                        border-radius: 6px;
-                        overflow: hidden;
-                        font-size: 13px;
-                    ">
-                        <thead>
-                            <tr style="background-color:#f8f9fa;">
-                                <th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;width:40%;border-bottom:2px solid #e0e0e0;">{col1}</th>
-                                <th style="padding:10px 12px;text-align:center;font-weight:600;color:#555;width:20%;border-bottom:2px solid #e0e0e0;">{col2}</th>
-                                <th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;">{col3}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        """.format(
+        table_html = (
+            '<div style="margin-top:8px;">'
+            '{heading}'
+            '<hr style="margin:6px 0 12px 0;border:none;border-top:1px solid #eee;">'
+            '{summary}'
+            '<div style="overflow-x:auto;">'
+            '<table style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; font-size: 13px;">'
+            '<thead>'
+            '<tr style="background-color:#f8f9fa;">'
+            '<th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;width:40%;border-bottom:2px solid #e0e0e0;">{col1}</th>'
+            '<th style="padding:10px 12px;text-align:center;font-weight:600;color:#555;width:20%;border-bottom:2px solid #e0e0e0;">{col2}</th>'
+            '<th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;">{col3}</th>'
+            '</tr>'
+            '</thead>'
+            '<tbody>'
+            '{rows}'
+            '</tbody>'
+            '</table>'
+            '</div>'
+            '</div>'
+        ).format(
             heading = heading_html,
             summary = summary_html,
             col1    = _("Program"),

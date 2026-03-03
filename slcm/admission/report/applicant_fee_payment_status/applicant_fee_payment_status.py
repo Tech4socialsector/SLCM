@@ -68,6 +68,18 @@ def get_columns() -> list[dict]:
 			"width": 120
 		},
 		{
+			"label": _("Paid Amount"),
+			"fieldname": "paid_amount",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
+			"label": _("Pending Amount"),
+			"fieldname": "pending_amount",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
 			"label": _("Fee Invoice"),
 			"fieldname": "fee_invoice",
 			"fieldtype": "Link",
@@ -114,6 +126,17 @@ def get_data(filters: dict | None) -> list[dict]:
 		order_by="assignment_date desc"
 	)
 
+	# Calculate paid and pending amounts per row
+	for row in data:
+		total = float(row.get("total_amount") or 0)
+		if row.get("status") == "Paid":
+			row["paid_amount"] = total
+			row["pending_amount"] = 0
+		else:
+			# For now, we treat other statuses as unpaid until actual payment logic is linked
+			row["paid_amount"] = 0
+			row["pending_amount"] = total
+
 	return data
 
 
@@ -144,7 +167,8 @@ def get_report_summary(data: list[dict]) -> list[dict]:
 
 	total_count = len(data)
 	total_amount = sum(float(row.get("total_amount") or 0) for row in data)
-	paid_amount = sum(float(row.get("total_amount") or 0) for row in data if row.get("status") == "Paid")
+	paid_amount = sum(float(row.get("paid_amount") or 0) for row in data)
+	pending_amount = sum(float(row.get("pending_amount") or 0) for row in data)
 
 	return [
 		{
@@ -163,6 +187,12 @@ def get_report_summary(data: list[dict]) -> list[dict]:
 			"value": paid_amount,
 			"indicator": "Green",
 			"label": _("Total Amount Paid"),
+			"datatype": "Currency",
+		},
+		{
+			"value": pending_amount,
+			"indicator": "Red",
+			"label": _("Pending Amount"),
 			"datatype": "Currency",
 		}
 	]

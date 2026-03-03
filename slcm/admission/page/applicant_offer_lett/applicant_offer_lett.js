@@ -42,6 +42,9 @@ class ApplicantOfferLetter {
 
 	render(data) {
 		let me = this;
+		this.page.clear_inner_toolbar();
+		this.page.clear_menu();
+
 		window.cur_page = this;
 		this.data = data;
 		const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid, online_payment_enabled } = data;

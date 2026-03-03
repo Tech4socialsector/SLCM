@@ -131,10 +131,14 @@ def get_chart(data: list[dict]) -> dict:
 	return {
 		"data": {
 			"labels": list(program_counts.keys()),
-			"datasets": [{"values": list(program_counts.values())}],
+			"datasets": [{"name": _("Applicants"), "values": list(program_counts.values())}],
 		},
-		"type": "bar",
-		"colors": chart_colors
+		"type": "line",
+		"colors": ["#1a73e8"],
+		"lineOptions": {
+			"regionFill": 1,
+			"spline": 1
+		}
 	}
 
 

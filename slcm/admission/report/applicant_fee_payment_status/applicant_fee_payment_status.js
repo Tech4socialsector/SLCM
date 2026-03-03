@@ -35,5 +35,12 @@ frappe.query_reports["Applicant Fee Payment Status"] = {
             "fieldtype": "Link",
             "options": "Applicant"
         }
-    ]
+    ],
+    "onload": function (report) {
+        report.page.add_inner_button(__("Refresh"), function () {
+            report.refresh();
+        });
+        report.chart_options = { height: 300 };
+        report.refresh();
+    }
 };

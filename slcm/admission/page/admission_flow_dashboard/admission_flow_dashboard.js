@@ -85,6 +85,13 @@ class AdmissionDashboard {
                         <div id="program-chart"></div>
                     </div>
 
+                    <div id="fee-payment-card" class="chart-card glass-card">
+                        <div class="chart-header">
+                            <h6 class="chart-title">${__('Fee Payment Status')}</h6>
+                        </div>
+                        <div id="fee-payment-chart"></div>
+                    </div>
+
                     <div id="offer-breakdown-card" class="chart-card glass-card full-width">
                         <div class="chart-header">
                             <h6 class="chart-title">${__('Offer Outcomes')}</h6>
@@ -227,6 +234,7 @@ class AdmissionDashboard {
         this.render_gender_distribution(data.gender_dist || []);
         this.render_campus_distribution(data.campus_dist || []);
         this.render_program_distribution(data.program_dist || []);
+        this.render_fee_payment_distribution(data.fee_payment_dist || []);
         this.render_offer_breakdown(data.offer_breakdown || []);
         this.render_category_distribution(data.category_dist || []);
     }
@@ -470,6 +478,24 @@ class AdmissionDashboard {
                 xIsSeries: true
             },
             colors: ['#f59e0b']
+        });
+    }
+
+    render_fee_payment_distribution(dist) {
+        let container = $("#fee-payment-chart").empty();
+        if (!dist.length) {
+            container.append(`<div class="text-center p-5 text-muted">${__('No data available')}</div>`);
+            return;
+        }
+
+        new frappe.Chart("#fee-payment-chart", {
+            data: {
+                labels: dist.map(d => d.label),
+                datasets: [{ values: dist.map(d => d.count) }]
+            },
+            type: 'pie',
+            height: 300,
+            colors: ['#10b981', '#f59e0b', '#3b82f6', '#f43f5e', '#64748b']
         });
     }
 }
