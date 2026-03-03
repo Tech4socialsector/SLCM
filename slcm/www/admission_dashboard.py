@@ -1,5 +1,5 @@
 import frappe
-from slcm.admission.doctype.admission_result.admission_result import get_applicant_data
+from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 
 def get_context(context):
     """

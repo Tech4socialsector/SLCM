@@ -26,8 +26,8 @@ class TestPortalAnnouncement(unittest.TestCase):
     def test_status_options(self):
         meta = frappe.get_meta("Portal Announcement")
         field = next(f for f in meta.fields if f.fieldname == "status")
-        options = field.options.split("
-")
+        options = field.options.split("\n")
+
         self.assertIn("Draft", options)
         self.assertIn("Published", options)
         self.assertIn("Archived", options)

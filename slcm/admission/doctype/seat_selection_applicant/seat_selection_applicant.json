@@ -22,7 +22,7 @@
             "fieldtype": "Link",
             "in_list_view": 1,
             "label": "Applicant",
-            "options": "Admission Result",
+            "options": "Eligibility Result",
             "reqd": 1
         },
         {

@@ -26,10 +26,52 @@ class ScholarshipApplication(Document):
 		self.validate_scheme_mapping()
 		self.validate_requirements()
 		self.validate_stage()
+		self.set_applicant_metadata()
+		self.set_original_fee()
 		self.calculate_benefit()
 		self.validate_rejection_reason()
 		self.validate_approval_authority()
 		self.validate_conflicts()
+
+	def set_applicant_metadata(self):
+		if not self.applicant_id:
+			return
+
+		if not self.applicant_name:
+			self.applicant_name = frappe.db.get_value("Applicant", self.applicant_id, "candidate_name")
+
+	def set_original_fee(self):
+		if not self.applicant_id or not self.program:
+			return
+
+		from slcm.api.service.offer_service import OfferService
+		from slcm.api.service.fee_service import FeeService
+
+		# Resolve admission year
+		campus = self.campus or frappe.db.get_value("Applicant", self.applicant_id, "campus")
+		cycle = self.admission_cycle or frappe.db.get_value("Applicant", self.applicant_id, "admission_cycle")
+		
+		try:
+			admission_year = OfferService.resolve_admission_year(self.applicant_id, campus, cycle)
+			if not admission_year:
+				return
+
+			# Get active config
+			config = OfferService.get_active_config(admission_year, cycle, campus)
+			
+			fee_structure_name = None
+			for row in config.fee_structure:
+				fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
+				if fs_program == self.program:
+					fee_structure_name = row.fee_structure
+					break
+			
+			if fee_structure_name:
+				fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name)
+				self.original_fee_amount = flt(fee_data.get("total_payable") or 0)
+		except Exception:
+			# If resolution fails, we don't block save, but fee might be 0
+			pass
 
 	def prevent_duplicate(self):
 		existing = frappe.db.exists(
@@ -103,9 +145,9 @@ class ScholarshipApplication(Document):
 			)
 			
 			if merit_score is None:
-				# Fallback to Admission Result entrance percentage
+				# Fallback to Eligibility Result entrance percentage
 				merit_score = frappe.db.get_value(
-					"Admission Result",
+					"Eligibility Result",
 					{"applicant_id": self.applicant_id, "admission_cycle": self.admission_cycle},
 					"entrance_percentage"
 				)
@@ -243,7 +285,7 @@ class ScholarshipApplication(Document):
 
 	def apply_financial_effects(self):
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		approved_amt = self.approved_amount or self.calculated_benefit or 0
+		approved_amt = self.calculated_benefit or 0
 
 		scheme.current_beneficiaries += 1
 		scheme.utilized_budget += flt(approved_amt)
@@ -266,9 +308,9 @@ class ScholarshipApplication(Document):
 		old_doc = self.get_doc_before_save()
 		approved_amt = 0
 		if old_doc:
-			approved_amt = old_doc.approved_amount or old_doc.calculated_benefit or 0
+			approved_amt = old_doc.calculated_benefit or 0
 		else:
-			approved_amt = self.approved_amount or self.calculated_benefit or 0
+			approved_amt = self.calculated_benefit or 0
 
 		scheme.current_beneficiaries = max(0, scheme.current_beneficiaries - 1)
 		scheme.utilized_budget = max(0, scheme.utilized_budget - flt(approved_amt))
@@ -281,3 +323,92 @@ class ScholarshipApplication(Document):
 				scheme.status = "Active"
 
 		scheme.save(ignore_permissions=True)
+
+@frappe.whitelist()
+def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):
+	"""
+	Whitelisted method for JS access to fetch original fee amount.
+	"""
+	if not applicant_id or not program:
+		return 0
+
+	from slcm.api.service.offer_service import OfferService
+	from slcm.api.service.fee_service import FeeService
+
+	# Resolve missing fields from Applicant
+	if not campus or not cycle:
+		details = frappe.db.get_value("Applicant", applicant_id, ["campus", "admission_cycle"], as_dict=1)
+		if details:
+			campus = campus or details.campus
+			cycle = cycle or details.admission_cycle
+
+	if not campus or not cycle:
+		return 0
+
+	try:
+		admission_year = OfferService.resolve_admission_year(applicant_id, campus, cycle)
+		if not admission_year:
+			return 0
+
+		config = OfferService.get_active_config(admission_year, cycle, campus)
+		
+		fee_structure_name = None
+		for row in config.fee_structure:
+			fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
+			if fs_program == program:
+				fee_structure_name = row.fee_structure
+				break
+		
+		if fee_structure_name:
+			fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name)
+			return flt(fee_data.get("total_payable") or 0)
+	except Exception:
+		pass
+	
+	return 0
+
+
+@frappe.whitelist()
+def get_applicant_details():
+	"""Returns the applicant record for the current user based on session email."""
+	user = frappe.session.user
+	if user == "Guest" or not user:
+		return None
+	
+	applicant = frappe.db.get_value("Applicant", {"email": user}, 
+		["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
+	return applicant
+
+
+@frappe.whitelist()
+def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cycle):
+	"""Returns a list of eligible scholarship schemes for the applicant."""
+	if not all([applicant_id, program, campus, admission_cycle]):
+		return []
+
+	mappings = frappe.get_all(
+		"Scholarship Scheme Mapping",
+		filters={
+			"admission_cycle": admission_cycle,
+			"campus": campus
+		},
+		fields=["scholarship_scheme", "program", "category"]
+	)
+	
+	applicant_categories = frappe.get_all("Applicant Category", filters={"parent": applicant_id}, fields=["category"])
+	applicant_category_names = [c.category for c in applicant_categories]
+	
+	eligible_schemes = []
+	for m in mappings:
+		# Check program match (mapping has specific program or is global)
+		program_match = not m.program or m.program == program
+		
+		# Check category match (mapping has specific category or is global)
+		category_match = not m.category or m.category in applicant_category_names
+		
+		if program_match and category_match:
+			scheme_status = frappe.db.get_value("Scholarship Scheme", m.scholarship_scheme, "status")
+			if scheme_status == "Active":
+				eligible_schemes.append(m.scholarship_scheme)
+				
+	return list(set(eligible_schemes))
