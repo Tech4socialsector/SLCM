@@ -86,24 +86,63 @@ class EligibilityResultConfiguration(Document):
             "program_level": self.program_level
         }, as_dict=True)
 
-        def get_applicant_marks(applicant_id):
-            """Fetch academic mark fields from Applicant DocType."""
-            return frappe.db.get_value(
-                "Applicant",
-                applicant_id,
-                ["hsc_percentage", "ug_cgpa", "pg_cgpa"],
-                as_dict=True
-            ) or {}
-
-        def compute_percentage(score, max_score=100):
-            """Convert raw score to percentage with safe fallback."""
-            try:
-                return round((float(score or 0) / float(max_score or 100)) * 100, 4)
-            except Exception:
-                return 0.0
+        # Previously we gathered academic marks (HSC, UG/PG CGPA) from
+        # the Applicant document and its child tables.  The current
+        # Eligibility Result doctype no longer contains any of those
+        # fields, so there's no need to fetch them; attempting to read
+        # non‑existent columns was causing SQL errors.  All scoring
+        # information is now taken directly from the source records.
 
         count = 0
 
+        def get_applicant_education(applicant_id, program_level):
+            """Fetch education-related fields from the Applicant doc.
+            Rules:
+            - UG: only return `hsc_group` and `hsc_percentage`.
+            - PG / Research Course: return `hsc_group`, `hsc_percentage`
+              and copy `pg_degree_details` rows (if any).
+            """
+            edu = {
+                "hsc_group": None,
+                "hsc_percentage": None,
+                "ug_degree_details": [],
+                "pg_degree_details": []
+            }
+
+            try:
+                app = frappe.get_doc("Applicant", applicant_id)
+            except Exception:
+                return edu
+
+            edu["hsc_group"] = getattr(app, "hsc_group", None)
+            edu["hsc_percentage"] = getattr(app, "hsc_percentage", None)
+
+            if (program_level or "").strip() in ("PG", "Research Course"):
+                # copy UG degree rows if present (PG applicants need their UG transcript)
+                for row in getattr(app, "ug_degree_details", []) or []:
+                    edu["ug_degree_details"].append({
+                        "ug_program": getattr(row, "ug_program", None),
+                        "ug_cgpa": getattr(row, "ug_cgpa", None),
+                        "percentage_cgpa_obtained": getattr(row, "percentage_cgpa_obtained", None),
+                        "year_of_completion": getattr(row, "year_of_completion", None),
+                        "college": getattr(row, "college", None),
+                        "degree_certificate": getattr(row, "degree_certificate", None),
+                        "marksheets": getattr(row, "marksheets", None)
+                    })
+
+                # also copy any PG degree details they may have entered (rare)
+                for row in getattr(app, "pg_degree_details", []) or []:
+                    edu["pg_degree_details"].append({
+                        "pg_program": getattr(row, "pg_program", None),
+                        "pg_cgpa": getattr(row, "pg_cgpa", None),
+                        "percentagecgpa_obtained": getattr(row, "percentagecgpa_obtained", None),
+                        "year_of_completion": getattr(row, "year_of_completion", None),
+                        "collegeuniversity": getattr(row, "collegeuniversity", None),
+                        "pg_degree_certificatebonafide_certificate_to_be_uploaded": getattr(row, "pg_degree_certificatebonafide_certificate_to_be_uploaded", None),
+                        "transcriptsmarksheets_to_be_uploaded": getattr(row, "transcriptsmarksheets_to_be_uploaded", None)
+                    })
+
+            return edu
         def upsert_result(data, source_type):
             nonlocal count
             existing = frappe.db.get_value("Eligibility Result", {"applicant_id": data.applicant_id}, "name")
@@ -113,9 +152,9 @@ class EligibilityResultConfiguration(Document):
                 res = frappe.new_doc("Eligibility Result")
                 res.applicant_id = data.applicant_id
 
-            # Fetch academic marks from Applicant DocType
-            marks = get_applicant_marks(data.applicant_id)
-
+            # Populate only the fields that actually exist on the
+            # Eligibility Result doctype.  Marks and percentages were
+            # removed from the schema earlier, so we no longer store them.
             res.candidate_name = data.candidate_name
             res.email = data.email
             res.gender = data.gender
@@ -126,18 +165,29 @@ class EligibilityResultConfiguration(Document):
             res.admission_cycle = data.admission_cycle
             res.campus = data.campus
 
-            # Raw scores from Interview/Entrance Test Seat Allocation
+            # retain the raw scores if provided (these fields are still
+            # defined on Eligibility Result)
             res.entrance_test_score = data.get("entrance_test_score") or 0
             res.interview_score = data.get("interview_score") or 0
 
-            # Derive percentages (if not directly on the source doc, compute from raw score)
-            res.entrance_percentage = compute_percentage(res.entrance_test_score)
-            res.interview_percentage = compute_percentage(res.interview_score)
+            # Fetch and populate education details from Applicant
+            edu = get_applicant_education(data.applicant_id, data.program_level)
+            # always write HSC values (may be blank)
+            res.hsc_group = edu.get("hsc_group")
+            res.hsc_percentage = edu.get("hsc_percentage")
 
-            # Academic marks from Applicant
-            res.hsc_percentage = marks.get("hsc_percentage") or 0
-            res.ug_cgpa = marks.get("ug_cgpa") or 0
-            res.pg_cgpa = marks.get("pg_cgpa") or 0
+            # clear existing child tables first
+            if getattr(res, "ug_degree_details", None):
+                res.set("ug_degree_details", [])
+            if getattr(res, "pg_degree_details", None):
+                res.set("pg_degree_details", [])
+
+            # populate both UG and PG rows for PG/Research applicants
+            if (data.program_level or "").strip() in ("PG", "Research Course"):
+                for row in edu.get("ug_degree_details", []) or []:
+                    res.append("ug_degree_details", row)
+                for row in edu.get("pg_degree_details", []) or []:
+                    res.append("pg_degree_details", row)
 
             res.source_type = source_type
             res.result_status = "Qualified"
