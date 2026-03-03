@@ -15,7 +15,7 @@ def get_columns():
             "label": "Applicant",
             "fieldname": "applicant",
             "fieldtype": "Link",
-            "options": "Admission Result",
+            "options": "Applicant",
             "width": 150
         },
         {
@@ -63,7 +63,7 @@ def get_data(filters):
     query = """
         SELECT
             mla.applicant,
-            aa.applicant_id,
+            mla.applicant_id,
             mla.program,
             ml.campus,
             mla.reservation_category,
@@ -75,10 +75,6 @@ def get_data(filters):
             `tabMerit List` ml
         ON
             mla.parent = ml.name
-        JOIN
-            `tabAdmission Result` aa
-        ON
-            mla.applicant = aa.name
         WHERE
             ml.admission_cycle = %(cycle)s
             AND ml.campus = %(campus)s

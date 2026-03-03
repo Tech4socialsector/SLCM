@@ -7,21 +7,17 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     using the 'Seat Allocation Result Notification' template record and logs it.
     """
     try:
-        applicant_doc = frappe.get_doc("Admission Result", applicant)
+        # Load the Applicant document directly
+        applicant_doc = frappe.get_doc("Applicant", applicant)
     except frappe.DoesNotExistError:
-        frappe.logger().error(f"Notification error: Admission Result '{applicant}' not found.")
+        frappe.logger().error(f"Notification error: Applicant '{applicant}' not found.")
         return
  
-    # Resolve email: Try Admission Result first, then fallback to Applicant
-    email = getattr(applicant_doc, "email", None) or getattr(applicant_doc, "email_id", None)
-    
-    if not email and applicant_doc.applicant_id:
-        email = frappe.db.get_value("Applicant", applicant_doc.applicant_id, "email")
-        if email:
-            frappe.logger().info(f"Notification: Using fallback email from Applicant {applicant_doc.applicant_id} for {applicant}")
+    # Resolve email from Applicant record
+    email = applicant_doc.email
  
     if not email:
-        frappe.logger().warning(f"Notification skipped: No email found for applicant {applicant} (ID: {applicant_doc.applicant_id})")
+        frappe.logger().warning(f"Notification skipped: No email found for applicant {applicant}")
         return
  
     # Fetch and render the Email Template record
@@ -50,7 +46,7 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
  
     args = {
         "doc": doc_context,
-        "applicant_name": applicant_doc.applicant_name or applicant,
+        "applicant_name": applicant_doc.candidate_name or applicant,
         "program": program,
         "admission_cycle": admission_cycle,
         "status": new_status,
@@ -126,17 +122,18 @@ def notify_published_allocation(allocation_name):
         allocated_status_map[row.applicant] = row.selection_status
         allocated_rows_map[row.applicant] = row
  
-    # 2. Fetch all Admission Results for this cycle and campus
+    # 2. Fetch all Applicants for this cycle and campus
     # This ensures even those NOT in the Merit List (Ineligible etc.) get a notification
     filters = {
         "admission_cycle": allocation.admission_cycle,
-        "campus": allocation.campus
+        "campus": allocation.campus,
+        "docstatus": 1
     }
     # Filter by program level if the Seat Allocation is specific
     if allocation.program_level:
         filters["program_level"] = allocation.program_level
  
-    all_applicants = frappe.get_all("Admission Result", filters=filters, fields=["name", "program"])
+    all_applicants = frappe.get_all("Applicant", filters=filters, fields=["name", "program"])
  
     frappe.logger().info(f"Notification: Bulk publishing {allocation_name}. Candidates in allocation: {len(allocated_status_map)}, Total applicants to notify: {len(all_applicants)}")
  

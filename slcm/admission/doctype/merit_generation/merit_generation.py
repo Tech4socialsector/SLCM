@@ -46,11 +46,12 @@ class MeritGeneration(Document):
 
         # 2. Check if applicants exist for this program level
         applicants = frappe.db.sql("""
-            SELECT ar.name 
-            FROM `tabAdmission Result` ar
-            WHERE ar.admission_cycle = %(cycle)s
-              AND ar.program_level = %(level)s
-              AND ar.campus = %(campus)s
+            SELECT a.name 
+            FROM `tabApplicant` a
+            WHERE a.admission_cycle = %(cycle)s
+              AND a.program_level = %(level)s
+              AND a.campus = %(campus)s
+              AND a.docstatus = 1
             LIMIT 1
         """, {
             "cycle": self.admission_cycle,

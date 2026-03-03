@@ -15,7 +15,7 @@ def get_columns():
             "label": _("Applicant"),
             "fieldname": "applicant",
             "fieldtype": "Link",
-            "options": "Admission Result",
+            "options": "Applicant",
             "width": 180
         },
         {

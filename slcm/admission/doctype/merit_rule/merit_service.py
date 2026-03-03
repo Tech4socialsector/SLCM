@@ -122,15 +122,17 @@ def generate_merit_for_level(cycle, campus, program_level):
     rule = frappe.get_doc("Merit Rule", merit_rule_name)
 
     # Fetch applicants for this program level
+    # Fetch applicants for this program level from Applicant DocType
     applicants = frappe.get_all(
-        "Admission Result",
+        "Applicant",
         filters={
             "admission_cycle": cycle,
             "campus": campus,
-            "program_level": program_level
+            "program_level": program_level,
+            "docstatus": 1
         },
         fields=[
-            "name", "applicant_id", "program", "program_level", "reservation_category",
+            "name", "program", "program_level", "reservation_category",
             "hsc_percentage", "entrance_percentage", "interview_percentage",
             "ug_cgpa", "pg_cgpa"
         ]
@@ -154,7 +156,7 @@ def generate_merit_for_level(cycle, campus, program_level):
         total_score = calculate_merit_with_rule(app, rule)
         merit.append("merit_applicants", {
             "applicant": app.name,
-            "applicant_id": app.applicant_id,
+            "applicant_id": app.name, # Name is the ID in Applicant DocType
             "program": app.program,
             "program_level": app.program_level,
             "reservation_category": app.reservation_category,

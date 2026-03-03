@@ -83,6 +83,10 @@
   "class_xii_school",
   "hsc_group",
   "hsc_percentage",
+  "entrance_percentage",
+  "interview_percentage",
+  "ug_cgpa",
+  "pg_cgpa",
   "column_break_mlet",
   "class_xii_year_of_completion",
   "class_xii_cgpa",
@@ -824,6 +828,26 @@
    "label": "Xll Percentage ",
    "non_negative": 1,
    "precision": "2"
+  },
+  {
+   "fieldname": "entrance_percentage",
+   "fieldtype": "Float",
+   "label": "Entrance Test Percentage"
+  },
+  {
+   "fieldname": "interview_percentage",
+   "fieldtype": "Float",
+   "label": "Interview Percentage"
+  },
+  {
+   "fieldname": "ug_cgpa",
+   "fieldtype": "Float",
+   "label": "UG CGPA"
+  },
+  {
+   "fieldname": "pg_cgpa",
+   "fieldtype": "Float",
+   "label": "PG CGPA"
   },
   {
    "fieldname": "hsc_group",
