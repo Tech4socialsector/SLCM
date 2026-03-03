@@ -17,14 +17,11 @@ class EligibilityResultConfiguration(Document):
     @frappe.whitelist()
     def generate_result(self):
         """
-        Generates Eligibility Result records from:
-        1. Interview Seat Allocation (interview_result_status = 'Pass')
-        2. Applicant (dual exemption: entrance test & interview)
-        3. Entrance Test Seat Allocation (result_status = 'Pass' AND exempts_interview = 1)
-        
-        Also enriches each record with academic marks from the Applicant DocType:
-        hsc_percentage, ug_cgpa, pg_cgpa, entrance_percentage, interview_percentage
+        Generates Eligibility Result records.
         """
+        # Force reload the doctype to ensure the latest source_type options are picked up
+        frappe.reload_doc("admission", "doctype", "eligibility_result")
+
         if self.status not in ["Draft", "In Progress", "Failed"]:
             frappe.throw("Document must be in Draft, In Progress, or Failed to generate results.")
 
@@ -136,7 +133,8 @@ class EligibilityResultConfiguration(Document):
                 "hsc_group": None,
                 "hsc_percentage": None,
                 "ug_degree_details": [],
-                "pg_degree_details": []
+                "pg_degree_details": [],
+                "categories": ""
             }
 
             try:
@@ -146,6 +144,10 @@ class EligibilityResultConfiguration(Document):
 
             edu["hsc_group"] = getattr(app, "hsc_group", None)
             edu["hsc_percentage"] = getattr(app, "hsc_percentage", None)
+
+            # Join additional categories from the child table into a string
+            cats = [row.category for row in getattr(app, "categories", []) if row.category]
+            edu["categories"] = ", ".join(cats) if cats else ""
 
             if (program_level or "").strip() in ("PG", "Research Course"):
                 # copy UG degree rows if present (PG applicants need their UG transcript)
@@ -189,20 +191,29 @@ class EligibilityResultConfiguration(Document):
             res.email = data.email
             res.gender = data.gender
             res.reservation_category = data.get("reservation_category")
+            
+            # Fetch and populate education and category details from Applicant
+            edu = get_applicant_education(data.applicant_id, data.program_level)
+            res.categories = edu.get("categories")
             res.program = data.program
             res.program_level = data.program_level
             res.academic_year = data.academic_year
             res.admission_cycle = data.admission_cycle
             res.campus = data.campus
 
-            # retain the raw scores if provided (these fields are still
-            # defined on Eligibility Result)
-            res.entrance_test_score = data.get("entrance_test_score") or 0
-            res.interview_score = data.get("interview_score") or 0
+            # Populate scores. For exempted stages, assign 100 as per user request.
+            if source_type == "Exempted":
+                res.entrance_test_score = 100
+                res.interview_score = 100
+            elif source_type == "ET Pass (Interview Exempt)":
+                res.entrance_test_score = data.get("entrance_test_score") or 0
+                res.interview_score = 100
+            else:
+                res.entrance_test_score = data.get("entrance_test_score") or 0
+                res.interview_score = data.get("interview_score") or 0
 
-            # Fetch and populate education details from Applicant
-            edu = get_applicant_education(data.applicant_id, data.program_level)
-            # always write HSC values (may be blank)
+            # res.hsc_group already set via 'edu' above
+            # res.hsc_percentage already set via 'edu' above
             res.hsc_group = edu.get("hsc_group")
             res.hsc_percentage = edu.get("hsc_percentage")
 
