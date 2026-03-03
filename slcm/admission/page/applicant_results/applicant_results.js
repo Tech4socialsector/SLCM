@@ -440,9 +440,7 @@ frappe.pages["applicant-results"].on_page_load = function (wrapper) {
     function render_apps(apps) {
         const rows = apps.map(a => {
             const st = (a.status || "").toLowerCase().replace(/ /g, "-");
-            const amt = a.approved_amount
-                ? `₹${frappe.format(a.approved_amount, { fieldtype: "Currency" })}`
-                : (a.calculated_benefit ? `₹${frappe.format(a.calculated_benefit, { fieldtype: "Currency" })} (est.)` : "—");
+            const amt = a.calculated_benefit ? `₹${frappe.format(a.calculated_benefit, { fieldtype: "Currency" })}` : "—";
             return `<tr>
                 <td>${esc(a.scholarship_scheme || "")}</td>
                 <td><span class="ar-pill ${st}">${a.status || ""}</span></td>

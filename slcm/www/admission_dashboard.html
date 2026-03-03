@@ -299,8 +299,7 @@
                                 class="status-badge status-{{ app.status.lower().replace(' ', '-') }}">{{ app.status
                                 }}</span>
                             {% if app.status == 'Approved' %}
-                            | Amount: <span style="color: var(--success); font-weight: 700;">₹ {{ app.approved_amount or
-                                app.calculated_benefit }}</span>
+                            | Amount: <span style="color: var(--success); font-weight: 700;">₹ {{ app.calculated_benefit }}</span>
                             {% endif %}
                         </p>
                     </div>

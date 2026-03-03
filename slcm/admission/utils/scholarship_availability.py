@@ -68,7 +68,7 @@ def get_applied_scholarships_for_dashboard(applicant_id):
     return frappe.get_all(
         "Scholarship Application",
         filters={"applicant_id": applicant_id},
-        fields=["name", "scholarship_scheme", "status", "calculated_benefit", "approved_amount", "creation"],
+        fields=["name", "scholarship_scheme", "status", "calculated_benefit", "creation"],
         order_by="creation desc"
     )
 

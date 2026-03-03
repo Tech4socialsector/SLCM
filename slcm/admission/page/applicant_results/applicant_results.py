@@ -129,7 +129,7 @@ def get_my_results():
         my_applications = frappe.get_all(
             "Scholarship Application",
             filters={"applicant_id": applicant.name},
-            fields=["name", "scholarship_scheme", "status", "calculated_benefit", "approved_amount", "creation"],
+            fields=["name", "scholarship_scheme", "status", "calculated_benefit", "creation"],
             order_by="creation desc"
         )
         result["my_scholarship_applications"] = my_applications

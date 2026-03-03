@@ -285,7 +285,7 @@ class ScholarshipApplication(Document):
 
 	def apply_financial_effects(self):
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		approved_amt = self.approved_amount or self.calculated_benefit or 0
+		approved_amt = self.calculated_benefit or 0
 
 		scheme.current_beneficiaries += 1
 		scheme.utilized_budget += flt(approved_amt)
@@ -308,9 +308,9 @@ class ScholarshipApplication(Document):
 		old_doc = self.get_doc_before_save()
 		approved_amt = 0
 		if old_doc:
-			approved_amt = old_doc.approved_amount or old_doc.calculated_benefit or 0
+			approved_amt = old_doc.calculated_benefit or 0
 		else:
-			approved_amt = self.approved_amount or self.calculated_benefit or 0
+			approved_amt = self.calculated_benefit or 0
 
 		scheme.current_beneficiaries = max(0, scheme.current_beneficiaries - 1)
 		scheme.utilized_budget = max(0, scheme.utilized_budget - flt(approved_amt))
