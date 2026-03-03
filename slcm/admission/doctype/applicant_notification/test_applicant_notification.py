@@ -14,7 +14,7 @@ class TestApplicantNotification(unittest.TestCase):
         meta = frappe.get_meta("Applicant Notification")
         field = next((f for f in meta.fields if f.fieldname == "notification_type"), None)
         self.assertIsNotNone(field)
-        options = field.options.split("
-")
+        options = field.options.split("\n")
+
         for t in ["Stage Update", "Document Request", "Offer", "Fee", "General"]:
             self.assertIn(t, options)

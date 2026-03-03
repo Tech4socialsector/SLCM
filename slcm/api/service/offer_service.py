@@ -429,7 +429,7 @@ class OfferService:
                         "parenttype": "Seat Allocation",
                         "selection_status": ["in", ["Selected", "Accepted"]]
                     }
-                    if frappe.db.exists("Admission Result", applicant_name):
+                    if frappe.db.exists("Eligibility Result", applicant_name):
                          sa_child_filters["applicant"] = applicant_name
                     else:
                          sa_child_filters["applicant_id"] = applicant_name
