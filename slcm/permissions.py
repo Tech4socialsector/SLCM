@@ -94,3 +94,64 @@ def seat_allocation_query_conditions(user):
         return f"`tabEntrance Test Seat Allocation`.email = '{user}'"
 
     return ""    
+# ==========================================================
+# INTERVIEW STAFF MEMBER - SELF RECORD ONLY
+# ==========================================================
+
+def interview_staff_member_query_conditions(user):
+
+    if user == "Administrator":
+        return ""
+
+    roles = frappe.get_roles(user)
+
+    if "Interview Staff Member" in roles:
+
+        staff_name = frappe.db.get_value(
+            "Interview Staff Member",
+            {"user": user},
+            "name"
+        )
+
+        if not staff_name:
+            return "1=0"
+
+        return f"`tabInterview Staff Member`.name = '{staff_name}'"
+
+    return ""
+
+
+# ==========================================================
+# INTERVIEW SEAT ALLOCATION - ROLE BASED FILTER
+# ==========================================================
+
+def interview_seat_allocation_query_conditions(user):
+
+    if user == "Administrator":
+        return ""
+
+    roles = frappe.get_roles(user)
+
+    # -----------------------------
+    # Applicant Restriction
+    # -----------------------------
+    if "Applicant" in roles:
+        return f"`tabInterview Seat Allocation`.email = '{user}'"
+
+    # -----------------------------
+    # Interview Staff Member Restriction
+    # -----------------------------
+    if "Interview Staff Member" in roles:
+
+        staff_name = frappe.db.get_value(
+            "Interview Staff Member",
+            {"user": user},
+            "name"
+        )
+
+        if not staff_name:
+            return "1=0"
+
+        return f"`tabInterview Seat Allocation`.interview_staff_member = '{staff_name}'"
+
+    return ""

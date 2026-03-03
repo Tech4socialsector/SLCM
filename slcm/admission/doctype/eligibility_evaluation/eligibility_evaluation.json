@@ -9,15 +9,17 @@
   "applicant_name",
   "academic_year",
   "admission_cycle",
+  "column_break_bpot",
   "campus",
   "program",
   "reservation_category",
   "evaluation_result_section",
-  "evaluation_status",
   "exempts_entrance_test",
   "exempts_interview",
-  "failure_message",
-  "program_eligibility_details"
+  "evaluation_status",
+  "column_break_pbte",
+  "program_eligibility_details",
+  "failure_message"
  ],
  "fields": [
   {
@@ -99,12 +101,20 @@
    "fieldname": "program_eligibility_details",
    "fieldtype": "HTML",
    "label": "Program Eligibility Details"
+  },
+  {
+   "fieldname": "column_break_bpot",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_pbte",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 14:35:36.672684",
+ "modified": "2026-03-03 11:10:10.869097",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Evaluation",
