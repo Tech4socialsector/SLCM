@@ -24,7 +24,7 @@ fixtures = [
     {
         "doctype": "Role",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member"]]
         ]
     },
     {
@@ -36,7 +36,7 @@ fixtures = [
     {
         "doctype": "Role Profile",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member"]]
         ]
     }
 ]
@@ -346,4 +346,8 @@ permission_query_conditions = {
 
     # Seat Allocation - filtered based on role
     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
+
+    # New
+    "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
+    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
 }

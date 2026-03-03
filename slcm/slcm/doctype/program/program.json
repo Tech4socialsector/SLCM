@@ -144,7 +144,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2026-03-01 18:35:50.807110",
+ "modified": "2026-03-03 11:52:56.358537",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",
@@ -197,6 +197,16 @@
    "read": 1,
    "report": 1,
    "role": "Entrance Test Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Staff Member",
    "share": 1,
    "write": 1
   }

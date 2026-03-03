@@ -12,6 +12,7 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Program ",
    "options": "Program"
   }
@@ -20,7 +21,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-17 11:30:13.774724",
+ "modified": "2026-03-03 11:09:25.464472",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Program",
