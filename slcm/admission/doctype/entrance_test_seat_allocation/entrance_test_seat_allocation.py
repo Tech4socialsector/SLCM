@@ -16,36 +16,131 @@ class EntranceTestSeatAllocation(Document):
 
 
 @frappe.whitelist()
-def update_ranks_by_category(academic_year, admission_cycle, program_level):
+def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None):
     """
-    Ranks applicants based on score_obtained for a given batch.
+    Ranks applicants based on score_obtained for a given batch and sends result emails.
     Filters: Academic Year, Admission Cycle, Program Level.
-    Only includes those marked as 'Attended'.
+    Optional: entrance_test_list
     """
     if not (academic_year and admission_cycle and program_level):
         frappe.throw("Academic Year, Admission Cycle, and Program Level are required for ranking.")
 
-    # Fetch records sorted by score_obtained descending
-    records = frappe.get_all("Entrance Test Seat Allocation",
-        filters={
-            "academic_year": academic_year,
-            "admission_cycle": admission_cycle,
-            "program_level": program_level,
-            "entrance_test_status": "Attended"
-        },
+    # 1. Rank Attended applicants
+    attended_filters = {
+        "academic_year": academic_year,
+        "admission_cycle": admission_cycle,
+        "program_level": program_level,
+        "entrance_test_status": "Attended"
+    }
+    if entrance_test_list:
+        attended_filters["entrance_test_list"] = entrance_test_list
+
+    attended_records = frappe.get_all("Entrance Test Seat Allocation",
+        filters=attended_filters,
         fields=["name", "score_obtained"],
         order_by="score_obtained desc"
     )
 
-    if not records:
-        return 0
-
-    # Assign ranks
-    for i, rec in enumerate(records, start=1):
+    for i, rec in enumerate(attended_records, start=1):
         frappe.db.set_value("Entrance Test Seat Allocation", rec.name, "entrance_test_rank", i, update_modified=False)
 
     frappe.db.commit()
-    return len(records)
+
+    # 2. Fetch ALL applicants (Attended + Absent) to send notifications
+    all_filters = {
+        "academic_year": academic_year,
+        "admission_cycle": admission_cycle,
+        "program_level": program_level,
+        "entrance_test_status": ["in", ["Attended", "Absent"]]
+    }
+    if entrance_test_list:
+        all_filters["entrance_test_list"] = entrance_test_list
+
+    all_records = frappe.get_all("Entrance Test Seat Allocation",
+        filters=all_filters,
+        fields=["name", "applicant", "candidate_name", "email", "entrance_test_status", 
+                "score_obtained", "total_score", "entrance_test_rank", "entrance_test_list"]
+    )
+
+    count = 0
+    for rec in all_records:
+        doc = frappe.get_doc("Entrance Test Seat Allocation", rec.name)
+        
+        # Resolve email
+        email = doc.email or ""
+        if not email and doc.applicant:
+            try:
+                app_email = frappe.db.get_value("Applicant", doc.applicant, "email_id")
+                if app_email:
+                    email = app_email
+            except Exception:
+                pass
+
+        if email:
+            try:
+                _send_result_notification_email(doc, email)
+                count += 1
+            except Exception:
+                frappe.log_error(title=f"Result Email Failed: {doc.name}")
+
+    return count
+
+
+def _send_result_notification_email(doc, email):
+    """Send a result/rank notification email to the applicant."""
+    from frappe.utils import get_url_to_form
+    url = get_url_to_form("Entrance Test Seat Allocation", doc.name)
+
+    status_color = "#2e7d32" if doc.entrance_test_status == "Attended" else "#c62828"
+    
+    score_html = ""
+    if doc.entrance_test_status == "Attended":
+        score_html = f"""
+        <div style="background:#f1f8e9; border:1px solid #c5e1a5; padding:15px; border-radius:8px; margin:20px 0;">
+            <p style="margin:5px 0;"><strong>Score Obtained:</strong> {doc.score_obtained or 0} / {doc.total_score or 0}</p>
+            <p style="margin:5px 0;"><strong>Final Rank:</strong> <span style="font-size:18px; color:#2e7d32; font-weight:bold;">{doc.entrance_test_rank or '—'}</span></p>
+        </div>
+        """
+    else:
+        score_html = f"""
+        <div style="background:#ffebee; border:1px solid #ffcdd2; padding:15px; border-radius:8px; margin:20px 0;">
+            <p style="margin:5px 0; color:#c62828;"><strong>Status:</strong> Absent</p>
+            <p style="margin:5px 0; font-size:12px; color:#666;">You were marked as absent for this test. Since no score was recorded, no rank has been assigned.</p>
+        </div>
+        """
+
+    msg = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+        <h2 style="color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px;">Entrance Test Result</h2>
+        <p>Dear {doc.candidate_name or doc.applicant},</p>
+        <p>The results for your entrance test have been processed. Below are your details:</p>
+        
+        <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Applicant ID:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">{doc.applicant}</td></tr>
+            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Test Name:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">{doc.entrance_test_list}</td></tr>
+            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Status:</strong></td><td style="padding:8px; border-bottom:1px solid #eee; color:{status_color}; font-weight:bold;">{doc.entrance_test_status}</td></tr>
+        </table>
+
+        {score_html}
+
+        <p>You can view your detailed record and breakdown by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{url}" style="display:inline-block; padding:12px 24px; background:#1565c0; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold;">View My Result in Portal</a>
+        </div>
+        
+        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px;">
+            This corresponds to record: {doc.name}. If you cannot click the button, copy this link: {url}
+        </p>
+    </div>
+    """
+
+    frappe.sendmail(
+        recipients=[email],
+        subject=f"Entrance Test Result — {doc.candidate_name or doc.applicant}",
+        message=msg,
+        reference_doctype="Entrance Test Seat Allocation",
+        reference_name=doc.name
+    )
 
 
 @frappe.whitelist()
@@ -132,10 +227,6 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
 
     frappe.db.commit()
     return count
-
-
-    frappe.db.commit()
-    return len(records)
 
 
 def _send_reschedule_email(doc, email):

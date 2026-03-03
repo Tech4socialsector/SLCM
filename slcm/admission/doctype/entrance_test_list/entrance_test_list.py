@@ -207,74 +207,54 @@ class EntranceTestList(Document):
 
 
 def _send_allocation_email(allocation, email):
-    """Send a simple HTML email to the applicant with their allocation and preference details."""
-    try:
-        from frappe.utils import get_url_to_form
-        url = get_url_to_form("Entrance Test Seat Allocation", allocation.name)
+    """Send a premium result/allocation email to the applicant."""
+    from frappe.utils import get_url_to_form
+    url = get_url_to_form("Entrance Test Seat Allocation", allocation.name)
 
-        prefs_html = ""
-        if getattr(allocation, 'assigned_preferences', None):
-            prefs_html = "<ul>"
-            for p in allocation.assigned_preferences:
-                prefs_html += f"<li>{getattr(p, 'preference_order', '')}. {p.center_name or p.provider} ({p.provider})</li>"
-            prefs_html += "</ul>"
+    prefs_html = ""
+    if getattr(allocation, 'assigned_preferences', None):
+        prefs_html = '<div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"><strong>Assigned Center Options:</strong><ul style="margin:10px 0; padding-left:20px; color:#555;">'
+        for p in allocation.assigned_preferences:
+            prefs_html += f"<li>{getattr(p, 'preference_order', '')}. {p.center_name or p.provider} ({p.provider})</li>"
+        prefs_html += "</ul></div>"
 
-        applicant_info = f"""
-        <p><strong>Applicant Details</strong><br>
-        Name: {allocation.candidate_name or ''}<br>
-        Application No: {allocation.applicant or ''}<br>
-        Email: {email}<br>
-        Gender: {allocation.gender or ''}<br>
-        Reservation Category: {allocation.reservation_category or ''}
-        </p>
-        """
-
-        program_info = f"""
-        <p><strong>Program Details</strong><br>
-        Entrance Test Name: {allocation.entrance_test_name or allocation.entrance_test_list or ''}<br>
-        Program: {allocation.program or ''}<br>
-        Program Level: {allocation.program_level or ''}<br>
-        Academic Year: {allocation.academic_year or ''}<br>
-        Admission Cycle: {allocation.admission_cycle or ''}<br>
-        Campus: {allocation.campus or ''}
-        </p>
-        """
-
-        allocation_info = f"""
-        <p><strong>Allocation</strong><br>
-        Allocation Date/Time (admin): {allocation.allocation_date or 'Not set'}<br>
-        Current Status: {allocation.allocation_status or 'Not set'}<br>
-        Seat No: {allocation.seat_number or '-'}<br>
-        Room: {allocation.room_name or '-'}<br>
-        Building: {allocation.building or '-'}<br>
-        Floor: {allocation.floor or '-'}<br>
-        Center: {allocation.center_name or '-'}
-        </p>
-        """
-
-        msg = f"""
+    msg = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
+        <h2 style="color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; margin-top: 0;">Entrance Test — Seat Allocation</h2>
         <p>Dear {allocation.candidate_name or allocation.applicant},</p>
-        {applicant_info}
-        {program_info}
-        {allocation_info}
-        <p><strong>Assigned Preferences</strong>{prefs_html}</p>
-        <p>
-            <a href="{url}" style="display:inline-block;padding:10px 14px;background:#1565c0;color:#fff;border-radius:4px;text-decoration:none;">Choose the preferences for Entrance test</a>
-        </p>
-        <p>If the button above does not work, open: {url}</p>
-        """
+        <p>We are pleased to inform you that your registration for the entrance test has been processed. You can now proceed to <strong>choose your preferred test center</strong>.</p>
+        
+        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>Test Details:</strong></p>
+            <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+                <tr><td style="padding:5px 0; color:#666;">Application No:</td><td style="padding:5px 0; font-weight:bold;">{allocation.applicant}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Entrance Test:</td><td style="padding:5px 0; font-weight:bold;">{allocation.entrance_test_name or allocation.entrance_test_list}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Campus:</td><td style="padding:5px 0; font-weight:bold;">{allocation.campus}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Program:</td><td style="padding:5px 0; font-weight:bold;">{allocation.program}</td></tr>
+            </table>
+            {prefs_html}
+        </div>
 
-        frappe.sendmail(
-            recipients=[email],
-            subject=f"Entrance Test — Seat Allocation for {allocation.candidate_name or allocation.applicant}",
-            message=msg,
-            reference_doctype="Entrance Test Seat Allocation",
-            reference_name=allocation.name
-        )
-    except Exception as e:
-        import traceback
-        frappe.log_error(message=traceback.format_exc(), title="Send Allocation Email Error")
-        raise
+        <p>Please click the button below to log in and select your center from the available options. Seats are allocated on a first-come, first-served basis.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{url}" style="display:inline-block; padding:12px 28px; background:#1565c0; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">Choose Your Test Center</a>
+        </div>
+        
+        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
+            Record Reference: {allocation.name}<br>
+            If the button doesn't work, copy this link: {url}
+        </p>
+    </div>
+    """
+
+    frappe.sendmail(
+        recipients=[email],
+        subject=f"Entrance Test Seat Allocation — {allocation.candidate_name or allocation.applicant}",
+        message=msg,
+        reference_doctype="Entrance Test Seat Allocation",
+        reference_name=allocation.name
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
