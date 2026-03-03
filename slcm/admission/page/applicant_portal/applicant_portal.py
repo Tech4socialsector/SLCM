@@ -1,4 +1,8 @@
+# Access disabled — replaced by www pages in Phase 17
 import frappe
+
+def has_permission():
+    return False
 
 def get_context(context):
     """

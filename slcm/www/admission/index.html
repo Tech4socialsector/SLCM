@@ -1,0 +1,283 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block title %}{{ portal_config.get('portal_title') if portal_config and portal_config.get else
+(portal_config.portal_title if portal_config else 'Admissions') }}{% endblock %}
+
+{% block extra_css %}
+.stats-bar { display:flex; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.07); overflow:hidden;
+margin-bottom:28px; }
+.stats-bar-item { flex:1; text-align:center; padding:20px 12px; border-right:1px solid var(--border); }
+.stats-bar-item:last-child { border-right:none; }
+.stats-bar-value { font-size:26px; font-weight:700; color:var(--primary); }
+.stats-bar-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
+.announce-strip { background:var(--primary-light); border:1px solid #c8d8f0; border-radius:10px; padding:10px 20px;
+margin-bottom:24px; display:flex; gap:28px; align-items:center; overflow-x:auto; font-size:13px; color:var(--primary);
+font-weight:500; }
+.announce-strip span::before { content:"📢 "; }
+.hero-wrap { position:relative; border-radius:12px; overflow:hidden; margin-bottom:28px; height:280px;
+background:var(--primary); }
+.hero-slide { display:none; height:280px; position:relative; }
+.hero-slide.active { display:block; }
+.hero-slide img { width:100%; height:280px; object-fit:cover; }
+.hero-slide-caption { position:absolute; bottom:0; left:0; right:0;
+background:linear-gradient(transparent,rgba(0,0,0,0.55)); color:#fff; padding:20px 24px; font-size:16px;
+font-weight:600; }
+.hero-dots { position:absolute; bottom:12px; right:16px; display:flex; gap:6px; }
+.hero-dot { width:8px; height:8px; border-radius:50%; border:none; padding:0; cursor:pointer;
+background:rgba(255,255,255,0.4); }
+.hero-dot.active { background:#fff; }
+.programs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:24px; }
+.prog-card-img { width:100%; height:180px; object-fit:cover; }
+.prog-card-placeholder { width:100%; height:180px; background:var(--primary-light); display:flex; align-items:center;
+justify-content:center; font-size:52px; font-weight:800; color:var(--primary); opacity:0.25; }
+.prog-card-body { padding:16px; }
+.prog-card-title { font-size:16px; font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between;
+align-items:flex-start; gap:8px; }
+.prog-card-desc { font-size:13px; color:var(--muted); line-height:1.5; margin:6px 0 10px; }
+.prog-card-meta { font-size:12px; color:var(--muted); margin-bottom:8px; }
+.prog-card-actions { display:flex; gap:8px; flex-wrap:wrap; }
+@media(max-width:600px){ .stats-bar{flex-wrap:wrap;} .stats-bar-item{flex:1 1 50%;border-right:none;border-bottom:1px
+solid var(--border);} .programs-grid{grid-template-columns:1fr;} }
+{% endblock %}
+
+{% block content %}
+{# ── Safe extraction of all portal_config values ── #}
+{% if portal_config and portal_config.get %}
+{% set _title = portal_config.get('portal_title') or 'Admissions' %}
+{% set _subtitle = portal_config.get('portal_subtitle') or '' %}
+{% set _slides = portal_config.get('slideshow_images') or [] %}
+{% set _hero_img = portal_config.get('hero_image') or '' %}
+{% set _show_ann = portal_config.get('show_announcement') or 0 %}
+{% set _ann_text = portal_config.get('header_announcement') or '' %}
+{% set _login_req = portal_config.get('login_required_for_application') %}
+{% set _show_seats = portal_config.get('show_intake_count') or 0 %}
+{% set _show_elig = portal_config.get('show_eligibility_hint') or 0 %}
+{% elif portal_config %}
+{% set _title = portal_config.portal_title or 'Admissions' %}
+{% set _subtitle = portal_config.portal_subtitle or '' %}
+{% set _slides = portal_config.slideshow_images or [] %}
+{% set _hero_img = portal_config.hero_image or '' %}
+{% set _show_ann = portal_config.show_announcement or 0 %}
+{% set _ann_text = portal_config.header_announcement or '' %}
+{% set _login_req = portal_config.login_required_for_application %}
+{% set _show_seats = portal_config.show_intake_count or 0 %}
+{% set _show_elig = portal_config.show_eligibility_hint or 0 %}
+{% else %}
+{% set _title = 'Admissions' %}
+{% set _subtitle = '' %}
+{% set _slides = [] %}
+{% set _hero_img = '' %}
+{% set _show_ann = 0 %}
+{% set _ann_text = '' %}
+{% set _login_req = 1 %}
+{% set _show_seats = 0 %}
+{% set _show_elig = 0 %}
+{% endif %}
+
+<!-- Heading -->
+<div style="margin-bottom:24px;">
+    <h1 style="font-size:28px;font-weight:800;color:var(--primary);margin-bottom:4px;">
+        {{ _title }}{% if active_cycle %} — {{ active_cycle.name }}{% endif %}
+    </h1>
+    {% if _subtitle %}<p style="color:var(--muted);font-size:15px;margin:0;">{{ _subtitle }}</p>{% endif %}
+    {% if active_cycle and active_cycle.application_end %}
+    <p style="color:var(--muted);font-size:13px;margin:4px 0 0;">
+        Application deadline: <strong>{{ frappe.utils.formatdate(active_cycle.application_end, "dd MMM yyyy")
+            }}</strong>
+    </p>
+    {% endif %}
+</div>
+
+<!-- Hero slideshow -->
+{% if _slides and _slides | length > 0 %}
+<div class="hero-wrap" id="heroWrap">
+    {% for slide in _slides %}
+    {% set _simg = slide.get('image') if slide.get else slide.image %}
+    {% set _scap = slide.get('caption') if slide.get else slide.caption %}
+    <div class="hero-slide {% if loop.first %}active{% endif %}">
+        <img src="{{ _simg or '' }}" alt="{{ _scap or '' }}">
+        {% if _scap %}<div class="hero-slide-caption">{{ _scap }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    {% if _slides | length > 1 %}
+    <div class="hero-dots">
+        {% for slide in _slides %}
+        <button class="hero-dot {% if loop.first %}active{% endif %}" data-idx="{{ loop.index0 }}"></button>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% elif _hero_img %}
+<div style="border-radius:12px;overflow:hidden;margin-bottom:28px;">
+    <img src="{{ _hero_img }}" alt="{{ _title }}" style="width:100%;max-height:280px;object-fit:cover;">
+</div>
+{% endif %}
+
+<!-- Announcement banner -->
+{% if _show_ann and _ann_text %}
+<div
+    style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:12px 20px;margin-bottom:20px;font-size:14px;color:#856404;">
+    📢 {{ _ann_text | safe }}
+</div>
+{% endif %}
+
+<!-- Stats bar -->
+{% if stats %}
+<div class="stats-bar">
+    <div class="stats-bar-item">
+        <div class="stats-bar-value">{{ stats.total_programs or (programs | length) }}</div>
+        <div class="stats-bar-label">Programs</div>
+    </div>
+    <div class="stats-bar-item">
+        <div class="stats-bar-value">{{ stats.total_seats or "—" }}</div>
+        <div class="stats-bar-label">Total Seats</div>
+    </div>
+    <div class="stats-bar-item">
+        <div class="stats-bar-value">{{ stats.days_remaining if stats.days_remaining is not none else "—" }}</div>
+        <div class="stats-bar-label">Days Left</div>
+    </div>
+    <div class="stats-bar-item">
+        <div class="stats-bar-value" style="font-size:18px;">
+            {{ frappe.utils.formatdate(stats.apply_by, "dd MMM") if stats.apply_by else "—" }}
+        </div>
+        <div class="stats-bar-label">Apply By</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Portal Announcement strip from DocType -->
+{% if announcements %}
+<div class="announce-strip">
+    {% for a in announcements %}<span>{{ a.title }}</span>{% endfor %}
+</div>
+{% endif %}
+
+<!-- Programs grid -->
+{% if programs %}
+<div class="programs-grid">
+    {% for p in programs %}
+    <div class="adm-card">
+        {% set _pimg = p.featured_image or p.get('featured_image') if p.get else p.featured_image %}
+        {% set _pabrv = p.program_abbreviation or (p.get('program_abbreviation') if p.get else '') %}
+        {% set _pname = p.program_name or (p.get('program_name') if p.get else 'Program') %}
+        {% set _pslug = p.program_slug or (p.get('program_slug') if p.get else '') or p.program %}
+        {% if _pimg %}
+        <img src="{{ _pimg }}" alt="{{ _pname }}" class="prog-card-img">
+        {% else %}
+        <div class="prog-card-placeholder">{{ (_pabrv or _pname or 'P')[0] | upper }}</div>
+        {% endif %}
+        <div class="prog-card-body">
+            <div class="prog-card-title">
+                <span>{{ _pname }}</span>
+                <span>
+                    {% if p.show_closed %}<span class="badge-closed">Closed</span>
+                    {% elif p.show_filling_fast %}<span class="badge-filling">Filling Fast</span>
+                    {% else %}<span class="badge-open">Open</span>{% endif %}
+                </span>
+            </div>
+            {% set _pdesc = p.short_description or (p.get('short_description') if p.get else '') %}
+            {% if _pdesc %}<div class="prog-card-desc">{{ _pdesc }}</div>{% endif %}
+            {% if _show_seats and p.total_seats %}
+            <div class="prog-card-meta">🪑 {{ p.total_seats }} seats</div>
+            {% endif %}
+            {% if _show_elig and p.eligibility_hint %}
+            <div class="prog-card-meta" style="border-left:3px solid var(--primary);padding-left:8px;">{{
+                p.eligibility_hint }}</div>
+            {% endif %}
+            {% if p.brochure_url %}
+            <a href="{{ p.brochure_url }}" target="_blank"
+                style="font-size:12px;color:var(--primary);text-decoration:none;display:inline-block;margin-bottom:10px;">📄
+                Brochure</a>
+            {% endif %}
+            <div class="prog-card-actions">
+                <button class="btn-primary-adm" id="apply-btn-{{ loop.index }}" data-program="{{ p.program }}"
+                    data-name="{{ _pname | replace('"', ' &quot;') }}" data-level="{{ p.program_level or 'UG' }}"
+                    data-cycle="{{ p.admission_cycle or '' }}">
+                    Apply Now
+                </button>
+                <a href="/admission/{{ _pslug }}" class="btn-outline-adm">View Details</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:60px 20px;color:var(--muted);">
+    <div style="font-size:48px;margin-bottom:16px;">📋</div>
+    <h3>No programs available at this time.</h3>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // LOGIN_REQUIRED from portal config — safe Jinja extraction
+    var LOGIN_REQUIRED = "{{ 'true' if _login_req else 'false' }}" === "true";
+
+    // Wire up all Apply Now buttons — do NOT use inline onclick
+    // because apiFetch may not be defined yet when onclick fires
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[id^="apply-btn-"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var program = btn.getAttribute('data-program');
+                var name = btn.getAttribute('data-name');
+                var level = btn.getAttribute('data-level');
+                var cycle = btn.getAttribute('data-cycle');
+                handleApply(program, name, level, cycle);
+            });
+        });
+
+        document.querySelectorAll('.hero-dot').forEach(function (dot) {
+            dot.addEventListener('click', function () {
+                var idx = parseInt(dot.getAttribute('data-idx'));
+                if (typeof window.goHeroSlide === 'function') {
+                    window.goHeroSlide(idx);
+                }
+            });
+        });
+
+        // Slideshow auto-advance
+        var slides = document.querySelectorAll('.hero-slide');
+        var dots = document.querySelectorAll('.hero-dot');
+        if (slides.length > 1) {
+            var idx = 0;
+            window.goHeroSlide = function (i) {
+                slides[idx].classList.remove('active');
+                if (dots[idx]) dots[idx].classList.remove('active');
+                idx = ((i % slides.length) + slides.length) % slides.length;
+                slides[idx].classList.add('active');
+                if (dots[idx]) dots[idx].classList.add('active');
+            };
+            setInterval(function () { window.goHeroSlide(idx + 1); }, 3000);
+        }
+    });
+
+    async function handleApply(program, programName, level, cycle) {
+        var formUrl = '/applicant-form?program=' + encodeURIComponent(program)
+            + '&level=' + encodeURIComponent(level);
+
+        if (LOGIN_REQUIRED && window.session_user === 'Guest') {
+            window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
+            return;
+        }
+        try {
+            var result = await apiFetch(
+                'slcm.admission.utils.web.check_existing_application',
+                { program: program }
+            );
+            if (result && result.exists) {
+                if (confirm('You already have an application for ' + programName +
+                    ' (' + result.status + ').\nStart a new one anyway?')) {
+                    window.location.href = formUrl;
+                } else {
+                    window.location.href = '/my-applications';
+                }
+            } else {
+                window.location.href = formUrl;
+            }
+        } catch (e) {
+            window.location.href = formUrl;
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admissions{% endblock %} — {{ frappe.get_doc("Website Settings").title or "SLCM" }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    {# portal_config is a plain Python dict from get_portal_config() #}
+    {# Use .get() with fallback for safe dict access in Jinja2 #}
+    {% if portal_config and portal_config.get %}
+    {% set _primary = portal_config.get('primary_color') or '#1a3c6e' %}
+    {% set _secondary = portal_config.get('secondary_color') or '#c8a14b' %}
+    {% set _pc_title = portal_config.get('portal_title') or '' %}
+    {% set _footer = portal_config.get('footer_text') or '' %}
+    {% set _cemail = portal_config.get('contact_email') or '' %}
+    {% set _active = portal_config.get('portal_active') %}
+    {% set _mmsg = portal_config.get('maintenance_message') or '' %}
+    {% elif portal_config %}
+    {% set _primary = portal_config.primary_color or '#1a3c6e' %}
+    {% set _secondary = portal_config.secondary_color or '#c8a14b' %}
+    {% set _pc_title = portal_config.portal_title or '' %}
+    {% set _footer = portal_config.footer_text or '' %}
+    {% set _cemail = portal_config.contact_email or '' %}
+    {% set _active = portal_config.portal_active %}
+    {% set _mmsg = portal_config.maintenance_message or '' %}
+    {% else %}
+    {% set _primary = '#1a3c6e' %}
+    {% set _secondary = '#c8a14b' %}
+    {% set _pc_title = '' %}
+    {% set _footer = '' %}
+    {% set _cemail = '' %}
+    {% set _active = 1 %}
+    {% set _mmsg = '' %}
+    {% endif %}
+    <style>
+        :root {
+            --primary: {
+                    {
+                    _primary
+                }
+            }
+
+            ;
+
+            --secondary: {
+                    {
+                    _secondary
+                }
+            }
+
+            ;
+
+            --accent: {
+                    {
+                    _secondary
+                }
+            }
+
+            ;
+            --primary-light: #e8f0fb;
+            --text: #1a1a2e;
+            --muted: #6c757d;
+            --border: #dee2e6;
+            --card-bg: #ffffff;
+            --bg: #f4f6fb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+        }
+
+        .adm-nav {
+            background: var(--primary);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .adm-nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .adm-nav-brand img {
+            height: 36px;
+            width: auto;
+        }
+
+        .adm-nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .adm-nav-links a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .adm-nav-links a:hover {
+            color: #fff;
+        }
+
+        .adm-nav-links .nav-btn {
+            background: var(--accent);
+            color: #fff !important;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .adm-nav-links .nav-btn:hover {
+            opacity: 0.88;
+        }
+
+        .adm-main {
+            min-height: calc(100vh - 120px);
+            padding: 32px 0;
+        }
+
+        .adm-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .adm-footer {
+            background: var(--primary);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            padding: 16px 24px;
+            font-size: 13px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .adm-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .adm-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .badge-filling {
+            background: #fff3cd;
+            color: #856404;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .badge-closed {
+            background: #f8d7da;
+            color: #721c24;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .badge-open {
+            background: #d1e7dd;
+            color: #155724;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .btn-primary-adm {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary-adm:hover {
+            opacity: 0.88;
+            color: #fff;
+        }
+
+        .btn-outline-adm {
+            background: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+            padding: 7px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-outline-adm:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .adm-nav-links .nav-hide-mobile {
+                display: none;
+            }
+
+            .adm-container {
+                padding: 0 12px;
+            }
+        }
+
+        {% block extra_css %}
+        {% endblock %}
+    </style>
+</head>
+
+<body>
+    <nav class="adm-nav">
+        {% set ws = frappe.get_doc("Website Settings") %}
+        <a href="/admission" class="adm-nav-brand">
+            {% if ws.banner_image %}<img src="{{ ws.banner_image }}" alt="Logo">{% endif %}
+            {{ _pc_title or ws.title or "Admissions" }}
+        </a>
+        <div class="adm-nav-links">
+            <a href="/admission" class="nav-hide-mobile">Programs</a>
+            {% if frappe.session.user != "Guest" %}
+            <a href="/my-applications" class="nav-hide-mobile">My Applications</a>
+            <button class="nav-btn" onclick="doLogout()">Logout</button>
+            {% else %}
+            <a href="/login" class="nav-btn">Login / Apply</a>
+            {% endif %}
+        </div>
+    </nav>
+    {% if _active == 0 %}
+    <main class="adm-main" style="display:flex;align-items:center;justify-content:center;">
+        <div style="text-align:center;max-width:500px;padding:40px;">
+            <div style="font-size:48px;margin-bottom:16px;">🔧</div>
+            <h2 style="color:var(--primary);">Portal Under Maintenance</h2>
+            <div style="color:var(--muted);margin-top:12px;">
+                {{ _mmsg | safe if _mmsg else "The admission portal is temporarily unavailable." }}
+            </div>
+        </div>
+    </main>
+    {% else %}
+    <main class="adm-main">
+        <div class="adm-container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    {% endif %}
+    <footer class="adm-footer">
+        <span>
+            {% if _footer %}
+            {{ _footer }}
+            {% else %}
+            © {{ frappe.utils.nowdate()[:4] }} {{ frappe.get_doc("Website Settings").title or "SLCM" }}. All rights
+            reserved.
+            {% if _cemail %} | <a href="mailto:{{ _cemail }}" style="color:rgba(255,255,255,0.7);">{{ _cemail }}</a>{%
+            endif %}
+            {% endif %}
+        </span>
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        window.csrf_token = "{{ frappe.session.csrf_token }}";
+        window.session_user = "{{ frappe.session.user }}";
+
+        async function doLogout() {
+            try {
+                await fetch('/api/method/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': window.csrf_token },
+                    body: 'csrf_token=' + encodeURIComponent(window.csrf_token)
+                });
+            } catch (e) { }
+            window.location.href = '/login';
+        }
+
+        // apiFetch — defined in base so ALL child pages can call it from onclick
+        function apiFetch(method, args) {
+            args = args || {};
+            return fetch('/api/method/' + method, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.csrf_token },
+                body: JSON.stringify(args)
+            }).then(function (r) { return r.json(); }).then(function (d) { return d.message; });
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

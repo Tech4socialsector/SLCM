@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — {{ frappe.get_doc("Website Settings").title or "Admissions" }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        :root {
+            --primary: {{ portal_config.primary_color if portal_config else "#1a3c6e" }};
+            --secondary: {{ portal_config.secondary_color if portal_config else "#c8a14b" }};
+            --primary-light: #e8f0fb;
+            --accent: {{ portal_config.secondary_color if portal_config else "#c8a14b" }};
+            --border: #dee2e6;
+            --muted: #6c757d;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f4f6fb; margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
+        .login-wrapper { flex: 1; display: flex; align-items: stretch; min-height: 100vh; }
+        /* LEFT panel */
+        .login-left {
+            flex: 0 0 420px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 40px;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+            z-index: 1;
+        }
+        .login-logo { text-align: center; margin-bottom: 32px; }
+        .login-logo img { height: 56px; margin-bottom: 12px; }
+        .login-logo h1 { font-size: 22px; font-weight: 800; color: var(--primary); margin: 0; }
+        .login-logo p { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+        /* Tabs */
+        .login-tabs { display: flex; width: 100%; border-bottom: 2px solid var(--border); margin-bottom: 28px; }
+        .login-tab { flex: 1; text-align: center; padding: 10px; font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .login-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        /* Form */
+        .form-group { margin-bottom: 16px; width: 100%; }
+        .form-group label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
+        .form-group input {
+            width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+            border-radius: 8px; font-size: 14px; outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: var(--primary); }
+        .btn-login {
+            width: 100%; padding: 12px; background: var(--primary); color: #fff;
+            border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
+            cursor: pointer; margin-top: 8px; transition: background 0.2s;
+        }
+        .btn-login:hover { background: #142f58; }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+        .form-error { color: #dc3545; font-size: 13px; margin-top: 8px; display: none; }
+        .form-success { color: #198754; font-size: 13px; margin-top: 8px; display: none; }
+        .forgot-link { font-size: 12px; color: var(--primary); text-decoration: none; display: block; text-align: right; margin-top: -8px; margin-bottom: 12px; }
+        /* RIGHT panel */
+        .login-right {
+            flex: 1;
+            background: var(--primary);
+            padding: 48px 40px;
+            overflow-y: auto;
+        }
+        .login-right h2 { color: rgba(255,255,255,0.9); font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .notice-card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        .notice-card-title { color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .notice-card-meta { color: rgba(255,255,255,0.6); font-size: 12px; }
+        .section-divider { border-color: rgba(255,255,255,0.15); margin: 24px 0; }
+        @media (max-width: 768px) {
+            .login-wrapper { flex-direction: column; }
+            .login-left { flex: none; width: 100%; padding: 32px 24px; box-shadow: none; }
+            .login-right { padding: 32px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+
+    <!-- LEFT: Login/Signup form -->
+    <div class="login-left">
+        <div class="login-logo">
+            {% set ws = frappe.get_doc("Website Settings") %}
+            {% if ws.banner_image %}
+            <img src="{{ ws.banner_image }}" alt="Logo">
+            {% endif %}
+            <h1>{{ (portal_config.portal_title if portal_config and portal_config.portal_title else ws.title) or "Admissions" }}</h1>
+            <p>Admission Portal</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="login-tabs" style="width:100%;">
+            <div class="login-tab active" id="tab-login" onclick="switchTab('login')">Login</div>
+            <div class="login-tab" id="tab-signup" onclick="switchTab('signup')">Register</div>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="login-form" style="width:100%;">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="login-email" placeholder="your @email.com" autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password">
+            </div>
+            <a href="/update-password" class="forgot-link">Forgot password?</a>
+            <div class="form-error" id="login-error"></div>
+            <button class="btn-login" id="login-btn" onclick="doLogin()">Login</button>
+        </div>
+
+        <!-- SIGNUP FORM -->
+        <div id="signup-form" style="width:100%;display:none;">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="signup-name" placeholder="Your full name">
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="signup-email" placeholder="your @email.com" autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="tel" id="signup-mobile" placeholder="+91 XXXXX XXXXX">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signup-password" placeholder="Create a password">
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="signup-confirm" placeholder="Repeat password">
+            </div>
+            <div class="form-error" id="signup-error"></div>
+            <div class="form-success" id="signup-success"></div>
+            <button class="btn-login" id="signup-btn" onclick="doSignup()">Create Account</button>
+        </div>
+
+        <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);
+             text-align:center;">
+            <a href="/app" style="font-size:12px;color:var(--muted);text-decoration:none;">
+                Staff / Admin login →
+            </a>
+        </div>
+    </div>
+
+    <!-- RIGHT: Notices -->
+    <div class="login-right">
+
+        {% if announcements %}
+        <h2>📢 Announcements</h2>
+        {% for a in announcements %}
+        <div class="notice-card">
+            <div class="notice-card-title">{{ a.title }}</div>
+            {% if a.publish_date %}
+            <div class="notice-card-meta">
+                {{ frappe.utils.formatdate(a.publish_date, "dd MMM yyyy") }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <hr class="section-divider">
+        {% endif %}
+
+        {% if events %}
+        <h2>📅 Important Dates</h2>
+        {% for e in events %}
+        <div class="notice-card">
+            <div class="notice-card-title">{{ e.title }}</div>
+            {% if e.event_date %}
+            <div class="notice-card-meta">
+                {{ frappe.utils.formatdate(e.event_date, "dd MMM yyyy") }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <hr class="section-divider">
+        {% endif %}
+
+        {% if circulars %}
+        <h2>📄 Circulars</h2>
+        {% for c in circulars %}
+        <div class="notice-card">
+            <div class="notice-card-title">{{ c.title }}</div>
+            {% if c.publish_date %}
+            <div class="notice-card-meta">
+                {{ frappe.utils.formatdate(c.publish_date, "dd MMM yyyy") }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if not announcements and not events and not circulars %}
+        <div style="text-align:center;color:rgba(255,255,255,0.5);padding:60px 0;">
+            <div style="font-size:40px;margin-bottom:12px;">🎓</div>
+            <p>Welcome to the Admissions Portal</p>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    const REDIRECT_TO = "{{ redirect_to }}";
+
+    function switchTab(tab) {
+        document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+        document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+        document.getElementById('login-form').style.display  = tab === 'login'  ? 'block' : 'none';
+        document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
+    }
+
+    function showError(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+    function hideError(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    async function doLogin() {
+        hideError('login-error');
+        const email = document.getElementById('login-email').value.trim();
+        const pwd   = document.getElementById('login-password').value;
+        if (!email || !pwd) { showError('login-error', 'Please enter email and password.'); return; }
+
+        const btn = document.getElementById('login-btn');
+        btn.disabled = true;
+        btn.textContent = 'Logging in...';
+
+        try {
+            const resp = await fetch('/api/method/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usr: email, pwd: pwd })
+            });
+            const data = await resp.json();
+            if (data.message === 'Logged In') {
+                const dest = REDIRECT_TO || '/my-applications';
+                window.location.href = dest;
+            } else {
+                showError('login-error', data.message || 'Invalid credentials. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        } catch(e) {
+            showError('login-error', 'Login failed. Please try again.');
+            btn.disabled = false;
+            btn.textContent = 'Login';
+        }
+    }
+
+    async function doSignup() {
+        hideError('signup-error');
+        document.getElementById('signup-success').style.display = 'none';
+
+        const name    = document.getElementById('signup-name').value.trim();
+        const email   = document.getElementById('signup-email').value.trim();
+        const mobile  = document.getElementById('signup-mobile').value.trim();
+        const pwd     = document.getElementById('signup-password').value;
+        const confirm = document.getElementById('signup-confirm').value;
+
+        if (!name || !email || !pwd) { showError('signup-error', 'Please fill all required fields.'); return; }
+        if (pwd !== confirm) { showError('signup-error', 'Passwords do not match.'); return; }
+        if (pwd.length < 8) { showError('signup-error', 'Password must be at least 8 characters.'); return; }
+
+        const btn = document.getElementById('signup-btn');
+        btn.disabled = true;
+        btn.textContent = 'Creating account...';
+
+        try {
+            const resp = await fetch('/api/method/frappe.core.doctype.user.user.sign_up', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    full_name: name,
+                    redirect_to: REDIRECT_TO || '/my-applications'
+                })
+            });
+            const data = await resp.json();
+            // Frappe sign_up sends verification email
+            const msg = data.message;
+            if (Array.isArray(msg) && msg[0] === 1) {
+                // Success
+                const el = document.getElementById('signup-success');
+                el.textContent = 'Account created! Please check your email to verify your account.';
+                el.style.display = 'block';
+            } else {
+                showError('signup-error', (Array.isArray(msg) ? msg[1] : msg) || 'Registration failed.');
+            }
+        } catch(e) {
+            showError('signup-error', 'Registration failed. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Create Account';
+        }
+    }
+
+    // Enter key support
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const activeTab = document.getElementById('tab-login').classList.contains('active');
+            if (activeTab) doLogin(); else doSignup();
+        }
+    });
+</script>
+</body>
+</html>

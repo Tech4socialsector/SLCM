@@ -31,8 +31,6 @@
   "col_break_3",
   "allow_document_upload_after_submit",
   "section_break_skip_fee",
-  "skip_fee_check_for_testing",
-  "fee_pending_message",
   "section_break_stage",
   "show_stage_progress",
   "progress_style",
@@ -52,301 +50,71 @@
   "contact_email",
   "contact_phone",
   "col_break_6",
-  "footer_text"
+  "footer_text",
+  "section_break_login",
+  "login_required_for_application"
  ],
  "fields": [
-  {
-   "fieldname": "section_break_branding",
-   "fieldtype": "Section Break",
-   "label": "Branding & Identity"
-  },
-  {
-   "description": "Main heading shown on portal",
-   "fieldname": "portal_title",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Portal Title",
-   "reqd": 1
-  },
-  {
-   "fieldname": "portal_subtitle",
-   "fieldtype": "Small Text",
-   "label": "Portal Subtitle"
-  },
-  {
-   "fieldname": "col_break_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "hero_image",
-   "fieldtype": "Attach Image",
-   "label": "Hero / Banner Image"
-  },
-  {
-   "description": "Defaults to Institution Settings color if blank",
-   "fieldname": "primary_color",
-   "fieldtype": "Color",
-   "label": "Primary Color"
-  },
-  {
-   "fieldname": "secondary_color",
-   "fieldtype": "Color",
-   "label": "Secondary Color"
-  },
-  {
-    "fieldname": "slideshow_section",
-    "fieldtype": "Section Break",
-    "label": "Hero Banner Slideshow",
-    "description": "Images for the hero carousel. Auto-transitions every 3 seconds. If empty, hero shows institution name and tagline only."
-  },
-  {
-    "fieldname": "slideshow_images",
-    "fieldtype": "Table",
-    "label": "Slideshow Images",
-    "options": "Portal Slideshow Image"
-  },
-  {
-   "fieldname": "section_break_announcement",
-   "fieldtype": "Section Break",
-   "label": "Announcement Banner"
-  },
-  {
-   "default": "0",
-   "fieldname": "show_announcement",
-   "fieldtype": "Check",
-   "label": "Show Announcement Banner"
-  },
-  {
-   "depends_on": "eval:doc.show_announcement==1",
-   "fieldname": "header_announcement",
-   "fieldtype": "Text Editor",
-   "label": "Announcement Content"
-  },
-  {
-   "fieldname": "section_break_status",
-   "fieldtype": "Section Break",
-   "label": "Portal Status"
-  },
-  {
-   "default": "1",
-   "fieldname": "portal_active",
-   "fieldtype": "Check",
-   "label": "Portal Active"
-  },
-  {
-   "fieldname": "col_break_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.portal_active==0",
-   "fieldname": "maintenance_message",
-   "fieldtype": "Text Editor",
-   "label": "Maintenance Message"
-  },
-  {
-   "fieldname": "section_break_programs",
-   "fieldtype": "Section Break",
-   "label": "Program Display"
-  },
-  {
-   "default": "Grid",
-   "fieldname": "program_card_layout",
-   "fieldtype": "Select",
-   "label": "Program Card Layout",
-   "options": "Grid\nList"
-  },
-  {
-   "default": "0",
-   "fieldname": "show_intake_count",
-   "fieldtype": "Check",
-   "label": "Show Seat Count on Cards"
-  },
-  {
-   "default": "0",
-   "fieldname": "show_eligibility_hint",
-   "fieldtype": "Check",
-   "label": "Show Eligibility Summary on Cards"
-  },
-  {
-   "fieldname": "section_break_edit_rules",
-   "fieldtype": "Section Break",
-   "label": "Edit Rules After Submission"
-  },
-  {
-   "default": "0",
-   "fieldname": "allow_edit_after_submit",
-   "fieldtype": "Check",
-   "label": "Allow Edit After Submission"
-  },
-  {
-   "depends_on": "eval:doc.allow_edit_after_submit==1",
-   "fieldname": "edit_allowed_until",
-   "fieldtype": "Select",
-   "label": "Edit Allowed Until",
-   "options": "\nApplication End Date\nFixed Days\nNever"
-  },
-  {
-   "depends_on": "eval:doc.edit_allowed_until=='Fixed Days'",
-   "fieldname": "edit_allowed_days",
-   "fieldtype": "Int",
-   "label": "Edit Allowed Days"
-  },
-  {
-   "fieldname": "col_break_3",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "allow_document_upload_after_submit",
-   "fieldtype": "Check",
-   "label": "Allow Document Upload After Submission"
-  },
-  {
-   "fieldname": "section_break_skip_fee",
-   "fieldtype": "Section Break",
-   "label": "Payment Settings"
-  },
-  {
-   "default": "0",
-   "description": "Enable only in development. Disables fee verification for all applicants.",
-   "fieldname": "skip_fee_check_for_testing",
-   "fieldtype": "Check",
-   "label": "Skip Fee Check (Testing Only)"
-  },
-  {
-   "description": "Shown to applicants when application fee is not paid",
-   "fieldname": "fee_pending_message",
-   "fieldtype": "Text Editor",
-   "label": "Fee Pending Message"
-  },
-  {
-   "fieldname": "section_break_stage",
-   "fieldtype": "Section Break",
-   "label": "Stage Progress Display"
-  },
-  {
-   "default": "1",
-   "fieldname": "show_stage_progress",
-   "fieldtype": "Check",
-   "label": "Show Stage Progress"
-  },
-  {
-   "default": "Steps",
-   "depends_on": "eval:doc.show_stage_progress==1",
-   "fieldname": "progress_style",
-   "fieldtype": "Select",
-   "label": "Progress Style",
-   "options": "Steps\nTimeline"
-  },
-  {
-   "fieldname": "section_break_downloads",
-   "fieldtype": "Section Break",
-   "label": "Downloads"
-  },
-  {
-   "default": "1",
-   "fieldname": "allow_pdf_download",
-   "fieldtype": "Check",
-   "label": "Allow Application PDF Download"
-  },
-  {
-   "fieldname": "col_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.allow_pdf_download==1",
-   "fieldname": "application_template",
-   "fieldtype": "Link",
-   "label": "Application PDF Template",
-   "options": "Offer Letter"
-  },
-  {
-   "fieldname": "section_break_notifications",
-   "fieldtype": "Section Break",
-   "label": "Notification Settings"
-  },
-  {
-   "default": "1",
-   "fieldname": "enable_email_notifications",
-   "fieldtype": "Check",
-   "label": "Send Email on Stage Change"
-  },
-  {
-   "default": "1",
-   "fieldname": "enable_portal_notifications",
-   "fieldtype": "Check",
-   "label": "Show Portal Bell Notifications"
-  },
-  {
-   "fieldname": "section_break_messages",
-   "fieldtype": "Section Break",
-   "label": "Applicant Messages"
-  },
-  {
-   "fieldname": "document_upload_note",
-   "fieldtype": "Text Editor",
-   "label": "Document Upload Instructions"
-  },
-  {
-   "fieldname": "col_break_5",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "submission_message",
-   "fieldtype": "Text Editor",
-   "label": "Post-Submission Message"
-  },
-  {
-   "fieldname": "submission_email_template",
-   "fieldtype": "Link",
-   "label": "Submission Email Template",
-   "options": "Email Template Config"
-  },
-  {
-   "fieldname": "section_break_contact",
-   "fieldtype": "Section Break",
-   "label": "Contact & Footer"
-  },
-  {
-   "fieldname": "contact_email",
-   "fieldtype": "Data",
-   "label": "Contact Email",
-   "options": "Email"
-  },
-  {
-   "fieldname": "contact_phone",
-   "fieldtype": "Data",
-   "label": "Contact Phone"
-  },
-  {
-   "fieldname": "col_break_6",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "footer_text",
-   "fieldtype": "Small Text",
-   "label": "Footer Text"
-  }
+  {"fieldname":"section_break_branding","fieldtype":"Section Break","label":"Branding & Identity"},
+  {"description":"Main heading shown on portal","fieldname":"portal_title","fieldtype":"Data","in_list_view":1,"label":"Portal Title","reqd":1},
+  {"fieldname":"portal_subtitle","fieldtype":"Small Text","label":"Portal Subtitle"},
+  {"fieldname":"col_break_1","fieldtype":"Column Break"},
+  {"fieldname":"hero_image","fieldtype":"Attach Image","label":"Hero / Banner Image"},
+  {"description":"Defaults to #1a3c6e if blank","fieldname":"primary_color","fieldtype":"Color","label":"Primary Color"},
+  {"fieldname":"secondary_color","fieldtype":"Color","label":"Secondary Color"},
+  {"fieldname":"slideshow_section","fieldtype":"Section Break","label":"Hero Banner Slideshow","description":"Images for the hero carousel on the /admission page."},
+  {"fieldname":"slideshow_images","fieldtype":"Table","label":"Slideshow Images","options":"Portal Slideshow Image"},
+  {"fieldname":"section_break_announcement","fieldtype":"Section Break","label":"Announcement Banner"},
+  {"default":"0","fieldname":"show_announcement","fieldtype":"Check","label":"Show Announcement Banner"},
+  {"depends_on":"eval:doc.show_announcement==1","fieldname":"header_announcement","fieldtype":"Text Editor","label":"Announcement Content"},
+  {"fieldname":"section_break_status","fieldtype":"Section Break","label":"Portal Status"},
+  {"default":"1","fieldname":"portal_active","fieldtype":"Check","label":"Portal Active"},
+  {"fieldname":"col_break_2","fieldtype":"Column Break"},
+  {"depends_on":"eval:doc.portal_active==0","fieldname":"maintenance_message","fieldtype":"Text Editor","label":"Maintenance Message"},
+  {"fieldname":"section_break_programs","fieldtype":"Section Break","label":"Program Display"},
+  {"default":"Grid","fieldname":"program_card_layout","fieldtype":"Select","label":"Program Card Layout","options":"Grid\nList"},
+  {"default":"0","fieldname":"show_intake_count","fieldtype":"Check","label":"Show Seat Count on Cards"},
+  {"default":"0","fieldname":"show_eligibility_hint","fieldtype":"Check","label":"Show Eligibility Summary on Cards"},
+  {"fieldname":"section_break_edit_rules","fieldtype":"Section Break","label":"Edit Rules After Submission"},
+  {"default":"0","fieldname":"allow_edit_after_submit","fieldtype":"Check","label":"Allow Edit After Submission"},
+  {"depends_on":"eval:doc.allow_edit_after_submit==1","fieldname":"edit_allowed_until","fieldtype":"Select","label":"Edit Allowed Until","options":"\nApplication End Date\nFixed Days\nNever"},
+  {"depends_on":"eval:doc.edit_allowed_until=='Fixed Days'","fieldname":"edit_allowed_days","fieldtype":"Int","label":"Edit Allowed Days"},
+  {"fieldname":"col_break_3","fieldtype":"Column Break"},
+  {"default":"0","fieldname":"allow_document_upload_after_submit","fieldtype":"Check","label":"Allow Document Upload After Submission"},
+  {"fieldname":"section_break_skip_fee","fieldtype":"Section Break","label":"Payment Settings"},
+  {"fieldname":"section_break_stage","fieldtype":"Section Break","label":"Stage Progress Display"},
+  {"default":"1","fieldname":"show_stage_progress","fieldtype":"Check","label":"Show Stage Progress"},
+  {"default":"Steps","depends_on":"eval:doc.show_stage_progress==1","fieldname":"progress_style","fieldtype":"Select","label":"Progress Style","options":"Steps\nTimeline"},
+  {"fieldname":"section_break_downloads","fieldtype":"Section Break","label":"Downloads"},
+  {"default":"1","fieldname":"allow_pdf_download","fieldtype":"Check","label":"Allow Application PDF Download"},
+  {"fieldname":"col_break_4","fieldtype":"Column Break"},
+  {"depends_on":"eval:doc.allow_pdf_download==1","fieldname":"application_template","fieldtype":"Link","label":"Application PDF Template","options":"Offer Letter"},
+  {"fieldname":"section_break_notifications","fieldtype":"Section Break","label":"Notification Settings"},
+  {"default":"1","fieldname":"enable_email_notifications","fieldtype":"Check","label":"Send Email on Stage Change"},
+  {"default":"1","fieldname":"enable_portal_notifications","fieldtype":"Check","label":"Show Portal Bell Notifications"},
+  {"fieldname":"section_break_messages","fieldtype":"Section Break","label":"Applicant Messages"},
+  {"fieldname":"document_upload_note","fieldtype":"Text Editor","label":"Document Upload Instructions"},
+  {"fieldname":"col_break_5","fieldtype":"Column Break"},
+  {"fieldname":"submission_message","fieldtype":"Text Editor","label":"Post-Submission Message"},
+  {"fieldname":"submission_email_template","fieldtype":"Link","label":"Submission Email Template","options":"Email Template Config"},
+  {"fieldname":"section_break_contact","fieldtype":"Section Break","label":"Contact & Footer"},
+  {"fieldname":"contact_email","fieldtype":"Data","label":"Contact Email","options":"Email"},
+  {"fieldname":"contact_phone","fieldtype":"Data","label":"Contact Phone"},
+  {"fieldname":"col_break_6","fieldtype":"Column Break"},
+  {"fieldname":"footer_text","fieldtype":"Small Text","label":"Footer Text"},
+  {"fieldname":"section_break_login","fieldtype":"Section Break","label":"Application Form Access"},
+  {"default":"1","fieldname":"login_required_for_application","fieldtype":"Check","label":"Login Required to Apply","description":"If unchecked, applicants can open the application form without logging in."}
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-02-26 19:25:00.191407",
+ "modified": "2026-03-03 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",
  "owner": "Administrator",
  "permissions": [
-  {
-   "create": 1,
-   "read": 1,
-   "role": "System Manager",
-   "write": 1
-  },
-  {
-   "read": 1,
-   "role": "Admission Admin",
-   "write": 1
-  }
+  {"create":1,"read":1,"role":"System Manager","write":1},
+  {"read":1,"role":"Admission Admin","write":1}
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
