@@ -55,8 +55,7 @@
    "in_standard_filter": 1,
    "label": "Email Template",
    "mandatory_depends_on": "eval:doc.send_email ==1",
-   "options": "Email Templates",
-   "reqd": 1
+   "options": "Email Templates"
   },
   {
    "default": "0",
@@ -123,7 +122,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-03-02 14:57:55.843201",
+ "modified": "2026-03-03 15:31:39.332318",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",
