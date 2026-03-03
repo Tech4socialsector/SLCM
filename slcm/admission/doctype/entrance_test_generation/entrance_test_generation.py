@@ -42,7 +42,8 @@ class EntranceTestGeneration(Document):
                 app.gender,
                 app.reservation_category,
                 app.program,
-                app.program_level
+                app.program_level,
+                COALESCE(ee.exempts_interview, 0) AS exempts_interview
             FROM `tabApplicant` app
             LEFT JOIN `tabEligibility Evaluation` ee ON ee.applicant_name = app.name
             WHERE 
@@ -99,6 +100,8 @@ class EntranceTestGeneration(Document):
                 "reservation_category": app.reservation_category,
                 "email": app.email,
                 "gender": app.gender,
+                "exempts_entrance_test": 0,  # These students are NOT exempt from entrance test
+                "exempts_interview": app.get("exempts_interview") or 0,
             })
 
         test_list.insert(ignore_permissions=True)

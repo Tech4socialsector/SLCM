@@ -20,6 +20,7 @@ class EligibilityResultConfiguration(Document):
         Generates Eligibility Result records from:
         1. Interview Seat Allocation (interview_result_status = 'Pass')
         2. Applicant (dual exemption: entrance test & interview)
+        3. Entrance Test Seat Allocation (result_status = 'Pass' AND exempts_interview = 1)
         
         Also enriches each record with academic marks from the Applicant DocType:
         hsc_percentage, ug_cgpa, pg_cgpa, entrance_percentage, interview_percentage
@@ -79,6 +80,35 @@ class EligibilityResultConfiguration(Document):
                 AND ee.exempts_entrance_test = 1
                 AND ee.exempts_interview = 1
                 AND app.application_status != 'Rejected'
+        """, {
+            "academic_year": self.academic_year,
+            "campus": self.campus,
+            "admission_cycle": self.admission_cycle,
+            "program_level": self.program_level
+        }, as_dict=True)
+
+        # ─── Source 3: ET Pass + Interview Exempted ───────────────────────────
+        et_pass_interview_exempt = frappe.db.sql("""
+            SELECT
+                etsa.applicant AS applicant_id,
+                etsa.candidate_name,
+                etsa.email,
+                etsa.gender,
+                etsa.reservation_category,
+                etsa.program,
+                etsa.program_level,
+                etsa.academic_year,
+                etsa.admission_cycle,
+                etsa.campus,
+                etsa.score_obtained AS entrance_test_score
+            FROM `tabEntrance Test Seat Allocation` etsa
+            WHERE
+                etsa.academic_year = %(academic_year)s
+                AND etsa.campus = %(campus)s
+                AND etsa.admission_cycle = %(admission_cycle)s
+                AND etsa.program_level = %(program_level)s
+                AND etsa.result_status = 'Pass'
+                AND COALESCE(etsa.exempts_interview, 0) = 1
         """, {
             "academic_year": self.academic_year,
             "campus": self.campus,
@@ -197,16 +227,25 @@ class EligibilityResultConfiguration(Document):
             res.save(ignore_permissions=True)
             count += 1
 
-        # Track applicant IDs that came from interview passers to avoid duplicates
-        interview_applicant_ids = set()
+        # Track applicant IDs to avoid duplicates via a set
+        finalized_applicant_ids = set()
 
+        # Priority 1: Interview Passers
         for app in passed_interviewees:
             upsert_result(app, "Interview Pass")
-            interview_applicant_ids.add(app.applicant_id)
+            finalized_applicant_ids.add(app.applicant_id)
 
+        # Priority 2: ET Pass + Interview Exempt (Source 3)
+        for app in et_pass_interview_exempt:
+            if app.applicant_id not in finalized_applicant_ids:
+                upsert_result(app, "ET Pass (Interview Exempt)")
+                finalized_applicant_ids.add(app.applicant_id)
+
+        # Priority 3: Dual Exempted Applicants (Source 2)
         for app in exempted_applicants:
-            if app.applicant_id not in interview_applicant_ids:
+            if app.applicant_id not in finalized_applicant_ids:
                 upsert_result(app, "Exempted")
+                finalized_applicant_ids.add(app.applicant_id)
 
         if count > 0:
             frappe.db.commit()

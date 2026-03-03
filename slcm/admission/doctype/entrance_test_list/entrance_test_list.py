@@ -143,6 +143,8 @@ class EntranceTestList(Document):
                 allocation.reservation_category  = app.reservation_category
                 allocation.email                 = app.email
                 allocation.gender                = app.gender
+                allocation.exempts_entrance_test = getattr(app, "exempts_entrance_test", 0)
+                allocation.exempts_interview    = getattr(app, "exempts_interview", 0)
                 allocation.allocation_status      = "Not Allocated"
                 allocation.entrance_test_status   = "Scheduled"
             
