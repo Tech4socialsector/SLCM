@@ -246,11 +246,7 @@ frappe.ui.form.on("Seat Allocation", {
                                     frappe.msgprint({
                                         title: __("Bulk Offer Generation Report"),
                                         message: message,
-                                        indicator: error_count > 0 ? 'orange' : 'green',
-                                        primary_action: {
-                                            label: __("Refresh"),
-                                            action: () => frm.reload_doc()
-                                        }
+                                        indicator: error_count > 0 ? 'orange' : 'green'
                                     });
                                 }, 800);
                                 return;
