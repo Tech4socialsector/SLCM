@@ -24,7 +24,7 @@
    "icon": "settings",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Confogration",
+   "label": "Configuration",
    "link_to": "Offer Configuration",
    "link_type": "DocType",
    "show_arrow": 0,
@@ -138,7 +138,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-28 12:44:38.295313",
+ "modified": "2026-03-03 18:38:18.715083",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
