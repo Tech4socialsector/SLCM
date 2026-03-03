@@ -226,11 +226,26 @@ class ScholarshipApplication(Document):
 		self.create_audit_log()
 		
 		old_doc = self.get_doc_before_save()
-		if old_doc and old_doc.status == "Approved" and self.status != "Approved":
+		if not old_doc:
+			if self.status == "Approved":
+				self.apply_financial_effects()
+			return
+
+		# Case 1: Status changed from something else to Approved
+		if old_doc.status != "Approved" and self.status == "Approved":
+			self.apply_financial_effects()
+		
+		# Case 2: Status changed from Approved to something else
+		elif old_doc.status == "Approved" and self.status != "Approved":
 			self.reverse_financial_effects()
 		
-		if self.status == "Approved" and (not old_doc or old_doc.status != "Approved"):
-			self.apply_financial_effects()
+		# Case 3: Remains Approved but benefit changed
+		elif self.status == "Approved" and old_doc.status == "Approved":
+			benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
+			if benefit_diff != 0:
+				scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
+				scheme.utilized_budget += flt(benefit_diff)
+				scheme.save(ignore_permissions=True)
 
 	def on_trash(self):
 		if self.status == "Approved":
