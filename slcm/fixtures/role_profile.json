@@ -34,5 +34,17 @@
     "role": "Entrance Test Admin"
    }
   ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-03-01 18:18:17.755131",
+  "name": "Applicant",
+  "role_profile": "Applicant ",
+  "roles": [
+   {
+    "role": "Applicant"
+   }
+  ]
  }
 ]

@@ -90,12 +90,23 @@
   "class_xii_marksheet",
   "section_break_cmag",
   "ug_degree_completion",
+  "section_break_vokh",
+  "national_test_name",
+  "column_break_qiha",
+  "percentage",
   "section_break_cris",
   "ug_degree_details_column",
   "ug_degree_details",
+  "section_break_vmys",
+  "phd_proposal",
+  "column_break_nkbo",
+  "phd_program_type",
+  "section_break_cmjy",
+  "proposed_phd_topic",
   "pg_degree_details",
-  "national_test_name",
-  "percentage",
+  "others_section",
+  "other_degree",
+  "other_degree_details",
   "employment_history_tab",
   "post_degree_work_experience",
   "years_of_work_experience",
@@ -141,6 +152,7 @@
   "application_fee_status",
   "fee_waived_by",
   "fee_waived_on",
+  "column_break_fcum",
   "current_stage",
   "portal_last_login"
  ],
@@ -160,8 +172,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "label": "Academic Year",
-   "options": "Academic Year",
-   "reqd": 1
+   "options": "Academic Year"
   },
   {
    "allow_on_submit": 1,
@@ -179,27 +190,23 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
-   "label": "Full Name (As per Secondary School Certificate)",
-   "reqd": 1
+   "label": "Full Name (As per Secondary School Certificate)"
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth",
-   "reqd": 1
+   "label": "Date of Birth"
   },
   {
    "fieldname": "gender",
    "fieldtype": "Select",
    "label": "Gender",
-   "options": "\nMale\nFemale\nOthers",
-   "reqd": 1
+   "options": "\nMale\nFemale\nOthers"
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile Number",
-   "reqd": 1
+   "label": "Mobile Number"
   },
   {
    "fieldname": "alternate_contact",
@@ -405,7 +412,8 @@
    "fieldname": "years_of_work_experience",
    "fieldtype": "Select",
    "label": "How many years of work experience do you have?",
-   "mandatory_depends_on": "eval:doc.post_degree_work_experience === \"Yes\""
+   "mandatory_depends_on": "eval:doc.post_degree_work_experience === \"Yes\"",
+   "options": "\n1 to 2 years\n2 to 5 years\n5 years above"
   },
   {
    "fieldname": "eligibility_for_reservation_tab",
@@ -566,7 +574,7 @@
    "fieldname": "source_of_information",
    "fieldtype": "Select",
    "label": "Where Did You Hear About the Programme?",
-   "options": "\nOthers"
+   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers"
   },
   {
    "description": "Curriculum Vitae (Max 5MB - Supported formats doc, docx pdf) Declaration.",
@@ -761,20 +769,25 @@
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "fieldname": "ug_degree_completion",
    "fieldtype": "Select",
    "label": "Have you completed your UG degree",
+   "mandatory_depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "options": "\nFinal year\nCompleted"
   },
   {
+   "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "fieldname": "section_break_cris",
    "fieldtype": "Section Break",
-   "label": "Completion Degree Details "
+   "label": "UG Degree Details "
   },
   {
+   "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "fieldname": "ug_degree_details",
    "fieldtype": "Table",
    "label": "Degree",
+   "mandatory_depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "options": "UG Degree Detail"
   },
   {
@@ -836,9 +849,11 @@
    "label": "UG Degree Details "
   },
   {
+   "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "pg_degree_details",
    "fieldtype": "Table",
    "label": "PG Degree Details ",
+   "mandatory_depends_on": "eval:doc.program_level == \"PHD\"",
    "options": "PG Degree Details"
   },
   {
@@ -862,14 +877,13 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "label": "Program Level",
-   "options": "UG\nPG\nResearch Course"
+   "options": "\nUG\nPG\nResearch Course"
   },
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "label": "Admission Year",
-   "options": "Admission Year",
-   "reqd": 1
+   "options": "Admission Year"
   },
   {
    "fieldname": "applicant_id",
@@ -915,13 +929,76 @@
    "fieldtype": "Datetime",
    "label": "Portal Last Login",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.program_level == \"Research Course\"",
+   "fieldname": "section_break_vmys",
+   "fieldtype": "Section Break",
+   "label": "PHD Details"
+  },
+  {
+   "depends_on": "eval:doc.program_level == \"Research Course\"",
+   "fieldname": "proposed_phd_topic",
+   "fieldtype": "Small Text",
+   "label": "Proposed PhD Topic ",
+   "mandatory_depends_on": "eval:doc.program_level == \"PHD\""
+  },
+  {
+   "fieldname": "phd_proposal",
+   "fieldtype": "Attach",
+   "label": "PhD Proposal Upload"
+  },
+  {
+   "fieldname": "phd_program_type",
+   "fieldtype": "Select",
+   "label": "PhD Programme Selection",
+   "options": "\nLaw\nInterdisciplinary"
+  },
+  {
+   "fieldname": "column_break_nkbo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.program_level == \"Research Course\"",
+   "fieldname": "section_break_cmjy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "others_section",
+   "fieldtype": "Section Break",
+   "label": "Others"
+  },
+  {
+   "fieldname": "other_degree",
+   "fieldtype": "Select",
+   "label": "Do you have any other degrees?",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval: doc.other_degree == \"Yes\"",
+   "fieldname": "other_degree_details",
+   "fieldtype": "Small Text",
+   "label": "Please Specify the names of all other degrees",
+   "mandatory_depends_on": "eval: doc.other_degree == \"Yes\""
+  },
+  {
+   "fieldname": "column_break_fcum",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_vokh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_qiha",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 18:37:03.316109",
+ "modified": "2026-03-02 23:03:19.657579",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
