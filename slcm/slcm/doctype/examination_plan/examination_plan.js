@@ -116,11 +116,12 @@ function show_master_data_dialog(frm) {
 											<tr style="font-size: 12px; color: #6c757d;">
 												<th style="width: 40px;"><input type="checkbox" id="check-all-courses"></th>
 												<th>Course Name</th>
-												<th>All Type</th>
 												<th>Credits</th>
 												<th>Department</th>
 												<th>Enrolled Students</th>
-												<th>Exam Schema</th>
+												<th>Evaluation Schema</th>
+                                                <th>Max Marks</th>
+                                                <th>Grade Schema</th>
 											</tr>
 										</thead>
 										<tbody id="courses-table-body" style="font-size: 13px;">
@@ -130,17 +131,18 @@ function show_master_data_dialog(frm) {
                     window.exam_plan_courses = r.message;
                     r.message.forEach(row => {
                         html += `
-							<tr class="course-row" data-name="${row.name}" style="cursor: pointer;">
+                            <tr class="course-row" data-name="${row.name}" style="cursor: pointer;">
 								<td onclick="event.stopPropagation();"><input type="checkbox" class="course-check" data-name="${row.name}"></td>
 								<td>
 									<div><i class="fa fa-check-square-o text-success mr-1"></i> ${row.course_name}</div>
 									<div class="text-muted" style="font-size: 11px;">(${row.course_code})</div>
 								</td>
-								<td>${row.course_type || '-'}</td>
 								<td>${row.credit_value || '-'}</td>
 								<td>${row.department_name || '-'}</td>
 								<td>${row.enrolled_students || 0}</td>
-								<td class="exam-schema-cell">${row.exam_schema || '-'}</td>
+								<td class="eval-schema-cell text-primary" style="font-size: 11px;">${row.evaluation_schema || '-'}</td>
+                                <td>${row.max_marks || '-'}</td>
+								<td class="grade-schema-cell text-primary" style="font-size: 11px;">${row.grade_schema || '-'}</td>
 							</tr>
 						`;
                     });

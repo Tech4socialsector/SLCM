@@ -8,6 +8,8 @@
  "engine": "InnoDB",
  "field_order": [
   "grading_schema_name",
+  "schema_name",
+  "description",
   "maximum_marks",
   "grading_type",
   "section_break_grades",
@@ -18,9 +20,20 @@
    "fieldname": "grading_schema_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Grading Schema Name",
+   "label": "Schema Code",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "schema_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
   },
   {
    "fieldname": "maximum_marks",
@@ -39,14 +52,15 @@
   {
    "fieldname": "section_break_grades",
    "fieldtype": "Section Break",
-   "label": "Grades"
+   "label": "Grade Schema Global Settings"
   },
   {
    "fieldname": "grades",
    "fieldtype": "Table",
-   "label": "Grades",
+   "label": "Regular/Makeup Exam Composition",
    "options": "Grading Schema Component",
-   "reqd": 1
+   "reqd": 1,
+   "description": ""
   }
  ],
  "grid_page_length": 50,

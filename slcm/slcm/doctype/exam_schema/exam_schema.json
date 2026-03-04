@@ -10,13 +10,24 @@
   "schema_name",
   "total_marks",
   "passing_marks",
-  "section_break_zfjn",
-  "schema_type",
-  "requires_enrolment",
-  "description",
-  "weightages",
   "section_break_weightage",
-  "assessments"
+  "schema_type",
+  "description",
+  "requires_enrolment",
+  "weightages",
+  "assessments",
+  "section_break_makeup",
+  "makeup_assessment_composition",
+  "total_effective_makeup_marks",
+  "section_break_re_exam",
+  "re_exam_assessment_composition",
+  "total_effective_re_exam_marks",
+  "section_break_zfjn",
+  "internal_assessment_composition",
+  "total_effective_internal_marks",
+  "section_break_external",
+  "external_assessment_composition",
+  "total_effective_external_marks"
  ],
  "fields": [
   {
@@ -77,8 +88,71 @@
    "options": "Exam Schema Assessment"
   },
   {
+   "fieldname": "section_break_makeup",
+   "fieldtype": "Section Break",
+   "label": "Makeup Composition"
+  },
+  {
+   "fieldname": "makeup_assessment_composition",
+   "fieldtype": "Table",
+   "label": "Makeup Assessment Composition",
+   "options": "Exam Schema Assessment"
+  },
+  {
+   "fieldname": "total_effective_makeup_marks",
+   "fieldtype": "Float",
+   "label": "Total Effective Makeup Marks",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_re_exam",
+   "fieldtype": "Section Break",
+   "label": "Re-Exam Composition"
+  },
+  {
+   "fieldname": "re_exam_assessment_composition",
+   "fieldtype": "Table",
+   "label": "Re-Exam Assessment Composition",
+   "options": "Exam Schema Assessment"
+  },
+  {
+   "fieldname": "total_effective_re_exam_marks",
+   "fieldtype": "Float",
+   "label": "Total Effective Re-Exam Marks",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_zfjn",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "internal_assessment_composition",
+   "fieldtype": "Table",
+   "label": "Internal Assessment Composition",
+   "options": "Exam Schema Assessment"
+  },
+  {
+   "fieldname": "total_effective_internal_marks",
+   "fieldtype": "Float",
+   "label": "Total Effective Internal Marks",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_external",
+   "fieldtype": "Section Break",
+   "label": "External Composition"
+  },
+  {
+   "fieldname": "external_assessment_composition",
+   "fieldtype": "Table",
+   "label": "External Assessment Composition",
+   "options": "Exam Schema Assessment"
+  },
+  {
+   "fieldname": "total_effective_external_marks",
+   "fieldtype": "Float",
+   "label": "Total Effective External Marks",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
