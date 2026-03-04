@@ -42,43 +42,20 @@ def get_context(context):
                 # Dates not set — treat as open so admin can test
                 app_open = True
         except Exception as e:
-            frappe.log_error(f"app_open calculation failed: {e}", "Portal Index")
+            frappe.log_error(title="Portal Index", message=f"app_open calculation failed: {e}")
             app_open = True   # fail open so cards still show Apply Now
 
-    # ── 5. Programs ──────────────────────────────────────────────────
-    programs = []
+    # ── 5. Programs & Announcements ──────────────────────────────────
     try:
-        from slcm.admission.utils.portal import get_active_programs
-        programs = get_active_programs() or []
+        from slcm.admission.utils.portal import (
+            get_active_programs, get_active_announcements
+        )
+        context.programs      = get_active_programs() or []
+        context.announcements = get_active_announcements(limit=6) or []
     except Exception as e:
-        frappe.log_error(f"get_active_programs failed: {e}", "Portal Index")
-
-    for p in programs:
-        p["is_open"]         = app_open
-        p["show_filling_fast"] = False
-        p["show_closed"]     = not app_open
-        p["total_seats"]     = 0
-        p["available_seats"] = 0
-
-        rp_name = p.get("reservation_policy")
-        if rp_name:
-            try:
-                rp = frappe.get_doc("Program Reservation Policy", rp_name)
-                total     = rp.total_seats or 0
-                available = getattr(rp, "total_available", total) or total
-                p["total_seats"]     = total
-                p["available_seats"] = available
-                if total > 0:
-                    fill_pct = ((total - available) / total) * 100
-                    p["show_filling_fast"] = app_open and fill_pct >= 90
-                    p["show_closed"]       = available == 0
-            except Exception:
-                pass
-
-        # Get URL slug for this program
-        p["program_slug"] = frappe.db.get_value(
-            "Program", p.get("program"), "program_slug"
-        ) or (p.get("program") or "").lower().replace(" ", "-")
+        frappe.log_error(title="Portal Index", message=f"fetch failed: {e}")
+        context.programs = []
+        context.announcements = []
 
     # ── 6. Stats ─────────────────────────────────────────────────────
     try:
@@ -87,14 +64,6 @@ def get_context(context):
     except Exception:
         context.stats = {}
 
-    # ── 7. Announcements ─────────────────────────────────────────────
-    try:
-        from slcm.admission.utils.portal import get_active_announcements
-        context.announcements = get_active_announcements(limit=5) or []
-    except Exception:
-        context.announcements = []
-
-    context.programs     = programs
     context.active_cycle = active_cycle
     context.app_open     = app_open
     context.no_cache     = 1

@@ -3,7 +3,20 @@
 {% block title %}{{ portal_config.get('portal_title') if portal_config and portal_config.get else
 (portal_config.portal_title if portal_config else 'Admissions') }}{% endblock %}
 
-{% block extra_css %}
+{% block theme_vars %}
+<style>
+    :root {
+        {% if portal_config %}
+        --primary:   {{ portal_config.get('primary_color', '#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
+        --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
+        --accent:    {{ portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
+        {% endif %}
+    }
+</style>
+{% endblock %}
+
+{% block page_css %}
+<style>
 .stats-bar { display:flex; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.07); overflow:hidden;
 margin-bottom:28px; }
 .stats-bar-item { flex:1; text-align:center; padding:20px 12px; border-right:1px solid var(--border); }
@@ -22,22 +35,232 @@ background:var(--primary); }
 .hero-slide-caption { position:absolute; bottom:0; left:0; right:0;
 background:linear-gradient(transparent,rgba(0,0,0,0.55)); color:#fff; padding:20px 24px; font-size:16px;
 font-weight:600; }
-.hero-dots { position:absolute; bottom:12px; right:16px; display:flex; gap:6px; }
+.hero-dots { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:15; }
 .hero-dot { width:8px; height:8px; border-radius:50%; border:none; padding:0; cursor:pointer;
 background:rgba(255,255,255,0.4); }
 .hero-dot.active { background:#fff; }
-.programs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:24px; }
-.prog-card-img { width:100%; height:180px; object-fit:cover; }
-.prog-card-placeholder { width:100%; height:180px; background:var(--primary-light); display:flex; align-items:center;
-justify-content:center; font-size:52px; font-weight:800; color:var(--primary); opacity:0.25; }
-.prog-card-body { padding:16px; }
-.prog-card-title { font-size:16px; font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between;
-align-items:flex-start; gap:8px; }
-.prog-card-desc { font-size:13px; color:var(--muted); line-height:1.5; margin:6px 0 10px; }
-.prog-card-meta { font-size:12px; color:var(--muted); margin-bottom:8px; }
-.prog-card-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.hero-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,0.35); color: #fff; border: none;
+    width: 44px; height: 44px; border-radius: 50%; font-size: 24px;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; z-index: 10; transition: background 0.2s;
+}
+.hero-nav:hover { background: rgba(0,0,0,0.6); }
+.hero-prev { left: 12px; }
+.hero-next { right: 12px; }
+
+/* ── Program Grid ── */
+.section-programs, .section-announcements {
+    padding: 20px 0 40px;
+}
+.section-header {
+    margin-bottom: 28px;
+}
+.section-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0 0 4px;
+}
+.section-sub {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0;
+}
+.prog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+.prog-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.22s ease;
+    outline: none;
+    border: 1.5px solid transparent;
+}
+.prog-card:hover, .prog-card:focus {
+    transform: translateY(-6px) scale(1.015);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.13);
+    border-color: var(--primary);
+}
+.prog-thumb {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    background: var(--primary-light);
+}
+.prog-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+.prog-card:hover .prog-thumb img {
+    transform: scale(1.05);
+}
+.prog-thumb-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 72px; font-weight: 900;
+    color: var(--primary); opacity: 0.12;
+}
+.fill-bar-track {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 4px; background: rgba(255,255,255,0.3);
+}
+.fill-bar-fill {
+    height: 4px; transition: width 0.6s ease;
+    border-radius: 0 2px 2px 0;
+}
+.fill-danger  { background: #ef4444; }
+.fill-warning { background: #f59e0b; }
+.fill-info    { background: #3b82f6; }
+.fill-success { background: #10b981; }
+.prog-status-badge {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+    z-index: 5;
+}
+.badge-open   { background: #d1fae5; color: #065f46; }
+.badge-closed { background: #fee2e2; color: #991b1b; }
+.prog-body { padding: 18px 20px 20px; }
+.prog-name {
+    font-size: 17px; font-weight: 700;
+    color: var(--text); margin: 0 0 8px; line-height: 1.3;
+}
+.fill-badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px; margin-bottom: 10px;
+}
+.fill-badge.fill-danger  { background: #fee2e2; color: #991b1b; }
+.fill-badge.fill-warning { background: #fef3c7; color: #92400e; }
+.fill-badge.fill-info    { background: #dbeafe; color: #1e40af; }
+.fill-badge.fill-success { background: #d1fae5; color: #065f46; }
+.prog-desc {
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+    margin-bottom: 12px; min-height: 40px;
+}
+.desc-toggle-btn {
+    background: none; border: none; color: var(--primary);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    padding: 0; margin-top: 4px; display: inline;
+}
+.prog-meta-row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 14px;
+}
+.prog-meta-item {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; color: var(--muted);
+}
+.prog-actions {
+    display: flex; gap: 8px; align-items: center;
+}
+.btn-view-details {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--primary); color: #fff;
+    padding: 8px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: background 0.15s;
+    flex: 1; justify-content: center;
+}
+.btn-view-details:hover { opacity: 0.9; color: #fff; }
+.btn-brochure {
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 1.5px solid var(--primary); color: var(--primary);
+    padding: 7px 12px; border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    text-decoration: none; transition: all 0.15s; white-space: nowrap;
+}
+.btn-brochure:hover {
+    background: var(--primary); color: #fff;
+}
+.empty-programs {
+    grid-column: 1/-1; text-align: center;
+    padding: 60px 20px; color: var(--muted);
+}
+
+/* ── Announcement Grid ── */
+.ann-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+.ann-card {
+    background: #fff; border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    overflow: hidden; cursor: pointer;
+    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.22s ease;
+    border: 1.5px solid transparent;
+}
+.ann-card:hover, .ann-card:focus {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+    border-color: var(--secondary);
+    outline: none;
+}
+.ann-img {
+    height: 150px; overflow: hidden;
+    background: var(--primary-light);
+}
+.ann-img img {
+    width: 100%; height: 100%;
+    object-fit: cover; transition: transform 0.35s ease;
+}
+.ann-card:hover .ann-img img { transform: scale(1.05); }
+.ann-img-placeholder {
+    height: 150px;
+    display: flex; align-items: center;
+    justify-content: center; color: var(--primary); opacity: 0.35;
+    background: var(--primary-light);
+}
+.ann-body { padding: 16px 18px 18px; }
+.ann-type-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.ann-badge-event        { background: #dbeafe; color: #1e40af; }
+.ann-badge-announcement { background: #fef3c7; color: #92400e; }
+.ann-badge-alert        { background: #fee2e2; color: #991b1b; }
+.ann-badge-notice       { background: #e0e7ff; color: #3730a3; }
+.ann-badge-news         { background: #d1fae5; color: #065f46; }
+.ann-badge-general      { background: #f3f4f6; color: #374151; }
+.ann-title {
+    font-size: 15px; font-weight: 700;
+    color: var(--text); margin: 0 0 6px; line-height: 1.35;
+}
+.ann-summary {
+    font-size: 13px; color: var(--muted);
+    line-height: 1.5; margin: 0 0 10px;
+}
+.ann-meta {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 12px;
+}
+.ann-meta-item {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--muted);
+}
+.ann-author { font-style: italic; }
+.ann-view-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--primary); font-size: 13px; font-weight: 600;
+    text-decoration: none;
+}
+.ann-view-link:hover { text-decoration: underline; }
+
 @media(max-width:600px){ .stats-bar{flex-wrap:wrap;} .stats-bar-item{flex:1 1 50%;border-right:none;border-bottom:1px
-solid var(--border);} .programs-grid{grid-template-columns:1fr;} }
+solid var(--border);} .prog-grid, .ann-grid{grid-template-columns:1fr;} }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -89,27 +312,38 @@ solid var(--border);} .programs-grid{grid-template-columns:1fr;} }
 </div>
 
 <!-- Hero slideshow -->
-{% if _slides and _slides | length > 0 %}
+{% set _show_slides = _slides and _slides | length > 0 %}
+{% if _hero_img and not _show_slides %}
+<div class="hero-wrap" style="height:280px;">
+    <img src="{{ _hero_img }}" alt="{{ _title }}" style="width:100%;height:280px;object-fit:cover;">
+</div>
+{% elif _show_slides %}
 <div class="hero-wrap" id="heroWrap">
+    {% if _hero_img %}
+    <div class="hero-slide active">
+        <img src="{{ _hero_img }}" alt="{{ _title }}">
+    </div>
+    {% endif %}
     {% for slide in _slides %}
     {% set _simg = slide.get('image') if slide.get else slide.image %}
     {% set _scap = slide.get('caption') if slide.get else slide.caption %}
-    <div class="hero-slide {% if loop.first %}active{% endif %}">
+    <div class="hero-slide {% if not _hero_img and loop.first %}active{% endif %}">
         <img src="{{ _simg or '' }}" alt="{{ _scap or '' }}">
         {% if _scap %}<div class="hero-slide-caption">{{ _scap }}</div>{% endif %}
     </div>
     {% endfor %}
-    {% if _slides | length > 1 %}
-    <div class="hero-dots">
-        {% for slide in _slides %}
+    
+    <button class="hero-nav hero-prev" id="heroPrev" aria-label="Previous">&#8249;</button>
+    <button class="hero-nav hero-next" id="heroNext" aria-label="Next">&#8250;</button>
+
+    {% set total_slides = (_slides | length + (1 if _hero_img else 0)) %}
+    {% if total_slides > 1 %}
+    <div class="hero-dots" id="heroDots">
+        {% for i in range(total_slides) %}
         <button class="hero-dot {% if loop.first %}active{% endif %}" data-idx="{{ loop.index0 }}"></button>
         {% endfor %}
     </div>
     {% endif %}
-</div>
-{% elif _hero_img %}
-<div style="border-radius:12px;overflow:hidden;margin-bottom:28px;">
-    <img src="{{ _hero_img }}" alt="{{ _title }}" style="width:100%;max-height:280px;object-fit:cover;">
 </div>
 {% endif %}
 
@@ -145,139 +379,321 @@ solid var(--border);} .programs-grid{grid-template-columns:1fr;} }
 </div>
 {% endif %}
 
-<!-- Portal Announcement strip from DocType -->
-{% if announcements %}
-<div class="announce-strip">
-    {% for a in announcements %}<span>{{ a.title }}</span>{% endfor %}
-</div>
-{% endif %}
+<!-- ═══ PROGRAMS SECTION ═══ -->
+<section class="section-programs">
+    <div class="section-header">
+        <h2 class="section-title">Programs</h2>
+        <p class="section-sub">{{ programs|length }} program{{ 's' if programs|length != 1 }} available this cycle</p>
+    </div>
 
-<!-- Programs grid -->
-{% if programs %}
-<div class="programs-grid">
+    <div class="prog-grid">
     {% for p in programs %}
-    <div class="adm-card">
-        {% set _pimg = p.featured_image or p.get('featured_image') if p.get else p.featured_image %}
-        {% set _pabrv = p.program_abbreviation or (p.get('program_abbreviation') if p.get else '') %}
-        {% set _pname = p.program_name or (p.get('program_name') if p.get else 'Program') %}
-        {% set _pslug = p.program_slug or (p.get('program_slug') if p.get else '') or p.program %}
-        {% if _pimg %}
-        <img src="{{ _pimg }}" alt="{{ _pname }}" class="prog-card-img">
-        {% else %}
-        <div class="prog-card-placeholder">{{ (_pabrv or _pname or 'P')[0] | upper }}</div>
-        {% endif %}
-        <div class="prog-card-body">
-            <div class="prog-card-title">
-                <span>{{ _pname }}</span>
-                <span>
-                    {% if p.show_closed %}<span class="badge-closed">Closed</span>
-                    {% elif p.show_filling_fast %}<span class="badge-filling">Filling Fast</span>
-                    {% else %}<span class="badge-open">Open</span>{% endif %}
-                </span>
+    <article class="prog-card" tabindex="0"
+             onclick="window.location='/admission/{{ p.program_slug or (p.program | lower | replace(' ','-')) }}'"
+             role="button"
+             aria-label="View {{ p.program_name }} details">
+
+        <!-- Thumbnail / placeholder -->
+        <div class="prog-thumb">
+            {% set _pimg = p.featured_image or p.get('featured_image') %}
+            {% if _pimg %}
+            <img src="{{ _pimg }}" alt="{{ p.program_name }}" loading="lazy">
+            {% else %}
+            <div class="prog-thumb-placeholder">
+                {{ (p.program_abbreviation or p.program_name[0]) | upper }}
             </div>
-            {% set _pdesc = p.short_description or (p.get('short_description') if p.get else '') %}
-            {% if _pdesc %}<div class="prog-card-desc">{{ _pdesc }}</div>{% endif %}
-            {% if _show_seats and p.total_seats %}
-            <div class="prog-card-meta">🪑 {{ p.total_seats }} seats</div>
             {% endif %}
-            {% if _show_elig and p.eligibility_hint %}
-            <div class="prog-card-meta" style="border-left:3px solid var(--primary);padding-left:8px;">{{
-                p.eligibility_hint }}</div>
+
+            <!-- Fill bar overlay at bottom of image -->
+            {% if p.fill_pct %}
+            <div class="fill-bar-track">
+                <div class="fill-bar-fill {{ p.fill_class }}"
+                     style="width:{{ p.fill_pct }}%"></div>
+            </div>
             {% endif %}
-            {% if p.brochure_url %}
-            <a href="{{ p.brochure_url }}" target="_blank"
-                style="font-size:12px;color:var(--primary);text-decoration:none;display:inline-block;margin-bottom:10px;">📄
-                Brochure</a>
+
+            <!-- Status badge top-right -->
+            <span class="prog-status-badge {% if app_open %}badge-open{% else %}badge-closed{% endif %}">
+                {% if app_open %}Open{% else %}Closed{% endif %}
+            </span>
+        </div>
+
+        <!-- Card body -->
+        <div class="prog-body">
+            <h3 class="prog-name">{{ p.program_name }}</h3>
+
+            <!-- Fill capacity badge -->
+            {% if p.fill_badge %}
+            <span class="fill-badge {{ p.fill_class }}">{{ p.fill_badge }}</span>
             {% endif %}
-            <div class="prog-card-actions">
-                <button class="btn-primary-adm" id="apply-btn-{{ loop.index }}" data-program="{{ p.program }}"
-                    data-name="{{ _pname | replace('"', ' &quot;') }}" data-level="{{ p.program_level or 'UG' }}"
-                    data-cycle="{{ p.admission_cycle or '' }}">
-                    Apply Now
+
+            <!-- Description with see more/less -->
+            {% if p.desc_short %}
+            <div class="prog-desc">
+                <span class="desc-s-{{ loop.index }}">{{ p.desc_short }}</span>
+                {% if p.desc_has_more %}
+                <span class="desc-f-{{ loop.index }}" style="display:none;">
+                    {{ p.desc_full | safe }}
+                </span>
+                <button class="desc-toggle-btn"
+                    onclick="event.stopPropagation(); toggleDesc({{ loop.index }}, this)">
+                    + See more
                 </button>
-                <a href="/admission/{{ _pslug }}" class="btn-outline-adm">View Details</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Seats row -->
+            <div class="prog-meta-row">
+                <span class="prog-meta-item">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    {{ p.seats or 0 }} seats
+                </span>
+                {% if p.eligibility_hint %}
+                <span class="prog-meta-item">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {{ p.eligibility_hint | truncate(40, True) }}
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Action row -->
+            <div class="prog-actions">
+                <a href="/admission/{{ p.program_slug or (p.program | lower | replace(' ','-')) }}"
+                   class="btn-view-details"
+                   onclick="event.stopPropagation()">
+                    View Details
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </a>
+                {% if p.brochure_url %}
+                <a href="{{ p.brochure_url }}" target="_blank"
+                   class="btn-brochure" onclick="event.stopPropagation()"
+                   title="Download Brochure">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Brochure
+                </a>
+                {% endif %}
             </div>
         </div>
+    </article>
+    {% else %}
+    <div class="empty-programs">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+             stroke="var(--muted)" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <p>No programs available for this cycle.</p>
     </div>
     {% endfor %}
-</div>
-{% else %}
-<div style="text-align:center;padding:60px 20px;color:var(--muted);">
-    <div style="font-size:48px;margin-bottom:16px;">📋</div>
-    <h3>No programs available at this time.</h3>
-</div>
+    </div><!-- .prog-grid -->
+</section>
+
+
+<!-- ═══ ANNOUNCEMENTS & EVENTS SECTION ═══ -->
+{% if announcements %}
+<section class="section-announcements">
+    <div class="section-header">
+        <h2 class="section-title">Announcements &amp; Events</h2>
+        <p class="section-sub">Latest updates from the admission office</p>
+    </div>
+
+    <div class="ann-grid">
+    {% for a in announcements %}
+    <article class="ann-card ann-type-{{ (a.announcement_type or 'general') | lower }}"
+             onclick="window.location='/announcement/{{ a.name }}'"
+             role="button" tabindex="0"
+             aria-label="Read {{ a.title }}">
+
+        <!-- Featured image -->
+        {% if a.featured_image %}
+        <div class="ann-img">
+            <img src="{{ a.featured_image }}" alt="{{ a.title }}" loading="lazy">
+        </div>
+        {% else %}
+        <div class="ann-img ann-img-placeholder">
+            {% if a.announcement_type == 'Event' %}
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            {% else %}
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+                <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="ann-body">
+            <!-- Type badge -->
+            <span class="ann-type-badge ann-badge-{{ (a.announcement_type or 'general') | lower }}">
+                {{ a.announcement_type or 'General' }}
+            </span>
+
+            <h3 class="ann-title">{{ a.title }}</h3>
+
+            {% if a.summary %}
+            <p class="ann-summary">{{ a.summary | truncate(100, True) }}</p>
+            {% endif %}
+
+            <!-- Meta: date + venue for events -->
+            <div class="ann-meta">
+                {% if a.announcement_type == 'Event' and a.event_date %}
+                <span class="ann-meta-item">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    {{ frappe.utils.formatdate(a.event_date, "dd MMM yyyy") }}
+                </span>
+                {% elif a.publish_date %}
+                <span class="ann-meta-item">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    {{ frappe.utils.formatdate(a.publish_date, "dd MMM yyyy") }}
+                </span>
+                {% endif %}
+                {% if a.event_venue %}
+                <span class="ann-meta-item">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    {{ a.event_venue }}
+                </span>
+                {% endif %}
+                {% if a.created_by_role %}
+                <span class="ann-meta-item ann-author">
+                    {{ a.created_by_role }}
+                </span>
+                {% endif %}
+            </div>
+
+            <a href="/announcement/{{ a.name }}"
+               class="ann-view-link" onclick="event.stopPropagation()">
+                View Details
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+        </div>
+    </article>
+    {% endfor %}
+    </div><!-- .ann-grid -->
+</section>
 {% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    function toggleDesc(idx, btn) {
+        var s = document.querySelector('.desc-s-' + idx);
+        var f = document.querySelector('.desc-f-' + idx);
+        if (!s || !f) return;
+        if (f.style.display === 'none') {
+            f.style.display = 'inline'; s.style.display = 'none';
+            btn.textContent = '- See less';
+        } else {
+            f.style.display = 'none'; s.style.display = 'inline';
+            btn.textContent = '+ See more';
+        }
+    }
+
     // LOGIN_REQUIRED from portal config — safe Jinja extraction
     var LOGIN_REQUIRED = "{{ 'true' if _login_req else 'false' }}" === "true";
 
     // Wire up all Apply Now buttons — do NOT use inline onclick
     // because apiFetch may not be defined yet when onclick fires
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('[id^="apply-btn-"]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var program = btn.getAttribute('data-program');
-                var name = btn.getAttribute('data-name');
-                var level = btn.getAttribute('data-level');
-                var cycle = btn.getAttribute('data-cycle');
-                handleApply(program, name, level, cycle);
-            });
-        });
-
-        document.querySelectorAll('.hero-dot').forEach(function (dot) {
-            dot.addEventListener('click', function () {
-                var idx = parseInt(dot.getAttribute('data-idx'));
-                if (typeof window.goHeroSlide === 'function') {
-                    window.goHeroSlide(idx);
-                }
-            });
-        });
-
         // Slideshow auto-advance
         var slides = document.querySelectorAll('.hero-slide');
         var dots = document.querySelectorAll('.hero-dot');
         if (slides.length > 1) {
             var idx = 0;
+            var timer;
             window.goHeroSlide = function (i) {
                 slides[idx].classList.remove('active');
                 if (dots[idx]) dots[idx].classList.remove('active');
                 idx = ((i % slides.length) + slides.length) % slides.length;
                 slides[idx].classList.add('active');
                 if (dots[idx]) dots[idx].classList.add('active');
+                if (timer) { clearInterval(timer); timer = setInterval(function () { window.goHeroSlide(idx + 1); }, 4000); }
             };
-            setInterval(function () { window.goHeroSlide(idx + 1); }, 3000);
+            timer = setInterval(function () { window.goHeroSlide(idx + 1); }, 4000);
+
+            var prevBtn = document.getElementById('heroPrev');
+            var nextBtn = document.getElementById('heroNext');
+            if (prevBtn) prevBtn.addEventListener('click', function() { window.goHeroSlide(idx - 1); });
+            if (nextBtn) nextBtn.addEventListener('click', function() { window.goHeroSlide(idx + 1); });
+
+            dots.forEach(function (dot) {
+                dot.addEventListener('click', function () {
+                    window.goHeroSlide(parseInt(dot.getAttribute('data-idx')));
+                });
+            });
         }
     });
 
     async function handleApply(program, programName, level, cycle) {
-        var formUrl = '/applicant-form?program=' + encodeURIComponent(program)
+        var formUrl = '/application-form/new?program=' + encodeURIComponent(program)
             + '&level=' + encodeURIComponent(level);
 
         if (LOGIN_REQUIRED && window.session_user === 'Guest') {
             window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
             return;
         }
-        try {
-            var result = await apiFetch(
-                'slcm.admission.utils.web.check_existing_application',
-                { program: program }
-            );
-            if (result && result.exists) {
-                if (confirm('You already have an application for ' + programName +
-                    ' (' + result.status + ').\nStart a new one anyway?')) {
-                    window.location.href = formUrl;
+
+        showConfirm('Apply for ' + programName + '?', async function() {
+            try {
+                var result = await apiFetch(
+                    'slcm.admission.utils.web.check_existing_application',
+                    { program: program }
+                );
+                if (result && result.exists) {
+                    showConfirm(
+                        'You already have an application for ' + programName +
+                        ' (Status: ' + result.status + ').\nStart a new one?',
+                        function() { window.location.href = formUrl; }
+                    );
                 } else {
-                    window.location.href = '/my-applications';
+                    window.location.href = formUrl;
                 }
-            } else {
+            } catch(e) {
+                showToast('Could not check applications. Proceeding...', 'info');
                 window.location.href = formUrl;
             }
-        } catch (e) {
-            window.location.href = formUrl;
-        }
+        });
     }
 </script>
 {% endblock %}
