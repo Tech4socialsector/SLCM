@@ -150,7 +150,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-02 15:01:21.410493",
+ "modified": "2026-03-02 18:39:03.596454",
  "modified_by": "Administrator",
  "module": "slcm",
  "name": "Fee Structure",
@@ -166,6 +166,39 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offer Letter Admin",
    "share": 1,
    "write": 1
   }

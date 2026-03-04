@@ -13,6 +13,7 @@
   "is_active",
   "amended_from",
   "column_break_otyc",
+  "minimum_marks",
   "approval_authority",
   "effective_from",
   "effective_to",
@@ -34,6 +35,13 @@
    "in_list_view": 1,
    "label": "Program Level",
    "options": "UG\nPG\nResearch Cource",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "minimum_marks",
+   "fieldtype": "Float",
+   "label": "Minimum Marks",
    "reqd": 1
   },
   {
@@ -104,7 +112,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 18:37:15.758020",
+ "modified": "2026-03-03 16:15:22.421035",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit Rule",

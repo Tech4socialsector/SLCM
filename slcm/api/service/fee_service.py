@@ -102,6 +102,7 @@ class FeeService:
         assignment.offer_letter = offer.name
         assignment.program = offer.program
         assignment.academic_year = offer.academic_year or frappe.db.get_value("Applicant", offer.applicant, "academic_year")
+        assignment.admission_cycle = offer.admission_cycle or frappe.db.get_value("Applicant", offer.applicant, "admission_cycle")
         assignment.assignment_date = frappe.utils.today()
         
         for row in snapshot.fee_component:

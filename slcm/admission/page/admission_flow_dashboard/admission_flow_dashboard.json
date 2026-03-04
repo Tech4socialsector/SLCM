@@ -1,22 +1,29 @@
 {
-    "content": null,
-    "creation": "2026-02-27 10:00:00.000000",
-    "doctype": "Page",
-    "idx": 0,
-    "modified": "2026-02-27 10:00:00.000000",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "admission-flow-dashboard",
-    "owner": "Administrator",
-    "page_name": "Admission Flow Dashboard",
-    "roles": [
-        {
-            "role": "System Manager"
-        },
-        {
-            "role": "Admission Officer"
-        }
-    ],
-    "standard": "Yes",
-    "title": "Admission Flow Dashboard"
+ "content": null,
+ "creation": "2026-02-27 10:00:00",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-03-02 18:42:08.534009",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "admission-flow-dashboard",
+ "owner": "Administrator",
+ "page_name": "admission-flow-dashboard",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Campus Admin"
+  },
+  {
+   "role": "Admission Admin"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Admission Flow Dashboard"
 }

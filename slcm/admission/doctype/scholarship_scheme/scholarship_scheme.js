@@ -5,6 +5,24 @@ frappe.ui.form.on("Scholarship Scheme", {
     refresh(frm) {
         frm.trigger("scheme_type");
         frm.trigger("coverage_type");
+
+        if (!frm.is_new()) {
+            frm.add_custom_button(__("Sync Budget"), () => {
+                frm.call({
+                    doc: frm.doc,
+                    method: "sync_budget",
+                    callback: function (r) {
+                        if (r.message && r.message.status === "Success") {
+                            frappe.show_alert({
+                                message: __("Budget synced successfully. Utilized: {0}", [format_currency(r.message.utilized_budget)]),
+                                indicator: "green"
+                            });
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            }, __("Actions"));
+        }
     },
     scheme_type(frm) {
         const type = frm.doc.scheme_type;

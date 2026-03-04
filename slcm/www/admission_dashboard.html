@@ -222,11 +222,11 @@
                 {% if entry.profile.hsc_percentage %}
                 <div class="score-chip">HSC: {{ entry.profile.hsc_percentage }}%</div>
                 {% endif %}
-                {% if entry.profile.entrance_percentage %}
-                <div class="score-chip">Entrance: {{ entry.profile.entrance_percentage }}%</div>
+                {% if entry.profile.entrance_test_score %}
+                <div class="score-chip">Entrance: {{ entry.profile.entrance_test_score }}</div>
                 {% endif %}
-                {% if entry.profile.interview_percentage %}
-                <div class="score-chip">Interview: {{ entry.profile.interview_percentage }}%</div>
+                {% if entry.profile.interview_score %}
+                <div class="score-chip">Interview: {{ entry.profile.interview_score }}</div>
                 {% endif %}
                 {% if entry.profile.ug_cgpa %}
                 <div class="score-chip">UG CGPA: {{ entry.profile.ug_cgpa }}</div>
@@ -299,8 +299,8 @@
                                 class="status-badge status-{{ app.status.lower().replace(' ', '-') }}">{{ app.status
                                 }}</span>
                             {% if app.status == 'Approved' %}
-                            | Amount: <span style="color: var(--success); font-weight: 700;">₹ {{ app.approved_amount or
-                                app.calculated_benefit }}</span>
+                            | Amount: <span style="color: var(--success); font-weight: 700;">₹ {{ app.calculated_benefit
+                                }}</span>
                             {% endif %}
                         </p>
                     </div>

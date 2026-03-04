@@ -998,7 +998,7 @@
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 23:03:19.657579",
+ "modified": "2026-03-03 11:52:19.780778",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -1040,6 +1040,24 @@
    "write": 1
   },
   {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offer Letter Admin",
+   "share": 1
+  },
+  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -1047,7 +1065,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Entrance Test Admin",
+   "role": "Campus Admin",
    "share": 1,
    "write": 1
   },
@@ -1057,7 +1075,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Entrance Test Provider",
+   "role": "Interview Staff Member",
    "share": 1,
    "write": 1
   }

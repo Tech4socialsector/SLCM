@@ -1,0 +1,39 @@
+{
+ "chart_name": "Admission Pipeline",
+ "chart_type": "Report",
+ "creation": "2026-03-03 12:38:48.190136",
+ "currency": "",
+ "custom_options": "{\"x_field\": \"stage\", \"chart_type\": \"Bar\", \"colors\": [\"#00bfa5\", \"#ff5858\"], \"axisOptions\": {\"xPos\": \"bottom\", \"chartType\": \"bar\"}, \"barOptions\": {\"spaceRatio\": 0.2}}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "filters_json": "{}",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 0,
+ "is_standard": 1,
+ "modified": "2026-03-03 12:48:46.714753",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission Pipeline",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "report_name": "Campus and Program Admissions Funnel",
+ "roles": [],
+ "show_values_over_chart": 0,
+ "time_interval": "Yearly",
+ "timeseries": 0,
+ "timespan": "Last Year",
+ "type": "Bar",
+ "use_report_chart": 0,
+ "x_field": "stage",
+ "y_axis": [
+  {
+   "color": "#00bfa5",
+   "y_field": "count"
+  },
+  {
+   "color": "#ff5858",
+   "y_field": "conversion"
+  }
+ ]
+}

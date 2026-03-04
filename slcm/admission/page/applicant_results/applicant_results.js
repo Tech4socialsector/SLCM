@@ -250,8 +250,8 @@ frappe.pages["applicant-results"].on_page_load = function (wrapper) {
             { label: "Total Score", val: fmt(m.total_score), color: "#2e7d32" },
         ];
         if (m.hsc_percentage) fields.push({ label: "HSC %", val: fmt(m.hsc_percentage) + "%" });
-        if (m.entrance_percentage) fields.push({ label: "Entrance %", val: fmt(m.entrance_percentage) + "%" });
-        if (m.interview_percentage) fields.push({ label: "Interview %", val: fmt(m.interview_percentage) + "%" });
+        if (m.entrance_score) fields.push({ label: "Entrance Score", val: fmt(m.entrance_score) });
+        if (m.interview_score) fields.push({ label: "Interview Score", val: fmt(m.interview_score) });
         if (m.ug_cgpa) fields.push({ label: "UG CGPA", val: fmt(m.ug_cgpa) });
         if (m.pg_cgpa) fields.push({ label: "PG CGPA", val: fmt(m.pg_cgpa) });
 
@@ -440,9 +440,7 @@ frappe.pages["applicant-results"].on_page_load = function (wrapper) {
     function render_apps(apps) {
         const rows = apps.map(a => {
             const st = (a.status || "").toLowerCase().replace(/ /g, "-");
-            const amt = a.approved_amount
-                ? `₹${frappe.format(a.approved_amount, { fieldtype: "Currency" })}`
-                : (a.calculated_benefit ? `₹${frappe.format(a.calculated_benefit, { fieldtype: "Currency" })} (est.)` : "—");
+            const amt = a.calculated_benefit ? `₹${frappe.format(a.calculated_benefit, { fieldtype: "Currency" })}` : "—";
             return `<tr>
                 <td>${esc(a.scholarship_scheme || "")}</td>
                 <td><span class="ar-pill ${st}">${a.status || ""}</span></td>

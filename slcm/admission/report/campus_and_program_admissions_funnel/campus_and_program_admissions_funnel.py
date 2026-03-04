@@ -47,17 +47,17 @@ def get_data(filters):
             continue
         status_map[status] = status_map.get(status, 0) + res.count
 
-    # Define stages for the report
+    # Define all 9 stages for the report
     report_stages = [
-        {"label": "Submitted", "statuses": ["Submitted", "Selected", "Waitlisted", "Rejected", "Offer Accepted", "Offer Issued", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"]},
-        {"label": "Selected", "statuses": ["Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"], "parent": "Submitted"},
-        {"label": "Waitlisted", "statuses": ["Waitlisted"], "parent": "Submitted"},
-        {"label": "Rejected", "statuses": ["Rejected"], "parent": "Submitted"},
-        {"label": "Offer Issued", "statuses": ["Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid"], "parent": "Selected"},
-        {"label": "Offer Accepted", "statuses": ["Offer Accepted", "Fee Paid", "Accepted"], "parent": "Offer Issued"},
-        {"label": "Offer Declined", "statuses": ["Offer Declined"], "parent": "Offer Issued"},
-        {"label": "Offer Expired", "statuses": ["Offer Expired"], "parent": "Offer Issued"},
-        {"label": "Fee Paid", "statuses": ["Fee Paid"], "parent": "Offer Accepted"}
+        {"label": _("Submitted"), "statuses": ["Submitted", "Selected", "Waitlisted", "Rejected", "Offer Accepted", "Offer Issued", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"]},
+        {"label": _("Selected"), "statuses": ["Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"], "parent": _("Submitted")},
+        {"label": _("Waitlist"), "statuses": ["Waitlisted"], "parent": _("Submitted")},
+        {"label": _("Rejected"), "statuses": ["Rejected"], "parent": _("Submitted")},
+        {"label": _("Offered"), "statuses": ["Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid"], "parent": _("Selected")},
+        {"label": _("Accepted"), "statuses": ["Offer Accepted", "Fee Paid", "Accepted"], "parent": _("Offered")},
+        {"label": _("Declined"), "statuses": ["Offer Declined"], "parent": _("Offered")},
+        {"label": _("Expired"), "statuses": ["Offer Expired"], "parent": _("Offered")},
+        {"label": _("Fee Paid"), "statuses": ["Fee Paid"], "parent": _("Accepted")}
     ]
 
     # Calculate counts for each report stage
@@ -74,13 +74,11 @@ def get_data(filters):
         count = calculated_counts[label]
         parent = stage.get("parent")
         
-        conversion = None
+        conversion = 0.0
         if parent and calculated_counts.get(parent, 0) > 0:
-            conversion = (count / calculated_counts[parent]) * 100
+            conversion = round((count / calculated_counts[parent]) * 100, 2)
         elif not parent: # Root stage
              conversion = 100.0
-        else:
-            conversion = 0.0
         
         data.append({
             "stage": label,

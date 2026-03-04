@@ -8,23 +8,32 @@ def calculate_merit_with_rule(applicant, rule):
     Calculates total merit score for an applicant based on the given rule.
     """
     total_score = 0
+    
+    # Pre-fetch merit components for efficiency if there are many rows
+    component_map = {}
+    component_names = [row.component_type for row in rule.components if row.is_active]
+    
+    if component_names:
+        components = frappe.get_all(
+            "Merit Component",
+            filters={"name": ["in", component_names]},
+            fields=["name", "field_name", "multiplier"]
+        )
+        component_map = {c.name: c for c in components}
+
     for row in rule.components:
         if not row.is_active:
             continue
 
-        score = 0
-        if row.component_type == "HSC Percentage":
-            score = applicant.hsc_percentage or 0
-        elif row.component_type == "Entrance Test":
-            score = applicant.entrance_percentage or 0
-        elif row.component_type == "Interview":
-            score = applicant.interview_percentage or 0
-        elif row.component_type == "UG CGPA":
-            val = applicant.ug_cgpa or 0
-            score = val * 10
-        elif row.component_type == "PG CGPA":
-            val = applicant.pg_cgpa or 0
-            score = val * 10
+        comp_meta = component_map.get(row.component_type)
+        if not comp_meta:
+            # Fallback for gracefully handling missing component definitions
+            frappe.logger().warning(f"Merit Component '{row.component_type}' not found for calculation.")
+            continue
+
+        # Dynamic attribute lookup
+        val = getattr(applicant, comp_meta.field_name, 0) or 0
+        score = val * (comp_meta.multiplier or 1.0)
 
         total_score += score * (row.weight / 100)
 
@@ -38,9 +47,9 @@ def _rank_applicants(applicant_rows):
     """
     sort_key = lambda x: (
         x.total_score,
-        x.entrance_percentage or 0,
+        x.entrance_score or 0,
         x.hsc_percentage or 0,
-        x.interview_percentage or 0
+        x.interview_score or 0
     )
 
     # Overall Rank
@@ -123,7 +132,7 @@ def generate_merit_for_level(cycle, campus, program_level):
 
     # Fetch applicants for this program level
     applicants = frappe.get_all(
-        "Admission Result",
+        "Eligibility Result",
         filters={
             "admission_cycle": cycle,
             "campus": campus,
@@ -131,7 +140,7 @@ def generate_merit_for_level(cycle, campus, program_level):
         },
         fields=[
             "name", "applicant_id", "program", "program_level", "reservation_category",
-            "hsc_percentage", "entrance_percentage", "interview_percentage",
+            "hsc_percentage", "entrance_test_score", "interview_score",
             "ug_cgpa", "pg_cgpa"
         ]
     )
@@ -152,6 +161,10 @@ def generate_merit_for_level(cycle, campus, program_level):
 
     for app in applicants:
         total_score = calculate_merit_with_rule(app, rule)
+
+        if total_score < rule.minimum_marks:
+            continue
+
         merit.append("merit_applicants", {
             "applicant": app.name,
             "applicant_id": app.applicant_id,
@@ -159,8 +172,8 @@ def generate_merit_for_level(cycle, campus, program_level):
             "program_level": app.program_level,
             "reservation_category": app.reservation_category,
             "hsc_percentage": app.hsc_percentage,
-            "entrance_percentage": app.entrance_percentage,
-            "interview_percentage": app.interview_percentage,
+            "entrance_score": app.entrance_test_score,
+            "interview_score": app.interview_score,
             "ug_cgpa": app.ug_cgpa,
             "pg_cgpa": app.pg_cgpa,
             "total_score": total_score,

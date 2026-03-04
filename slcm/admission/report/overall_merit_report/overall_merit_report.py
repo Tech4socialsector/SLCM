@@ -12,10 +12,9 @@ def execute(filters=None):
 def get_columns():
     return [
         {
-            "label": "Applicant",
-            "fieldname": "applicant",
-            "fieldtype": "Link",
-            "options": "Admission Result",
+            "label": "Candidate Name",
+            "fieldname": "candidate_name",
+            "fieldtype": "Data",
             "width": 150
         },
         {
@@ -62,7 +61,7 @@ def get_columns():
 def get_data(filters):
     query = """
         SELECT
-            mla.applicant,
+            mla.candidate_name,
             aa.applicant_id,
             mla.program,
             ml.campus,
@@ -76,7 +75,7 @@ def get_data(filters):
         ON
             mla.parent = ml.name
         JOIN
-            `tabAdmission Result` aa
+            `tabEligibility Result` aa
         ON
             mla.applicant = aa.name
         WHERE
@@ -91,7 +90,7 @@ def get_data(filters):
         query += " AND mla.reservation_category = %(reservation_category)s"
         
     # Standardize tie-breaking with merit_service.py
-    query += " ORDER BY mla.total_score DESC, mla.entrance_percentage DESC, mla.hsc_percentage DESC, mla.interview_percentage DESC"
+    query += " ORDER BY mla.total_score DESC, mla.entrance_score DESC, mla.hsc_percentage DESC, mla.interview_score DESC"
     
     return frappe.db.sql(query, {
         "cycle": filters.get("admission_cycle"),

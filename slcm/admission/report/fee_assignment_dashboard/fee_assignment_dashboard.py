@@ -7,9 +7,10 @@ from frappe import _
 def execute(filters=None):
 	columns = get_columns()
 	data = get_data(filters)
-	chart = get_chart(data)
-	report_summary = get_report_summary(data)
-	return columns, data, None, chart, report_summary
+	
+	# Return full tuple to ensure standard 'result' property is populated in JS
+	# columns, result, message, chart, report_summary
+	return columns, data, None, None, None
 
 def get_columns():
 	return [
@@ -34,52 +35,29 @@ def get_columns():
 	]
 
 def get_data(filters):
-	data = frappe.db.get_all("Applicant Fee Assignment",
-		fields=["status", "count(name) as count", "sum(total_amount) as total_amount"],
-		group_by="status"
-	)
+	conditions = ""
+	values = {}
+	
+	if filters:
+		if filters.get("from_date"):
+			conditions += " AND assignment_date >= %(from_date)s"
+			values["from_date"] = filters.get("from_date")
+		if filters.get("to_date"):
+			conditions += " AND assignment_date <= %(to_date)s"
+			values["to_date"] = filters.get("to_date")
+		if filters.get("status"):
+			conditions += " AND status = %(status)s"
+			values["status"] = filters.get("status")
+
+	data = frappe.db.sql(f"""
+		SELECT 
+			status, 
+			COUNT(name) as count, 
+			SUM(total_amount) as total_amount
+		FROM `tabApplicant Fee Assignment`
+		WHERE docstatus < 2 {conditions}
+		GROUP BY status
+	""", values, as_dict=1)
+	
 	return data
 
-def get_chart(data):
-	labels = [d.status for d in data]
-	values = [d.count for d in data]
-	
-	return {
-		"data": {
-			"labels": labels,
-			"datasets": [{"values": values}]
-		},
-		"type": "donut",
-		"height": 250
-	}
-
-def get_report_summary(data):
-	total_assigned = 0
-	converted_count = 0
-	total_count = 0
-	pending_amount = 0
-	
-	for d in data:
-		total_count += d.count
-		total_assigned += d.total_amount
-		if d.status == "Converted":
-			converted_count += d.count
-		if d.status in ["Assigned", "Partially Paid"]:
-			pending_amount += d.total_amount
-	
-	conversion_rate = (converted_count / total_count * 100) if total_count > 0 else 0
-	
-	return [
-		{
-			"value": pending_amount,
-			"indicator": "Red" if pending_amount > 0 else "Green",
-			"label": _("Total Pending Collection"),
-			"datatype": "Currency"
-		},
-		{
-			"value": conversion_rate,
-			"indicator": "Blue",
-			"label": _("Conversion Rate"),
-			"datatype": "Percent"
-		}
-	]

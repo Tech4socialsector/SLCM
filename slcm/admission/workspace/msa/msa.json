@@ -1,7 +1,7 @@
 {
  "app": "slcm",
  "charts": [],
- "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"Ah6SyomZpu\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule Mapping\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"xcszl2GrWZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit\",\"col\":4}},{\"id\":\"VLetqLuLlB\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"l3tRSlGQA5\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"MxNHtRfxzq\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"dBHi4gkFvX\",\"type\":\"card\",\"data\":{\"card_name\":\"Logs\",\"col\":4}},{\"id\":\"BdlGHrplJH\",\"type\":\"card\",\"data\":{\"card_name\":\"page\",\"col\":4}}]",
+ "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"Ah6SyomZpu\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule Mapping\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"WUc1ICGUOz\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit \",\"col\":4}},{\"id\":\"2nFwcalWX_\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Uv0kebi4uV\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"1REulgiGgO\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"vEO09THmKr\",\"type\":\"card\",\"data\":{\"card_name\":\"Logs\",\"col\":4}},{\"id\":\"ue_oanO0PA\",\"type\":\"card\",\"data\":{\"card_name\":\"page\",\"col\":4}}]",
  "creation": "2026-02-20 09:51:44.094533",
  "custom_blocks": [],
  "docstatus": 0,
@@ -17,7 +17,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Merit",
+   "label": "Merit ",
    "link_count": 4,
    "link_type": "DocType",
    "onboard": 0,
@@ -75,9 +75,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Seat Allocation",
+   "label": "Waitlist Rule",
    "link_count": 0,
-   "link_to": "Seat Allocation",
+   "link_to": "Waitlist Rule",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -85,9 +85,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Waitlist Rule",
+   "label": "Seat Allocation",
    "link_count": 0,
-   "link_to": "Waitlist Rule",
+   "link_to": "Seat Allocation",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -137,7 +137,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Setup",
-   "link_count": 2,
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -145,9 +145,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Admission Result",
+   "label": "Admission Cycle",
    "link_count": 0,
-   "link_to": "Admission Result",
+   "link_to": "Admission Cycle",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -165,6 +165,16 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Eligibility Result",
+   "link_count": 0,
+   "link_to": "Eligibility Result",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Logs",
    "link_count": 2,
    "link_type": "DocType",
@@ -174,9 +184,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Merit Audit Log",
+   "label": "Seat Allocation Audit Log",
    "link_count": 0,
-   "link_to": "Merit Audit Log",
+   "link_to": "Seat Allocation Audit Log",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -184,9 +194,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Seat Allocation Audit Log",
+   "label": "Merit Audit Log",
    "link_count": 0,
-   "link_to": "Seat Allocation Audit Log",
+   "link_to": "Merit Audit Log",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -211,7 +221,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-02 15:03:15.790754",
+ "modified": "2026-03-03 16:41:57.505441",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "MSA",

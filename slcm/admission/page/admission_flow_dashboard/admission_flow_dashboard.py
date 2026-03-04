@@ -62,7 +62,10 @@ def get_dashboard_data(filters=None):
     # 9. Offer Status Breakdown
     offer_breakdown = get_offer_status_breakdown(where_clause)
 
-    # 10. Yield Metrics
+    # 10. Fee Payment Status
+    fee_payment_dist = get_fee_payment_status(where_clause)
+
+    # 11. Yield Metrics
     yield_metrics = get_yield_metrics(summary)
 
     return {
@@ -75,6 +78,7 @@ def get_dashboard_data(filters=None):
         "gender_dist": gender_dist,
         "state_dist": state_dist,
         "offer_breakdown": offer_breakdown,
+        "fee_payment_dist": fee_payment_dist,
         "yield_metrics": yield_metrics
     }
 
@@ -165,6 +169,45 @@ def get_offer_status_breakdown(where_clause):
         FROM `tabApplicant`
         {where_clause} AND application_status IN ('Offer Issued', 'Offer Accepted', 'Offer Declined', 'Offer Expired', 'Fee Paid', 'Accepted')
         GROUP BY label
+    """
+    return frappe.db.sql(sql, as_dict=1)
+
+def get_fee_payment_status(where_clause):
+    # Join with Applicant to apply same filters (campus, cycle, year, etc.)
+    sql = f"""
+        SELECT 
+            afa.status as label,
+            COUNT(*) as count
+        FROM `tabApplicant Fee Assignment` afa
+        JOIN `tabApplicant` app ON afa.applicant = app.name
+        {where_clause.replace('WHERE', 'WHERE afa.docstatus < 2 AND ')}
+        GROUP BY label
+        ORDER BY count DESC
+    """
+    # Note: where_clause already has 'WHERE docstatus < 2'. 
+    # If where_clause has 'WHERE docstatus < 2 AND ...', replace 'WHERE' with 'WHERE afa.docstatus < 2 AND' 
+    # is a bit tricky if it's already there.
+    
+    # Let's be safer with the replacement:
+    final_where = where_clause.replace('admission_year', 'app.admission_year')\
+                              .replace('admission_cycle', 'app.admission_cycle')\
+                              .replace('campus', 'app.campus')\
+                              .replace('program', 'app.program')\
+                              .replace('reservation_category', 'app.reservation_category')\
+                              .replace('gender', 'app.gender')\
+                              .replace('state', 'app.state')\
+                              .replace('creation', 'app.creation')\
+                              .replace('docstatus', 'app.docstatus')
+
+    sql = f"""
+        SELECT 
+            afa.status as label,
+            COUNT(*) as count
+        FROM `tabApplicant Fee Assignment` afa
+        JOIN `tabApplicant` app ON afa.applicant = app.name
+        {final_where}
+        GROUP BY label
+        ORDER BY count DESC
     """
     return frappe.db.sql(sql, as_dict=1)
 

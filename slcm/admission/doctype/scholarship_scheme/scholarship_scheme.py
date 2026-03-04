@@ -81,6 +81,34 @@ class ScholarshipScheme(Document):
 			if flt(self.max_amount) < 0:
 				frappe.throw(frappe._("Maximum amount cannot be negative"))
 
+	@frappe.whitelist()
+	def sync_budget(self):
+		"""
+		Recalculates utilized_budget and current_beneficiaries based on approved applications.
+		Useful for correcting discrepancies.
+		"""
+		result = frappe.db.sql("""
+			SELECT count(name), sum(calculated_benefit)
+			FROM `tabScholarship Application`
+			WHERE scholarship_scheme = %s AND status = 'Approved'
+		""", (self.name,))
+		
+		count, total = result[0] if result else (0, 0)
+
+		self.current_beneficiaries = count or 0
+		self.utilized_budget = flt(total or 0)
+		
+		# Re-verify status based on limits
+		if (self.max_beneficiaries and self.current_beneficiaries >= self.max_beneficiaries) or \
+		   (self.total_budget and self.utilized_budget >= self.total_budget):
+			if self.status == "Active":
+				self.status = "Archived"
+		elif self.status == "Archived":
+			self.status = "Active"
+
+		self.save(ignore_permissions=True)
+		return {"status": "Success", "utilized_budget": self.utilized_budget, "current_beneficiaries": self.current_beneficiaries}
+
 	def autoname(self):
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))

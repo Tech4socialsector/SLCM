@@ -80,7 +80,7 @@ class InterviewConfiguration(Document):
         # Students who sat the entrance test and have result_status = 'Pass'
         # in EntranceTestSeatAllocation. Fetch their details via the
         # Applicant link stored in the allocation record.
-        # Also exclude those separately exempted from interview.
+        # We use the carry-forward checkbox etsa.exempts_interview
         source2_applicants = frappe.db.sql("""
             SELECT
                 app.name          AS applicant_id,
@@ -94,8 +94,6 @@ class InterviewConfiguration(Document):
             FROM `tabEntrance Test Seat Allocation` etsa
             INNER JOIN `tabApplicant` app
                     ON app.name = etsa.applicant
-            LEFT JOIN `tabEligibility Evaluation` ee
-                    ON ee.applicant_name = app.name
             WHERE
                 etsa.academic_year    = %(academic_year)s
                 AND etsa.campus       = %(campus)s
@@ -103,7 +101,7 @@ class InterviewConfiguration(Document):
                 AND etsa.program_level   = %(program_level)s
                 AND etsa.result_status   = 'Pass'
                 AND app.application_status != 'Rejected'
-                AND (ee.exempts_interview IS NULL OR ee.exempts_interview = 0)
+                AND COALESCE(etsa.exempts_interview, 0) = 0
         """, {
             "academic_year":   self.academic_year,
             "campus":          self.campus,

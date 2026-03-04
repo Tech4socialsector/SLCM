@@ -95,8 +95,7 @@
    "fieldname": "rendered_content",
    "fieldtype": "HTML Editor",
    "in_preview": 1,
-   "label": "Rendered Content",
-   "read_only": 1
+   "label": "Rendered Content"
   },
   {
    "fieldname": "controls_tab",
@@ -206,7 +205,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 15:13:20.448830",
+ "modified": "2026-03-02 18:31:52.010458",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
@@ -224,6 +223,36 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offer Letter Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

@@ -429,7 +429,7 @@ class OfferService:
                         "parenttype": "Seat Allocation",
                         "selection_status": ["in", ["Selected", "Accepted"]]
                     }
-                    if frappe.db.exists("Admission Result", applicant_name):
+                    if frappe.db.exists("Eligibility Result", applicant_name):
                          sa_child_filters["applicant"] = applicant_name
                     else:
                          sa_child_filters["applicant_id"] = applicant_name
@@ -491,6 +491,8 @@ class OfferService:
                 error_msg = str(e) or "Unknown Server Error"
                 results["errors"].append({"applicant": str(data.get("applicant") if isinstance(data, dict) else data), "error": error_msg})
                 frappe.log_error(f"Bulk Offer Generation Error for {str(data)}: {error_msg}", "Offer Service")
+        
+        return results
 
     @staticmethod
     def background_bulk_worker(applicants, user):
