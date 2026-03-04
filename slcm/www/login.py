@@ -3,18 +3,18 @@ import frappe
 def get_context(context):
     # If user is already logged in, redirect appropriately
     if frappe.session.user != "Guest":
-        redirect = frappe.local.request.args.get("redirect", "")
-        if redirect and redirect.startswith("/app"):
-            frappe.local.flags.redirect_location = redirect
+        user_type = frappe.db.get_value("User", frappe.session.user, "user_type") or "Website User"
+        if user_type == "System User":
+            frappe.local.flags.redirect_location = "/desk"
         else:
-            frappe.local.flags.redirect_location = "/my-applications"
+            frappe.local.flags.redirect_location = "/admission"
         raise frappe.Redirect
 
     # Check if this is a desk login attempt (redirect=/app or next=/app)
     redirect_to = frappe.local.request.args.get("redirect", "") or \
                   frappe.local.request.args.get("next", "")
     context.is_desk_redirect = redirect_to.startswith("/app")
-    context.redirect_to = redirect_to or "/my-applications"
+    context.redirect_to = redirect_to or "/admission"
 
     from slcm.admission.utils.portal import get_portal_config
     portal_config = get_portal_config()
@@ -22,21 +22,17 @@ def get_context(context):
 
     # Announcements for right panel
     try:
-        # Field names from JSON: announcement_type, status, publish_date, event_date
-        context.announcements = frappe.get_all(
-            "Portal Announcement",
-            filters={"status": "Published", "announcement_type": "Announcement"},
-            fields=["title", "summary as content", "publish_date"],
-            order_by="publish_date desc",
-            limit=5
-        )
-    except Exception:
+        from slcm.admission.utils.web import get_public_announcements
+        context.announcements = get_public_announcements()
+    except Exception as e:
+        frappe.log_error(title="Portal", message=f"login announcements failed: {e}")
         context.announcements = []
 
+    # Important Dates (Events)
     try:
         context.events = frappe.get_all(
             "Portal Announcement",
-            filters={"status": "Published", "announcement_type": "Event"},
+            filters={"is_active": 1, "announcement_type": "Event"},
             fields=["title", "summary as content", "event_date"],
             order_by="event_date asc",
             limit=5
@@ -44,9 +40,7 @@ def get_context(context):
     except Exception:
         context.events = []
 
-    # Circulars not in type options
-    context.circulars = []
-
     # Capture redirect param
     context.no_cache = 1
     context.title = portal_config.get("portal_title", "Login / Register")
+    context.csrf_token = frappe.local.session.data.csrf_token or ''
