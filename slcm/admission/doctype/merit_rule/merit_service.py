@@ -8,23 +8,32 @@ def calculate_merit_with_rule(applicant, rule):
     Calculates total merit score for an applicant based on the given rule.
     """
     total_score = 0
+    
+    # Pre-fetch merit components for efficiency if there are many rows
+    component_map = {}
+    component_names = [row.component_type for row in rule.components if row.is_active]
+    
+    if component_names:
+        components = frappe.get_all(
+            "Merit Component",
+            filters={"name": ["in", component_names]},
+            fields=["name", "field_name", "multiplier"]
+        )
+        component_map = {c.name: c for c in components}
+
     for row in rule.components:
         if not row.is_active:
             continue
 
-        score = 0
-        if row.component_type == "HSC Percentage":
-            score = applicant.hsc_percentage or 0
-        elif row.component_type == "Entrance Score":
-            score = applicant.entrance_test_score or 0
-        elif row.component_type == "Interview Score":
-            score = applicant.interview_score or 0
-        elif row.component_type == "UG CGPA":
-            val = applicant.ug_cgpa or 0
-            score = val * 10
-        elif row.component_type == "PG CGPA":
-            val = applicant.pg_cgpa or 0
-            score = val * 10
+        comp_meta = component_map.get(row.component_type)
+        if not comp_meta:
+            # Fallback for gracefully handling missing component definitions
+            frappe.logger().warning(f"Merit Component '{row.component_type}' not found for calculation.")
+            continue
+
+        # Dynamic attribute lookup
+        val = getattr(applicant, comp_meta.field_name, 0) or 0
+        score = val * (comp_meta.multiplier or 1.0)
 
         total_score += score * (row.weight / 100)
 

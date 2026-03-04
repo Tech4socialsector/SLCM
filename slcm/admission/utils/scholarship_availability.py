@@ -17,10 +17,12 @@ def check_scholarship_availability(scheme_name, applicant_status):
         frappe.throw(frappe._("Scholarship scheme {0} is not active").format(scheme_name))
 
     # 2. Stage check
-    if scheme.stage_availability == "Post-Selection" and applicant_status != "Selected":
+    valid_offer_statuses = ["Offer Issued", "Offer Accepted", "Fee Paid"]
+    
+    if scheme.stage_availability == "Post-Selection" and applicant_status not in ["Selected"] + valid_offer_statuses:
         frappe.throw(frappe._("Scholarship available only after selection"))
 
-    if scheme.stage_availability == "Post-Offer" and applicant_status != "Offered":
+    if scheme.stage_availability == "Post-Offer" and applicant_status not in valid_offer_statuses:
         frappe.throw(frappe._("Scholarship available only after offer issuance"))
 
     # 3. Date window check
@@ -135,18 +137,14 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             continue
             
         # Check stage availability
-        if scheme.stage_availability == "Post-Selection" and "Selected" not in applicant_statuses:
-            continue
-        if scheme.stage_availability == "Post-Offer" and "Offered" not in list(applicant_statuses) + []: # Add other valid states if needed, wait for now checking if the status is there
-            pass # We'll refine this below
-            
-        # Refined stage checking
         is_eligible_stage = True
+        valid_post_offer = ["Offer Issued", "Offer Accepted", "Fee Paid"]
+        
         if scheme.stage_availability == "Post-Selection":
-            if "Selected" not in applicant_statuses and "Offered" not in applicant_statuses and "Accepted" not in applicant_statuses:
+            if "Selected" not in applicant_statuses and not any(s in applicant_statuses for s in valid_post_offer):
                 is_eligible_stage = False
         elif scheme.stage_availability == "Post-Offer":
-             if "Offered" not in applicant_statuses and "Accepted" not in applicant_statuses:
+            if not any(s in applicant_statuses for s in valid_post_offer):
                 is_eligible_stage = False
                 
         if not is_eligible_stage:

@@ -18,14 +18,14 @@ def get_columns() -> list[dict]:
 			"width": 140
 		},
 		{
-			"label": _("Applicant"),
+			"label": _("Applicant ID"),
 			"fieldname": "applicant",
 			"fieldtype": "Link",
 			"options": "Applicant",
 			"width": 120
 		},
 		{
-			"label": _("Applicant Name"),
+			"label": _("Candidate Name"),
 			"fieldname": "applicant_name",
 			"fieldtype": "Data",
 			"width": 180
