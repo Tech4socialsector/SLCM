@@ -385,7 +385,7 @@
     <div class="hero-banner">
         <div class="hero-content">
             <p style="text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.5rem; opacity: 0.8;">Applicant Workspace</p>
-            <h1>Welcome back, {{ entry.profile.candidate_name.split(' ')[0] }}!</h1>
+            <h1>Welcome back, {{ (entry.profile.candidate_name or "").split(' ')[0] }}!</h1>
             <p>Track your application journey for {{ entry.profile.admission_cycle }}</p>
         </div>
     </div>
@@ -517,7 +517,7 @@
                 <div class="item-row">
                     <div class="item-main">
                         <h4>{{ app.scholarship_scheme }}</h4>
-                        <div class="item-sub">Submitted on: {{ app.creation.split(' ')[0] }}</div>
+                        <div class="item-sub">Submitted on: {{ app.creation.strftime('%Y-%m-%d') }}</div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 1.5rem;">
                         {% if app.status == 'Approved' %}

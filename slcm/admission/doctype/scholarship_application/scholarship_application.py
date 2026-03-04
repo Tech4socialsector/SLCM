@@ -25,6 +25,10 @@ class ScholarshipApplication(Document):
 		print(f"DEBUG: autoname self.name: {self.name}")
 
 	def validate(self):
+		if not self.status:
+			# Web forms pass empty strings for read_only status fields, bypassing the Draft default
+			self.status = "Submitted"
+			
 		self.prevent_duplicate()
 		self.validate_scheme_mapping()
 		self.validate_requirements()
@@ -119,15 +123,16 @@ class ScholarshipApplication(Document):
 			frappe.throw(frappe._("Scholarship not applicable for selected cycle/program/campus/category."))
 
 	def validate_requirements(self):
+		# Always mandatory as per user request
+		if self.family_income is None or self.family_income == "":
+			frappe.throw(frappe._("Family Income is mandatory for this scholarship"))
+		if not self.income_certificate:
+			frappe.throw(frappe._("Income Certificate is mandatory for this scholarship"))
+
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
 		
 		# 1. Income Validation
 		if scheme.scheme_type == "Need" and scheme.income_certificate_required:
-			if self.family_income is None:
-				frappe.throw(frappe._("Family Income is mandatory for this scholarship"))
-			if not self.income_certificate:
-				frappe.throw(frappe._("Income Certificate is mandatory for this scholarship"))
-			
 			if scheme.max_income and flt(self.family_income) > flt(scheme.max_income):
 				frappe.throw(frappe._("Family Income {0} exceeds the maximum allowed {1} for this scholarship")
 					.format(self.family_income, scheme.max_income))

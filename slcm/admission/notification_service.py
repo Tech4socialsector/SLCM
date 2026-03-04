@@ -48,9 +48,23 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
             "applicant": applicant
         })
  
+    # Force Candidate Name resolution if missing or None
+    raw_name = doc_context.get("candidate_name") or applicant_doc.candidate_name
+    if not raw_name and doc_context.get("applicant_id"):
+        raw_name = frappe.db.get_value("Applicant", doc_context["applicant_id"], "candidate_name")
+    
+    # Absolute string fallback
+    safe_name = str(raw_name or "Applicant")
+    if safe_name == "None":
+        safe_name = "Applicant"
+        
+    doc_context["candidate_name"] = safe_name
+    doc_context["applicant_name"] = safe_name
+
     args = {
         "doc": doc_context,
-        "applicant_name": applicant_doc.candidate_name or applicant,
+        "candidate_name": safe_name,
+        "applicant_name": safe_name,
         "program": program,
         "admission_cycle": admission_cycle,
         "status": new_status,
