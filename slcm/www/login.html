@@ -54,11 +54,17 @@
         .form-error { color: #dc3545; font-size: 13px; margin-top: 8px; display: none; }
         .form-success { color: #198754; font-size: 13px; margin-top: 8px; display: none; }
         .forgot-link { font-size: 12px; color: var(--primary); text-decoration: none; display: block; text-align: right; margin-top: -8px; margin-bottom: 12px; }
-        .login-right { flex: 1; background: var(--primary); padding: 48px 40px; overflow-y: auto; }
+        .login-right { flex: 1; background: var(--primary); padding: 48px 40px; overflow-y: auto; max-height: 100vh; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent; }
+.login-right::-webkit-scrollbar { width: 5px; }
+.login-right::-webkit-scrollbar-track { background: transparent; }
+.login-right::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
+.login-right::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
         .login-right h2 { color: rgba(255,255,255,0.9); font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-        .notice-card { background: #fff; border-radius: 10px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); cursor: pointer; padding: 12px; }
-        .notice-card-title { color: var(--primary); font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-        .notice-card-meta { color: var(--muted); font-size: 12px; }
+        .notices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.notice-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); cursor: pointer; padding: 0; transition: transform 0.2s, box-shadow 0.2s; }
+.notice-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .notice-card-title { color: var(--primary); font-size: 13px; font-weight: 700; margin-bottom: 6px; line-height: 1.35; }
+.notice-card-meta { color: var(--muted); font-size: 11px; display: flex; align-items: center; gap: 4px; }
         .section-divider { border-color: rgba(255,255,255,0.15); margin: 24px 0; }
         @media (max-width: 768px) { .login-wrapper { flex-direction: column; } .login-left { flex: none; width: 100%; padding: 32px 24px; box-shadow: none; } .login-right { padding: 32px 24px; } }
     </style>
@@ -105,22 +111,17 @@
             <button class="btn-login" id="signup-btn" onclick="doRegister()">Create Account</button>
             <p style="font-size:12px;color:var(--muted);margin-top:16px;text-align:center;">A verification email will be sent to activate your account.</p>
         </div>
-        <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);text-align:center;">
-            <a href="/desk" style="font-size:12px;color:var(--muted);text-decoration:none;">Staff / Admin login →</a>
-        </div>
     </div>
     <div class="login-right">
+        <div style="text-align:center;color:rgba(255,255,255,0.5);padding:60px 0;">
+            <div style="font-size:40px;margin-bottom:12px;">🎓</div>
+            <p>Welcome to the Admissions Portal</p>
+        </div>
         {% if announcements %}
-        <h2 style="color:#fff;">📢 Announcements</h2>
-        {% for a in announcements %}
-        <div class="notice-card" onclick="window.location='/announcement/{{ a.name }}'"
-             style="background:#fff;border-radius:12px;overflow:hidden;
-                    margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);
-                    cursor:pointer;transition:transform 0.2s,box-shadow 0.2s; padding:0;"
-             onmouseover="this.style.transform='translateY(-3px)';
-                          this.style.boxShadow='0 6px 20px rgba(0,0,0,0.12)';"
-             onmouseout="this.style.transform='';
-                         this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+        <h2 style="color:#fff;">Announcements</h2>
+        <div class="notices-grid">
+            {% for a in announcements %}
+        <div class="notice-card" onclick="window.location='/announcement/{{ a.name }}'">
 
             {% if a.featured_image %}
             <img src="{{ a.featured_image }}" alt="{{ a.title }}"
@@ -177,22 +178,53 @@
             </div>
         </div>
         {% endfor %}
+        </div>
         <hr class="section-divider">
         {% endif %}
         {% if events %}
-        <h2 style="color:#fff;">📅 Important Dates</h2>
-        {% for e in events %}
-        <div class="notice-card">
-            <div class="notice-card-title">{{ e.title }}</div>
-            {% if e.event_date %}<div class="notice-card-meta">{{ frappe.utils.formatdate(e.event_date, "dd MMM yyyy") }}</div>{% endif %}
+        <h2 style="color:#fff;">Important Dates</h2>
+        <div class="notices-grid">
+            {% for e in events %}
+            <div class="notice-card" style="padding:0;cursor:pointer;"
+     onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)';"
+     onmouseout="this.style.transform='';this.style.boxShadow='0 1px 4px rgba(0,0,0,0.08)';">
+    <div style="background:linear-gradient(135deg,var(--primary),#a01f1f);
+                padding:14px 16px 10px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-10px;right:-10px;width:60px;height:60px;
+                    border-radius:50%;background:rgba(255,255,255,0.08);"></div>
+        <div style="position:absolute;bottom:-16px;right:16px;width:40px;height:40px;
+                    border-radius:50%;background:rgba(255,255,255,0.06);"></div>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;
+                     letter-spacing:0.6px;color:rgba(255,255,255,0.75);
+                     background:rgba(255,255,255,0.15);padding:2px 8px;
+                     border-radius:20px;">Important Date</span>
+        <svg style="position:absolute;top:12px;right:14px;opacity:0.4;"
+             width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="#fff" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+    </div>
+    <div style="padding:12px 16px 14px;">
+        <div class="notice-card-title">{{ e.title }}</div>
+        {% if e.event_date %}
+        <div class="notice-card-meta">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            {{ frappe.utils.formatdate(e.event_date, "dd MMM yyyy") }}
         </div>
-        {% endfor %}
-        <hr class="section-divider">
         {% endif %}
-        <div style="text-align:center;color:rgba(255,255,255,0.5);padding:60px 0;">
-            <div style="font-size:40px;margin-bottom:12px;">🎓</div>
-            <p>Welcome to the Admissions Portal</p>
+    </div>
+</div>
+            {% endfor %}
         </div>
+        <hr class="section-divider">
+        {% endif %}        
     </div>
 </div>
 

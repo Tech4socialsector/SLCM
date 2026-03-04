@@ -125,7 +125,7 @@ def get_public_announcements():
             filters={"is_active": 1},
             fields=["name", "title", "publish_date",
                     "announcement_type", "summary as content",
-                    "featured_image as image", "owner"],
+                    "featured_image", "owner"],
             order_by="publish_date desc",
             limit=10)
         
