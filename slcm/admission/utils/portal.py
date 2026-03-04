@@ -122,22 +122,59 @@ def get_active_programs():
             filters={"parent": active_cycle, "is_active": 1},
             fields=[
                 "program", "program_name", "seats", "eligibility_hint",
-                "brochure_url", "program_image as featured_image", "description",
-                "program_media", "reservation_policy"
+                "brochure_url", "program_image as featured_image", "desciption",
+                "program_media", "reservation_policy", "max_applications",
+                "application_count",
             ],
             order_by="program_name asc"
         )
 
+        import re as _re
         for p in programs:
             p["admission_cycle"] = active_cycle
-            p["program_abbreviation"] = frappe.db.get_value("Program", p.program, "program_shortcode") or ""
-            # Truncate description for card
-            p["has_more_description"] = False
-            if p.description and len(p.description) > 160:
-                p["short_description"] = p.description[:157] + "..."
-                p["has_more_description"] = True
+            # Fetch slug and abbreviation from Program
+            prog_info = frappe.db.get_value("Program", p.program, ["program_slug", "program_shortcode"], as_dict=True)
+            if prog_info:
+                p["program_slug"] = prog_info.program_slug
+                p["program_abbreviation"] = prog_info.program_shortcode
             else:
-                p["short_description"] = p.description or ""
+                p["program_slug"] = (p.program or "").lower().replace(" ", "-")
+                p["program_abbreviation"] = ""
+            
+            raw = p.get("desciption") or ""
+            if raw:
+                plain = _re.sub(r'<[^>]+>', '', raw).strip()
+                words = plain.split()
+                p["desc_short"]    = ' '.join(words[:20])
+                p["desc_full"]     = raw
+                p["desc_has_more"] = len(words) > 20
+            else:
+                p["desc_short"]    = p.get("eligibility_hint") or ""
+                p["desc_full"]     = ""
+                p["desc_has_more"] = False
+
+            # Fill badge
+            total   = int(p.get("max_applications") or p.get("seats") or 0)
+            received = int(p.get("application_count") or 0)
+            if total > 0:
+                pct = min(100, round((received / total) * 100))
+                p["fill_pct"] = pct
+                if pct >= 90:
+                    p["fill_badge"] = f"Only {total - received} seats left"
+                    p["fill_class"] = "fill-danger"
+                elif pct >= 70:
+                    p["fill_badge"] = f"{pct}% filled"
+                    p["fill_class"] = "fill-warning"
+                elif pct >= 40:
+                    p["fill_badge"] = f"{pct}% filled"
+                    p["fill_class"] = "fill-info"
+                else:
+                    p["fill_badge"] = "Seats available"
+                    p["fill_class"] = "fill-success"
+            else:
+                p["fill_pct"]   = 0
+                p["fill_badge"] = "Open"
+                p["fill_class"] = "fill-success"
 
         return programs
     except Exception as e:
@@ -152,7 +189,7 @@ def api_get_program_detail(program, cycle):
         cp = frappe.db.get_value(
             "Admission Cycle Program",
             {"parent": cycle, "program": program},
-            ["program_name", "seats", "eligibility_hint", "brochure_url", "description", "program_media", "reservation_policy"],
+            ["program_name", "seats", "eligibility_hint", "brochure_url", "desciption", "program_media", "reservation_policy"],
             as_dict=True
         )
         if not cp: return None
@@ -164,7 +201,7 @@ def api_get_program_detail(program, cycle):
             "total_seats": cp.seats or 0,
             "eligibility_hint": cp.eligibility_hint or "",
             "brochure_url": cp.brochure_url or "",
-            "description": cp.description or "",
+            "description": cp.desciption or "",
             "images": [],
             "videos": [],
             "categories": []
@@ -172,9 +209,15 @@ def api_get_program_detail(program, cycle):
 
         # Media
         if cp.program_media:
+            # brochure_pdf is in Program Media DocType
+            brochure_pdf = frappe.db.get_value("Program Media", cp.program_media, "brochure_pdf")
+            if brochure_pdf:
+                res["brochure_url"] = brochure_pdf
+
+            # media_gallery is the child table fieldname in Program Media
             media_list = frappe.get_all(
                 "Media",
-                filters={"parent": cp.program_media},
+                filters={"parent": cp.program_media, "parentfield": "media_gallery"},
                 fields=["media_type", "file", "caption", "sequence"],
                 order_by="sequence asc"
             )
@@ -239,16 +282,25 @@ def api_get_portal_stats():
 
 @frappe.whitelist(allow_guest=True)
 def get_active_announcements(limit=10):
-    """Returns published announcements."""
+    """Returns active announcements for display on portal"""
     try:
-        return frappe.get_all(
-            "Portal Announcement",
-            filters={"is_published": 1},
-            fields=["title", "content", "announcement_type", "publish_date", "event_date"],
+        anns = frappe.get_all("Portal Announcement",
+            filters={"is_active": 1},
+            fields=["name", "title", "announcement_type", "summary",
+                    "featured_image", "publish_date", "event_date",
+                    "event_venue", "created_by_role", "owner"],
             order_by="publish_date desc",
             limit=limit
         )
-    except Exception:
+        for a in anns:
+            # Enrich with owner full name if created_by_role not set
+            if not a.get("created_by_role") and a.get("owner"):
+                a["created_by_role"] = frappe.db.get_value(
+                    "User", a.owner, "full_name"
+                ) or a.owner
+        return anns
+    except Exception as e:
+        frappe.log_error(f"get_active_announcements failed: {e}", "Portal")
         return []
 
 
