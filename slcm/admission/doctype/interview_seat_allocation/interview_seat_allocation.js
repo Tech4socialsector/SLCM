@@ -3,6 +3,14 @@
 
 frappe.ui.form.on("Interview Seat Allocation", {
     refresh(frm) {
+        // Administrator can do everything — skip all restrictions
+        if (frappe.user_roles.includes("Administrator")) {
+            // Ensure all tabs/sections are visible and editable
+            frm.set_df_property("tab_9_tab", "hidden", 0);
+            frm.set_df_property("reschedule_section", "hidden", 0);
+            return;
+        }
+
         // show/hide reschedule tab depending on flag or status
         const is_rescheduled = frm.doc.is_rescheduled == 1 || frm.doc.interview_status === "Rescheduled";
         frm.set_df_property("tab_9_tab", "hidden", !is_rescheduled);

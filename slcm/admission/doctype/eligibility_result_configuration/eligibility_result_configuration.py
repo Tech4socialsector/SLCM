@@ -17,13 +17,11 @@ class EligibilityResultConfiguration(Document):
     @frappe.whitelist()
     def generate_result(self):
         """
-        Generates Eligibility Result records from:
-        1. Interview Seat Allocation (interview_result_status = 'Pass')
-        2. Applicant (dual exemption: entrance test & interview)
-        
-        Also enriches each record with academic marks from the Applicant DocType:
-        hsc_percentage, ug_cgpa, pg_cgpa, entrance_percentage, interview_percentage
+        Generates Eligibility Result records.
         """
+        # Force reload the doctype to ensure the latest source_type options are picked up
+        frappe.reload_doc("admission", "doctype", "eligibility_result")
+
         if self.status not in ["Draft", "In Progress", "Failed"]:
             frappe.throw("Document must be in Draft, In Progress, or Failed to generate results.")
 
@@ -86,6 +84,35 @@ class EligibilityResultConfiguration(Document):
             "program_level": self.program_level
         }, as_dict=True)
 
+        # ─── Source 3: ET Pass + Interview Exempted ───────────────────────────
+        et_pass_interview_exempt = frappe.db.sql("""
+            SELECT
+                etsa.applicant AS applicant_id,
+                etsa.candidate_name,
+                etsa.email,
+                etsa.gender,
+                etsa.reservation_category,
+                etsa.program,
+                etsa.program_level,
+                etsa.academic_year,
+                etsa.admission_cycle,
+                etsa.campus,
+                etsa.score_obtained AS entrance_test_score
+            FROM `tabEntrance Test Seat Allocation` etsa
+            WHERE
+                etsa.academic_year = %(academic_year)s
+                AND etsa.campus = %(campus)s
+                AND etsa.admission_cycle = %(admission_cycle)s
+                AND etsa.program_level = %(program_level)s
+                AND etsa.result_status = 'Pass'
+                AND COALESCE(etsa.exempts_interview, 0) = 1
+        """, {
+            "academic_year": self.academic_year,
+            "campus": self.campus,
+            "admission_cycle": self.admission_cycle,
+            "program_level": self.program_level
+        }, as_dict=True)
+
         # Previously we gathered academic marks (HSC, UG/PG CGPA) from
         # the Applicant document and its child tables.  The current
         # Eligibility Result doctype no longer contains any of those
@@ -106,7 +133,8 @@ class EligibilityResultConfiguration(Document):
                 "hsc_group": None,
                 "hsc_percentage": None,
                 "ug_degree_details": [],
-                "pg_degree_details": []
+                "pg_degree_details": [],
+                "categories": ""
             }
 
             try:
@@ -116,6 +144,10 @@ class EligibilityResultConfiguration(Document):
 
             edu["hsc_group"] = getattr(app, "hsc_group", None)
             edu["hsc_percentage"] = getattr(app, "hsc_percentage", None)
+
+            # Join additional categories from the child table into a string
+            cats = [row.category for row in getattr(app, "categories", []) if row.category]
+            edu["categories"] = ", ".join(cats) if cats else ""
 
             if (program_level or "").strip() in ("PG", "Research Course"):
                 # copy UG degree rows if present (PG applicants need their UG transcript)
@@ -159,20 +191,29 @@ class EligibilityResultConfiguration(Document):
             res.email = data.email
             res.gender = data.gender
             res.reservation_category = data.get("reservation_category")
+            
+            # Fetch and populate education and category details from Applicant
+            edu = get_applicant_education(data.applicant_id, data.program_level)
+            res.categories = edu.get("categories")
             res.program = data.program
             res.program_level = data.program_level
             res.academic_year = data.academic_year
             res.admission_cycle = data.admission_cycle
             res.campus = data.campus
 
-            # retain the raw scores if provided (these fields are still
-            # defined on Eligibility Result)
-            res.entrance_test_score = data.get("entrance_test_score") or 0
-            res.interview_score = data.get("interview_score") or 0
+            # Populate scores. For exempted stages, assign 100 as per user request.
+            if source_type == "Exempted":
+                res.entrance_test_score = 100
+                res.interview_score = 100
+            elif source_type == "ET Pass (Interview Exempt)":
+                res.entrance_test_score = data.get("entrance_test_score") or 0
+                res.interview_score = 100
+            else:
+                res.entrance_test_score = data.get("entrance_test_score") or 0
+                res.interview_score = data.get("interview_score") or 0
 
-            # Fetch and populate education details from Applicant
-            edu = get_applicant_education(data.applicant_id, data.program_level)
-            # always write HSC values (may be blank)
+            # res.hsc_group already set via 'edu' above
+            # res.hsc_percentage already set via 'edu' above
             res.hsc_group = edu.get("hsc_group")
             res.hsc_percentage = edu.get("hsc_percentage")
 
@@ -197,16 +238,25 @@ class EligibilityResultConfiguration(Document):
             res.save(ignore_permissions=True)
             count += 1
 
-        # Track applicant IDs that came from interview passers to avoid duplicates
-        interview_applicant_ids = set()
+        # Track applicant IDs to avoid duplicates via a set
+        finalized_applicant_ids = set()
 
+        # Priority 1: Interview Passers
         for app in passed_interviewees:
             upsert_result(app, "Interview Pass")
-            interview_applicant_ids.add(app.applicant_id)
+            finalized_applicant_ids.add(app.applicant_id)
 
+        # Priority 2: ET Pass + Interview Exempt (Source 3)
+        for app in et_pass_interview_exempt:
+            if app.applicant_id not in finalized_applicant_ids:
+                upsert_result(app, "ET Pass (Interview Exempt)")
+                finalized_applicant_ids.add(app.applicant_id)
+
+        # Priority 3: Dual Exempted Applicants (Source 2)
         for app in exempted_applicants:
-            if app.applicant_id not in interview_applicant_ids:
+            if app.applicant_id not in finalized_applicant_ids:
                 upsert_result(app, "Exempted")
+                finalized_applicant_ids.add(app.applicant_id)
 
         if count > 0:
             frappe.db.commit()

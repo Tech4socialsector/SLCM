@@ -20,46 +20,128 @@ class InterviewSeatAllocation(Document):
 
 @frappe.whitelist()
 def update_ranks_by_category(academic_year, admission_cycle, program_level, interview_list=None):
-    """Rank Interview Seat Allocation records by **interview_score**.
-
-    The caller must supply **Academic Year**, **Admission Cycle** and
-    **Program Level**.  These three fields are used to filter the
-    allocations; if **interview_list** is also provided the results will
-    be scoped to that specific interview event as well.  Only records
-    whose ``interview_status`` is ``"Attended"`` are considered.
-
-    The method returns the number of records that were ranked.  It is
-    intended to be invoked from a list-view button/dialog very similar
-    to the one used by ``Entrance Test Seat Allocation``.
     """
-
+    Rank Interview Seat Allocation records by **interview_score** and send results.
+    """
     if not (academic_year and admission_cycle and program_level):
         frappe.throw("Academic Year, Admission Cycle, and Program Level are required for ranking.")
 
-    # build filters
-    filters = {
+    # 1. Rank Attended applicants
+    attended_filters = {
         "academic_year": academic_year,
         "admission_cycle": admission_cycle,
         "program_level": program_level,
         "interview_status": "Attended",
     }
     if interview_list:
-        filters["interview_list"] = interview_list
+        attended_filters["interview_list"] = interview_list
 
-    records = frappe.get_all("Interview Seat Allocation",
-        filters=filters,
+    attended_records = frappe.get_all("Interview Seat Allocation",
+        filters=attended_filters,
         fields=["name", "interview_score"],
         order_by="interview_score desc"
     )
 
-    if not records:
-        return 0
-
-    for i, rec in enumerate(records, start=1):
+    for i, rec in enumerate(attended_records, start=1):
         frappe.db.set_value("Interview Seat Allocation", rec.name, "rank", i, update_modified=False)
 
     frappe.db.commit()
-    return len(records)
+
+    # 2. Fetch ALL applicants (Attended + Absent) to send notifications
+    all_filters = {
+        "academic_year": academic_year,
+        "admission_cycle": admission_cycle,
+        "program_level": program_level,
+        "interview_status": ["in", ["Attended", "Absent"]]
+    }
+    if interview_list:
+        all_filters["interview_list"] = interview_list
+
+    all_records = frappe.get_all("Interview Seat Allocation",
+        filters=all_filters,
+        fields=["name", "applicant", "candidate_name", "email", "interview_status", 
+                "interview_score", "rank", "interview_list"]
+    )
+
+    count = 0
+    for rec in all_records:
+        doc = frappe.get_doc("Interview Seat Allocation", rec.name)
+        
+        # Resolve email
+        email = doc.email or ""
+        if not email and doc.applicant:
+            try:
+                app_email = frappe.db.get_value("Applicant", doc.applicant, "email_id")
+                if app_email:
+                    email = app_email
+            except Exception:
+                pass
+
+        if email:
+            try:
+                _send_result_notification_email(doc, email)
+                count += 1
+            except Exception:
+                frappe.log_error(title=f"Interview Result Email Failed: {doc.name}")
+
+    return count
+
+
+def _send_result_notification_email(doc, email):
+    """Send a result/rank notification email to the applicant for Interview."""
+    from frappe.utils import get_url_to_form
+    url = get_url_to_form("Interview Seat Allocation", doc.name)
+
+    status_color = "#2e7d32" if doc.interview_status == "Attended" else "#c62828"
+    
+    score_html = ""
+    if doc.interview_status == "Attended":
+        score_html = f"""
+        <div style="background:#e3f2fd; border:1px solid #bbdefb; padding:15px; border-radius:8px; margin:20px 0;">
+            <p style="margin:5px 0;"><strong>Interview Score:</strong> {doc.interview_score or 0}</p>
+            <p style="margin:5px 0;"><strong>Final Rank:</strong> <span style="font-size:18px; color:#1565c0; font-weight:bold;">{doc.rank or '—'}</span></p>
+        </div>
+        """
+    else:
+        score_html = f"""
+        <div style="background:#ffebee; border:1px solid #ffcdd2; padding:15px; border-radius:8px; margin:20px 0;">
+            <p style="margin:5px 0; color:#c62828;"><strong>Status:</strong> Absent</p>
+            <p style="margin:5px 0; font-size:12px; color:#666;">You were marked as absent for the interview. No score or rank has been assigned.</p>
+        </div>
+        """
+
+    msg = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+        <h2 style="color: #0277bd; border-bottom: 2px solid #0277bd; padding-bottom: 10px;">Interview Result</h2>
+        <p>Dear {doc.candidate_name or doc.applicant},</p>
+        <p>The results for your interview have been processed. Below are your details:</p>
+        
+        <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Applicant ID:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">{doc.applicant}</td></tr>
+            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Interview Session:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">{doc.interview_list or '—'}</td></tr>
+            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Status:</strong></td><td style="padding:8px; border-bottom:1px solid #eee; color:{status_color}; font-weight:bold;">{doc.interview_status}</td></tr>
+        </table>
+
+        {score_html}
+
+        <p>You can view your detailed interview feedback and score by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{url}" style="display:inline-block; padding:12px 24px; background:#0277bd; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold;">View My Result in Portal</a>
+        </div>
+        
+        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px;">
+            This corresponds to record: {doc.name}. If you cannot click the button, copy this link: {url}
+        </p>
+    </div>
+    """
+
+    frappe.sendmail(
+        recipients=[email],
+        subject=f"Interview Result — {doc.candidate_name or doc.applicant}",
+        message=msg,
+        reference_doctype="Interview Seat Allocation",
+        reference_name=doc.name
+    )
 
 
 @frappe.whitelist()
