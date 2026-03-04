@@ -314,51 +314,73 @@ class ScholarshipApplication(Document):
 		frappe.msgprint(msg, indicator=indicator)
 
 	def create_audit_log(self):
+		"""
+		Records status changes and application creation in the Scholarship Audit Log.
+		"""
 		old_doc = self.get_doc_before_save()
-		if not old_doc:
+		
+		is_new = not old_doc
+		if not is_new and old_doc.status == self.status:
+			# Only log if status has changed
 			return
 
-		if old_doc.status == self.status:
-			return
-
-		# Create hash for tamper detection
-		record_string = json.dumps({
-			"application": self.name,
-			"old_status": old_doc.status,
-			"new_status": self.status,
-			"user": frappe.session.user,
-			"time": str(now_datetime())
-		}, sort_keys=True)
-
-		record_hash = hashlib.sha256(record_string.encode()).hexdigest()
-
-		# Mapping status to action_type if needed
+		# Mapping status to action_type allowed in Scholarship Audit Log
 		action_map = {
 			"Submitted": "Apply",
 			"Under Review": "Review",
 			"Approved": "Approve",
 			"Rejected": "Reject",
-			"Revoked": "Revoke"
+			"Revoked": "Revoke",
+			"Cancelled": "Revoke",
+			"Draft": "Modify"
 		}
-		action_type = action_map.get(self.status, self.status)
+		
+		# If new and already submitted (e.g. from web form), use Apply
+		if is_new:
+			action_type = "Apply" if self.status != "Draft" else "Modify"
+			previous_state = {}
+		else:
+			action_type = action_map.get(self.status, "Modify")
+			previous_state = old_doc.as_dict()
 
-		frappe.get_doc({
-			"doctype": "Scholarship Audit Log",
-			"scholarship_application": self.name,
-			"scholarship_scheme": self.scholarship_scheme,
-			"admission_cycle": self.admission_cycle,
-			"campus": self.campus,
-			"program": self.program,
-			"action_type": action_type,
-			"previous_state": json.dumps(old_doc.as_dict(), indent=4, default=str),
-			"new_state": json.dumps(self.as_dict(), indent=4, default=str),
-			"performed_by": frappe.session.user,
-			"triggered_by": "System",
-			"action_timestamp": now_datetime(),
-			"reason": self.rejection_reason or "Status Change",
-			"ip_address": frappe.local.request_ip if hasattr(frappe.local, "request_ip") else None,
-			"record_hash": record_hash
-		}).insert(ignore_permissions=True)
+		# Determine triggered_by based on user role/session
+		triggered_by = "Admin"
+		if frappe.session.user == self.owner:
+			triggered_by = "Applicant"
+		elif frappe.session.user == "Administrator":
+			triggered_by = "System"
+
+		# Create hash for tamper detection
+		record_string = json.dumps({
+			"application": self.name,
+			"old_status": old_doc.status if old_doc else None,
+			"new_status": self.status,
+			"user": frappe.session.user,
+			"time": str(now_datetime())
+		}, sort_keys=True)
+		record_hash = hashlib.sha256(record_string.encode()).hexdigest()
+
+		try:
+			frappe.get_doc({
+				"doctype": "Scholarship Audit Log",
+				"scholarship_application": self.name,
+				"scholarship_scheme": self.scholarship_scheme,
+				"admission_cycle": self.admission_cycle,
+				"campus": self.campus,
+				"program": self.program,
+				"action_type": action_type,
+				"previous_state": json.dumps(previous_state, indent=4, default=str),
+				"new_state": json.dumps(self.as_dict(), indent=4, default=str),
+				"performed_by": frappe.session.user,
+				"triggered_by": triggered_by,
+				"action_timestamp": now_datetime(),
+				"reason": self.rejection_reason or f"Status changed to {self.status}",
+				"ip_address": frappe.local.request_ip if hasattr(frappe.local, "request_ip") else None,
+				"record_hash": record_hash
+			}).insert(ignore_permissions=True)
+		except Exception as e:
+			# Log to Error Log but don't stop the main Scholarship save
+			frappe.log_error(title="Scholarship Audit Log Error", message=frappe.get_traceback())
 
 	def apply_financial_effects(self):
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)

@@ -205,7 +205,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "page",
-   "link_count": 1,
+   "link_count": 2,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -219,9 +219,19 @@
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "seat-matrix-dashboard",
+   "link_count": 0,
+   "link_to": "seat-matrix-dashboard",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-03-03 16:41:57.505441",
+ "modified": "2026-03-04 15:35:54.901188",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "MSA",

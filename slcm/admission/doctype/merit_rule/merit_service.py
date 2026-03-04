@@ -43,13 +43,12 @@ def calculate_merit_with_rule(applicant, rule):
 def _rank_applicants(applicant_rows):
     """
     Applies overall, program, and category ranking with tie-breaking.
-    Tie-breaking priority: Total Score > Entrance % > HSC % > Interview %
+    Tie-breaking priority: Total Score > HSC % (12th Mark) > Entrance Test Score
     """
     sort_key = lambda x: (
         x.total_score,
-        x.entrance_score or 0,
         x.hsc_percentage or 0,
-        x.interview_score or 0
+        x.entrance_score or 0
     )
 
     # Overall Rank
