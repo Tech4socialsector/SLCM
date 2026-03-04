@@ -37,53 +37,77 @@ def get_exam_courses(exam_plan_name):
 	courses = frappe.get_all("Course", fields=["name", "course_name", "course_code", "course_type", "credit_value", "department_name"])
 	
 	for course in courses:
-		mapped = frappe.db.get_value("Examination Plan Course", {"examination_plan": exam_plan_name, "course": course.name}, ["name", "exam_schema"], as_dict=True)
+		mapped = frappe.db.get_value("Exam Course Mapping", {"examination_plan": exam_plan_name, "course": course.name}, ["name", "exam_schema", "grading_schema"], as_dict=True)
 		if mapped:
 			course["mapped_id"] = mapped.name
-			course["exam_schema"] = mapped.exam_schema
+			
+			schemas = []
+			if mapped.exam_schema:
+			    schemas.append(f"Eval: {mapped.exam_schema}")
+			if mapped.grading_schema:
+			    schemas.append(f"Grade: {mapped.grading_schema}")
+			    
+			course["exam_schema"] = " | ".join(schemas) if schemas else "-"
 		else:
 			course["mapped_id"] = None
 			course["exam_schema"] = None
 
 		# Count enrolled students
+		# (Note: In a strict setup, we might filter by `se.term_name = plan.academic_term`. For now, we fetch any enrollment for the course)
 		enrolled = frappe.db.sql("""
 			SELECT COUNT(sec.name) 
-			FROM `tabStudent Enrollment Course` sec 
+			FROM `tabProgram Enrollment` sec 
 			JOIN `tabStudent Enrollment` se ON se.name = sec.parent 
-			WHERE sec.course = %s AND se.term_name = %s
-		""", (course.name, plan.academic_term))
+			WHERE sec.course = %s
+		""", (course.name,))
 		course["enrolled_students"] = enrolled[0][0] if enrolled else 0
 			
 	return courses
 
 @frappe.whitelist()
-def get_course_students(exam_plan_name, course_name):
+def get_course_students(exam_plan_name, course_names=None):
 	plan = frappe.get_doc("Examination Plan", exam_plan_name)
 	
-	students = frappe.db.sql("""
-		SELECT se.student, se.student_name, sec.status 
-		FROM `tabStudent Enrollment Course` sec 
+	if isinstance(course_names, str):
+		try:
+			course_names = json.loads(course_names)
+		except:
+			course_names = [course_names]
+	
+	course_condition = ""
+	args_tuple = []
+	if course_names:
+		format_strings = ','.join(['%s'] * len(course_names))
+		course_condition = f"AND sec.course IN ({format_strings})"
+		args_tuple = list(course_names)
+		
+	students = frappe.db.sql(f"""
+		SELECT se.student, se.student_name, sec.course_status as status, sec.course_name as enrolled_course
+		FROM `tabProgram Enrollment` sec 
 		JOIN `tabStudent Enrollment` se ON se.name = sec.parent 
-		WHERE sec.course = %s AND se.term_name = %s
-	""", (course_name, plan.academic_term), as_dict=True)
+		WHERE 1=1 {course_condition}
+	""", tuple(args_tuple), as_dict=True)
 	
 	return students
 
 @frappe.whitelist()
-def apply_schema_to_courses(exam_plan, schema_name, courses):
+def apply_schema_to_courses(exam_plan, schema_doctype, schema_name, courses):
 	if isinstance(courses, str):
 		courses = json.loads(courses)
+	
+	schema_field = "exam_schema" if schema_doctype == "Exam Schema" else "grading_schema"
 		
 	for course_name in courses:
-		existing = frappe.db.exists("Examination Plan Course", {"examination_plan": exam_plan, "course": course_name})
+		existing = frappe.db.exists("Exam Course Mapping", {"examination_plan": exam_plan, "course": course_name})
 		if existing:
-			frappe.db.set_value("Examination Plan Course", existing, "exam_schema", schema_name)
+			frappe.db.set_value("Exam Course Mapping", existing, schema_field, schema_name)
 		else:
 			doc = frappe.get_doc({
-				"doctype": "Examination Plan Course",
+				"doctype": "Exam Course Mapping",
 				"examination_plan": exam_plan,
 				"course": course_name,
-				"exam_schema": schema_name
+				schema_field: schema_name,
+				"mapped_unmapped_status": "Mapped"
 			})
 			doc.insert(ignore_permissions=True)
 	frappe.db.commit()
@@ -94,8 +118,8 @@ def unmap_schema_from_courses(exam_plan, courses):
 		courses = json.loads(courses)
 		
 	for course_name in courses:
-		existing = frappe.db.exists("Examination Plan Course", {"examination_plan": exam_plan, "course": course_name})
+		existing = frappe.db.exists("Exam Course Mapping", {"examination_plan": exam_plan, "course": course_name})
 		if existing:
-			frappe.delete_doc("Examination Plan Course", existing, ignore_permissions=True)
+			frappe.delete_doc("Exam Course Mapping", existing, ignore_permissions=True)
 	frappe.db.commit()
 

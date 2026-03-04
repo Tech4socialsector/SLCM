@@ -90,10 +90,10 @@ function show_master_data_dialog(frm) {
 						<!-- Tabs -->
 						<ul class="nav nav-tabs" style="margin-bottom: 15px; border-bottom: 2px solid #ddd;">
 							<li class="nav-item">
-								<a class="nav-link active" id="tab-courses" data-toggle="tab" href="#content-courses" style="font-weight: bold; color: #ff5252; border-bottom: 2px solid #ff5252; border-top: none; border-left: none; border-right: none; background: transparent;">Courses</a>
+								<a class="nav-link active" id="tab-courses" data-target="#content-courses" style="cursor: pointer; font-weight: bold; color: #ff5252; border-bottom: 2px solid #ff5252; border-top: none; border-left: none; border-right: none; background: transparent;">Courses</a>
 							</li>
 							<li class="nav-item">
-								<a class="nav-link" id="tab-students" data-toggle="tab" href="#content-students" style="font-weight: bold; color: #555; border: none; background: transparent;">Students</a>
+								<a class="nav-link" id="tab-students" data-target="#content-students" style="cursor: pointer; font-weight: bold; color: #555; border: none; background: transparent;">Students</a>
 							</li>
 						</ul>
 
@@ -170,6 +170,7 @@ function show_master_data_dialog(frm) {
 												<tr style="font-size: 12px; color: #6c757d;">
 													<th>Student ID</th>
 													<th>Student Name</th>
+													<th>Course Name</th>
 													<th>Status</th>
 												</tr>
 											</thead>
@@ -185,10 +186,47 @@ function show_master_data_dialog(frm) {
 
                 dialog.fields_dict.master_html.$wrapper.html(html);
 
+                let load_students = function (course_names, course_title) {
+                    dialog.fields_dict.master_html.$wrapper.find('#students-empty').hide();
+                    dialog.fields_dict.master_html.$wrapper.find('#students-content').hide();
+                    dialog.fields_dict.master_html.$wrapper.find('#students-loading').show();
+
+                    dialog.fields_dict.master_html.$wrapper.find('#selected-course-title').text('Students enrolled for: ' + course_title);
+
+                    frappe.call({
+                        method: 'slcm.slcm.doctype.examination_plan.examination_plan.get_course_students',
+                        args: {
+                            exam_plan_name: frm.doc.name,
+                            course_names: course_names ? JSON.stringify(course_names) : null
+                        },
+                        callback: function (r2) {
+                            dialog.fields_dict.master_html.$wrapper.find('#students-loading').hide();
+                            dialog.fields_dict.master_html.$wrapper.find('#students-content').show();
+
+                            let st_html = '';
+                            if (r2.message && r2.message.length > 0) {
+                                r2.message.forEach(st => {
+                                    st_html += `
+										<tr>
+											<td>${st.student}</td>
+											<td>${st.student_name}</td>
+											<td>${st.enrolled_course || '-'}</td>
+											<td><span class="badge badge-success">${st.status || 'Active'}</span></td>
+										</tr>
+									`;
+                                });
+                            } else {
+                                st_html = '<tr><td colspan="4" class="text-center text-muted">No students found.</td></tr>';
+                            }
+                            dialog.fields_dict.master_html.$wrapper.find('#students-table-body').html(st_html);
+                        }
+                    });
+                };
+
                 // Tab Switching Logic
                 dialog.fields_dict.master_html.$wrapper.find('.nav-link').on('click', function (e) {
                     e.preventDefault();
-                    let target = $(this).attr('href');
+                    let target = $(this).attr('data-target');
 
                     dialog.fields_dict.master_html.$wrapper.find('.nav-link').css({
                         'color': '#555',
@@ -203,49 +241,33 @@ function show_master_data_dialog(frm) {
 
                     dialog.fields_dict.master_html.$wrapper.find('.tab-pane').removeClass('show active');
                     dialog.fields_dict.master_html.$wrapper.find(target).addClass('show active');
+
+                    if (target === '#content-students') {
+                        let checked = [];
+                        dialog.fields_dict.master_html.$wrapper.find('.course-check:checked').each(function () {
+                            checked.push($(this).data('name'));
+                        });
+
+                        let course_title = 'All Courses';
+                        if (checked.length === 1) {
+                            course_title = dialog.fields_dict.master_html.$wrapper.find('.course-check:checked').first().closest('tr').find('td:nth-child(2) div:first').text().trim();
+                        } else if (checked.length > 1) {
+                            course_title = checked.length + ' Selected Courses';
+                        }
+
+                        load_students(checked.length > 0 ? checked : null, course_title);
+                    }
                 });
 
                 // Course Row Click -> Load Students
                 dialog.fields_dict.master_html.$wrapper.find('.course-row').on('click', function () {
-                    let course_name = $(this).data('name');
-                    let course_title = $(this).find('td:nth-child(2) div:first').text().trim();
+                    // Check this row exclusively, uncheck others.
+                    dialog.fields_dict.master_html.$wrapper.find('.course-check').prop('checked', false);
+                    dialog.fields_dict.master_html.$wrapper.find('#check-all-courses').prop('checked', false);
+                    $(this).find('.course-check').prop('checked', true);
 
                     // Switch to students tab visually
                     dialog.fields_dict.master_html.$wrapper.find('#tab-students').trigger('click');
-
-                    dialog.fields_dict.master_html.$wrapper.find('#students-empty').hide();
-                    dialog.fields_dict.master_html.$wrapper.find('#students-content').hide();
-                    dialog.fields_dict.master_html.$wrapper.find('#students-loading').show();
-
-                    dialog.fields_dict.master_html.$wrapper.find('#selected-course-title').text('Students enrolled for: ' + course_title);
-
-                    frappe.call({
-                        method: 'slcm.slcm.doctype.examination_plan.examination_plan.get_course_students',
-                        args: {
-                            exam_plan_name: frm.doc.name,
-                            course_name: course_name
-                        },
-                        callback: function (r2) {
-                            dialog.fields_dict.master_html.$wrapper.find('#students-loading').hide();
-                            dialog.fields_dict.master_html.$wrapper.find('#students-content').show();
-
-                            let st_html = '';
-                            if (r2.message && r2.message.length > 0) {
-                                r2.message.forEach(st => {
-                                    st_html += `
-										<tr>
-											<td>${st.student}</td>
-											<td>${st.student_name}</td>
-											<td><span class="badge badge-success">${st.status || 'Active'}</span></td>
-										</tr>
-									`;
-                                });
-                            } else {
-                                st_html = '<tr><td colspan="3" class="text-center text-muted">No students found for this course in the selected term.</td></tr>';
-                            }
-                            dialog.fields_dict.master_html.$wrapper.find('#students-table-body').html(st_html);
-                        }
-                    });
                 });
 
                 dialog.fields_dict.master_html.$wrapper.find('#search-course').on('keyup', function () {
@@ -313,11 +335,24 @@ function show_apply_schema_dialog(frm, selected_courses, parent_refresh_callback
             {
                 fieldtype: 'HTML',
                 fieldname: 'info_html',
-                options: `< div style = "margin-bottom: 15px;" > Selected Courses: <b>${selected_courses.length}</b></div > `
+                options: `<div style="margin-bottom: 15px;">Selected Courses: <b>${selected_courses.length}</b></div>`
+            },
+            {
+                fieldname: 'schema_type',
+                label: __('Schema Type'),
+                fieldtype: 'Select',
+                options: 'Exam Schema\nGrading Schema',
+                reqd: 1,
+                default: 'Exam Schema',
+                onchange: function () {
+                    let stype = apply_dialog.get_value('schema_type');
+                    apply_dialog.set_df_property('schema', 'options', stype);
+                }
             },
             {
                 fieldtype: 'Link',
                 fieldname: 'schema',
+                depends_on: "eval:doc.schema_type",
                 label: __('Select Schema'),
                 options: 'Exam Schema',
                 reqd: 1
@@ -325,12 +360,12 @@ function show_apply_schema_dialog(frm, selected_courses, parent_refresh_callback
             {
                 fieldtype: 'HTML',
                 fieldname: 'create_new_html',
-                options: `< div class="text-right" style = "margin-top: -30px; margin-bottom: 20px;" > <a href="#" id="create-new-schema" class="text-danger border-danger" style="border: 1px solid; padding: 5px 10px; border-radius: 4px; text-decoration: none;">+ Create New Schema</a></div > `
+                options: `<div class="text-right" style="margin-top: 5px; margin-bottom: 20px;"><a href="#" id="create-new-schema" class="text-danger border-danger" style="border: 1px solid; padding: 5px 10px; border-radius: 4px; text-decoration: none;">+ Create New Schema</a></div>`
             },
             {
                 fieldtype: 'HTML',
                 fieldname: 'warning_html',
-                options: `< div class="text-muted" style = "font-size: 11px; margin-top: 10px;" > <i class="fa fa-info-circle"></i> Updating schema for this course will erase marks for all the assessments.Class Work Assessment(Faculty Grade Book) marks will remain unaffected.</div > `
+                options: `<div class="text-muted" style="font-size: 11px; margin-top: 10px;"><i class="fa fa-info-circle"></i> Updating schema for this course will erase marks for all the assessments. Class Work Assessment(Faculty Grade Book) marks will remain unaffected.</div>`
             }
         ],
         primary_action_label: __('Apply'),
@@ -344,6 +379,7 @@ function show_apply_schema_dialog(frm, selected_courses, parent_refresh_callback
                 method: 'slcm.slcm.doctype.examination_plan.examination_plan.apply_schema_to_courses',
                 args: {
                     exam_plan: frm.doc.name,
+                    schema_doctype: values.schema_type,
                     schema_name: values.schema,
                     courses: selected_courses
                 },
@@ -362,7 +398,8 @@ function show_apply_schema_dialog(frm, selected_courses, parent_refresh_callback
 
     apply_dialog.$wrapper.find('#create-new-schema').on('click', function (e) {
         e.preventDefault();
-        frappe.new_doc('Exam Schema');
+        let targetDoc = apply_dialog.get_value('schema_type') || 'Exam Schema';
+        frappe.new_doc(targetDoc);
     });
 
     apply_dialog.show();

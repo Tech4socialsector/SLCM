@@ -8,22 +8,15 @@
  "engine": "InnoDB",
  "field_order": [
   "schema_name",
-  "details",
-  "column_break_1",
   "total_marks",
   "passing_marks",
+  "section_break_zfjn",
+  "schema_type",
+  "requires_enrolment",
+  "description",
+  "weightages",
   "section_break_weightage",
-  "internal_weightage",
-  "column_break_2",
-  "external_weightage",
-  "section_break_internals",
-  "internals",
-  "section_break_externals",
-  "externals",
-  "section_break_makeup",
-  "makeup",
-  "section_break_re_exam",
-  "re_exam"
+  "assessments"
  ],
  "fields": [
   {
@@ -33,15 +26,6 @@
    "label": "Schema Name",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "fieldname": "details",
-   "fieldtype": "Small Text",
-   "label": "Details"
-  },
-  {
-   "fieldname": "column_break_1",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "total_marks",
@@ -61,70 +45,46 @@
    "label": "Weightage"
   },
   {
-   "fieldname": "internal_weightage",
-   "fieldtype": "Percent",
-   "label": "Internal Weightage",
+   "default": "Evaluation Schema",
+   "fieldname": "schema_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Schema Type",
+   "options": "Evaluation Schema\nGrading Schema",
    "reqd": 1
   },
   {
-   "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
   },
   {
-   "fieldname": "external_weightage",
-   "fieldtype": "Percent",
-   "label": "External Weightage",
-   "reqd": 1
+   "default": "0",
+   "fieldname": "requires_enrolment",
+   "fieldtype": "Check",
+   "label": "Requires Enrolment"
   },
   {
-   "fieldname": "section_break_internals",
-   "fieldtype": "Section Break",
-   "label": "Internals"
-  },
-  {
-   "fieldname": "internals",
+   "fieldname": "weightages",
    "fieldtype": "Table",
-   "label": "Internals",
-   "options": "Exam Assessment"
+   "label": "Weightages",
+   "options": "Exam Schema Weightage"
   },
   {
-   "fieldname": "section_break_externals",
-   "fieldtype": "Section Break",
-   "label": "Externals"
-  },
-  {
-   "fieldname": "externals",
+   "fieldname": "assessments",
    "fieldtype": "Table",
-   "label": "Externals",
-   "options": "Exam Assessment"
+   "label": "Assessments",
+   "options": "Exam Schema Assessment"
   },
   {
-   "fieldname": "section_break_makeup",
-   "fieldtype": "Section Break",
-   "label": "Makeup (Optional)"
-  },
-  {
-   "fieldname": "makeup",
-   "fieldtype": "Table",
-   "label": "Makeup",
-   "options": "Exam Assessment"
-  },
-  {
-   "fieldname": "section_break_re_exam",
-   "fieldtype": "Section Break",
-   "label": "Re-Exam (Optional)"
-  },
-  {
-   "fieldname": "re_exam",
-   "fieldtype": "Table",
-   "label": "Re-Exam",
-   "options": "Exam Assessment"
+   "fieldname": "section_break_zfjn",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 12:06:43.509735",
+ "modified": "2026-03-03 16:49:23.238112",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Exam Schema",

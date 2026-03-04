@@ -1,45 +1,31 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:exam_type",
- "creation": "2026-03-03 10:56:58.387926",
+ "autoname": "field:component_name",
+ "creation": "2026-03-03 15:15:49.404250",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "exam_type",
-  "belongs_in_re_exam_component",
-  "description"
+  "component_name"
  ],
  "fields": [
   {
-   "fieldname": "exam_type",
+   "fieldname": "component_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Exam Type",
+   "label": "Component Name",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "belongs_in_re_exam_component",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Belongs In Re Exam Component"
-  },
-  {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Description"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 16:33:08.432265",
+ "modified": "2026-03-03 16:33:57.733458",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Exam Type",
+ "name": "Exam Component",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

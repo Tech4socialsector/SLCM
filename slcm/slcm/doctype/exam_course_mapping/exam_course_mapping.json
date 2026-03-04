@@ -1,75 +1,66 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:examination_name",
- "creation": "2026-03-03 10:57:20.479899",
+ "creation": "2026-03-03 16:33:58.682882",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "dashboard_html",
-  "examination_name",
-  "academic_term",
-  "academic_year",
-  "exam_type",
-  "status"
+  "examination_plan",
+  "course",
+  "exam_schema",
+  "grading_schema",
+  "mapped_unmapped_status"
  ],
  "fields": [
   {
-   "fieldname": "examination_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Examination Name",
-   "reqd": 1,
-   "unique": 1
-  },
-  {
-   "fieldname": "academic_term",
+   "fieldname": "examination_plan",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Term",
-   "options": "Academic Term",
+   "label": "Examination Plan",
+   "options": "Examination Plan",
    "reqd": 1
   },
   {
-   "fieldname": "dashboard_html",
-   "fieldtype": "HTML",
-   "label": "Dashboard Data"
-  },
-  {
-   "fieldname": "academic_year",
+   "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Academic Year",
-   "options": "Academic Year",
+   "label": "Course",
+   "options": "Course",
    "reqd": 1
   },
   {
-   "fieldname": "exam_type",
+   "fieldname": "exam_schema",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Exam Type",
-   "options": "Exam Type",
+   "label": "Exam Schema",
+   "options": "Exam Schema",
    "reqd": 1
   },
   {
-   "default": "Draft",
-   "fieldname": "status",
+   "fieldname": "grading_schema",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Grading Schema",
+   "options": "Grading Schema",
+   "reqd": 1
+  },
+  {
+   "default": "Mapped",
+   "fieldname": "mapped_unmapped_status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Draft\nActive\nCompleted",
-   "reqd": 1
+   "options": "Mapped\nUnmapped"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 16:33:58.015250",
+ "modified": "2026-03-03 16:33:58.737128",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Examination Plan",
- "naming_rule": "By fieldname",
+ "name": "Exam Course Mapping",
  "owner": "Administrator",
  "permissions": [
   {
