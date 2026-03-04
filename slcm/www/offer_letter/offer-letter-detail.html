@@ -430,6 +430,46 @@
         });
     }
 
+    function start_expiry_timer(deadline_str) {
+        if (!deadline_str) return;
+
+        const timer_el = $('#expiry-timer-display');
+        if (!timer_el.length) return;
+
+        // Technically, a Frappe 'Date' field like "2026-03-04" is parsed by JS as the START of the day (00:00:00).
+        // Since the current time is 16:22, it shows as EXPIRED.
+        // We adjust it to the END of the day (23:59:59) so the user has the full day to settle.
+        let deadline_val = deadline_str;
+        if (deadline_str.length === 10) { // Format is YYYY-MM-DD
+            deadline_val = deadline_str + " 23:59:59";
+        }
+
+        const deadline = new Date(deadline_val).getTime();
+
+        const x = setInterval(function () {
+            const now = new Date().getTime();
+            const distance = deadline - now;
+
+            if (distance < 0) {
+                clearInterval(x);
+                timer_el.text("{{ _('EXPIRED') }}");
+                timer_el.css('color', '#feb2b2');
+                return;
+            }
+
+            const hours = Math.floor(distance / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            const display =
+                (hours < 10 ? "0" + hours : hours) + " : " +
+                (minutes < 10 ? "0" + minutes : minutes) + " : " +
+                (seconds < 10 ? "0" + seconds : seconds) + " more";
+
+            timer_el.html(display);
+        }, 1000);
+    }
+
     function render_offer_detail(data) {
         const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid, online_payment_enabled } = data;
         const wrapper = $('#offer-detail-wrapper');
@@ -452,6 +492,18 @@
                         ${offer.offer_status}
                     </div>
                 </div>
+
+                ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+                    <div class="ui-card" style="background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%); border: none;">
+                        <span class="ui-card-label" style="color: rgba(255,255,255,0.6);">{{ _("Offer Expiry Timer") }}</span>
+                        <div id="expiry-timer-display" style="color: #fff; font-size: 1.5rem; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 8px;">
+                            -- : -- : --
+                        </div>
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.75rem; font-weight: 500;">
+                            <i class="fa fa-calendar-o mr-1"></i> {{ _("Deadline") }}: ${frappe.datetime.str_to_user(offer.payment_deadline)}
+                        </div>
+                    </div>
+                ` : ''}
 
                 <div class="ui-card">
                     <span class="ui-card-label">{{ _("Summary") }}</span>
@@ -526,6 +578,9 @@
         </div>
     `;
         wrapper.html(html);
+        if (offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted')) {
+            start_expiry_timer(offer.payment_deadline);
+        }
     }
 
     function handle_primary_action() {

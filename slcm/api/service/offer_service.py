@@ -349,12 +349,12 @@ class OfferService:
     @staticmethod
     def expire_offers():
         """
-        Scheduled job logic to transition 'Issued' offers to 'Expired' 
-        after the payment deadline.
+        Scheduled job logic to transition 'Issued' and 'Accepted' offers to 'Expired' 
+        after the payment deadline (if payment is not completed).
         """
         to_expire = frappe.get_all("Offer Letter", filters={
-            "offer_status": "Issued",
-            "payment_deadline": ["<", now_datetime()]
+            "offer_status": ["in", ["Issued", "Accepted"]],
+            "payment_deadline": ["<", frappe.utils.nowdate()]
         }, fields=["name"])
 
         processed = 0
