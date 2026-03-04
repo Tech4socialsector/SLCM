@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:schema_name",
+ "creation": "2026-03-03 12:06:43.509735",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "schema_name",
+  "total_marks",
+  "passing_marks",
+  "section_break_zfjn",
+  "schema_type",
+  "requires_enrolment",
+  "description",
+  "weightages",
+  "section_break_weightage",
+  "assessments"
+ ],
+ "fields": [
+  {
+   "fieldname": "schema_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Schema Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "total_marks",
+   "fieldtype": "Float",
+   "label": "Total Marks",
+   "reqd": 1
+  },
+  {
+   "fieldname": "passing_marks",
+   "fieldtype": "Float",
+   "label": "Passing Marks",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_weightage",
+   "fieldtype": "Section Break",
+   "label": "Weightage"
+  },
+  {
+   "default": "Evaluation Schema",
+   "fieldname": "schema_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Schema Type",
+   "options": "Evaluation Schema\nGrading Schema",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "default": "0",
+   "fieldname": "requires_enrolment",
+   "fieldtype": "Check",
+   "label": "Requires Enrolment"
+  },
+  {
+   "fieldname": "weightages",
+   "fieldtype": "Table",
+   "label": "Weightages",
+   "options": "Exam Schema Weightage"
+  },
+  {
+   "fieldname": "assessments",
+   "fieldtype": "Table",
+   "label": "Assessments",
+   "options": "Exam Schema Assessment"
+  },
+  {
+   "fieldname": "section_break_zfjn",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-03 16:49:23.238112",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Exam Schema",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
