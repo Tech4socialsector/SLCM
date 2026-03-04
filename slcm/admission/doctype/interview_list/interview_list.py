@@ -159,45 +159,49 @@ class InterviewList(Document):
 
 
 def _send_interview_slot_email(allocation, email, staff):
-    """Send interview slot assignment notification to applicant."""
-    try:
-        from frappe.utils import get_url_to_form
-        url = get_url_to_form("Interview Seat Allocation", allocation.name)
+    """Send a premium interview slot assignment notification to the applicant."""
+    from frappe.utils import get_url_to_form
+    url = get_url_to_form("Interview Seat Allocation", allocation.name)
 
-        msg = f"""
+    msg = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
+        <h2 style="color: #0277bd; border-bottom: 2px solid #0277bd; padding-bottom: 10px; margin-top: 0;">Admission Interview Scheduled</h2>
         <p>Dear {allocation.candidate_name or allocation.applicant},</p>
-        <p>Your interview has been scheduled. Please find the details below:</p>
-        <p>
-            <strong>Interview Details</strong><br>
-            Date: {allocation.interview_date or 'To be communicated'}<br>
-            Time: {allocation.interview_time or 'To be communicated'}<br>
-            Interviewer: {staff.staff_name or ''}<br>
-            Staff Contact: {staff.contact_number or ''}<br>
-            Staff Email: {staff.email or ''}
-        </p>
-        <p>
-            <strong>Your Details</strong><br>
-            Application No: {allocation.applicant or ''}<br>
-            Program: {allocation.program or ''}<br>
-            Campus: {allocation.campus or ''}<br>
-            Academic Year: {allocation.academic_year or ''}
-        </p>
-        <p>
-            <a href="{url}" style="display:inline-block;padding:10px 14px;background:#1565c0;color:#fff;border-radius:4px;text-decoration:none;">
-                View Interview Details
-            </a>
-        </p>
-        <p>If the button above does not work, open: {url}</p>
-        """
+        <p>Your admission interview has been scheduled. Please find the session details below:</p>
+        
+        <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>Interview Details:</strong></p>
+            <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+                <tr><td style="padding:5px 0; color:#666;">Date:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_date or 'To be communicated'}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Time:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_time or 'To be communicated'}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Interviewer:</td><td style="padding:5px 0; font-weight:bold;">{staff.staff_name or ''}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Staff Contact:</td><td style="padding:5px 0; font-weight:bold;">{staff.contact_number or ''}</td></tr>
+            </table>
+        </div>
 
-        frappe.sendmail(
-            recipients=[email],
-            subject=f"Interview Scheduled — {allocation.candidate_name or allocation.applicant}",
-            message=msg,
-            reference_doctype="Interview Seat Allocation",
-            reference_name=allocation.name
-        )
-    except Exception as e:
-        import traceback
-        frappe.log_error(message=traceback.format_exc(), title="Send Interview Slot Email Error")
-        raise
+        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0; font-size: 13px;">
+            <p style="margin: 0 0 5px 0; color:#666;"><strong>Your Information:</strong></p>
+            <p style="margin: 0;">ID: {allocation.applicant} | {allocation.program} ({allocation.academic_year})</p>
+            <p style="margin: 0;">Campus: {allocation.campus}</p>
+        </div>
+
+        <p>Please click the button below to view your full interview details and status in the portal:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{url}" style="display:inline-block; padding:12px 28px; background:#0277bd; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">View Interview Details</a>
+        </div>
+        
+        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
+            Record Reference: {allocation.name}<br>
+            If the button doesn't work, copy this link: {url}
+        </p>
+    </div>
+    """
+
+    frappe.sendmail(
+        recipients=[email],
+        subject=f"Interview Scheduled — {allocation.candidate_name or allocation.applicant}",
+        message=msg,
+        reference_doctype="Interview Seat Allocation",
+        reference_name=allocation.name
+    )
