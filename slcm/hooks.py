@@ -17,6 +17,11 @@ doc_events = {
         "before_save": "slcm.lms_automation.handle_payment_paid"
     }
 }
+fixtures = [
+    "Web Form",
+    "Custom Field",
+    "Property Setter"
+]
 # Apps
 # ------------------
 
