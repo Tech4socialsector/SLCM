@@ -51,6 +51,7 @@ def create_seat_allocation(merit_list_name, selected_applicants):
         row = merit_data.get(applicant_name)
         alloc.append("selection_applicant", {
             "applicant": applicant_name,
+            "candidate_name": row.candidate_name if row else None,
             "applicant_id": row.applicant_id if row else None,
             "program": row.program if row else None,
             "reservation_category": row.reservation_category if row else None,

@@ -11,15 +11,18 @@ from frappe.utils import now_datetime, flt
 
 class ScholarshipApplication(Document):
 	def autoname(self):
+		print(f"DEBUG: autoname self.admission_cycle: {self.admission_cycle}")
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))
 		
 		cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code")
+		print(f"DEBUG: autoname cycle_code: {cycle_code}")
 		if not cycle_code:
 			frappe.throw(frappe._("Cycle Code not found in Admission Cycle {0}").format(self.admission_cycle))
 		
 		# Naming Series: SA-{CYCLE}-.#####
 		self.name = make_autoname(f"SA-{cycle_code}-.#####")
+		print(f"DEBUG: autoname self.name: {self.name}")
 
 	def validate(self):
 		self.prevent_duplicate()
@@ -226,11 +229,32 @@ class ScholarshipApplication(Document):
 		self.create_audit_log()
 		
 		old_doc = self.get_doc_before_save()
-		if old_doc and old_doc.status == "Approved" and self.status != "Approved":
-			self.reverse_financial_effects()
-		
-		if self.status == "Approved" and (not old_doc or old_doc.status != "Approved"):
+		if not old_doc:
+			if self.status == "Approved":
+				self.apply_financial_effects()
+				self.apply_fee_deduction()
+			return
+
+		# Case 1: Status changed from something else to Approved
+		if old_doc.status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
+			self.apply_fee_deduction()
+		
+		# Case 2: Status changed from Approved to something else
+		elif old_doc.status == "Approved" and self.status != "Approved":
+			self.reverse_financial_effects()
+			self.reverse_fee_deduction()
+		
+		# Case 3: Remains Approved but benefit changed
+		elif self.status == "Approved" and old_doc.status == "Approved":
+			benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
+			if benefit_diff != 0:
+				scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
+				scheme.utilized_budget += flt(benefit_diff)
+				scheme.save(ignore_permissions=True)
+			
+			# Always ensure fee deduction is synced if still approved
+			self.apply_fee_deduction()
 
 	def on_trash(self):
 		if self.status == "Approved":
@@ -323,6 +347,28 @@ class ScholarshipApplication(Document):
 				scheme.status = "Active"
 
 		scheme.save(ignore_permissions=True)
+
+	def apply_fee_deduction(self):
+		"""
+		Triggers update on Applicant Fee Assignment which pulls scholarship benefit.
+		"""
+		if not self.applicant_id or not self.admission_cycle:
+			return
+
+		afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+			"applicant": self.applicant_id,
+			"admission_cycle": self.admission_cycle
+		}, "name")
+
+		if afa_name:
+			afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
+			afa.save(ignore_permissions=True)
+
+	def reverse_fee_deduction(self):
+		"""
+		Triggers update on Applicant Fee Assignment which clears scholarship benefit.
+		"""
+		self.apply_fee_deduction() # Same logic: save AFA, it will re-check and find no approved scholarship
 
 @frappe.whitelist()
 def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):

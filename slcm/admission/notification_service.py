@@ -50,7 +50,7 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
  
     args = {
         "doc": doc_context,
-        "applicant_name": applicant_doc.applicant_name or applicant,
+        "applicant_name": applicant_doc.candidate_name or applicant,
         "program": program,
         "admission_cycle": admission_cycle,
         "status": new_status,

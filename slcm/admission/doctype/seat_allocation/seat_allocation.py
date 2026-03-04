@@ -283,7 +283,7 @@ class SeatAllocation(Document):
                 
                 match_strings = list(set([s for s in match_strings if s]))
 
-                category_pool = [r for r in remaining_pool if r.reservation_category in match_strings]
+                category_pool = [r for r in remaining_pool if (r.reservation_category or "General") in match_strings]
 
                 selected_reserved = category_pool[:category_seats]
 
@@ -327,7 +327,7 @@ class SeatAllocation(Document):
                 match_strings = list(set([s for s in match_strings if s]))
 
                 # Re-fetch category pool from the updated remaining pool
-                waitlist_pool = [r for r in remaining_pool if r.reservation_category in match_strings]
+                waitlist_pool = [r for r in remaining_pool if (r.reservation_category or "General") in match_strings]
                 waitlist_reserved = waitlist_pool[:cat_waitlist_cap]
 
                 for row in waitlist_reserved:

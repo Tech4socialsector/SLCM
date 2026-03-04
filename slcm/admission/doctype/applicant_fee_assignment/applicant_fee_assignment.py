@@ -7,9 +7,21 @@ from frappe.utils import flt, getdate, add_days, nowdate
 
 class ApplicantFeeAssignment(Document):
 	def validate(self):
+		self.set_metadata()
 		self.set_notification_receiver()
+		self.apply_scholarship()
 		self.calculate_totals()
 		self.validate_status_change()
+
+	def set_metadata(self):
+		if self.applicant:
+			if not self.admission_cycle or not self.academic_year:
+				metadata = frappe.db.get_value("Applicant", self.applicant, ["admission_cycle", "academic_year"], as_dict=True)
+				if metadata:
+					if not self.admission_cycle:
+						self.admission_cycle = metadata.admission_cycle
+					if not self.academic_year:
+						self.academic_year = metadata.academic_year
 
 	def set_notification_receiver(self):
 		if self.applicant:
@@ -32,6 +44,50 @@ class ApplicantFeeAssignment(Document):
 			total_amount += row.total_amount
 		
 		self.total_amount = total_amount
+		self.final_payable_amount = self.total_amount
+
+	def apply_scholarship(self):
+		"""
+		Checks for approved scholarship and applies it as a line item.
+		"""
+		if not self.applicant or not self.admission_cycle:
+			return
+
+		scholarship = frappe.db.get_value("Scholarship Application", {
+			"applicant_id": self.applicant,
+			"admission_cycle": self.admission_cycle,
+			"status": "Approved"
+		}, ["name", "approved_amount", "calculated_benefit"], as_dict=True)
+
+		if scholarship:
+			benefit = flt(scholarship.approved_amount) or flt(scholarship.calculated_benefit)
+			if benefit > 0:
+				found = False
+				for row in self.fee_components:
+					if row.fee_component == "Scholarship":
+						row.amount = -benefit
+						found = True
+						break
+				
+				if not found:
+					self.append("fee_components", {
+						"fee_component": "Scholarship",
+						"component_name": "Scholarship benefit",
+						"amount": -benefit,
+						"is_taxable": 0
+					})
+				
+				self.scholarship_amount = benefit
+				self.scholarship_applied = 1
+		else:
+			# Remove scholarship if no longer approved
+			new_components = []
+			for row in self.fee_components:
+				if row.fee_component != "Scholarship":
+					new_components.append(row)
+			self.fee_components = new_components
+			self.scholarship_amount = 0
+			self.scholarship_applied = 0
 
 	def validate_status_change(self):
 		if self.status == "Converted" and not self.fee_invoice:
@@ -43,7 +99,7 @@ class ApplicantFeeAssignment(Document):
 			frappe.throw(frappe._("At least one Fee Component is required."))
 		
 		for row in self.fee_components:
-			if flt(row.amount) <= 0:
+			if flt(row.amount) <= 0 and row.fee_component != "Scholarship":
 				frappe.throw(frappe._("Amount for {0} must be positive.").format(row.component_name))
 		
 		self.status = "Assigned"

@@ -45,7 +45,7 @@
         {
             "fieldname": "applicant_name",
             "fieldtype": "Data",
-            "label": "Applicant Name",
+            "label": "Candidate Name",
             "reqd": 1
         },
         {

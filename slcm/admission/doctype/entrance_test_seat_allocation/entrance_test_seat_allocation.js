@@ -17,7 +17,14 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
     });
 
     // ── Role based restrictions ──────────────────────────
-    if (frappe.user_roles.includes("Applicant")) {
+    // Administrator can do everything — skip all restrictions
+    if (frappe.user_roles.includes("Administrator")) {
+      frm.set_df_property("tab_9_tab", "hidden", 0);
+      frm.set_df_property("reschedule_seat_allocation_section", "hidden", 0);
+      frm.set_df_property("section_break_axgb", "hidden", 0);
+      frm.set_df_property("entrance_test_status", "read_only", 0);
+      frm.set_df_property("score_obtained", "read_only", 0);
+    } else if (frappe.user_roles.includes("Applicant")) {
       _apply_applicant_permissions(frm);
 
       // Force status to "Scheduled" for applicants if not already set or invalid
@@ -27,7 +34,7 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
       // Ensure it remains read-only for applicants at all times
       frm.set_df_property("entrance_test_status", "read_only", 1);
     } else {
-      // FOR ADMINS / OTHER ROLES:
+      // FOR OTHER ROLES (non-Admin, non-Applicant):
       // Ensure the Reschedule tab and other sections are ALWAYS visible for them
       frm.set_df_property("tab_9_tab", "hidden", 0);
       frm.set_df_property("reschedule_seat_allocation_section", "hidden", 0);

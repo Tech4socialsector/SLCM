@@ -6,10 +6,12 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "eligibility_rule_mapping_section",
   "rule",
   "admission_cycle",
   "program",
   "campus",
+  "column_break_enee",
   "reservation_category",
   "failure_message",
   "is_active"
@@ -62,12 +64,21 @@
    "in_list_view": 1,
    "label": "Failure Message",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_enee",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "eligibility_rule_mapping_section",
+   "fieldtype": "Section Break",
+   "label": "Eligibility Rule Mapping"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-25 22:08:24.606702",
+ "modified": "2026-03-03 11:09:00.240333",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",
