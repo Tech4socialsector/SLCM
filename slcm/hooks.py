@@ -308,7 +308,9 @@ scheduler_events = {
 }
 
 website_route_rules = [
-    {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"}
+    {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
+    {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
+    {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"}
 ]
 
 doc_events = {
