@@ -145,6 +145,7 @@ class FeeService:
         assignment.db_set("status", "Paid")
         
         # Update Offer Letter status directly
+        offer_doc.offer_status = "Payment Completed"
         offer_doc.db_set("offer_status", "Payment Completed")
 
         # Sync Payment Request if it exists
@@ -265,7 +266,7 @@ class FeeService:
                     response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature})
                 
                 # Generate Receipt
-                FeeService.generate_receipt(offer, razorpay_payment_id, "Razorpay Online")
+                FeeService.generate_receipt(offer, razorpay_payment_id, "Online")
 
                 return {"status": "success"}
 

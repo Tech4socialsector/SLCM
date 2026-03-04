@@ -451,7 +451,7 @@ class ApplicantOfferLetter {
 
 	initiate_razorpay_payment(offer_name) {
 		let me = this;
-		frappe.dom.freeze(__('Initiating Payment Gateway...'));
+		frappe.dom.freeze(__('Launching Secure Payment Gateway...'));
 
 		frappe.call({
 			method: "slcm.api.service.offer_service.create_offer_razorpay_order",
@@ -549,7 +549,7 @@ class ApplicantOfferLetter {
 
 	verify_razorpay_payment(response, order_id, offer_name) {
 		let me = this;
-		frappe.dom.freeze(__('Verifying Payment...'));
+		frappe.dom.freeze(__('Verifying Payment Status. Please wait...'));
 
 		frappe.call({
 			method: "slcm.api.service.offer_service.verify_offer_payment",
@@ -574,6 +574,9 @@ class ApplicantOfferLetter {
 						indicator: 'red'
 					});
 				}
+			},
+			error: function () {
+				frappe.dom.unfreeze();
 			}
 		});
 	}

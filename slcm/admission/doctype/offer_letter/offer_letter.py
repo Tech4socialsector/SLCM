@@ -204,6 +204,7 @@ class OfferLetter(Document):
         Called by the payments app when a payment is successful.
         """
         if status in ["Authorized", "Completed"]:
+            self.offer_status = "Payment Completed"
             self.db_set("offer_status", "Payment Completed")
             
             # Update any linked Payment Request
