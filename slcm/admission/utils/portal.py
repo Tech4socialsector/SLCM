@@ -19,8 +19,8 @@ def get_portal_config():
             "primary_color": config.primary_color or "#1a3c6e",
             "secondary_color": config.secondary_color or "#c8a14b",
             "slideshow_images": [
-                {"image": s.image, "caption": s.caption or "", "sequence": s.sequence or 0}
-                for s in sorted(config.slideshow_images or [], key=lambda x: x.sequence or 0)
+                {"image": s.image, "caption": s.caption or "", "idx": s.idx or 0}
+                for s in sorted(config.slideshow_images or [], key=lambda x: x.idx or 0)
             ],
             "show_announcement": config.show_announcement,
             "header_announcement": config.header_announcement or "",

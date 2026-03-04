@@ -35,29 +35,9 @@
     {% endif %}
     <style>
         :root {
-            --primary: {
-                    {
-                    _primary
-                }
-            }
-
-            ;
-
-            --secondary: {
-                    {
-                    _secondary
-                }
-            }
-
-            ;
-
-            --accent: {
-                    {
-                    _secondary
-                }
-            }
-
-            ;
+            --primary: {{ _primary }};
+            --secondary: {{ _secondary }};
+            --accent: {{ _secondary }};
             --primary-light: #e8f0fb;
             --text: #1a1a2e;
             --muted: #6c757d;
