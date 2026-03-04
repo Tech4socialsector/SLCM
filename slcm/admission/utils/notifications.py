@@ -2,6 +2,25 @@ import frappe
 from frappe.utils import now, today, date_diff
 
 
+def log_communication(applicant, communication_type, category, subject, content, reference_doctype=None, reference_name=None):
+    """Logs communication with an applicant."""
+    try:
+        frappe.get_doc({
+            "doctype": "Applicant Communication Log",
+            "applicant": applicant,
+            "communication_type": communication_type,
+            "notification_category": category,
+            "sender": frappe.session.user if frappe.session.user != 'Guest' else 'Administrator',
+            "subject": subject,
+            "content": content,
+            "reference_doctype": reference_doctype,
+            "reference_name": reference_name,
+            "timestamp": now()
+        }).insert(ignore_permissions=True)
+    except Exception as e:
+        frappe.log_error(f"log_communication failed for {applicant}: {e}", "Notifications")
+
+
 def notify_applicant(applicant, notification_type, message, action_url=None):
     """
     Creates portal notification and optionally sends email.
@@ -22,6 +41,27 @@ def notify_applicant(applicant, notification_type, message, action_url=None):
                 "created_on": now()
             }).insert(ignore_permissions=True)
             frappe.db.commit()
+
+            # Map category correctly to allowed options
+            category_map = {
+                "Offer": "Offer Letter",
+                "Fee": "Fee",
+                "Stage Update": "Admission",
+                "Seat Allocation": "Seat Allocation",
+                "Merit": "Merit"
+            }
+            log_category = category_map.get(notification_type, "Generic")
+
+            # Log portal notification
+            log_communication(
+                applicant=applicant,
+                communication_type="Portal Notification",
+                category=log_category,
+                subject=notification_type,
+                content=message,
+                reference_doctype="Applicant",
+                reference_name=applicant
+            )
 
         # Send email if enabled
         if config.enable_email_notifications:
@@ -80,6 +120,27 @@ def _send_email_notification(applicant, notification_type, message):
             body = body.replace(placeholder, str(value or ""))
 
         frappe.sendmail(recipients=[email], subject=subject, message=body)
+
+        # Map notification type to trigger event
+        category_map = {
+            "Offer": "Offer Letter",
+            "Fee": "Fee",
+            "Stage Update": "Admission",
+            "Seat Allocation": "Seat Allocation",
+            "Merit": "Merit"
+        }
+        log_category = category_map.get(notification_type, "Generic")
+
+        # Log email notification
+        log_communication(
+            applicant=applicant,
+            communication_type="Email",
+            category=log_category,
+            subject=subject,
+            content=body,
+            reference_doctype="Applicant",
+            reference_name=applicant
+        )
 
     except Exception as e:
         frappe.log_error(f"_send_email_notification failed: {e}", "Notifications")
@@ -160,6 +221,16 @@ def send_offer_deadline_reminder(applicant_name, campus, days_left):
             will be automatically cancelled.<br><br>
             NLSIU Admissions Team
             """
+        )
+
+        log_communication(
+            applicant=applicant_name,
+            communication_type="Email",
+            category="Offer Letter",
+            subject=f"NLSIU | Offer Deadline Reminder - {days_left} day(s) left",
+            content=f"Offer reminder sent for {applicant.program} at {campus}. {days_left} day(s) left.",
+            reference_doctype="Applicant",
+            reference_name=applicant_name
         )
     except Exception as e:
         frappe.log_error(str(e), "Offer Reminder Error")

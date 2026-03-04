@@ -288,12 +288,23 @@ class OfferService:
         if offer.offer_status != "Issued":
             throw(_("Only 'Issued' offers can be accepted. Current status: {0}").format(offer.offer_status))
 
-        if offer.payment_deadline and get_datetime(offer.payment_deadline) < now_datetime():
+        if offer.payment_deadline and getdate(offer.payment_deadline) < getdate(now_datetime()):
             throw(_("This offer expired on {0} and cannot be accepted.").format(offer.payment_deadline))
 
         offer.offer_status = "Accepted"
         offer.accepted_on = now_datetime()
         offer.save(ignore_permissions=True)
+
+        from slcm.admission.utils.notifications import log_communication
+        log_communication(
+            applicant=offer.applicant,
+            communication_type="Portal Notification",
+            category="Offer Letter",
+            subject=_("Admission Offer Accepted"),
+            content=_("You have successfully accepted the admission offer for {0}.").format(offer.program),
+            reference_doctype="Offer Letter",
+            reference_name=offer.name
+        )
 
         OfferService.create_fee_assignment_from_offer(offer)
         return True
@@ -344,6 +355,17 @@ class OfferService:
         if reason:
             offer.edit_reason = reason # Passed to the log via model hook
         offer.save(ignore_permissions=True)
+
+        from slcm.admission.utils.notifications import log_communication
+        log_communication(
+            applicant=offer.applicant,
+            communication_type="Portal Notification",
+            category="Offer Letter",
+            subject=_("Admission Offer Rejected"),
+            content=_("You have rejected the admission offer for {0}. Reason: {1}").format(offer.program, reason or _("Not specified")),
+            reference_doctype="Offer Letter",
+            reference_name=offer.name
+        )
         return True
 
     @staticmethod
@@ -627,6 +649,18 @@ class OfferService:
             subject=subject,
             message=message,
             attachments=attachments
+        )
+
+        # Log offer communication
+        from slcm.admission.utils.notifications import log_communication
+        log_communication(
+            applicant=offer.applicant,
+            communication_type="Email",
+            category="Offer Letter",
+            subject=subject,
+            content=message,
+            reference_doctype="Offer Letter",
+            reference_name=offer.name
         )
 
     @staticmethod

@@ -163,6 +163,20 @@ class FeeService:
         OfferService.sync_seat_allocation_status(offer_doc, status="Fee Paid")
         OfferService.log_action(offer_name, "Fee Paid", _("Fee status updated to Paid via {0}").format(payment_mode))
 
+        from slcm.admission.utils.notifications import log_communication
+        log_communication(
+            applicant=assignment.applicant,
+            communication_type="Portal Notification",
+            category="Fee",
+            subject=_("Admission Fee Payment Completed"),
+            content=_("Your payment of {0} for {1} has been received successfully.").format(
+                frappe.format_value(offer_doc.payable_amount, offer_doc.meta.get_field("payable_amount"), offer_doc),
+                offer_doc.program
+            ),
+            reference_doctype="Offer Letter",
+            reference_name=offer_doc.name
+        )
+
         # Generate Receipt
         return FeeService.generate_receipt(
             offer_doc, 
