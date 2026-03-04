@@ -41,16 +41,19 @@ def get_exam_courses(exam_plan_name):
 		if mapped:
 			course["mapped_id"] = mapped.name
 			
-			schemas = []
+			course["evaluation_schema"] = mapped.exam_schema
+			course["grade_schema"] = mapped.grading_schema
+
 			if mapped.exam_schema:
-			    schemas.append(f"Eval: {mapped.exam_schema}")
-			if mapped.grading_schema:
-			    schemas.append(f"Grade: {mapped.grading_schema}")
-			    
-			course["exam_schema"] = " | ".join(schemas) if schemas else "-"
+				max_marks = frappe.db.get_value("Exam Schema", mapped.exam_schema, "total_marks")
+				course["max_marks"] = max_marks
+			else:
+				course["max_marks"] = None
 		else:
 			course["mapped_id"] = None
-			course["exam_schema"] = None
+			course["evaluation_schema"] = None
+			course["grade_schema"] = None
+			course["max_marks"] = None
 
 		# Count enrolled students
 		# (Note: In a strict setup, we might filter by `se.term_name = plan.academic_term`. For now, we fetch any enrollment for the course)
@@ -109,6 +112,7 @@ def apply_schema_to_courses(exam_plan, schema_doctype, schema_name, courses):
 				schema_field: schema_name,
 				"mapped_unmapped_status": "Mapped"
 			})
+			doc.flags.ignore_mandatory = True
 			doc.insert(ignore_permissions=True)
 	frappe.db.commit()
 
