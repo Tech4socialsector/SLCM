@@ -97,11 +97,14 @@ frappe.ui.form.on("Offer Letter", {
                                     upi_id: values.upi_id,
                                     remarks: values.remarks
                                 },
+                                freeze: true,
+                                freeze_message: __("Recording Payment..."),
                                 callback: function (r) {
-                                    if (!r.exc) {
+                                    if (r.message && !r.exc) {
                                         d.hide();
-                                        frappe.show_alert({
-                                            message: __('Payment recorded successfully. Receipt {0} generated.', [r.message]),
+                                        frappe.msgprint({
+                                            title: __('Payment Status'),
+                                            message: __('Payment recorded successfully. Receipt <b>{0}</b> has been generated.', [r.message]),
                                             indicator: 'green'
                                         });
                                         frm.reload_doc();

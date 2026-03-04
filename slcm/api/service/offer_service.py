@@ -913,13 +913,18 @@ class OfferService:
             if send_email and offer.applicant:
                 applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
                 if applicant_email:
+                    # Resolve Email Account link to actual email address
+                    actual_sender = None
+                    if sender_email:
+                        actual_sender = frappe.db.get_value("Email Account", sender_email, "email_id")
+                    
                     frappe.sendmail(
                         recipients=[applicant_email],
                         subject=_("Admission Reminder: Pending Offer Letter for {0}").format(offer.program),
                         message=final_message,
                         reference_doctype="Offer Letter",
                         reference_name=offer.name,
-                        sender=sender_email
+                        sender=actual_sender
                     )
                     frappe.logger().info(f"Offer Reminder Email sent to {applicant_email} for {offer_name}")
                 else:

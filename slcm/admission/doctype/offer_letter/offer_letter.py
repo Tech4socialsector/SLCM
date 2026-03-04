@@ -61,7 +61,7 @@ class OfferLetter(Document):
             "Rejected": ("Offer Declined", "Offer Declined"),
             "Withdrawn": ("Offer Declined", "Offer Declined"),
             "Expired": ("Offer Expired", "Offer Expired"),
-            "Accepted": ("Accepted", "Offer Accepted"),
+            "Accepted": ("Offer Accepted", "Offer Accepted"),
             "Payment Completed": ("Fee Paid", "Fee Paid"),
             "Issued": ("Offer Issued", "Offer Issued")
         }

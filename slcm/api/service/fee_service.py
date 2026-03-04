@@ -150,9 +150,12 @@ class FeeService:
         offer_doc.db_set("offer_status", "Payment Completed")
 
         # Sync Payment Request if it exists
-        # For manual payments, we use "Manual Payment" as the gateway label to distinguish from Razorpay/Online
+        # For manual payments, we check if "Manual Payment" gateway exists, otherwise use a generic label
         gateway = "Manual Payment" if payment_mode != "Online" else (frappe.db.get_value("Fee Structure", offer_doc.fee_structure, "payment_gateway") or "Online")
         
+        if gateway == "Manual Payment" and not frappe.db.exists("Payment Gateway", "Manual Payment"):
+            gateway = None # Don't set non-existent link
+            
         FeeService._update_payment_request(offer_doc, gateway, reference_number or "N/A", "Paid", payment_id=reference_number)
 
         from slcm.api.service.offer_service import OfferService
@@ -411,7 +414,7 @@ class FeeService:
                 "reference_doctype": "Offer Letter", 
                 "reference_name": offer.name,
                 "status": ["!=", "Cancelled"]
-            }, "name")
+            }, "name", order_by="creation desc")
         
         if not pr_name and transaction_id:
              # Fallback to finding by transaction id if specifically provided
@@ -420,8 +423,8 @@ class FeeService:
 
         if pr_name:
             pr = frappe.get_doc("Payment Request", pr_name)
-            # Update gateway if it's a manual override
-            if gateway == "Manual Payment":
+            # Update gateway if it's a manual override and it exists
+            if gateway and frappe.db.exists("Payment Gateway", gateway):
                 pr.db_set("payment_gateway", gateway)
         else:
             pr = frappe.new_doc("Payment Request")
@@ -430,31 +433,44 @@ class FeeService:
             pr.amount = offer.payable_amount
             pr.currency = frappe.defaults.get_global_default("currency") or "INR"
             pr.email_to = frappe.db.get_value("Applicant", offer.applicant, "email")
-            pr.payment_gateway = gateway
+            if gateway and frappe.db.exists("Payment Gateway", gateway):
+                pr.payment_gateway = gateway
             pr.transaction_id = transaction_id
 
         if pr.name and pr.docstatus > 0:
-            # If doc is already submitted, we use db_set
+            # If doc is already submitted, we use db_set/set_value for direct DB update
             frappe.logger().debug(f"Updating submitted Payment Request {pr.name} to status {status}")
-            pr.db_set("status", status)
+            
+            update_data = {"status": status}
+            if status == "Paid":
+                update_data["failure_message"] = None
+            elif failure_reason:
+                update_data["status"] = "Failed"
+                update_data["failure_message"] = failure_reason
+            
             if payment_id:
-                pr.db_set("transaction_id", payment_id) # Update with actual payment id
+                update_data["transaction_id"] = payment_id
+                
             if response_data:
-                pr.db_set("gateway_response", json.dumps(response_data, indent=4))
-            if failure_reason:
-                pr.db_set("status", "Failed")
-                pr.db_set("failure_message", failure_reason)
+                update_data["gateway_response"] = json.dumps(response_data, indent=4)
+            
+            if gateway and frappe.db.exists("Payment Gateway", gateway):
+                update_data["payment_gateway"] = gateway
+
+            frappe.db.set_value("Payment Request", pr.name, update_data, update_modified=True)
             frappe.db.commit()
         else:
             # Draft or New
             pr.status = status
             if payment_id:
-                pr.transaction_id = payment_id # Or maybe keep order id? 
-                # Usually we want to know both. Let's keep transaction_id as the primary tracking key.
+                pr.transaction_id = payment_id 
             
             if response_data:
                 pr.gateway_response = json.dumps(response_data, indent=4)
             
+            if status == "Paid":
+                pr.failure_message = None
+                
             if failure_reason:
                 pr.status = "Failed"
                 pr.failure_message = failure_reason

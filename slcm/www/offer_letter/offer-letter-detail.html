@@ -32,6 +32,49 @@
     </div>
 </div>
 
+<!-- Generic Confirmation Modal -->
+<div id="confirmation-modal" class="custom-modal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h4 id="conf-modal-title">{{ _("Confirm Action") }}</h4>
+            <span class="close-modal" onclick="close_confirmation_modal()">&times;</span>
+        </div>
+        <div class="custom-modal-body p-4">
+            <div class="text-center mb-4">
+                <div class="icon-circle bg-light-primary text-primary mx-auto mb-3"
+                    style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ebf8ff;">
+                    <i class="fa fa-question-circle-o fa-2x"></i>
+                </div>
+                <p id="conf-modal-msg" class="text-muted"></p>
+            </div>
+            <div class="d-flex gap-3" style="gap: 12px;">
+                <button class="btn btn-secondary flex-grow-1 py-2" style="border-radius: 10px;"
+                    onclick="close_confirmation_modal()">{{ _("Cancel") }}</button>
+                <button id="conf-modal-btn" class="btn btn-primary flex-grow-1 py-2"
+                    style="border-radius: 10px; background-color: #1a202c;">{{ _("Confirm") }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="success-modal" class="custom-modal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-body p-5 text-center">
+            <div class="mb-4">
+                <div class="bg-success text-white mx-auto mb-3"
+                    style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa fa-check fa-2x"></i>
+                </div>
+                <h3 class="font-weight-bold color-dark" id="success-title">{{ _("Success!") }}</h3>
+                <p id="success-msg" class="text-muted mb-0"></p>
+            </div>
+            <button class="btn btn-primary w-100 py-3" style="border-radius: 12px; background-color: #1a202c;"
+                onclick="location.reload()">{{ _("Close") }}</button>
+        </div>
+    </div>
+</div>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -340,10 +383,23 @@
     .color-dark {
         color: #1a202c;
     }
+
+    .bg-light-primary {
+        background-color: #ebf8ff;
+    }
+
+    .gap-3 {
+        gap: 1rem;
+    }
+
+    .flex-grow-1 {
+        flex-grow: 1;
+    }
 </style>
 
 <script>
     let cur_offer_data = null;
+    let payment_processed = false;
 
     function format_currency(v, c) {
         if (window.format_currency) return window.format_currency(v, c);
@@ -490,8 +546,17 @@
     }
 
     function handle_accept() {
-        if (!confirm("{{ _('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions and your other offer letters will be rejected.') }}")) return;
+        show_confirmation({
+            title: "{{ _('Admission Offer Acceptance') }}",
+            message: "{{ _('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions. Please note: all other active offers will be automatically rejected.') }}",
+            btn_label: "{{ _('Yes, Accept Offer') }}",
+            on_confirm: function () {
+                execute_acceptance();
+            }
+        });
+    }
 
+    function execute_acceptance() {
         show_processing("{{ _('Processing Acceptance...') }}");
 
         frappe.call({
@@ -499,7 +564,6 @@
             args: { offer_name: cur_offer_data.offer.name },
             callback: function (r) {
                 if (r.message) {
-                    // Reject other offers as per desk logic
                     frappe.call({
                         method: 'slcm.api.service.offer_service.reject_applicant_other_offer',
                         args: {
@@ -508,11 +572,19 @@
                         },
                         callback: function (r2) {
                             hide_processing();
-                            alert("{{ _('Congratulations! You have successfully accepted the admission offer.') }}");
+
                             if (cur_offer_data.online_payment_enabled) {
-                                handle_pay_fee();
+                                // Just a small notification before jumping to pay
+                                frappe.show_alert({
+                                    message: "{{ _('Offer accepted successfully. Proceeding to fee payment.') }}",
+                                    indicator: 'green'
+                                });
+                                setTimeout(() => handle_pay_fee(), 1000);
                             } else {
-                                window.location.reload();
+                                show_success({
+                                    title: "{{ _('Offer Accepted!') }}",
+                                    message: "{{ _('Congratulations! You have successfully accepted the admission offer. Our team will contact you for further steps.') }}"
+                                });
                             }
                         }
                     });
@@ -522,6 +594,29 @@
             },
             error: function () { hide_processing(); }
         });
+    }
+
+    function show_confirmation(options) {
+        $('#conf-modal-title').text(options.title || "{{ _('Confirm Action') }}");
+        $('#conf-modal-msg').text(options.message || "");
+        $('#conf-modal-btn').text(options.btn_label || "{{ _('Confirm') }}");
+
+        $('#conf-modal-btn').off('click').on('click', function () {
+            close_confirmation_modal();
+            if (options.on_confirm) options.on_confirm();
+        });
+
+        $('#confirmation-modal').fadeIn(200);
+    }
+
+    function close_confirmation_modal() {
+        $('#confirmation-modal').fadeOut(200);
+    }
+
+    function show_success(options) {
+        $('#success-title').text(options.title || "{{ _('Success!') }}");
+        $('#success-msg').text(options.message || "");
+        $('#success-modal').fadeIn(200);
     }
 
     function handle_pay_fee() {
@@ -603,7 +698,9 @@
             theme: { color: "#1a202c" },
             modal: {
                 ondismiss: function () {
-                    log_payment_failure(cur_offer_data.offer.name, data.order_id, { "message": "User closed the payment modal" });
+                    if (!payment_processed) {
+                        log_payment_failure(cur_offer_data.offer.name, data.order_id, { "message": "User closed the payment modal" });
+                    }
                 }
             }
         };
@@ -651,6 +748,7 @@
             },
             callback: function (r) {
                 if (r.message && r.message.status === 'success') {
+                    payment_processed = true;
                     show_processing("{{ _('Payment Successful! Finalizing...') }}");
                     setTimeout(() => window.location.reload(), 1500);
                 } else {
