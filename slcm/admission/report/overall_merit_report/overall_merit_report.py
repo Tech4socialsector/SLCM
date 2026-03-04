@@ -12,10 +12,9 @@ def execute(filters=None):
 def get_columns():
     return [
         {
-            "label": "Applicant",
-            "fieldname": "applicant",
-            "fieldtype": "Link",
-            "options": "Eligibility Result",
+            "label": "Candidate Name",
+            "fieldname": "candidate_name",
+            "fieldtype": "Data",
             "width": 150
         },
         {
@@ -62,7 +61,7 @@ def get_columns():
 def get_data(filters):
     query = """
         SELECT
-            mla.applicant,
+            mla.candidate_name,
             aa.applicant_id,
             mla.program,
             ml.campus,

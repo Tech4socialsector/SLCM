@@ -119,7 +119,7 @@ class EligibilityResultConfiguration(Document):
             res.candidate_name = data.candidate_name
             res.email = data.email
             res.gender = data.gender
-            res.reservation_category = data.get("reservation_category")
+            res.reservation_category = data.get("reservation_category") or "General"
             res.program = data.program
             res.program_level = data.program_level
             res.academic_year = data.academic_year

@@ -217,5 +217,7 @@
     "search_fields": "applicant_id,candidate_name",
     "sort_field": "modified",
     "sort_order": "DESC",
-    "states": []
+    "states": [],
+    "title_field": "candidate_name",
+    "track_changes": 1
 }

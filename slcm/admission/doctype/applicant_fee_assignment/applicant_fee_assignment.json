@@ -9,6 +9,7 @@
         "applicant_section",
         "applicant",
         "applicant_name",
+        "admission_cycle",
         "column_break_1",
         "offer_letter",
         "program",
@@ -19,6 +20,11 @@
         "column_break_2",
         "fee_invoice",
         "total_amount",
+        "total_fee",
+        "original_total_fee",
+        "scholarship_amount",
+        "final_payable_amount",
+        "scholarship_applied",
         "fee_components_section",
         "fee_components",
         "remarks_section",
@@ -46,7 +52,7 @@
             "fieldtype": "Data",
             "in_list_view": 1,
             "in_standard_filter": 1,
-            "label": "Applicant Name",
+            "label": "Candidate Name",
             "read_only": 1
         },
         {
@@ -118,6 +124,43 @@
             "fieldtype": "Currency",
             "in_list_view": 1,
             "label": "Total Amount",
+            "read_only": 1
+        },
+        {
+            "fieldname": "admission_cycle",
+            "fieldtype": "Link",
+            "label": "Admission Cycle",
+            "options": "Admission Cycle",
+            "read_only": 1
+        },
+        {
+            "fieldname": "total_fee",
+            "fieldtype": "Currency",
+            "label": "Total Fee",
+            "read_only": 1
+        },
+        {
+            "fieldname": "original_total_fee",
+            "fieldtype": "Currency",
+            "label": "Original Total Fee",
+            "read_only": 1
+        },
+        {
+            "fieldname": "scholarship_amount",
+            "fieldtype": "Currency",
+            "label": "Scholarship Amount",
+            "read_only": 1
+        },
+        {
+            "fieldname": "final_payable_amount",
+            "fieldtype": "Currency",
+            "label": "Final Payable Amount",
+            "read_only": 1
+        },
+        {
+            "fieldname": "scholarship_applied",
+            "fieldtype": "Check",
+            "label": "Scholarship Applied",
             "read_only": 1
         },
         {

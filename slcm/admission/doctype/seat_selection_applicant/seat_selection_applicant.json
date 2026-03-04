@@ -6,7 +6,7 @@
     "editable_grid": 1,
     "engine": "InnoDB",
     "field_order": [
-        "applicant",
+        "candidate_name",
         "applicant_id",
         "program",
         "reservation_category",
@@ -14,23 +14,31 @@
         "category_rank",
         "selection_status",
         "overall_rank",
-        "allocation_type"
+        "allocation_type",
+        "applicant"
     ],
     "fields": [
         {
+            "fieldname": "candidate_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Candidate Name",
+            "read_only": 1
+        },
+        {
             "fieldname": "applicant",
             "fieldtype": "Link",
-            "in_list_view": 1,
-            "label": "Applicant",
+            "hidden": 1,
+            "in_list_view": 0,
+            "label": "Eligibility Link",
             "options": "Eligibility Result",
             "reqd": 1
         },
         {
-            "fetch_from": "applicant.applicant_id",
             "fieldname": "applicant_id",
             "fieldtype": "Data",
             "in_list_view": 1,
-            "label": "Applicant Id",
+            "label": "Applicant ID",
             "read_only": 1
         },
         {
@@ -57,7 +65,8 @@
         {
             "fieldname": "category_rank",
             "fieldtype": "Int",
-            "label": "Category Rank"
+            "label": "Category Rank",
+            "in_list_view": 0
         },
         {
             "fieldname": "selection_status",

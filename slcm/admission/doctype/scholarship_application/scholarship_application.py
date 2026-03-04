@@ -11,15 +11,18 @@ from frappe.utils import now_datetime, flt
 
 class ScholarshipApplication(Document):
 	def autoname(self):
+		print(f"DEBUG: autoname self.admission_cycle: {self.admission_cycle}")
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))
 		
 		cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code")
+		print(f"DEBUG: autoname cycle_code: {cycle_code}")
 		if not cycle_code:
 			frappe.throw(frappe._("Cycle Code not found in Admission Cycle {0}").format(self.admission_cycle))
 		
 		# Naming Series: SA-{CYCLE}-.#####
 		self.name = make_autoname(f"SA-{cycle_code}-.#####")
+		print(f"DEBUG: autoname self.name: {self.name}")
 
 	def validate(self):
 		self.prevent_duplicate()
@@ -234,10 +237,12 @@ class ScholarshipApplication(Document):
 		# Case 1: Status changed from something else to Approved
 		if old_doc.status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
+			self.apply_fee_deduction()
 		
 		# Case 2: Status changed from Approved to something else
 		elif old_doc.status == "Approved" and self.status != "Approved":
 			self.reverse_financial_effects()
+			self.reverse_fee_deduction()
 		
 		# Case 3: Remains Approved but benefit changed
 		elif self.status == "Approved" and old_doc.status == "Approved":
@@ -338,6 +343,67 @@ class ScholarshipApplication(Document):
 				scheme.status = "Active"
 
 		scheme.save(ignore_permissions=True)
+
+	def apply_fee_deduction(self):
+		"""
+		Applies scholarship benefit to Applicant Fee Assignment
+		"""
+		if not self.applicant_id or not self.admission_cycle:
+			return
+
+		afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+			"applicant": self.applicant_id,
+			"admission_cycle": self.admission_cycle
+		}, "name")
+
+		if not afa_name:
+			frappe.throw(frappe._("Applicant Fee Assignment not found for applicant {0} and admission cycle {1}")
+						.format(self.applicant_id, self.admission_cycle))
+
+		afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
+
+		if afa.scholarship_applied:
+			frappe.throw(frappe._("Scholarship already applied to Fee Assignment {0}").format(afa_name))
+
+		# Store original fee if not set
+		if not afa.original_total_fee:
+			afa.original_total_fee = afa.total_amount
+		
+		# Use approved_amount if available, else calculated_benefit
+		benefit = flt(self.approved_amount) if hasattr(self, 'approved_amount') and self.approved_amount else flt(self.calculated_benefit)
+		
+		afa.scholarship_amount = benefit
+		afa.final_payable_amount = max(0, flt(afa.original_total_fee) - benefit)
+		afa.scholarship_applied = 1
+		afa.total_fee = afa.total_amount # Mirror for scholarship logic
+		
+		afa.save(ignore_permissions=True)
+
+	def reverse_fee_deduction(self):
+		"""
+		Restores original fees in Applicant Fee Assignment
+		"""
+		if not self.applicant_id or not self.admission_cycle:
+			return
+
+		afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+			"applicant": self.applicant_id,
+			"admission_cycle": self.admission_cycle
+		}, "name")
+
+		if not afa_name:
+			return # If AFA is gone, nothing to reverse
+
+		afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
+		
+		if not afa.scholarship_applied:
+			return
+
+		afa.final_payable_amount = afa.original_total_fee
+		afa.scholarship_amount = 0
+		afa.scholarship_applied = 0
+		
+		afa.save(ignore_permissions=True)
 
 @frappe.whitelist()
 def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):

@@ -89,7 +89,7 @@ function open_allocation_dialog(frm) {
                 <input type="checkbox" class="applicant-checkbox" data-idx="${idx}" checked>
             </td>
             <td>${row.overall_rank || "-"}</td>
-            <td><b>${row.applicant || "-"}</b></td>
+            <td><b>${row.candidate_name || "-"}</b></td>
             <td>${row.applicant_id || "-"}</td>
             <td>${row.program || "-"}</td>
             <td>${row.reservation_category || "-"}</td>
@@ -154,7 +154,7 @@ function open_allocation_dialog(frm) {
                                 <tr>
                                     <th style="width:40px;"></th>
                                     <th>Rank</th>
-                                    <th>Applicant</th>
+                                    <th>Candidate Name</th>
                                     <th>Applicant ID</th>
                                     <th>Program</th>
                                     <th>Reservation Category</th>

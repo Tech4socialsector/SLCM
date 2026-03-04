@@ -50,7 +50,7 @@
             "fieldtype": "Data",
             "fetch_from": "applicant_id.candidate_name",
             "in_list_view": 1,
-            "label": "Applicant Name",
+            "label": "Candidate Name",
             "read_only": 1,
             "reqd": 1
         },

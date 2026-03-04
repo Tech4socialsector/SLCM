@@ -12,10 +12,9 @@ def execute(filters=None):
 def get_columns():
     return [
         {
-            "label": _("Applicant"),
-            "fieldname": "applicant",
-            "fieldtype": "Link",
-            "options": "Eligibility Result",
+            "label": _("Candidate Name"),
+            "fieldname": "candidate_name",
+            "fieldtype": "Data",
             "width": 180
         },
         {
@@ -94,7 +93,7 @@ def get_data(filters):
 
     sql = f"""
         SELECT
-            app.applicant,
+            app.candidate_name,
             app.applicant_id,
             app.program,
             app.reservation_category,
