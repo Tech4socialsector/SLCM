@@ -16,9 +16,10 @@
   "candidate_gender",
   "candidate_dob",
   "candidate_nationality",
+  "candidates_state",
   "candidate_address",
   "candidate_contact_number",
-  "where_did_you_hear_about_the_fle_programme",
+  "where_did_you_hear",
   "if_others_mention_here",
   "section_break_education",
   "last_examination_attended",
@@ -240,14 +241,7 @@
    "options": "\nAuthorized\nCaptured\nFailed\nRefunded\nPending\nCancelled\nPayment Initiated"
   },
   {
-   "fieldname": "where_did_you_hear_about_the_fle_programme",
-   "fieldtype": "Select",
-   "label": "Where did you hear about the FLE Programme?",
-   "options": "\nSocial Media\nNLSIU Website\nFrom my School\nOthers",
-   "reqd": 1
-  },
-  {
-   "depends_on": "eval:doc.where_did_you_hear==\"Others\"",
+   "depends_on": "eval: doc.where_did_you_hear==\"Others\"",
    "fieldname": "if_others_mention_here",
    "fieldtype": "Data",
    "label": "If Others, Mention here"
@@ -277,12 +271,27 @@
    "fieldname": "payment_id",
    "fieldtype": "Data",
    "label": "Payment Id"
+  },
+  {
+   "fieldname": "candidates_state",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Candidate's State",
+   "options": "State"
+  },
+  {
+   "fieldname": "where_did_you_hear",
+   "fieldtype": "Select",
+   "label": "Where did you hear about the FLE Programme?",
+   "options": "\nSocial Media\nNLSIU Website\nFrom my School\nOthers",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 18:56:52.064214",
+ "modified": "2026-03-03 19:32:05.753393",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
