@@ -298,13 +298,13 @@
    "fieldname": "footer_link",
    "fieldtype": "HTML",
    "label": "Footer Link",
-   "options": "https://pace.nls.ac.in/programmes/foundations-for-a-legal-education\n"
+   "options": "<a href=\"https://pace.nls.ac.in/programmes/foundations-for-a-legal-education\"\ntarget=\"_blank\"\nrel=\"noopener noreferrer\"\nstyle=\"color: blue;\">\nhttps://pace.nls.ac.in/programmes/foundations-for-a-legal-education\n</a>"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 21:04:57.374776",
+ "modified": "2026-03-03 21:21:03.596953",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
