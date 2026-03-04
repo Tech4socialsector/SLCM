@@ -139,7 +139,7 @@ def generate_merit_for_level(cycle, campus, program_level):
             "program_level": program_level
         },
         fields=[
-            "name", "applicant_id", "program", "program_level", "reservation_category",
+            "name", "applicant_id", "candidate_name", "program", "program_level", "reservation_category",
             "hsc_percentage", "entrance_test_score", "interview_score",
             "ug_cgpa", "pg_cgpa"
         ]
@@ -168,6 +168,7 @@ def generate_merit_for_level(cycle, campus, program_level):
         merit.append("merit_applicants", {
             "applicant": app.name,
             "applicant_id": app.applicant_id,
+            "candidate_name": app.candidate_name,
             "program": app.program,
             "program_level": app.program_level,
             "reservation_category": app.reservation_category,

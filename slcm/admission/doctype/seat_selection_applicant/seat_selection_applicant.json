@@ -19,22 +19,16 @@
     ],
     "fields": [
         {
+            "fetch_from": "applicant.candidate_name",
             "fieldname": "candidate_name",
             "fieldtype": "Data",
             "in_list_view": 1,
             "label": "Candidate Name",
             "read_only": 1
         },
+        
         {
-            "fieldname": "applicant",
-            "fieldtype": "Link",
-            "hidden": 1,
-            "in_list_view": 0,
-            "label": "Eligibility Link",
-            "options": "Eligibility Result",
-            "reqd": 1
-        },
-        {
+            "fetch_from": "applicant.applicant_id",
             "fieldname": "applicant_id",
             "fieldtype": "Data",
             "in_list_view": 1,
@@ -87,6 +81,15 @@
             "fieldtype": "Int",
             "in_list_view": 1,
             "label": "Overall Rank"
+        },
+        {
+            "fieldname": "applicant",
+            "fieldtype": "Link",
+            "hidden": 1,
+            "in_list_view": 0,
+            "label": "Eligibility Link",
+            "options": "Eligibility Result",
+            "reqd": 1
         }
     ],
     "grid_page_length": 50,

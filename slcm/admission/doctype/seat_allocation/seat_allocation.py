@@ -170,6 +170,7 @@ class SeatAllocation(Document):
             self.append("selection_applicant", {
                 "applicant": row.applicant,
                 "applicant_id": row.applicant_id,
+                "candidate_name": row.candidate_name,
                 "program": row.program,
                 "reservation_category": row.reservation_category,
                 "total_score": row.total_score,

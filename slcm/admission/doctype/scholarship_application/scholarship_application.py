@@ -232,18 +232,18 @@ class ScholarshipApplication(Document):
 		if not old_doc:
 			if self.status == "Approved":
 				self.apply_financial_effects()
-				self.apply_fee_deduction()
+				self.sync_fee_assignment()
 			return
 
 		# Case 1: Status changed from something else to Approved
 		if old_doc.status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
-			self.apply_fee_deduction()
+			self.sync_fee_assignment()
 		
-		# Case 2: Status changed from Approved to something else
-		elif old_doc.status == "Approved" and self.status != "Approved":
+		# Case 2: Status changed from Approved to something else (Rejected/Cancelled/Revoked)
+		elif old_doc.status == "Approved" and self.status in ["Rejected", "Cancelled", "Revoked"]:
 			self.reverse_financial_effects()
-			self.reverse_fee_deduction()
+			self.sync_fee_assignment(reverse=True)
 		
 		# Case 3: Remains Approved but benefit changed
 		elif self.status == "Approved" and old_doc.status == "Approved":
@@ -254,11 +254,64 @@ class ScholarshipApplication(Document):
 				scheme.save(ignore_permissions=True)
 			
 			# Always ensure fee deduction is synced if still approved
-			self.apply_fee_deduction()
+			self.sync_fee_assignment()
 
 	def on_trash(self):
 		if self.status == "Approved":
 			self.reverse_financial_effects()
+			self.sync_fee_assignment(reverse=True)
+
+	def sync_fee_assignment(self, reverse=False):
+		"""
+		Updates the linked Applicant Fee Assignment with scholarship benefit.
+		Uses frappe.db.set_value to avoid permission issues on submitted documents.
+		"""
+		if not self.applicant_id or not self.admission_cycle:
+			return
+
+		# Query matching AFA where applicant and admission_cycle match, and it's not cancelled
+		afa_data = frappe.db.get_value("Applicant Fee Assignment", {
+			"applicant": self.applicant_id,
+			"admission_cycle": self.admission_cycle,
+			"docstatus": ["!=", 2]
+		}, ["name", "total_amount"], as_dict=True)
+
+		if not afa_data:
+			if not reverse:
+				frappe.msgprint(
+					frappe._("No active Applicant Fee Assignment found for applicant {0}. Fee sync skipped.")
+					.format(self.applicant_id),
+					indicator="orange"
+				)
+			return
+
+		afa_name = afa_data.name
+		total_amount = flt(afa_data.total_amount)
+		
+		if reverse:
+			scholarship_amount = 0
+			scholarship_applied = 0
+			final_payable_amount = total_amount
+			msg = frappe._("Scholarship reversed in Fee Assignment {0}.").format(afa_name)
+			indicator = "orange"
+		else:
+			scholarship_amount = flt(self.calculated_benefit)
+			scholarship_applied = 1
+			final_payable_amount = total_amount - scholarship_amount
+			msg = frappe._("Fee Assignment {0} synced: Benefit {1}, Final Payable {2}")\
+				.format(afa_name, scholarship_amount, final_payable_amount)
+			indicator = "green"
+
+		# Apply changes directly to DB
+		frappe.db.set_value("Applicant Fee Assignment", afa_name, {
+			"scholarship_amount": scholarship_amount,
+			"scholarship_applied": scholarship_applied,
+			"final_payable_amount": final_payable_amount
+		}, update_modified=True)
+		
+		# Commit to ensure changes are visible
+		frappe.db.commit()
+		frappe.msgprint(msg, indicator=indicator)
 
 	def create_audit_log(self):
 		old_doc = self.get_doc_before_save()
@@ -348,27 +401,16 @@ class ScholarshipApplication(Document):
 
 		scheme.save(ignore_permissions=True)
 
-	def apply_fee_deduction(self):
-		"""
-		Triggers update on Applicant Fee Assignment which pulls scholarship benefit.
-		"""
-		if not self.applicant_id or not self.admission_cycle:
-			return
-
-		afa_name = frappe.db.get_value("Applicant Fee Assignment", {
-			"applicant": self.applicant_id,
-			"admission_cycle": self.admission_cycle
-		}, "name")
-
-		if afa_name:
-			afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
-			afa.save(ignore_permissions=True)
-
-	def reverse_fee_deduction(self):
-		"""
-		Triggers update on Applicant Fee Assignment which clears scholarship benefit.
-		"""
-		self.apply_fee_deduction() # Same logic: save AFA, it will re-check and find no approved scholarship
+@frappe.whitelist()
+def sync_fee_assignment_manually(docname):
+	"""
+	Whitelisted method to manually trigger fee assignment sync from Client Script.
+	"""
+	doc = frappe.get_doc("Scholarship Application", docname)
+	if doc.status == "Approved":
+		doc.sync_fee_assignment()
+	else:
+		frappe.throw(frappe._("Fee assignment can only be synced for Approved applications."))
 
 @frappe.whitelist()
 def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):
