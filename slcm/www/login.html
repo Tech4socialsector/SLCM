@@ -114,13 +114,66 @@
         <h2 style="color:#fff;">📢 Announcements</h2>
         {% for a in announcements %}
         <div class="notice-card" onclick="window.location='/announcement/{{ a.name }}'"
-             style="display:flex;gap:12px;align-items:center;">
+             style="background:#fff;border-radius:12px;overflow:hidden;
+                    margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);
+                    cursor:pointer;transition:transform 0.2s,box-shadow 0.2s; padding:0;"
+             onmouseover="this.style.transform='translateY(-3px)';
+                          this.style.boxShadow='0 6px 20px rgba(0,0,0,0.12)';"
+             onmouseout="this.style.transform='';
+                         this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+
             {% if a.featured_image %}
-            <img src="{{ a.featured_image }}" style="width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;">
+            <img src="{{ a.featured_image }}" alt="{{ a.title }}"
+                 style="width:100%;height:130px;object-fit:cover;
+                        display:block;">
+            {% else %}
+            <div style="width:100%;height:80px;
+                        background:linear-gradient(135deg,
+                            var(--primary-light,#fde8e8),
+                            rgba(26,60,110,0.08));
+                        display:flex;align-items:center;justify-content:center;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                     stroke="var(--primary,#1a3c6e)" stroke-width="1.5">
+                    {% if a.announcement_type == 'Event' %}
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                    {% else %}
+                    <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    {% endif %}
+                </svg>
+            </div>
             {% endif %}
-            <div style="flex:1;min-width:0;">
-                <div class="notice-card-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.title }}</div>
-                {% if a.publish_date %}<div class="notice-card-meta">{{ frappe.utils.formatdate(a.publish_date, "dd MMM yyyy") }}</div>{% endif %}
+
+            <div style="padding:12px 14px;">
+                {% if a.announcement_type %}
+                <span style="font-size:10px;font-weight:700;
+                             text-transform:uppercase;letter-spacing:0.5px;
+                             padding:2px 8px;border-radius:20px;
+                             background:{% if a.announcement_type == 'Event' %}#dbeafe{% elif a.announcement_type == 'Alert' %}#fee2e2{% else %}#fef3c7{% endif %};
+                             color:{% if a.announcement_type == 'Event' %}#1e40af{% elif a.announcement_type == 'Alert' %}#991b1b{% else %}#92400e{% endif %};">
+                    {{ a.announcement_type }}
+                </span>
+                {% endif %}
+                <div style="font-weight:600;font-size:13px;
+                            margin-top:6px;color:#1a1a1a;line-height:1.35;
+                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ a.title }}
+                </div>
+                {% set display_date = a.event_date if a.announcement_type == 'Event' and a.event_date else a.publish_date %}
+                {% if display_date %}
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;
+                            display:flex;align-items:center;gap:4px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    {{ frappe.utils.formatdate(display_date, "dd MMM yyyy") }}
+                </div>
+                {% endif %}
             </div>
         </div>
         {% endfor %}

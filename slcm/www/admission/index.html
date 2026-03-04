@@ -146,11 +146,6 @@ background:rgba(255,255,255,0.4); }
     font-size: 13px; color: var(--muted); line-height: 1.6;
     margin-bottom: 12px; min-height: 40px;
 }
-.desc-toggle-btn {
-    background: none; border: none; color: var(--primary);
-    font-size: 12px; font-weight: 600; cursor: pointer;
-    padding: 0; margin-top: 4px; display: inline;
-}
 .prog-meta-row {
     display: flex; flex-wrap: wrap; gap: 8px;
     margin-bottom: 14px;
@@ -162,6 +157,33 @@ background:rgba(255,255,255,0.4); }
 .prog-actions {
     display: flex; gap: 8px; align-items: center;
 }
+.btn-apply-now {
+    display: inline-flex; align-items: center;
+    background: var(--secondary, #c8a14b); color: #fff;
+    padding: 8px 14px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    border: none; cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+    white-space: nowrap;
+    flex: 1; justify-content: center;
+}
+.btn-apply-now:hover:not(:disabled) {
+    background: #a07830; color: #fff;
+}
+.btn-apply-now:disabled {
+    opacity: 0.5; cursor: not-allowed;
+}
+.prog-brochure-row {
+    margin-top: 12px; padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+.btn-brochure-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    color: var(--muted); font-size: 12px;
+    text-decoration: none; transition: color 0.15s;
+}
+.btn-brochure-link:hover { color: var(--primary); }
+
 .btn-view-details {
     display: inline-flex; align-items: center; gap: 4px;
     background: var(--primary); color: #fff;
@@ -389,7 +411,7 @@ solid var(--border);} .prog-grid, .ann-grid{grid-template-columns:1fr;} }
     <div class="prog-grid">
     {% for p in programs %}
     <article class="prog-card" tabindex="0"
-             onclick="window.location='/admission/{{ p.program_slug or (p.program | lower | replace(' ','-')) }}'"
+             onclick="window.location='/admission/{{ p.program_slug }}'"
              role="button"
              aria-label="View {{ p.program_name }} details">
 
@@ -397,7 +419,8 @@ solid var(--border);} .prog-grid, .ann-grid{grid-template-columns:1fr;} }
         <div class="prog-thumb">
             {% set _pimg = p.featured_image or p.get('featured_image') %}
             {% if _pimg %}
-            <img src="{{ _pimg }}" alt="{{ p.program_name }}" loading="lazy">
+            <img src="{{ _pimg }}" alt="{{ p.program_name }}"
+                 loading="lazy">
             {% else %}
             <div class="prog-thumb-placeholder">
                 {{ (p.program_abbreviation or p.program_name[0]) | upper }}
@@ -427,20 +450,9 @@ solid var(--border);} .prog-grid, .ann-grid{grid-template-columns:1fr;} }
             <span class="fill-badge {{ p.fill_class }}">{{ p.fill_badge }}</span>
             {% endif %}
 
-            <!-- Description with see more/less -->
+            <!-- Plain description (20 words) -->
             {% if p.desc_short %}
-            <div class="prog-desc">
-                <span class="desc-s-{{ loop.index }}">{{ p.desc_short }}</span>
-                {% if p.desc_has_more %}
-                <span class="desc-f-{{ loop.index }}" style="display:none;">
-                    {{ p.desc_full | safe }}
-                </span>
-                <button class="desc-toggle-btn"
-                    onclick="event.stopPropagation(); toggleDesc({{ loop.index }}, this)">
-                    + See more
-                </button>
-                {% endif %}
-            </div>
+            <p class="prog-desc">{{ p.desc_short }}</p>
             {% endif %}
 
             <!-- Seats row -->
@@ -468,7 +480,7 @@ solid var(--border);} .prog-grid, .ann-grid{grid-template-columns:1fr;} }
 
             <!-- Action row -->
             <div class="prog-actions">
-                <a href="/admission/{{ p.program_slug or (p.program | lower | replace(' ','-')) }}"
+                <a href="/admission/{{ p.program_slug }}"
                    class="btn-view-details"
                    onclick="event.stopPropagation()">
                     View Details
@@ -477,23 +489,33 @@ solid var(--border);} .prog-grid, .ann-grid{grid-template-columns:1fr;} }
                         <polyline points="9 18 15 12 9 6"/>
                     </svg>
                 </a>
-                {% if p.brochure_url %}
+
+                <button class="btn-apply-now"
+                    onclick="event.stopPropagation(); handleApplyNow('{{ p.program_slug }}', '{{ p.program }}', '{{ p.program_name | replace("'", "&apos;") }}')"
+                    {% if not app_open %}disabled title="Applications closed"{% endif %}>
+                    Apply Now
+                </button>
+            </div>
+
+            <!-- Brochure row -->
+            {% if p.brochure_url %}
+            <div class="prog-brochure-row">
                 <a href="{{ p.brochure_url }}" target="_blank"
-                   class="btn-brochure" onclick="event.stopPropagation()"
-                   title="Download Brochure">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                   class="btn-brochure-link" onclick="event.stopPropagation()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    Brochure
+                    Download Brochure
                 </a>
-                {% endif %}
             </div>
+            {% endif %}
         </div>
     </article>
     {% else %}
+
     <div class="empty-programs">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
              stroke="var(--muted)" stroke-width="1.5">
@@ -617,17 +639,23 @@ solid var(--border);} .prog-grid, .ann-grid{grid-template-columns:1fr;} }
 
 {% block extra_js %}
 <script>
-    function toggleDesc(idx, btn) {
-        var s = document.querySelector('.desc-s-' + idx);
-        var f = document.querySelector('.desc-f-' + idx);
-        if (!s || !f) return;
-        if (f.style.display === 'none') {
-            f.style.display = 'inline'; s.style.display = 'none';
-            btn.textContent = '- See less';
-        } else {
-            f.style.display = 'none'; s.style.display = 'inline';
-            btn.textContent = '+ See more';
+    function handleApplyNow(slug, programId, programName) {
+        var isLoggedIn = (window.session_user && window.session_user !== 'Guest');
+        var formUrl = '/applicant-form/new?program=' + encodeURIComponent(programId);
+        
+        if (!isLoggedIn) {
+            window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
+            return;
         }
+        
+        showConfirm(
+            'Apply for <strong>' + programName + '</strong>?<br>' +
+            '<span style="font-size:13px;color:var(--muted);">' +
+            'You will be taken to the application form.</span>',
+            function() {
+                window.location.href = formUrl;
+            }
+        );
     }
 
     // LOGIN_REQUIRED from portal config — safe Jinja extraction

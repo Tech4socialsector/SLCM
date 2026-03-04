@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,513 +8,670 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
 
     <style>
-        header.navbar, .navbar.navbar-expand, nav.navbar,
-        .web-header, .web-navbar, #navbar-main,
-        header[class*="navbar"], .website-header { display: none !important; }
-        .page-content { margin-top: 0 !important; padding-top: 0 !important; }
-        .main-section  { padding-top: 0 !important; }
+        header.navbar,
+        .navbar.navbar-expand,
+        nav.navbar,
+        .web-header,
+        .web-navbar,
+        #navbar-main,
+        header[class*="navbar"],
+        .website-header {
+            display: none !important;
+        }
+
+        .page-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        .main-section {
+            padding-top: 0 !important;
+        }
     </style>
 
     <style>
         :root {
-            --primary: #1a3c6e; --secondary: #c8a14b; --accent: #c8a14b;
-            --primary-light: #e8f0fb; --text: #1a1a2e; --muted: #6c757d;
-            --border: #dee2e6; --card-bg: #ffffff; --bg: #f4f6fb;
+            --primary: #1a3c6e;
+            --secondary: #c8a14b;
+            --accent: #c8a14b;
+            --primary-light: #e8f0fb;
+            --text: #1a1a2e;
+            --muted: #6c757d;
+            --border: #dee2e6;
+            --card-bg: #ffffff;
+            --bg: #f4f6fb;
         }
     </style>
     {% block theme_vars %}{% endblock %}
 
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
-        .adm-nav { background: var(--primary); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-        .adm-nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #fff; font-weight: 700; font-size: 18px; }
-        .adm-nav-brand img { height: 36px; width: auto; }
-        .adm-nav-links { display: flex; gap: 20px; align-items: center; }
-        .adm-nav-links a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px; font-weight: 500; }
-        .adm-nav-links a:hover { color: #fff; }
-        .nav-btn { background: var(--accent); color: #fff !important; padding: 6px 16px; border-radius: 6px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; text-decoration: none; display: inline-block; }
-        .nav-btn:hover { opacity: 0.88; }
-        .adm-main { min-height: calc(100vh - 120px); padding: 32px 0; }
-        .adm-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-        .adm-footer { background: var(--primary); color: rgba(255,255,255,0.7); text-align: center; padding: 16px 24px; font-size: 13px; min-height: 60px; display: flex; align-items: center; justify-content: center; }
-        .btn-primary-adm { background: var(--primary); color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-primary-adm:hover { opacity: 0.88; color: #fff; }
-        .btn-primary-adm:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-outline-adm { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); padding: 7px 18px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-outline-adm:hover { background: var(--primary); color: #fff; }
-        
-        .panel-tab { flex:1; padding:10px; border:none; background:none; cursor:pointer; font-size:13px; font-weight:600; color:var(--muted); border-bottom:2px solid transparent; transition: all 0.2s; }
-        .panel-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
-        
-        @media (max-width: 768px) { .adm-nav-links .nav-hide-mobile { display: none; } .adm-container { padding: 0 12px; } #ann-panel { width: 100vw !important; right: -100vw !important; } }
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .adm-nav {
+            background: var(--primary);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .adm-nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .adm-nav-brand img {
+            height: 36px;
+            width: auto;
+        }
+
+        .adm-nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .adm-nav-links a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .adm-nav-links a:hover {
+            color: #fff;
+        }
+
+        .nav-btn {
+            background: var(--accent);
+            color: #fff !important;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            opacity: 0.88;
+        }
+
+        .adm-main {
+            min-height: calc(100vh - 120px);
+            padding: 32px 0;
+        }
+
+        .adm-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .adm-footer {
+            background: var(--primary);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            padding: 16px 24px;
+            font-size: 13px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary-adm {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary-adm:hover {
+            opacity: 0.88;
+            color: #fff;
+        }
+
+        .btn-primary-adm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-outline-adm {
+            background: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+            padding: 7px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-outline-adm:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .panel-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .adm-nav-links .nav-hide-mobile {
+                display: none;
+            }
+
+            .adm-container {
+                padding: 0 12px;
+            }
+
+            #ann-panel {
+                width: 100vw !important;
+                right: -100vw !important;
+            }
+        }
     </style>
     {% block page_css %}{% endblock %}
 </head>
+
 <body>
 
-{% if portal_config and portal_config.get %}
-    {% set _pc_title = portal_config.get('portal_title')        or '' %}
-    {% set _footer   = portal_config.get('footer_text')         or '' %}
-    {% set _cemail   = portal_config.get('contact_email')       or '' %}
-    {% set _active   = portal_config.get('portal_active')            %}
-    {% set _mmsg     = portal_config.get('maintenance_message') or '' %}
-{% elif portal_config %}
-    {% set _pc_title = portal_config.portal_title        or '' %}
-    {% set _footer   = portal_config.footer_text         or '' %}
-    {% set _cemail   = portal_config.contact_email       or '' %}
-    {% set _active   = portal_config.portal_active            %}
-    {% set _mmsg     = portal_config.maintenance_message or '' %}
-{% else %}
+    {% if portal_config and portal_config.get %}
+    {% set _pc_title = portal_config.get('portal_title') or '' %}
+    {% set _footer = portal_config.get('footer_text') or '' %}
+    {% set _cemail = portal_config.get('contact_email') or '' %}
+    {% set _active = portal_config.get('portal_active') %}
+    {% set _mmsg = portal_config.get('maintenance_message') or '' %}
+    {% elif portal_config %}
+    {% set _pc_title = portal_config.portal_title or '' %}
+    {% set _footer = portal_config.footer_text or '' %}
+    {% set _cemail = portal_config.contact_email or '' %}
+    {% set _active = portal_config.portal_active %}
+    {% set _mmsg = portal_config.maintenance_message or '' %}
+    {% else %}
     {% set _pc_title = '' %} {% set _footer = '' %} {% set _cemail = '' %}
-    {% set _active = 1 %}    {% set _mmsg   = '' %}
-{% endif %}
+    {% set _active = 1 %} {% set _mmsg = '' %}
+    {% endif %}
 
-<nav class="adm-nav">
-    {% set ws = frappe.get_doc("Website Settings") %}
-    <a href="/admission" class="adm-nav-brand">
-        {% if ws.banner_image %}<img src="{{ ws.banner_image }}" alt="Logo">{% endif %}
-        {{ _pc_title or ws.title or "Admissions" }}
-    </a>
-    <div class="adm-nav-links">
-        <a href="/admission" class="nav-hide-mobile">Programs</a>
-        {% if frappe.session.user != "Guest" %}
+    <nav class="adm-nav">
+        {% set ws = frappe.get_doc("Website Settings") %}
+        <a href="/admission" class="adm-nav-brand">
+            {% if ws.banner_image %}<img src="{{ ws.banner_image }}" alt="Logo">{% endif %}
+            {{ _pc_title or ws.title or "Admissions" }}
+        </a>
+        <div class="adm-nav-links">
+            <a href="/admission" class="nav-hide-mobile">Programs</a>
+            {% if frappe.session.user != "Guest" %}
             <a href="/my-applications" class="nav-hide-mobile">My Applications</a>
-        {% endif %}
-        
-        <div style="position:relative;display:flex;align-items:center;">
-            <button id="bellBtn"
-                style="background:none;border:none;color:#fff;cursor:pointer;
+            {% endif %}
+
+
+            <div style="position:relative;display:flex;align-items:center;">
+                <button id="bellBtn" style="background:none;border:none;color:#fff;cursor:pointer;
                        padding:4px 8px;position:relative;display:flex;align-items:center;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                     stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-                <span id="bellBadge"
-                    style="display:none;position:absolute;top:-4px;right:-4px;
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    <span id="bellBadge" style="display:none;position:absolute;top:-4px;right:-4px;
                            background:#fff;color:var(--primary);
                            border:1.5px solid var(--primary);
                            border-radius:50%;min-width:18px;height:18px;
                            font-size:10px;font-weight:700;
                            display:flex;align-items:center;justify-content:center;
                            padding:0 3px;line-height:1;box-sizing:border-box;">0</span>
-            </button>
-        </div>
+                </button>
+            </div>
 
-        {% if frappe.session.user != "Guest" %}
+            {% if frappe.session.user != "Guest" %}
             <button id="logout-btn" class="nav-btn">Logout</button>
-        {% else %}
+            {% else %}
             <a href="/login" class="nav-btn">Login / Apply</a>
-        {% endif %}
-    </div>
-</nav>
+            {% endif %}
+        </div>
+    </nav>
 
-{% if _active == 0 %}
-<main class="adm-main" style="display:flex;align-items:center;justify-content:center;">
-    <div style="text-align:center;max-width:500px;padding:40px;">
-        <div style="font-size:48px;margin-bottom:16px;">🔧</div>
-        <h2 style="color:var(--primary);">Portal Under Maintenance</h2>
-        <div style="color:var(--muted);margin-top:12px;">{{ _mmsg | safe if _mmsg else "Temporarily unavailable." }}</div>
-    </div>
-</main>
-{% else %}
-<main class="adm-main">
-    <div class="adm-container">
-        {% block content %}{% endblock %}
-    </div>
-</main>
-{% endif %}
+    {% if _active == 0 %}
+    <main class="adm-main" style="display:flex;align-items:center;justify-content:center;">
+        <div style="text-align:center;max-width:500px;padding:40px;">
+            <div style="font-size:48px;margin-bottom:16px;">🔧</div>
+            <h2 style="color:var(--primary);">Portal Under Maintenance</h2>
+            <div style="color:var(--muted);margin-top:12px;">{{ _mmsg | safe if _mmsg else "Temporarily unavailable." }}
+            </div>
+        </div>
+    </main>
+    {% else %}
+    <main class="adm-main">
+        <div class="adm-container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    {% endif %}
 
-<footer class="adm-footer">
-    <span>
-        {% if _footer %}{{ _footer }}
-        {% else %}© {{ frappe.utils.nowdate()[:4] }} {{ frappe.get_doc("Website Settings").title or "SLCM" }}. All rights reserved.
-            {% if _cemail %} | <a href="mailto:{{ _cemail }}" style="color:rgba(255,255,255,0.7);">{{ _cemail }}</a>{% endif %}
-        {% endif %}
-    </span>
-</footer>
+    <footer class="adm-footer">
+        <span>
+            {% if _footer %}{{ _footer }}
+            {% else %}© {{ frappe.utils.nowdate()[:4] }} {{ frappe.get_doc("Website Settings").title or "SLCM" }}. All
+            rights reserved.
+            {% if _cemail %} | <a href="mailto:{{ _cemail }}" style="color:rgba(255,255,255,0.7);">{{ _cemail }}</a>{%
+            endif %}
+            {% endif %}
+        </span>
+    </footer>
 
-<!-- Announcement slide panel -->
-<div id="ann-overlay"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;"
-    onclick="closeAnnPanel()"></div>
+    <!-- Announcement slide panel -->
+    <div id="ann-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;"
+        onclick="closeAnnPanel()"></div>
 
-<div id="ann-panel"
-    style="position:fixed;top:0;right:-420px;width:420px;max-width:95vw;height:100vh;
+    <div id="ann-panel" style="position:fixed;top:0;right:-420px;width:420px;max-width:95vw;height:100vh;
            background:#fff;z-index:501;box-shadow:-4px 0 24px rgba(0,0,0,0.12);
            transition:right 0.3s cubic-bezier(0.4,0,0.2,1);
            display:flex;flex-direction:column;overflow:hidden;">
 
-    <!-- Panel header -->
-    <div style="padding:20px 20px 16px;border-bottom:1px solid var(--border);
+        <!-- Panel header -->
+        <div style="padding:20px 20px 16px;border-bottom:1px solid var(--border);
                 display:flex;justify-content:space-between;align-items:center;
                 flex-shrink:0;">
-        <div style="font-size:16px;font-weight:700;color:var(--primary);">
-            Notifications
-        </div>
-        <button onclick="closeAnnPanel()"
-            style="background:none;border:none;cursor:pointer;color:var(--muted);
+            <div style="font-size:16px;font-weight:700;color:var(--primary);">
+                Notifications
+            </div>
+            <button onclick="closeAnnPanel()" style="background:none;border:none;cursor:pointer;color:var(--muted);
                    display:flex;align-items:center;justify-content:center;
                    width:32px;height:32px;border-radius:6px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-        </button>
-    </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
 
-    <!-- Panel tabs -->
-    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
-        <button class="panel-tab active" id="tab-notif"
-            onclick="switchPanelTab('notif')">
-            Notifications
-        </button>
-        <button class="panel-tab" id="tab-ann"
-            onclick="switchPanelTab('ann')">
-            Announcements
-        </button>
-    </div>
+        <!-- Panel tabs -->
+        <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
+            <button class="panel-tab" id="tab-notif" onclick="switchPanelTab('notif')">
+                Notifications
+            </button>
+            <button class="panel-tab active" id="tab-ann" onclick="switchPanelTab('ann')">
+                Announcements
+            </button>
+        </div>
 
-    <!-- Announcement filters -->
-    <div id="ann-filters" style="display:none;padding:8px 16px;
+        <!-- Announcement filters -->
+        <div id="ann-filters" style="display:none;padding:8px 16px;
          border-bottom:1px solid var(--border);display:flex;
          flex-wrap:wrap;gap:6px;align-items:center;">
-        <span style="font-size:11px;color:var(--muted);font-weight:600;">
-            Filter:
-        </span>
-        <button class="ann-filter-btn active" data-type="all"
-            onclick="setAnnFilter('all', this)"
-            style="font-size:11px;padding:3px 10px;border-radius:20px;
+            <span style="font-size:11px;color:var(--muted);font-weight:600;">
+                Filter:
+            </span>
+            <button class="ann-filter-btn active" data-type="all" onclick="setAnnFilter('all', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
                    border:1px solid var(--primary);background:var(--primary);
                    color:#fff;cursor:pointer;transition:all 0.2s;">
-            All
-        </button>
-        <button class="ann-filter-btn" data-type="Event"
-            onclick="setAnnFilter('Event', this)"
-            style="font-size:11px;padding:3px 10px;border-radius:20px;
+                All
+            </button>
+            <button class="ann-filter-btn" data-type="Event" onclick="setAnnFilter('Event', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
                    border:1px solid var(--border);background:#fff;
                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
-            Event
-        </button>
-        <button class="ann-filter-btn" data-type="Announcement"
-            onclick="setAnnFilter('Announcement', this)"
-            style="font-size:11px;padding:3px 10px;border-radius:20px;
+                Event
+            </button>
+            <button class="ann-filter-btn" data-type="Announcement" onclick="setAnnFilter('Announcement', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
                    border:1px solid var(--border);background:#fff;
                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
-            Announcement
-        </button>
-        <button class="ann-filter-btn" data-type="Alert"
-            onclick="setAnnFilter('Alert', this)"
-            style="font-size:11px;padding:3px 10px;border-radius:20px;
+                Announcement
+            </button>
+            <button class="ann-filter-btn" data-type="Alert" onclick="setAnnFilter('Alert', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
                    border:1px solid var(--border);background:#fff;
                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
-            Alert
-        </button>
-        <button class="ann-filter-btn" data-type="Notice"
-            onclick="setAnnFilter('Notice', this)"
-            style="font-size:11px;padding:3px 10px;border-radius:20px;
+                Alert
+            </button>
+            <button class="ann-filter-btn" data-type="Notice" onclick="setAnnFilter('Notice', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
                    border:1px solid var(--border);background:#fff;
                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
-            Notice
-        </button>
-        <button class="ann-filter-btn" data-type="News"
-            onclick="setAnnFilter('News', this)"
-            style="font-size:11px;padding:3px 10px;border-radius:20px;
+                Notice
+            </button>
+            <button class="ann-filter-btn" data-type="News" onclick="setAnnFilter('News', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
                    border:1px solid var(--border);background:#fff;
                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
-            News
-        </button>
-    </div>
-
-    <!-- Panel content -->
-    <div id="panel-content" style="flex:1;overflow-y:auto;padding:0;">
-        <div id="panel-loading" style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">
-            Loading...
+                News
+            </button>
         </div>
-    </div>
 
-    <!-- Panel footer -->
-    <div style="padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;text-align:center;">
-        <a href="/admission" style="font-size:13px;color:var(--primary);
+        <!-- Panel content -->
+        <div id="panel-content" style="flex:1;overflow-y:auto;padding:0;">
+            <div id="panel-loading" style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">
+                Loading...
+            </div>
+        </div>
+
+        <!-- Panel footer -->
+        <div style="padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;text-align:center;">
+            <a href="/admission" style="font-size:13px;color:var(--primary);
                                      font-weight:600;text-decoration:none;">
-            View all announcements →
-        </a>
-    </div>
-</div>
-
-<div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
-
-<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:12px;padding:28px 32px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
-        <div id="confirm-message" style="font-size:15px;font-weight:600;margin-bottom:20px;color:var(--text);white-space:pre-line;"></div>
-        <div style="display:flex;gap:12px;justify-content:flex-end;">
-            <button id="confirm-cancel" class="btn-outline-adm" style="padding:8px 20px;">Cancel</button>
-            <button id="confirm-ok"     class="btn-primary-adm" style="padding:8px 20px;">Confirm</button>
+                View all announcements →
+            </a>
         </div>
     </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-<script>
-window.csrf_token   = "{{ frappe.session.csrf_token }}";
-window.session_user = "{{ frappe.session.user }}";
+    <div id="toast-container"
+        style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;">
+    </div>
 
-function apiFetch(method, args) {
-    return fetch('/api/method/' + method, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.csrf_token },
-        body: JSON.stringify(args || {})
-    }).then(function(r){ return r.json(); }).then(function(d){ return d.message; });
-}
+    <div id="confirm-overlay"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;align-items:center;justify-content:center;">
+        <div
+            style="background:#fff;border-radius:12px;padding:28px 32px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+            <div id="confirm-message"
+                style="font-size:15px;font-weight:600;margin-bottom:20px;color:var(--text);white-space:pre-line;"></div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;">
+                <button id="confirm-cancel" class="btn-outline-adm" style="padding:8px 20px;">Cancel</button>
+                <button id="confirm-ok" class="btn-primary-adm" style="padding:8px 20px;">Confirm</button>
+            </div>
+        </div>
+    </div>
 
-function showToast(message, type) {
-    type = type || 'info';
-    var colors = { success:'#22c55e', error:'#ef4444', info:'#3b82f6' };
-    var icons  = { success:'✓', error:'✕', info:'ℹ' };
-    var t = document.createElement('div');
-    t.style.cssText = 'background:#fff;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:14px;pointer-events:all;min-width:240px;border-left:4px solid '+(colors[type]||'#3b82f6');
-    t.innerHTML = '<span style="color:'+(colors[type]||'#3b82f6')+';font-weight:700;font-size:16px;">'+(icons[type]||'ℹ')+'</span><span>'+message+'</span>';
-    var c = document.getElementById('toast-container');
-    if(c){ c.appendChild(t); setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(function(){ t.remove(); },300); },3500); }
-}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        window.csrf_token = "{{ frappe.session.csrf_token }}";
+        window.session_user = "{{ frappe.session.user }}";
 
-function showConfirm(message, onConfirm) {
-    var o = document.getElementById('confirm-overlay');
-    var m = document.getElementById('confirm-message');
-    var ok = document.getElementById('confirm-ok');
-    var cancel = document.getElementById('confirm-cancel');
-    if(!o){ if(window.confirm(message)) onConfirm(); return; }
-    m.textContent = message;
-    o.style.display = 'flex';
-    ok.onclick     = function(){ o.style.display='none'; onConfirm(); };
-    cancel.onclick = function(){ o.style.display='none'; };
-}
-
-// Announcements Slide Panel Logic
-var _panelTab = 'notif';
-var _panelData = null;
-
-function openAnnPanel() {
-    document.getElementById('ann-overlay').style.display = 'block';
-    document.getElementById('ann-panel').style.right = '0';
-    if (!_panelData) loadPanelData();
-}
-
-function closeAnnPanel() {
-    document.getElementById('ann-overlay').style.display = 'none';
-    document.getElementById('ann-panel').style.right = '-420px';
-}
-
-function switchPanelTab(tab) {
-    _panelTab = tab;
-    ['notif', 'ann'].forEach(t => {
-        document.getElementById('tab-' + t).classList.toggle('active', t === tab);
-    });
-    
-    var filterBar = document.getElementById('ann-filters');
-    if (filterBar) {
-        filterBar.style.display = (tab === 'ann') ? 'flex' : 'none';
-    }
-    renderPanelContent();
-}
-
-var _annFilter = 'all';
-function setAnnFilter(type, btn) {
-    _annFilter = type;
-    document.querySelectorAll('.ann-filter-btn').forEach(function(b) {
-        var isActive = b.getAttribute('data-type') === type;
-        b.style.background = isActive ? 'var(--primary)' : '#fff';
-        b.style.color = isActive ? '#fff' : 'var(--muted)';
-        b.style.borderColor = isActive ? 'var(--primary)' : 'var(--border)';
-    });
-    renderPanelContent();
-}
-
-async function loadPanelData() {
-    const loading = document.getElementById('panel-loading');
-    if (loading) loading.style.display = 'block';
-    
-    try {
-        if (window.session_user && window.session_user !== 'Guest') {
-            _panelData = await apiFetch('slcm.admission.utils.web.get_portal_notifications', {});
-        } else {
-            const r = await fetch('/api/method/slcm.admission.utils.web.get_public_announcements');
-            const d = await r.json();
-            _panelData = { notifications: [], announcements: d.message || [] };
-        }
-        updateBadge();
-    } catch(e) {
-        _panelData = { notifications: [], announcements: [] };
-    }
-    renderPanelContent();
-}
-
-function updateBadge() {
-    if (!_panelData) return;
-    var unread = (_panelData.notifications || []).filter(n => !n.is_read).length;
-    var badge = document.getElementById('bellBadge');
-    if (badge) {
-        if (unread > 0) {
-            badge.style.display = 'flex';
-            badge.textContent = unread > 99 ? '99+' : String(unread);
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-}
-
-function renderPanelContent() {
-    var content = document.getElementById('panel-content');
-    if (!content) return;
-    
-    var loading = document.getElementById('panel-loading');
-    if (loading) loading.style.display = 'none';
-
-    if (!_panelData) return;
-
-    var rawItems = _panelTab === 'notif'
-        ? (_panelData.notifications || [])
-        : (_panelData.announcements || []);
-        
-    var items = (_panelTab === 'ann' && _annFilter !== 'all')
-        ? rawItems.filter(function(i) { return (i.announcement_type || '') === _annFilter; })
-        : rawItems;
-
-    if (items.length === 0) {
-        content.innerHTML = '<div style="padding:48px 20px;text-align:center;color:var(--muted);font-size:13px;">' +
-            (_panelTab === 'notif' ? 'No notifications yet.' : 'No announcements matching this filter.') +
-            '</div>';
-        return;
-    }
-
-    content.innerHTML = items.map(function(item) {
-        var isUnread  = item.is_read === 0 || item.is_read === false;
-        var bg        = isUnread ? '#f0f7ff' : '#fff';
-        var title     = item.title || item.message || 'Notification';
-        var date      = item.creation || item.publish_date || '';
-        var annType   = item.announcement_type || item.notification_type || '';
-        var href      = annType ? '/announcement/' + item.name : '#';
-        var createdBy = item.owner_fullname || item.owner || '';
-
-        // Avatar: image if available, else colored circle with initials
-        var avatarHtml;
-        if (item.image) {
-            avatarHtml = '<img src="' + item.image + '" ' +
-                'style="width:40px;height:40px;border-radius:50%;' +
-                'object-fit:cover;flex-shrink:0;">';
-        } else {
-            // Color based on type
-            var colors = {
-                'Event':        ['#dbeafe','#1e40af'],
-                'Announcement': ['#fef3c7','#92400e'],
-                'Alert':        ['#fee2e2','#991b1b'],
-                'Info':         ['#d1fae5','#065f46'],
-            };
-            var colorPair = colors[annType] || ['var(--primary-light)','var(--primary)'];
-            var initial   = title.charAt(0).toUpperCase();
-            avatarHtml = '<div style="width:40px;height:40px;border-radius:50%;' +
-                'background:' + colorPair[0] + ';color:' + colorPair[1] + ';' +
-                'flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
-                'font-weight:700;font-size:16px;">' + initial + '</div>';
+        function apiFetch(method, args) {
+            return fetch('/api/method/' + method, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.csrf_token },
+                body: JSON.stringify(args || {})
+            }).then(function (r) { return r.json(); }).then(function (d) { return d.message; });
         }
 
-        // Indicator: tick if read, dot if unread
-        var indicator = isUnread
-            ? '<span style="width:20px;height:20px;border-radius:50%;' +
-              'border:2px solid var(--primary);flex-shrink:0;' +
-              'margin-top:6px;display:flex;align-items:center;' +
-              'justify-content:center;" title="Mark as read">' +
-              '<span style="width:7px;height:7px;border-radius:50%;' +
-              'background:var(--primary);"></span></span>'
-            : '<span style="width:20px;height:20px;border-radius:50%;' +
-              'background:#d1fae5;flex-shrink:0;margin-top:6px;' +
-              'display:flex;align-items:center;justify-content:center;">' +
-              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"' +
-              ' stroke="#065f46" stroke-width="3"><polyline points="20 6 9 17 4 12"/>' +
-              '</svg></span>';
-
-        var metaLine = '';
-        if (date || createdBy || annType) {
-            var parts = [];
-            if (annType)   parts.push('<span style="background:var(--primary-light);' +
-                'color:var(--primary);border-radius:10px;padding:1px 6px;' +
-                'font-size:10px;font-weight:600;text-transform:uppercase;">' +
-                annType + '</span>');
-            if (createdBy) parts.push(createdBy);
-            if (date)      parts.push(date.split(' ')[0]);
-            metaLine = '<div style="font-size:11px;color:var(--muted);' +
-                'margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
-                parts.join(' · ') + '</div>';
+        function showToast(message, type) {
+            type = type || 'info';
+            var colors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' };
+            var icons = { success: '✓', error: '✕', info: 'ℹ' };
+            var t = document.createElement('div');
+            t.style.cssText = 'background:#fff;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:14px;pointer-events:all;min-width:240px;border-left:4px solid ' + (colors[type] || '#3b82f6');
+            t.innerHTML = '<span style="color:' + (colors[type] || '#3b82f6') + ';font-weight:700;font-size:16px;">' + (icons[type] || 'ℹ') + '</span><span>' + message + '</span>';
+            var c = document.getElementById('toast-container');
+            if (c) { c.appendChild(t); setTimeout(function () { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function () { t.remove(); }, 300); }, 3500); }
         }
 
-        var fullPageLink = (annType && href !== '#')
-            ? '<a href="' + href + '" style="font-size:11px;color:var(--primary);' +
-              'text-decoration:none;margin-top:6px;display:inline-block;font-weight:600;">' +
-              'View full page →</a>'
-            : '';
+        function showConfirm(message, onConfirm) {
+            var o = document.getElementById('confirm-overlay');
+            var m = document.getElementById('confirm-message');
+            var ok = document.getElementById('confirm-ok');
+            var cancel = document.getElementById('confirm-cancel');
+            if (!o) { if (window.confirm(message)) onConfirm(); return; }
+            m.textContent = message;
+            o.style.display = 'flex';
+            ok.onclick = function () { o.style.display = 'none'; onConfirm(); };
+            cancel.onclick = function () { o.style.display = 'none'; };
+        }
 
-        return '<div style="padding:12px 16px;border-bottom:1px solid var(--border);' +
-            'background:' + bg + ';cursor:pointer;" ' +
-            'onclick="' + (href !== '#' ? 'window.location=\'' + href + '\'' :
-                'markItemRead(\'' + item.name + '\')') + '">' +
-            '<div style="display:flex;align-items:flex-start;gap:10px;">' +
-            avatarHtml +
-            '<div style="flex:1;min-width:0;">' +
-            '<div style="font-size:13px;font-weight:' + (isUnread ? '600' : '400') + ';' +
-            'color:var(--text);line-height:1.4;">' + title + '</div>' +
-            metaLine +
-            fullPageLink +
-            '</div>' +
-            indicator +
-            '</div></div>';
-    }).join('');
-}
+        // Announcements Slide Panel Logic
+        var _panelTab = 'notif';
+        var _panelData = null;
 
-async function markItemRead(name) {
-    if (_panelData && _panelData.notifications) {
-        _panelData.notifications.forEach(n => { if (n.name === name) n.is_read = 1; });
-        updateBadge();
-        renderPanelContent();
-    }
-    try {
-        await apiFetch('slcm.admission.utils.web.mark_notifications_read', { names: [name] });
-    } catch(e) {}
-}
+        function openAnnPanel() {
+            document.getElementById('ann-overlay').style.display = 'block';
+            document.getElementById('ann-panel').style.right = '0';
+            if (!_panelData) loadPanelData();
+        }
 
-document.addEventListener('DOMContentLoaded', function() {
-    var bellBtn = document.getElementById('bellBtn');
-    if (bellBtn) {
-        bellBtn.onclick = function(e) {
-            e.stopPropagation();
-            openAnnPanel();
-        };
-    }
-    
-    var logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
-            showConfirm('Are you sure you want to logout?', async function() {
-                try {
-                    await fetch('/api/method/logout', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': window.csrf_token },
-                        body: 'csrf_token=' + encodeURIComponent(window.csrf_token)
-                    });
-                } catch(e) {}
-                window.location.href = '/login';
+        function closeAnnPanel() {
+            document.getElementById('ann-overlay').style.display = 'none';
+            document.getElementById('ann-panel').style.right = '-420px';
+        }
+
+        function switchPanelTab(tab) {
+            _panelTab = tab;
+            ['notif', 'ann'].forEach(t => {
+                document.getElementById('tab-' + t).classList.toggle('active', t === tab);
             });
-        });
-    }
 
-    if (window.session_user !== 'Guest') {
-        loadPanelData();
-    }
-});
-</script>
-{% block extra_js %}{% endblock %}
+            var filterBar = document.getElementById('ann-filters');
+            if (filterBar) {
+                filterBar.style.display = (tab === 'ann') ? 'flex' : 'none';
+            }
+            renderPanelContent();
+        }
+
+        var _annFilter = 'all';
+        function setAnnFilter(type, btn) {
+            _annFilter = type;
+            document.querySelectorAll('.ann-filter-btn').forEach(function (b) {
+                var isActive = b.getAttribute('data-type') === type;
+                b.style.background = isActive ? 'var(--primary)' : '#fff';
+                b.style.color = isActive ? '#fff' : 'var(--muted)';
+                b.style.borderColor = isActive ? 'var(--primary)' : 'var(--border)';
+            });
+            renderPanelContent();
+        }
+
+        async function loadPanelData() {
+            const loading = document.getElementById('panel-loading');
+            if (loading) loading.style.display = 'block';
+
+            try {
+                if (window.session_user && window.session_user !== 'Guest') {
+                    _panelData = await apiFetch('slcm.admission.utils.web.get_portal_notifications', {});
+                } else {
+                    const r = await fetch('/api/method/slcm.admission.utils.web.get_public_announcements');
+                    const d = await r.json();
+                    _panelData = { notifications: [], announcements: d.message || [] };
+                }
+                updateBadge();
+            } catch (e) {
+                _panelData = { notifications: [], announcements: [] };
+            }
+            renderPanelContent();
+        }
+
+        function updateBadge() {
+            if (!_panelData) return;
+            var unread = (_panelData.notifications || []).filter(n => !n.is_read).length;
+            var badge = document.getElementById('bellBadge');
+            if (badge) {
+                if (unread > 0) {
+                    badge.style.display = 'flex';
+                    badge.textContent = unread > 99 ? '99+' : String(unread);
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        function renderPanelContent() {
+            var content = document.getElementById('panel-content');
+            if (!content) return;
+
+            var loading = document.getElementById('panel-loading');
+            if (loading) loading.style.display = 'none';
+
+            if (!_panelData) return;
+
+            var rawItems = _panelTab === 'notif'
+                ? (_panelData.notifications || [])
+                : (_panelData.announcements || []);
+
+            var items = (_panelTab === 'ann' && _annFilter !== 'all')
+                ? rawItems.filter(function (i) { return (i.announcement_type || '') === _annFilter; })
+                : rawItems;
+
+            if (items.length === 0) {
+                content.innerHTML = '<div style="padding:48px 20px;text-align:center;color:var(--muted);font-size:13px;">' +
+                    (_panelTab === 'notif' ? 'No notifications yet.' : 'No announcements matching this filter.') +
+                    '</div>';
+                return;
+            }
+
+            content.innerHTML = items.map(function (item) {
+                var isUnread = item.is_read === 0 || item.is_read === false;
+                var bg = isUnread ? '#f0f7ff' : '#fff';
+                var title = item.title || item.message || 'Notification';
+                var date = item.creation || item.publish_date || '';
+                var annType = item.announcement_type || item.notification_type || '';
+                var href = annType ? '/announcement/' + item.name : '#';
+                var createdBy = item.owner_fullname || item.owner || '';
+
+                // Avatar: image if available, else colored circle with initials
+                var avatarHtml;
+                if (item.image) {
+                    avatarHtml = '<img src="' + item.image + '" ' +
+                        'style="width:40px;height:40px;border-radius:50%;' +
+                        'object-fit:cover;flex-shrink:0;">';
+                } else {
+                    // Color based on type
+                    var colors = {
+                        'Event': ['#dbeafe', '#1e40af'],
+                        'Announcement': ['#fef3c7', '#92400e'],
+                        'Alert': ['#fee2e2', '#991b1b'],
+                        'Info': ['#d1fae5', '#065f46'],
+                    };
+                    var colorPair = colors[annType] || ['var(--primary-light)', 'var(--primary)'];
+                    var initial = title.charAt(0).toUpperCase();
+                    avatarHtml = '<div style="width:40px;height:40px;border-radius:50%;' +
+                        'background:' + colorPair[0] + ';color:' + colorPair[1] + ';' +
+                        'flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
+                        'font-weight:700;font-size:16px;">' + initial + '</div>';
+                }
+
+                // Indicator: tick if read, dot if unread
+                var indicator = isUnread
+                    ? '<span style="width:20px;height:20px;border-radius:50%;' +
+                    'border:2px solid var(--primary);flex-shrink:0;' +
+                    'margin-top:6px;display:flex;align-items:center;' +
+                    'justify-content:center;" title="Mark as read">' +
+                    '<span style="width:7px;height:7px;border-radius:50%;' +
+                    'background:var(--primary);"></span></span>'
+                    : '<span style="width:20px;height:20px;border-radius:50%;' +
+                    'background:#d1fae5;flex-shrink:0;margin-top:6px;' +
+                    'display:flex;align-items:center;justify-content:center;">' +
+                    '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"' +
+                    ' stroke="#065f46" stroke-width="3"><polyline points="20 6 9 17 4 12"/>' +
+                    '</svg></span>';
+
+                var metaLine = '';
+                if (date || createdBy || annType) {
+                    var parts = [];
+                    if (annType) parts.push('<span style="background:var(--primary-light);' +
+                        'color:var(--primary);border-radius:10px;padding:1px 6px;' +
+                        'font-size:10px;font-weight:600;text-transform:uppercase;">' +
+                        annType + '</span>');
+                    if (createdBy) parts.push(createdBy);
+                    if (date) parts.push(date.split(' ')[0]);
+                    metaLine = '<div style="font-size:11px;color:var(--muted);' +
+                        'margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
+                        parts.join(' · ') + '</div>';
+                }
+
+                var fullPageLink = (annType && href !== '#')
+                    ? '<a href="' + href + '" style="font-size:11px;color:var(--primary);' +
+                    'text-decoration:none;margin-top:6px;display:inline-block;font-weight:600;">' +
+                    'View full page →</a>'
+                    : '';
+
+                return '<div style="padding:12px 16px;border-bottom:1px solid var(--border);' +
+                    'background:' + bg + ';cursor:pointer;" ' +
+                    'onclick="' + (href !== '#' ? 'window.location=\'' + href + '\'' :
+                        'markItemRead(\'' + item.name + '\')') + '">' +
+                    '<div style="display:flex;align-items:flex-start;gap:10px;">' +
+                    avatarHtml +
+                    '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-size:13px;font-weight:' + (isUnread ? '600' : '400') + ';' +
+                    'color:var(--text);line-height:1.4;">' + title + '</div>' +
+                    metaLine +
+                    fullPageLink +
+                    '</div>' +
+                    indicator +
+                    '</div></div>';
+            }).join('');
+        }
+
+        async function markItemRead(name) {
+            if (_panelData && _panelData.notifications) {
+                _panelData.notifications.forEach(n => { if (n.name === name) n.is_read = 1; });
+                updateBadge();
+                renderPanelContent();
+            }
+            try {
+                await apiFetch('slcm.admission.utils.web.mark_notifications_read', { names: [name] });
+            } catch (e) { }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var bellBtn = document.getElementById('bellBtn');
+            if (bellBtn) {
+                bellBtn.onclick = function (e) {
+                    e.stopPropagation();
+                    openAnnPanel();
+                };
+            }
+
+            var logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function () {
+                    showConfirm('Are you sure you want to logout?', async function () {
+                        try {
+                            await fetch('/api/method/logout', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': window.csrf_token },
+                                body: 'csrf_token=' + encodeURIComponent(window.csrf_token)
+                            });
+                        } catch (e) { }
+                        window.location.href = '/login';
+                    });
+                });
+            }
+
+            if (window.session_user !== 'Guest') {
+                loadPanelData();
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
 
 </body>
+
 </html>

@@ -19,11 +19,11 @@ def get_context(context):
     slug = frappe.form_dict.get("name") or frappe.form_dict.get("program_slug") or ""
     frappe.log_error(title="Portal Debug", message=f"slug={repr(slug)}")
 
-    def normalize_slug(s):
+    def _normalize_slug(s):
         if not s: return ""
-        # Match index.html logic: replace space with dash
-        # Match common URL normalization: remove parens
-        return s.lower().replace(" ","-").replace("(","").replace(")","").replace("--","-").strip("-")
+        s = s.lower()
+        s = re.sub(r'[^a-z0-9]+', '-', s)
+        return s.strip('-')
 
     program_name = None
     # 1. Direct name match
@@ -37,12 +37,12 @@ def get_context(context):
     # 3. Normalized slug match
     if not program_name:
         all_progs = frappe.get_all("Program", fields=["name","program_slug"])
-        slug_norm = normalize_slug(slug)
+        slug_norm = _normalize_slug(slug)
         for p in all_progs:
-            if normalize_slug(p.program_slug) == slug_norm:
+            if _normalize_slug(p.program_slug) == slug_norm:
                 program_name = p.name
                 break
-            if normalize_slug(p.name) == slug_norm:
+            if _normalize_slug(p.name) == slug_norm:
                 program_name = p.name
                 break
 

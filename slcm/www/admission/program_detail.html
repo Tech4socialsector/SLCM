@@ -207,15 +207,19 @@
         <div class="detail-section">
             <h3>About This Program</h3>
             {% set words = program.description | striptags | wordcount %}
-            {% if words > 30 %}
+            {% if words > 50 %}
             <div style="font-size:15px;line-height:1.8;">
-                <span id="desc-short">{{ program.description | striptags | truncate(200) }}</span>
-                <span id="desc-full" style="display:none;">{{ program.description | safe }}</span>
-                <br>
-                <button onclick="toggleProgramDesc(this)"
+                <div id="desc-preview">{{ program.description | striptags | truncate(350, True, '...') }}</div>
+                <div id="desc-full" style="display:none;">{{ program.description | safe }}</div>
+                <button id="desc-toggle-btn" onclick="toggleFullDesc()"
                     style="background:none;border:none;color:var(--primary);
-                           font-size:13px;cursor:pointer;padding:0;margin-top:6px;font-weight:600;">
-                    + Read more
+                           font-size:13px;cursor:pointer;padding:0;margin-top:10px;
+                           font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                    <svg id="desc-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                    <span>Read full description</span>
                 </button>
             </div>
             {% else %}
@@ -310,9 +314,28 @@
                 </div>
             </div>
             {% endif %}
-            {% if program.brochure_url %}<a href="{{ program.brochure_url }}" target="_blank"
-                style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--primary);text-decoration:none;margin-bottom:16px;">📄
-                Download Brochure</a>{% endif %}
+            {% if program.brochure_url %}
+            <div style="margin-top:16px;">
+                <a href="{{ program.brochure_url }}" target="_blank"
+                   style="display:flex;align-items:center;justify-content:center;
+                          gap:8px;padding:10px 20px;border-radius:10px;
+                          border:1.5px solid var(--primary);color:var(--primary);
+                          text-decoration:none;font-size:14px;font-weight:600;
+                          transition:all 0.15s;"
+                   onmouseover="this.style.background='var(--primary)';
+                                this.style.color='#fff';"
+                   onmouseout="this.style.background='';
+                               this.style.color='var(--primary)';">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download Brochure
+                </a>
+            </div>
+            {% endif %}
             <div style="margin-top:8px;">
                 {% if app_open %}
                 <button class="btn-primary-adm" id="detail-apply-btn" style="width:100%;text-align:center;"
@@ -343,15 +366,21 @@
 {% set login_req_val = 'true' if (portal_config.get('login_required_for_application') if (portal_config and
 portal_config.get) else (portal_config.login_required_for_application if portal_config else True)) else 'false' %}
 <script>
-    function toggleProgramDesc(btn) {
-        var s = document.getElementById('desc-short');
-        var f = document.getElementById('desc-full');
-        if (f.style.display === 'none') {
-            s.style.display = 'none'; f.style.display = 'inline';
-            btn.textContent = '- Read less';
+    function toggleFullDesc() {
+        var preview = document.getElementById('desc-preview');
+        var full    = document.getElementById('desc-full');
+        var btn     = document.getElementById('desc-toggle-btn');
+        var icon    = document.getElementById('desc-toggle-icon');
+        if (full.style.display === 'none') {
+            preview.style.display = 'none';
+            full.style.display    = 'block';
+            btn.querySelector('span').textContent = 'Show less';
+            icon.style.transform = 'rotate(180deg)';
         } else {
-            f.style.display = 'none'; s.style.display = 'inline';
-            btn.textContent = '+ Read more';
+            full.style.display    = 'none';
+            preview.style.display = 'block';
+            btn.querySelector('span').textContent = 'Read full description';
+            icon.style.transform = '';
         }
     }
     var LOGIN_REQUIRED = "{{ login_req_val }}" === "true";
@@ -391,15 +420,19 @@ portal_config.get) else (portal_config.login_required_for_application if portal_
         if (applyBtn) { applyBtn.addEventListener('click', function () { handleApply(applyBtn.getAttribute('data-program'), applyBtn.getAttribute('data-name'), applyBtn.getAttribute('data-level'), applyBtn.getAttribute('data-cycle')); }); }
     });
     async function handleApply(program, programName, level, cycle) {
-        var formUrl = '/application-form/new?program=' + encodeURIComponent(program) + '&level=' + encodeURIComponent(level || 'UG');
-        if (LOGIN_REQUIRED && window.session_user === 'Guest') { window.location.href = '/login?redirect=' + encodeURIComponent(formUrl); return; }
-        showConfirm('Apply for ' + programName + '?', async function () {
-            try {
-                var result = await apiFetch('slcm.admission.utils.web.check_existing_application', { program: program });
-                if (result && result.exists) { showConfirm('You already have an application for ' + programName + ' (Status: ' + result.status + ').\nStart a new one?', function () { window.location.href = formUrl; }); }
-                else { window.location.href = formUrl; }
-            } catch (e) { showToast('Could not check applications. Proceeding...', 'info'); window.location.href = formUrl; }
-        });
+        var formUrl = '/applicant-form/new?program=' + encodeURIComponent(program);
+        if (LOGIN_REQUIRED && window.session_user === 'Guest') {
+            window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
+            return;
+        }
+        showConfirm(
+            'Apply for <strong>' + programName + '</strong>?<br>' +
+            '<span style="font-size:13px;color:var(--muted);">' +
+            'You will be taken to the application form.</span>',
+            function() {
+                window.location.href = formUrl;
+            }
+        );
     }
 </script>
 {% endblock %}

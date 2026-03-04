@@ -138,11 +138,12 @@ def get_active_programs():
                 p["program_slug"] = prog_info.program_slug
                 p["program_abbreviation"] = prog_info.program_shortcode
             else:
-                p["program_slug"] = (p.program or "").lower().replace(" ", "-")
+                p["program_slug"] = _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = ""
             
             raw = p.get("desciption") or ""
             if raw:
+                # 20 words plain text for cards
                 plain = _re.sub(r'<[^>]+>', '', raw).strip()
                 words = plain.split()
                 p["desc_short"]    = ' '.join(words[:20])
