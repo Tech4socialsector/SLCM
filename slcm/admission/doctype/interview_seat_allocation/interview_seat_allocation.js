@@ -65,4 +65,24 @@ function _apply_applicant_permissions(frm) {
         ];
         re_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
     }
+
+    // Feedback field logic
+    const results_ready = frm.doc.result_published == 1 || (frm.doc.rank && frm.doc.rank > 0);
+    
+    // Show feedback only when ranks/results are updated
+    frm.set_df_property("feedback", "hidden", !results_ready);
+    
+    if (results_ready) {
+        // Mandatory if empty, Read-only if already submitted (has value)
+        const has_feedback = !!(frm.doc.feedback && frm.doc.feedback.trim());
+        frm.set_df_property("feedback", "reqd", !has_feedback);
+        frm.set_df_property("feedback", "read_only", has_feedback);
+    }
+
+    // Result section read-only for applicants
+    const result_fields = [
+        "interview_status", "attendance_marked_on", "interview_score",
+        "interview_result_status", "rank", "result_published"
+    ];
+    result_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
 }

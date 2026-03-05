@@ -43,11 +43,14 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
     )
 
     for i, rec in enumerate(attended_records, start=1):
-        frappe.db.set_value("Interview Seat Allocation", rec.name, "rank", i, update_modified=False)
+        frappe.db.set_value("Interview Seat Allocation", rec.name, {
+            "rank": i,
+            "result_published": 1
+        }, update_modified=False)
 
     frappe.db.commit()
 
-    # 2. Fetch ALL applicants (Attended + Absent) to send notifications
+    # 2. Fetch ALL applicants (Attended + Absent) to send notifications and mark published
     all_filters = {
         "academic_year": academic_year,
         "admission_cycle": admission_cycle,
@@ -66,6 +69,10 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
     count = 0
     for rec in all_records:
         doc = frappe.get_doc("Interview Seat Allocation", rec.name)
+        
+        # Set result_published for all notified candidates
+        if not doc.result_published:
+            doc.db_set("result_published", 1)
         
         # Resolve email
         email = doc.email or ""

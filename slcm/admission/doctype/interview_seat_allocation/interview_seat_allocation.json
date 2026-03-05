@@ -50,7 +50,8 @@
   "interview_score",
   "interview_result_status",
   "rank",
-  "result_published"
+  "result_published",
+  "feedback"
  ],
  "fields": [
   {
@@ -226,10 +227,11 @@
    "read_only": 1
   },
   {
+   "default": "0",
    "fieldname": "is_rescheduled",
    "fieldtype": "Check",
-   "label": "Rescheduled",
-   "hidden": 1
+   "hidden": 1,
+   "label": "Rescheduled"
   },
   {
    "fieldname": "tab_9_tab",
@@ -335,12 +337,17 @@
    "fieldname": "rank",
    "fieldtype": "Int",
    "label": "Rank"
+  },
+  {
+   "fieldname": "feedback",
+   "fieldtype": "Small Text",
+   "label": "Feedback"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 15:20:31.789081",
+ "modified": "2026-03-05 11:42:13.472790",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
@@ -379,7 +386,8 @@
    "read": 1,
    "report": 1,
    "role": "Applicant",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "email": 1,
