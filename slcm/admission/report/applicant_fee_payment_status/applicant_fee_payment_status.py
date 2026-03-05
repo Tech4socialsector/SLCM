@@ -63,8 +63,8 @@ def get_columns() -> list[dict]:
 			"width": 100
 		},
 		{
-			"label": _("Total Amount"),
-			"fieldname": "total_amount",
+			"label": _("Payable Amount"),
+			"fieldname": "final_payable_amount",
 			"fieldtype": "Currency",
 			"width": 120
 		},
@@ -122,52 +122,72 @@ def get_data(filters: dict | None) -> list[dict]:
 			"assignment_date",
 			"status",
 			"total_amount",
+			"final_payable_amount",
 			"fee_invoice",
 			"offer_letter"
 		],
-		order_by="assignment_date desc"
+		order_by="assignment_date asc"
 	)
 
-	# Calculate paid and pending amounts from receipts
+	# Get all unique offer letters to fetch their total receipts
+	offer_letters = list(set(row.offer_letter for row in data if row.offer_letter))
+	offer_paid_map = {}
+	if offer_letters:
+		receipt_data = frappe.get_all(
+			"Applicant Payment Receipt",
+			filters={"offer_letter": ["in", offer_letters], "docstatus": 1},
+			fields=["offer_letter", {"SUM": "total_amount"}],
+			group_by="offer_letter"
+		)
+		for r in receipt_data:
+			offer_paid_map[r.offer_letter] = flt(r.total_amount)
+
+	# Keep track of how much of each offer's payment has been allocated
+	allocated_paid = {}
+
+	# Calculate paid and pending amounts for each assignment
 	for row in data:
-		total = flt(row.get("total_amount") or 0)
+		total = flt(row.get("final_payable_amount") or 0)
+		offer_total_paid = offer_paid_map.get(row.offer_letter, 0)
 		
-		# Sum all submitted receipts for this offer/assignment
-		paid = flt(frappe.db.sql("""
-			SELECT SUM(total_amount) 
-			FROM `tabApplicant Payment Receipt` 
-			WHERE offer_letter = %s AND docstatus = 1
-		""", (row.offer_letter,))[0][0] or 0)
+		# Remaining available paid amount for this offer
+		available_paid = max(0, offer_total_paid - allocated_paid.get(row.offer_letter, 0))
 		
-		row["paid_amount"] = paid
-		row["pending_amount"] = max(0, total - paid)
+		# Allocate to this assignment up to its total
+		paid_for_this = min(total, available_paid)
+		row["paid_amount"] = paid_for_this
+		row["pending_amount"] = max(0, total - paid_for_this)
+		
+		# Update allocated record
+		allocated_paid[row.offer_letter] = allocated_paid.get(row.offer_letter, 0) + paid_for_this
 		
 		# Sync display status if inconsistent
-		if paid >= total and row.status != "Paid" and total > 0:
+		if row["paid_amount"] >= total and row.status not in ["Paid", "Cancelled", "Converted"] and total > 0:
 			row["status"] = "Paid"
-		elif paid > 0 and paid < total and row.status != "Partially Paid":
+		elif row["paid_amount"] > 0 and row["paid_amount"] < total and row.status != "Partially Paid":
 			row["status"] = "Partially Paid"
 
+	# Sort back to descending date for display
+	data.sort(key=lambda x: x.assignment_date or "", reverse=True)
 	return data
 
 
 def get_chart(data: list[dict]) -> dict:
-	"""Return chart data showing distribution by status."""
+	"""Return chart data showing Total Paid vs Total Pending."""
 	if not data:
 		return {}
 
-	status_counts = {}
-	for row in data:
-		status = row.get("status") or _("Not Specified")
-		status_counts[status] = status_counts.get(status, 0) + 1
+	total_paid = sum(flt(row.get("paid_amount") or 0) for row in data)
+	total_pending = sum(flt(row.get("pending_amount") or 0) for row in data)
 
 	return {
 		"data": {
-			"labels": list(status_counts.keys()),
-			"datasets": [{"values": list(status_counts.values())}],
+			"labels": [_("Paid"), _("Pending")],
+			"datasets": [{"values": [total_paid, total_pending]}],
 		},
 		"type": "donut",
-		"colors": ["#7cd6fd", "#743ee2", "#ff5858", "#ffa00a", "#17a2b8", "#28a745"]
+		"height": 300,
+		"colors": ["#28a745", "#ff5858"]
 	}
 
 
@@ -177,7 +197,7 @@ def get_report_summary(data: list[dict]) -> list[dict]:
 		return []
 
 	total_count = len(data)
-	total_amount = sum(float(row.get("total_amount") or 0) for row in data)
+	total_amount = sum(float(row.get("final_payable_amount") or 0) for row in data)
 	paid_amount = sum(float(row.get("paid_amount") or 0) for row in data)
 	pending_amount = sum(float(row.get("pending_amount") or 0) for row in data)
 
