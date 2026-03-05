@@ -1,150 +1,163 @@
 {
- "actions": [],
- "allow_rename": 1,
- "creation": "2026-03-03 15:15:49.762362",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "exam_component",
-  "assessment",
-  "minimum_marks",
-  "maximum_marks",
-  "passing_marks",
-  "weightage",
-  "requires_enrolment",
-  "effective_maximum_marks",
-  "section_break_substitution",
-  "substitution_type",
-  "substitute_assessment",
-  "substitute_component",
-  "column_break_sub",
-  "substitute_weightage",
-  "substitute_effective_marks",
-  "substitute_assessment_effective_marks"
- ],
- "fields": [
-  {
-   "fieldname": "exam_component",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Exam Component",
-   "options": "Exam Component",
-   "reqd": 1
-  },
-  {
-   "fieldname": "assessment",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Assessment",
-   "options": "Exam Assessment",
-   "reqd": 1
-  },
-  {
-   "fieldname": "minimum_marks",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Minimum Marks",
-   "reqd": 1
-  },
-  {
-   "fieldname": "maximum_marks",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Maximum Marks",
-   "reqd": 1
-  },
-  {
-   "fieldname": "passing_marks",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Passing Marks",
-   "reqd": 1
-  },
-  {
-   "fieldname": "weightage",
-   "fieldtype": "Percent",
-   "in_list_view": 1,
-   "label": "Weightage (%)",
-   "reqd": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "requires_enrolment",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Requires Enrolment"
-  },
-  {
-   "fieldname": "effective_maximum_marks",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Effective Maximum Marks",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_substitution",
-   "fieldtype": "Section Break",
-   "label": "Substitution Settings"
-  },
-  {
-   "fieldname": "substitution_type",
-   "fieldtype": "Select",
-   "label": "Substitution Type",
-   "options": "\nAssessment\nComponent"
-  },
-  {
-   "fieldname": "substitute_assessment",
-   "fieldtype": "Link",
-   "label": "Substitute For Assessment",
-   "options": "Exam Assessment",
-   "depends_on": "eval:doc.substitution_type=='Assessment'"
-  },
-  {
-   "fieldname": "substitute_component",
-   "fieldtype": "Select",
-   "label": "Substitute For Component",
-   "options": "\nInternal\nExternal",
-   "depends_on": "eval:doc.substitution_type=='Component'"
-  },
-  {
-   "fieldname": "column_break_sub",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "substitute_weightage",
-   "fieldtype": "Percent",
-   "label": "Weightage (%)",
-   "depends_on": "eval:doc.substitution_type"
-  },
-  {
-   "fieldname": "substitute_effective_marks",
-   "fieldtype": "Float",
-   "label": "Effective Marks",
-   "read_only": 1,
-   "depends_on": "eval:doc.substitution_type"
-  },
-  {
-   "fieldname": "substitute_assessment_effective_marks",
-   "fieldtype": "Float",
-   "label": "Substitute Assessment Effective Marks",
-   "read_only": 1,
-   "depends_on": "eval:doc.substitution_type"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "istable": 1,
- "links": [],
- "modified": "2026-03-03 16:33:58.269690",
- "modified_by": "Administrator",
- "module": "SLCM",
- "name": "Exam Schema Assessment",
- "owner": "Administrator",
- "permissions": [],
- "row_format": "Dynamic",
- "rows_threshold_for_grid_search": 20,
- "sort_field": "creation",
- "sort_order": "DESC",
- "states": []
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2026-03-03 15:15:49.762362",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "exam_component",
+        "assessment",
+        "label",
+        "effective_maximum_marks",
+        "weightage",
+        "maximum_marks",
+        "minimum_marks",
+        "passing_marks",
+        "consider_for_pass_fail",
+        "requires_enrolment",
+        "section_break_substitution",
+        "substitution_type",
+        "substitute_assessment",
+        "substitute_component",
+        "column_break_sub",
+        "substitute_weightage",
+        "substitute_effective_marks",
+        "substitute_assessment_effective_marks"
+    ],
+    "fields": [
+        {
+            "fieldname": "exam_component",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Exam Component",
+            "options": "Exam Component",
+            "read_only": 1,
+            "reqd": 1
+        },
+        {
+            "fieldname": "assessment",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Assessment",
+            "options": "Exam Assessment",
+            "reqd": 1
+        },
+        {
+            "fieldname": "label",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Label"
+        },
+        {
+            "fieldname": "effective_maximum_marks",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Effective Max",
+            "read_only": 1
+        },
+        {
+            "fieldname": "weightage",
+            "fieldtype": "Percent",
+            "in_list_view": 1,
+            "label": "Weightage %"
+        },
+        {
+            "fieldname": "maximum_marks",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Max Marks"
+        },
+        {
+            "fieldname": "minimum_marks",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Min Marks"
+        },
+        {
+            "fieldname": "passing_marks",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Passing Marks"
+        },
+        {
+            "default": "0",
+            "fieldname": "consider_for_pass_fail",
+            "fieldtype": "Check",
+            "in_list_view": 1,
+            "label": "Pass/Fail"
+        },
+        {
+            "default": "Auto",
+            "fieldname": "requires_enrolment",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Enrollment",
+            "options": "Auto\nManual"
+        },
+        {
+            "fieldname": "section_break_substitution",
+            "fieldtype": "Section Break",
+            "label": "Substitution Settings"
+        },
+        {
+            "fieldname": "substitution_type",
+            "fieldtype": "Select",
+            "label": "Substitution Type",
+            "options": "\nAssessment\nComponent"
+        },
+        {
+            "depends_on": "eval:doc.substitution_type=='Assessment'",
+            "fieldname": "substitute_assessment",
+            "fieldtype": "Link",
+            "label": "Substitute For Assessment",
+            "options": "Exam Assessment"
+        },
+        {
+            "depends_on": "eval:doc.substitution_type=='Component'",
+            "fieldname": "substitute_component",
+            "fieldtype": "Select",
+            "label": "Substitute For Component",
+            "options": "\nInternal\nExternal"
+        },
+        {
+            "fieldname": "column_break_sub",
+            "fieldtype": "Column Break"
+        },
+        {
+            "depends_on": "eval:doc.substitution_type",
+            "fieldname": "substitute_weightage",
+            "fieldtype": "Percent",
+            "label": "Weightage (%)"
+        },
+        {
+            "depends_on": "eval:doc.substitution_type",
+            "fieldname": "substitute_effective_marks",
+            "fieldtype": "Float",
+            "label": "Effective Marks",
+            "read_only": 1
+        },
+        {
+            "depends_on": "eval:doc.substitution_type",
+            "fieldname": "substitute_assessment_effective_marks",
+            "fieldtype": "Float",
+            "label": "Substitute Assessment Effective Marks",
+            "read_only": 1
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "links": [],
+    "modified": "2026-03-04 22:25:00.000000",
+    "modified_by": "Administrator",
+    "module": "SLCM",
+    "name": "Exam Schema Assessment",
+    "owner": "Administrator",
+    "permissions": [],
+    "row_format": "Dynamic",
+    "rows_threshold_for_grid_search": 20,
+    "sort_field": "creation",
+    "sort_order": "DESC",
+    "states": []
 }
