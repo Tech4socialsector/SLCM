@@ -50,29 +50,34 @@ class FeeInvoice(Document):
 
 	def on_update_after_submit(self):
 		# Update fee assignment when payment is made
-		if self.fee_assignment:
-			# Check if it's a Student Fee Assignment or Applicant Fee Assignment
-			assignment_doctype = "Student Fee Assignment"
-			if not frappe.db.exists("Student Fee Assignment", self.fee_assignment):
-				if frappe.db.exists("Applicant Fee Assignment", self.fee_assignment):
-					assignment_doctype = "Applicant Fee Assignment"
-				else:
-					return
+		reference_assignment = self.fee_assignment or self.applicant_fee_assignment
+		if reference_assignment:
+			# Check which doctype it belongs to
+			assignment_doctype = None
+			if self.fee_assignment and frappe.db.exists("Student Fee Assignment", self.fee_assignment):
+				assignment_doctype = "Student Fee Assignment"
+			elif self.applicant_fee_assignment and frappe.db.exists("Applicant Fee Assignment", self.applicant_fee_assignment):
+				assignment_doctype = "Applicant Fee Assignment"
+			
+			if not assignment_doctype:
+				return
 
-			assignment = frappe.get_doc(assignment_doctype, self.fee_assignment)
+			assignment = frappe.get_doc(assignment_doctype, reference_assignment)
 			
 			if assignment_doctype == "Student Fee Assignment":
 				assignment.paid_amount = self.paid_amount
 				assignment.outstanding_amount = self.outstanding_amount
-				assignment.update_status()
+				if hasattr(assignment, 'update_status'):
+					assignment.update_status()
 				assignment.save()
 			else:
 				# Applicant Fee Assignment
 				if self.status == "Paid":
-					assignment.status = "Converted" # Or maintain Converted if already set
+					assignment.status = "Converted"
 				elif self.status == "Partially Paid":
 					assignment.status = "Partially Paid"
 				assignment.save()
+
 
 	def on_payment_authorized(self, payment_status):
 		"""Called by the payments app after a successful transaction."""

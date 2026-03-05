@@ -120,8 +120,8 @@ class ApplicantFeeAssignment(Document):
 def create_invoice(docname):
 	doc = frappe.get_doc("Applicant Fee Assignment", docname)
 	
-	if doc.status not in ["Assigned", "Partially Paid"]:
-		frappe.throw(frappe._("Invoice can only be created for assignments with status 'Assigned' or 'Partially Paid'."))
+	if doc.status not in ["Assigned", "Partially Paid", "Paid"]:
+		frappe.throw(frappe._("Invoice can only be created for assignments with status 'Assigned', 'Partially Paid', or 'Paid'."))
 	
 	applicant = frappe.get_doc("Applicant", doc.applicant)
 	
@@ -170,8 +170,8 @@ def create_invoice(docname):
 	invoice.program = doc.program
 	invoice.academic_year = doc.academic_year
 	invoice.invoice_date = nowdate()
-	invoice.due_date = add_days(nowdate(), 15) # Configurable? Using 15 as per requirement
-	invoice.fee_assignment = doc.name
+	invoice.due_date = add_days(nowdate(), 15) 
+	invoice.applicant_fee_assignment = doc.name
 	
 	for row in doc.fee_components:
 		invoice.append("fee_components", {
@@ -185,13 +185,38 @@ def create_invoice(docname):
 		})
 	
 	invoice.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
-	# invoice.submit() # Temporarily skipping submit to see if redirect works with Draft
 	
-	# 4. Update Fee Assignment
+	# 4. Migrate Payments if already paid as Applicant
+	if doc.status == "Paid":
+		# Find the receipt associated with this offer/applicant
+		receipt_name = frappe.db.get_value("Applicant Payment Receipt", 
+			{"offer_letter": doc.offer_letter, "docstatus": 1}, "name")
+		
+		if receipt_name:
+			receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+			
+			payment = frappe.new_doc("Fee Payment")
+			payment.student = student_name
+			payment.fee_invoice = invoice.name
+			payment.payment_date = receipt.payment_date or nowdate()
+			payment.payment_mode = receipt.payment_mode if receipt.payment_mode in ["Cash", "Bank Transfer", "Cheque", "Online Payment"] else "Other"
+			payment.amount = receipt.total_amount
+			payment.reference_number = receipt.transaction_id
+			payment.status = "Submitted"
+			
+			payment.insert(ignore_permissions=True)
+			payment.submit()
+			
+			# Ensure invoice amounts are refreshed
+			invoice.reload()
+			invoice.save()
+
+	# 5. Update Fee Assignment
 	doc.db_set("fee_invoice", invoice.name)
 	doc.db_set("status", "Converted")
 	
 	return invoice.name
+
 
 @frappe.whitelist()
 def create_payment(docname, amount, payment_mode, reference_number=None):
