@@ -11,6 +11,7 @@
   "user",
   "email",
   "contact_number",
+  "interview_address",
   "column_break_ism1",
   "designation",
   "is_active",
@@ -103,12 +104,17 @@
    "label": "Admission Cycle",
    "options": "Admission Cycle",
    "reqd": 1
+  },
+  {
+   "fieldname": "interview_address",
+   "fieldtype": "Small Text",
+   "label": "Interview Address"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 11:53:45.569877",
+ "modified": "2026-03-05 10:18:53.623480",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Staff Member",
