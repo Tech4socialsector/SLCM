@@ -334,24 +334,13 @@ function _handle_admit_card_download(frm, is_rescheduled) {
     return;
   }
 
-  frappe.show_alert({ message: __("Generating Admit Card…"), indicator: "blue" }, 3);
+  frappe.show_alert({ message: __("Downloading Admit Card…"), indicator: "blue" }, 3);
 
-  // Fetch Campus Branding
-  frappe.db.get_value("Campus", frm.doc.campus, ["campus_name", "logo"], (r) => {
-    const branding = r || {};
-
-    frappe.call({
-      method: "frappe.client.get",
-      args: { doctype: "Entrance Test Seat Allocation", name: frm.doc.name },
-      callback: function (res) {
-        if (res.exc || !res.message) {
-          frappe.msgprint(__("Failed to fetch document. Please try again."));
-          return;
-        }
-        generate_admit_card_pdf(res.message, frm, branding, is_rescheduled);
-      }
-    });
-  });
+  // Link to the same Python download method used in the web portal
+  const url = frappe.urllib.get_full_url(
+    `/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name=${frm.doc.name}`
+  );
+  window.open(url, "_blank");
 }
 
 // ============================================================
