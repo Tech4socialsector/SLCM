@@ -997,7 +997,38 @@
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
- "links": [],
+ "links": [
+  {
+   "link_doctype": "Admission Application",
+   "link_fieldname": "applicant",
+   "group": "Admission"
+  },
+  {
+   "link_doctype": "Eligibility Result",
+   "link_fieldname": "applicant_id",
+   "group": "Admission"
+  },
+  {
+   "link_doctype": "Offer Letter",
+   "link_fieldname": "applicant",
+   "group": "Admission"
+  },
+  {
+   "link_doctype": "Scholarship Application",
+   "link_fieldname": "applicant_id",
+   "group": "Admission"
+  },
+  {
+   "link_doctype": "Applicant Communication Log",
+   "link_fieldname": "applicant",
+   "group": "Communications"
+  },
+  {
+   "link_doctype": "Applicant Document",
+   "link_fieldname": "applicant",
+   "group": "Documents"
+  }
+ ],
  "modified": "2026-03-03 11:52:19.780778",
  "modified_by": "Administrator",
  "module": "Admission",
