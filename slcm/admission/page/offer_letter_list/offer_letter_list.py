@@ -48,7 +48,8 @@ def get_offer_list(limit_start=0, limit_page_length=10):
         fields=fields, 
         order_by="creation desc",
         limit_start=limit_start,
-        limit_page_length=limit_page_length
+        limit_page_length=limit_page_length,
+        ignore_permissions=True
     )
 
     return {

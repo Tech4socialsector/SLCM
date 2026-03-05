@@ -32,6 +32,93 @@ frappe.ui.form.on('Applicant Fee Assignment', {
                 });
             }, __('View'));
         }
+
+        if (frm.doc.docstatus === 1 && ["Assigned", "Partially Paid"].includes(frm.doc.status)) {
+            frm.add_custom_button(__('Record Manual Payment'), function () {
+                if (frm.doc.status === "Paid") {
+                    frappe.msgprint(__('Fee has already been paid for this assignment.'));
+                    return;
+                }
+
+                let d = new frappe.ui.Dialog({
+                    title: __('Record Manual Payment'),
+                    fields: [
+                        {
+                            label: __('Payment Mode'),
+                            fieldname: 'payment_mode',
+                            fieldtype: 'Select',
+                            options: 'Cash\nCheque\nUPI\nQR Code\nBank Transfer\nDemand Draft',
+                            default: 'Cash',
+                            reqd: 1
+                        },
+                        {
+                            label: __('Reference No / TXN ID'),
+                            fieldname: 'transaction_id',
+                            fieldtype: 'Data',
+                            depends_on: 'eval:doc.payment_mode !== "Cash"'
+                        },
+                        {
+                            label: __('Bank Name'),
+                            fieldname: 'bank_name',
+                            fieldtype: 'Data',
+                            depends_on: 'eval:["Cheque", "Bank Transfer", "Demand Draft"].includes(doc.payment_mode)'
+                        },
+                        {
+                            label: __('Cheque Number'),
+                            fieldname: 'cheque_number',
+                            fieldtype: 'Data',
+                            depends_on: 'eval:doc.payment_mode === "Cheque"'
+                        },
+                        {
+                            label: __('Cheque Date'),
+                            fieldname: 'cheque_date',
+                            fieldtype: 'Date',
+                            depends_on: 'eval:doc.payment_mode === "Cheque"'
+                        },
+                        {
+                            label: __('UPI ID'),
+                            fieldname: 'upi_id',
+                            fieldtype: 'Data',
+                            depends_on: 'eval:["UPI", "QR Code"].includes(doc.payment_mode)'
+                        },
+                        {
+                            label: __('Remarks'),
+                            fieldname: 'remarks',
+                            fieldtype: 'Small Text'
+                        }
+                    ],
+                    primary_action_label: __('Submit Payment'),
+                    primary_action(values) {
+                        frappe.confirm(__('Are you sure you want to record this {0} payment of {1}?', [values.payment_mode, format_currency(frm.doc.total_amount)]), () => {
+                            frappe.call({
+                                method: 'slcm.api.service.fee_service.process_fee_payment',
+                                args: {
+                                    offer_name: frm.doc.offer_letter,
+                                    payment_mode: values.payment_mode,
+                                    reference_number: values.transaction_id,
+                                    bank_name: values.bank_name,
+                                    cheque_number: values.cheque_number,
+                                    cheque_date: values.cheque_date,
+                                    upi_id: values.upi_id,
+                                    remarks: values.remarks
+                                },
+                                callback: function (r) {
+                                    if (!r.exc) {
+                                        d.hide();
+                                        frappe.show_alert({
+                                            message: __('Payment recorded successfully. Receipt {0} generated.', [r.message]),
+                                            indicator: 'green'
+                                        });
+                                        frm.reload_doc();
+                                    }
+                                }
+                            });
+                        });
+                    }
+                });
+                d.show();
+            }, __('Actions'));
+        }
     }
 });
 

@@ -62,22 +62,24 @@ def get_data(filters):
 
     # Calculate counts for each report stage
     calculated_counts = {}
+    total_submitted = 0
     for stage in report_stages:
         total = 0
         for status in stage["statuses"]:
             total += status_map.get(status, 0)
         calculated_counts[stage["label"]] = total
+        if stage["label"] == _("Submitted"):
+            total_submitted = total
 
     data = []
     for stage in report_stages:
         label = stage["label"]
         count = calculated_counts[label]
-        parent = stage.get("parent")
         
         conversion = 0.0
-        if parent and calculated_counts.get(parent, 0) > 0:
-            conversion = round((count / calculated_counts[parent]) * 100, 2)
-        elif not parent: # Root stage
+        if total_submitted > 0:
+            conversion = round((count / total_submitted) * 100, 2)
+        elif not stage.get("parent"): # Root stage
              conversion = 100.0
         
         data.append({

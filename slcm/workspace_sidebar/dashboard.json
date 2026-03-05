@@ -1,0 +1,28 @@
+{
+ "app": "slcm",
+ "creation": "2026-03-03 18:47:31.387946",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "airplay",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "airplay",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Dashboard",
+   "link_to": "Admission",
+   "link_type": "Dashboard",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-03-03 18:47:31.387946",
+ "modified_by": "Administrator",
+ "name": "Dashboard",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Dashboard"
+}

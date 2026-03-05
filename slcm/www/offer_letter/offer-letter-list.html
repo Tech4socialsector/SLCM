@@ -1,0 +1,284 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div id="offer-list-wrapper">
+    <div class="text-center p-5 mt-5" id="loader">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">{{ _("Loading...") }}</span>
+        </div>
+        <p class="mt-3 text-muted">{{ _("Fetching your admission offers...") }}</p>
+    </div>
+</div>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        background-color: #f8f9fc !important;
+        font-family: 'Inter', sans-serif;
+    }
+
+    #offer-list-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .portal-header {
+        margin-bottom: 32px;
+    }
+
+    .portal-header h2 {
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 8px;
+    }
+
+    .portal-header p {
+        color: #718096;
+    }
+
+    .offer-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        margin-bottom: 24px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .offer-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .card-body {
+        padding: 24px;
+        flex: 1;
+    }
+
+    .card-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #a0aec0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .program-name {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 4px;
+    }
+
+    .campus-name {
+        font-size: 0.9rem;
+        color: #718096;
+        margin-bottom: 20px;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 8px;
+        text-transform: uppercase;
+    }
+
+    .status-badge.issued {
+        background: #fffaf0;
+        color: #dd6b20;
+    }
+
+    .status-badge.accepted {
+        background: #ebf8ff;
+        color: #3182ce;
+    }
+
+    .status-badge.payment-completed {
+        background: #f0fff4;
+        color: #38a169;
+    }
+
+    .status-badge.rejected {
+        background: #fff5f5;
+        color: #e53e3e;
+    }
+
+    .card-footer {
+        padding: 16px 24px;
+        background-color: #fafcfe;
+        border-top: 1px solid #eef2f7;
+        border-radius: 0 0 16px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .payable-amount {
+        font-weight: 700;
+        color: #1a202c;
+    }
+
+    .view-link {
+        color: #3182ce;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+        .portal-header {
+            text-align: center;
+        }
+    }
+</style>
+
+<script>
+    function format_currency(v, c) {
+        if (window.format_currency) return window.format_currency(v, c);
+        return (c || "INR") + " " + parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    }
+
+    // Fallback for translation helper
+    window._ = window._ || function (s) { return s; };
+
+    frappe.ready(function () {
+        fetch_offers();
+    });
+
+    function fetch_offers() {
+        frappe.call({
+            method: 'slcm.admission.page.offer_letter_list.offer_letter_list.get_offer_list',
+            args: {
+                limit_start: 0,
+                limit_page_length: 100
+            },
+            callback: function (r) {
+                if (r.message && !r.message.error) {
+                    render_offer_list(r.message);
+                } else {
+                    render_error(r.message ? r.message.error : "{{ _('Unknown Error') }}");
+                }
+            }
+        });
+    }
+
+    function render_offer_list(data) {
+        const { offers, applicant_name, is_admin, currency } = data;
+        const wrapper = $('#offer-list-wrapper');
+
+        if (!offers || offers.length === 0) {
+            render_error("{{ _('No admission offers found.') }}");
+            return;
+        }
+
+        let html = `
+        <div class="portal-header">
+            <h2>${is_admin ? "{{ _('Admission Offers Registry') }}" : "{{ _('My Admission Offers') }}"}</h2>
+            <p>${is_admin ? "{{ _('Administrative overview of all issued offers.') }}" : "{{ _('Welcome back, ') }}" + applicant_name + ". {{ _('Review your offers below.') }}"}</p>
+        </div>
+        <div class="row">
+    `;
+
+        offers.forEach(offer => {
+            const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
+            html += `
+            <div class="col-md-6 mb-4">
+                <div class="offer-card" onclick="window.location.href='/offer_letter/offer-letter-detail?offer=${offer.name}'">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="card-label">${offer.name}</span>
+                            <span class="status-badge ${status_class}">${offer.offer_status}</span>
+                        </div>
+                        <div class="program-name">${offer.program}</div>
+                        <div class="campus-name"><i class="fa fa-map-marker mr-1"></i> ${offer.campus}</div>
+                        
+                        ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+                            <div class="mt-3 p-2 rounded" style="background: #1a202c; color: #fff; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px;">
+                                <small style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; opacity: 0.7;">{{ _("Expiry") }}</small>
+                                <span class="offer-timer" data-deadline="${offer.payment_deadline}" style="font-weight: 700; font-size: 0.85rem; letter-spacing: 0.02em;">--:--:--</span>
+                            </div>
+                        ` : ''}
+
+                        ${is_admin ? `
+                            <div class="mt-2 pt-2 border-top">
+                                <span class="card-label">Applicant</span>
+                                <div style="font-weight:500; font-size: 0.9rem;">${offer.applicant}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="card-footer">
+                        <div class="payable-amount">${format_currency(offer.payable_amount, currency)}</div>
+                        <a href="/offer_letter/offer-letter-detail?offer=${offer.name}" class="view-link">
+                            View Details <i class="fa fa-chevron-right ml-1" style="font-size: 0.7rem;"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+        });
+
+        html += `</div>`;
+        wrapper.html(html);
+        start_offer_timers();
+    }
+
+    function start_offer_timers() {
+        const update_timers = () => {
+            $('.offer-timer').each(function () {
+                const $this = $(this);
+                const deadline_str = $this.data('deadline');
+                if (!deadline_str) return;
+
+                // Adjust to end of day for consistency
+                let deadline_val = deadline_str;
+                if (deadline_str.length === 10) {
+                    deadline_val += " 23:59:59";
+                }
+
+                const deadline = new Date(deadline_val).getTime();
+                const now = new Date().getTime();
+                const distance = deadline - now;
+
+                if (distance < 0) {
+                    $this.closest('div').css('background', '#e53e3e');
+                    $this.text("{{ _('EXPIRED') }}");
+                    return;
+                }
+
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                const display =
+                    (hours < 10 ? "0" + hours : hours) + ":" +
+                    (minutes < 10 ? "0" + minutes : minutes) + ":" +
+                    (seconds < 10 ? "0" + seconds : seconds);
+
+                $this.text(display);
+            });
+        };
+
+        setInterval(update_timers, 1000);
+        update_timers();
+    }
+
+    function render_error(message) {
+        $('#offer-list-wrapper').html(`
+        <div class="text-center p-5 mt-5">
+            <i class="fa fa-folder-open fa-3x text-muted mb-4 opacity-25"></i>
+            <h4 class="text-muted font-weight-bold">{{ _("No Offers Found") }}</h4>
+            <p class="text-muted">${message}</p>
+        </div>
+    `);
+    }
+</script>
+{% endblock %}

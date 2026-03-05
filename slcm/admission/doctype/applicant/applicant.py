@@ -129,6 +129,17 @@ class Applicant(Document):
             """
         )
 
+        from slcm.admission.utils.notifications import log_communication
+        log_communication(
+            applicant=self.name,
+            communication_type="Email",
+            category="Admission",
+            subject=f"NLSIU Application Submitted - {self.applicant_id}",
+            content=f"Confirmation email sent for application {self.applicant_id}. Program: {self.program}",
+            reference_doctype="Applicant",
+            reference_name=self.name
+        )
+
     def before_submit(self):
         if self.evaluation_status == "Ineligible":
             frappe.throw(

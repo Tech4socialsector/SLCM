@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 
 def execute(filters: dict | None = None):
@@ -121,21 +122,31 @@ def get_data(filters: dict | None) -> list[dict]:
 			"assignment_date",
 			"status",
 			"total_amount",
-			"fee_invoice"
+			"fee_invoice",
+			"offer_letter"
 		],
 		order_by="assignment_date desc"
 	)
 
-	# Calculate paid and pending amounts per row
+	# Calculate paid and pending amounts from receipts
 	for row in data:
-		total = float(row.get("total_amount") or 0)
-		if row.get("status") == "Paid":
-			row["paid_amount"] = total
-			row["pending_amount"] = 0
-		else:
-			# For now, we treat other statuses as unpaid until actual payment logic is linked
-			row["paid_amount"] = 0
-			row["pending_amount"] = total
+		total = flt(row.get("total_amount") or 0)
+		
+		# Sum all submitted receipts for this offer/assignment
+		paid = flt(frappe.db.sql("""
+			SELECT SUM(total_amount) 
+			FROM `tabApplicant Payment Receipt` 
+			WHERE offer_letter = %s AND docstatus = 1
+		""", (row.offer_letter,))[0][0] or 0)
+		
+		row["paid_amount"] = paid
+		row["pending_amount"] = max(0, total - paid)
+		
+		# Sync display status if inconsistent
+		if paid >= total and row.status != "Paid" and total > 0:
+			row["status"] = "Paid"
+		elif paid > 0 and paid < total and row.status != "Partially Paid":
+			row["status"] = "Partially Paid"
 
 	return data
 

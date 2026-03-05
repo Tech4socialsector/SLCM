@@ -61,7 +61,7 @@ class OfferLetter(Document):
             "Rejected": ("Offer Declined", "Offer Declined"),
             "Withdrawn": ("Offer Declined", "Offer Declined"),
             "Expired": ("Offer Expired", "Offer Expired"),
-            "Accepted": ("Accepted", "Offer Accepted"),
+            "Accepted": ("Offer Accepted", "Offer Accepted"),
             "Payment Completed": ("Fee Paid", "Fee Paid"),
             "Issued": ("Offer Issued", "Offer Issued")
         }
@@ -204,6 +204,7 @@ class OfferLetter(Document):
         Called by the payments app when a payment is successful.
         """
         if status in ["Authorized", "Completed"]:
+            self.offer_status = "Payment Completed"
             self.db_set("offer_status", "Payment Completed")
             
             # Update any linked Payment Request

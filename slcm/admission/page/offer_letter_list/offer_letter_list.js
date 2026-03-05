@@ -1,59 +1,59 @@
 frappe.pages['offer-letter-list'].on_page_load = function (wrapper) {
-	var page = frappe.ui.make_app_page({
-		parent: wrapper,
-		title: __('My Admission Offers'),
-		single_column: true
-	});
+    var page = frappe.ui.make_app_page({
+        parent: wrapper,
+        title: __('My Admission Offers'),
+        single_column: true
+    });
 
-	new OfferLetterList(wrapper);
+    new OfferLetterList(wrapper);
 }
 
 class OfferLetterList {
-	constructor(wrapper) {
-		this.wrapper = $(wrapper);
-		this.page = wrapper.page;
-		this.current_page = 1;
-		this.limit_page_length = 10; // Testing limit
-		this.total_count = 0;
-		this.init();
-	}
+    constructor(wrapper) {
+        this.wrapper = $(wrapper);
+        this.page = wrapper.page;
+        this.current_page = 1;
+        this.limit_page_length = 10; // Testing limit
+        this.total_count = 0;
+        this.init();
+    }
 
-	init() {
-		this.fetch_data();
-	}
+    init() {
+        this.fetch_data();
+    }
 
-	fetch_data() {
-		let me = this;
-		const limit_start = (this.current_page - 1) * this.limit_page_length;
+    fetch_data() {
+        let me = this;
+        const limit_start = (this.current_page - 1) * this.limit_page_length;
 
-		frappe.call({
-			method: 'slcm.admission.page.offer_letter_list.offer_letter_list.get_offer_list',
-			args: {
-				limit_start: limit_start,
-				limit_page_length: this.limit_page_length
-			},
-			callback: function (r) {
-				if (r.message && !r.message.error) {
-					me.total_count = r.message.total_count;
-					me.render(r.message);
-				} else {
-					me.render_error(r.message ? r.message.error : "Unknown Error");
-				}
-			}
-		});
-	}
+        frappe.call({
+            method: 'slcm.admission.page.offer_letter_list.offer_letter_list.get_offer_list',
+            args: {
+                limit_start: limit_start,
+                limit_page_length: this.limit_page_length
+            },
+            callback: function (r) {
+                if (r.message && !r.message.error) {
+                    me.total_count = r.message.total_count;
+                    me.render(r.message);
+                } else {
+                    me.render_error(r.message ? r.message.error : "Unknown Error");
+                }
+            }
+        });
+    }
 
-	render(data) {
-		let me = this;
-		const { offers, applicant_name, is_admin, currency } = data;
+    render(data) {
+        let me = this;
+        const { offers, applicant_name, is_admin, currency } = data;
 
-		if (!offers || offers.length === 0) {
-			this.render_error(__('No admission offers found for your account.'));
-			return;
-		}
+        if (!offers || offers.length === 0) {
+            this.render_error(__('No admission offers found for your account.'));
+            return;
+        }
 
-		// --- Render Skeleton/Container ---
-		this.wrapper.find('.layout-main-section').html(`
+        // --- Render Skeleton/Container ---
+        this.wrapper.find('.layout-main-section').html(`
             <div class="list-container p-4">
                 <div class="list-header mb-4">
                     <h4>${is_admin ? __('Administrative View') : __('Welcome')} - <span class="text-primary">${applicant_name}</span></h4>
@@ -70,11 +70,11 @@ class OfferLetterList {
             </div>
         `);
 
-		// --- Render Offers ---
-		const grid = this.wrapper.find('#offer-grid');
-		offers.forEach(offer => {
-			const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
-			const card_html = `
+        // --- Render Offers ---
+        const grid = this.wrapper.find('#offer-grid');
+        offers.forEach(offer => {
+            const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
+            const card_html = `
                 <div class="col-md-6 mb-4">
                     <div class="card offer-card shadow-sm border-0 h-100 pointer" onclick="frappe.set_route('applicant-offer-lett', '${offer.name}')">
                         <div class="card-body">
@@ -101,11 +101,18 @@ class OfferLetterList {
                             </div>
 
                             <div class="mt-3 pt-3 border-top">
-                                <div class="d-flex align-items-center ${new Date(offer.payment_deadline) < new Date() ? 'text-danger' : 'text-warning'}">
-                                    <i class="fa fa-clock-o mr-2"></i>
-                                    <span class="small font-weight-bold">
-                                        ${__('Deadline')}: ${frappe.datetime.str_to_user(offer.payment_deadline)}
-                                    </span>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="${new Date(offer.payment_deadline) < new Date() ? 'text-danger' : 'text-warning'}">
+                                        <i class="fa fa-clock-o mr-2"></i>
+                                        <span class="small font-weight-bold">
+                                            ${__('Deadline')}: ${frappe.datetime.str_to_user(offer.payment_deadline)}
+                                        </span>
+                                    </div>
+                                    ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+                                        <div class="p-1 px-2 rounded offer-timer-chip" data-deadline="${offer.payment_deadline}" style="background: #1a202c; color: #fff; font-size: 0.75rem; font-weight: 700;">
+                                            --:--:--
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -115,19 +122,60 @@ class OfferLetterList {
                     </div>
                 </div>
             `;
-			grid.append(card_html);
-		});
+            grid.append(card_html);
+        });
 
-		this.render_pagination();
-	}
+        this.render_pagination();
+        this.start_timers();
+    }
 
-	render_pagination() {
-		let me = this;
-		const total_pages = Math.ceil(this.total_count / this.limit_page_length);
-		if (total_pages <= 1) return;
+    start_timers() {
+        if (this.timer_interval) clearInterval(this.timer_interval);
 
-		const container = this.wrapper.find('#pagination-wrapper');
-		let html = `
+        const update_timers = () => {
+            this.wrapper.find('.offer-timer-chip').each(function () {
+                const $this = $(this);
+                const deadline_str = $this.data('deadline');
+                if (!deadline_str) return;
+
+                let deadline_val = deadline_str;
+                if (deadline_str.length === 10) {
+                    deadline_val += " 23:59:59";
+                }
+
+                const deadline = new Date(deadline_val).getTime();
+                const now = new Date().getTime();
+                const distance = deadline - now;
+
+                if (distance < 0) {
+                    $this.css('background', '#e53e3e').text(__('EXPIRED'));
+                    return;
+                }
+
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                const display =
+                    (hours < 10 ? "0" + hours : hours) + ":" +
+                    (minutes < 10 ? "0" + minutes : minutes) + ":" +
+                    (seconds < 10 ? "0" + seconds : seconds);
+
+                $this.text(display);
+            });
+        };
+
+        this.timer_interval = setInterval(update_timers, 1000);
+        update_timers();
+    }
+
+    render_pagination() {
+        let me = this;
+        const total_pages = Math.ceil(this.total_count / this.limit_page_length);
+        if (total_pages <= 1) return;
+
+        const container = this.wrapper.find('#pagination-wrapper');
+        let html = `
             <nav aria-label="Page navigation">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item ${this.current_page === 1 ? 'disabled' : ''}">
@@ -137,15 +185,15 @@ class OfferLetterList {
                     </li>
         `;
 
-		for (let i = 1; i <= total_pages; i++) {
-			html += `
+        for (let i = 1; i <= total_pages; i++) {
+            html += `
                 <li class="page-item ${this.current_page === i ? 'active' : ''}">
                     <a class="page-link" href="#" data-page="${i}">${i}</a>
                 </li>
             `;
-		}
+        }
 
-		html += `
+        html += `
                     <li class="page-item ${this.current_page === total_pages ? 'disabled' : ''}">
                         <a class="page-link" href="#" data-page="${this.current_page + 1}" aria-label="Next">
                             <span aria-hidden="true">${__('Next')} &raquo;</span>
@@ -158,24 +206,24 @@ class OfferLetterList {
             </div>
         `;
 
-		container.html(html);
+        container.html(html);
 
-		container.find('.page-link').on('click', function (e) {
-			e.preventDefault();
-			const new_page = $(this).data('page');
-			if (new_page && new_page !== me.current_page && new_page >= 1 && new_page <= total_pages) {
-				me.current_page = new_page;
-				me.fetch_data();
-				// Scroll to top of list
-				$([document.documentElement, document.body]).animate({
-					scrollTop: me.wrapper.offset().top - 100
-				}, 400);
-			}
-		});
-	}
+        container.find('.page-link').on('click', function (e) {
+            e.preventDefault();
+            const new_page = $(this).data('page');
+            if (new_page && new_page !== me.current_page && new_page >= 1 && new_page <= total_pages) {
+                me.current_page = new_page;
+                me.fetch_data();
+                // Scroll to top of list
+                $([document.documentElement, document.body]).animate({
+                    scrollTop: me.wrapper.offset().top - 100
+                }, 400);
+            }
+        });
+    }
 
-	render_error(message) {
-		this.wrapper.find('.layout-main-section').html(`
+    render_error(message) {
+        this.wrapper.find('.layout-main-section').html(`
             <div class="text-center p-5 mt-5">
                 <div class="mb-4">
                     <i class="fa fa-folder-open-o fa-4x text-light"></i>
@@ -184,5 +232,5 @@ class OfferLetterList {
                 <p class="text-muted">${message}</p>
             </div>
         `);
-	}
+    }
 }
