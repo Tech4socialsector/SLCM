@@ -100,9 +100,20 @@
     gap: 14px;
     margin-bottom: 32px;
 }
-@media (max-width: 600px) {
-    .ma-stats { grid-template-columns: repeat(2, 1fr); }
-}
+        @media (max-width: 600px) {
+            .ma-stats { grid-template-columns: repeat(2, 1fr); }
+            .ma-wrap  { padding: 0 16px; }
+            .ma-card-body { padding: 14px 16px; }
+            .ma-prog-name { font-size: 15px; }
+            .ma-actions { flex-direction: column; }
+            .ma-btn-primary,
+            .ma-btn-secondary { width: 100%; justify-content: center; }
+        }
+        @media (max-width: 380px) {
+            .ma-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .ma-stat  { padding: 14px 12px; }
+            .ma-stat-val { font-size: 24px; }
+        }
 .ma-stat {
     background: #fff;
     border-radius: 14px;

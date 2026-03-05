@@ -141,11 +141,22 @@
         border-bottom: 1px solid var(--border);
     }
 
-    @media(max-width:768px) {
-        .detail-grid {
-            grid-template-columns: 1fr !important;
+        @media (max-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr !important;
+            }
+            /* On mobile sidebar comes AFTER main content */
+            .detail-grid > div:last-child {
+                order: -1;
+            }
+            .slideshow-wrap { height: 220px !important; }
+            .slideshow-wrap img { height: 220px !important; }
         }
-    }
+        @media (max-width: 480px) {
+            .detail-section { padding: 16px !important; }
+            .cat-table { font-size: 12px !important; }
+            .cat-table th, .cat-table td { padding: 6px 8px !important; }
+        }
 </style>
 {% endblock %}
 

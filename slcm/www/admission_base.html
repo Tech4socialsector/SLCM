@@ -201,6 +201,166 @@
             border-bottom-color: var(--primary);
         }
 
+        /* ── Panel positioning — CSS only, no inline right ───── */
+        #ann-panel {
+            width: min(420px, 95vw);
+            right: min(-420px, -95vw);
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #ann-panel.panel-open {
+            right: 0 !important;
+        }
+        @media (max-width: 768px) {
+            #ann-panel {
+                width: 100vw !important;
+                right: -100vw !important;
+            }
+            #ann-panel.panel-open {
+                right: 0 !important;
+            }
+        }
+        .ann-filter-btn {
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .ann-filter-btn.active,
+        .ann-filter-btn:focus {
+            background: var(--primary) !important;
+            color: #fff !important;
+            border-color: var(--primary) !important;
+        }
+        @media (max-width: 480px) {
+            #ann-panel {
+                top: 0 !important;
+                height: 100vh !important;
+                height: 100dvh !important;
+            }
+            #ann-panel > div:first-child {
+                padding: 14px 16px 12px;
+            }
+            .panel-tab {
+                font-size: 12px;
+                padding: 9px 6px;
+            }
+            #ann-filters {
+                padding: 6px 10px !important;
+                gap: 4px !important;
+            }
+            .ann-filter-btn {
+                font-size: 10px !important;
+                padding: 2px 7px !important;
+            }
+        }
+
+        /* ── Hamburger button ─────────────────────────────────── */
+        .nav-hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.12);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 8px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .nav-hamburger:hover { background: rgba(255,255,255,0.22); }
+        .nav-hamburger.open { background: rgba(255,255,255,0.22); }
+        .ham-line {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #fff;
+            border-radius: 2px;
+            transition: transform 0.25s ease, opacity 0.2s ease;
+            transform-origin: center;
+        }
+        .nav-hamburger.open .ham-line:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+        .nav-hamburger.open .ham-line:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+        .nav-hamburger.open .ham-line:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        /* ── Mobile drawer ────────────────────────────────────── */
+        .mobile-drawer {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+            z-index: 999;
+            padding: 8px 0 16px;
+            transform: translateY(-10px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+                        opacity 0.18s ease;
+            border-radius: 0 0 16px 16px;
+        }
+        .mobile-drawer.open {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .drawer-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a2e;
+            text-decoration: none;
+            transition: background 0.15s;
+            border-left: 3px solid transparent;
+        }
+        .drawer-link:hover {
+            background: #f8fafc;
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+        .drawer-link svg { opacity: 0.6; flex-shrink: 0; }
+        .drawer-link:hover svg { opacity: 1; }
+        .drawer-link-danger { color: #dc2626; }
+        .drawer-link-danger:hover {
+            background: #fef2f2;
+            border-left-color: #dc2626;
+            color: #dc2626;
+        }
+        .drawer-divider {
+            height: 1px;
+            background: #f0f0f0;
+            margin: 8px 24px;
+        }
+        /* Overlay behind drawer */
+        .drawer-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            top: 60px;
+            background: rgba(0,0,0,0.25);
+            z-index: 998;
+        }
+        .drawer-overlay.open { display: block; }
+
         @media (max-width: 768px) {
             .adm-nav-links .nav-hide-mobile {
                 display: none;
@@ -210,10 +370,13 @@
                 padding: 0 12px;
             }
 
-            #ann-panel {
-                width: 100vw !important;
-                right: -100vw !important;
-            }
+            /* Panel rules handled in dedicated block above */
+
+            .nav-hamburger { display: flex; }
+            /* Hide desktop nav links on mobile — bell stays visible */
+            .nav-hide-mobile { display: none !important; }
+            /* Keep logout button hidden on mobile (drawer has it) */
+            .nav-logout-btn { display: none !important; }
         }
     </style>
     {% block page_css %}{% endblock %}
@@ -270,12 +433,67 @@
             </div>
 
             {% if frappe.session.user != "Guest" %}
-            <button id="logout-btn" class="nav-btn">Logout</button>
+            <button id="logout-btn" class="nav-btn nav-logout-btn">Logout</button>
             {% else %}
-            <a href="/login" class="nav-btn">Login / Apply</a>
+            <a href="/login" class="nav-btn nav-logout-btn">Login / Apply</a>
             {% endif %}
         </div>
+
+        <!-- Hamburger button — visible only on mobile -->
+        <button class="nav-hamburger" id="nav-hamburger"
+                aria-label="Open menu" aria-expanded="false">
+            <span class="ham-line"></span>
+            <span class="ham-line"></span>
+            <span class="ham-line"></span>
+        </button>
     </nav>
+
+    <!-- Mobile drawer — slides down below navbar -->
+    <div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+        <a href="/admission" class="drawer-link"
+           onclick="closeDrawer()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Programs
+        </a>
+        <a href="/my-applications" class="drawer-link"
+           onclick="closeDrawer()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            My Applications
+        </a>
+        <div class="drawer-divider"></div>
+        {% if frappe.session.user and frappe.session.user != "Guest" %}
+        <a href="#" class="drawer-link drawer-link-danger" id="drawer-logout-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Logout
+        </a>
+        {% else %}
+        <a href="/login" class="drawer-link" onclick="closeDrawer()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                <polyline points="10 17 15 12 10 7"/>
+                <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            Login
+        </a>
+        {% endif %}
+    </div>
+    <!-- Drawer overlay -->
+    <div class="drawer-overlay" id="drawer-overlay"
+         onclick="closeDrawer()"></div>
 
     {% if _active == 0 %}
     <main class="adm-main" style="display:flex;align-items:center;justify-content:center;">
@@ -309,9 +527,8 @@
     <div id="ann-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;"
         onclick="closeAnnPanel()"></div>
 
-    <div id="ann-panel" style="position:fixed;top:0;right:-420px;width:420px;max-width:95vw;height:100vh;
+    <div id="ann-panel" style="position:fixed;top:0;height:100vh;
            background:#fff;z-index:501;box-shadow:-4px 0 24px rgba(0,0,0,0.12);
-           transition:right 0.3s cubic-bezier(0.4,0,0.2,1);
            display:flex;flex-direction:column;overflow:hidden;">
 
         <!-- Panel header -->
@@ -333,18 +550,18 @@
 
         <!-- Panel tabs -->
         <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
-            <button class="panel-tab" id="tab-notif" onclick="switchPanelTab('notif')">
+            <button class="panel-tab active" id="tab-notif" onclick="switchPanelTab('notif')">
                 Notifications
             </button>
-            <button class="panel-tab active" id="tab-ann" onclick="switchPanelTab('ann')">
+            <button class="panel-tab" id="tab-ann" onclick="switchPanelTab('ann')">
                 Announcements
             </button>
         </div>
 
         <!-- Announcement filters -->
-        <div id="ann-filters" style="display:none;padding:8px 16px;
-         border-bottom:1px solid var(--border);display:flex;
-         flex-wrap:wrap;gap:6px;align-items:center;">
+        <div id="ann-filters" style="display:none;padding:8px 12px;
+         border-bottom:1px solid var(--border);
+         flex-wrap:wrap;gap:5px;align-items:center;">
             <span style="font-size:11px;color:var(--muted);font-weight:600;">
                 Filter:
             </span>
@@ -443,7 +660,7 @@
             var ok = document.getElementById('confirm-ok');
             var cancel = document.getElementById('confirm-cancel');
             if (!o) { if (window.confirm(message)) onConfirm(); return; }
-            m.textContent = message;
+            m.innerHTML = message;
             o.style.display = 'flex';
             ok.onclick = function () { o.style.display = 'none'; onConfirm(); };
             cancel.onclick = function () { o.style.display = 'none'; };
@@ -454,14 +671,22 @@
         var _panelData = null;
 
         function openAnnPanel() {
-            document.getElementById('ann-overlay').style.display = 'block';
-            document.getElementById('ann-panel').style.right = '0';
+            var panel   = document.getElementById('ann-panel');
+            var overlay = document.getElementById('ann-overlay');
+            if (!panel || !overlay) return;
+            panel.classList.add('panel-open');
+            overlay.style.display = 'block';
+            document.body.style.overflow = 'hidden';
             if (!_panelData) loadPanelData();
         }
 
         function closeAnnPanel() {
-            document.getElementById('ann-overlay').style.display = 'none';
-            document.getElementById('ann-panel').style.right = '-420px';
+            var panel   = document.getElementById('ann-panel');
+            var overlay = document.getElementById('ann-overlay');
+            if (!panel || !overlay) return;
+            panel.classList.remove('panel-open');
+            overlay.style.display = 'none';
+            document.body.style.overflow = '';
         }
 
         function switchPanelTab(tab) {
@@ -667,6 +892,56 @@
 
             if (window.session_user !== 'Guest') {
                 loadPanelData();
+            }
+
+            // ── Mobile drawer ─────────────────────────────────────────────
+            function toggleDrawer() {
+                var btn     = document.getElementById('nav-hamburger');
+                var drawer  = document.getElementById('mobile-drawer');
+                var overlay = document.getElementById('drawer-overlay');
+                var isOpen  = drawer.classList.contains('open');
+                if (isOpen) {
+                    closeDrawer();
+                } else {
+                    btn.classList.add('open');
+                    btn.setAttribute('aria-expanded', 'true');
+                    drawer.classList.add('open');
+                    drawer.setAttribute('aria-hidden', 'false');
+                    overlay.classList.add('open');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+            window.closeDrawer = function() {
+                var btn     = document.getElementById('nav-hamburger');
+                var drawer  = document.getElementById('mobile-drawer');
+                var overlay = document.getElementById('drawer-overlay');
+                if (!btn) return;
+                btn.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+                drawer.classList.remove('open');
+                drawer.setAttribute('aria-hidden', 'true');
+                overlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+            // Close drawer on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeDrawer();
+                    closeAnnPanel();
+                }
+            });
+            // Wire hamburger button
+            var hamBtn = document.getElementById('nav-hamburger');
+            if (hamBtn) hamBtn.addEventListener('click', toggleDrawer);
+
+            // Wire drawer logout
+            var drawerLogoutBtn = document.getElementById('drawer-logout-btn');
+            if (drawerLogoutBtn) {
+                drawerLogoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeDrawer();
+                    if (logoutBtn) logoutBtn.click();
+                });
             }
         });
     </script>
