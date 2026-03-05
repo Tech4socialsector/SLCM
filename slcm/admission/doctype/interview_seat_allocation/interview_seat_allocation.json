@@ -13,13 +13,13 @@
   "admission_cycle",
   "campus",
   "program_level",
+  "category",
   "tab_applicant_info",
   "applicant",
   "candidate_name",
   "program",
   "email",
   "gender",
-  "category",
   "section_break_isa_src",
   "source_type",
   "entrance_test_score",
@@ -30,6 +30,7 @@
   "staff_contact",
   "interview_date",
   "interview_time",
+  "interview_address",
   "interview_slot_status",
   "slot_assigned_by",
   "is_rescheduled",
@@ -41,6 +42,7 @@
   "re_staff_contact",
   "re_interview_date",
   "re_interview_time",
+  "re_interview_address",
   "re_interview_slot_status",
   "re_slot_assigned_by",
   "reschedule_reason",
@@ -333,6 +335,18 @@
    "label": "Rank"
   },
   {
+   "fetch_from": "interview_staff_member.interview_address",
+   "fieldname": "interview_address",
+   "fieldtype": "Small Text",
+   "label": "Interview Address"
+  },
+  {
+   "fetch_from": "re_interview_staff_member.interview_address",
+   "fieldname": "re_interview_address",
+   "fieldtype": "Small Text",
+   "label": "Interview Address"
+  },
+  {
    "fieldname": "category",
    "fieldtype": "Table",
    "label": "Category",
@@ -342,7 +356,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-05 12:58:46.858273",
+ "modified": "2026-03-05 15:22:38.251866",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
