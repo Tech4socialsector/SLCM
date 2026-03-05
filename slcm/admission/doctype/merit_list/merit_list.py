@@ -34,9 +34,9 @@ def create_seat_allocation(merit_list_name, selected_applicants):
 
     merit = frappe.get_doc("Merit List", merit_list_name)
 
-    # Build a lookup map: applicant name → merit row data
+    # Build a lookup map: applicant ID -> merit row data
     merit_data = {
-        row.applicant: row
+        (row.applicant_id or row.applicant): row
         for row in merit.merit_applicants
     }
 
@@ -47,10 +47,10 @@ def create_seat_allocation(merit_list_name, selected_applicants):
     alloc.merit_list = merit_list_name
     alloc.status = "Draft"
 
-    for applicant_name in selected_applicants:
-        row = merit_data.get(applicant_name)
+    for applicant_id in selected_applicants:
+        row = merit_data.get(applicant_id)
         alloc.append("selection_applicant", {
-            "applicant": applicant_name,
+            "applicant": row.applicant_id if row and row.applicant_id else applicant_id,
             "candidate_name": row.candidate_name if row else None,
             "applicant_id": row.applicant_id if row else None,
             "program": row.program if row else None,

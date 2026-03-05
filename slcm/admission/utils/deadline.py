@@ -52,14 +52,14 @@ def validate_cycle_deadline(action, cycle_name):
     if now < start:
         frappe.throw(
             f"The {deadline_type} window has not opened yet. "
-            f"It opens on {frappe.utils.formatdate(str(start), 'dd MMM yyyy, hh:mm a')}.",
+            f"It opens on {frappe.utils.format_datetime(start, 'dd MMM yyyy, hh:mm a')}.",
             title="Window Not Open"
         )
 
     if now > end:
         frappe.throw(
             f"The {deadline_type} window is closed. "
-            f"It closed on {frappe.utils.formatdate(str(end), 'dd MMM yyyy, hh:mm a')}.",
+            f"It closed on {frappe.utils.format_datetime(end, 'dd MMM yyyy, hh:mm a')}.",
             title="Deadline Passed"
         )
 

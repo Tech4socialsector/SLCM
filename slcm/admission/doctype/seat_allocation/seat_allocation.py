@@ -18,7 +18,7 @@ class SeatAllocation(Document):
         rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired"]
         
         for row in (self.selection_applicant or []):
-            if row.selection_status in ["Selected", "Accepted"]:
+            if row.selection_status in ["Selected", "Offer Accepted"]:
                 self.total_selected += 1
             elif row.selection_status == "Waitlisted":
                 self.total_waitlisted += 1
@@ -82,8 +82,8 @@ class SeatAllocation(Document):
                         admission_cycle=self.admission_cycle
                     )
 
-            # Trigger promotion if a Selected/Accepted/Offer Issued applicant moves to any rejected status
-            if old_status in ["Selected", "Accepted", "Offer Issued"] and new_status in rejection_statuses:
+            # Trigger promotion if a Selected/Offer Accepted/Offer Issued applicant moves to any rejected status
+            if old_status in ["Selected", "Offer Accepted", "Offer Issued"] and new_status in rejection_statuses:
                 affected_programs.add(row.program)
 
         if not affected_programs:
@@ -167,6 +167,7 @@ class SeatAllocation(Document):
         self.selection_applicant = []
 
         for row in merit.merit_applicants:
+            app_id = row.applicant_id or row.applicant
             self.append("selection_applicant", {
                 "applicant": row.applicant,
                 "applicant_id": row.applicant_id,

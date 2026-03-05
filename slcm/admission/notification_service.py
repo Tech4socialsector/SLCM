@@ -125,6 +125,18 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
                 now=False
             )
         frappe.logger().info(f"Notification queued: Email to {email} for status {new_status}")
+
+        # Log specialized communication
+        from slcm.admission.utils.notifications import log_communication
+        log_communication(
+            applicant=applicant,
+            communication_type="Email",
+            category="Seat Allocation",
+            subject=subject,
+            content=message,
+            reference_doctype="Seat Allocation",
+            reference_name=allocation_name
+        )
     except Exception as e:
         frappe.logger().error(f"Notification error (enqueue/sendmail) for {applicant}: {e}")
         return
