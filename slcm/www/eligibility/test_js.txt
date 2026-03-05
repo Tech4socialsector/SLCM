@@ -1,0 +1,1 @@
+const preferences = {{ preferences|tojson|safe if preferences else '[]' }};

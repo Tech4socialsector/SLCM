@@ -4,7 +4,8 @@
 import frappe
 import json
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url
+from frappe.utils import now_datetime, get_url, nowdate
+from frappe.utils.pdf import get_pdf
 
 
 class EntranceTestList(Document):
@@ -356,6 +357,9 @@ def confirm_applicant_preference(allocation_name, selected_provider):
 
     frappe.db.commit()
 
+    # Generate and store admit card automatically
+    generate_and_store_admit_card(allocation, is_rescheduled=False)
+
     return {
         "seat_number":    seat_number,
         "room_name":      assigned_room.room_name,
@@ -418,6 +422,9 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
 
     frappe.db.commit()
 
+    # Generate and store admit card automatically for rescheduled test
+    generate_and_store_admit_card(allocation, is_rescheduled=True)
+
     return {
         "seat_number":    seat_number,
         "room_name":      assigned_room.room_name,
@@ -440,4 +447,80 @@ def _get_remaining_capacity(provider_name):
         return total
     except Exception:
         return 0
+
+@frappe.whitelist()
+def generate_and_store_admit_card(allocation, is_rescheduled=False):
+    """
+    Generates the admit card using the print format specified in Entrance Test List
+    and attaches it to the Entrance Test Seat Allocation record.
+    If is_rescheduled is True, stores in reschedule_admit_card field.
+    """
+    if isinstance(allocation, str):
+        allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation)
+        
+    etl_name = allocation.entrance_test_list
+    etl = frappe.get_doc("Entrance Test List", etl_name)
+    
+    # Try flexible generation first
+    pdf_content = None
+    if etl.admit_card_format:
+        try:
+            pdf_content = frappe.get_print(
+                allocation.doctype, 
+                allocation.name, 
+                etl.admit_card_format, 
+                as_pdf=True
+            )
+        except Exception as e:
+            frappe.log_error(f"Flexible PDF Generation Failed for {allocation.name}, falling back to manual: {str(e)}", "Admit Card Error")
+    
+    # Internal Fallback to Manual Template if flexible failed or format missing
+    if not pdf_content:
+        try:
+            from slcm.www.eligibility.entrance_test_seat_allocation import get_admit_card_html
+            from frappe.utils.pdf import get_pdf
+            
+            html = get_admit_card_html(allocation, is_rescheduled)
+            pdf_content = get_pdf(html)
+        except Exception as e:
+            frappe.log_error(f"Manual Fallback PDF Generation Error for {allocation.name}: {str(e)}", "Admit Card Error")
+            return None
+    
+    field_to_update = "reschedule_admit_card" if is_rescheduled else "admit_card"
+    file_name = f"Admit_Card_{allocation.applicant}_{'RE' if is_rescheduled else 'BASE'}.pdf"
+    
+    # Remove old file from the SPECIFIC field if exists
+    old_file_url = getattr(allocation, field_to_update)
+    if old_file_url:
+        old_file = frappe.db.get_value("File", {"file_url": old_file_url}, "name")
+        if old_file:
+            frappe.delete_doc("File", old_file, ignore_permissions=True)
+
+    _file = frappe.get_doc({
+        "doctype": "File",
+        "file_name": file_name,
+        "attached_to_doctype": allocation.doctype,
+        "attached_to_name": allocation.name,
+        "attached_to_field": field_to_update,
+        "content": pdf_content,
+        "is_private": 1
+    })
+    _file.save(ignore_permissions=True)
+    
+    # Update allocation record
+    values = {
+        field_to_update: _file.file_url,
+        "admit_card_generated": 1
+    }
+    if not allocation.admit_card_number:
+        values["admit_card_number"] = f"AC-{allocation.name}"
+        
+    frappe.db.set_value(allocation.doctype, allocation.name, values)
+    allocation.update(values)
+    frappe.db.commit()
+    
+    # Debug log to verify storage
+    # frappe.msgprint(f"Stored {field_to_update} for {allocation.name}")
+    
+    return _file.file_url
     

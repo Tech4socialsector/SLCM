@@ -15,6 +15,17 @@ class OfferConfiguration(Document):
     def validate(self):
         if self.is_active:
             self.validate_single_active_config()
+        self.validate_duplicate_programs()
+
+    def validate_duplicate_programs(self):
+        programs = []
+        if getattr(self, "offer_letter_pdf", []):
+            for row in self.offer_letter_pdf:
+                if row.program in programs:
+                    frappe.throw(
+                        f"Program {frappe.bold(row.program)} is duplicated in the Offer Letter PDF child table."
+                    )
+                programs.append(row.program)
 
     def validate_single_active_config(self):
         existing = frappe.get_all(

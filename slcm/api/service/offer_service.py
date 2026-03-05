@@ -254,8 +254,18 @@ class OfferService:
                 if config.pdf_format:
                     OfferService._generate_offer_pdf(offer, config.pdf_format)
             else:
+                # Find matching PDF from child table
+                program_pdf = None
                 if getattr(config, "offer_letter_pdf", None):
-                    OfferService._attach_static_pdf(offer, config.offer_letter_pdf)
+                    for row in config.offer_letter_pdf:
+                        if row.program == program:
+                            program_pdf = row.offer_letter_pdf
+                            break
+                
+                if program_pdf:
+                    OfferService._attach_static_pdf(offer, program_pdf)
+                else:
+                    throw(_("{0} program offer letter pdf not found in offer configration").format(program))
             
             # Send offer letter email to applicant
             if getattr(config, "send_email", 0):

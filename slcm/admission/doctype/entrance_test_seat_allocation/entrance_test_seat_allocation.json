@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:applicant",
- "creation": "2026-03-02 11:05:49.615668",
+ "creation": "2026-03-05 17:51:23.390912",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -44,6 +44,7 @@
   "allocation_date",
   "allocated_by",
   "download_admit_card",
+  "admit_card",
   "tab_9_tab",
   "reschedule_seat_allocation_section",
   "re_entrance_test_name",
@@ -61,6 +62,7 @@
   "re_allocation_date",
   "re_allocated_by",
   "re_download_admit_card",
+  "reschedule_admit_card",
   "section_break_axgb",
   "is_rescheduled",
   "reschedule_reason",
@@ -261,6 +263,7 @@
    "depends_on": "eval:doc.allocation_status == 'Allocated'",
    "fieldname": "download_admit_card",
    "fieldtype": "Button",
+   "hidden": 1,
    "label": "Download Admit Card"
   },
   {
@@ -444,6 +447,7 @@
   {
    "fieldname": "re_download_admit_card",
    "fieldtype": "Button",
+   "hidden": 1,
    "label": "Download Admit Card"
   },
   {
@@ -489,12 +493,22 @@
    "fieldtype": "Table",
    "label": "Category",
    "options": "Applicant Category"
+  },
+  {
+   "fieldname": "admit_card",
+   "fieldtype": "Attach",
+   "label": "Admit Card"
+  },
+  {
+   "fieldname": "reschedule_admit_card",
+   "fieldtype": "Attach",
+   "label": "Admit Card"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-05 12:13:59.618966",
+ "modified": "2026-03-05 18:06:33.268564",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

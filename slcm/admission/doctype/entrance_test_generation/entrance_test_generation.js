@@ -26,32 +26,39 @@ frappe.ui.form.on("Entrance Test Generation", {
                     return;
                 }
 
-                frappe.confirm(
-                    __("Generate Entrance Test List for {0} applicants?<br><br><b>Filters:</b><br>Academic Year: {1}<br>Campus: {2}<br>Cycle: {3}<br>Level: {4}",
-                        [frm.doc.generation_code || "this set",
-                        frm.doc.academic_year,
-                        frm.doc.campus,
-                        frm.doc.admission_cycle,
-                        frm.doc.program_level || "Any"]),
-                    () => {
-                        // Yes → proceed
-                        frm.call({
-                            method: "generate_test_list",           // same method name as before
-                            doc: frm.doc,
-                            freeze: true,
-                            freeze_message: __("Generating Entrance Test List... Please wait"),
-                            callback: (r) => {
-                                if (r.message) {
-                                    frm.reload_doc();               // refresh form
-                                    // optional: frm.set_value("status", "In Progress"); but better do it server-side
+                frappe.prompt([
+                    {
+                        fieldname: "admit_card_format",
+                        fieldtype: "Link",
+                        label: __("Admit Card Print Format"),
+                        options: "Print Format",
+                        reqd: 1,
+                        get_query: () => {
+                            return {
+                                filters: {
+                                    doc_type: "Entrance Test Seat Allocation"
                                 }
-                            }
-                        });
-                    },
-                    () => {
-                        // No → do nothing
+                            };
+                        }
                     }
-                );
+                ], (values) => {
+                    // Start generation with selected format
+                    frm.call({
+                        method: "generate_test_list",
+                        args: {
+                            admit_card_format: values.admit_card_format
+                        },
+                        doc: frm.doc,
+                        freeze: true,
+                        freeze_message: __("Generating Entrance Test List... Please wait"),
+                        callback: (r) => {
+                            if (r.message) {
+                                frm.reload_doc();
+                            }
+                        }
+                    });
+                }, __("Select Admit Card Format"), __("Generate"));
+
 
             }, __("Actions"))
                 .addClass("btn-primary")
