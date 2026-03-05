@@ -4,7 +4,7 @@
 frappe.ui.form.on("Scholarship Scheme", {
     refresh(frm) {
         frm.trigger("scheme_type");
-        frm.trigger("coverage_type");
+        frm.trigger("apply_on");
 
         if (!frm.is_new()) {
             frm.add_custom_button(__("Sync Budget"), () => {
@@ -36,7 +36,7 @@ frappe.ui.form.on("Scholarship Scheme", {
             frm.set_df_property(f, "hidden", 0);
             frm.set_df_property(f, "reqd", 0);
         });
-        frm.set_df_property("coverage_type", "read_only", 0);
+        frm.set_df_property("apply_on", "read_only", 0);
         frm.set_df_property("approval_authority", "read_only", 0);
 
         if (type === "Need") {
@@ -51,14 +51,42 @@ frappe.ui.form.on("Scholarship Scheme", {
             income_fields.forEach(f => frm.set_df_property(f, "hidden", 1));
         } else if (type === "Government") {
             // Government schemes are often fixed and have strict authority
-            frm.set_df_property("coverage_type", "read_only", 1);
+            frm.set_df_property("apply_on", "read_only", 1);
             frm.set_df_property("approval_authority", "read_only", 1);
 
             if (frm.is_new()) {
-                if (!frm.doc.coverage_type) frm.set_value("coverage_type", "Fixed");
+                if (!frm.doc.apply_on) frm.set_value("apply_on", "Total Fee");
                 if (!frm.doc.approval_authority) frm.set_value("approval_authority", "Finance Head");
             }
         }
+    },
+    apply_on(frm) {
+        if (frm.doc.apply_on === "Component-wise") {
+            frm.set_value("coverage_type", "Component-wise");
+            frm.set_value("coverage_value", 0);
+            
+            // Explicitly show component fields in JS just in case JSON depends_on is slow
+            frm.toggle_display("section_component_coverage", true);
+            frm.toggle_display("coverage_rules", true);
+            
+            // Hide simple coverage fields
+            frm.toggle_display("coverage_type", false);
+            frm.toggle_display("coverage_value", false);
+        } else {
+            // Show simple coverage fields
+            frm.toggle_display("coverage_type", true);
+            frm.toggle_display("coverage_value", true);
+            
+            // Hide component fields
+            frm.toggle_display("section_component_coverage", false);
+            frm.toggle_display("coverage_rules", false);
+            
+            // Reset coverage type if it was component-wise
+            if (frm.doc.coverage_type === "Component-wise") {
+                frm.set_value("coverage_type", "Percentage");
+            }
+        }
+        frm.trigger("coverage_type");
     },
     coverage_type(frm) {
         if (frm.doc.coverage_type === "Percentage") {
