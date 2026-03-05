@@ -1,5 +1,9 @@
 def get_data():
 	return {
+		"fieldname": "applicant",
+		"non_standard_fieldnames": {
+			"Eligibility Result": "applicant_id"
+		},
 		"transactions": [
 			{
 				"label": "Communications",
@@ -8,23 +12,7 @@ def get_data():
 			},
 			{
 				"label": "Admission",
-				"fieldname": "applicant",
-				"items": ["Admission Application", "Offer Letter"]
-			},
-			{
-				"label": "Results",
-				"fieldname": "applicant_id",
-				"items": ["Eligibility Result"]
-			},
-			{
-				"label": "Scholarship",
-				"fieldname": "applicant_id",
-				"items": ["Scholarship Application"]
-			},
-			{
-				"label": "Documents",
-				"fieldname": "applicant",
-				"items": ["Applicant Document"]
+				"items": ["Admission Application", "Eligibility Result", "Offer Letter"]
 			}
 		]
 	}
