@@ -31,10 +31,10 @@
 
     <style>
         :root {
-            --primary: #1a3c6e;
-            --secondary: #c8a14b;
-            --accent: #c8a14b;
-            --primary-light: #e8f0fb;
+            --primary: {{ (portal_config.get('primary_color') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')) or '#1a3c6e' }};
+            --secondary: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
+            --accent: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
+            --primary-light: {{ (portal_config.get('primary_light_color') if portal_config and portal_config.get else (portal_config.primary_light_color if portal_config else '#e8f0fb')) or '#e8f0fb' }};
             --text: #1a1a2e;
             --muted: #6c757d;
             --border: #dee2e6;
@@ -458,7 +458,6 @@
             <a href="/admission" class="nav-hide-mobile">Programs</a>
             {% if frappe.session.user != "Guest" %}
             <a href="/my-applications" class="nav-hide-mobile">My Applications</a>
-            <a href="/offer_letter/offer-letter-list" class="nav-hide-mobile">Offer Letter</a>
             {% endif %}
             <a href="/merit-and-schoarship/admission_dashboard" class="nav-hide-mobile">Merit and Scholarships</a>
             {% if frappe.session.user != "Guest" %}
@@ -698,12 +697,24 @@
         window.csrf_token = "{{ frappe.session.csrf_token }}";
         window.session_user = "{{ frappe.session.user }}";
 
-        function apiFetch(method, args) {
-            return fetch('/api/method/' + method, {
+        async function apiFetch(method, args) {
+            const r = await fetch('/api/method/' + method, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.csrf_token },
                 body: JSON.stringify(args || {})
-            }).then(function (r) { return r.json(); }).then(function (d) { return d.message; });
+            });
+            const d = await r.json();
+            if (!r.ok || d.exc) {
+                let msg = 'Server Error';
+                if (d._server_messages) {
+                    const msgs = JSON.parse(d._server_messages);
+                    msg = msgs.map(m => JSON.parse(m).message).join('\n');
+                } else if (d.exc) {
+                    try { msg = JSON.parse(d.exc_type) + ': ' + d.exc; } catch(e) { msg = d.exc; }
+                }
+                throw new Error(msg);
+            }
+            return d.message;
         }
 
         function showToast(message, type) {

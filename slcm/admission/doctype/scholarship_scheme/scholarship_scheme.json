@@ -8,6 +8,7 @@
   "scheme_name",
   "scheme_code",
   "admission_cycle",
+  "approval_authority",
   "scheme_type",
   "column_basic_2",
   "eligibility_criteria",
@@ -74,6 +75,13 @@
    "reqd": 1
   },
   {
+   "fieldname": "approval_authority",
+   "fieldtype": "Select",
+   "label": "Approval Authority",
+   "options": "Admissions Committee\nFinance Head\nVC",
+   "reqd": 1
+  },
+  {
    "fieldname": "scheme_type",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -123,7 +131,7 @@
    "fieldtype": "Select",
    "label": "Coverage Type",
    "mandatory_depends_on": "eval:doc.apply_on != 'Component-wise'",
-   "options": "Percentage\nFixed"
+   "options": "Percentage\nFixed\nComponent-wise"
   },
   {
    "depends_on": "eval:doc.apply_on != 'Component-wise'",

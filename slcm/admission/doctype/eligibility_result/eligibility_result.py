@@ -39,7 +39,7 @@ def get_applicant_data():
         fields=[
             "name", "applicant_id", "candidate_name", "campus", "program", 
             "program_level", "admission_cycle", "reservation_category",
-            "hsc_percentage", "entrance_percentage", "interview_percentage",
+            "hsc_percentage", "entrance_test_score", "interview_score",
             "ug_cgpa", "pg_cgpa"
         ]
     )
@@ -66,7 +66,7 @@ def get_applicant_data():
         # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",
             filters={"applicant_id": res.applicant_id},
-            fields=["selection_status", "overall_rank", "allocation_type", "parent"]
+            fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score"]
         )
         
         # Inject Seat Allocation details

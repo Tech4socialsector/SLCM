@@ -291,8 +291,8 @@ class ScholarshipApplication(Document):
 			benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
 			if benefit_diff != 0:
 				scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-				scheme.utilized_budget += flt(benefit_diff)
-				scheme.save(ignore_permissions=True)
+				new_budget = flt(scheme.utilized_budget or 0) + flt(benefit_diff)
+				scheme.db_set("utilized_budget", new_budget)
 			
 			# Always ensure fee deduction is synced if still approved
 			self.sync_fee_assignment()
@@ -326,11 +326,11 @@ class ScholarshipApplication(Document):
 		
 		# Calculate cumulative scholarship amount from ALL approved applications for this applicant + cycle
 		# We use direct SQL to avoid permission issues and ensure we get the latest committed data
-		total_scholarship = frappe.db.get_value("Scholarship Application", {
-			"applicant_id": self.applicant_id,
-			"admission_cycle": self.admission_cycle,
-			"status": "Approved"
-		}, "sum(calculated_benefit)") or 0
+		total_scholarship = frappe.db.sql("""
+			SELECT SUM(calculated_benefit)
+			FROM `tabScholarship Application`
+			WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
+		""", (self.applicant_id, self.admission_cycle))[0][0] or 0
 
 		scholarship_applied = 1 if total_scholarship > 0 else 0
 		final_payable_amount = total_amount - flt(total_scholarship)
@@ -422,24 +422,25 @@ class ScholarshipApplication(Document):
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
 		approved_amt = self.calculated_benefit or 0
 
-		scheme.current_beneficiaries += 1
-		scheme.utilized_budget += flt(approved_amt)
+		new_beneficiaries = (scheme.current_beneficiaries or 0) + 1
+		new_budget = flt(scheme.utilized_budget or 0) + flt(approved_amt)
+		new_status = scheme.status
 
 		# Auto-archive logic
-		if scheme.max_beneficiaries and scheme.current_beneficiaries >= scheme.max_beneficiaries:
-			scheme.status = "Archived"
+		if scheme.max_beneficiaries and new_beneficiaries >= scheme.max_beneficiaries:
+			new_status = "Archived"
 
-		if scheme.total_budget and scheme.utilized_budget >= scheme.total_budget:
-			scheme.status = "Archived"
+		if scheme.total_budget and new_budget >= scheme.total_budget:
+			new_status = "Archived"
 
-		scheme.save(ignore_permissions=True)
+		scheme.db_set({
+			"current_beneficiaries": new_beneficiaries,
+			"utilized_budget": new_budget,
+			"status": new_status
+		})
 
 	def reverse_financial_effects(self):
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		# We need to know what was the approved amount. 
-		# If it's being called from on_update, self.approved_amount might have changed, 
-		# but usually it wouldn't change in the same save that changes status from Approved.
-		# However, it's safer to use the value from old_doc if available.
 		old_doc = self.get_doc_before_save()
 		approved_amt = 0
 		if old_doc:
@@ -447,17 +448,125 @@ class ScholarshipApplication(Document):
 		else:
 			approved_amt = self.calculated_benefit or 0
 
-		scheme.current_beneficiaries = max(0, scheme.current_beneficiaries - 1)
-		scheme.utilized_budget = max(0, scheme.utilized_budget - flt(approved_amt))
+		new_beneficiaries = max(0, (scheme.current_beneficiaries or 0) - 1)
+		new_budget = max(0, flt(scheme.utilized_budget or 0) - flt(approved_amt))
+		new_status = scheme.status
 
 		# Re-activate logic: if it was archived and now we are below limits
 		if scheme.status == "Archived":
-			bene_ok = not scheme.max_beneficiaries or scheme.current_beneficiaries < scheme.max_beneficiaries
-			budget_ok = not scheme.total_budget or scheme.utilized_budget < scheme.total_budget
+			bene_ok = not scheme.max_beneficiaries or new_beneficiaries < scheme.max_beneficiaries
+			budget_ok = not scheme.total_budget or new_budget < scheme.total_budget
 			if bene_ok and budget_ok:
-				scheme.status = "Active"
+				new_status = "Active"
 
-		scheme.save(ignore_permissions=True)
+		scheme.db_set({
+			"current_beneficiaries": new_beneficiaries,
+			"utilized_budget": new_budget,
+			"status": new_status
+		})
+
+@frappe.whitelist()
+def create_scholarship_application(scheme, family_income, income_certificate_data=None, income_certificate_name=None, supporting_documents_data=None, supporting_documents_name=None):
+	"""
+	Creates a new Scholarship Application from the portal dashboard with support for base64 files.
+	"""
+	user = frappe.session.user
+	frappe.log_error(f"Applying for scheme {scheme} by user {user}", "Scholarship Application Debug")
+	
+	if user == "Guest" or not user:
+		frappe.throw(frappe._("You must be logged in to apply for a scholarship."))
+
+	# Get applicant record
+	applicant = frappe.db.get_value("Applicant", {"email": user}, 
+		["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
+	
+	if not applicant:
+		# Fallback 1: check Eligibility Result if Applicant email doesn't match
+		applicant_id = frappe.db.get_value("Eligibility Result", {"email": user}, "applicant_id")
+		if applicant_id:
+			applicant = frappe.db.get_value("Applicant", applicant_id, 
+				["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
+	
+	if not applicant:
+		# Fallback 2: search by owner (User ID)
+		applicant = frappe.db.get_value("Applicant", {"owner": user}, 
+			["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
+
+	if not applicant:
+		frappe.log_error(f"No applicant found for user {user}", "Scholarship Application Debug")
+		frappe.throw(frappe._("No applicant record found for your account."))
+
+	frappe.log_error(f"Found applicant {applicant.name}", "Scholarship Application Debug")
+
+	# Handle file uploads
+	income_cert_url = None
+	if income_certificate_data and income_certificate_name:
+		try:
+			from frappe.utils.file_manager import save_file
+			import base64
+			
+			if "," in income_certificate_data:
+				income_certificate_data = income_certificate_data.split(",")[1]
+				
+			file_content = base64.b64decode(income_certificate_data)
+			# Save file without attachment initially to avoid name mandatory error
+			saved_file = save_file(income_certificate_name, file_content, None, None, is_private=0)
+			income_cert_url = saved_file.file_url
+		except Exception as e:
+			frappe.log_error(f"File upload error (Income): {e}", "Scholarship Application Debug")
+			frappe.throw(frappe._("Failed to upload Income Certificate: {0}").format(str(e)))
+
+	supporting_docs_url = None
+	if supporting_documents_data and supporting_documents_name:
+		try:
+			from frappe.utils.file_manager import save_file
+			import base64
+			
+			if "," in supporting_documents_data:
+				supporting_documents_data = supporting_documents_data.split(",")[1]
+				
+			file_content = base64.b64decode(supporting_documents_data)
+			# Save file without attachment initially to avoid name mandatory error
+			saved_file = save_file(supporting_documents_name, file_content, None, None, is_private=0)
+			supporting_docs_url = saved_file.file_url
+		except Exception as e:
+			frappe.log_error(f"File upload error (Supporting): {e}", "Scholarship Application Debug")
+
+	# Create the application
+	try:
+		app = frappe.get_doc({
+			"doctype": "Scholarship Application",
+			"applicant_id": applicant.name,
+			"applicant_name": applicant.candidate_name,
+			"admission_cycle": applicant.admission_cycle,
+			"campus": applicant.campus,
+			"program": applicant.program,
+			"scholarship_scheme": scheme,
+			"family_income": flt(family_income),
+			"income_certificate": income_cert_url,
+			"supporting_documents": supporting_docs_url,
+			"status": "Submitted"
+		})
+		
+		app.insert(ignore_permissions=True)
+		
+		# Update file references
+		if income_cert_url:
+			frappe.db.set_value("File", {"file_url": income_cert_url}, {
+				"attached_to_doctype": "Scholarship Application",
+				"attached_to_name": app.name
+			}, update_modified=False)
+		if supporting_docs_url:
+			frappe.db.set_value("File", {"file_url": supporting_docs_url}, {
+				"attached_to_doctype": "Scholarship Application",
+				"attached_to_name": app.name
+			}, update_modified=False)
+			
+		frappe.db.commit()
+		return app.name
+	except Exception as e:
+		frappe.log_error(f"Insert error: {e}", "Scholarship Application Debug")
+		frappe.throw(str(e))
 
 @frappe.whitelist()
 def get_calculated_benefit(doc):

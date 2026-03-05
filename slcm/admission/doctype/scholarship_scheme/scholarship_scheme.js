@@ -94,5 +94,34 @@ frappe.ui.form.on("Scholarship Scheme", {
         } else if (frm.doc.coverage_type === "Fixed") {
             frm.set_df_property("coverage_value", "label", __("Fixed Amount"));
         }
+        frm.trigger("calculate_max_beneficiaries");
+    },
+    total_budget(frm) {
+        frm.trigger("calculate_max_beneficiaries");
+    },
+    coverage_value(frm) {
+        frm.trigger("calculate_max_beneficiaries");
+    },
+    max_amount(frm) {
+        frm.trigger("calculate_max_beneficiaries");
+    },
+    calculate_max_beneficiaries(frm) {
+        if (frm.doc.total_budget && frm.doc.total_budget > 0) {
+            let per_student_benefit = 0;
+
+            if (frm.doc.coverage_type === "Fixed" && frm.doc.coverage_value > 0) {
+                per_student_benefit = frm.doc.coverage_value;
+            } else if (frm.doc.max_amount && frm.doc.max_amount > 0) {
+                // For percentage or other types, use max_amount as an estimate if provided
+                per_student_benefit = frm.doc.max_amount;
+            }
+
+            if (per_student_benefit > 0) {
+                const max_bene = Math.floor(frm.doc.total_budget / per_student_benefit);
+                if (max_bene > 0 && frm.doc.max_beneficiaries !== max_bene) {
+                    frm.set_value("max_beneficiaries", max_bene);
+                }
+            }
+        }
     }
 });

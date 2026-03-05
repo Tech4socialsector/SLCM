@@ -205,20 +205,10 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "page",
-   "link_count": 2,
+   "link_count": 1,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "applicant-results",
-   "link_count": 0,
-   "link_to": "applicant-results",
-   "link_type": "Page",
-   "onboard": 0,
-   "type": "Link"
   },
   {
    "hidden": 0,
@@ -231,7 +221,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-04 15:35:54.901188",
+ "modified": "2026-03-05 18:14:30.467695",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "MSA",
