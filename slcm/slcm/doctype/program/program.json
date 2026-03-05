@@ -9,6 +9,7 @@
  "engine": "InnoDB",
  "field_order": [
   "program_id",
+  "program_slug",
   "program_name",
   "program_shortcode",
   "department",
@@ -134,6 +135,12 @@
    "fieldname": "current_year",
    "fieldtype": "Data",
    "label": "Current Year"
+  },
+  {
+   "fieldname": "program_slug",
+   "fieldtype": "Data",
+   "label": "URL Slug",
+   "read_only": 1
   }
  ],
  "image_field": "hero_image",
@@ -144,7 +151,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2026-03-03 11:52:56.358537",
+ "modified": "2026-03-05 14:24:57.026933",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",
