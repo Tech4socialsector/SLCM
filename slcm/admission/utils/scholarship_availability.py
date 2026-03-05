@@ -70,7 +70,7 @@ def get_applied_scholarships_for_dashboard(applicant_id):
     return frappe.get_all(
         "Scholarship Application",
         filters={"applicant_id": applicant_id},
-        fields=["name", "scholarship_scheme", "status", "calculated_benefit", "creation"],
+        fields=["name", "scholarship_scheme", "status", "calculated_benefit", "creation", "family_income", "income_certificate", "supporting_documents"],
         order_by="creation desc"
     )
 
@@ -93,16 +93,17 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     if not mappings:
         return []
 
-    # Get applicant category for filtering
-    applicant_category = frappe.db.get_value("Applicant", applicant_id, "reservation_category")
+    # Get applicant categories for filtering
+    from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
+    applicant_categories = get_applicant_categories(applicant_id)
 
     applicable_schemes = []
     for m in mappings:
         # Check program match
         program_match = not m.program or m.program == program
         
-        # Check category match
-        category_match = not m.category or m.category == applicant_category
+        # Check category match (if mapping has category, student must have it in their multi-category list)
+        category_match = not m.category or m.category in applicant_categories
         
         if program_match and category_match:
             applicable_schemes.append(m.scholarship_scheme)
@@ -118,18 +119,47 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             "name": ["in", applicable_schemes],
             "status": "Active"
         },
-        fields=["name", "scheme_name", "coverage_type", "coverage_value", "apply_on", "stage_availability", "application_start", "application_end", "max_beneficiaries", "current_beneficiaries", "total_budget", "utilized_budget"]
+        fields=["name", "scheme_name", "scheme_type", "coverage_type", "coverage_value", "apply_on", "stage_availability", "application_start", "application_end", "max_beneficiaries", "current_beneficiaries", "total_budget", "utilized_budget", "exclusive_scheme"]
     )
     
     available = []
     
     # Get schemes already applied for
-    applied = frappe.get_all("Scholarship Application", filters={"applicant_id": applicant_id}, pluck="scholarship_scheme")
+    applied_docs = frappe.get_all("Scholarship Application", 
+        filters={"applicant_id": applicant_id, "status": ["not in", ["Rejected", "Revoked"]]}, 
+        fields=["scholarship_scheme", "status"]
+    )
+    applied_scheme_names = [d.scholarship_scheme for d in applied_docs]
+    approved_scheme_names = [d.scholarship_scheme for d in applied_docs if d.status == "Approved"]
+
+    # Check if applicant already has an APPROVED Exclusive scholarship
+    has_exclusive = frappe.db.exists("Scholarship Application", {
+        "applicant_id": applicant_id,
+        "status": "Approved",
+        "scholarship_scheme": ["in", frappe.get_all("Scholarship Scheme", filters={"exclusive_scheme": 1}, pluck="name")]
+    })
+
+    # Get Max Schemes limit from Cycle
+    cycle_limit = frappe.db.get_value("Admission Cycle", cycle, "max_schemes_per_applicant") or 0
 
     for scheme in schemes:
-        if scheme.name in applied:
+        # Skip if already applied (even if not yet approved)
+        if scheme.name in applied_scheme_names:
             continue
             
+        # 1. Exclusive Check: If they have an exclusive one, they see nothing else.
+        if has_exclusive:
+            continue
+            
+        # 2. If THIS scheme is exclusive, they can only see it if they have ZERO approved schemes.
+        if scheme.exclusive_scheme and len(approved_scheme_names) > 0:
+            continue
+            
+        # 3. Max Schemes Check: If they already reached the limit for this cycle
+        if cycle_limit > 0:
+            if len(approved_scheme_names) >= cycle_limit:
+                continue
+
         # Check dates
         if scheme.application_start and now < scheme.application_start:
             continue

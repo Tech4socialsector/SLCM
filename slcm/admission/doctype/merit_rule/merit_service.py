@@ -42,14 +42,13 @@ def calculate_merit_with_rule(applicant, rule):
 
 def _rank_applicants(applicant_rows):
     """
-    Applies overall, program, and category ranking with tie-breaking.
-    Tie-breaking priority: Total Score > Entrance % > HSC % > Interview %
+    Applies overall and program ranking with tie-breaking.
+    Tie-breaking priority: Total Score > HSC % (12th Mark) > Entrance Test Score
     """
     sort_key = lambda x: (
         x.total_score,
-        x.entrance_score or 0,
         x.hsc_percentage or 0,
-        x.interview_score or 0
+        x.entrance_score or 0
     )
 
     # Overall Rank
@@ -65,15 +64,6 @@ def _rank_applicants(applicant_rows):
         group.sort(key=sort_key, reverse=True)
         for i, row in enumerate(group):
             row.program_rank = i + 1
-
-    # Category Rank
-    category_groups = defaultdict(list)
-    for row in applicant_rows:
-        category_groups[row.reservation_category].append(row)
-    for group in category_groups.values():
-        group.sort(key=sort_key, reverse=True)
-        for i, row in enumerate(group):
-            row.category_rank = i + 1
 
 
 def generate_merit_for_level(cycle, campus, program_level):
@@ -139,7 +129,7 @@ def generate_merit_for_level(cycle, campus, program_level):
             "program_level": program_level
         },
         fields=[
-            "name", "applicant_id", "program", "program_level", "reservation_category",
+            "name", "applicant_id", "candidate_name", "program", "program_level",
             "hsc_percentage", "entrance_test_score", "interview_score",
             "ug_cgpa", "pg_cgpa"
         ]
@@ -166,11 +156,10 @@ def generate_merit_for_level(cycle, campus, program_level):
             continue
 
         merit.append("merit_applicants", {
-            "applicant": app.name,
             "applicant_id": app.applicant_id,
+            "candidate_name": app.candidate_name,
             "program": app.program,
             "program_level": app.program_level,
-            "reservation_category": app.reservation_category,
             "hsc_percentage": app.hsc_percentage,
             "entrance_score": app.entrance_test_score,
             "interview_score": app.interview_score,
@@ -195,7 +184,7 @@ def generate_merit_for_level(cycle, campus, program_level):
         log_merit_action(
             merit_list=merit.name,
             admission_cycle=merit.admission_cycle,
-            applicant=row.applicant,
+            applicant=row.applicant_id,
             program=row.program,
             action_type="Merit Calculated",
             remarks=f"Calculated via Merit Rule: {merit_rule_name}. Total Score: {row.total_score:.3f}"

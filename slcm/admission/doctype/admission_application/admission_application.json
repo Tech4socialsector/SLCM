@@ -36,7 +36,6 @@
   "test_score",
   "test_rank",
   "col_break_4",
-  "test_category_rank",
   "test_result_status",
   "section_interview",
   "interview_slot",
@@ -233,11 +232,6 @@
   {
    "fieldname": "col_break_4",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "test_category_rank",
-   "fieldtype": "Int",
-   "label": "Category Rank"
   },
   {
    "fieldname": "test_result_status",

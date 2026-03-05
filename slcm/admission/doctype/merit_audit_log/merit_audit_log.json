@@ -39,11 +39,11 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Applicant",
-   "options": "Eligibility Result",
+   "options": "Applicant",
    "read_only": 1
   },
   {
-   "fetch_from": "applicant.applicant_id",
+   "fetch_from": "applicant.name",
    "fieldname": "applicant_id",
    "fieldtype": "Data",
    "in_list_view": 1,

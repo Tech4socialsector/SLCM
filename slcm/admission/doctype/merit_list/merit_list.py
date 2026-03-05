@@ -23,7 +23,7 @@ class MeritList(Document):
 def create_seat_allocation(merit_list_name, selected_applicants):
     """
     Creates a Seat Allocation from selected applicant names.
-    Fetches merit data (score, ranks, reservation_category) from the Merit List child table.
+    Fetches merit data (score, ranks) from the Merit List child table.
     Returns the name of the created Seat Allocation.
     """
     if isinstance(selected_applicants, str):
@@ -36,7 +36,7 @@ def create_seat_allocation(merit_list_name, selected_applicants):
 
     # Build a lookup map: applicant ID -> merit row data
     merit_data = {
-        (row.applicant_id or row.applicant): row
+        row.applicant_id: row
         for row in merit.merit_applicants
     }
 
@@ -50,14 +50,11 @@ def create_seat_allocation(merit_list_name, selected_applicants):
     for applicant_id in selected_applicants:
         row = merit_data.get(applicant_id)
         alloc.append("selection_applicant", {
-            "applicant": row.applicant_id if row and row.applicant_id else applicant_id,
+            "applicant_id": row.applicant_id if row else applicant_id,
             "candidate_name": row.candidate_name if row else None,
-            "applicant_id": row.applicant_id if row else None,
             "program": row.program if row else None,
-            "reservation_category": row.reservation_category if row else None,
             "total_score": row.total_score if row else 0,
             "overall_rank": row.overall_rank if row else None,
-            "category_rank": row.category_rank if row else None,
             "selection_status": "Draft"
         })
 

@@ -38,8 +38,8 @@ def get_applicant_data():
         filters={"email": user_email},
         fields=[
             "name", "applicant_id", "candidate_name", "campus", "program", 
-            "program_level", "admission_cycle",
-            "hsc_percentage", "entrance_percentage", "interview_percentage",
+            "program_level", "admission_cycle", "reservation_category",
+            "hsc_percentage", "entrance_test_score", "interview_score",
             "ug_cgpa", "pg_cgpa"
         ]
     )
@@ -48,11 +48,25 @@ def get_applicant_data():
         return {"error": "No applicant record found for this email."}
 
     # 2. For each result, get the specific selection statuses from Seat Allocation child tables
+    settings = frappe.get_single("Admission Settings")
+    
     combined_data = []
     for res in results:
+        # Fetch Merit List Entries
+        merit_entries = []
+        if settings.is_merit_list:
+            merit_entries = frappe.get_all("Merit List Applicant",
+                filters={"applicant_id": res.applicant_id},
+                fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
+            )
+            for m in merit_entries:
+                if m.parent:
+                    m.published = frappe.db.get_value("Merit List", m.parent, "status") == "Published"
+        
+        # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",
-            filters={"applicant": res.name},
-            fields=["selection_status", "overall_rank", "category_rank", "allocation_type", "parent"]
+            filters={"applicant_id": res.applicant_id},
+            fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score"]
         )
         
         # Inject Seat Allocation details
@@ -64,7 +78,7 @@ def get_applicant_data():
         
         available_scholarships = []
         applied_scholarships = []
-        if res.applicant_id:
+        if res.applicant_id and settings.is_scholarship_available:
             from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard, get_applied_scholarships_for_dashboard
             available_scholarships = get_available_scholarships_for_dashboard(
                 res.applicant_id, res.admission_cycle, res.campus, res.program, published_statuses
@@ -73,6 +87,7 @@ def get_applicant_data():
 
         combined_data.append({
             "profile": res,
+            "merit": [m for m in merit_entries if m.published],
             "results": [s for s in statuses if s.published],
             "available_scholarships": available_scholarships,
             "applied_scholarships": applied_scholarships

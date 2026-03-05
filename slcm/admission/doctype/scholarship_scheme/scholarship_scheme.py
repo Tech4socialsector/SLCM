@@ -98,15 +98,20 @@ class ScholarshipScheme(Document):
 		self.current_beneficiaries = count or 0
 		self.utilized_budget = flt(total or 0)
 		
+		status = self.status
 		# Re-verify status based on limits
 		if (self.max_beneficiaries and self.current_beneficiaries >= self.max_beneficiaries) or \
 		   (self.total_budget and self.utilized_budget >= self.total_budget):
 			if self.status == "Active":
-				self.status = "Archived"
+				status = "Archived"
 		elif self.status == "Archived":
-			self.status = "Active"
+			status = "Active"
 
-		self.save(ignore_permissions=True)
+		self.db_set({
+			"current_beneficiaries": self.current_beneficiaries,
+			"utilized_budget": self.utilized_budget,
+			"status": status
+		})
 		return {"status": "Success", "utilized_budget": self.utilized_budget, "current_beneficiaries": self.current_beneficiaries}
 
 	def autoname(self):

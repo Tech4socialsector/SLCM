@@ -92,9 +92,7 @@ function open_allocation_dialog(frm) {
             <td><b>${row.candidate_name || "-"}</b></td>
             <td>${row.applicant_id || "-"}</td>
             <td>${row.program || "-"}</td>
-            <td>${row.reservation_category || "-"}</td>
             <td>${(row.total_score !== undefined && row.total_score !== null) ? parseFloat(row.total_score).toFixed(3) : "-"}</td>
-            <td>${row.category_rank || "-"}</td>
         </tr>
     `).join("");
 
@@ -157,9 +155,7 @@ function open_allocation_dialog(frm) {
                                     <th>Candidate Name</th>
                                     <th>Applicant ID</th>
                                     <th>Program</th>
-                                    <th>Reservation Category</th>
                                     <th>Total Score</th>
-                                    <th>Category Rank</th>
                                 </tr>
                             </thead>
                             <tbody>${rows_html}</tbody>

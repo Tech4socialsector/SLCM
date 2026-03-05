@@ -1,5 +1,7 @@
 import frappe
+import math
 from frappe.utils import now_datetime, getdate
+from slcm.admission.doctype.seat_allocation.seat_allocation import get_category_priority, get_applicant_categories
 
 
 def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict:
@@ -138,125 +140,131 @@ def process_waitlist(rule_doc, ignore_cutoff=False):
 
 def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list:
     """
-    Core promotion logic for a single program within a seat allocation.
-    Returns a list of (applicant_id, program) tuples for newly promoted candidates.
+    Upgraded promotion logic with Category Sliding.
+    Ensures applicants are moved to their highest priority eligible category (GEN first, then Reserved by priority).
     """
-    quotas = _get_program_quotas(rule_doc.campus, rule_doc.admission_cycle, program)
-    
-    selected_rows = [
-        r for r in seat_alloc.selection_applicant
-        if r.program == program and r.selection_status in ["Selected", "Accepted"]
-    ]
-    
-    waitlisted_rows = [
-        r for r in seat_alloc.selection_applicant
-        if r.program == program and r.selection_status == "Waitlisted"
-    ]
-
-    if not waitlisted_rows:
-        return False
-
     from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
-    promoted_total = 0
-    promoted_list = []
+    from slcm.admission.notification_service import notify_status_change
 
-    # 1. Promote for OPEN seats
-    open_selected = [r for r in selected_rows if r.allocation_type == "Open"]
-    open_vacancies = max(0, quotas["GEN"] - len(open_selected))
+    quotas = _get_program_quotas(rule_doc.campus, rule_doc.admission_cycle, program)
+    priority_map = get_category_priority(rule_doc.admission_cycle, rule_doc.campus, program)
     
-    if open_vacancies > 0:
-        open_waitlist = [r for r in waitlisted_rows if r.allocation_type == "Open"]
-        open_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+    # Define active statuses that occupy or want a seat
+    # We include people who already have offers to allow them to "slide" to GEN and free up reserved seats
+    selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
+    waitlist_statuses = ["Waitlisted"]
+    
+    # 1. Gather all active candidates for this program
+    active_pool = [
+        r for r in seat_alloc.selection_applicant
+        if r.program == program and (r.selection_status in selection_statuses or r.selection_status in waitlist_statuses)
+    ]
+    
+    if not active_pool:
+        return []
+
+    # Sort by Merit: Total Score DESC, Overall Rank ASC
+    active_pool.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+
+    promoted_list = []
+    total_promoted = 0
+    
+    # Quota tracking
+    vacancies = {
+        "GEN": quotas["GEN"],
+        "Reserved": quotas["Reserved"].copy()
+    }
+
+    # 2. Re-allocate everyone in the pool based on current vacancies
+    for row in active_pool:
+        old_status = row.selection_status
+        old_type = row.allocation_type
+        old_cat = row.allocated_category
         
-        # Log that vacancies were identified
-        log_seat_allocation_action(
-            seat_allocation=seat_alloc.name,
-            admission_cycle=seat_alloc.admission_cycle,
-            program=program,
-            action_type="Waitlist Vacated",
-            remarks=f"Automatic promotion engine ({rule_doc.name}) identified {open_vacancies} vacant OPEN seat(s)."
-        )
-
-        for row in open_waitlist[:open_vacancies]:
-            row.selection_status = "Selected"
-            promoted_total += 1
-            promoted_list.append((row.applicant_id, program))
-            log_seat_allocation_action(
-                seat_allocation=seat_alloc.name,
-                admission_cycle=seat_alloc.admission_cycle,
-                applicant=row.applicant,
-                program=program,
-                action_type="Waitlist Promoted",
-                old_value="Waitlisted",
-                new_value="Selected",
-                remarks=f"Automatically promoted to OPEN seat via rule {rule_doc.name}."
+        assigned = False
+        new_type = None
+        new_cat = None
+        
+        # A. Try GEN first (Highest priority for everyone)
+        if vacancies["GEN"] > 0:
+            assigned = True
+            new_type = "Open"
+            new_cat = None
+            vacancies["GEN"] -= 1
+        else:
+            # B. Try Reserved Categories in priority order
+            applicant_categories = get_applicant_categories(row.applicant_id)
+            # Filter and sort applicant's categories by the program's priority policy
+            valid_categories = sorted(
+                [c for c in applicant_categories if c in vacancies["Reserved"]],
+                key=lambda c: priority_map.get(c, 999)
             )
-
-            # Send notification for automatic promotion
-            from slcm.admission.notification_service import notify_status_change
-            notify_status_change(
-                applicant=row.applicant,
-                program=program,
-                old_status="Waitlisted",
-                new_status="Selected",
-                allocation_name=seat_alloc.name,
-                admission_cycle=seat_alloc.admission_cycle
-            )
-
-    # 2. Promote for RESERVED seats
-    for cat_name, cat_quota in quotas["Reserved"].items():
-        # Handle matching by name/code/cat_name for categories
-        cat_doc = frappe.get_cached_value("Admission Category", cat_name, ["name", "category_code", "category_name"], as_dict=1)
-        match_strings = [cat_name]
-        if cat_doc:
-            if cat_doc.get("category_code"): match_strings.append(cat_doc.get("category_code"))
-            if cat_doc.get("category_name"): match_strings.append(cat_doc.get("category_name"))
-
-        cat_selected = [r for r in selected_rows if r.allocation_type == "Reserved" and r.reservation_category in match_strings]
-        cat_vacancies = max(0, cat_quota - len(cat_selected))
-
-        if cat_vacancies > 0:
-            cat_waitlist = [r for r in waitlisted_rows if r.allocation_type == "Reserved" and r.reservation_category in match_strings and r.selection_status == "Waitlisted"]
-            cat_waitlist.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
-            # Log that vacancies were identified for this category
-            log_seat_allocation_action(
-                seat_allocation=seat_alloc.name,
-                admission_cycle=seat_alloc.admission_cycle,
-                program=program,
-                action_type="Waitlist Vacated",
-                remarks=f"Automatic promotion engine ({rule_doc.name}) identified {cat_vacancies} vacant RESERVED seat(s) for {cat_name}."
-            )
-
-            for row in cat_waitlist[:cat_vacancies]:
+            for cat in valid_categories:
+                if vacancies["Reserved"][cat] > 0:
+                    assigned = True
+                    new_type = "Reserved"
+                    new_cat = cat
+                    vacancies["Reserved"][cat] -= 1
+                    break
+        
+        if assigned:
+            if old_status in waitlist_statuses:
+                # PROMOTION from Waitlist
                 row.selection_status = "Selected"
-                promoted_total += 1
+                row.allocation_type = new_type
+                row.allocated_category = new_cat
+                total_promoted += 1
                 promoted_list.append((row.applicant_id, program))
+                
                 log_seat_allocation_action(
                     seat_allocation=seat_alloc.name,
                     admission_cycle=seat_alloc.admission_cycle,
-                    applicant=row.applicant,
+                    applicant=row.applicant_id,
                     program=program,
                     action_type="Waitlist Promoted",
                     old_value="Waitlisted",
                     new_value="Selected",
-                    remarks=f"Automatically promoted to RESERVED ({cat_name}) seat via rule {rule_doc.name}."
+                    remarks=f"Promoted to {new_type} seat ({new_cat or 'GEN'}) via Upgradation Engine."
                 )
-
-                # Send notification for automatic promotion
-                from slcm.admission.notification_service import notify_status_change
-                notify_status_change(
-                    applicant=row.applicant,
+                notify_status_change(row.applicant_id, program, "Waitlisted", "Selected", seat_alloc.name, seat_alloc.admission_cycle)
+            
+            elif old_type != new_type or old_cat != new_cat:
+                # UPGRADATION / SLIDING
+                row.allocation_type = new_type
+                row.allocated_category = new_cat
+                
+                log_seat_allocation_action(
+                    seat_allocation=seat_alloc.name,
+                    admission_cycle=seat_alloc.admission_cycle,
+                    applicant=row.applicant_id,
                     program=program,
-                    old_status="Waitlisted",
-                    new_status="Selected",
-                    allocation_name=seat_alloc.name,
-                    admission_cycle=seat_alloc.admission_cycle
+                    action_type="Seat Upgraded",
+                    old_value=f"{old_type} ({old_cat or 'GEN'})",
+                    new_value=f"{new_type} ({new_cat or 'GEN'})",
+                    remarks="Slided to a higher priority category seat."
                 )
+        else:
+            # No seat available. 
+            # If they were already Selected, this means quotas were reduced or merit changed.
+            # We keep them Selected but mark their category as "Overflow" or just keep the old one?
+            # To be safe and avoid demotions, if they were Selected, they MUST keep a seat.
+            if old_status in selection_statuses:
+                # Force keep their old seat if possible, or just let them stay Selected.
+                # However, our logic above ensures merit order. If they don't get a seat now,
+                # it's because someone better took it.
+                # BUT we should not demote. So we'll give them an 'extra' seat if needed.
+                row.selection_status = old_status # Keep it
+                row.allocation_type = old_type
+                row.allocated_category = old_cat
+            else:
+                row.selection_status = "Waitlisted"
+                row.allocation_type = None
+                row.allocated_category = None
 
-    if promoted_total:
-        seat_alloc.total_selected = int(seat_alloc.total_selected or 0) + promoted_total
-        seat_alloc.total_waitlisted = max(0, int(seat_alloc.total_waitlisted or 0) - promoted_total)
+    if total_promoted:
+        seat_alloc.total_selected = int(seat_alloc.total_selected or 0) + total_promoted
+        seat_alloc.total_waitlisted = max(0, int(seat_alloc.total_waitlisted or 0) - total_promoted)
         return promoted_list
 
     return []

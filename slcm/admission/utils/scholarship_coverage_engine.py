@@ -9,25 +9,23 @@ def calculate_scholarship_amount(application_doc):
     original_fee = flt(application_doc.original_fee_amount)
     benefit = 0
 
-    # Determine base amount based on "Apply On"
-    if scheme.apply_on == "Total Fee":
-        base_amount = original_fee
-        benefit = calculate_base_benefit(base_amount, scheme)
-
-    elif scheme.apply_on == "Tuition Only":
-        base_amount = get_tuition_amount(application_doc)
-        benefit = calculate_base_benefit(base_amount, scheme)
-
-    elif scheme.apply_on == "Component-wise":
+    # Determine calculation mode
+    # Case 1: Component-wise rules (Either by coverage_type OR by apply_on)
+    if scheme.coverage_type == "Component-wise" or scheme.apply_on == "Component-wise":
         benefit = calculate_component_wise(application_doc, scheme)
 
+    # Case 2: Simple calculation on a specific base
     else:
-        # Default to Total Fee if not specified
-        base_amount = original_fee
+        if scheme.apply_on == "Tuition Only":
+            base_amount = get_tuition_amount(application_doc)
+        else:
+            # Default to Total Fee
+            base_amount = original_fee
+            
         benefit = calculate_base_benefit(base_amount, scheme)
 
-    # Cap by scheme maximum amount if applicable (for non-component-wise)
-    if scheme.apply_on != "Component-wise" and scheme.max_amount:
+    # Cap by scheme maximum amount if applicable (for non-component-wise or overall cap)
+    if scheme.max_amount and flt(scheme.max_amount) > 0:
         benefit = min(benefit, flt(scheme.max_amount))
 
     # Prevent over-deduction (total benefit cannot exceed original fee)
@@ -44,17 +42,39 @@ def calculate_base_benefit(base_amount, scheme):
         benefit = flt(scheme.coverage_value)
     return benefit
 
-def get_tuition_amount(application_doc):
-    """Fetches the Tuition component amount from the relevant Fee Structure."""
-    # Find active Fee Structure for the program and academic year
-    # Assuming Academic Year is available on Applicant or Application
+def resolve_fee_structure(application_doc):
+    """
+    Finds the active Fee Structure for the given application.
+    Logic mirrors OfferService.get_active_config and FeeService.
+    """
+    program = application_doc.program
+    campus = application_doc.campus
+    cycle = application_doc.admission_cycle
+    
+    # Try to find academic year from Applicant if not on application
     academic_year = application_doc.get("academic_year")
     if not academic_year:
         academic_year = frappe.db.get_value("Applicant", application_doc.applicant_id, "academic_year")
+    
+    # Also try mapping from Admission Cycle -> Admission Year -> Academic Year (via settings or name match)
+    if not academic_year:
+        admission_year = frappe.db.get_value("Admission Cycle", cycle, "admission_year")
+        if admission_year:
+            # Simple assumption: Admission Year name matches Academic Year name
+            if frappe.db.exists("Academic Year", admission_year):
+                academic_year = admission_year
+    
+    # Last fallback: Admission Settings
+    if not academic_year:
+        academic_year = frappe.db.get_single_value("Admission Settings", "current_academic_year")
 
+    if not academic_year:
+        return None
+
+    # Find active Fee Structure
     fee_structure = frappe.get_all("Fee Structure", 
         filters={
-            "program": application_doc.program,
+            "program": program,
             "academic_year": academic_year,
             "status": "Active"
         },
@@ -62,13 +82,26 @@ def get_tuition_amount(application_doc):
     )
 
     if not fee_structure:
-        # Fallback to total if no specific structure found
+        return None
+
+    return frappe.get_doc("Fee Structure", fee_structure[0].name)
+
+def get_tuition_amount(application_doc):
+    """Fetches the Tuition component amount from the relevant Fee Structure."""
+    fs_doc = resolve_fee_structure(application_doc)
+    if not fs_doc:
         return flt(application_doc.original_fee_amount)
 
-    fs_doc = frappe.get_doc("Fee Structure", fee_structure[0].name)
     for comp in fs_doc.components:
-        # Check by name or link? Usually fee_component logic
-        if comp.fee_component == "Tuition" or frappe.db.get_value("Fee Component", comp.fee_component, "is_tuition_fee"):
+        # Check by name or flag
+        is_tuition = False
+        if comp.fee_component == "Tuition":
+            is_tuition = True
+        else:
+            # Check if the fee component record has the tuition flag
+            is_tuition = frappe.db.get_value("Fee Component", comp.fee_component, "is_tuition_fee")
+
+        if is_tuition:
             return flt(comp.amount)
 
     return flt(application_doc.original_fee_amount)
@@ -77,24 +110,11 @@ def calculate_component_wise(application_doc, scheme):
     """Calculates benefit by applying specific rules to individual fee components."""
     total_benefit = 0
     
-    # Get Fee Structure components
-    academic_year = application_doc.get("academic_year")
-    if not academic_year:
-        academic_year = frappe.db.get_value("Applicant", application_doc.applicant_id, "academic_year")
-
-    fee_structure = frappe.get_all("Fee Structure", 
-        filters={
-            "program": application_doc.program,
-            "academic_year": academic_year,
-            "status": "Active"
-        },
-        limit=1
-    )
-
-    if not fee_structure:
+    fs_doc = resolve_fee_structure(application_doc)
+    if not fs_doc:
         return 0
 
-    fs_doc = frappe.get_doc("Fee Structure", fee_structure[0].name)
+    # Build component lookup: {component_name/id: amount}
     components = {c.fee_component: flt(c.amount) for c in fs_doc.components}
 
     # Apply rules from scheme
@@ -113,7 +133,7 @@ def calculate_component_wise(application_doc, scheme):
             comp_benefit = flt(rule.coverage_value)
 
         # Apply component-level cap
-        if rule.maximum_cap:
+        if rule.maximum_cap and flt(rule.maximum_cap) > 0:
             comp_benefit = min(comp_benefit, flt(rule.maximum_cap))
 
         total_benefit += comp_benefit

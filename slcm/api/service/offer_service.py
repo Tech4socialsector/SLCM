@@ -145,17 +145,12 @@ class OfferService:
 
         # Status verification: Only 'Selected' applicants in published Seat Allocations can receive offers
         sa_filters = {
-            "applicant": applicant,
+            "applicant_id": applicant,
             "program": program,
             "selection_status": "Selected",
             "parenttype": "Seat Allocation"
         }
         status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
-        
-        if not status_check:
-             # Try by applicant_id as fallback
-             sa_filters["applicant_id"] = sa_filters.pop("applicant")
-             status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
 
         if not status_check:
              # Check if an offer was ALREADY issued (in which case they would be 'Offer Issued')
@@ -459,12 +454,9 @@ class OfferService:
                     # Search for a row where this applicant is 'Selected' or 'Accepted'
                     sa_child_filters = {
                         "parenttype": "Seat Allocation",
-                        "selection_status": ["in", ["Selected", "Accepted"]]
+                        "selection_status": ["in", ["Selected", "Accepted"]],
+                        "applicant_id": applicant_name
                     }
-                    if frappe.db.exists("Eligibility Result", applicant_name):
-                         sa_child_filters["applicant"] = applicant_name
-                    else:
-                         sa_child_filters["applicant_id"] = applicant_name
 
                     sa_child_data = frappe.db.get_value(
                         "Seat Selection Applicant",

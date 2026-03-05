@@ -84,13 +84,15 @@
         {
             "fieldname": "family_income",
             "fieldtype": "Currency",
-            "label": "Family Income"
+            "label": "Family Income",
+            "reqd": 1
         },
         {
             "fieldname": "income_certificate",
             "fieldtype": "Attach",
             "label": "Income Certificate",
-            "options": "PDF,JPG,PNG"
+            "options": "PDF,JPG,PNG",
+            "reqd": 1
         },
         {
             "fieldname": "supporting_documents",

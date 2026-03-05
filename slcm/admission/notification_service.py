@@ -48,15 +48,51 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
             "applicant": applicant
         })
  
+    # Force Candidate Name resolution if missing or None
+    raw_name = doc_context.get("candidate_name") or applicant_doc.candidate_name
+    if not raw_name and doc_context.get("applicant_id"):
+        raw_name = frappe.db.get_value("Applicant", doc_context["applicant_id"], "candidate_name")
+    
+    # Absolute string fallback
+    safe_name = str(raw_name or "Applicant")
+    if safe_name == "None":
+        safe_name = "Applicant"
+        
+    doc_context["candidate_name"] = safe_name
+    doc_context["applicant_name"] = safe_name
+
+    # Resolve Merit Total Score for context
+    merit_total_score = doc_context.get("total_score")
+    if merit_total_score is None:
+        # Try fetching from Merit List Applicant for this cycle
+        merit_total_score = frappe.db.get_value("Merit List Applicant", {
+            "applicant": applicant,
+            "parentfield": "merit_applicants"
+        }, "total_score")
+    
+    # Format if number
+    if merit_total_score is not None:
+        try:
+            from frappe.utils import flt
+            merit_total_score = flt(merit_total_score, 3)
+        except:
+            pass
+    
+    doc_context["merit_total_score"] = merit_total_score
+    doc_context["total_score"] = merit_total_score
+
     args = {
         "doc": doc_context,
-        "applicant_name": applicant_doc.candidate_name or applicant,
+        "candidate_name": safe_name,
+        "applicant_name": safe_name,
         "program": program,
         "admission_cycle": admission_cycle,
         "status": new_status,
         "old_status": old_status,
         "new_status": new_status,
-        "allocation_name": allocation_name
+        "allocation_name": allocation_name,
+        "merit_total_score": merit_total_score,
+        "total_score": merit_total_score
     }
  
     try:
@@ -135,8 +171,8 @@ def notify_published_allocation(allocation_name):
     allocated_status_map = {}
     allocated_rows_map = {}
     for row in (allocation.selection_applicant or []):
-        allocated_status_map[row.applicant] = row.selection_status
-        allocated_rows_map[row.applicant] = row
+        allocated_status_map[row.applicant_id] = row.selection_status
+        allocated_rows_map[row.applicant_id] = row
  
     # 2. Fetch all Eligibility Results for this cycle and campus
     # This ensures even those NOT in the Merit List (Ineligible etc.) get a notification

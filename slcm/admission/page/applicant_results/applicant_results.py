@@ -47,7 +47,6 @@ def get_my_results():
                 mla.total_score,
                 mla.overall_rank,
                 mla.program_rank,
-                mla.category_rank,
                 mla.hsc_percentage,
                 mla.entrance_score,
                 mla.interview_score,
