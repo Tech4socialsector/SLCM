@@ -12,12 +12,13 @@
   "generate_offer_letter_by_system",
   "send_email",
   "column_break_sswl",
-  "offer_letter_pdf",
   "pdf_format",
   "from_email_account",
   "email_template",
   "fee_structure",
-  "is_active"
+  "is_active",
+  "section_break_jrvf",
+  "offer_letter_pdf"
  ],
  "fields": [
   {
@@ -95,11 +96,12 @@
    "label": "Generate Offer Letter By system"
   },
   {
-   "depends_on": "eval:doc.generate_offer_letter_by_system == 0",
    "fieldname": "offer_letter_pdf",
-   "fieldtype": "Attach",
+   "fieldtype": "Table",
    "label": "Offer Letter PDF",
-   "mandatory_depends_on": "eval:doc.generate_offer_letter_by_system == 0"
+   "mandatory_depends_on": "eval:doc.generate_offer_letter_by_system == 0",
+   "options": "Offer Letter PDF",
+   "read_only_depends_on": "eval:doc.generate_offer_letter_by_system == 1"
   },
   {
    "default": "0",
@@ -116,13 +118,17 @@
    "label": "From Email Account",
    "mandatory_depends_on": "eval:doc.send_email ==1",
    "options": "Email Account"
+  },
+  {
+   "fieldname": "section_break_jrvf",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-03-03 15:31:39.332318",
+ "modified": "2026-03-05 18:19:44.753034",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",

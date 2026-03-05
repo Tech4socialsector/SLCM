@@ -9,6 +9,7 @@
   "campus",
   "admission_cycle",
   "program_level",
+  "admit_card_format",
   "generated_on",
   "status",
   "entrance_test_applicant"
@@ -54,12 +55,20 @@
    "fieldtype": "Table",
    "label": "Entrance Test Applicant",
    "options": "Entrance Test Applicant"
+  },
+  {
+   "fieldname": "admit_card_format",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Admit Card Format",
+   "options": "Print Format",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-01 18:32:43.015890",
+ "modified": "2026-03-05 16:56:26.540213",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test List",

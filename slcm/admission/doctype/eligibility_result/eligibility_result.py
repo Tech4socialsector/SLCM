@@ -45,7 +45,47 @@ def get_applicant_data():
     )
 
     if not results:
-        return {"error": "No applicant record found for this email."}
+        # Fallback to Applicant record if no Eligibility Result found yet
+        # This allows new applicants to see their basic dashboard
+        applicants = frappe.get_all("Applicant",
+            filters={"email": user_email},
+            fields=[
+                "name as applicant_id", "candidate_name", "campus", "program",
+                "program_level", "admission_cycle"
+            ]
+        )
+        
+        if not applicants:
+            # Second fallback: check by owner if email doesn't match (unlikely but possible)
+            applicants = frappe.get_all("Applicant",
+                filters={"owner": user_email},
+                fields=[
+                    "name as applicant_id", "candidate_name", "campus", "program",
+                    "program_level", "admission_cycle"
+                ]
+            )
+
+        if not applicants:
+            return {"error": "No applicant record found for this email."}
+        
+        # Map applicant fields to the expected result structure
+        results = []
+        for app in applicants:
+            results.append({
+                "name": None,
+                "applicant_id": app.applicant_id,
+                "candidate_name": app.candidate_name,
+                "campus": app.campus,
+                "program": app.program,
+                "program_level": app.program_level,
+                "admission_cycle": app.admission_cycle,
+                "reservation_category": None,
+                "hsc_percentage": None,
+                "entrance_test_score": None,
+                "interview_score": None,
+                "ug_cgpa": None,
+                "pg_cgpa": None
+            })
 
     # 2. For each result, get the specific selection statuses from Seat Allocation child tables
     settings = frappe.get_single("Admission Settings")

@@ -17,20 +17,35 @@ frappe.ui.form.on("Offer Configuration", {
                 }
             }
         }),
-        frm.set_query('email_template', function () {
-            return {
-                filters: {
-                    'template_for_offer_letter': 1
+            frm.set_query('email_template', function () {
+                return {
+                    filters: {
+                        'template_for_offer_letter': 1
+                    }
                 }
-            }
-        }),
-        frm.set_query('fee_structure', function () {
-            return {
-                filters: {
-                    'status': 'Active',
-                    'applicable': 'Applicant'
+            }),
+            frm.set_query('fee_structure', function () {
+                return {
+                    filters: {
+                        'status': 'Active',
+                        'applicable': 'Applicant'
+                    }
                 }
-            }
-        })
+            })
+    }
+});
+
+frappe.ui.form.on("Offer Letter PDF", {
+    program: function (frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        let duplicate = (frm.doc.offer_letter_pdf || []).find(d => d.program === row.program && d.name !== row.name);
+        if (duplicate) {
+            frappe.msgprint({
+                title: __('Duplicate Program'),
+                message: __('Program {0} is already added in another row.', [row.program.bold()]),
+                indicator: 'orange'
+            });
+            frappe.model.set_value(cdt, cdn, 'program', '');
+        }
     }
 });
