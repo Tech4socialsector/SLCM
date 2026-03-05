@@ -29,11 +29,12 @@ class ScholarshipApplication(Document):
 			# Web forms pass empty strings for read_only status fields, bypassing the Draft default
 			self.status = "Submitted"
 			
+		self.set_applicant_metadata()
+		self.set_academic_year()
 		self.prevent_duplicate()
 		self.validate_scheme_mapping()
 		self.validate_requirements()
 		self.validate_stage()
-		self.set_applicant_metadata()
 		self.set_original_fee()
 		self.calculate_benefit()
 		self.validate_rejection_reason()
@@ -46,6 +47,17 @@ class ScholarshipApplication(Document):
 
 		if not self.applicant_name:
 			self.applicant_name = frappe.db.get_value("Applicant", self.applicant_id, "candidate_name")
+
+	def set_academic_year(self):
+		if self.admission_cycle and not self.academic_year:
+			admission_year = frappe.db.get_value("Admission Cycle", self.admission_cycle, "admission_year")
+			if admission_year:
+				# Academic Year usually matches Admission Year name in this system
+				if frappe.db.exists("Academic Year", admission_year):
+					self.academic_year = admission_year
+				else:
+					# Fallback to Admission Settings
+					self.academic_year = frappe.db.get_single_value("Admission Settings", "current_academic_year")
 
 	def set_original_fee(self):
 		if not self.applicant_id or not self.program:
@@ -100,7 +112,8 @@ class ScholarshipApplication(Document):
 			filters={
 				"scholarship_scheme": self.scholarship_scheme,
 				"admission_cycle": self.admission_cycle,
-				"campus": self.campus
+				"campus": self.campus,
+				"is_active": 1
 			},
 			fields=["program", "category"]
 		)
@@ -120,7 +133,7 @@ class ScholarshipApplication(Document):
 				break
 
 		if not is_applicable:
-			frappe.throw(frappe._("Scholarship not applicable for selected cycle/program/campus/category."))
+			frappe.throw(frappe._("Scholarship not applicable or inactive for selected cycle/program/campus/category."))
 
 	def validate_requirements(self):
 		# Always mandatory as per user request
@@ -160,16 +173,16 @@ class ScholarshipApplication(Document):
 					"entrance_percentage"
 				)
 
-			if merit_score is not None and flt(merit_score) < flt(scheme.min_merit_score):
-				frappe.throw(frappe._("Your merit score ({0}) is below the required minimum ({1}) for this scholarship")
-					.format(merit_score, scheme.min_merit_score))
-			
-			if merit_score is None:
-				# If still None, maybe merit hasn't been generated yet
-				# We allow submission but mark for review? Or block?
-				# The user said "possibly hide income certificate", implies they can apply.
-				# Let's show a warning if it's missing but don't block if not explicit.
-				pass
+			if merit_score is not None:
+				if flt(merit_score) < flt(scheme.min_merit_score):
+					frappe.throw(frappe._("Your merit score ({0}) is below the required minimum ({1}) for this scholarship")
+						.format(merit_score, scheme.min_merit_score))
+			else:
+				# No merit score found at all
+				frappe.msgprint(
+					frappe._("Warning: No merit score found for this applicant. Manual verification required for Merit Scholarship."),
+					indicator="orange"
+				)
 
 	def validate_stage(self):
 		# Skip availability checks if rejecting or revoking
@@ -245,8 +258,8 @@ class ScholarshipApplication(Document):
 			self.apply_financial_effects()
 			self.sync_fee_assignment()
 		
-		# Case 2: Status changed from Approved to something else (Rejected/Cancelled/Revoked)
-		elif old_doc.status == "Approved" and self.status in ["Rejected", "Cancelled", "Revoked"]:
+		# Case 2: Status changed from Approved to something else
+		elif old_doc.status == "Approved" and self.status != "Approved":
 			self.reverse_financial_effects()
 			self.sync_fee_assignment(reverse=True)
 		
@@ -427,6 +440,21 @@ class ScholarshipApplication(Document):
 				scheme.status = "Active"
 
 		scheme.save(ignore_permissions=True)
+
+@frappe.whitelist()
+def get_calculated_benefit(doc):
+	if isinstance(doc, str):
+		doc = frappe._dict(json.loads(doc))
+	
+	from slcm.admission.utils.scholarship_coverage_engine import calculate_scholarship_amount
+	
+	benefit = calculate_scholarship_amount(doc)
+	final_fee = flt(doc.original_fee_amount or 0) - flt(benefit or 0)
+	
+	return {
+		"benefit": benefit,
+		"final_fee": final_fee
+	}
 
 @frappe.whitelist()
 def sync_fee_assignment_manually(docname):

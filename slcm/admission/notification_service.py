@@ -61,6 +61,26 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     doc_context["candidate_name"] = safe_name
     doc_context["applicant_name"] = safe_name
 
+    # Resolve Merit Total Score for context
+    merit_total_score = doc_context.get("total_score")
+    if merit_total_score is None:
+        # Try fetching from Merit List Applicant for this cycle
+        merit_total_score = frappe.db.get_value("Merit List Applicant", {
+            "applicant": applicant,
+            "parentfield": "merit_applicants"
+        }, "total_score")
+    
+    # Format if number
+    if merit_total_score is not None:
+        try:
+            from frappe.utils import flt
+            merit_total_score = flt(merit_total_score, 3)
+        except:
+            pass
+    
+    doc_context["merit_total_score"] = merit_total_score
+    doc_context["total_score"] = merit_total_score
+
     args = {
         "doc": doc_context,
         "candidate_name": safe_name,
@@ -70,7 +90,9 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         "status": new_status,
         "old_status": old_status,
         "new_status": new_status,
-        "allocation_name": allocation_name
+        "allocation_name": allocation_name,
+        "merit_total_score": merit_total_score,
+        "total_score": merit_total_score
     }
  
     try:
