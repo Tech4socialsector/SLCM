@@ -65,6 +65,20 @@ frappe.ui.form.on("Program Reservation Policy", {
 });
 
 frappe.ui.form.on("Program Reservation Category", {
+    priority: function (frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        if (row.priority) {
+            let duplicate = (frm.doc.categories || []).find(r => r.name !== row.name && r.priority === row.priority);
+            if (duplicate) {
+                frappe.msgprint({
+                    title: __("Duplicate Priority"),
+                    message: __("Priority {0} is already used for {1}. Please use a unique priority.", [row.priority, duplicate.category_name]),
+                    indicator: "orange"
+                });
+                frappe.model.set_value(cdt, cdn, "priority", "");
+            }
+        }
+    },
     percentage: function (frm, cdt, cdn) {
         cal_percentage_seats(frm);
     },
