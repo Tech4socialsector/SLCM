@@ -5,6 +5,7 @@ from frappe.utils import now_datetime, get_url, get_datetime
 
 
 class EntranceTestSeatAllocation(Document):
+
     def before_save(self):
         # Update attendance_marked_on if status changes to Attended, Absent, or Rescheduled
         # This only happens when the status is changed manually (Admin)
@@ -13,6 +14,18 @@ class EntranceTestSeatAllocation(Document):
             if self.entrance_test_status != old_status:
                 if self.entrance_test_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
+
+        # Fetch categories from Applicant if newly set or empty
+        # Priority: Seat Allocation category (if already filled) vs Applicant's categories
+        if self.applicant and (not self.category or self.is_new()):
+            app_categories = frappe.get_all("Applicant Category", 
+                filters={"parent": self.applicant, "parenttype": "Applicant"},
+                fields=["category"]
+            )
+            # Re-initialize the child table ONLY if it's currently empty
+            if not self.category:
+                for row in app_categories:
+                    self.append("category", {"category": row.category})
 
 
 @frappe.whitelist()

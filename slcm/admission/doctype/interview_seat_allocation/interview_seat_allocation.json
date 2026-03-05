@@ -17,9 +17,9 @@
   "applicant",
   "candidate_name",
   "program",
-  "reservation_category",
   "email",
   "gender",
+  "category",
   "section_break_isa_src",
   "source_type",
   "entrance_test_score",
@@ -131,12 +131,6 @@
    "options": "Program"
   },
   {
-   "fieldname": "reservation_category",
-   "fieldtype": "Data",
-   "in_standard_filter": 1,
-   "label": "Reservation Category"
-  },
-  {
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Email"
@@ -226,10 +220,11 @@
    "read_only": 1
   },
   {
+   "default": "0",
    "fieldname": "is_rescheduled",
    "fieldtype": "Check",
-   "label": "Rescheduled",
-   "hidden": 1
+   "hidden": 1,
+   "label": "Rescheduled"
   },
   {
    "fieldname": "tab_9_tab",
@@ -335,12 +330,18 @@
    "fieldname": "rank",
    "fieldtype": "Int",
    "label": "Rank"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Table",
+   "label": "Category",
+   "options": "Applicant Category"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 15:20:31.789081",
+ "modified": "2026-03-05 12:58:46.858273",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",

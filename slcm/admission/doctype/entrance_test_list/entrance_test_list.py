@@ -140,7 +140,6 @@ class EntranceTestList(Document):
                 allocation.applicant             = app.applicant_id
                 allocation.candidate_name        = app.candidate_name
                 allocation.program               = app.program
-                allocation.reservation_category  = app.reservation_category
                 allocation.email                 = app.email
                 allocation.gender                = app.gender
                 allocation.exempts_entrance_test = getattr(app, "exempts_entrance_test", 0)

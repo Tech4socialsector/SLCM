@@ -6,7 +6,22 @@ from frappe.model.document import Document
 
 
 class EligibilityResult(Document):
-    pass
+
+    def before_save(self):
+        """
+        Fetch the Applicant's multi-category child table and populate
+        the local `category` table if it is currently empty.
+        This mirrors the same pattern used in Entrance Test Seat Allocation
+        and Interview Seat Allocation.
+        """
+        if self.applicant_id and not self.category:
+            app_categories = frappe.get_all(
+                "Applicant Category",
+                filters={"parent": self.applicant_id, "parenttype": "Applicant"},
+                fields=["category"]
+            )
+            for row in app_categories:
+                self.append("category", {"category": row.category})
 
 @frappe.whitelist()
 def get_applicant_data():

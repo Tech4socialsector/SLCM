@@ -143,15 +143,6 @@ frappe.ui.form.on("Applicant", {
         }
     },
 
-    // ── RESERVATION CATEGORY ─────────────────
-    reservation_category: function (frm) {
-        frm.set_value("ews_certificate", "");
-        frm.set_value("caste_certificate", "");
-        frm.set_value("pwd_certificate", "");
-        frm.set_value("ews", 0);
-        frm.set_value("pwd", 0);
-    },
-
     // ── GUARDIAN REQUIRED ────────────────────
     guardian_required: function (frm) {
         frm.toggle_reqd("guardian_name", frm.doc.guardian_required);
