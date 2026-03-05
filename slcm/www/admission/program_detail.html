@@ -431,7 +431,7 @@ portal_config.get) else (portal_config.login_required_for_application if portal_
         if (applyBtn) { applyBtn.addEventListener('click', function () { handleApply(applyBtn.getAttribute('data-program'), applyBtn.getAttribute('data-name'), applyBtn.getAttribute('data-level'), applyBtn.getAttribute('data-cycle')); }); }
     });
     async function handleApply(program, programName, level, cycle) {
-        var formUrl = '/applicant-form/new?program=' + encodeURIComponent(program);
+        var formUrl = '/application-form/new?program=' + encodeURIComponent(program);
         if (LOGIN_REQUIRED && window.session_user === 'Guest') {
             window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
             return;

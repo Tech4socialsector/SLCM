@@ -1,0 +1,215 @@
+/* ── Stage Tracker Widget ─────────────────────────────────────────── */
+
+.st-wrapper {
+  width: 100%;
+  padding: 16px 0 8px;
+}
+
+/* ── Banner messages ─────────────────────────────────────────────── */
+.st-banner {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+.st-banner-rejected   { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+.st-banner-waitlisted { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+.st-banner-offer      { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+
+/* ── Rail (horizontal flex container) ───────────────────────────── */
+.st-rail {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #dee2e6 transparent;
+  gap: 0;
+}
+.st-rail::-webkit-scrollbar       { height: 4px; }
+.st-rail::-webkit-scrollbar-track { background: transparent; }
+.st-rail::-webkit-scrollbar-thumb { background: #dee2e6; border-radius: 4px; }
+
+/* ── Node ────────────────────────────────────────────────────────── */
+.st-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 80px;
+  max-width: 110px;
+  position: relative;
+  cursor: default;
+}
+
+/* ── Circle ──────────────────────────────────────────────────────── */
+.st-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  border: 2px solid #dee2e6;
+  background: #fff;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+/* Status colors */
+.st-completed .st-circle {
+  background: #065f46;
+  border-color: #065f46;
+  color: #fff;
+}
+.st-active .st-circle {
+  background: #1a3c6e;
+  border-color: #1a3c6e;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(26, 60, 110, 0.15);
+}
+.st-rejected .st-circle {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+.st-waitlisted .st-circle {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #fff;
+}
+
+/* ── Pulse ring on active node ───────────────────────────────────── */
+.st-pulse {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #1a3c6e;
+  opacity: 0;
+  animation: st-pulse-anim 2s ease-out infinite;
+  top: -6px;
+  left: -6px;
+}
+ @keyframes st-pulse-anim {
+  0%   { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+/* ── Connector line ──────────────────────────────────────────────── */
+.st-connector {
+  flex: 1;
+  height: 2px;
+  min-width: 24px;
+  margin-top: 17px;   /* vertically centers with the 36px circle */
+  align-self: flex-start;
+  transition: background 0.3s;
+}
+.st-line-done    { background: #065f46; }
+.st-line-active  { background: repeating-linear-gradient(90deg, #1a3c6e 0 6px, transparent 6px 12px); }
+.st-line-pending { background: #dee2e6; }
+
+/* ── Label block ─────────────────────────────────────────────────── */
+.st-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 8px;
+  transition: opacity 0.2s;
+}
+.st-label-hide {
+  opacity: 0;
+  pointer-events: none;
+}
+.st-stage-icon {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+.st-stage-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1a1a2e;
+  line-height: 1.3;
+  max-width: 90px;
+  word-break: break-word;
+}
+.st-pending .st-stage-name  { color: #6c757d; font-weight: 400; }
+.st-completed .st-stage-name { color: #065f46; }
+.st-active .st-stage-name    { color: #1a3c6e; font-weight: 700; }
+.st-rejected .st-stage-name  { color: #dc2626; }
+.st-waitlisted .st-stage-name { color: #92400e; }
+
+.st-stage-date {
+  font-size: 10px;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+/* ── Action button ───────────────────────────────────────────────── */
+.st-action-btn {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: #c8a14b;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.st-action-btn:hover {
+  opacity: 0.88;
+  color: #fff;
+}
+
+/* ── Skeleton loader ─────────────────────────────────────────────── */
+.st-skeleton .st-skel-circle {
+  background: #e9ecef;
+  border-color: #e9ecef;
+  animation: st-shimmer 1.5s infinite;
+}
+.st-skeleton .st-skel-line {
+  width: 60px;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  margin-top: 8px;
+  animation: st-shimmer 1.5s infinite;
+}
+ @keyframes st-shimmer {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.st-empty {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+/* ── Compact mode ────────────────────────────────────────────────── */
+.st-mode-compact .st-node  { min-width: 60px; max-width: 80px; }
+.st-mode-compact .st-circle { width: 30px; height: 30px; font-size: 11px; }
+.st-mode-compact .st-connector { margin-top: 14px; }
+.st-mode-compact .st-stage-name { font-size: 10px; }
+.st-mode-compact .st-action-btn { font-size: 9px; padding: 3px 7px; }
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .st-node     { min-width: 60px; max-width: 72px; }
+  .st-circle   { width: 30px; height: 30px; font-size: 12px; }
+  .st-connector { margin-top: 14px; min-width: 16px; }
+  .st-stage-name { font-size: 10px; }
+  .st-stage-date { display: none; }
+}

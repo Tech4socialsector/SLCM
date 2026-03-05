@@ -660,7 +660,7 @@ background:rgba(255,255,255,0.4); }
 <script>
     function handleApplyNow(slug, programId, programName) {
         var isLoggedIn = (window.session_user && window.session_user !== 'Guest');
-        var formUrl = '/applicant-form/new?program=' + encodeURIComponent(programId);
+        var formUrl = '/application-form/new?program=' + encodeURIComponent(programId);
         
         if (!isLoggedIn) {
             window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
