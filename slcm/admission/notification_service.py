@@ -171,8 +171,8 @@ def notify_published_allocation(allocation_name):
     allocated_status_map = {}
     allocated_rows_map = {}
     for row in (allocation.selection_applicant or []):
-        allocated_status_map[row.applicant] = row.selection_status
-        allocated_rows_map[row.applicant] = row
+        allocated_status_map[row.applicant_id] = row.selection_status
+        allocated_rows_map[row.applicant_id] = row
  
     # 2. Fetch all Eligibility Results for this cycle and campus
     # This ensures even those NOT in the Merit List (Ineligible etc.) get a notification

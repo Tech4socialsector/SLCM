@@ -171,7 +171,7 @@ def get_data(filters):
 
         applicants = frappe.get_all("Seat Selection Applicant", 
             filters=app_params, 
-            fields=["parent", "program", "reservation_category", "selection_status", "allocation_type"]
+            fields=["parent", "program", "allocated_category", "selection_status", "allocation_type"]
         )
         
         for app in applicants:
@@ -179,7 +179,7 @@ def get_data(filters):
             program = app.program
             
             # Allocation Type Open/Null -> General
-            cat_key = "General" if app.allocation_type == "Open" or not app.reservation_category else app.reservation_category
+            cat_key = "General" if app.allocation_type == "Open" or not app.allocated_category else app.allocated_category
             
             key = (campus, program, cat_key)
             stats = allocations.setdefault(key, {"allocated": 0, "waitlisted": 0})

@@ -119,14 +119,15 @@ class ScholarshipApplication(Document):
 		)
 		
 		is_applicable = False
-		applicant_category = getattr(self, "category", None)
+		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
+		applicant_categories = get_applicant_categories(self.applicant_id)
 		
 		for m in mappings:
 			# Check program match (mapping has specific program or is global)
 			program_match = not m.program or m.program == self.program
 			
-			# Check category match (mapping has specific category or is global)
-			category_match = not m.category or m.category == applicant_category
+			# Check category match (if mapping has category, student must have it in their multi-category list)
+			category_match = not m.category or m.category in applicant_categories
 			
 			if program_match and category_match:
 				is_applicable = True
@@ -229,19 +230,41 @@ class ScholarshipApplication(Document):
 
 	def validate_conflicts(self):
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
+		
+		# 1. Check if applicant already has an APPROVED Exclusive scholarship
+		# If they do, they cannot have ANY other scholarship.
+		exclusive_exists = frappe.db.exists("Scholarship Application", {
+			"applicant_id": self.applicant_id,
+			"status": "Approved",
+			"name": ["!=", self.name],
+			"scholarship_scheme": ["in", frappe.get_all("Scholarship Scheme", filters={"exclusive_scheme": 1}, pluck="name")]
+		})
+		
+		if exclusive_exists:
+			frappe.throw(frappe._("Applicant already has an Approved Exclusive scholarship and cannot hold any other schemes."))
 
+		# 2. If THIS scheme is Exclusive, check if they have ANY other Approved scholarship
 		if scheme.exclusive_scheme:
-			existing = frappe.db.exists(
-				"Scholarship Application",
-				{
-					"applicant_id": self.applicant_id,
-					"status": "Approved",
-					"name": ["!=", self.name]
-				}
-			)
+			any_approved = frappe.db.exists("Scholarship Application", {
+				"applicant_id": self.applicant_id,
+				"status": "Approved",
+				"name": ["!=", self.name]
+			})
+			if any_approved:
+				frappe.throw(frappe._("This is an Exclusive scholarship. It cannot be approved because the applicant already has another active scholarship."))
 
-			if existing:
-				frappe.throw(frappe._("Applicant already has an approved exclusive scholarship"))
+		# 3. Check Max Schemes Per Applicant limit from Admission Cycle
+		limit = frappe.db.get_value("Admission Cycle", self.admission_cycle, "max_schemes_per_applicant")
+		if limit and limit > 0:
+			approved_count = frappe.db.count("Scholarship Application", {
+				"applicant_id": self.applicant_id,
+				"status": "Approved",
+				"name": ["!=", self.name],
+				"admission_cycle": self.admission_cycle # Limit per cycle
+			})
+			
+			if approved_count >= limit:
+				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
 
 	def on_update(self):
 		self.create_audit_log()
@@ -282,12 +305,13 @@ class ScholarshipApplication(Document):
 	def sync_fee_assignment(self, reverse=False):
 		"""
 		Updates the linked Applicant Fee Assignment with scholarship benefit.
-		Uses frappe.db.set_value to avoid permission issues on submitted documents.
+		Calculates the TOTAL approved scholarship amount for this applicant in this cycle
+		to ensure multiple scholarships are handled correctly (cumulative).
 		"""
 		if not self.applicant_id or not self.admission_cycle:
 			return
 
-		# Query matching AFA where applicant and admission_cycle match, and it's not cancelled
+		# Query matching AFA
 		afa_data = frappe.db.get_value("Applicant Fee Assignment", {
 			"applicant": self.applicant_id,
 			"admission_cycle": self.admission_cycle,
@@ -295,39 +319,33 @@ class ScholarshipApplication(Document):
 		}, ["name", "total_amount"], as_dict=True)
 
 		if not afa_data:
-			if not reverse:
-				frappe.msgprint(
-					frappe._("No active Applicant Fee Assignment found for applicant {0}. Fee sync skipped.")
-					.format(self.applicant_id),
-					indicator="orange"
-				)
 			return
 
 		afa_name = afa_data.name
 		total_amount = flt(afa_data.total_amount)
 		
-		if reverse:
-			scholarship_amount = 0
-			scholarship_applied = 0
-			final_payable_amount = total_amount
-			msg = frappe._("Scholarship reversed in Fee Assignment {0}.").format(afa_name)
-			indicator = "orange"
-		else:
-			scholarship_amount = flt(self.calculated_benefit)
-			scholarship_applied = 1
-			final_payable_amount = total_amount - scholarship_amount
-			msg = frappe._("Fee Assignment {0} synced: Benefit {1}, Final Payable {2}")\
-				.format(afa_name, scholarship_amount, final_payable_amount)
-			indicator = "green"
+		# Calculate cumulative scholarship amount from ALL approved applications for this applicant + cycle
+		# We use direct SQL to avoid permission issues and ensure we get the latest committed data
+		total_scholarship = frappe.db.get_value("Scholarship Application", {
+			"applicant_id": self.applicant_id,
+			"admission_cycle": self.admission_cycle,
+			"status": "Approved"
+		}, "sum(calculated_benefit)") or 0
+
+		scholarship_applied = 1 if total_scholarship > 0 else 0
+		final_payable_amount = total_amount - flt(total_scholarship)
+		
+		msg = frappe._("Fee Assignment {0} synced. Total Scholarship: {1}, Final Payable: {2}")\
+			.format(afa_name, total_scholarship, final_payable_amount)
+		indicator = "green"
 
 		# Apply changes directly to DB
 		frappe.db.set_value("Applicant Fee Assignment", afa_name, {
-			"scholarship_amount": scholarship_amount,
+			"scholarship_amount": total_scholarship,
 			"scholarship_applied": scholarship_applied,
 			"final_payable_amount": final_payable_amount
 		}, update_modified=True)
 		
-		# Commit to ensure changes are visible
 		frappe.db.commit()
 		frappe.msgprint(msg, indicator=indicator)
 

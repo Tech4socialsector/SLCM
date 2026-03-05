@@ -12,7 +12,6 @@
   "column_basic_2",
   "eligibility_criteria",
   "description",
-  "scholarship_coverage_rule_section",
   "coverage_and_financial_controls_tab",
   "section_coverage",
   "apply_on",
@@ -31,23 +30,18 @@
   "current_beneficiaries",
   "priority_and_availability_controls_tab",
   "section_conflict",
-  "priority",
-  "max_schemes_per_applicant",
-  "column_conflict_2",
   "min_income",
   "max_income",
+  "column_conflict_2",
   "min_merit_score",
   "income_certificate_required",
   "section_availability",
-  "stage_availability",
   "application_start",
-  "column_availability_2",
   "application_end",
-  "section_governance",
-  "status",
-  "approval_authority",
-  "column_governance_2",
   "approval_reference",
+  "column_availability_2",
+  "stage_availability",
+  "status",
   "remarks"
  ],
  "fields": [
@@ -200,12 +194,6 @@
    "label": "Conflict & Priority Controls"
   },
   {
-   "fieldname": "priority",
-   "fieldtype": "Int",
-   "label": "Priority",
-   "reqd": 1
-  },
-  {
    "default": "0",
    "fieldname": "exclusive_scheme",
    "fieldtype": "Check",
@@ -215,13 +203,6 @@
   {
    "fieldname": "column_conflict_2",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "1",
-   "fieldname": "max_schemes_per_applicant",
-   "fieldtype": "Int",
-   "label": "Max Schemes Per Applicant",
-   "reqd": 1
   },
   {
    "fieldname": "section_availability",
@@ -250,26 +231,10 @@
    "label": "Application End"
   },
   {
-   "fieldname": "section_governance",
-   "fieldtype": "Section Break",
-   "label": "Governance & Lifecycle"
-  },
-  {
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
    "options": "Draft\nActive\nArchived",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_governance_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "approval_authority",
-   "fieldtype": "Select",
-   "label": "Approval Authority",
-   "options": "Admissions Committee\nVC\nFinance Head",
    "reqd": 1
   },
   {
@@ -293,11 +258,6 @@
    "label": "Priority And Availability Controls"
   },
   {
-   "fieldname": "scholarship_coverage_rule_section",
-   "fieldtype": "Section Break",
-   "label": "Scholarship Coverage Rule"
-  },
-  {
    "fieldname": "min_merit_score",
    "fieldtype": "Float",
    "label": "Minimum Merit Score"
@@ -312,7 +272,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-05 10:45:00",
+ "modified": "2026-03-05 16:08:42.081257",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme",
