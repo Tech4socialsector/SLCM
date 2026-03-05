@@ -1,10 +1,577 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Interview Management</title>
-</head>
-<body>
-    <h1>Interview Management</h1>
-    <p>This is the interview management page.</p>
-</body>
-</html>
+{% extends "slcm/www/admission_base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-adm: #1a3c6e;
+        --secondary-adm: #7b1c1c;
+        --accent-adm: #fbbd08;
+    }
+
+    .allocation-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        background: #fff;
+        margin-bottom: 2rem;
+    }
+
+    .card-header-adm {
+        background: linear-gradient(135deg, var(--primary-adm), #2c5282);
+        color: white;
+        padding: 24px;
+        border: none;
+    }
+
+    .badge-status {
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-allocated {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-pending {
+        background: #fef9c3;
+        color: #854d0e;
+    }
+
+    .status-rescheduled {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-absent {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-selected {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .detail-value {
+        color: #1e293b;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .btn-primary-adm {
+        background: var(--primary-adm);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        color: white;
+    }
+
+    .btn-primary-adm:hover {
+        background: #2c5282;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(26, 60, 110, 0.2);
+        color: white;
+    }
+
+    .result-card {
+        background: linear-gradient(135deg, #ffffff, #f1f5f9);
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .rank-circle {
+        width: 80px;
+        height: 80px;
+        background: var(--primary-adm);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: 800;
+        margin: 0 auto 12px;
+        border: 4px solid #e2e8f0;
+    }
+
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        50% {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .reschedule-alert {
+        background: linear-gradient(135deg, #fffbeb, #fff7ed);
+        border: 1px dashed #fcd34d;
+        border-radius: 12px;
+        color: #92400e;
+    }
+
+    .slot-box {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .slot-box-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .feedback-box {
+        background: linear-gradient(135deg, #f0fdf4, #f8fafc);
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        padding: 24px;
+    }
+
+    .readonly-badge {
+        font-size: 0.7rem;
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 2px 8px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+        margin-left: 6px;
+        vertical-align: middle;
+    }
+
+    .confirmation-locked {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 10px;
+        padding: 14px 18px;
+        font-weight: 600;
+        color: #166534;
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            {% if no_record %}
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#94a3b8" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3"
+                            d="M4 10h16m-8-3V4M7 7V4m10 3V4M5 20h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Zm3-7h.01v.01H8V13Zm4 0h.01v.01H12V13Zm4 0h.01v.01H16V13Zm-8 4h.01v.01H8V17Zm4 0h.01v.01H12V17Zm4 0h.01v.01H16V17Z" />
+                    </svg>
+                </div>
+                <h3 class="fw-bold text-dark">No Interview Record Found</h3>
+                <p class="text-muted">Your interview slot has not been assigned yet. Please check back later.</p>
+            </div>
+
+            {% else %}
+
+            {# ── Reschedule Banner ─────────────────────────────────────────── #}
+            {% if is_rescheduled and previous_schedule %}
+            <div class="reschedule-alert p-4 mb-4 d-flex align-items-center gap-3">
+                <div class="bg-warning bg-opacity-20 p-3 rounded-circle text-warning">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        <path d="M22 4L12 14l-3-3" />
+                    </svg>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-1">Interview Rescheduled</h5>
+                    <p class="mb-0 opacity-75 small">
+                        Your previous interview with <b>{{ previous_schedule.staff_name }}</b>
+                        on <b>{{ frappe.format_date(previous_schedule.interview_date) }}</b>
+                        was rescheduled. Reason: <b>{{ previous_schedule.reason }}</b>.
+                        Please confirm your attendance for the new slot below.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── Result Section ─────────────────────────────────────────────── #}
+            {% if show_result %}
+            <div class="allocation-card mb-4 border-top border-4 border-primary">
+                <div class="card-header-adm d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 fw-bold">Interview Result</h4>
+                    <span class="badge-status
+                        {% if doc.interview_status == 'Selected' %}status-selected
+                        {% elif doc.interview_status == 'Rejected' %}status-rejected
+                        {% elif doc.interview_status == 'Attended' %}status-allocated
+                        {% else %}status-absent{% endif %}">
+                        {{ doc.interview_status }}
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center border-md-end">
+                            {% if doc.interview_status in ['Selected', 'Attended'] %}
+                            <div class="rank-circle">{{ doc.rank or '—' }}</div>
+                            <p class="text-muted small fw-bold text-uppercase">Interview Rank</p>
+                            {% else %}
+                            <div class="mb-3 text-danger">
+                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="15" y1="9" x2="9" y2="15" />
+                                    <line x1="9" y1="9" x2="15" y2="15" />
+                                </svg>
+                            </div>
+                            <h5 class="text-danger fw-bold">{{ doc.interview_status | upper }}</h5>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8 px-md-5">
+                            <h5 class="fw-bold mb-3">Result Summary</h5>
+                            <div class="detail-row">
+                                <span class="detail-label">Interview Score</span>
+                                <span class="detail-value text-primary h5 mb-0">{{ doc.interview_score or '—' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Result Status</span>
+                                <span class="detail-value">{{ doc.interview_result_status or 'Declared' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Attendance Marked On</span>
+                                <span class="detail-value">{{ doc.attendance_marked_on or '—' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── Main Info Card ─────────────────────────────────────────────── #}
+            <div class="allocation-card">
+                <div class="card-header-adm d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 fw-bold">Interview Details</h4>
+                    <span class="badge-status
+                        {% if doc.interview_slot_status == 'Confirmed' %}status-allocated
+                        {% elif doc.interview_slot_status == 'Rescheduled' %}status-rescheduled
+                        {% elif doc.interview_slot_status == 'Cancelled' %}status-absent
+                        {% else %}status-pending{% endif %}">
+                        {{ doc.interview_slot_status or 'Scheduled' }}
+                    </span>
+                </div>
+
+                <div class="card-body p-4">
+                    {# ── Applicant summary ──────────────────────────────────── #}
+                    <div class="row mb-4">
+                        <div class="col-md-3 text-center mb-4 mb-md-0">
+                            {% if doc.profile %}
+                            <img src="{{ doc.profile }}" class="rounded-circle shadow-sm"
+                                style="width: 140px; height: 140px; object-fit: cover; border: 4px solid #fff;">
+                            {% else %}
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto"
+                                style="width: 140px; height: 140px; border: 4px solid #fff;">
+                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1"
+                                    stroke-width="1.5">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                            </div>
+                            {% endif %}
+                            <h5 class="mt-3 mb-0 fw-bold">{{ doc.candidate_name }}</h5>
+                            <p class="text-muted small">{{ doc.applicant }}</p>
+                        </div>
+
+                        <div class="col-md-9 border-start ps-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="detail-row"><span class="detail-label">Program</span><span
+                                            class="detail-value">{{ doc.program }}</span></div>
+                                    <div class="detail-row"><span class="detail-label">Campus</span><span
+                                            class="detail-value">{{ doc.campus }}</span></div>
+                                    <div class="detail-row"><span class="detail-label">Academic Year</span><span
+                                            class="detail-value">{{ doc.academic_year }}</span></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-row"><span class="detail-label">Admission Cycle</span><span
+                                            class="detail-value">{{ doc.admission_cycle }}</span></div>
+                                    <div class="detail-row"><span class="detail-label">Source</span><span
+                                            class="detail-value">{{ doc.source_type or '—' }}</span></div>
+                                    <div class="detail-row"><span class="detail-label">Entrance Test Score</span><span
+                                            class="detail-value">{{ doc.entrance_test_score or '—' }}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    {# ── Current Slot Details ───────────────────────────────── #}
+                    <h5 class="fw-bold mb-3">
+                        {% if is_rescheduled %}Rescheduled{% endif %} Interview Slot
+                        <span class="readonly-badge">Read Only</span>
+                    </h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="slot-box">
+                                <div class="slot-box-label">Interviewer</div>
+                                <div class="fw-bold">{{ current_slot.staff_name or '—' }}</div>
+                                {% if current_slot.staff_contact %}
+                                <div class="text-muted small mt-1">{{ current_slot.staff_contact }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="slot-box">
+                                <div class="slot-box-label">Interview Date &amp; Time</div>
+                                <div class="fw-bold">{{ frappe.format_date(current_slot.interview_date) if
+                                    current_slot.interview_date else '—' }}</div>
+                                <div class="text-muted small mt-1">{{ current_slot.interview_time or 'Time TBD' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="slot-box">
+                                <div class="slot-box-label">Interview Venue</div>
+                                <div class="fw-bold" style="font-size:0.95rem;">{{ current_slot.interview_address or '—'
+                                    }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# ── Attendance Confirmation ────────────────────────────── #}
+                    {% if not show_result %}
+                    <hr class="my-3">
+
+                    {% set current_confirmation = current_slot.attendance_confirmation %}
+
+                    <h5 class="fw-bold mb-1">
+                        {% if is_rescheduled %}Re-schedule Attendance Confirmation{% else %}Attendance Confirmation{%
+                        endif %}
+                    </h5>
+                    <p class="text-muted small mb-3">Please confirm your attendance for the interview slot above.</p>
+
+                    {% if current_confirmation %}
+                    {# ── Already submitted: locked ──────────────────────────── #}
+                    <div class="confirmation-locked d-flex align-items-center gap-2">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                        Confirmation submitted: <strong class="ms-1">{{ current_confirmation }}</strong>
+                    </div>
+                    <p class="text-muted small mt-2">Your confirmation has been recorded and cannot be changed.</p>
+
+                    {% else %}
+                    {# ── Not yet submitted: show select field ───────────────── #}
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Select Confirmation</label>
+                            <select id="attendanceSelect" class="form-select form-select-lg">
+                                <option value="" disabled selected>Choose an option...</option>
+                                {% for opt in attendance_options %}
+                                <option value="{{ opt }}">{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-auto">
+                            <button id="btnSaveAttendance" class="btn btn-primary-adm" disabled>
+                                Save Confirmation
+                            </button>
+                        </div>
+                    </div>
+                    <div id="attendanceSaveSuccess" class="text-success mt-2 small" style="display:none;">
+                        ✔ Confirmation saved successfully.
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    {# ── Result published: read-only row ────────────────────── #}
+                    <hr class="my-3">
+                    <div class="detail-row">
+                        <span class="detail-label">Attendance Confirmation</span>
+                        <span class="detail-value">
+                            {{ (doc.re_interview_attendance_confirmation if is_rescheduled else
+                            doc.interview_attendance_confirmation) or '—' }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            {# ── Feedback Card ─────────────────────────────────────────────── #}
+            {% if show_feedback %}
+            <div class="allocation-card">
+                <div class="card-header-adm d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 fw-bold">Interview Feedback</h4>
+                    {% if feedback_submitted %}
+                    <span class="badge-status status-allocated">Submitted</span>
+                    {% else %}
+                    <span class="badge-status status-pending">Pending</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    {% if feedback_submitted %}
+                    <div class="feedback-box">
+                        <p class="text-muted small fw-bold text-uppercase mb-1">Your Feedback</p>
+                        <p class="mb-0" style="white-space: pre-wrap;">{{ doc.feedback }}</p>
+                    </div>
+                    <p class="text-muted small mt-3">Thank you for your feedback!</p>
+                    {% else %}
+                    <p class="text-muted small mb-3">We value your experience. Please share your feedback about the
+                        interview process.</p>
+                    <div class="mb-3">
+                        <textarea id="feedbackText" class="form-control" rows="5"
+                            placeholder="Share your thoughts about the interview experience..."></textarea>
+                    </div>
+                    <button id="btnSubmitFeedback" class="btn btn-primary-adm">Submit Feedback</button>
+                    <div id="feedbackSuccess" class="text-success mt-2 small" style="display:none;">
+                        ✔ Thank you! Your feedback has been submitted.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% endif %}{# end no_record #}
+
+        </div>
+    </div>
+</div>
+
+{% if not no_record %}
+<script type="application/json" id="__interview-page-data__">
+    {
+        "allocationName": "{{ doc.name }}",
+        "isRescheduled": {{ 'true' if is_rescheduled else 'false' }},
+        "showResult": {{ 'true' if show_result else 'false' }},
+        "showFeedback": {{ 'true' if show_feedback else 'false' }},
+        "feedbackSubmitted": {{ 'true' if feedback_submitted else 'false' }}
+    }
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var dataEl = document.getElementById('__interview-page-data__');
+        if (!dataEl) return;
+        var pageData = JSON.parse(dataEl.textContent);
+
+        // ── Attendance Confirmation Select ───────────────────────────
+        var sel = document.getElementById('attendanceSelect');
+        var btnSave = document.getElementById('btnSaveAttendance');
+        var saveSuccess = document.getElementById('attendanceSaveSuccess');
+
+        if (sel && btnSave) {
+            sel.addEventListener('change', function () {
+                btnSave.disabled = !this.value;
+            });
+
+            btnSave.addEventListener('click', function () {
+                var chosen = sel.value;
+                if (!chosen) {
+                    showToast('Please select an option first.', 'error');
+                    return;
+                }
+
+                var confirmMsg = 'Confirm your attendance as <b>' + chosen + '</b>?';
+                if (chosen === 'Need Reschedule') {
+                    confirmMsg += '<br><small class="text-muted">The admissions office will contact you for a new slot.</small>';
+                }
+                confirmMsg += '<br><small class="text-danger mt-1 d-block">This action cannot be undone.</small>';
+
+                showConfirm(confirmMsg, function () {
+                    btnSave.disabled = true;
+                    btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+                    apiFetch('slcm.www.eligibility.interview_management.save_attendance_confirmation', {
+                        allocation_name: pageData.allocationName,
+                        confirmation: chosen,
+                        is_rescheduled: pageData.isRescheduled
+                    }).then(function () {
+                        saveSuccess.style.display = 'block';
+                        showToast('Confirmation saved!', 'success');
+                        btnSave.innerHTML = 'Save Confirmation';
+                        setTimeout(function () { window.location.reload(); }, 1200);
+                    }).catch(function (err) {
+                        showToast(err.message || 'Error saving confirmation.', 'error');
+                        btnSave.disabled = false;
+                        btnSave.innerHTML = 'Save Confirmation';
+                    });
+                });
+            });
+        }
+
+        // ── Feedback ─────────────────────────────────────────────────
+        var btnFeedback = document.getElementById('btnSubmitFeedback');
+        var feedbackSuccess = document.getElementById('feedbackSuccess');
+
+        if (btnFeedback) {
+            btnFeedback.addEventListener('click', function () {
+                var txt = (document.getElementById('feedbackText').value || '').trim();
+                if (!txt) {
+                    showToast('Please enter your feedback before submitting.', 'error');
+                    return;
+                }
+
+                showConfirm('Submit your feedback? This cannot be changed later.', function () {
+                    btnFeedback.disabled = true;
+                    btnFeedback.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                    apiFetch('slcm.www.eligibility.interview_management.save_feedback', {
+                        allocation_name: pageData.allocationName,
+                        feedback_text: txt
+                    }).then(function () {
+                        feedbackSuccess.style.display = 'block';
+                        showToast('Feedback submitted! Thank you.', 'success');
+                        btnFeedback.innerHTML = 'Submit Feedback';
+                        setTimeout(function () { window.location.reload(); }, 1500);
+                    }).catch(function (err) {
+                        showToast(err.message || 'Error submitting feedback.', 'error');
+                        btnFeedback.disabled = false;
+                        btnFeedback.innerHTML = 'Submit Feedback';
+                    });
+                });
+            });
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

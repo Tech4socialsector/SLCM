@@ -167,8 +167,8 @@ class InterviewList(Document):
 
 def _send_interview_slot_email(allocation, email, staff):
     """Send a premium interview slot assignment notification to the applicant."""
-    from frappe.utils import get_url_to_form
-    url = get_url_to_form("Interview Seat Allocation", allocation.name)
+    from frappe.utils import get_url
+    url = get_url("/eligibility/interview-management")
 
     msg = f"""
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
@@ -181,6 +181,7 @@ def _send_interview_slot_email(allocation, email, staff):
             <table style="width:100%; border-collapse: collapse; font-size: 14px;">
                 <tr><td style="padding:5px 0; color:#666;">Date:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_date or 'To be communicated'}</td></tr>
                 <tr><td style="padding:5px 0; color:#666;">Time:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_time or 'To be communicated'}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Venue / Address:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_address or 'To be communicated'}</td></tr>
                 <tr><td style="padding:5px 0; color:#666;">Interviewer:</td><td style="padding:5px 0; font-weight:bold;">{staff.staff_name or ''}</td></tr>
                 <tr><td style="padding:5px 0; color:#666;">Staff Contact:</td><td style="padding:5px 0; font-weight:bold;">{staff.contact_number or ''}</td></tr>
             </table>

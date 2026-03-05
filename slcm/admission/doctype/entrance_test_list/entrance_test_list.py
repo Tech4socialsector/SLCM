@@ -208,8 +208,8 @@ class EntranceTestList(Document):
 
 def _send_allocation_email(allocation, email):
     """Send a premium result/allocation email to the applicant."""
-    from frappe.utils import get_url_to_form
-    url = get_url_to_form("Entrance Test Seat Allocation", allocation.name)
+    from frappe.utils import get_url
+    url = get_url("/eligibility/entrance-test-seat-allocation")
 
     prefs_html = ""
     if getattr(allocation, 'assigned_preferences', None):
