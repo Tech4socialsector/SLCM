@@ -32,7 +32,6 @@ class EligibilityResultConfiguration(Document):
                 itsa.candidate_name,
                 itsa.email,
                 itsa.gender,
-                itsa.reservation_category,
                 itsa.program,
                 itsa.program_level,
                 itsa.academic_year,
@@ -61,7 +60,6 @@ class EligibilityResultConfiguration(Document):
                 app.candidate_name,
                 app.email,
                 app.gender,
-                app.reservation_category,
                 app.program,
                 app.program_level,
                 app.academic_year,
@@ -91,7 +89,6 @@ class EligibilityResultConfiguration(Document):
                 etsa.candidate_name,
                 etsa.email,
                 etsa.gender,
-                etsa.reservation_category,
                 etsa.program,
                 etsa.program_level,
                 etsa.academic_year,
@@ -145,9 +142,9 @@ class EligibilityResultConfiguration(Document):
             edu["hsc_group"] = getattr(app, "hsc_group", None)
             edu["hsc_percentage"] = getattr(app, "hsc_percentage", None)
 
-            # Join additional categories from the child table into a string
+            # Collect raw category rows from the Applicant's categories child table
             cats = [row.category for row in getattr(app, "categories", []) if row.category]
-            edu["categories"] = ", ".join(cats) if cats else ""
+            edu["categories"] = cats  # kept as a list for child-table population
 
             if (program_level or "").strip() in ("PG", "Research Course"):
                 # copy UG degree rows if present (PG applicants need their UG transcript)
@@ -190,11 +187,14 @@ class EligibilityResultConfiguration(Document):
             res.candidate_name = data.candidate_name
             res.email = data.email
             res.gender = data.gender
-            res.reservation_category = data.get("reservation_category")
-            
-            # Fetch and populate education and category details from Applicant
+
+            # Fetch and populate education details from Applicant
             edu = get_applicant_education(data.applicant_id, data.program_level)
-            res.categories = edu.get("categories")
+
+            # Populate the `category` child table from Applicant's categories
+            res.set("category", [])
+            for cat_name in (edu.get("categories") or []):
+                res.append("category", {"category": cat_name})
             res.program = data.program
             res.program_level = data.program_level
             res.academic_year = data.academic_year

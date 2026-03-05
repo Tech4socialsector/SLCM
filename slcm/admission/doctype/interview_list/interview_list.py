@@ -106,9 +106,16 @@ class InterviewList(Document):
                 allocation.applicant           = row.applicant_id
                 allocation.candidate_name      = row.candidate_name
                 allocation.program             = row.program
-                allocation.reservation_category = row.reservation_category
                 allocation.email               = row.email
                 allocation.gender              = row.gender
+
+                # Populate categories from Applicant's categories child table
+                app_categories = frappe.get_all("Applicant Category",
+                    filters={"parent": row.applicant_id, "parenttype": "Applicant"},
+                    fields=["category"]
+                )
+                for cat in app_categories:
+                    allocation.append("category", {"category": cat.category})
 
                 # Source tracking
                 allocation.source_type         = row.source_type

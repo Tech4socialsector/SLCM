@@ -1,555 +1,555 @@
 {
-    "actions": [],
-    "allow_import": 1,
-    "allow_rename": 1,
-    "autoname": "field:applicant",
-    "creation": "2026-03-02 11:05:49.615668",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "tab_test_reference",
-        "profile",
-        "entrance_test_list",
-        "academic_year",
-        "admission_cycle",
-        "campus",
-        "program_level",
-        "tab_applicant_info",
-        "applicant",
-        "candidate_name",
-        "program",
-        "reservation_category",
-        "email",
-        "gender",
-        "date_of_birth",
-        "section_break_hynq",
-        "mother_name",
-        "father_name",
-        "father_mobile_number",
-        "exempts_entrance_test",
-        "exempts_interview",
-        "tab_allocation",
-        "entrance_test_name",
-        "entrance_test_provider",
-        "assigned_preferences",
-        "center_name",
-        "center_address",
-        "preference_order",
-        "room_code",
-        "room_name",
-        "building",
-        "floor",
-        "seat_number",
-        "allocation_status",
-        "allocation_date",
-        "allocated_by",
-        "download_admit_card",
-        "tab_9_tab",
-        "reschedule_seat_allocation_section",
-        "re_entrance_test_name",
-        "re_entrance_test_provider",
-        "re_assigned_preferences",
-        "re_center_name",
-        "re_center_address",
-        "re_preference_order",
-        "re_room_code",
-        "re_room_name",
-        "re_building",
-        "re_floor",
-        "re_seat_number",
-        "re_allocation_status",
-        "re_allocation_date",
-        "re_allocated_by",
-        "re_download_admit_card",
-        "section_break_axgb",
-        "is_rescheduled",
-        "reschedule_reason",
-        "rescheduled_on",
-        "rescheduled_by",
-        "tab_result",
-        "entrance_test_status",
-        "attendance_marked_on",
-        "total_score",
-        "score_obtained",
-        "result_status",
-        "entrance_test_rank",
-        "result_published",
-        "tab_communication",
-        "admit_card_generated",
-        "admit_card_number"
-    ],
-    "fields": [
-        {
-            "fieldname": "tab_test_reference",
-            "fieldtype": "Tab Break",
-            "label": "Test Reference"
-        },
-        {
-            "fieldname": "entrance_test_list",
-            "fieldtype": "Link",
-            "in_standard_filter": 1,
-            "label": "Entrance Test List",
-            "options": "Entrance Test List",
-            "reqd": 1
-        },
-        {
-            "fieldname": "academic_year",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "in_standard_filter": 1,
-            "label": "Academic Year",
-            "options": "Academic Year",
-            "reqd": 1
-        },
-        {
-            "fieldname": "admission_cycle",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "in_standard_filter": 1,
-            "label": "Admission Cycle",
-            "options": "Admission Cycle",
-            "reqd": 1
-        },
-        {
-            "fieldname": "campus",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "in_standard_filter": 1,
-            "label": "Campus",
-            "options": "Campus",
-            "reqd": 1
-        },
-        {
-            "fieldname": "program_level",
-            "fieldtype": "Select",
-            "in_standard_filter": 1,
-            "label": "Program Level",
-            "options": "UG\nPG\nResearch Course",
-            "reqd": 1
-        },
-        {
-            "fieldname": "tab_applicant_info",
-            "fieldtype": "Tab Break",
-            "label": "Applicant Information"
-        },
-        {
-            "fieldname": "applicant",
-            "fieldtype": "Link",
-            "in_standard_filter": 1,
-            "label": "Applicant",
-            "options": "Applicant",
-            "reqd": 1,
-            "unique": 1
-        },
-        {
-            "fieldname": "candidate_name",
-            "fieldtype": "Data",
-            "in_standard_filter": 1,
-            "label": "Candidate Name",
-            "reqd": 1
-        },
-        {
-            "fieldname": "program",
-            "fieldtype": "Link",
-            "in_standard_filter": 1,
-            "label": "Program",
-            "options": "Program",
-            "reqd": 1
-        },
-        {
-            "fieldname": "reservation_category",
-            "fieldtype": "Data",
-            "in_standard_filter": 1,
-            "label": "Reservation Category"
-        },
-        {
-            "fieldname": "email",
-            "fieldtype": "Data",
-            "label": "Email"
-        },
-        {
-            "fieldname": "gender",
-            "fieldtype": "Select",
-            "in_standard_filter": 1,
-            "label": "Gender",
-            "options": "Male\nFemale\nOthers"
-        },
-        {
-            "default": "0",
-            "fieldname": "exempts_entrance_test",
-            "fieldtype": "Check",
-            "label": "Exempts Entrance Test",
-            "read_only": 1
-        },
-        {
-            "default": "0",
-            "fieldname": "exempts_interview",
-            "fieldtype": "Check",
-            "label": "Exempts Interview",
-            "read_only": 1
-        },
-        {
-            "fieldname": "tab_allocation",
-            "fieldtype": "Tab Break",
-            "label": "Seat Allocation"
-        },
-        {
-            "fieldname": "entrance_test_provider",
-            "fieldtype": "Link",
-            "in_standard_filter": 1,
-            "label": "Entrance Test Provider",
-            "options": "Entrance Test Provider"
-        },
-        {
-            "fieldname": "assigned_preferences",
-            "fieldtype": "Table",
-            "label": "Assigned Preferences (Admin)",
-            "options": "Entrance Test Preference Assigned"
-        },
-        {
-            "fieldname": "center_name",
-            "fieldtype": "Data",
-            "label": "Center Name"
-        },
-        {
-            "fieldname": "center_address",
-            "fieldtype": "Small Text",
-            "label": "Center Address"
-        },
-        {
-            "fieldname": "preference_order",
-            "fieldtype": "Int",
-            "label": "Preference Order"
-        },
-        {
-            "fieldname": "room_code",
-            "fieldtype": "Data",
-            "label": "Room Code"
-        },
-        {
-            "fieldname": "room_name",
-            "fieldtype": "Data",
-            "label": "Room Name"
-        },
-        {
-            "fieldname": "building",
-            "fieldtype": "Data",
-            "label": "Building"
-        },
-        {
-            "fieldname": "floor",
-            "fieldtype": "Data",
-            "label": "Floor"
-        },
-        {
-            "fieldname": "seat_number",
-            "fieldtype": "Data",
-            "label": "Seat Number"
-        },
-        {
-            "fieldname": "allocation_status",
-            "fieldtype": "Select",
-            "label": "Allocation Status",
-            "options": "Not Allocated\nPreferences Assigned\nAllocated\nReallocated\nCancelled\nRejected"
-        },
-        {
-            "fieldname": "allocation_date",
-            "fieldtype": "Datetime",
-            "label": "Allocation Date"
-        },
-        {
-            "fieldname": "allocated_by",
-            "fieldtype": "Link",
-            "label": "Allocated By",
-            "options": "User"
-        },
-        {
-            "depends_on": "eval:doc.allocation_status == 'Allocated'",
-            "fieldname": "download_admit_card",
-            "fieldtype": "Button",
-            "label": "Download Admit Card"
-        },
-        {
-            "default": "0",
-            "fieldname": "is_rescheduled",
-            "fieldtype": "Check",
-            "label": "Is Rescheduled"
-        },
-        {
-            "fieldname": "reschedule_reason",
-            "fieldtype": "Small Text",
-            "label": "Reschedule Reason"
-        },
-        {
-            "fieldname": "rescheduled_on",
-            "fieldtype": "Datetime",
-            "label": "Rescheduled On"
-        },
-        {
-            "fieldname": "rescheduled_by",
-            "fieldtype": "Link",
-            "label": "Rescheduled By",
-            "options": "User"
-        },
-        {
-            "fieldname": "tab_communication",
-            "fieldtype": "Tab Break",
-            "label": "Communication"
-        },
-        {
-            "default": "0",
-            "fieldname": "admit_card_generated",
-            "fieldtype": "Check",
-            "label": "Admit Card Generated"
-        },
-        {
-            "fieldname": "admit_card_number",
-            "fieldtype": "Data",
-            "label": "Admit Card Number"
-        },
-        {
-            "fieldname": "tab_result",
-            "fieldtype": "Tab Break",
-            "label": "Result"
-        },
-        {
-            "fieldname": "attendance_marked_on",
-            "fieldtype": "Datetime",
-            "label": "Attendance Marked On"
-        },
-        {
-            "fieldname": "result_status",
-            "fieldtype": "Select",
-            "label": "Result Status",
-            "options": "\nPass\nFail\nAbsent\nWithheld\nDisqualified"
-        },
-        {
-            "default": "0",
-            "fieldname": "result_published",
-            "fieldtype": "Check",
-            "label": "Result Published"
-        },
-        {
-            "fetch_from": "applicant.candidate_photo",
-            "fieldname": "profile",
-            "fieldtype": "Attach Image",
-            "label": "Profile "
-        },
-        {
-            "fetch_from": "applicant.date_of_birth",
-            "fieldname": "date_of_birth",
-            "fieldtype": "Date",
-            "label": "Date of Birth"
-        },
-        {
-            "fieldname": "section_break_hynq",
-            "fieldtype": "Section Break",
-            "label": "Guardian Details"
-        },
-        {
-            "fetch_from": "applicant.mother_name",
-            "fieldname": "mother_name",
-            "fieldtype": "Data",
-            "label": "Mother Name "
-        },
-        {
-            "fetch_from": "applicant.father_name",
-            "fieldname": "father_name",
-            "fieldtype": "Data",
-            "label": "Father Name "
-        },
-        {
-            "fetch_from": "applicant.father_mobile",
-            "fieldname": "father_mobile_number",
-            "fieldtype": "Data",
-            "label": "Father Mobile Number "
-        },
-        {
-            "fieldname": "tab_9_tab",
-            "fieldtype": "Tab Break",
-            "label": "Reschedule Seat Allocation "
-        },
-        {
-            "fieldname": "reschedule_seat_allocation_section",
-            "fieldtype": "Section Break",
-            "label": "Reschedule Seat Allocation "
-        },
-        {
-            "fieldname": "re_entrance_test_provider",
-            "fieldtype": "Link",
-            "label": "Entrance Test Provider ",
-            "options": "Entrance Test Provider"
-        },
-        {
-            "fieldname": "re_assigned_preferences",
-            "fieldtype": "Table",
-            "label": "Assigned Preferences (Admin)",
-            "options": "Entrance Test Preference Assigned"
-        },
-        {
-            "fieldname": "re_center_name",
-            "fieldtype": "Data",
-            "label": "Center Name"
-        },
-        {
-            "fieldname": "re_center_address",
-            "fieldtype": "Small Text",
-            "label": "Center Address"
-        },
-        {
-            "fieldname": "re_preference_order",
-            "fieldtype": "Int",
-            "label": "Preference Order"
-        },
-        {
-            "fieldname": "re_room_code",
-            "fieldtype": "Data",
-            "label": "Room Code"
-        },
-        {
-            "fieldname": "re_room_name",
-            "fieldtype": "Data",
-            "label": "Room Name"
-        },
-        {
-            "fieldname": "re_building",
-            "fieldtype": "Data",
-            "label": "Building"
-        },
-        {
-            "fieldname": "re_floor",
-            "fieldtype": "Data",
-            "label": "Floor"
-        },
-        {
-            "fieldname": "re_seat_number",
-            "fieldtype": "Data",
-            "label": "Seat Number"
-        },
-        {
-            "fieldname": "re_allocation_status",
-            "fieldtype": "Select",
-            "label": "Allocation Status",
-            "options": "Not Allocated\nPreferences Assigned\nAllocated\nReallocated\nCancelled\nRejected"
-        },
-        {
-            "fieldname": "re_allocation_date",
-            "fieldtype": "Datetime",
-            "label": "Allocation Date"
-        },
-        {
-            "fieldname": "re_allocated_by",
-            "fieldtype": "Link",
-            "label": "Allocated By",
-            "options": "User"
-        },
-        {
-            "fieldname": "section_break_axgb",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "re_download_admit_card",
-            "fieldtype": "Button",
-            "label": "Download Admit Card"
-        },
-        {
-            "default": "Scheduled",
-            "fieldname": "entrance_test_status",
-            "fieldtype": "Select",
-            "in_standard_filter": 1,
-            "label": "Entrance Test Status",
-            "options": "\nAttended\nAbsent\nRescheduled\nNot Scheduled\nScheduled"
-        },
-        {
-            "fieldname": "entrance_test_name",
-            "fieldtype": "Link",
-            "label": "Entrance Test Name",
-            "options": "Entrance Test"
-        },
-        {
-            "fieldname": "re_entrance_test_name",
-            "fieldtype": "Link",
-            "label": "Entrance Test Name",
-            "options": "Entrance Test"
-        },
-        {
-            "fieldname": "total_score",
-            "fieldtype": "Int",
-            "label": "Total Score",
-            "non_negative": 1
-        },
-        {
-            "fieldname": "score_obtained",
-            "fieldtype": "Int",
-            "label": "Score Obtained",
-            "non_negative": 1
-        },
-        {
-            "fieldname": "entrance_test_rank",
-            "fieldtype": "Int",
-            "label": "Entrance Test Rank",
-            "non_negative": 1
-        }
-    ],
-    "grid_page_length": 50,
-    "index_web_pages_for_search": 1,
-    "links": [],
-    "modified": "2026-03-02 12:57:47.871017",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "Entrance Test Seat Allocation",
-    "naming_rule": "By fieldname",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "write": 1
-        },
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Entrance Test Admin",
-            "select": 1,
-            "share": 1,
-            "write": 1
-        },
-        {
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Applicant",
-            "share": 1,
-            "write": 1
-        },
-        {
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Entrance Test Provider",
-            "share": 1,
-            "write": 1
-        }
-    ],
-    "row_format": "Dynamic",
-    "rows_threshold_for_grid_search": 20,
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:applicant",
+ "creation": "2026-03-02 11:05:49.615668",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "tab_test_reference",
+  "profile",
+  "entrance_test_list",
+  "academic_year",
+  "admission_cycle",
+  "campus",
+  "program_level",
+  "tab_applicant_info",
+  "applicant",
+  "candidate_name",
+  "program",
+  "email",
+  "gender",
+  "date_of_birth",
+  "category",
+  "section_break_hynq",
+  "mother_name",
+  "father_name",
+  "father_mobile_number",
+  "exempts_entrance_test",
+  "exempts_interview",
+  "tab_allocation",
+  "entrance_test_name",
+  "entrance_test_provider",
+  "assigned_preferences",
+  "center_name",
+  "center_address",
+  "preference_order",
+  "room_code",
+  "room_name",
+  "building",
+  "floor",
+  "seat_number",
+  "allocation_status",
+  "allocation_date",
+  "allocated_by",
+  "download_admit_card",
+  "tab_9_tab",
+  "reschedule_seat_allocation_section",
+  "re_entrance_test_name",
+  "re_entrance_test_provider",
+  "re_assigned_preferences",
+  "re_center_name",
+  "re_center_address",
+  "re_preference_order",
+  "re_room_code",
+  "re_room_name",
+  "re_building",
+  "re_floor",
+  "re_seat_number",
+  "re_allocation_status",
+  "re_allocation_date",
+  "re_allocated_by",
+  "re_download_admit_card",
+  "section_break_axgb",
+  "is_rescheduled",
+  "reschedule_reason",
+  "rescheduled_on",
+  "rescheduled_by",
+  "tab_result",
+  "entrance_test_status",
+  "attendance_marked_on",
+  "total_score",
+  "score_obtained",
+  "result_status",
+  "entrance_test_rank",
+  "result_published",
+  "tab_communication",
+  "admit_card_generated",
+  "admit_card_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "tab_test_reference",
+   "fieldtype": "Tab Break",
+   "label": "Test Reference"
+  },
+  {
+   "fieldname": "entrance_test_list",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Entrance Test List",
+   "options": "Entrance Test List",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Program Level",
+   "options": "UG\nPG\nResearch Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "tab_applicant_info",
+   "fieldtype": "Tab Break",
+   "label": "Applicant Information"
+  },
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Applicant",
+   "options": "Applicant",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Candidate Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Gender",
+   "options": "Male\nFemale\nOthers"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_entrance_test",
+   "fieldtype": "Check",
+   "label": "Exempts Entrance Test",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_interview",
+   "fieldtype": "Check",
+   "label": "Exempts Interview",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tab_allocation",
+   "fieldtype": "Tab Break",
+   "label": "Seat Allocation"
+  },
+  {
+   "fieldname": "entrance_test_provider",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Entrance Test Provider",
+   "options": "Entrance Test Provider"
+  },
+  {
+   "fieldname": "assigned_preferences",
+   "fieldtype": "Table",
+   "label": "Assigned Preferences (Admin)",
+   "options": "Entrance Test Preference Assigned"
+  },
+  {
+   "fieldname": "center_name",
+   "fieldtype": "Data",
+   "label": "Center Name"
+  },
+  {
+   "fieldname": "center_address",
+   "fieldtype": "Small Text",
+   "label": "Center Address"
+  },
+  {
+   "fieldname": "preference_order",
+   "fieldtype": "Int",
+   "label": "Preference Order"
+  },
+  {
+   "fieldname": "room_code",
+   "fieldtype": "Data",
+   "label": "Room Code"
+  },
+  {
+   "fieldname": "room_name",
+   "fieldtype": "Data",
+   "label": "Room Name"
+  },
+  {
+   "fieldname": "building",
+   "fieldtype": "Data",
+   "label": "Building"
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "label": "Floor"
+  },
+  {
+   "fieldname": "seat_number",
+   "fieldtype": "Data",
+   "label": "Seat Number"
+  },
+  {
+   "fieldname": "allocation_status",
+   "fieldtype": "Select",
+   "label": "Allocation Status",
+   "options": "Not Allocated\nPreferences Assigned\nAllocated\nReallocated\nCancelled\nRejected"
+  },
+  {
+   "fieldname": "allocation_date",
+   "fieldtype": "Datetime",
+   "label": "Allocation Date"
+  },
+  {
+   "fieldname": "allocated_by",
+   "fieldtype": "Link",
+   "label": "Allocated By",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval:doc.allocation_status == 'Allocated'",
+   "fieldname": "download_admit_card",
+   "fieldtype": "Button",
+   "label": "Download Admit Card"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_rescheduled",
+   "fieldtype": "Check",
+   "label": "Is Rescheduled"
+  },
+  {
+   "fieldname": "reschedule_reason",
+   "fieldtype": "Small Text",
+   "label": "Reschedule Reason"
+  },
+  {
+   "fieldname": "rescheduled_on",
+   "fieldtype": "Datetime",
+   "label": "Rescheduled On"
+  },
+  {
+   "fieldname": "rescheduled_by",
+   "fieldtype": "Link",
+   "label": "Rescheduled By",
+   "options": "User"
+  },
+  {
+   "fieldname": "tab_communication",
+   "fieldtype": "Tab Break",
+   "label": "Communication"
+  },
+  {
+   "default": "0",
+   "fieldname": "admit_card_generated",
+   "fieldtype": "Check",
+   "label": "Admit Card Generated"
+  },
+  {
+   "fieldname": "admit_card_number",
+   "fieldtype": "Data",
+   "label": "Admit Card Number"
+  },
+  {
+   "fieldname": "tab_result",
+   "fieldtype": "Tab Break",
+   "label": "Result"
+  },
+  {
+   "fieldname": "attendance_marked_on",
+   "fieldtype": "Datetime",
+   "label": "Attendance Marked On"
+  },
+  {
+   "fieldname": "result_status",
+   "fieldtype": "Select",
+   "label": "Result Status",
+   "options": "\nPass\nFail\nAbsent\nWithheld\nDisqualified"
+  },
+  {
+   "default": "0",
+   "fieldname": "result_published",
+   "fieldtype": "Check",
+   "label": "Result Published"
+  },
+  {
+   "fetch_from": "applicant.candidate_photo",
+   "fieldname": "profile",
+   "fieldtype": "Attach Image",
+   "label": "Profile "
+  },
+  {
+   "fetch_from": "applicant.date_of_birth",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "section_break_hynq",
+   "fieldtype": "Section Break",
+   "label": "Guardian Details"
+  },
+  {
+   "fetch_from": "applicant.mother_name",
+   "fieldname": "mother_name",
+   "fieldtype": "Data",
+   "label": "Mother Name "
+  },
+  {
+   "fetch_from": "applicant.father_name",
+   "fieldname": "father_name",
+   "fieldtype": "Data",
+   "label": "Father Name "
+  },
+  {
+   "fetch_from": "applicant.father_mobile",
+   "fieldname": "father_mobile_number",
+   "fieldtype": "Data",
+   "label": "Father Mobile Number "
+  },
+  {
+   "fieldname": "tab_9_tab",
+   "fieldtype": "Tab Break",
+   "label": "Reschedule Seat Allocation "
+  },
+  {
+   "fieldname": "reschedule_seat_allocation_section",
+   "fieldtype": "Section Break",
+   "label": "Reschedule Seat Allocation "
+  },
+  {
+   "fieldname": "re_entrance_test_provider",
+   "fieldtype": "Link",
+   "label": "Entrance Test Provider ",
+   "options": "Entrance Test Provider"
+  },
+  {
+   "fieldname": "re_assigned_preferences",
+   "fieldtype": "Table",
+   "label": "Assigned Preferences (Admin)",
+   "options": "Entrance Test Preference Assigned"
+  },
+  {
+   "fieldname": "re_center_name",
+   "fieldtype": "Data",
+   "label": "Center Name"
+  },
+  {
+   "fieldname": "re_center_address",
+   "fieldtype": "Small Text",
+   "label": "Center Address"
+  },
+  {
+   "fieldname": "re_preference_order",
+   "fieldtype": "Int",
+   "label": "Preference Order"
+  },
+  {
+   "fieldname": "re_room_code",
+   "fieldtype": "Data",
+   "label": "Room Code"
+  },
+  {
+   "fieldname": "re_room_name",
+   "fieldtype": "Data",
+   "label": "Room Name"
+  },
+  {
+   "fieldname": "re_building",
+   "fieldtype": "Data",
+   "label": "Building"
+  },
+  {
+   "fieldname": "re_floor",
+   "fieldtype": "Data",
+   "label": "Floor"
+  },
+  {
+   "fieldname": "re_seat_number",
+   "fieldtype": "Data",
+   "label": "Seat Number"
+  },
+  {
+   "fieldname": "re_allocation_status",
+   "fieldtype": "Select",
+   "label": "Allocation Status",
+   "options": "Not Allocated\nPreferences Assigned\nAllocated\nReallocated\nCancelled\nRejected"
+  },
+  {
+   "fieldname": "re_allocation_date",
+   "fieldtype": "Datetime",
+   "label": "Allocation Date"
+  },
+  {
+   "fieldname": "re_allocated_by",
+   "fieldtype": "Link",
+   "label": "Allocated By",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_break_axgb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "re_download_admit_card",
+   "fieldtype": "Button",
+   "label": "Download Admit Card"
+  },
+  {
+   "default": "Scheduled",
+   "fieldname": "entrance_test_status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Entrance Test Status",
+   "options": "\nAttended\nAbsent\nRescheduled\nNot Scheduled\nScheduled"
+  },
+  {
+   "fieldname": "entrance_test_name",
+   "fieldtype": "Link",
+   "label": "Entrance Test Name",
+   "options": "Entrance Test"
+  },
+  {
+   "fieldname": "re_entrance_test_name",
+   "fieldtype": "Link",
+   "label": "Entrance Test Name",
+   "options": "Entrance Test"
+  },
+  {
+   "fieldname": "total_score",
+   "fieldtype": "Int",
+   "label": "Total Score",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "score_obtained",
+   "fieldtype": "Int",
+   "label": "Score Obtained",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "entrance_test_rank",
+   "fieldtype": "Int",
+   "label": "Entrance Test Rank",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Table",
+   "label": "Category",
+   "options": "Applicant Category"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-05 12:13:59.618966",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Entrance Test Seat Allocation",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Provider",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
 }

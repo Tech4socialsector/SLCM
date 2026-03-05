@@ -211,7 +211,7 @@ function fetch_absent_applicants(d) {
         args: {
             doctype: 'Interview Seat Allocation',
             filters: filters,
-            fields: ['name', 'candidate_name', 'applicant', 'program', 'reservation_category'],
+            fields: ['name', 'candidate_name', 'applicant', 'program'],
             limit_page_length: 50
         },
         callback: function (r) {
@@ -232,7 +232,6 @@ function fetch_absent_applicants(d) {
                                 <th>Candidate Name</th>
                                 <th>Applicant ID</th>
                                 <th>Program</th>
-                                <th>Category</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -245,7 +244,6 @@ function fetch_absent_applicants(d) {
                             <td>${app.candidate_name || ''}</td>
                             <td>${app.applicant || ''}</td>
                             <td>${app.program || ''}</td>
-                            <td>${app.reservation_category || ''}</td>
                         </tr>`;
                 });
             } else {

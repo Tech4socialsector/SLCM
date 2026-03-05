@@ -133,7 +133,6 @@ function _show_slot_dialog(frm, applicants, staff_list) {
             <td><b>${row.candidate_name || "Unknown"}</b></td>
             <td>${row.applicant_id || "-"}</td>
             <td>${row.program || "-"}</td>
-            <td>${row.reservation_category || "-"}</td>
             <td>
                 <span style="font-size:11px; padding:2px 7px; border-radius:10px;
                              background:${row.source_type === "Entrance Test" ? "#e3f2fd" : "#e8f5e9"};
@@ -212,7 +211,6 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                                     <th>Candidate Name</th>
                                     <th>Applicant ID</th>
                                     <th>Program</th>
-                                    <th>Category</th>
                                     <th>Source</th>
                                     <th style="text-align:right;">ET Score</th>
                                 </tr>

@@ -21,6 +21,48 @@ frappe.ui.form.on("Interview Seat Allocation", {
             _apply_applicant_permissions(frm);
         }
     },
+
+    // ── Applicant field change ───────────────────────────────────────────────
+    applicant(frm) {
+        if (!frm.doc.applicant) {
+            frm.set_df_property("category", "hidden", 1);
+            return;
+        }
+
+        // Fetch all needed Applicant information including categories
+        frappe.call({
+            method: "frappe.client.get",
+            args: { doctype: "Applicant", name: frm.doc.applicant },
+            callback: function (r) {
+                if (!r.message) return;
+                const app = r.message;
+
+                // Populate standard fields
+                frm.set_value("candidate_name", app.candidate_name);
+                frm.set_value("program", app.program);
+                frm.set_value("email", app.email);
+                frm.set_value("gender", app.gender);
+
+                // Source tracking fields (if present on the form)
+                if (app.exempts_entrance_test !== undefined) {
+                    frm.set_value("exempts_entrance_test", app.exempts_entrance_test);
+                }
+                if (app.exempts_interview !== undefined) {
+                    frm.set_value("exempts_interview", app.exempts_interview);
+                }
+
+                // Show the category table and populate it from Applicant's categories
+                frm.clear_table("category");
+                if (app.categories && app.categories.length) {
+                    app.categories.forEach(row => {
+                        frm.add_child("category", { category: row.category });
+                    });
+                }
+                frm.refresh_field("category");
+                frm.set_df_property("category", "hidden", 0);
+            }
+        });
+    },
 });
 
 function _apply_applicant_permissions(frm) {
@@ -31,12 +73,15 @@ function _apply_applicant_permissions(frm) {
     ];
     ref_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
 
-    // Applicant info read-only
+    // Applicant info read-only (including the category table)
     const info_fields = [
-        "applicant", "candidate_name", "program", "reservation_category",
+        "applicant", "candidate_name", "program",
         "email", "gender"
     ];
     info_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
+
+    // Make the category child table read-only for applicants
+    frm.set_df_property("category", "read_only", 1);
 
     // Slot section read-only except interview_staff_member until assigned
     const slot_readonly = [
