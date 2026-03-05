@@ -75,7 +75,6 @@ function _show_allocation_dialog(frm, applicants, providers) {
             <td><b>${row.candidate_name || "Unknown"}</b></td>
             <td>${row.applicant_id || "-"}</td>
             <td>${row.program || "-"}</td>
-            <td>${row.reservation_category || "-"}</td>
         </tr>
     `).join("");
 
@@ -154,7 +153,6 @@ function _show_allocation_dialog(frm, applicants, providers) {
                                     <th>Candidate Name</th>
                                     <th>Applicant ID</th>
                                     <th>Program</th>
-                                    <th>Category</th>
                                 </tr>
                             </thead>
                             <tbody>${rows_html}</tbody>

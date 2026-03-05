@@ -17,7 +17,30 @@ class ApplicantOfferLetter {
 
 	init() {
 		this.fetch_data();
+		this.setup_premium_loader();
 	}
+
+	setup_premium_loader() {
+		let me = this;
+		this.show_loader = (message) => {
+			if ($('.premium-loader-overlay').length) return;
+			const loader_html = `
+				<div class="premium-loader-overlay" id="payment-loader">
+					<div class="premium-loader-spinner"></div>
+					<div class="premium-loader-text">${message || __('Processing...')}</div>
+					<div class="premium-loader-subtext">${__('Please do not refresh or close this window.')}</div>
+				</div>
+			`;
+			$('body').append(loader_html);
+		};
+
+		this.hide_loader = () => {
+			$('.premium-loader-overlay').fadeOut(400, function () {
+				$(this).remove();
+			});
+		};
+	}
+
 
 	fetch_data() {
 		let me = this;
@@ -375,14 +398,14 @@ class ApplicantOfferLetter {
 		frappe.confirm(
 			__('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions and your other offer letters will be rejected.'),
 			() => {
-				frappe.dom.freeze(__('Processing Acceptance...'));
+				me.show_loader(__('Processing Acceptance...'));
 				frappe.call({
 					method: 'slcm.api.service.offer_service.accept_offer',
 					args: {
 						offer_name: me.data.offer.name
 					},
 					callback: function (r) {
-						frappe.dom.unfreeze();
+						me.hide_loader();
 						if (r.message) {
 							frappe.show_alert({
 								message: __('Congratulations! You have successfully accepted the admission offer.'),
@@ -422,7 +445,7 @@ class ApplicantOfferLetter {
 				reqd: 1
 			}
 		], (values) => {
-			frappe.dom.freeze(__('Processing Rejection...'));
+			me.show_loader(__('Processing Rejection...'));
 			frappe.call({
 				method: 'slcm.api.service.offer_service.reject_offer',
 				args: {
@@ -430,7 +453,7 @@ class ApplicantOfferLetter {
 					reason: values.reason
 				},
 				callback: function (r) {
-					frappe.dom.unfreeze();
+					me.hide_loader();
 					if (r.message) {
 						frappe.show_alert({
 							message: __('You have rejected the admission offer.'),
@@ -508,7 +531,7 @@ class ApplicantOfferLetter {
 
 	initiate_razorpay_payment(offer_name) {
 		let me = this;
-		frappe.dom.freeze(__('Launching Secure Payment Gateway...'));
+		me.show_loader(__('Launching Secure Payment Gateway...'));
 
 		frappe.call({
 			method: "slcm.api.service.offer_service.create_offer_razorpay_order",
@@ -516,13 +539,13 @@ class ApplicantOfferLetter {
 				offer_name: offer_name
 			},
 			callback: function (r) {
-				frappe.dom.unfreeze();
+				me.hide_loader();
 				if (r.message) {
 					me.open_razorpay_modal(r.message, offer_name);
 				}
 			},
 			error: function () {
-				frappe.dom.unfreeze();
+				me.hide_loader();
 			}
 		});
 	}
@@ -555,10 +578,9 @@ class ApplicantOfferLetter {
 		};
 
 		if (typeof Razorpay === 'undefined') {
-			frappe.dom.freeze(__('Loading Payment Securely...'));
 			$.getScript('https://checkout.razorpay.com/v1/checkout.js')
 				.done(function () {
-					frappe.dom.unfreeze();
+					me.hide_loader();
 					const rzp = new Razorpay(options);
 					rzp.on('payment.failed', function (response) {
 						me.log_payment_failure(offer_name, data.order_id, response.error);
@@ -566,7 +588,7 @@ class ApplicantOfferLetter {
 					rzp.open();
 				})
 				.fail(function (jqxhr, settings, exception) {
-					frappe.dom.unfreeze();
+					me.hide_loader();
 					console.error("Razorpay SDK load failed:", exception);
 
 					if (retry_count < 2) {
@@ -606,7 +628,7 @@ class ApplicantOfferLetter {
 
 	verify_razorpay_payment(response, order_id, offer_name) {
 		let me = this;
-		frappe.dom.freeze(__('Verifying Payment Status. Please wait...'));
+		me.show_loader(__('Verifying Payment Status. Please wait...'));
 
 		frappe.call({
 			method: "slcm.api.service.offer_service.verify_offer_payment",
@@ -617,7 +639,7 @@ class ApplicantOfferLetter {
 				offer_name: offer_name
 			},
 			callback: function (r) {
-				frappe.dom.unfreeze();
+				me.hide_loader();
 				if (r.message && r.message.status === 'success') {
 					frappe.show_alert({
 						message: __('Payment Successful! Congratulations.'),
@@ -633,7 +655,7 @@ class ApplicantOfferLetter {
 				}
 			},
 			error: function () {
-				frappe.dom.unfreeze();
+				me.hide_loader();
 			}
 		});
 	}

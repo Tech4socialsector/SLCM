@@ -125,3 +125,56 @@
         padding: 0 !important;
     }
 }
+
+/* Premium Loader Transition */
+.premium-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 1;
+    transition: opacity 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.premium-loader-spinner {
+    width: 80px;
+    height: 80px;
+    border: 5px solid rgba(0, 0, 0, 0.05); /* Lighter border */
+    border-top: 5px solid #1a73e8; /* Google Blue */
+    border-radius: 50%;
+    animation: premium-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Soft glow */
+}
+
+@keyframes premium-spin {
+    to { transform: rotate(360deg); }
+}
+
+.premium-loader-text {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 500;
+    color: #3c4043;
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+}
+
+.premium-loader-subtext {
+    margin-top: 8px;
+    color: #70757a;
+    font-size: 0.9rem;
+}
+
+@media print {
+    .premium-loader-overlay {
+        display: none !important;
+    }
+}

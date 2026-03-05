@@ -134,6 +134,45 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
     }
   },
 
+  applicant: function (frm) {
+    if (!frm.doc.applicant) {
+      frm.set_df_property("category", "hidden", 1);
+      return;
+    }
+
+    // Fetch all needed Applicant information including categories
+    frappe.call({
+      method: "frappe.client.get",
+      args: { doctype: "Applicant", name: frm.doc.applicant },
+      callback: function (r) {
+        if (!r.message) return;
+        const app = r.message;
+
+        // Populate standard fields
+        frm.set_value("candidate_name", app.candidate_name);
+        frm.set_value("program", app.program);
+        frm.set_value("email", app.email);
+        frm.set_value("gender", app.gender);
+        frm.set_value("date_of_birth", app.date_of_birth);
+        frm.set_value("mother_name", app.mother_name);
+        frm.set_value("father_name", app.father_name);
+        frm.set_value("father_mobile_number", app.father_mobile);
+        frm.set_value("exempts_entrance_test", app.exempts_entrance_test);
+        frm.set_value("exempts_interview", app.exempts_interview);
+
+        // Show the category table and populate it
+        frm.clear_table("category");
+        if (app.categories && app.categories.length) {
+          app.categories.forEach(row => {
+            frm.add_child("category", { category: row.category });
+          });
+        }
+        frm.refresh_field("category");
+        frm.set_df_property("category", "hidden", 0);
+      }
+    });
+  },
+
   before_save: function (frm) {
     // Initial Allocation Confirmation
     if (frm.doc.entrance_test_provider && frm.doc.allocation_status === "Not Allocated") {
@@ -216,7 +255,7 @@ function _apply_applicant_permissions(frm) {
 
   // ── 2. tab_applicant_info — fully read-only ───────────────
   const applicant_info_fields = [
-    "applicant", "candidate_name", "program", "reservation_category",
+    "applicant", "candidate_name", "program", "category",
     "email", "gender", "date_of_birth", "section_break_hynq",
     "mother_name", "father_name", "father_mobile_number"
   ];
@@ -820,11 +859,6 @@ body {
           <td class="lb">Gender</td>
           <td class="sp">:</td>
           <td class="vl">${val(doc.gender)}</td>
-        </tr>
-        <tr>
-          <td class="lb">Category / Reservation</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(doc.reservation_category)}</td>
         </tr>
         <tr>
           <td class="lb">Programme Applied</td>

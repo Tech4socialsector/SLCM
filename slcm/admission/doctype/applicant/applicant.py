@@ -62,17 +62,25 @@ class Applicant(Document):
     #             )
 
     def validate_reservation_documents(self):
-        if self.reservation_category == "EWS" and not self.ews_certificate:
+        if self.ews == "Yes" and not self.ews_certificate:
             frappe.throw(
                 "EWS Certificate is mandatory for EWS category.",
                 title="Missing Document"
             )
-        if self.reservation_category in ["SC", "ST", "OBC"] and not self.caste_certificate:
+        
+        caste_categories = {"SC", "ST", "OBC", "OBC-NCL"}
+        applicant_caste_categories = [
+            row.category for row in (self.categories or [])
+            if row.category in caste_categories
+        ]
+        
+        if applicant_caste_categories and not self.caste_certificate:
             frappe.throw(
-                f"Caste Certificate is mandatory for {self.reservation_category} category.",
+                f"Caste Certificate is mandatory for {', '.join(applicant_caste_categories)} category.",
                 title="Missing Document"
             )
-        if self.reservation_category == "PwD" and not self.pwd_certificate:
+            
+        if self.pwd == "Yes" and not self.pwd_certificate:
             frappe.throw(
                 "PwD Certificate is mandatory for PwD category.",
                 title="Missing Document"

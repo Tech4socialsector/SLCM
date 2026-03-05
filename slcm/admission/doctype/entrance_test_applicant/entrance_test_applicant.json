@@ -1,107 +1,100 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "creation": "2026-02-22 12:30:24.220148",
-    "doctype": "DocType",
-    "editable_grid": 1,
-    "engine": "InnoDB",
-    "field_order": [
-        "applicant_id",
-        "candidate_name",
-        "program",
-        "program_level",
-        "reservation_category",
-        "email",
-        "gender",
-        "exempts_entrance_test",
-        "exempts_interview",
-        "allocation_status"
-    ],
-    "fields": [
-        {
-            "fieldname": "program",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "label": "Program",
-            "options": "Program"
-        },
-        {
-            "fieldname": "program_level",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Program Level",
-            "options": "UG\nPG\nResearch Course"
-        },
-        {
-            "fetch_from": "applicant.candidate_name",
-            "fieldname": "candidate_name",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Candidate Name"
-        },
-        {
-            "fieldname": "applicant_id",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "label": "Applicant ID",
-            "options": "Applicant"
-        },
-        {
-            "fieldname": "email",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Email"
-        },
-        {
-            "fieldname": "gender",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Gender"
-        },
-        {
-            "fieldname": "reservation_category",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Category"
-        },
-        {
-            "default": "0",
-            "fieldname": "exempts_entrance_test",
-            "fieldtype": "Check",
-            "in_list_view": 1,
-            "label": "Exempts Entrance Test",
-            "read_only": 1
-        },
-        {
-            "default": "0",
-            "fieldname": "exempts_interview",
-            "fieldtype": "Check",
-            "in_list_view": 1,
-            "label": "Exempts Interview",
-            "read_only": 1
-        },
-        {
-            "default": "Not Allocated",
-            "fieldname": "allocation_status",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Allocation Status",
-            "options": "Not Allocated\nAllocated\nPreferences Assigned"
-        }
-    ],
-    "grid_page_length": 50,
-    "index_web_pages_for_search": 1,
-    "istable": 1,
-    "links": [],
-    "modified": "2026-02-27 12:48:13.816231",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "Entrance Test Applicant",
-    "owner": "Administrator",
-    "permissions": [],
-    "row_format": "Dynamic",
-    "rows_threshold_for_grid_search": 20,
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-22 12:30:24.220148",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_id",
+  "candidate_name",
+  "program",
+  "program_level",
+  "email",
+  "gender",
+  "exempts_entrance_test",
+  "exempts_interview",
+  "allocation_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Program Level",
+   "options": "UG\nPG\nResearch Course"
+  },
+  {
+   "fetch_from": "applicant.candidate_name",
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Name"
+  },
+  {
+   "fieldname": "applicant_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Applicant ID",
+   "options": "Applicant"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Gender"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_entrance_test",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Exempts Entrance Test",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_interview",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Exempts Interview",
+   "read_only": 1
+  },
+  {
+   "default": "Not Allocated",
+   "fieldname": "allocation_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Allocation Status",
+   "options": "Not Allocated\nAllocated\nPreferences Assigned"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-05 12:10:52.357070",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Entrance Test Applicant",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
 }

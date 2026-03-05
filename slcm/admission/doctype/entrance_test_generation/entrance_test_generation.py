@@ -40,7 +40,6 @@ class EntranceTestGeneration(Document):
                 app.candidate_name,
                 app.email,
                 app.gender,
-                app.reservation_category,
                 app.program,
                 app.program_level,
                 COALESCE(ee.exempts_interview, 0) AS exempts_interview
@@ -97,7 +96,6 @@ class EntranceTestGeneration(Document):
                 "candidate_name": app.candidate_name or "Unknown",
                 "program": app.program,
                 "program_level": app.program_level,
-                "reservation_category": app.reservation_category,
                 "email": app.email,
                 "gender": app.gender,
                 "exempts_entrance_test": 0,  # These students are NOT exempt from entrance test

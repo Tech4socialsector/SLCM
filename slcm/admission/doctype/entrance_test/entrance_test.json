@@ -1,112 +1,119 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "field:entrance_test_name",
- "creation": "2026-02-28 12:39:18.702886",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "entrance_test_name",
-  "campus",
-  "academic_year",
-  "admission_cycle",
-  "valid_from",
-  "valid_to",
-  "is_active"
- ],
- "fields": [
-  {
-   "fieldname": "entrance_test_name",
-   "fieldtype": "Data",
-   "label": "Entrance Test Name ",
-   "unique": 1
-  },
-  {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "label": "Campus",
-   "options": "Campus"
-  },
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "label": "Academic Year",
-   "options": "Academic Year"
-  },
-  {
-   "fieldname": "admission_cycle",
-   "fieldtype": "Link",
-   "label": "Admission Cycle",
-   "options": "Admission Cycle"
-  },
-  {
-   "fieldname": "valid_from",
-   "fieldtype": "Date",
-   "label": "Valid From "
-  },
-  {
-   "fieldname": "valid_to",
-   "fieldtype": "Date",
-   "label": "Valid To"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "label": "Is Active "
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2026-03-02 14:51:37.401647",
- "modified_by": "Administrator",
- "module": "Admission",
- "name": "Entrance Test",
- "naming_rule": "By fieldname",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Entrance Test Admin",
-   "select": 1,
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Entrance Test Provider",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "rows_threshold_for_grid_search": 20,
- "sort_field": "creation",
- "sort_order": "DESC",
- "states": []
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "field:entrance_test_name",
+    "creation": "2026-02-28 12:39:18.702886",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "entrance_test_name",
+        "campus",
+        "academic_year",
+        "admission_cycle",
+        "valid_from",
+        "valid_to",
+        "is_active",
+        "category"
+    ],
+    "fields": [
+        {
+            "fieldname": "entrance_test_name",
+            "fieldtype": "Data",
+            "label": "Entrance Test Name ",
+            "unique": 1
+        },
+        {
+            "fieldname": "campus",
+            "fieldtype": "Link",
+            "label": "Campus",
+            "options": "Campus"
+        },
+        {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "label": "Academic Year",
+            "options": "Academic Year"
+        },
+        {
+            "fieldname": "admission_cycle",
+            "fieldtype": "Link",
+            "label": "Admission Cycle",
+            "options": "Admission Cycle"
+        },
+        {
+            "fieldname": "valid_from",
+            "fieldtype": "Date",
+            "label": "Valid From "
+        },
+        {
+            "fieldname": "valid_to",
+            "fieldtype": "Date",
+            "label": "Valid To"
+        },
+        {
+            "default": "0",
+            "fieldname": "is_active",
+            "fieldtype": "Check",
+            "label": "Is Active "
+        },
+        {
+            "fieldname": "category",
+            "fieldtype": "Table",
+            "label": "Category",
+            "options": "Applicant Category"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-03-02 14:51:37.401647",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Entrance Test",
+    "naming_rule": "By fieldname",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Entrance Test Admin",
+            "select": 1,
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Entrance Test Provider",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "rows_threshold_for_grid_search": 20,
+    "sort_field": "creation",
+    "sort_order": "DESC",
+    "states": []
 }
