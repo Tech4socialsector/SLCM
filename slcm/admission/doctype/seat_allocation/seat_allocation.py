@@ -3,6 +3,49 @@ import math
 from frappe.model.document import Document
 from frappe.utils import now, get_link_to_form
 
+def get_applicant_categories(applicant_id):
+    eligibility = frappe.db.get_value(
+        "Eligibility Result",
+        {"applicant_id": applicant_id},
+        "name"
+    )
+
+    if not eligibility:
+        return []
+
+    categories = frappe.db.get_all(
+        "Applicant Category",
+        filters={"parent": eligibility, "parenttype": "Eligibility Result"},
+        pluck="category"
+    )
+
+    return categories
+
+def get_category_priority(admission_cycle, campus, program):
+    program_row = frappe.db.get_value("Admission Cycle Program", {
+        "parent": admission_cycle,
+        "campus": campus,
+        "program": program
+    }, ["name", "reservation_policy"], as_dict=True)
+
+    policy_name = None
+    if program_row:
+        policy_name = program_row.reservation_policy
+
+    if not policy_name:
+        policy_name = frappe.db.get_value("Program Reservation Policy", {
+            "admission_cycle": admission_cycle,
+            "program": program,
+            "status": ["!=", "Locked"]
+        }, "name")
+
+    priority_map = {}
+    if policy_name:
+        policy = frappe.get_doc("Program Reservation Policy", policy_name)
+        for row in policy.categories:
+            priority_map[row.category_name] = int(row.priority or 999)
+
+    return priority_map
 
 class SeatAllocation(Document):
 
@@ -57,7 +100,7 @@ class SeatAllocation(Document):
                 log_seat_allocation_action(
                     seat_allocation=self.name,
                     admission_cycle=self.admission_cycle,
-                    applicant=row.applicant,
+                    applicant=row.applicant_id,
                     program=row.program,
                     action_type="Manual Status Change",
                     old_value=old_status,
@@ -74,7 +117,7 @@ class SeatAllocation(Document):
                 if self.status == "Published":
                     from slcm.admission.notification_service import notify_status_change
                     notify_status_change(
-                        applicant=row.applicant,
+                        applicant=row.applicant_id,
                         program=row.program,
                         old_status=old_status,
                         new_status=new_status,
@@ -167,15 +210,11 @@ class SeatAllocation(Document):
         self.selection_applicant = []
 
         for row in merit.merit_applicants:
-            app_id = row.applicant_id or row.applicant
             self.append("selection_applicant", {
-                "applicant": app_id,
+                "applicant_id": row.applicant_id,
                 "candidate_name": row.candidate_name,
-                "applicant_id": row.applicant_id or row.applicant,
                 "program": row.program,
-                "reservation_category": row.reservation_category,
                 "total_score": row.total_score,
-                "category_rank": row.category_rank,
                 "overall_rank": row.overall_rank,
                 "selection_status": "Draft"
             })
@@ -265,37 +304,37 @@ class SeatAllocation(Document):
             # PHASE 2: RESERVED SELECTION
             # -----------------------------------
             reserved_quotas = quotas.get("Reserved", {})
+            priority_map = get_category_priority(self.admission_cycle, self.campus, program)
             
             # Store waitlist quotas to process later
             category_waitlist_quotas = {}
-
             for category, category_seats in reserved_quotas.items():
                 category_waitlist_quotas[category] = math.ceil(category_seats * waitlist_factor)
 
-                cat_doc = frappe.get_cached_value("Admission Category", category, ["name", "category_code", "category_name"], as_dict=1)
-                if not cat_doc:
-                    cat_name = frappe.db.get_value("Admission Category", {"category_name": category}, "name") or \
-                               frappe.db.get_value("Admission Category", {"category_code": category}, "name")
-                    if cat_name:
-                        cat_doc = frappe.get_cached_value("Admission Category", cat_name, ["name", "category_code", "category_name"], as_dict=1)
-
-                match_strings = [category]
-                if cat_doc:
-                    match_strings.extend([cat_doc.name, cat_doc.category_code, cat_doc.category_name])
+            # Allocate reserved seats
+            for applicant in remaining_pool[:]:
+                applicant_categories = get_applicant_categories(applicant.applicant_id)
                 
-                match_strings = list(set([s for s in match_strings if s]))
+                # Filter categories that have quotas
+                valid_categories = [c for c in applicant_categories if c in reserved_quotas]
 
-                category_pool = [r for r in remaining_pool if (r.reservation_category or "General") in match_strings]
+                # Sort by category priority (lowest number = highest priority)
+                valid_categories = sorted(
+                    valid_categories,
+                    key=lambda c: priority_map.get(c, 999)
+                )
 
-                selected_reserved = category_pool[:category_seats]
-
-                for row in selected_reserved:
-                    row.selection_status = "Selected"
-                    row.allocation_type = "Reserved"
-                    total_selected += 1
-
-                # Only remaining candidates NOT selected move forward
-                remaining_pool = [r for r in remaining_pool if r not in selected_reserved]
+                for category in valid_categories:
+                    if reserved_quotas[category] > 0:
+                        applicant.selection_status = "Selected"
+                        applicant.allocation_type = "Reserved"
+                        applicant.allocated_category = category
+                        
+                        reserved_quotas[category] -= 1
+                        total_selected += 1
+                        
+                        remaining_pool.remove(applicant)
+                        break
 
             # -----------------------------------
             # PHASE 3: WAITLISTS (OPEN THEN RESERVED)
@@ -311,34 +350,27 @@ class SeatAllocation(Document):
                 total_waitlisted += 1
                 
             # 2. Waitlist Reserved (from category specific pools)
-            for category, cat_waitlist_cap in category_waitlist_quotas.items():
-                if cat_waitlist_cap == 0:
-                    continue
-                    
-                cat_doc = frappe.get_cached_value("Admission Category", category, ["name", "category_code", "category_name"], as_dict=1)
-                if not cat_doc:
-                    cat_name = frappe.db.get_value("Admission Category", {"category_name": category}, "name") or \
-                               frappe.db.get_value("Admission Category", {"category_code": category}, "name")
-                    if cat_name:
-                        cat_doc = frappe.get_cached_value("Admission Category", cat_name, ["name", "category_code", "category_name"], as_dict=1)
+            for applicant in remaining_pool[:]:
+                applicant_categories = get_applicant_categories(applicant.applicant_id)
 
-                match_strings = [category]
-                if cat_doc:
-                    match_strings.extend([cat_doc.name, cat_doc.category_code, cat_doc.category_name])
-                
-                match_strings = list(set([s for s in match_strings if s]))
+                valid_categories = [c for c in applicant_categories if c in category_waitlist_quotas]
 
-                # Re-fetch category pool from the updated remaining pool
-                waitlist_pool = [r for r in remaining_pool if (r.reservation_category or "General") in match_strings]
-                waitlist_reserved = waitlist_pool[:cat_waitlist_cap]
+                valid_categories = sorted(
+                    valid_categories,
+                    key=lambda c: priority_map.get(c, 999)
+                )
 
-                for row in waitlist_reserved:
-                    row.selection_status = "Waitlisted"
-                    row.allocation_type = "Reserved"
-                    total_waitlisted += 1
-
-                # Only candidates NOT waitlisted move to rejections
-                remaining_pool = [r for r in remaining_pool if r not in waitlist_reserved]
+                for category in valid_categories:
+                    if category_waitlist_quotas[category] > 0:
+                        applicant.selection_status = "Waitlisted"
+                        applicant.allocation_type = "Reserved"
+                        applicant.allocated_category = category
+                        
+                        category_waitlist_quotas[category] -= 1
+                        total_waitlisted += 1
+                        
+                        remaining_pool.remove(applicant)
+                        break
 
             # -----------------------------------
             # PHASE 4: REJECT REMAINING
@@ -353,15 +385,16 @@ class SeatAllocation(Document):
         # -------------------------
         from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
         for row in self.selection_applicant:
+             category_used_str = f" Category Used: {row.allocated_category}" if row.allocated_category else ""
              log_seat_allocation_action(
                 seat_allocation=self.name,
                 admission_cycle=self.admission_cycle,
-                applicant=row.applicant,
+                applicant=row.applicant_id,
                 program=row.program,
                 action_type="Seat Allocated",
                 old_value="Draft",
                 new_value=row.selection_status,
-                remarks=f"Initial automatic allocation as {row.allocation_type or 'N/A'}"
+                remarks=f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
             )
 
         self.total_selected = total_selected

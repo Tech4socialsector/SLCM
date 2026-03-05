@@ -6,7 +6,21 @@ frappe.ui.form.on("Scholarship Application", {
         frm.add_fetch("applicant_id", "candidate_name", "applicant_name");
     },
     refresh(frm) {
-        frm.trigger("scholarship_scheme");
+        frm.trigger("scholarship_scheme_ui");
+        
+        if (frm.doc.status === "Approved") {
+            frm.add_custom_button(__("Sync Fee Assignment"), () => {
+                frappe.call({
+                    method: "slcm.admission.doctype.scholarship_application.scholarship_application.sync_fee_assignment_manually",
+                    args: {
+                        docname: frm.doc.name
+                    },
+                    callback: (r) => {
+                        frm.reload_doc();
+                    }
+                });
+            }).addClass("btn-primary");
+        }
     },
     applicant_id(frm) {
         if (frm.doc.applicant_id) {
@@ -21,6 +35,12 @@ frappe.ui.form.on("Scholarship Application", {
     program(frm) {
         frm.trigger("fetch_original_fee");
     },
+    campus(frm) {
+        frm.trigger("fetch_original_fee");
+    },
+    admission_cycle(frm) {
+        frm.trigger("fetch_original_fee");
+    },
     fetch_original_fee(frm) {
         if (frm.doc.applicant_id && frm.doc.program) {
             frappe.call({
@@ -32,25 +52,45 @@ frappe.ui.form.on("Scholarship Application", {
                     cycle: frm.doc.admission_cycle
                 },
                 callback: function (r) {
-                    if (r.message) {
+                    if (r.message !== undefined) {
                         frm.set_value("original_fee_amount", r.message);
+                        frm.trigger("calculate_benefit");
                     }
                 }
             });
         }
     },
     scholarship_scheme(frm) {
+        frm.trigger("scholarship_scheme_ui");
+        frm.trigger("calculate_benefit");
+    },
+    scholarship_scheme_ui(frm) {
         if (frm.doc.scholarship_scheme) {
-            frappe.db.get_value("Scholarship Scheme", frm.doc.scholarship_scheme,
-                ["scheme_type", "income_certificate_required"], (r) => {
-                    if (r) {
-                        const is_need = r.scheme_type === "Need" || r.income_certificate_required;
-                        frm.toggle_display("family_income", is_need);
-                        frm.toggle_reqd("family_income", is_need);
-                        frm.toggle_display("income_certificate", is_need);
-                        frm.toggle_reqd("income_certificate", is_need);
+            frm.toggle_display("family_income", true);
+            frm.toggle_reqd("family_income", true);
+            frm.toggle_display("income_certificate", true);
+            frm.toggle_reqd("income_certificate", true);
+        }
+    },
+    original_fee_amount(frm) {
+        frm.trigger("calculate_benefit");
+    },
+    calculate_benefit(frm) {
+        if (frm.doc.scholarship_scheme && frm.doc.original_fee_amount) {
+            // We must pass the doc so server has all context (cycle, campus, program)
+            frappe.call({
+                method: "slcm.admission.doctype.scholarship_application.scholarship_application.get_calculated_benefit",
+                args: {
+                    doc: frm.doc
+                },
+                callback: function(res) {
+                    if (res.message) {
+                        frm.set_value("calculated_benefit", res.message.benefit);
+                        frm.set_value("final_fee_amount", res.message.final_fee);
+                        frm.refresh_fields(["calculated_benefit", "final_fee_amount"]);
                     }
-                });
+                }
+            });
         }
     }
 });

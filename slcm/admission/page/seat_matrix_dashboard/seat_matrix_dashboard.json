@@ -1,0 +1,22 @@
+{
+ "creation": "2026-03-04 12:00:00",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "Admission",
+ "modified": "2026-03-04 12:00:00",
+ "modified_by": "Administrator",
+ "name": "seat-matrix-dashboard",
+ "owner": "Administrator",
+ "page_name": "seat-matrix-dashboard",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Admission Admin"
+  }
+ ],
+ "standard": "Yes",
+ "title": "Advanced Seat Matrix Dashboard"
+}

@@ -7,6 +7,7 @@ def get_data():
 		"transactions": [
 			{
 				"label": "Communications",
+				"fieldname": "applicant",
 				"items": ["Applicant Communication Log"]
 			},
 			{

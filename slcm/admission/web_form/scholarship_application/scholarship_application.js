@@ -1,4 +1,21 @@
 frappe.ready(function () {
+    // Inject CSS for mandatory field symbols
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .form-group.required label::after {
+            content: " *";
+            color: red;
+            font-weight: bold;
+        }
+        /* Alternative for some versions of Frappe web forms */
+        .reqd label::after {
+            content: " *";
+            color: red;
+            font-weight: bold;
+        }
+    `;
+    document.head.appendChild(style);
+
     // Both onload and after_load for maximum compatibility
     frappe.web_form.onload = function () {
         init_form();
@@ -13,6 +30,19 @@ frappe.ready(function () {
         window.scholarship_form_initialized = true;
 
         console.log("Scholarship Web Form Initialization. User:", frappe.session.user);
+
+        // Set default status for new applications
+        if (window.location.pathname.endsWith('/new')) {
+            frappe.web_form.set_value("status", "Submitted");
+
+            // Hide the workflow section and fields
+            frappe.web_form.set_df_property("section_workflow", "hidden", 1);
+            ["status", "reviewed_by", "approved_by", "approval_date", "rejection_reason"].forEach(f => {
+                frappe.web_form.set_df_property(f, "hidden", 1);
+            });
+        } else if (!frappe.web_form.get_value("status")) {
+            frappe.web_form.set_value("status", "Submitted");
+        }
 
         // Fetch applicant details on load
         frappe.call({
@@ -42,12 +72,25 @@ frappe.ready(function () {
                 }
             }
         });
+        refresh_mandatory_classes();
     }
 
     function set_fields_read_only(read_only) {
         const fields = ["applicant_id", "applicant_name", "admission_cycle", "campus", "program"];
         fields.forEach(f => {
             frappe.web_form.set_df_property(f, "read_only", read_only ? 1 : 0);
+        });
+        refresh_mandatory_classes();
+    }
+
+    function refresh_mandatory_classes() {
+        // Manually ensure the required class is on the form groups
+        ["family_income", "income_certificate"].forEach(f => {
+            const field = frappe.web_form.get_field(f);
+            if (field && field.$wrapper) {
+                field.$wrapper.addClass('required');
+                field.$wrapper.addClass('reqd');
+            }
         });
     }
 
@@ -75,6 +118,7 @@ frappe.ready(function () {
                         campus: r.campus,
                         admission_cycle: r.admission_cycle
                     });
+                    refresh_mandatory_classes();
                 }
             });
         }
@@ -124,15 +168,23 @@ frappe.ready(function () {
 
     frappe.web_form.on("scholarship_scheme", (field, value) => {
         if (value) {
-            frappe.db.get_value("Scholarship Scheme", value, ["scheme_type", "income_certificate_required"], (r) => {
-                if (r) {
-                    const is_need = r.scheme_type === "Need" || r.income_certificate_required;
-                    frappe.web_form.set_df_property("family_income", "hidden", !is_need);
-                    frappe.web_form.set_df_property("family_income", "reqd", is_need);
-                    frappe.web_form.set_df_property("income_certificate", "hidden", !is_need);
-                    frappe.web_form.set_df_property("income_certificate", "reqd", is_need);
-                }
-            });
+            frappe.web_form.set_df_property("family_income", "hidden", 0);
+            frappe.web_form.set_df_property("family_income", "reqd", 1);
+            frappe.web_form.set_df_property("income_certificate", "hidden", 0);
+            frappe.web_form.set_df_property("income_certificate", "reqd", 1);
         }
     });
+
+    frappe.web_form.validate = () => {
+        let data = frappe.web_form.get_values();
+        if (!data.family_income) {
+            frappe.msgprint(__("Family Income is mandatory"));
+            return false;
+        }
+        if (!data.income_certificate) {
+            frappe.msgprint(__("Income Certificate is mandatory"));
+            return false;
+        }
+        return true;
+    };
 });

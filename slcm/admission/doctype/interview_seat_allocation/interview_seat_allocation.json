@@ -50,7 +50,8 @@
   "interview_score",
   "interview_result_status",
   "rank",
-  "result_published"
+  "result_published",
+  "feedback"
  ],
  "fields": [
   {
@@ -380,7 +381,8 @@
    "read": 1,
    "report": 1,
    "role": "Applicant",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "email": 1,

@@ -12,6 +12,7 @@
   "column_core_2",
   "program",
   "category",
+  "is_active",
   "section_intake",
   "intake_limit",
   "column_intake_2",
@@ -65,6 +66,13 @@
    "options": "Admission Category"
   },
   {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
    "fieldname": "section_intake",
    "fieldtype": "Section Break",
    "label": "Intake Controls"
@@ -89,7 +97,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 18:43:14.613834",
+ "modified": "2026-03-05 10:00:00",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme Mapping",

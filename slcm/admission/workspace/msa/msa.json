@@ -213,15 +213,15 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "applicant-results",
+   "label": "seat-matrix-dashboard",
    "link_count": 0,
-   "link_to": "applicant-results",
+   "link_to": "seat-matrix-dashboard",
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-03-03 16:41:57.505441",
+ "modified": "2026-03-05 18:14:30.467695",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "MSA",

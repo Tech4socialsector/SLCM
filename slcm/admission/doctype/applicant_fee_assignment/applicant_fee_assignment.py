@@ -57,10 +57,10 @@ class ApplicantFeeAssignment(Document):
 			"applicant_id": self.applicant,
 			"admission_cycle": self.admission_cycle,
 			"status": "Approved"
-		}, ["name", "approved_amount", "calculated_benefit"], as_dict=True)
+		}, ["name", "calculated_benefit"], as_dict=True)
 
 		if scholarship:
-			benefit = flt(scholarship.approved_amount) or flt(scholarship.calculated_benefit)
+			benefit = flt(scholarship.calculated_benefit)
 			if benefit > 0:
 				found = False
 				for row in self.fee_components:

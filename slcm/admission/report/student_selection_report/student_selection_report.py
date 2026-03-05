@@ -31,8 +31,8 @@ def get_columns():
             "width": 150
         },
         {
-            "label": _("Category"),
-            "fieldname": "reservation_category",
+            "label": _("Allocated Category"),
+            "fieldname": "allocated_category",
             "fieldtype": "Link",
             "options": "Admission Category",
             "width": 120
@@ -96,7 +96,7 @@ def get_data(filters):
             app.candidate_name,
             app.applicant_id,
             app.program,
-            app.reservation_category,
+            app.allocated_category,
             app.selection_status,
             app.total_score,
             app.overall_rank

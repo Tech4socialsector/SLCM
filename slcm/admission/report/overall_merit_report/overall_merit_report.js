@@ -16,15 +16,10 @@ frappe.query_reports["Overall Merit Report"] = {
         },
         {
             "fieldname": "program",
-            "label": __("Program"),
+            "label": "Program",
             "fieldtype": "Link",
             "options": "Program"
-        },
-        {
-            "fieldname": "reservation_category",
-            "label": __("Category"),
-            "fieldtype": "Link",
-            "options": "Admission Category"
         }
+
     ]
 };

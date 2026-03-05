@@ -38,13 +38,6 @@ def get_columns():
             "width": 120
         },
         {
-            "label": "Category",
-            "fieldname": "reservation_category",
-            "fieldtype": "Link",
-            "options": "Admission Category",
-            "width": 100
-        },
-        {
             "label": "Total Score",
             "fieldname": "total_score",
             "fieldtype": "Float",
@@ -65,7 +58,6 @@ def get_data(filters):
             aa.applicant_id,
             mla.program,
             ml.campus,
-            mla.reservation_category,
             mla.total_score,
             mla.overall_rank
         FROM
@@ -77,7 +69,7 @@ def get_data(filters):
         JOIN
             `tabEligibility Result` aa
         ON
-            mla.applicant = aa.name
+            mla.applicant_id = aa.name
         WHERE
             ml.admission_cycle = %(cycle)s
             AND ml.campus = %(campus)s
@@ -86,17 +78,13 @@ def get_data(filters):
     if filters.get("program"):
         query += " AND mla.program = %(program)s"
         
-    if filters.get("reservation_category"):
-        query += " AND mla.reservation_category = %(reservation_category)s"
-        
     # Standardize tie-breaking with merit_service.py
     query += " ORDER BY mla.total_score DESC, mla.entrance_score DESC, mla.hsc_percentage DESC, mla.interview_score DESC"
     
     return frappe.db.sql(query, {
         "cycle": filters.get("admission_cycle"),
         "campus": filters.get("campus"),
-        "program": filters.get("program"),
-        "reservation_category": filters.get("reservation_category")
+        "program": filters.get("program")
     }, as_dict=True)
 
 def get_chart_data(columns, data, filters):

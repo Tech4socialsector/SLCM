@@ -8,9 +8,10 @@
   "section_break_basic",
   "cycle_name",
   "admission_year",
+  "approval_reference",
   "col_break_basic",
   "status",
-  "approval_reference",
+  "max_schemes_per_applicant",
   "section_break_programs",
   "programs",
   "section_break_stages",
@@ -63,7 +64,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Draft",
+   "default": "Active",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -71,6 +72,13 @@
    "label": "Status",
    "options": "Draft\nActive\nClosed",
    "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "Max number of scholarships an applicant can hold in this cycle (0 = no limit).",
+   "fieldname": "max_schemes_per_applicant",
+   "fieldtype": "Int",
+   "label": "Max Scholarship Schemes Per Applicant"
   },
   {
    "description": "Reference number for this cycle's approval",
@@ -201,7 +209,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-02 14:50:54.285448",
+ "modified": "2026-03-05 16:59:05.128203",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
