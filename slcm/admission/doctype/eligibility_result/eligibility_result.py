@@ -42,7 +42,7 @@ def get_applicant_data():
         if settings.is_merit_list:
             merit_entries = frappe.get_all("Merit List Applicant",
                 filters={"applicant": res.name},
-                fields=["total_score", "overall_rank", "category_rank", "program_rank", "status", "parent"]
+                fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
             )
             for m in merit_entries:
                 if m.parent:
@@ -51,7 +51,7 @@ def get_applicant_data():
         # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",
             filters={"applicant": res.name},
-            fields=["selection_status", "overall_rank", "category_rank", "allocation_type", "parent"]
+            fields=["selection_status", "overall_rank", "allocation_type", "parent"]
         )
         
         # Inject Seat Allocation details

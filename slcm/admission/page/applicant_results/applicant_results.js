@@ -246,7 +246,6 @@ frappe.pages["applicant-results"].on_page_load = function (wrapper) {
         const fields = [
             { label: "Overall Rank", val: m.overall_rank, rank: true },
             { label: "Program Rank", val: m.program_rank },
-            { label: "Category Rank", val: m.category_rank },
             { label: "Total Score", val: fmt(m.total_score), color: "#2e7d32" },
         ];
         if (m.hsc_percentage) fields.push({ label: "HSC %", val: fmt(m.hsc_percentage) + "%" });

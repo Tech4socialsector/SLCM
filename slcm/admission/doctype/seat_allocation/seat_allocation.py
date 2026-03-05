@@ -175,7 +175,6 @@ class SeatAllocation(Document):
                 "program": row.program,
                 "reservation_category": row.reservation_category,
                 "total_score": row.total_score,
-                "category_rank": row.category_rank,
                 "overall_rank": row.overall_rank,
                 "selection_status": "Draft"
             })

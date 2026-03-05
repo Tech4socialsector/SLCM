@@ -42,7 +42,7 @@ def calculate_merit_with_rule(applicant, rule):
 
 def _rank_applicants(applicant_rows):
     """
-    Applies overall, program, and category ranking with tie-breaking.
+    Applies overall and program ranking with tie-breaking.
     Tie-breaking priority: Total Score > HSC % (12th Mark) > Entrance Test Score
     """
     sort_key = lambda x: (
@@ -64,15 +64,6 @@ def _rank_applicants(applicant_rows):
         group.sort(key=sort_key, reverse=True)
         for i, row in enumerate(group):
             row.program_rank = i + 1
-
-    # Category Rank
-    category_groups = defaultdict(list)
-    for row in applicant_rows:
-        category_groups[row.reservation_category].append(row)
-    for group in category_groups.values():
-        group.sort(key=sort_key, reverse=True)
-        for i, row in enumerate(group):
-            row.category_rank = i + 1
 
 
 def generate_merit_for_level(cycle, campus, program_level):
