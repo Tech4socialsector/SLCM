@@ -24,7 +24,7 @@
    "icon": "settings",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Confogration",
+   "label": "Configuration",
    "link_to": "Offer Configuration",
    "link_type": "DocType",
    "show_arrow": 0,
@@ -92,18 +92,6 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "clipboard-pen",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Online Payment Log",
-   "link_to": "Online Payment Log",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
    "icon": "cctv",
    "indent": 0,
    "keep_closed": 0,
@@ -138,7 +126,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-28 12:44:38.295313",
+ "modified": "2026-03-04 16:10:07.772659",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

@@ -15,9 +15,14 @@
         "column_break_1",
         "payment_date",
         "payment_reference",
-        "transaction_id",
         "payment_mode",
+        "transaction_id",
+        "bank_name",
+        "cheque_number",
+        "cheque_date",
+        "upi_id",
         "campus",
+        "remarks",
         "fee_breakdown_section",
         "fee_components",
         "totals_section",
@@ -37,7 +42,7 @@
             "fieldtype": "Link",
             "in_list_view": 1,
             "in_standard_filter": 1,
-            "label": "Applicant ID",
+            "label": "Applicant",
             "options": "Applicant",
             "reqd": 1
         },
@@ -46,7 +51,7 @@
             "fieldname": "applicant_name",
             "fieldtype": "Data",
             "in_standard_filter": 1,
-            "label": "Candidate Name",
+            "label": "Applicant Name",
             "read_only": 1
         },
         {
@@ -92,16 +97,42 @@
             "options": "Payment Request"
         },
         {
-            "fieldname": "transaction_id",
-            "fieldtype": "Data",
-            "label": "Transaction ID",
-            "read_only": 1
+            "fieldname": "payment_mode",
+            "fieldtype": "Select",
+            "in_standard_filter": 1,
+            "label": "Payment Mode",
+            "options": "Online\nCash\nCheque\nUPI\nQR Code\nBank Transfer\nDemand Draft",
+            "reqd": 1
         },
         {
-            "fieldname": "payment_mode",
+            "fieldname": "transaction_id",
             "fieldtype": "Data",
-            "label": "Payment Mode",
-            "read_only": 1
+            "in_list_view": 1,
+            "label": "Transaction ID / Reference No"
+        },
+        {
+            "depends_on": "eval:['Cheque', 'Bank Transfer', 'Demand Draft'].includes(doc.payment_mode)",
+            "fieldname": "bank_name",
+            "fieldtype": "Data",
+            "label": "Bank Name"
+        },
+        {
+            "depends_on": "eval:doc.payment_mode == 'Cheque'",
+            "fieldname": "cheque_number",
+            "fieldtype": "Data",
+            "label": "Cheque Number"
+        },
+        {
+            "depends_on": "eval:doc.payment_mode == 'Cheque'",
+            "fieldname": "cheque_date",
+            "fieldtype": "Date",
+            "label": "Cheque Date"
+        },
+        {
+            "depends_on": "eval:doc.payment_mode == 'UPI'",
+            "fieldname": "upi_id",
+            "fieldtype": "Data",
+            "label": "UPI ID"
         },
         {
             "fieldname": "campus",
@@ -110,6 +141,11 @@
             "label": "Campus",
             "options": "Campus",
             "read_only": 1
+        },
+        {
+            "fieldname": "remarks",
+            "fieldtype": "Small Text",
+            "label": "Remarks / Notes"
         },
         {
             "fieldname": "fee_breakdown_section",

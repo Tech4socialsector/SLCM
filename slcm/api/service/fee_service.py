@@ -119,15 +119,22 @@ class FeeService:
         return assignment.name
 
     @staticmethod
-    def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None):
+    def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None, 
+                           bank_name=None, cheque_number=None, cheque_date=None, 
+                           upi_id=None, remarks=None):
         """
         Processes the fee payment for an accepted offer.
         """
+        offer_doc = frappe.get_doc("Offer Letter", offer_name)
+        
+        # Security: Prevent duplicate payments
+        if offer_doc.offer_status == "Payment Completed":
+            throw(_("Payment has already been recorded for this offer ({0}).").format(offer_name))
+
         assignment_name = frappe.db.get_value("Applicant Fee Assignment", 
             {"offer_letter": offer_name, "status": ["!=", "Cancelled"]}, "name")
         
         if not assignment_name:
-            offer_doc = frappe.get_doc("Offer Letter", offer_name)
             if offer_doc.offer_status != "Accepted":
                 throw(_("Offer must be 'Accepted' before paying fees."))
             assignment_name = FeeService.create_fee_assignment_from_offer(offer_doc)
@@ -139,11 +146,16 @@ class FeeService:
         assignment.db_set("status", "Paid")
         
         # Update Offer Letter status directly
-        offer_doc = frappe.get_doc("Offer Letter", offer_name)
+        offer_doc.offer_status = "Payment Completed"
         offer_doc.db_set("offer_status", "Payment Completed")
 
         # Sync Payment Request if it exists
-        gateway = frappe.db.get_value("Fee Structure", offer_doc.fee_structure, "payment_gateway") or "Cash"
+        # For manual payments, we check if "Manual Payment" gateway exists, otherwise use a generic label
+        gateway = "Manual Payment" if payment_mode != "Online" else (frappe.db.get_value("Fee Structure", offer_doc.fee_structure, "payment_gateway") or "Online")
+        
+        if gateway == "Manual Payment" and not frappe.db.exists("Payment Gateway", "Manual Payment"):
+            gateway = None # Don't set non-existent link
+            
         FeeService._update_payment_request(offer_doc, gateway, reference_number or "N/A", "Paid", payment_id=reference_number)
 
         from slcm.api.service.offer_service import OfferService
@@ -151,16 +163,32 @@ class FeeService:
         OfferService.sync_seat_allocation_status(offer_doc, status="Fee Paid")
         OfferService.log_action(offer_name, "Fee Paid", _("Fee status updated to Paid via {0}").format(payment_mode))
 
+        from slcm.admission.utils.notifications import log_communication
+        log_communication(
+            applicant=assignment.applicant,
+            communication_type="Portal Notification",
+            category="Fee",
+            subject=_("Admission Fee Payment Completed"),
+            content=_("Your payment of {0} for {1} has been received successfully.").format(
+                frappe.format_value(offer_doc.payable_amount, offer_doc.meta.get_field("payable_amount"), offer_doc),
+                offer_doc.program
+            ),
+            reference_doctype="Offer Letter",
+            reference_name=offer_doc.name
+        )
+
         # Generate Receipt
-        FeeService.generate_receipt(offer_doc, reference_number or "N/A", payment_mode)
+        return FeeService.generate_receipt(
+            offer_doc, 
+            reference_number or "N/A", 
+            payment_mode,
+            bank_name=bank_name,
+            cheque_number=cheque_number,
+            cheque_date=cheque_date,
+            upi_id=upi_id,
+            remarks=remarks
+        )
 
-
-
-        
-        return {
-            "success": True,
-            "message": "Fee assignment marked as paid"
-        }
 
     @staticmethod
     @frappe.whitelist()
@@ -256,7 +284,7 @@ class FeeService:
                     response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature})
                 
                 # Generate Receipt
-                FeeService.generate_receipt(offer, razorpay_payment_id, "Razorpay Online")
+                FeeService.generate_receipt(offer, razorpay_payment_id, "Online")
 
                 return {"status": "success"}
 
@@ -269,7 +297,9 @@ class FeeService:
             return {"status": "failed", "message": str(e)}
 
     @staticmethod
-    def generate_receipt(offer_doc, transaction_id, payment_mode):
+    def generate_receipt(offer_doc, transaction_id, payment_mode, 
+                        bank_name=None, cheque_number=None, cheque_date=None, 
+                        upi_id=None, remarks=None):
         """
         Generates a Payment Receipt based on the current Offer and Fee Snapshot.
         """
@@ -304,6 +334,13 @@ class FeeService:
             receipt.payment_mode = payment_mode
             receipt.total_amount = total_payable
             receipt.currency = frappe.defaults.get_global_default("currency") or "INR"
+
+            # Manual Details
+            receipt.bank_name = bank_name
+            receipt.cheque_number = cheque_number
+            receipt.cheque_date = cheque_date
+            receipt.upi_id = upi_id
+            receipt.remarks = remarks
             
             # Link to existing Payment Request if possible
             pr = frappe.db.get_value("Payment Request", {"transaction_id": transaction_id}, "name")
@@ -385,15 +422,24 @@ class FeeService:
         Creates or updates a Payment Request doc to store gateway response.
         We find by order_id (transaction_id) to allow multiple attempts per offer.
         """
+        # Try to find an existing payment request for this offer first
         pr_name = frappe.db.get_value("Payment Request", 
             {
                 "reference_doctype": "Offer Letter", 
                 "reference_name": offer.name,
-                "transaction_id": transaction_id
-            }, "name")
+                "status": ["!=", "Cancelled"]
+            }, "name", order_by="creation desc")
         
+        if not pr_name and transaction_id:
+             # Fallback to finding by transaction id if specifically provided
+             pr_name = frappe.db.get_value("Payment Request", 
+                {"transaction_id": transaction_id}, "name")
+
         if pr_name:
             pr = frappe.get_doc("Payment Request", pr_name)
+            # Update gateway if it's a manual override and it exists
+            if gateway and frappe.db.exists("Payment Gateway", gateway):
+                pr.db_set("payment_gateway", gateway)
         else:
             pr = frappe.new_doc("Payment Request")
             pr.reference_doctype = "Offer Letter"
@@ -401,31 +447,44 @@ class FeeService:
             pr.amount = offer.payable_amount
             pr.currency = frappe.defaults.get_global_default("currency") or "INR"
             pr.email_to = frappe.db.get_value("Applicant", offer.applicant, "email")
-            pr.payment_gateway = gateway
+            if gateway and frappe.db.exists("Payment Gateway", gateway):
+                pr.payment_gateway = gateway
             pr.transaction_id = transaction_id
 
         if pr.name and pr.docstatus > 0:
-            # If doc is already submitted, we use db_set
+            # If doc is already submitted, we use db_set/set_value for direct DB update
             frappe.logger().debug(f"Updating submitted Payment Request {pr.name} to status {status}")
-            pr.db_set("status", status)
+            
+            update_data = {"status": status}
+            if status == "Paid":
+                update_data["failure_message"] = None
+            elif failure_reason:
+                update_data["status"] = "Failed"
+                update_data["failure_message"] = failure_reason
+            
             if payment_id:
-                pr.db_set("transaction_id", payment_id) # Update with actual payment id
+                update_data["transaction_id"] = payment_id
+                
             if response_data:
-                pr.db_set("gateway_response", json.dumps(response_data, indent=4))
-            if failure_reason:
-                pr.db_set("status", "Failed")
-                pr.db_set("failure_message", failure_reason)
+                update_data["gateway_response"] = json.dumps(response_data, indent=4)
+            
+            if gateway and frappe.db.exists("Payment Gateway", gateway):
+                update_data["payment_gateway"] = gateway
+
+            frappe.db.set_value("Payment Request", pr.name, update_data, update_modified=True)
             frappe.db.commit()
         else:
             # Draft or New
             pr.status = status
             if payment_id:
-                pr.transaction_id = payment_id # Or maybe keep order id? 
-                # Usually we want to know both. Let's keep transaction_id as the primary tracking key.
+                pr.transaction_id = payment_id 
             
             if response_data:
                 pr.gateway_response = json.dumps(response_data, indent=4)
             
+            if status == "Paid":
+                pr.failure_message = None
+                
             if failure_reason:
                 pr.status = "Failed"
                 pr.failure_message = failure_reason
@@ -480,8 +539,13 @@ def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signat
     return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)
 
 @frappe.whitelist()
-def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None):
-    return FeeService.process_fee_payment(offer_name, payment_mode, reference_number)
+def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None, 
+                       bank_name=None, cheque_number=None, cheque_date=None, 
+                       upi_id=None, remarks=None):
+    return FeeService.process_fee_payment(
+        offer_name, payment_mode, reference_number, 
+        bank_name, cheque_number, cheque_date, upi_id, remarks
+    )
 @frappe.whitelist()
 def log_payment_failure(offer_name, order_id, error_data):
     return FeeService.log_payment_failure(offer_name, order_id, error_data)

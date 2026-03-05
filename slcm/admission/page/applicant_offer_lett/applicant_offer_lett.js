@@ -130,7 +130,19 @@ class ApplicantOfferLetter {
 							</div>
 						</div>
 
-						${offer.offer_status !== 'Payment Completed' ? `
+                        ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+                        <div class="card mb-4 shadow-sm border-0" style="background: linear-gradient(135deg, #FF9900 0%, #FF2E2E 100%); color: #fff;">
+                            <div class="card-body">
+                                <h6 class="text-uppercase small font-weight-bold mb-3" style="color: rgba(255,255,255,0.6);">${__('Offer Expiry Timer')}</h6>
+                                <div id="offer-expiry-timer" class="h3 font-weight-bold mb-2">--:--:--</div>
+                                <div class="small" style="color: rgba(255,255,255,0.7);">
+                                    <i class="fa fa-calendar-o mr-1"></i> ${__('Deadline')}: ${frappe.datetime.str_to_user(offer.payment_deadline)}
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+						${offer.offer_status !== 'Payment Completed' && offer.offer_status !== 'Accepted' && offer.offer_status !== 'Issued' ? `
 						<div class="card mb-4 shadow-sm border-0 bg-light-warning">
 							<div class="card-body">
 								<h6 class="text-warning text-uppercase small font-weight-bold mb-3">${__('Important Deadline')}</h6>
@@ -211,6 +223,51 @@ class ApplicantOfferLetter {
 		`;
 
 		this.wrapper.find('.layout-main-section').html(html);
+		if (offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted')) {
+			this.start_timer(offer.payment_deadline);
+		}
+	}
+
+	start_timer(deadline_str) {
+		if (!deadline_str) return;
+
+		const timer_el = this.wrapper.find('#offer-expiry-timer');
+		if (!timer_el.length) return;
+
+		if (this.timer_interval) clearInterval(this.timer_interval);
+
+		// Adjust to end of day
+		let deadline_val = deadline_str;
+		if (deadline_str.length === 10) {
+			deadline_val += " 23:59:59";
+		}
+
+		const deadline = new Date(deadline_val).getTime();
+
+		const update = () => {
+			const now = new Date().getTime();
+			const distance = deadline - now;
+
+			if (distance < 0) {
+				if (this.timer_interval) clearInterval(this.timer_interval);
+				timer_el.text(__('EXPIRED')).css('color', '#feb2b2');
+				return;
+			}
+
+			const hours = Math.floor(distance / (1000 * 60 * 60));
+			const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+			const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+			const display =
+				(hours < 10 ? "0" + hours : hours) + " : " +
+				(minutes < 10 ? "0" + minutes : minutes) + " : " +
+				(seconds < 10 ? "0" + seconds : seconds) + " more";
+
+			timer_el.html(display);
+		};
+
+		this.timer_interval = setInterval(update, 1000);
+		update();
 	}
 
 	render_error(message) {
@@ -451,7 +508,7 @@ class ApplicantOfferLetter {
 
 	initiate_razorpay_payment(offer_name) {
 		let me = this;
-		frappe.dom.freeze(__('Initiating Payment Gateway...'));
+		frappe.dom.freeze(__('Launching Secure Payment Gateway...'));
 
 		frappe.call({
 			method: "slcm.api.service.offer_service.create_offer_razorpay_order",
@@ -549,7 +606,7 @@ class ApplicantOfferLetter {
 
 	verify_razorpay_payment(response, order_id, offer_name) {
 		let me = this;
-		frappe.dom.freeze(__('Verifying Payment...'));
+		frappe.dom.freeze(__('Verifying Payment Status. Please wait...'));
 
 		frappe.call({
 			method: "slcm.api.service.offer_service.verify_offer_payment",
@@ -574,6 +631,9 @@ class ApplicantOfferLetter {
 						indicator: 'red'
 					});
 				}
+			},
+			error: function () {
+				frappe.dom.unfreeze();
 			}
 		});
 	}
