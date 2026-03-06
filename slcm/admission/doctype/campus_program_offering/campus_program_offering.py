@@ -29,12 +29,15 @@ class CampusProgramOffering(Document):
             )
 
     def validate_cycle_workflow(self):
-        cycle_workflow = frappe.db.get_value(
-            "Admission Cycle", self.admission_cycle, "workflow_type"
+        # Look up exam_type from the Admission Cycle Program child table for this program
+        cycle_exam_type = frappe.db.get_value(
+            "Admission Cycle Program",
+            {"parent": self.admission_cycle, "program": self.program},
+            "exam_type"
         )
-        if cycle_workflow and cycle_workflow != self.workflow_type:
+        if cycle_exam_type and cycle_exam_type != self.workflow_type:
             frappe.throw(
-                f"Workflow Type must match the Admission Cycle workflow: "
-                f"<b>{cycle_workflow}</b>",
+                f"Workflow Type must match the Admission Cycle exam type: "
+                f"<b>{cycle_exam_type}</b>",
                 title="Workflow Mismatch"
             )

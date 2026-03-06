@@ -92,7 +92,32 @@
    "fieldname": "applicable_workflow",
    "fieldtype": "Select",
    "label": "Applicable Workflow",
-   "options": "\nCLAT\nNLSAT\nPACE\nAll"
+   "options": "All\nCLAT\nNLSAT\nDirect Merit",
+   "default": "All",
+   "in_list_view": 1,
+   "reqd": 0
+  },
+  {
+   "fieldname": "allow_application",
+   "fieldtype": "Check",
+   "label": "Allow Application",
+   "default": "0"
+  },
+  {
+   "fieldname": "is_editable",
+   "fieldtype": "Check",
+   "label": "Allow Applicant Edit",
+   "default": "0"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Stage Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "Stage End Date"
   }
  ],
  "permissions": [

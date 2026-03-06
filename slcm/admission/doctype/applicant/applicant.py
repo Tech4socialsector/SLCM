@@ -26,6 +26,7 @@ class Applicant(Document):
               • Eligible:   saves at the END of validate_eligibility()
           - validate() no longer calls create_or_update_evaluation() at all.
         """
+        set_intake_type(self)
         self.validate_eligibility()
         # NOTE: create_or_update_evaluation() is now called exclusively inside
         # validate_eligibility() for BOTH eligible and ineligible outcomes.
@@ -154,6 +155,20 @@ class Applicant(Document):
                 _("Submission Not Allowed: Applicant is not eligible."),
                 title=_("Submission Not Allowed")
             )
+
+    def on_update(self):
+        # If current_stage changed, notify applicant
+        if self.is_new() or self.has_value_changed("current_stage"):
+            if self.current_stage and self.admission_cycle:
+                try:
+                    from slcm.admission.utils.stage_control import get_cycle_stages
+                    stages = get_cycle_stages(self.admission_cycle, self.intake_type or "All")
+                    for s in stages:
+                        if s.stage_name == self.current_stage:
+                            notify_stage_entry(self, s)
+                            break
+                except Exception:
+                    pass
 
     # ──────────────────────────────────────────────
     # CHILD TABLE VALUE HELPERS
@@ -1254,3 +1269,33 @@ def before_submit_applicant(doc, method):
             ),
             title=_("Submission Not Allowed")
         )
+
+def set_intake_type(doc, method=None):
+    """Auto-populate intake_type from the linked Program."""
+    if doc.program:
+        intake = frappe.db.get_value("Program", doc.program, "intake_type")
+        if intake and not doc.intake_type:
+            doc.intake_type = intake
+
+def notify_stage_entry(applicant_doc, stage):
+    """
+    Called when applicant enters a new stage.
+    Creates portal notification. Sends email if template configured.
+    Only fires if notify_applicant_on_entry = 1 on the stage.
+    """
+    if not getattr(stage, "notify_applicant_on_entry", 0):
+        return
+
+    try:
+        frappe.get_doc({
+            "doctype":           "Applicant Notification",
+            "applicant":         applicant_doc.name,
+            "title":             f"Stage Update: {stage.stage_name}",
+            "message":           f"Your application has moved to the {stage.stage_name} stage.",
+            "notification_type": "Stage Update",
+            "link":              "/my-applications",
+            "is_read":           0
+        }).insert(ignore_permissions=True)
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(f"notify_stage_entry failed: {e}", "Stage Notification")

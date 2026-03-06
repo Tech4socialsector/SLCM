@@ -23,9 +23,10 @@ def execute():
 			doc.save(ignore_permissions=True)
 
 	# 2. Map existing Admission Cycle workflow_type to exam_type
-	frappe.db.sql("""
-		UPDATE `tabAdmission Cycle` 
-		SET exam_type = workflow_type 
-		WHERE (exam_type IS NULL OR exam_type = '') 
-		AND workflow_type IN ('CLAT', 'NLSAT', 'PACE')
-	""")
+	if frappe.db.has_column('Admission Cycle', 'exam_type') and frappe.db.has_column('Admission Cycle', 'workflow_type'):
+		frappe.db.sql("""
+			UPDATE `tabAdmission Cycle` 
+			SET exam_type = workflow_type 
+			WHERE (exam_type IS NULL OR exam_type = '') 
+			AND workflow_type IN ('CLAT', 'NLSAT', 'PACE')
+		""")

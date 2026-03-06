@@ -1,5 +1,8 @@
 import frappe
 from slcm.admission.utils.portal import get_portal_config
+from slcm.admission.utils.stage_control import (
+    can_edit_application, get_current_stage, get_portal_stage_list
+)
 
 login_required = True
 
@@ -32,6 +35,19 @@ def get_context(context):
         context.applicant = applicant
         context.candidate_name = applicant.candidate_name or frappe.session.user.split("@")[0].replace(".", " ").title()
         
+        # Stage-driven edit permission and stage context
+        intake  = applicant.intake_type or "All"
+        cycle   = applicant.admission_cycle or ""
+        if cycle:
+            context.can_edit       = can_edit_application(cycle, intake)
+            context.portal_stages  = get_portal_stage_list(cycle, intake)
+            curr_st                = get_current_stage(cycle, intake)
+            context.active_stage   = curr_st.stage_name if curr_st else ""
+        else:
+            context.can_edit       = False
+            context.portal_stages  = []
+            context.active_stage   = ""
+
         # Status styling
         STATUS_STYLE = {
             "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
