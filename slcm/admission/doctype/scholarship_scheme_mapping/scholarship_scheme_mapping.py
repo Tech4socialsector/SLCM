@@ -11,12 +11,8 @@ class ScholarshipSchemeMapping(Document):
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))
 		
-		cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code")
-		if not cycle_code:
-			frappe.throw(frappe._("Cycle Code not found in Admission Cycle {0}").format(self.admission_cycle))
-		
 		# Naming Series: SSM-{CYCLE}-.#####
-		self.name = make_autoname(f"SSM-{cycle_code}-.#####")
+		self.name = make_autoname(f"SSM-{self.admission_cycle}-.#####")
 
 	def validate(self):
 		self.validate_duplicate_mapping()
@@ -40,9 +36,11 @@ class ScholarshipSchemeMapping(Document):
 	def validate_business_rules(self):
 		# Admission Cycle must be Active
 		if self.admission_cycle:
-			is_cycle_active = frappe.db.get_value("Admission Cycle", self.admission_cycle, "is_active")
-			if not is_cycle_active:
-				frappe.throw(frappe._("Admission Cycle {0} must be Active").format(self.admission_cycle))
+			cycle_status = frappe.db.get_value("Admission Cycle", self.admission_cycle, "status")
+			if cycle_status != "Active":
+				frappe.throw(frappe._("Admission Cycle {0} must be Active (Current Status: {1})").format(
+					self.admission_cycle, cycle_status
+				))
 
 		# Scholarship Scheme must be Active
 		if self.scholarship_scheme:

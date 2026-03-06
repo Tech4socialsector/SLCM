@@ -227,6 +227,11 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
                     new_value="Selected",
                     remarks=f"Promoted to {new_type} seat ({new_cat or 'GEN'}) via Upgradation Engine."
                 )
+                
+                # Sync status to Applicant record immediately
+                from slcm.api.service.offer_service import OfferService
+                OfferService.update_applicant_status(row.applicant_id, application_status="Selected")
+
                 notify_status_change(row.applicant_id, program, "Waitlisted", "Selected", seat_alloc.name, seat_alloc.admission_cycle)
             
             elif old_type != new_type or old_cat != new_cat:

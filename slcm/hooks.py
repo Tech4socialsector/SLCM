@@ -24,7 +24,7 @@ fixtures = [
     {
         "doctype": "Role",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin"]]
         ]
     },
     {
@@ -37,6 +37,12 @@ fixtures = [
         "doctype": "Role Profile",
         "filters": [
             ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member"]]
+        ]
+    },
+    {
+        "doctype":"Workflow",
+        "filters": [
+            ["name", "in", ["Scholarship Application Workflow"]]
         ]
     }
 ]

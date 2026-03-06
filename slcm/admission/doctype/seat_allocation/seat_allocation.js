@@ -25,6 +25,11 @@ frappe.ui.form.on("Seat Allocation", {
     },
 
     refresh(frm) {
+        // Prevent selecting past dates for published_on
+        frm.set_df_property("published_on", "options", {
+            minDate: new Date()
+        });
+
         if (frm.doc.status === "Draft" || frm.doc.status === "Allocated") {
             frm.add_custom_button(__("Get Merit List"), () => {
                 if (!frm.doc.merit_list) {

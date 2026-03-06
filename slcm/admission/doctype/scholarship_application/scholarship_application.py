@@ -6,29 +6,29 @@ import hashlib
 import json
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
-from frappe.utils import now_datetime, flt
+from frappe.utils import now_datetime, flt, get_datetime
 
 
 class ScholarshipApplication(Document):
 	def autoname(self):
-		print(f"DEBUG: autoname self.admission_cycle: {self.admission_cycle}")
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))
 		
-		cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code")
-		print(f"DEBUG: autoname cycle_code: {cycle_code}")
-		if not cycle_code:
-			frappe.throw(frappe._("Cycle Code not found in Admission Cycle {0}").format(self.admission_cycle))
-		
 		# Naming Series: SA-{CYCLE}-.#####
-		self.name = make_autoname(f"SA-{cycle_code}-.#####")
-		print(f"DEBUG: autoname self.name: {self.name}")
-
+		self.name = make_autoname(f"SA-{self.admission_cycle}-.#####")
+		
 	def validate(self):
 		if not self.status:
 			# Web forms pass empty strings for read_only status fields, bypassing the Draft default
-			self.status = "Submitted"
+			self.status = "Draft"
 			
+		if self.approval_date and get_datetime(self.approval_date) > get_datetime(now_datetime()):
+			frappe.throw(frappe._("Approval Date cannot be in the future."))
+
+		# Sync status from workflow_state if it exists
+		if getattr(self, "workflow_state", None):
+			self.status = self.workflow_state
+
 		self.set_applicant_metadata()
 		self.set_academic_year()
 		self.prevent_duplicate()
@@ -267,6 +267,10 @@ class ScholarshipApplication(Document):
 				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
 
 	def on_update(self):
+		# Sync status from workflow_state if it exists
+		if getattr(self, "workflow_state", None) and self.status != self.workflow_state:
+			self.db_set("status", self.workflow_state)
+
 		self.create_audit_log()
 		
 		old_doc = self.get_doc_before_save()

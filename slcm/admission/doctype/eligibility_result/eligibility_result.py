@@ -33,59 +33,55 @@ def get_applicant_data():
     if user_email == "Guest":
         return {"error": "Unauthorized"}
 
-    # 1. Fetch the primary Eligibility Result records
-    results = frappe.get_all("Eligibility Result", 
+    # 1. Fetch the primary Eligibility Result names first to get full docs
+    result_names = frappe.get_all("Eligibility Result", 
         filters={"email": user_email},
-        fields=[
-            "name", "applicant_id", "candidate_name", "campus", "program", 
-            "program_level", "admission_cycle", "reservation_category",
-            "hsc_percentage", "entrance_test_score", "interview_score",
-            "ug_cgpa", "pg_cgpa"
-        ]
+        pluck="name"
     )
 
-    if not results:
-        # Fallback to Applicant record if no Eligibility Result found yet
-        # This allows new applicants to see their basic dashboard
-        applicants = frappe.get_all("Applicant",
-            filters={"email": user_email},
-            fields=[
-                "name as applicant_id", "candidate_name", "campus", "program",
-                "program_level", "admission_cycle"
-            ]
-        )
+    results = []
+    for name in result_names:
+        doc = frappe.get_doc("Eligibility Result", name)
         
-        if not applicants:
-            # Second fallback: check by owner if email doesn't match (unlikely but possible)
-            applicants = frappe.get_all("Applicant",
-                filters={"owner": user_email},
-                fields=[
-                    "name as applicant_id", "candidate_name", "campus", "program",
-                    "program_level", "admission_cycle"
-                ]
-            )
+        # Calculate averaged UG CGPA
+        ug_avg = 0
+        if doc.ug_degree_details:
+            scores = [float(r.ug_cgpa or r.percentage_cgpa_obtained or 0) for r in doc.ug_degree_details]
+            if scores: ug_avg = sum(scores) / len(scores)
+            
+        # Calculate averaged PG CGPA
+        pg_avg = 0
+        if doc.pg_degree_details:
+            scores = [float(r.pg_cgpa or r.percentagecgpa_obtained or 0) for r in doc.pg_degree_details]
+            if scores: pg_avg = sum(scores) / len(scores)
 
-        if not applicants:
-            return {"error": "No applicant record found for this email."}
-        
-        # Map applicant fields to the expected result structure
-        results = []
-        for app in applicants:
-            results.append({
-                "name": None,
-                "applicant_id": app.applicant_id,
-                "candidate_name": app.candidate_name,
-                "campus": app.campus,
-                "program": app.program,
-                "program_level": app.program_level,
-                "admission_cycle": app.admission_cycle,
-                "reservation_category": None,
-                "hsc_percentage": None,
-                "entrance_test_score": None,
-                "interview_score": None,
-                "ug_cgpa": None,
-                "pg_cgpa": None
-            })
+        results.append({
+            "name": doc.name,
+            "applicant_id": doc.applicant_id,
+            "candidate_name": doc.candidate_name,
+            "campus": doc.campus,
+            "program": doc.program,
+            "program_level": doc.program_level,
+            "admission_cycle": doc.admission_cycle,
+            "reservation_category": doc.reservation_category,
+            "hsc_percentage": doc.hsc_percentage,
+            "entrance_test_score": doc.entrance_test_score,
+            "interview_score": doc.interview_score,
+            "ug_cgpa": round(ug_avg, 2),
+            "pg_cgpa": round(pg_avg, 2)
+        })
+
+    if not results:
+        # Check if Applicant record exists to provide a specific message
+        app_exists = frappe.db.exists("Applicant", {"email": user_email})
+        if not app_exists:
+            # Try owner fallback
+            app_exists = frappe.db.exists("Applicant", {"owner": user_email})
+
+        if app_exists:
+            return {"error": "Your Merit List evaluation is in progress. The results have not been published yet. Please check back later."}
+        else:
+            return {"error": "No admission application record found for this account."}
 
     # 2. For each result, get the specific selection statuses from Seat Allocation child tables
     settings = frappe.get_single("Admission Settings")
@@ -96,7 +92,7 @@ def get_applicant_data():
         merit_entries = []
         if settings.is_merit_list:
             merit_entries = frappe.get_all("Merit List Applicant",
-                filters={"applicant_id": res.applicant_id},
+                filters={"applicant_id": res['applicant_id']},
                 fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
             )
             for m in merit_entries:
@@ -105,7 +101,7 @@ def get_applicant_data():
         
         # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",
-            filters={"applicant_id": res.applicant_id},
+            filters={"applicant_id": res['applicant_id']},
             fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score"]
         )
         
@@ -118,12 +114,12 @@ def get_applicant_data():
         
         available_scholarships = []
         applied_scholarships = []
-        if res.applicant_id and settings.is_scholarship_available:
+        if res['applicant_id'] and settings.is_scholarship_available:
             from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard, get_applied_scholarships_for_dashboard
             available_scholarships = get_available_scholarships_for_dashboard(
-                res.applicant_id, res.admission_cycle, res.campus, res.program, published_statuses
+                res['applicant_id'], res['admission_cycle'], res['campus'], res['program'], published_statuses
             )
-            applied_scholarships = get_applied_scholarships_for_dashboard(res.applicant_id)
+            applied_scholarships = get_applied_scholarships_for_dashboard(res['applicant_id'])
 
         combined_data.append({
             "profile": res,
