@@ -227,7 +227,6 @@ class SeatAllocation(Document):
         # 2. Map programs to their specific policies
         policies = frappe.get_all("Program Reservation Policy", filters={
             "admission_cycle": self.admission_cycle,
-            "campus": self.campus,
             "program": ["in", list(affected_programs)],
             "docstatus": ["!=", 2]
         }, fields=["name", "program"])
