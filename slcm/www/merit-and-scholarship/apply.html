@@ -20,8 +20,15 @@
     }
 
     @keyframes slideUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .back-btn {
@@ -36,7 +43,9 @@
         transition: color 0.2s;
     }
 
-    .back-btn:hover { color: var(--form-primary); }
+    .back-btn:hover {
+        color: var(--form-primary);
+    }
 
     .form-container {
         max-width: 800px;
@@ -133,19 +142,51 @@
     }
 
     /* Inputs */
-    .form-group { margin-bottom: 32px; }
-    .form-label { display: block; font-weight: 700; font-size: 14px; color: #475569; margin-bottom: 10px; }
-    .required-dot { color: #ef4444; margin-left: 4px; }
-
-    .control-wrapper { position: relative; }
-    .control-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
-    
-    .form-control {
-        width: 100%; border-radius: 14px; border: 2px solid #e2e8f0; padding: 14px 16px; 
-        font-size: 15px; font-weight: 600; color: #1e293b; transition: all 0.25s ease; background: #fff;
+    .form-group {
+        margin-bottom: 32px;
     }
+
+    .form-label {
+        display: block;
+        font-weight: 700;
+        font-size: 14px;
+        color: #475569;
+        margin-bottom: 10px;
+    }
+
+    .required-dot {
+        color: #ef4444;
+        margin-left: 4px;
+    }
+
+    .control-wrapper {
+        position: relative;
+    }
+
+    .control-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        pointer-events: none;
+    }
+
+    .form-control {
+        width: 100%;
+        border-radius: 14px;
+        border: 2px solid #e2e8f0;
+        padding: 14px 16px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #1e293b;
+        transition: all 0.25s ease;
+        background: #fff;
+    }
+
     .form-control:focus {
-        border-color: var(--form-primary); outline: none;
+        border-color: var(--form-primary);
+        outline: none;
         box-shadow: 0 0 0 5px rgba(26, 60, 110, 0.08);
     }
 
@@ -171,10 +212,31 @@
         background: #f0f7ff;
     }
 
-    .upload-icon { font-size: 32px; margin-bottom: 12px; display: block; }
-    .upload-text { font-size: 14px; font-weight: 700; color: #475569; }
-    .upload-hint { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-    .selected-filename { font-size: 13px; font-weight: 800; color: var(--form-primary); margin-top: 12px; display: none; }
+    .upload-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .upload-text {
+        font-size: 14px;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    .upload-hint {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+
+    .selected-filename {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--form-primary);
+        margin-top: 12px;
+        display: none;
+    }
 
     /* Footer Buttons */
     .form-footer {
@@ -196,9 +258,21 @@
         box-shadow: 0 10px 15px -3px rgba(26, 60, 110, 0.2);
     }
 
-    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(26, 60, 110, 0.25); }
-    .btn-submit:active { transform: translateY(0); }
-    .btn-submit:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(26, 60, 110, 0.25);
+    }
+
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+
+    .btn-submit:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
 
     .btn-cancel {
         flex: 1;
@@ -212,12 +286,27 @@
         transition: all 0.2s;
     }
 
-    .btn-cancel:hover { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
+    .btn-cancel:hover {
+        background: #f8fafc;
+        color: #1e293b;
+        border-color: #cbd5e1;
+    }
 
     @media (max-width: 768px) {
-        .form-header, .form-body, .form-footer { padding: 32px 24px; }
-        .info-grid { grid-template-columns: 1fr; }
-        .form-footer { flex-direction: column-reverse; }
+
+        .form-header,
+        .form-body,
+        .form-footer {
+            padding: 32px 24px;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-footer {
+            flex-direction: column-reverse;
+        }
     }
 </style>
 {% endblock %}
@@ -225,8 +314,8 @@
 {% block content %}
 <div class="form-page-wrapper">
     <div class="container" style="max-width: 900px;">
-        
-        <a href="/merit-and-schoarship/admission_dashboard" class="back-btn">
+
+        <a href="/merit-and-scholarship/admission_dashboard" class="back-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -246,7 +335,8 @@
             <div style="font-size: 64px; margin-bottom: 24px;">⚠️</div>
             <h2 class="mb-3">Application Unavailable</h2>
             <p class="text-muted">{{ error }}</p>
-            <a href="/merit-and-schoarship/admission_dashboard" class="btn-cancel text-decoration-none d-inline-block px-5 mt-4">Return to Dashboard</a>
+            <a href="/merit-and-scholarship/admission_dashboard"
+                class="btn-cancel text-decoration-none d-inline-block px-5 mt-4">Return to Dashboard</a>
         </div>
         {% else %}
 
@@ -292,33 +382,40 @@
                                 Annual Family Income (₹) <span class="required-dot">*</span>
                             </label>
                             <div class="control-wrapper">
-                                <input type="number" id="family_income" class="form-control" placeholder="Enter amount, e.g. 450000" required>
+                                <input type="number" id="family_income" class="form-control"
+                                    placeholder="Enter amount, e.g. 450000" required>
                             </div>
-                            <div class="upload-hint mt-2">Provide the total combined annual income of all earning family members.</div>
+                            <div class="upload-hint mt-2">Provide the total combined annual income of all earning family
+                                members.</div>
                         </div>
                     </div>
 
                     <!-- Section 3: Documents -->
                     <div class="form-section">
                         <div class="section-title">Required Documents</div>
-                        
+
                         <div class="form-group">
                             <label class="form-label">
                                 Income Certificate <span class="required-dot">*</span>
                             </label>
-                            <div class="file-upload-box" id="box_income_cert" onclick="document.getElementById('income_certificate').click()">
-                                <input type="file" id="income_certificate" accept=".pdf,.jpg,.jpeg,.png" required style="display:none" onchange="handleFile(this, 'box_income_cert')">
+                            <div class="file-upload-box" id="box_income_cert"
+                                onclick="document.getElementById('income_certificate').click()">
+                                <input type="file" id="income_certificate" accept=".pdf,.jpg,.jpeg,.png" required
+                                    style="display:none" onchange="handleFile(this, 'box_income_cert')">
                                 <span class="upload-icon">📄</span>
                                 <span class="upload-text">Click to upload Income Certificate</span>
-                                <div class="upload-hint">Upload a valid certificate issued by competent authority (PDF/Image)</div>
+                                <div class="upload-hint">Upload a valid certificate issued by competent authority
+                                    (PDF/Image)</div>
                                 <div class="selected-filename"></div>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Supporting Documents (Optional)</label>
-                            <div class="file-upload-box" id="box_supp_docs" onclick="document.getElementById('supporting_documents').click()">
-                                <input type="file" id="supporting_documents" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFile(this, 'box_supp_docs')">
+                            <div class="file-upload-box" id="box_supp_docs"
+                                onclick="document.getElementById('supporting_documents').click()">
+                                <input type="file" id="supporting_documents" accept=".pdf,.jpg,.jpeg,.png"
+                                    style="display:none" onchange="handleFile(this, 'box_supp_docs')">
                                 <span class="upload-icon">📂</span>
                                 <span class="upload-text">Click to upload additional documents</span>
                                 <div class="upload-hint">Attach any other documents that support your eligibility.</div>
@@ -330,7 +427,8 @@
             </div>
 
             <div class="form-footer">
-                <button type="button" class="btn-cancel" onclick="window.location.href='/merit-and-schoarship/admission_dashboard'">Cancel</button>
+                <button type="button" class="btn-cancel"
+                    onclick="window.location.href='/merit-and-scholarship/admission_dashboard'">Cancel</button>
                 <button type="button" id="submitAppBtn" class="btn-submit">Submit Application</button>
             </div>
         </div>
@@ -345,7 +443,7 @@
         const box = document.getElementById(boxId);
         const fileNameEl = box.querySelector('.selected-filename');
         const textEl = box.querySelector('.upload-text');
-        
+
         if (input.files && input.files[0]) {
             box.classList.add('has-file');
             fileNameEl.innerText = 'Selected: ' + input.files[0].name;
@@ -367,11 +465,11 @@
         });
     }
 
-    document.getElementById('submitAppBtn')?.addEventListener('click', async function() {
+    document.getElementById('submitAppBtn')?.addEventListener('click', async function () {
         const btn = this;
         const incomeValue = document.getElementById('family_income').value;
         const incomeCertFile = document.getElementById('income_certificate').files[0];
-        
+
         // Validation
         if (!incomeValue || incomeValue <= 0) {
             showToast('Please enter a valid Annual Family Income', 'error');
@@ -385,7 +483,7 @@
         }
 
         const originalText = btn.innerHTML;
-        
+
         try {
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Submitting Application...';
@@ -394,7 +492,7 @@
             const suppDocsFile = document.getElementById('supporting_documents').files[0];
 
             const incomeCertData = await getBase64(incomeCertFile);
-            
+
             let suppDocsData = null;
             let suppDocsName = null;
             if (suppDocsFile) {
@@ -414,7 +512,7 @@
             if (response) {
                 showToast('Application submitted successfully!', 'success');
                 setTimeout(() => {
-                    window.location.href = '/merit-and-schoarship/admission_dashboard';
+                    window.location.href = '/merit-and-scholarship/admission_dashboard';
                 }, 1500);
             }
 

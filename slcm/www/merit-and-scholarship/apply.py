@@ -6,7 +6,7 @@ def get_context(context):
     
     # Redirect back to dashboard if no scheme is provided
     if not scheme_id:
-        frappe.local.flags.redirect_location = "/merit-and-schoarship/admission_dashboard"
+        frappe.local.flags.redirect_location = "/merit-and-scholarship/admission_dashboard"
         raise frappe.Redirect
 
     if frappe.session.user == "Guest":

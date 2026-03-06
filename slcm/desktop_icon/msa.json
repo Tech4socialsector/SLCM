@@ -1,22 +1,35 @@
 {
-    "app": "slcm",
-    "bg_color": "gray",
-    "creation": "2026-02-25 15:42:21.184236",
-    "docstatus": 0,
-    "doctype": "Desktop Icon",
-    "hidden": 0,
-    "icon_type": "Link",
-    "idx": 0,
-    "label": "MSA",
-    "link_to": "MSA",
-    "link_type": "Workspace Sidebar",
-    "modified": "2026-02-25 17:29:58.145681",
-    "modified_by": "Administrator",
-    "name": "MSA",
-    "owner": "Administrator",
-    "parent_icon": "Admission",
-    "restrict_removal": 0,
-    "roles": [],
-    "sidebar": "MSA",
-    "standard": 1
+ "app": "slcm",
+ "bg_color": "gray",
+ "creation": "2026-02-25 15:42:21.184236",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "MSA",
+ "link_to": "MSA",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-03-06 12:47:04.716465",
+ "modified_by": "Administrator",
+ "name": "MSA",
+ "owner": "Administrator",
+ "parent_icon": "Admission",
+ "restrict_removal": 0,
+ "roles": [
+  {
+   "role": "Campus Admin"
+  },
+  {
+   "role": "Merit Admin"
+  },
+  {
+   "role": "Admission Admin"
+  },
+  {
+   "role": "Administrator"
+  }
+ ],
+ "sidebar": "MSA",
+ "standard": 1
 }

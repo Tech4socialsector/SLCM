@@ -3,16 +3,22 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import flt, get_datetime
 
 
 class ScholarshipScheme(Document):
 	def validate(self):
+		self.validate_dates()
 		self.validate_income_range()
 		self.validate_merit_score()
 		self.validate_coverage()
 		self.validate_limits()
 		self.validate_max_amount()
+
+	def validate_dates(self):
+		if self.application_start and self.application_end:
+			if get_datetime(self.application_end) <= get_datetime(self.application_start):
+				frappe.throw(frappe._("Application End must be after Application Start"))
 
 	def validate_income_range(self):
 		if self.scheme_type == "Need":
@@ -118,12 +124,8 @@ class ScholarshipScheme(Document):
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))
 		
-		cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code")
-		if not cycle_code:
-			frappe.throw(frappe._("Cycle Code not found in Admission Cycle {0}").format(self.admission_cycle))
-		
 		# Naming Series: SS-{CYCLE}-{SCHEME_CODE}
 		if not self.scheme_code:
 			frappe.throw(frappe._("Scheme Code is mandatory for naming"))
 			
-		self.name = f"SS-{cycle_code}-{self.scheme_code}"
+		self.name = f"SS-{self.admission_cycle}-{self.scheme_code}"

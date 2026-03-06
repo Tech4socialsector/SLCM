@@ -69,6 +69,12 @@ def get_portal_config():
             "enable_portal_notifications": 1,
         }
 
+def update_website_context(context):
+    """
+    Globally provides portal_config to all website templates.
+    """
+    context.portal_config = get_portal_config()
+
 @frappe.whitelist(allow_guest=True)
 def api_get_hero_slides():
     """
