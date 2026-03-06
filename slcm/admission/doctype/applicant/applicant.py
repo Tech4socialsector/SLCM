@@ -1271,10 +1271,12 @@ def before_submit_applicant(doc, method):
         )
 
 def set_intake_type(doc, method=None):
-    """Auto-populate intake_type from the linked Program."""
-    if doc.program:
-        intake = frappe.db.get_value("Program", doc.program, "intake_type")
-        if intake and not doc.intake_type:
+    """Set intake_type from Admission Cycle (not Program)."""
+    if doc.admission_cycle:
+        intake = frappe.db.get_value(
+            "Admission Cycle", doc.admission_cycle, "intake_type"
+        )
+        if intake:
             doc.intake_type = intake
 
 def notify_stage_entry(applicant_doc, stage):

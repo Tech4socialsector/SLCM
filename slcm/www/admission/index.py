@@ -56,9 +56,29 @@ def get_context(context):
 
         # Stage-driven portal control
         active_cycle_name = active_cycle.name if active_cycle else ""
+        
+        # Check if logged-in user already has an application this cycle
+        context.already_applied = False
+        context.existing_application = ""
+        if frappe.session.user != "Guest" and active_cycle_name:
+            existing = frappe.get_all(
+                "Applicant",
+                filters={
+                    "owner": frappe.session.user,
+                    "admission_cycle": active_cycle_name
+                },
+                fields=["name"],
+                limit=1
+            )
+            if existing:
+                context.already_applied = True
+                context.existing_application = existing[0].name
+
         for prog in programs:
+            # Intake type now comes from Admission Cycle, but we may still filter stages by workflow
+            # For Program cards, we check if the cycle itself has an intake_type
             prog_intake = frappe.db.get_value(
-                "Program", prog.get("program"), "intake_type"
+                "Admission Cycle", active_cycle_name, "intake_type"
             ) or "All"
             
             if active_cycle_name:

@@ -7,6 +7,7 @@
  "field_order": [
   "section_break_basic",
   "cycle_name",
+  "intake_type",
   "admission_year",
   "approval_reference",
   "col_break_basic",
@@ -50,6 +51,15 @@
    "label": "Cycle Name",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "intake_type",
+   "fieldtype": "Select",
+   "label": "Intake Type",
+   "options": "CLAT\nNLSAT\nDirect Merit\nAll",
+   "default": "All",
+   "reqd": 0,
+   "description": "Determines which stage workflow applies to applicants in this cycle"
   },
   {
    "fieldname": "admission_year",

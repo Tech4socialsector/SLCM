@@ -2,6 +2,19 @@ import frappe
 from frappe.utils import today as get_today
 
 
+def get_intake_for_applicant(applicant_doc_or_name):
+    """Returns intake_type from the applicant's Admission Cycle."""
+    if isinstance(applicant_doc_or_name, str):
+        applicant = frappe.get_doc("Applicant", applicant_doc_or_name)
+    else:
+        applicant = applicant_doc_or_name
+    if not applicant.admission_cycle:
+        return "All"
+    return frappe.db.get_value(
+        "Admission Cycle", applicant.admission_cycle, "intake_type"
+    ) or "All"
+
+
 def get_cycle_stages(admission_cycle, intake_type=None):
     """
     Returns enabled, non-locked stage rows from Admission Cycle child table.

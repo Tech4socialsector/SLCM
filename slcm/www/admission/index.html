@@ -205,6 +205,16 @@ background:rgba(255,255,255,0.4); }
     justify-content: center;
 }
 .btn-view-details:hover { opacity: 0.9; color: #454343; }
+.cycle-badge       { display:inline-block; padding:3px 10px; border-radius:20px;
+                     font-size:11px; font-weight:700; margin-bottom:8px; }
+.cycle-open        { background:#d1fae5; color:#065f46; }
+.cycle-upcoming    { background:#fef3c7; color:#92400e; }
+.cycle-closed      { background:#f3f4f6; color:#9ca3af; }
+.btn-already-applied { display:inline-flex; align-items:center; gap:6px;
+                       padding:9px 20px; background:var(--secondary,#c8a14b);
+                       color:#fff; border-radius:9px; font-size:13px;
+                       font-weight:700; text-decoration:none; flex: 1; justify-content: center;}
+.btn-already-applied:hover { opacity:.9; color:#fff; }
 .btn-apply-closed {
     display: inline-block;
     padding: 9px 20px;
@@ -475,6 +485,14 @@ background:rgba(255,255,255,0.4); }
 
         <!-- Card body -->
         <div class="prog-body">
+            {% if p.can_apply %}
+              <span class="cycle-badge cycle-open">Applications Open</span>
+            {% elif p.current_stage_name and p.current_stage_name != '' %}
+              <span class="cycle-badge cycle-upcoming">Coming Soon</span>
+            {% else %}
+              <span class="cycle-badge cycle-closed">Closed</span>
+            {% endif %}
+
             <h3 class="prog-name">{{ p.program_name }}</h3>
 
             <!-- Fill capacity badge -->
@@ -522,7 +540,11 @@ background:rgba(255,255,255,0.4); }
                     </svg>
                 </a>
 
-                {% if p.can_apply %}
+                {% if already_applied %}
+                  <a href="/my-applications" class="btn-already-applied" onclick="event.stopPropagation()">
+                    View My Application →
+                  </a>
+                {% elif p.can_apply %}
                 <button class="btn-apply-now"
                     onclick="event.stopPropagation(); handleApplyNow('{{ p.program_slug }}', '{{ p.program }}', '{{ p.program_name | replace("'", "&apos;") }}')">
                     Apply Now

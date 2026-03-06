@@ -1,29 +1,33 @@
 import frappe
 
-@frappe.whitelist(allow_guest=True)
-def check_existing_application(program):
+@frappe.whitelist()
+def check_existing_application(admission_cycle=None):
     """
-    Called from the /admission page JS before redirecting to application form.
-    Checks if the logged-in user already has an application for this program.
+    Returns existing application name if user already applied in this cycle.
+    Called from /admission page before showing Apply Now.
     """
-    user = frappe.session.user
-    if user == "Guest":
-        return {"exists": False}
+    if frappe.session.user == "Guest":
+        return {"exists": False, "name": ""}
 
-    existing = frappe.db.get_value(
+    filters = {"owner": frappe.session.user}
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+
+    existing = frappe.get_all(
         "Applicant",
-        {"email": user, "program": program},
-        ["name", "application_status", "applicant_id"],
-        as_dict=True
+        filters=filters,
+        fields=["name", "admission_cycle", "application_status"],
+        order_by="creation desc",
+        limit=1
     )
     if existing:
         return {
-            "exists": True,
-            "status": existing.application_status or "Draft",
-            "name": existing.name,
-            "applicant_id": existing.applicant_id or existing.name
+            "exists":  True,
+            "name":    existing[0].name,
+            "status":  existing[0].application_status,
+            "cycle":   existing[0].admission_cycle,
         }
-    return {"exists": False}
+    return {"exists": False, "name": ""}
 
 @frappe.whitelist()
 def mark_notifications_read(names=None):
@@ -153,111 +157,112 @@ def get_user_type():
 @frappe.whitelist()
 def get_stage_tracker_data(applicant_name):
     """
-    Returns structured stage tracker data for the applicant portal.
-    Consumed by stage_tracker.js on both:
-      - /my-applications page (compact view)
-      - /applicant-form/{name} page (full view)
+    Returns stage pipeline for /my-applications stage tracker widget.
+    Reads stages from Admission Cycle child table filtered by intake_type.
     """
-    import frappe
-
-    # 1. Load applicant
+    # Permission: owner or admin
     applicant = frappe.get_doc("Applicant", applicant_name)
-
-    # 2. Permission check — only owner or admin
     allowed_roles = {"Admission Admin", "System Manager", "Applicant"}
     is_owner = frappe.session.user == applicant.owner
     has_role = bool(allowed_roles & set(frappe.get_roles()))
     if not is_owner and not has_role:
         frappe.throw("Not permitted", frappe.PermissionError)
 
-    # 3. Get ordered enabled stages from Admission Cycle
     if not applicant.admission_cycle:
-        return {"stages": [], "current_stage": None, "track_type": "normal"}
+        return {"stages": [], "app_status": applicant.application_status or ""}
 
-    cycle_doc = frappe.get_doc("Admission Cycle", applicant.admission_cycle)
-    enabled_stages = sorted(
-        [s for s in cycle_doc.stages if s.is_enabled],
-        key=lambda s: s.sequence_no or 0
-    )
+    # Get intake_type from Admission Cycle (not Program)
+    intake_type = frappe.db.get_value(
+        "Admission Cycle", applicant.admission_cycle, "intake_type"
+    ) or "All"
 
-    # 4. Determine track type
-    status = applicant.application_status or ""
-    if status == "Waitlisted":
-        track_type = "waitlisted"
-    elif status in ("Offer Issued", "Offer Accepted", "Fee Paid"):
-        track_type = "promoted" if applicant.get("was_waitlisted") else "normal"
-    else:
-        track_type = "normal"
+    # Load stages from cycle child table
+    try:
+        from slcm.admission.utils.stage_control import get_cycle_stages
+        stages = get_cycle_stages(applicant.admission_cycle, intake_type)
+    except Exception as e:
+        frappe.log_error(f"get_stage_tracker_data stage load error: {e}")
+        stages = []
 
-    # 5. Get applicant stage history from current_stage field
-    #    current_stage is a Data field — contains the active stage name
+    if not stages:
+        return {"stages": [], "app_status": applicant.application_status or ""}
+
+    from frappe.utils import today as get_today
+    today = get_today()
     current_stage_name = applicant.current_stage or ""
 
-    # Build stage name → reached_on map from Version log if available
-    stage_dates = {}
-    try:
-        versions = frappe.get_all(
-            "Version",
-            filters={"ref_doctype": "Applicant", "docname": applicant_name},
-            fields=["data", "creation"],
-            order_by="creation asc"
-        )
-        for v in versions:
-            import json
-            data = json.loads(v.data or "{}")
-            for change in data.get("changed", []):
-                if change[0] == "current_stage" and change[2]:
-                    stage_dates[change[2]] = str(v.creation)[:10]
-    except Exception:
-        pass
+    # Determine status of each stage
+    result_stages = []
+    found_active = False
 
-    # 6. Build stage list with status per stage
-    stages_out = []
-    current_reached = False
+    def get_seq(s):
+        return getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
 
-    for idx, stage in enumerate(enabled_stages):
-        sname = stage.stage_name
+    for s in stages:
+        sd = str(getattr(s, "start_date", None) or getattr(s, "stage_start_date", None) or "")
+        ed = str(getattr(s, "end_date", None) or getattr(s, "stage_end_date", None) or "")
 
-        if sname == current_stage_name:
-            stage_status = "active"
-            current_reached = True
-        elif not current_reached:
-            # All stages before current = completed
-            stage_status = "completed"
+        # Determine status
+        if sd and ed:
+            if today > ed:
+                status = "completed"
+            elif sd <= today <= ed:
+                status = "active"
+                found_active = True
+            else:
+                status = "pending"
+        elif current_stage_name:
+            if s.stage_name == current_stage_name:
+                status = "active"
+                found_active = True
+            elif not found_active:
+                status = "completed"
+            else:
+                status = "pending"
         else:
-            # Stages after current = pending
-            stage_status = "pending"
+            status = "pending"
 
-        # Override for terminal statuses
-        if status == "Rejected" and sname == current_stage_name:
-            stage_status = "rejected"
-        if status == "Waitlisted" and sname == current_stage_name:
-            stage_status = "waitlisted"
-
-        # Show action button only if applicant is active at this stage
+        # Check for applicant action on this stage
         show_action = (
-            stage_status == "active"
-            and stage.requires_applicant_action
+            status == "active" and
+            bool(getattr(s, "requires_applicant_action", 0))
         )
+        action_url   = getattr(s, "action_url", "") or ""
+        action_label = getattr(s, "action_label", "") or ""
 
-        stages_out.append({
-            "sequence":              stage.sequence_no,
-            "stage_name":            sname,
-            "stage_type":            stage.stage_type or "",
-            "status":                stage_status,
-            "reached_on":            stage_dates.get(sname, ""),
-            "requires_action":       bool(stage.requires_applicant_action),
-            "action_label":          stage.action_label or "",
-            "action_url":            stage.action_url or "",
-            "show_action":           show_action,
+        # Override action_url for known stage types
+        stage_type = getattr(s, "stage_type", "") or ""
+        if status == "active" and not action_url:
+            if stage_type == "Interview":
+                action_url   = "/eligibility/interview_management"
+                action_label = "View Interview"
+                show_action  = True
+            elif stage_type == "Exam":
+                action_url   = "/eligibility/entrance_test_seat_allocation"
+                action_label = "View Exam Details"
+                show_action  = True
+            elif stage_type == "Offer Letter":
+                action_url   = "/offer_letter/offer-letter-list"
+                action_label = "View Offer"
+                show_action  = True
+
+        result_stages.append({
+            "stage_name":    s.stage_name,
+            "stage_type":    stage_type,
+            "sequence":      get_seq(s),
+            "status":        status,
+            "reached_on":    sd if status == "completed" else "",
+            "show_action":   show_action,
+            "action_url":    action_url,
+            "action_label":  action_label,
         })
 
     return {
-        "track_type":     track_type,
-        "stages":         stages_out,
-        "current_stage":  current_stage_name,
-        "app_status":     status,
+        "stages":     result_stages,
+        "app_status": applicant.application_status or "",
+        "track_type": "normal",
     }
+
 
 
 @frappe.whitelist()
