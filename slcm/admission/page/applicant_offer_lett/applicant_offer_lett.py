@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 @frappe.whitelist()
 def get_offer_details(offer_name=None):
@@ -71,19 +72,22 @@ def get_offer_details(offer_name=None):
     fee_data = []
     snapshot = frappe.get_all("Offer Fee Snapshot", filters={"offer_id": offer_id}, order_by="creation desc", limit=1, ignore_permissions=True)
     if snapshot:
-        snapshot_items = frappe.get_all("Fee Component Child", 
-            filters={"parent": snapshot[0].name, "parenttype": "Offer Fee Snapshot"}, 
+        snapshot_items = frappe.get_all("Fee Component Child",
+            filters={"parent": snapshot[0].name, "parenttype": "Offer Fee Snapshot"},
             fields=["component_name", "fee_component", "total_amount", "amount"],
             ignore_permissions=True
         )
         for comp in snapshot_items:
+            # Skip any legacy Scholarship component rows — shown separately below
+            if (comp.fee_component or "").lower() == "scholarship":
+                continue
             fee_data.append({
                 "component": comp.component_name or comp.fee_component,
                 "amount": comp.total_amount or comp.amount
             })
     elif fee_structure:
-        fs_components = frappe.get_all("Fee Component Child", 
-            filters={"parent": fee_structure, "parenttype": "Fee Structure"}, 
+        fs_components = frappe.get_all("Fee Component Child",
+            filters={"parent": fee_structure, "parenttype": "Fee Structure"},
             fields=["component_name", "fee_component", "total_amount", "amount"],
             ignore_permissions=True
         )
@@ -93,10 +97,20 @@ def get_offer_details(offer_name=None):
                 "amount": comp.total_amount or comp.amount
             })
 
-    
     # Check if Fee is paid
-    fee_paid = frappe.db.get_value("Applicant Fee Assignment", 
+    fee_paid = frappe.db.get_value("Applicant Fee Assignment",
         {"offer_letter": offer_id, "status": ["in", ["Paid", "Fee Paid"]]}, "name")
+
+    # Scholarship Amount: prefer live total from Scholarship Application (most accurate)
+    applicant_id = target_applicant
+    admission_cycle = offer_dict.get("admission_cycle") or frappe.db.get_value("Applicant", applicant_id, "admission_cycle")
+    live_scholarship = frappe.db.sql("""
+        SELECT SUM(calculated_benefit)
+        FROM `tabScholarship Application`
+        WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
+    """, (applicant_id, admission_cycle))[0][0] or 0
+    scholarship_amount = flt(live_scholarship)
+    offer_dict["scholarship_amount"] = scholarship_amount
 
     # Get Online Payment Enabled flag
     online_payment_enabled = frappe.db.get_value("Fee Structure", fee_structure, "online_payment") if fee_structure else False

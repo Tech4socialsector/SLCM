@@ -11,18 +11,11 @@ from frappe.utils import now_datetime, flt
 
 class ScholarshipApplication(Document):
 	def autoname(self):
-		print(f"DEBUG: autoname self.admission_cycle: {self.admission_cycle}")
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))
 		
-		cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code")
-		print(f"DEBUG: autoname cycle_code: {cycle_code}")
-		if not cycle_code:
-			frappe.throw(frappe._("Cycle Code not found in Admission Cycle {0}").format(self.admission_cycle))
-		
 		# Naming Series: SA-{CYCLE}-.#####
-		self.name = make_autoname(f"SA-{cycle_code}-.#####")
-		print(f"DEBUG: autoname self.name: {self.name}")
+		self.name = make_autoname(f"SA-{self.admission_cycle}-.#####")
 
 	def validate(self):
 		if not self.status:
@@ -304,50 +297,94 @@ class ScholarshipApplication(Document):
 
 	def sync_fee_assignment(self, reverse=False):
 		"""
-		Updates the linked Applicant Fee Assignment with scholarship benefit.
-		Calculates the TOTAL approved scholarship amount for this applicant in this cycle
-		to ensure multiple scholarships are handled correctly (cumulative).
+		Sync Scenario 2: Scholarship approved/revoked AFTER offer acceptance.
+		Finds the existing Applicant Fee Assignment and updates scholarship_amount
+		and final_payable_amount directly. No Fee Component row is added.
 		"""
 		if not self.applicant_id or not self.admission_cycle:
 			return
 
-		# Query matching AFA
-		afa_data = frappe.db.get_value("Applicant Fee Assignment", {
-			"applicant": self.applicant_id,
-			"admission_cycle": self.admission_cycle,
-			"docstatus": ["!=", 2]
-		}, ["name", "total_amount"], as_dict=True)
-
-		if not afa_data:
-			return
-
-		afa_name = afa_data.name
-		total_amount = flt(afa_data.total_amount)
-		
-		# Calculate cumulative scholarship amount from ALL approved applications for this applicant + cycle
-		# We use direct SQL to avoid permission issues and ensure we get the latest committed data
+		# Calculate total scholarship across all approved applications for this applicant + cycle
 		total_scholarship = frappe.db.sql("""
 			SELECT SUM(calculated_benefit)
 			FROM `tabScholarship Application`
 			WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
 		""", (self.applicant_id, self.admission_cycle))[0][0] or 0
+		total_scholarship = flt(total_scholarship)
 
-		scholarship_applied = 1 if total_scholarship > 0 else 0
-		final_payable_amount = total_amount - flt(total_scholarship)
-		
-		msg = frappe._("Fee Assignment {0} synced. Total Scholarship: {1}, Final Payable: {2}")\
-			.format(afa_name, total_scholarship, final_payable_amount)
-		indicator = "green"
+		# 1. Update Applicant Fee Assignment (if it exists)
+		afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+			"applicant": self.applicant_id,
+			"admission_cycle": self.admission_cycle,
+			"docstatus": ["!=", 2]
+		}, "name")
 
-		# Apply changes directly to DB
-		frappe.db.set_value("Applicant Fee Assignment", afa_name, {
-			"scholarship_amount": total_scholarship,
-			"scholarship_applied": scholarship_applied,
-			"final_payable_amount": final_payable_amount
-		}, update_modified=True)
-		
+		if afa_name:
+			afa_doc = frappe.get_doc("Applicant Fee Assignment", afa_name)
+			# Recalculate final payable from total_amount (base fees) minus new scholarship
+			new_final = flt(afa_doc.total_amount) - total_scholarship
+
+			# Use db_set to update submitted documents directly
+			frappe.db.set_value("Applicant Fee Assignment", afa_name, {
+				"scholarship_amount": total_scholarship,
+				"scholarship_applied": 1 if total_scholarship > 0 else 0,
+				"final_payable_amount": new_final
+			})
+			frappe.msgprint(
+				frappe._("Fee Assignment {0} updated. Scholarship: {1}, Final Payable: {2}").format(
+					afa_name, total_scholarship, new_final),
+				indicator="green"
+			)
+
+		# 2. Update Offer Letter + Offer Fee Snapshot
+		self.sync_offer_letter(total_scholarship)
+
 		frappe.db.commit()
-		frappe.msgprint(msg, indicator=indicator)
+
+	def sync_offer_letter(self, total_scholarship):
+		"""
+		Updates the Offer Letter payable_amount and the Offer Fee Snapshot
+		scholarship_amount / total_payable fields.
+		No Fee Component row manipulation — scholarship is tracked as a field.
+		"""
+		offer_name = frappe.db.get_value("Offer Letter", {
+			"applicant": self.applicant_id,
+			"admission_cycle": self.admission_cycle,
+			"offer_status": ["in", ["Issued", "Accepted", "Draft", "Payment Completed"]]
+		}, "name")
+
+		if not offer_name:
+			return
+
+		# Find the snapshot
+		snapshot_name = frappe.db.get_value("Offer Fee Snapshot", {"offer_id": offer_name}, "name")
+		if not snapshot_name:
+			return
+
+		snapshot = frappe.get_doc("Offer Fee Snapshot", snapshot_name)
+
+		# Base total = sum of all real fee component rows (excluding any legacy Scholarship rows)
+		base_total = sum(
+			flt(row.total_amount)
+			for row in snapshot.fee_component
+			if (row.fee_component or "").lower() != "scholarship"
+		)
+		new_payable = base_total - flt(total_scholarship)
+
+		# Update Offer Letter payable_amount
+		frappe.db.set_value("Offer Letter", offer_name, "payable_amount", new_payable)
+
+		# Update Offer Fee Snapshot summary fields only (no row manipulation)
+		frappe.db.set_value("Offer Fee Snapshot", snapshot_name, {
+			"scholarship_amount": total_scholarship,
+			"total_payable": new_payable
+		})
+
+		frappe.msgprint(
+			frappe._("Offer Letter {0} updated. Scholarship: {1}, Payable: {2}").format(
+				offer_name, total_scholarship, new_payable),
+			indicator="blue"
+		)
 
 	def create_audit_log(self):
 		"""

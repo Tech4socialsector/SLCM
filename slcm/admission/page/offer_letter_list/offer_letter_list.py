@@ -52,6 +52,10 @@ def get_offer_list(limit_start=0, limit_page_length=10):
         ignore_permissions=True
     )
 
+    for offer in offers:
+        scholarship = frappe.db.get_value("Offer Fee Snapshot", {"offer_id": offer.name}, "scholarship_amount")
+        offer["scholarship_amount"] = scholarship or 0
+
     return {
         "offers": offers,
         "total_count": total_count,

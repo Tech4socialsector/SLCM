@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import flt
 
 login_required = True
 
@@ -115,6 +116,22 @@ def get_context(context):
                 "Program", app.program, "program_slug"
             ) or ""
         ) if app.get("program") else ""
+
+        # 3. Fetch linked Offer and Fee details
+        offer = frappe.db.get_value("Offer Letter", {
+            "applicant": app.name,
+            "offer_status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
+        }, ["name", "payable_amount", "offer_status"], as_dict=True)
+
+        if offer:
+            app["offer_name"] = offer.name
+            app["payable_amount"] = offer.payable_amount
+            app["offer_status_on_letter"] = offer.offer_status
+            
+            # Get scholarship amount from snapshot if available
+            scholarship = frappe.db.get_value("Offer Fee Snapshot", 
+                {"offer_id": offer.name}, "scholarship_amount")
+            app["scholarship_amount"] = flt(scholarship) or 0
 
     notifications = []
     try:
