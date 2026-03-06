@@ -101,8 +101,8 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
 
 def _send_result_notification_email(doc, email):
     """Send a result/rank notification email to the applicant."""
-    from frappe.utils import get_url_to_form
-    url = get_url_to_form("Entrance Test Seat Allocation", doc.name)
+    from frappe.utils import get_url
+    url = get_url("/eligibility/entrance-test-seat-allocation")
 
     status_color = "#2e7d32" if doc.entrance_test_status == "Attended" else "#c62828"
     
@@ -245,8 +245,8 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
 def _send_reschedule_email(doc, email):
     """Send a reschedule notification email to the applicant."""
     try:
-        from frappe.utils import get_url_to_form
-        url = get_url_to_form("Entrance Test Seat Allocation", doc.name)
+        from frappe.utils import get_url
+        url = get_url("/eligibility/entrance-test-seat-allocation")
 
         prefs_html = "<ul>"
         for p in doc.re_assigned_preferences:

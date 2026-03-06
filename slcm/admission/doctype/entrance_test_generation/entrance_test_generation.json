@@ -46,7 +46,8 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nIn Progress\nAllocation Done\nCompleted\nFailed"
+   "options": "Draft\nIn Progress\nAllocation Done\nCompleted\nFailed",
+   "read_only": 1
   },
   {
    "fieldname": "generated_on",
@@ -81,7 +82,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-01 18:32:59.239632",
+ "modified": "2026-03-05 21:57:34.099331",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Generation",
