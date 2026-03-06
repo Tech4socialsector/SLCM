@@ -19,15 +19,17 @@ class ScholarshipApplication(Document):
 		
 	def validate(self):
 		if not self.status:
-			# Web forms pass empty strings for read_only status fields, bypassing the Draft default
 			self.status = "Draft"
 			
 		if self.approval_date and get_datetime(self.approval_date) > get_datetime(now_datetime()):
 			frappe.throw(frappe._("Approval Date cannot be in the future."))
 
-		# Sync status from workflow_state if it exists
+		# If workflow is active, ensure status and workflow_state are in sync
 		if getattr(self, "workflow_state", None):
 			self.status = self.workflow_state
+		else:
+			# Ensure workflow_state is populated for initial record
+			self.workflow_state = self.status
 
 		self.set_applicant_metadata()
 		self.set_academic_year()
@@ -270,6 +272,8 @@ class ScholarshipApplication(Document):
 		# Sync status from workflow_state if it exists
 		if getattr(self, "workflow_state", None) and self.status != self.workflow_state:
 			self.db_set("status", self.workflow_state)
+		elif self.status and not getattr(self, "workflow_state", None):
+			self.db_set("workflow_state", self.status)
 
 		self.create_audit_log()
 		
