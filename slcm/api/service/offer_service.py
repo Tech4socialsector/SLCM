@@ -1059,6 +1059,3 @@ def get_pending_offers_list():
 @frappe.whitelist()
 def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
     return OfferService.send_bulk_reminders(offer_names, message, send_email, send_notification, sender_email)
-
-def expire_offers():
-    return OfferService.expire_offers()

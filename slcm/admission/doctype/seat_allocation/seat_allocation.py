@@ -212,21 +212,27 @@ class SeatAllocation(Document):
         Updates the linked Program Reservation Policy for each program in this allocation
         to reflect Filled and Available seats.
         """
-        # 1. Map programs to their specific policies
+        # 1. Identify programs in this allocation
+        affected_programs = set()
+        grouped_by_program = {}
+        for row in self.selection_applicant:
+            if row.program:
+                affected_programs.add(row.program)
+                if not reset_only:
+                    grouped_by_program.setdefault(row.program, []).append(row)
+
+        if not affected_programs:
+            return
+
+        # 2. Map programs to their specific policies
         policies = frappe.get_all("Program Reservation Policy", filters={
             "admission_cycle": self.admission_cycle,
-            "campus": self.campus,
+            "program": ["in", list(affected_programs)],
             "docstatus": ["!=", 2]
         }, fields=["name", "program"])
 
         policy_map = {p.program: p.name for p in policies}
         
-        # 2. Group applicants by program
-        grouped_by_program = {}
-        if not reset_only:
-            for row in self.selection_applicant:
-                grouped_by_program.setdefault(row.program, []).append(row)
-
         filled_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
 
         # 3. Process each policy found for this campus/cycle
@@ -492,81 +498,6 @@ class SeatAllocation(Document):
         frappe.db.commit()
 
         frappe.msgprint("Seat Allocation phase completed successfully.")
-
-    def sync_filled_seats(self):
-        """
-        Updates the linked Program Reservation Policy for each program in this allocation
-        to reflect Filled and Available seats.
-        """
-        grouped_by_program = {}
-        for row in self.selection_applicant:
-            grouped_by_program.setdefault(row.program, []).append(row)
-
-        filled_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
-
-        for program, applicants in grouped_by_program.items():
-            # 1. Find the PRP for this program, campus and cycle
-            policy_name = frappe.db.get_value("Admission Cycle Program", {
-                "parent": self.admission_cycle,
-                "campus": self.campus,
-                "program": program
-            }, "reservation_policy")
-
-            if not policy_name:
-                 policy_name = frappe.db.get_value("Program Reservation Policy", {
-                    "admission_cycle": self.admission_cycle,
-                    "program": program,
-                    "status": ["!=", "Locked"]
-                }, "name")
-
-            if not policy_name:
-                continue
-
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
-            
-            # Reset counts in policy rows
-            for p_row in policy.categories:
-                p_row.filled_seats = 0
-            
-            # Tally filled seats from current allocation
-            for app in applicants:
-                if app.selection_status in filled_statuses:
-                    # Map to policy category
-                    # If Open, it maps to reservation_quota == "General" or blank category?
-                    # The user example shows Category Name == General is item 1.
-                    
-                    category_found = False
-                    if app.allocation_type == "Open":
-                        # Find the "General" quota row
-                        for p_row in policy.categories:
-                            if p_row.reservation_quota == "General" or not p_row.category_name:
-                                p_row.filled_seats = int(p_row.filled_seats or 0) + 1
-                                category_found = True
-                                break
-                    else:
-                        # Find specific category row
-                        for p_row in policy.categories:
-                            if p_row.category_name == app.allocated_category:
-                                p_row.filled_seats = int(p_row.filled_seats or 0) + 1
-                                category_found = True
-                                break
-                    
-                    if not category_found:
-                         # Fallback to General if something is weird
-                         for p_row in policy.categories:
-                            if p_row.reservation_quota == "General":
-                                p_row.filled_seats = int(p_row.filled_seats or 0) + 1
-                                break
-
-            # Calculate available and update totals
-            policy.total_filled = 0
-            for p_row in policy.categories:
-                p_row.available_seats = max(0, int(p_row.seats or 0) - int(p_row.filled_seats or 0))
-                policy.total_filled += int(p_row.filled_seats or 0)
-            
-            policy.total_available = max(0, int(policy.total_allocated or 0) - int(policy.total_filled or 0))
-            
-            policy.save(ignore_permissions=True)
 
     @frappe.whitelist()
     def publish_allocation(self):
