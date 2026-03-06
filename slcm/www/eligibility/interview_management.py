@@ -3,6 +3,9 @@ from frappe import _
 from frappe.utils import formatdate, format_datetime, nowdate
 
 def get_context(context):
+    from slcm.admission.utils.portal import get_portal_config
+    context.portal_config = get_portal_config()
+    
     user = frappe.session.user
     if user == "Guest":
         frappe.throw(_("Please login to view this page"), frappe.PermissionError)
@@ -95,8 +98,11 @@ def save_attendance_confirmation(allocation_name, confirmation, is_rescheduled=F
         frappe.throw(_("Invalid confirmation option."))
 
     # Security check: verify ownership
-    owner_email = frappe.db.get_value("Interview Seat Allocation", allocation_name, "email")
-    if owner_email != frappe.session.user:
+    user = frappe.session.user
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
+    doc_applicant = frappe.db.get_value("Interview Seat Allocation", allocation_name, "applicant")
+    
+    if not applicant_name or doc_applicant != applicant_name:
         frappe.throw(_("You are not authorized to modify this record."), frappe.PermissionError)
 
     if isinstance(is_rescheduled, str):
@@ -123,9 +129,12 @@ def save_feedback(allocation_name, feedback_text):
     if not feedback_text or not feedback_text.strip():
         frappe.throw(_("Feedback cannot be empty."))
 
-    # Security check
-    owner_email = frappe.db.get_value("Interview Seat Allocation", allocation_name, "email")
-    if owner_email != frappe.session.user:
+    # Security check: verify ownership
+    user = frappe.session.user
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
+    doc_applicant = frappe.db.get_value("Interview Seat Allocation", allocation_name, "applicant")
+    
+    if not applicant_name or doc_applicant != applicant_name:
         frappe.throw(_("You are not authorized to modify this record."), frappe.PermissionError)
 
     doc = frappe.get_doc("Interview Seat Allocation", allocation_name)

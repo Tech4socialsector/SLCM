@@ -1,491 +1,330 @@
 {% extends "slcm/www/admission_base.html" %}
 
-{% block content %}
+{% block theme_vars %}
 <style>
     :root {
-        --primary-adm: #1a3c6e;
-        --secondary-adm: #7b1c1c;
-        --accent-adm: #fbbd08;
-    }
-
-    .allocation-card {
-        border-radius: 16px;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-        background: #fff;
-        margin-bottom: 2rem;
-    }
-
-    .card-header-adm {
-        background: linear-gradient(135deg, var(--primary-adm), #2c5282);
-        color: white;
-        padding: 24px;
-        border: none;
-    }
-
-    .badge-status {
-        padding: 8px 16px;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .status-allocated {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .status-pending {
-        background: #fef9c3;
-        color: #854d0e;
-    }
-
-    .status-rescheduled {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .status-absent {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .status-selected {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .status-rejected {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        color: #64748b;
-        font-weight: 500;
-    }
-
-    .detail-value {
-        color: #1e293b;
-        font-weight: 600;
-        text-align: right;
-    }
-
-    .btn-primary-adm {
-        background: var(--primary-adm);
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        color: white;
-    }
-
-    .btn-primary-adm:hover {
-        background: #2c5282;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(26, 60, 110, 0.2);
-        color: white;
-    }
-
-    .result-card {
-        background: linear-gradient(135deg, #ffffff, #f1f5f9);
-        border-radius: 12px;
-        padding: 24px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .rank-circle {
-        width: 80px;
-        height: 80px;
-        background: var(--primary-adm);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        font-weight: 800;
-        margin: 0 auto 12px;
-        border: 4px solid #e2e8f0;
-    }
-
-    .pulse-animation {
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        50% {
-            transform: scale(1.05);
-            opacity: 0.8;
-        }
-
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-
-    .reschedule-alert {
-        background: linear-gradient(135deg, #fffbeb, #fff7ed);
-        border: 1px dashed #fcd34d;
-        border-radius: 12px;
-        color: #92400e;
-    }
-
-    .slot-box {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 20px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .slot-box-label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        color: #64748b;
-        margin-bottom: 4px;
-    }
-
-    .feedback-box {
-        background: linear-gradient(135deg, #f0fdf4, #f8fafc);
-        border: 1px solid #bbf7d0;
-        border-radius: 12px;
-        padding: 24px;
-    }
-
-    .readonly-badge {
-        font-size: 0.7rem;
-        background: #f1f5f9;
-        color: #64748b;
-        padding: 2px 8px;
-        border-radius: 4px;
-        border: 1px solid #e2e8f0;
-        margin-left: 6px;
-        vertical-align: middle;
-    }
-
-    .confirmation-locked {
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        border-radius: 10px;
-        padding: 14px 18px;
-        font-weight: 600;
-        color: #166534;
+        --primary-adm: {{ (portal_config.get('primary_color') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')) or '#1a3c6e' }};
+        --secondary-adm: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
+        --accent-adm: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
+        --primary-light-adm: {{ (portal_config.get('primary_light_color') if portal_config and portal_config.get else (portal_config.primary_light_color if portal_config else '#e8f0fb')) or '#e8f0fb' }};
+        --bg-adm: {{ (portal_config.get('bg_color') if portal_config and portal_config.get else (portal_config.bg_color if portal_config else '#f4f6fb')) or '#f4f6fb' }};
+        
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.5);
+        --glass-shadow: 0 15px 45px rgba(0, 0, 0, 0.05);
+        --text-main: #0f172a;
+        --text-muted: #64748b;
     }
 </style>
+{% endblock %}
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
+{% block content %}
+<style>
+    .adm-container {
+        width: 100% !important;
+        max-width: 1400px !important;
+        padding: 2rem;
+    }
 
-            {% if no_record %}
-            <div class="text-center py-5">
-                <div class="mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" fill="none" viewBox="0 0 24 24">
-                        <path stroke="#94a3b8" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3"
-                            d="M4 10h16m-8-3V4M7 7V4m10 3V4M5 20h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Zm3-7h.01v.01H8V13Zm4 0h.01v.01H12V13Zm4 0h.01v.01H16V13Zm-8 4h.01v.01H8V17Zm4 0h.01v.01H12V17Zm4 0h.01v.01H16V17Z" />
-                    </svg>
-                </div>
-                <h3 class="fw-bold text-dark">No Interview Record Found</h3>
-                <p class="text-muted">Your interview slot has not been assigned yet. Please check back later.</p>
-            </div>
+    body {
+        background: radial-gradient(circle at top right, var(--primary-light-adm), transparent), 
+                    radial-gradient(circle at bottom left, #fff, transparent), 
+                    var(--bg-adm);
+        min-height: 100vh;
+        color: var(--text-main);
+        font-family: 'Inter', system-ui, sans-serif;
+    }
 
+    /* Premium Glassmorphism */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid var(--glass-border);
+        border-radius: 30px;
+        box-shadow: var(--glass-shadow);
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s ease;
+    }
+
+    .glass-card:hover { transform: translateY(-5px); }
+
+    .card-header-premium {
+        padding: 1.5rem 2.5rem;
+        background: linear-gradient(135deg, var(--primary-adm), var(--secondary-adm));
+        color: white;
+    }
+
+    .card-body-padding { padding: 2.5rem; }
+
+    /* Typography & Badges */
+    .dash-title { font-weight: 900; font-size: 2.5rem; color: var(--primary-adm); letter-spacing: -1px; }
+    .data-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .data-value { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+
+    .badge-premium {
+        padding: 0.6rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 800;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .status-confirmed { background: #dcfce7; color: #166534; }
+    .status-pending { background: #fef9c3; color: #854d0e; }
+    .status-rescheduled { background: #dbeafe; color: #1e40af; }
+    .status-cancelled { background: #fee2e2; color: #991b1b; }
+
+    /* Avatar */
+    .profile-avatar-xl {
+        width: 130px;
+        height: 130px;
+        border-radius: 35px;
+        border: 6px solid white;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+        object-fit: cover;
+        margin: 0 auto 1.5rem;
+    }
+
+    /* Slot Box */
+    .slot-display {
+        background: white;
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
+
+    /* Action Button */
+    .btn-action-premium {
+        background: var(--primary-adm);
+        color: white;
+        border: none;
+        padding: 1.1rem 3rem;
+        border-radius: 18px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 100%;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .btn-action-premium:hover:not(:disabled) {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        background: var(--secondary-adm);
+        color: white;
+    }
+
+    .btn-action-premium:disabled { opacity: 0.5; filter: grayscale(1); }
+
+    /* Result UI */
+    .rank-ring-xl {
+        width: 140px;
+        height: 140px;
+        border: 10px solid var(--primary-light-adm);
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+    }
+
+    /* Animations */
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-step { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+</style>
+
+<div class="dashboard-container">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 animate-step">
+        <div>
+            <h1 class="dash-title mb-1">Interview Portal</h1>
+            <p class="text-muted fw-medium mb-0">Direct Admission Assessment Center</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            {% if not no_record %}
+            <span class="badge-premium {% if doc.interview_slot_status == 'Confirmed' %}status-confirmed{% else %}status-pending{% endif %}">
+                Slot Status: {{ doc.interview_slot_status or 'Pending' }}
+            </span>
             {% else %}
-
-            {# ── Reschedule Banner ─────────────────────────────────────────── #}
-            {% if is_rescheduled and previous_schedule %}
-            <div class="reschedule-alert p-4 mb-4 d-flex align-items-center gap-3">
-                <div class="bg-warning bg-opacity-20 p-3 rounded-circle text-warning">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                        <path d="M22 4L12 14l-3-3" />
-                    </svg>
-                </div>
-                <div>
-                    <h5 class="fw-bold mb-1">Interview Rescheduled</h5>
-                    <p class="mb-0 opacity-75 small">
-                        Your previous interview with <b>{{ previous_schedule.staff_name }}</b>
-                        on <b>{{ frappe.format_date(previous_schedule.interview_date) }}</b>
-                        was rescheduled. Reason: <b>{{ previous_schedule.reason }}</b>.
-                        Please confirm your attendance for the new slot below.
-                    </p>
-                </div>
-            </div>
+            <span class="badge-premium status-pending">
+                Status: No Record
+            </span>
             {% endif %}
-
-            {# ── Result Section ─────────────────────────────────────────────── #}
-            {% if show_result %}
-            <div class="allocation-card mb-4 border-top border-4 border-primary">
-                <div class="card-header-adm d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 fw-bold">Interview Result</h4>
-                    <span class="badge-status
-                        {% if doc.interview_status == 'Selected' %}status-selected
-                        {% elif doc.interview_status == 'Rejected' %}status-rejected
-                        {% elif doc.interview_status == 'Attended' %}status-allocated
-                        {% else %}status-absent{% endif %}">
-                        {{ doc.interview_status }}
-                    </span>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-4 text-center border-md-end">
-                            {% if doc.interview_status in ['Selected', 'Attended'] %}
-                            <div class="rank-circle">{{ doc.rank or '—' }}</div>
-                            <p class="text-muted small fw-bold text-uppercase">Interview Rank</p>
-                            {% else %}
-                            <div class="mb-3 text-danger">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="15" y1="9" x2="9" y2="15" />
-                                    <line x1="9" y1="9" x2="15" y2="15" />
-                                </svg>
-                            </div>
-                            <h5 class="text-danger fw-bold">{{ doc.interview_status | upper }}</h5>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-8 px-md-5">
-                            <h5 class="fw-bold mb-3">Result Summary</h5>
-                            <div class="detail-row">
-                                <span class="detail-label">Interview Score</span>
-                                <span class="detail-value text-primary h5 mb-0">{{ doc.interview_score or '—' }}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Result Status</span>
-                                <span class="detail-value">{{ doc.interview_result_status or 'Declared' }}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Attendance Marked On</span>
-                                <span class="detail-value">{{ doc.attendance_marked_on or '—' }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {# ── Main Info Card ─────────────────────────────────────────────── #}
-            <div class="allocation-card">
-                <div class="card-header-adm d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 fw-bold">Interview Details</h4>
-                    <span class="badge-status
-                        {% if doc.interview_slot_status == 'Confirmed' %}status-allocated
-                        {% elif doc.interview_slot_status == 'Rescheduled' %}status-rescheduled
-                        {% elif doc.interview_slot_status == 'Cancelled' %}status-absent
-                        {% else %}status-pending{% endif %}">
-                        {{ doc.interview_slot_status or 'Scheduled' }}
-                    </span>
-                </div>
-
-                <div class="card-body p-4">
-                    {# ── Applicant summary ──────────────────────────────────── #}
-                    <div class="row mb-4">
-                        <div class="col-md-3 text-center mb-4 mb-md-0">
-                            {% if doc.profile %}
-                            <img src="{{ doc.profile }}" class="rounded-circle shadow-sm"
-                                style="width: 140px; height: 140px; object-fit: cover; border: 4px solid #fff;">
-                            {% else %}
-                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto"
-                                style="width: 140px; height: 140px; border: 4px solid #fff;">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1"
-                                    stroke-width="1.5">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                    <circle cx="12" cy="7" r="4" />
-                                </svg>
-                            </div>
-                            {% endif %}
-                            <h5 class="mt-3 mb-0 fw-bold">{{ doc.candidate_name }}</h5>
-                            <p class="text-muted small">{{ doc.applicant }}</p>
-                        </div>
-
-                        <div class="col-md-9 border-start ps-4">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="detail-row"><span class="detail-label">Program</span><span
-                                            class="detail-value">{{ doc.program }}</span></div>
-                                    <div class="detail-row"><span class="detail-label">Campus</span><span
-                                            class="detail-value">{{ doc.campus }}</span></div>
-                                    <div class="detail-row"><span class="detail-label">Academic Year</span><span
-                                            class="detail-value">{{ doc.academic_year }}</span></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="detail-row"><span class="detail-label">Admission Cycle</span><span
-                                            class="detail-value">{{ doc.admission_cycle }}</span></div>
-                                    <div class="detail-row"><span class="detail-label">Source</span><span
-                                            class="detail-value">{{ doc.source_type or '—' }}</span></div>
-                                    <div class="detail-row"><span class="detail-label">Entrance Test Score</span><span
-                                            class="detail-value">{{ doc.entrance_test_score or '—' }}</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="my-3">
-
-                    {# ── Current Slot Details ───────────────────────────────── #}
-                    <h5 class="fw-bold mb-3">
-                        {% if is_rescheduled %}Rescheduled{% endif %} Interview Slot
-                        <span class="readonly-badge">Read Only</span>
-                    </h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <div class="slot-box">
-                                <div class="slot-box-label">Interviewer</div>
-                                <div class="fw-bold">{{ current_slot.staff_name or '—' }}</div>
-                                {% if current_slot.staff_contact %}
-                                <div class="text-muted small mt-1">{{ current_slot.staff_contact }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="slot-box">
-                                <div class="slot-box-label">Interview Date &amp; Time</div>
-                                <div class="fw-bold">{{ frappe.format_date(current_slot.interview_date) if
-                                    current_slot.interview_date else '—' }}</div>
-                                <div class="text-muted small mt-1">{{ current_slot.interview_time or 'Time TBD' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="slot-box">
-                                <div class="slot-box-label">Interview Venue</div>
-                                <div class="fw-bold" style="font-size:0.95rem;">{{ current_slot.interview_address or '—'
-                                    }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# ── Attendance Confirmation ────────────────────────────── #}
-                    {% if not show_result %}
-                    <hr class="my-3">
-
-                    {% set current_confirmation = current_slot.attendance_confirmation %}
-
-                    <h5 class="fw-bold mb-1">
-                        {% if is_rescheduled %}Re-schedule Attendance Confirmation{% else %}Attendance Confirmation{%
-                        endif %}
-                    </h5>
-                    <p class="text-muted small mb-3">Please confirm your attendance for the interview slot above.</p>
-
-                    {% if current_confirmation %}
-                    {# ── Already submitted: locked ──────────────────────────── #}
-                    <div class="confirmation-locked d-flex align-items-center gap-2">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                            <polyline points="22 4 12 14.01 9 11.01" />
-                        </svg>
-                        Confirmation submitted: <strong class="ms-1">{{ current_confirmation }}</strong>
-                    </div>
-                    <p class="text-muted small mt-2">Your confirmation has been recorded and cannot be changed.</p>
-
-                    {% else %}
-                    {# ── Not yet submitted: show select field ───────────────── #}
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Select Confirmation</label>
-                            <select id="attendanceSelect" class="form-select form-select-lg">
-                                <option value="" disabled selected>Choose an option...</option>
-                                {% for opt in attendance_options %}
-                                <option value="{{ opt }}">{{ opt }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-auto">
-                            <button id="btnSaveAttendance" class="btn btn-primary-adm" disabled>
-                                Save Confirmation
-                            </button>
-                        </div>
-                    </div>
-                    <div id="attendanceSaveSuccess" class="text-success mt-2 small" style="display:none;">
-                        ✔ Confirmation saved successfully.
-                    </div>
-                    {% endif %}
-
-                    {% else %}
-                    {# ── Result published: read-only row ────────────────────── #}
-                    <hr class="my-3">
-                    <div class="detail-row">
-                        <span class="detail-label">Attendance Confirmation</span>
-                        <span class="detail-value">
-                            {{ (doc.re_interview_attendance_confirmation if is_rescheduled else
-                            doc.interview_attendance_confirmation) or '—' }}
-                        </span>
-                    </div>
-                    {% endif %}
-
-                </div>
-            </div>
-
-            {# ── Feedback Card ─────────────────────────────────────────────── #}
-            {% if show_feedback %}
-            <div class="allocation-card">
-                <div class="card-header-adm d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 fw-bold">Interview Feedback</h4>
-                    {% if feedback_submitted %}
-                    <span class="badge-status status-allocated">Submitted</span>
-                    {% else %}
-                    <span class="badge-status status-pending">Pending</span>
-                    {% endif %}
-                </div>
-                <div class="card-body p-4">
-                    {% if feedback_submitted %}
-                    <div class="feedback-box">
-                        <p class="text-muted small fw-bold text-uppercase mb-1">Your Feedback</p>
-                        <p class="mb-0" style="white-space: pre-wrap;">{{ doc.feedback }}</p>
-                    </div>
-                    <p class="text-muted small mt-3">Thank you for your feedback!</p>
-                    {% else %}
-                    <p class="text-muted small mb-3">We value your experience. Please share your feedback about the
-                        interview process.</p>
-                    <div class="mb-3">
-                        <textarea id="feedbackText" class="form-control" rows="5"
-                            placeholder="Share your thoughts about the interview experience..."></textarea>
-                    </div>
-                    <button id="btnSubmitFeedback" class="btn btn-primary-adm">Submit Feedback</button>
-                    <div id="feedbackSuccess" class="text-success mt-2 small" style="display:none;">
-                        ✔ Thank you! Your feedback has been submitted.
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% endif %}{# end no_record #}
-
         </div>
     </div>
+
+    {% if no_record %}
+    <div class="glass-card p-5 text-center animate-step">
+        <div class="mb-4 opacity-25">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3 class="fw-black">No Interview Scheduled</h3>
+        <p class="text-muted">Your interview record is not available yet. Please contact the admission cell for assistance.</p>
+    </div>
+    {% else %}
+
+    <div class="row g-4 mb-4 align-items-stretch">
+        {# ── Column Left: Profile ── #}
+        <div class="col-lg-4 animate-step delay-1">
+            <div class="glass-card">
+                <div class="card-header-premium"><h5 class="mb-0 fw-bold">Candidate Profile</h5></div>
+                <div class="card-body-padding text-center">
+                    {% if doc.profile %}
+                    <img src="{{ doc.profile }}" class="profile-avatar-xl">
+                    {% else %}
+                    <div class="profile-avatar-xl bg-light d-flex align-items-center justify-content-center mx-auto text-muted">
+                        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    {% endif %}
+                    <h2 class="fw-black mb-1">{{ doc.candidate_name }}</h2>
+                    <p class="text-primary fw-black mb-4">{{ doc.applicant }}</p>
+                    
+                    <div class="text-start mt-4 pt-4 border-top">
+                        <div class="row g-4">
+                            <div class="col-12"><div class="data-label">Program Applied</div><div class="data-value">{{ doc.program }}</div></div>
+                            <div class="col-6"><div class="data-label">Campus</div><div class="data-value">{{ doc.campus }}</div></div>
+                            <div class="col-6"><div class="data-label">Academic Year</div><div class="data-value">{{ doc.academic_year }}</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── Column Right: Details/Results ── #}
+        <div class="col-lg-8 animate-step delay-2">
+            {% if show_result %}
+            <div class="glass-card mb-4" style="border-top: 8px solid #22c55e;">
+                <div class="card-header-premium" style="background: linear-gradient(135deg, #166534, #22c55e);">
+                    <h5 class="mb-0 fw-bold">Interview Assessment Result</h5>
+                </div>
+                <div class="card-body-padding">
+                    <div class="row align-items-center g-5">
+                        <div class="col-md-4 text-center border-md-end">
+                            <div class="rank-ring-xl">
+                                <div class="h1 fw-black text-success mb-0">{{ doc.rank or '—' }}</div>
+                                <div class="data-label" style="font-size: 0.6rem;">Interview Rank</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8 ps-md-5">
+                            <div class="row g-4">
+                                <div class="col-sm-6"><div class="data-label">Assessment Score</div><div class="h2 fw-black text-dark mb-0">{{ doc.interview_score or '—' }}</div></div>
+                                <div class="col-sm-6"><div class="data-label">Official Status</div><div class="h2 fw-black text-success mb-0">{{ doc.interview_result_status or 'Declared' }}</div></div>
+                                <div class="col-12 mt-4"><div class="p-3 bg-success bg-opacity-5 rounded-4 border border-success border-opacity-10 text-success small"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Verified result based on panel assessment held on {{ frappe.format_date(current_slot.interview_date) }}.</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="glass-card">
+                <div class="card-header-premium"><h5 class="mb-0 fw-bold">{% if is_rescheduled %}Rescheduled{% endif %} Interview Assignment</h5></div>
+                <div class="card-body-padding">
+                    {% if is_rescheduled and previous_schedule %}
+                    <div class="p-4 rounded-4 bg-warning bg-opacity-5 border border-warning border-opacity-20 mb-5">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="text-warning"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="M22 4L12 14l-3-3"/></svg></div>
+                            <h6 class="fw-black text-dark mb-0">Previous Schedule Note</h6>
+                        </div>
+                        <p class="text-muted small mb-0">Your previous slot on {{ frappe.format_date(previous_schedule.interview_date) }} was updated due to: <b>{{ previous_schedule.reason }}</b></p>
+                    </div>
+                    {% endif %}
+
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <div class="slot-display">
+                                <div class="data-label">Assigned Panelist</div>
+                                <div class="h5 fw-black text-primary mb-1">{{ current_slot.staff_name or 'Panel TBA' }}</div>
+                                <p class="text-muted small mb-0">{{ current_slot.staff_contact or 'Direct contact via portal' }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="slot-display h-100">
+                                <div class="data-label">Date & Time</div>
+                                <div class="h5 fw-black mb-1">{{ frappe.format_date(current_slot.interview_date) if current_slot.interview_date else 'Schedule TBA' }}</div>
+                                <p class="text-muted small mb-0">{{ current_slot.interview_time or 'TBD' }}</p>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="slot-display" style="border-left: 6px solid var(--primary-adm);">
+                                <div class="data-label">Interview Venue</div>
+                                <div class="h5 fw-black mb-0">{{ current_slot.interview_address or 'Venue details will be updated here' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not show_result %}
+                    <div class="mt-5 border-top pt-5">
+                        {% if current_slot.attendance_confirmation %}
+                        <div class="p-4 bg-success bg-opacity-5 rounded-4 border border-success border-opacity-20 text-center">
+                            <div class="text-success h4 fw-black mb-2">Confirmation Received</div>
+                            <p class="text-muted mb-0">You have confirmed your attendance as: <b>{{ current_slot.attendance_confirmation }}</b></p>
+                        </div>
+                        {% else %}
+                        <div id="attendance-action-section">
+                            <h4 class="fw-black mb-3">Attendance Confirmation</h4>
+                            <p class="text-muted mb-4">Please confirm your availability for this slot. Once submitted, your selection is final.</p>
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-7">
+                                    <select id="attendanceSelect" class="form-select form-select-lg fw-bold border-0 bg-light py-3 px-4">
+                                        <option value="" disabled selected>Select your response...</option>
+                                        {% for opt in attendance_options %}
+                                        <option value="{{ opt }}">{{ opt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <button id="btnSaveAttendance" class="btn-action-premium" disabled>Submit Confirmation</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── Feedback Section ── #}
+            {% if show_feedback %}
+            <div class="glass-card mt-4 animate-step">
+                <div class="card-header-premium" style="background: var(--bg-adm); color: var(--primary-adm); border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <h5 class="mb-0 fw-bold">Interview Process Feedback</h5>
+                </div>
+                <div class="card-body-padding">
+                    {% if feedback_submitted %}
+                    <div class="p-4 bg-light rounded-4">
+                        <div class="data-label">Your Submitted Feedback</div>
+                        <p class="mb-0 fw-medium" style="white-space: pre-wrap;">{{ doc.feedback }}</p>
+                    </div>
+                    {% else %}
+                    <div class="mb-4">
+                        <label class="data-label">Experience Sharing</label>
+                        <textarea id="feedbackText" class="form-control border-0 bg-light rounded-4 p-4 mt-2 fw-medium" rows="4" placeholder="How was your interview experience?"></textarea>
+                    </div>
+                    <button id="btnSubmitFeedback" class="btn-action-premium">Submit Feedback</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 {% if not no_record %}
 <script type="application/json" id="__interview-page-data__">
     {
         "allocationName": "{{ doc.name }}",
-        "isRescheduled": {{ 'true' if is_rescheduled else 'false' }},
-        "showResult": {{ 'true' if show_result else 'false' }},
-        "showFeedback": {{ 'true' if show_feedback else 'false' }},
-        "feedbackSubmitted": {{ 'true' if feedback_submitted else 'false' }}
+        "isRescheduled": {{ 'true' if is_rescheduled else 'false' }}
     }
 </script>
 <script>
@@ -494,77 +333,48 @@
         if (!dataEl) return;
         var pageData = JSON.parse(dataEl.textContent);
 
-        // ── Attendance Confirmation Select ───────────────────────────
         var sel = document.getElementById('attendanceSelect');
         var btnSave = document.getElementById('btnSaveAttendance');
-        var saveSuccess = document.getElementById('attendanceSaveSuccess');
 
         if (sel && btnSave) {
-            sel.addEventListener('change', function () {
-                btnSave.disabled = !this.value;
-            });
-
+            sel.addEventListener('change', function () { btnSave.disabled = !this.value; });
             btnSave.addEventListener('click', function () {
                 var chosen = sel.value;
-                if (!chosen) {
-                    showToast('Please select an option first.', 'error');
-                    return;
-                }
-
-                var confirmMsg = 'Confirm your attendance as <b>' + chosen + '</b>?';
-                if (chosen === 'Need Reschedule') {
-                    confirmMsg += '<br><small class="text-muted">The admissions office will contact you for a new slot.</small>';
-                }
-                confirmMsg += '<br><small class="text-danger mt-1 d-block">This action cannot be undone.</small>';
-
-                showConfirm(confirmMsg, function () {
+                showConfirm('Confirm your response as <b>' + chosen + '</b>?', function () {
                     btnSave.disabled = true;
-                    btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
-
+                    btnSave.innerHTML = 'Processing...';
                     apiFetch('slcm.www.eligibility.interview_management.save_attendance_confirmation', {
                         allocation_name: pageData.allocationName,
                         confirmation: chosen,
                         is_rescheduled: pageData.isRescheduled
-                    }).then(function () {
-                        saveSuccess.style.display = 'block';
-                        showToast('Confirmation saved!', 'success');
-                        btnSave.innerHTML = 'Save Confirmation';
-                        setTimeout(function () { window.location.reload(); }, 1200);
-                    }).catch(function (err) {
-                        showToast(err.message || 'Error saving confirmation.', 'error');
+                    }).then(() => {
+                        showToast('Confirmation recorded!', 'success');
+                        setTimeout(() => window.location.reload(), 1200);
+                    }).catch(err => {
+                        showToast(err.message, 'error');
                         btnSave.disabled = false;
-                        btnSave.innerHTML = 'Save Confirmation';
+                        btnSave.innerHTML = 'Submit Confirmation';
                     });
                 });
             });
         }
 
-        // ── Feedback ─────────────────────────────────────────────────
         var btnFeedback = document.getElementById('btnSubmitFeedback');
-        var feedbackSuccess = document.getElementById('feedbackSuccess');
-
         if (btnFeedback) {
             btnFeedback.addEventListener('click', function () {
                 var txt = (document.getElementById('feedbackText').value || '').trim();
-                if (!txt) {
-                    showToast('Please enter your feedback before submitting.', 'error');
-                    return;
-                }
-
-                showConfirm('Submit your feedback? This cannot be changed later.', function () {
+                if (!txt) { showToast('Please enter your feedback.', 'error'); return; }
+                showConfirm('Submit your feedback?', function () {
                     btnFeedback.disabled = true;
-                    btnFeedback.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
-
+                    btnFeedback.innerHTML = 'Submitting...';
                     apiFetch('slcm.www.eligibility.interview_management.save_feedback', {
                         allocation_name: pageData.allocationName,
                         feedback_text: txt
-                    }).then(function () {
-                        feedbackSuccess.style.display = 'block';
-                        showToast('Feedback submitted! Thank you.', 'success');
-                        btnFeedback.innerHTML = 'Submit Feedback';
-                        setTimeout(function () { window.location.reload(); }, 1500);
-                    }).catch(function (err) {
-                        showToast(err.message || 'Error submitting feedback.', 'error');
+                    }).then(() => {
+                        showToast('Thank you for your feedback!', 'success');
+                        setTimeout(() => window.location.reload(), 1200);
+                    }).catch(err => {
+                        showToast(err.message, 'error');
                         btnFeedback.disabled = false;
                         btnFeedback.innerHTML = 'Submit Feedback';
                     });

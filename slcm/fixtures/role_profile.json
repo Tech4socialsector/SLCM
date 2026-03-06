@@ -70,5 +70,50 @@
     "role": "Interview Admin"
    }
   ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-03-06 12:37:07.200536",
+  "name": "Campus Admin",
+  "role_profile": "Campus Admin",
+  "roles": [
+   {
+    "role": "Campus Admin"
+   },
+   {
+    "role": "Academic Admin"
+   },
+   {
+    "role": "Admission Admin"
+   },
+   {
+    "role": "Admission Officer"
+   },
+   {
+    "role": "Eligibility Admin"
+   },
+   {
+    "role": "Entrance Test Admin"
+   },
+   {
+    "role": "Entrance Test Provider"
+   },
+   {
+    "role": "Interview Admin"
+   },
+   {
+    "role": "Interview Staff Member"
+   },
+   {
+    "role": "Merit Admin"
+   },
+   {
+    "role": "Offer Letter Admin"
+   },
+   {
+    "role": "Scholarship Admin"
+   }
+  ]
  }
 ]

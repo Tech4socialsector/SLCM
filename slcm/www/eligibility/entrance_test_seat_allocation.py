@@ -5,6 +5,9 @@ import base64
 import mimetypes
 
 def get_context(context):
+    from slcm.admission.utils.portal import get_portal_config
+    context.portal_config = get_portal_config()
+    
     user = frappe.session.user
     if user == "Guest":
         frappe.throw(_("Please login to view this page"), frappe.PermissionError)
@@ -72,8 +75,11 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
     )
     
     # Security check: verify ownership
-    owner_email = frappe.db.get_value("Entrance Test Seat Allocation", allocation_name, "email")
-    if owner_email != frappe.session.user:
+    user = frappe.session.user
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
+    doc_applicant = frappe.db.get_value("Entrance Test Seat Allocation", allocation_name, "applicant")
+    
+    if not applicant_name or doc_applicant != applicant_name:
         frappe.throw(_("You are not authorized to modify this record."), frappe.PermissionError)
     
     # Validation
@@ -98,8 +104,11 @@ def download_admit_card(allocation_name):
     If missing, triggers generation+storage then serves the result.
     """
     # Security check
+    user = frappe.session.user
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
     doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
-    if doc.email != frappe.session.user:
+    
+    if not applicant_name or doc.applicant != applicant_name:
         frappe.throw(_("Not authorized"), frappe.PermissionError)
 
     is_rescheduled = (doc.is_rescheduled == 1 or doc.entrance_test_status == "Rescheduled")
