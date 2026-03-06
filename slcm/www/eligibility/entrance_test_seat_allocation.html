@@ -1,518 +1,385 @@
 {% extends "slcm/www/admission_base.html" %}
 
-{% block content %}
+{% block theme_vars %}
 <style>
     :root {
-        --primary-adm: #1a3c6e;
-        --secondary-adm: #7b1c1c;
-        --accent-adm: #fbbd08;
+        --primary-adm: {{ (portal_config.get('primary_color') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')) or '#1a3c6e' }};
+        --secondary-adm: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
+        --accent-adm: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
+        --primary-light-adm: {{ (portal_config.get('primary_light_color') if portal_config and portal_config.get else (portal_config.primary_light_color if portal_config else '#e8f0fb')) or '#e8f0fb' }};
+        --bg-adm: {{ (portal_config.get('bg_color') if portal_config and portal_config.get else (portal_config.bg_color if portal_config else '#f4f6fb')) or '#f4f6fb' }};
+        
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.5);
+        --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Full screen responsive grid container */
+    .dashboard-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 2rem;
     }
 
-    .allocation-card {
-        border-radius: 16px;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    body {
+        background: var(--bg-adm);
+        min-height: 100vh;
+        color: var(--text-main);
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        box-shadow: var(--glass-shadow);
+        height: 100%;
         overflow: hidden;
-        background: #fff;
-        margin-bottom: 2rem;
-    }
-
-    .card-header-adm {
-        background: linear-gradient(135deg, var(--primary-adm), #2c5282);
-        color: white;
-        padding: 24px;
-        border: none;
-    }
-
-    .badge-status {
-        padding: 8px 16px;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .status-allocated {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .status-pending {
-        background: #fef9c3;
-        color: #854d0e;
-    }
-
-    .status-rescheduled {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .status-absent {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .detail-row {
         display: flex;
-        justify-content: space-between;
-        padding: 12px 0;
-        border-bottom: 1px solid #f1f5f9;
+        flex-direction: column;
     }
 
-    .detail-row:last-child {
-        border-bottom: none;
+    .card-header-gradient {
+        padding: 1.25rem 2rem;
+        background: linear-gradient(135deg, var(--primary-adm), var(--secondary-adm));
+        color: white;
     }
 
-    .detail-label {
-        color: #64748b;
-        font-weight: 500;
+    .card-body-padding {
+        padding: 2.5rem;
     }
 
-    .detail-value {
-        color: #1e293b;
-        font-weight: 600;
-        text-align: right;
+    /* Typography */
+    .dash-title { font-weight: 900; font-size: 2.25rem; color: var(--primary-adm); letter-spacing: -0.025em; }
+    .data-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .data-value { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+
+    .status-badge-premium {
+        background: white;
+        color: var(--primary-adm);
+        padding: 0.6rem 1.25rem;
+        border-radius: 100px;
+        font-weight: 800;
+        font-size: 0.8rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.05);
     }
 
-    .provider-selection {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 20px;
-        border: 2px dashed #cbd5e1;
-        transition: all 0.3s ease;
+    .profile-avatar-lg {
+        width: 110px;
+        height: 110px;
+        border-radius: 24px;
+        border: 4px solid white;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        object-fit: cover;
+        margin-bottom: 1.5rem;
     }
 
-    .provider-selection:hover {
-        border-color: var(--primary-adm);
-        background: #f1f5f9;
-    }
-
-    .btn-primary-adm {
+    .btn-action-master {
         background: var(--primary-adm);
+        color: white;
         border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        padding: 1rem 2.5rem;
+        border-radius: 16px;
+        font-weight: 800;
+        font-size: 1.05rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .btn-action-master:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        background: var(--secondary-adm);
         color: white;
     }
 
-    .btn-primary-adm:hover {
-        background: #2c5282;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(26, 60, 110, 0.2);
-        color: white;
-    }
-
-    .result-card {
-        background: linear-gradient(135deg, #ffffff, #f1f5f9);
-        border-radius: 12px;
-        padding: 24px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .rank-circle {
-        width: 80px;
-        height: 80px;
-        background: var(--primary-adm);
-        color: white;
+    /* Result UI */
+    .rank-display-box {
+        background: white;
+        border: 6px solid var(--primary-light-adm);
+        width: 130px;
+        height: 130px;
         border-radius: 50%;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
-        font-weight: 800;
-        margin: 0 auto 12px;
-        border: 4px solid #e2e8f0;
+        margin: 0 auto;
     }
 
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-top: 24px;
-    }
-
-    .info-item {
-        background: white;
-        padding: 16px;
-        border-radius: 12px;
-        border: 1px solid #f1f5f9;
+    /* Result Notification Panel */
+    .result-notice-panel {
+        max-width: 75%;
+        margin: 2rem auto 0;
+        padding: 1.5rem 2rem;
+        background: rgba(34, 197, 94, 0.05);
+        border: 1.5px solid rgba(34, 197, 94, 0.15);
+        border-radius: 20px;
         text-align: center;
     }
 
-    .pulse-animation {
-        animation: pulse 2s infinite;
+    .result-notice-text {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #166534;
+        line-height: 1.6;
+        margin: 0;
     }
 
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        50% {
-            transform: scale(1.05);
-            opacity: 0.8;
-        }
-
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-
-    .timeline-badge {
-        background: #fef3c7;
-        color: #92400e;
-        border: 1px solid #fde68a;
-        padding: 4px 12px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: bold;
-    }
-
-    .journey-node {
-        position: relative;
-        padding-left: 2rem;
-        padding-bottom: 1.5rem;
-    }
-
-    .journey-node::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: #e2e8f0;
-    }
-
-    .journey-node::after {
-        content: '';
-        position: absolute;
-        left: -4px;
-        top: 0;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #94a3b8;
-    }
-
-    .journey-node.active::after {
-        background: var(--primary-adm);
-        box-shadow: 0 0 0 4px rgba(26, 60, 110, 0.1);
-    }
-
-    .journey-node:last-child {
-        padding-bottom: 0;
-    }
-
-    .reschedule-alert {
-        background: linear-gradient(135deg, #fffbeb, #fff7ed);
-        border: 1px dashed #fcd34d;
-        border-radius: 12px;
-        color: #92400e;
-    }
+    .animate-entrance { animation: fadeInUp 0.6s ease-out both; }
 </style>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            {% if no_record %}
-            <div class="text-center py-5">
-                <div class="mb-4" style="font-size: 48px;">
-                    <svg class="w-[88px] h-[88px] text-gray-800 dark:text-white" aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3"
-                            d="M4 10h16m-8-3V4M7 7V4m10 3V4M5 20h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Zm3-7h.01v.01H8V13Zm4 0h.01v.01H12V13Zm4 0h.01v.01H16V13Zm-8 4h.01v.01H8V17Zm4 0h.01v.01H12V17Zm4 0h.01v.01H16V17Z" />
-                    </svg>
+<div class="dashboard-container">
+    <!-- Section 1: Dashboard Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 animate-entrance">
+        <div class="mt-3 mt-md-0">
+            <span class="status-badge-premium">
+                <span class="text-success me-2">●</span>
+                System Status: {{ doc.entrance_test_status if not no_record else 'No Record' }}
+            </span>
+        </div>
+    </div>
+
+    {% if no_record %}
+    <div class="glass-card p-5 text-center animate-entrance">
+        <div class="mb-4 opacity-25">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        </div>
+        <h3 class="fw-black">Account Not Initialized</h3>
+        <p class="text-muted">We couldn't find any entrance test seat allocation record for your account yet.</p>
+    </div>
+    {% else %}
+
+    <!-- Row 1: Candidate Profile (Left) + Entrance Test Result (Right) -->
+    <div class="row g-4 mb-4 align-items-stretch">
+        <div class="col-lg-4 animate-entrance" style="animation-delay: 0.1s;">
+            <div class="glass-card">
+                <div class="card-header-gradient"><h5 class="mb-0 fw-bold">Candidate Profile</h5></div>
+                <div class="card-body-padding text-center">
+                    {% if doc.profile %}
+                    <img src="{{ doc.profile }}" class="profile-avatar-lg">
+                    {% else %}
+                    <div class="profile-avatar-lg bg-light d-flex align-items-center justify-content-center mx-auto text-muted">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    {% endif %}
+                    <h3 class="fw-black mb-1">{{ doc.candidate_name }}</h3>
+                    <p class="text-primary fw-bold mb-4">{{ doc.applicant }}</p>
+                    <div class="text-start border-top pt-4">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="data-label">Program</div>
+                                <div class="data-value small">{{ doc.program }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="data-label">Campus</div>
+                                <div class="data-value small">{{ doc.campus }}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="fw-bold text-dark">No Seat Allocation Record Found</h3>
-                <p class="text-muted">Your entrance test seat allocation has not been initiated yet. Please check back
-                    later.</p>
+            </div>
+        </div>
+
+        <div class="col-lg-8 animate-entrance" style="animation-delay: 0.2s;">
+            {% if show_result %}
+            <div class="glass-card" style="border-top: 6px solid #22c55e;">
+                <div class="card-header-gradient" style="background: linear-gradient(135deg, #166534, #22c55e);">
+                    <h5 class="mb-0 fw-bold">Entrance Test Result</h5>
+                </div>
+                <div class="card-body-padding h-100 d-flex flex-column">
+                    <div class="row align-items-center g-4">
+                        <div class="col-md-4 text-center border-md-end">
+                            <div class="rank-display-box">
+                                <div class="h1 fw-black text-success mb-0">{{ doc.entrance_test_rank or '—' }}</div>
+                                <div class="data-label" style="font-size: 0.6rem;">Rank</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8 ps-md-5">
+                            <div class="row g-4">
+                                <div class="col-sm-6">
+                                    <div class="data-label">Score Obtained</div>
+                                    <div class="h2 fw-black mb-0 text-dark">{{ doc.score_obtained or 0 }} <span class="text-muted h5">/ {{ doc.total_score or 0 }}</span></div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="data-label">Result Status</div>
+                                    <div class="h2 fw-black text-success mb-0">{{ doc.result_status or 'Declared' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Improved Notification Panel -->
+                    <div class="result-notice-panel">
+                        <p class="result-notice-text">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="me-2 mb-1"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Your entrance test result has been verified.<br>
+                            <span class="text-muted small fw-normal">Further admission instructions will be sent to your registered email.</span>
+                        </p>
+                    </div>
+                </div>
             </div>
             {% else %}
-
-            <!-- Reschedule Banner -->
-            {% if is_rescheduled and previous_schedule %}
-            <div class="reschedule-alert p-4 mb-4 d-flex align-items-center gap-3">
-                <div class="bg-warning bg-opacity-20 p-3 rounded-circle text-warning">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                        <path d="M22 21V3" />
-                        <path d="M7 12l5 5 10-10" />
-                    </svg>
-                </div>
-                <div>
-                    <h5 class="fw-bold mb-1">Entrance Test Rescheduled</h5>
-                    <p class="mb-0 opacity-75 small">Your previous appointment at <b>{{ previous_schedule.center }}</b>
-                        on <b>{{ frappe.format_date(previous_schedule.date) }}</b> was updated (Reason: {{
-                        previous_schedule.reason }}). <b>Action required:</b> Please select your new preferred center
-                        for the rescheduled test.</p>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Result Section (If published) -->
-            {% if show_result %}
-            <div class="allocation-card mb-4 border-top border-4 border-primary">
-                <div class="card-header-adm d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 fw-bold">Entrance Test Result</h4>
-                    <span
-                        class="badge-status {% if doc.entrance_test_status == 'Attended' %}status-allocated{% else %}status-absent{% endif %}">
-                        {{ doc.entrance_test_status }}
-                    </span>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-4 text-center border-md-end">
-                            {% if doc.entrance_test_status == 'Attended' %}
-                            <div class="rank-circle">{{ doc.entrance_test_rank or '—' }}</div>
-                            <p class="text-muted small fw-bold text-uppercase">Final Rank</p>
-                            {% else %}
-                            <div class="mb-3 text-danger">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="15" y1="9" x2="9" y2="15" />
-                                    <line x1="9" y1="9" x2="15" y2="15" />
-                                </svg>
-                            </div>
-                            <h5 class="text-danger fw-bold">ABSENT</h5>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-8 px-md-5">
-                            <h5 class="fw-bold mb-3">Performance Summary</h5>
-                            <div class="detail-row">
-                                <span class="detail-label">Score Obtained</span>
-                                <span class="detail-value text-primary h5 mb-0">{{ doc.score_obtained or 0 }} / {{
-                                    doc.total_score or 0 }}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Result Status</span>
-                                <span class="detail-value">{{ doc.result_status or 'Declared' }}</span>
-                            </div>
-                            <p class="mt-3 text-muted small">This result is final and based on your performance in the
-                                entrance test held on {{ frappe.format_date(doc.re_allocation_date if is_rescheduled
-                                else
-                                doc.allocation_date) }}.</p>
-                        </div>
+            <div class="glass-card bg-primary bg-opacity-5" style="border: 2px dashed var(--primary-adm);">
+                <div class="card-body-padding h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                    <div class="bg-white p-4 rounded-circle shadow-sm mb-4">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary-adm)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Applicant Summary Card -->
-            <div class="allocation-card">
-                <div class="card-header-adm d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 fw-bold">Seat Allocation Details</h4>
-                    <span
-                        class="badge-status {% if is_rescheduled %}status-rescheduled{% else %}status-pending{% endif %}">
-                        {{ doc.entrance_test_status }}
-                    </span>
-                </div>
-
-                <div class="card-body p-4">
-                    <div class="row">
-                        <div class="col-md-3 text-center mb-4 mb-md-0">
-                            <div class="position-relative d-inline-block">
-                                {% if doc.profile %}
-                                <img src="{{ doc.profile }}" class="rounded-circle shadow-sm"
-                                    style="width: 140px; height: 140px; object-fit: cover; border: 4px solid #fff;">
-                                {% else %}
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto"
-                                    style="width: 140px; height: 140px; border: 4px solid #fff;">
-                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1"
-                                        stroke-width="1.5">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
-                                </div>
-                                {% endif %}
-                            </div>
-                            <h5 class="mt-3 mb-0 fw-bold">{{ doc.candidate_name }}</h5>
-                            <p class="text-muted small">{{ doc.applicant }}</p>
-                        </div>
-
-                        <div class="col-md-9 border-start">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="detail-row"><span class="detail-label">Program</span><span
-                                            class="detail-value">{{ doc.program }}</span></div>
-                                    <div class="detail-row"><span class="detail-label">Test Date</span><span
-                                            class="detail-value">{{ frappe.format_date(doc.re_allocation_date if
-                                            is_rescheduled else
-                                            doc.allocation_date) }}</span></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="detail-row"><span class="detail-label">Campus</span><span
-                                            class="detail-value">{{ doc.campus }}</span></div>
-                                    <div class="detail-row"><span class="detail-label">Test List</span><span
-                                            class="detail-value">{{ doc.entrance_test_list }}</span></div>
-                                </div>
-                            </div>
-
-                            <hr class="my-4">
-
-                            {% set current_status = doc.re_allocation_status if is_rescheduled else
-                            doc.allocation_status %}
-
-                            {% if current_status == "Allocated" %}
-                            <div class="text-center py-4">
-                                <div class="mb-3">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e"
-                                        stroke-width="2.5">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                        <polyline points="22 4 12 14.01 9 11.01" />
-                                    </svg>
-                                </div>
-                                <h4 class="fw-bold">Seat Confirmed</h4>
-                                <p class="text-muted">Your examination center and seat are confirmed. Download your
-                                    admit card below.</p>
-
-                                <button onclick="downloadAdmitCard()" class="btn btn-primary-adm px-4 py-2 mt-2">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2" class="me-2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    Download Admit Card
-                                </button>
-                            </div>
-
-                            <div class="row mt-4">
-                                <div class="col-md-7">
-                                    <h6 class="fw-bold text-muted mb-3 d-flex align-items-center gap-2">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                                            <circle cx="12" cy="10" r="3" />
-                                        </svg>
-                                        CONFIRMED VENUE
-                                    </h6>
-                                    <div class="provider-selection mb-3 bg-white border-primary border-opacity-25"
-                                        style="border-style: solid; border-width: 1px;">
-                                        <div class="fw-bold text-primary h5 mb-1">{{ doc.re_center_name if
-                                            is_rescheduled else doc.center_name }}</div>
-                                        <div class="small text-muted">{{ doc.re_center_address if is_rescheduled else
-                                            doc.center_address }}</div>
-
-                                        {% if is_rescheduled %}
-                                        <div class="mt-3 pt-3 border-top small">
-                                            <span class="text-muted d-block mb-1">Previous Schedule Info:</span>
-                                            <div class="opacity-75">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                                                    stroke="currentColor" stroke-width="2" class="me-1">
-                                                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                {{ previous_schedule.center }} ({{
-                                                frappe.format_date(previous_schedule.date) }})
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-5">
-                                    <h6 class="fw-bold text-muted mb-3 d-flex align-items-center gap-2">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                            <line x1="9" y1="3" x2="9" y2="21" />
-                                            <line x1="15" y1="3" x2="15" y2="21" />
-                                            <line x1="3" y1="9" x2="21" y2="9" />
-                                            <line x1="3" y1="15" x2="21" y2="15" />
-                                        </svg>
-                                        SEATING
-                                    </h6>
-                                    <div class="row g-3">
-                                        <div class="col-6">
-                                            <div class="bg-light p-2 rounded text-center">
-                                                <small class="text-muted d-block mb-1">Room</small>
-                                                <span class="fw-bold">{{ doc.re_room_name if is_rescheduled else
-                                                    doc.room_name }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="bg-light p-2 rounded text-center">
-                                                <small class="text-muted d-block mb-1">Seat</small>
-                                                <span class="fw-bold text-primary">{{ doc.re_seat_number if
-                                                    is_rescheduled else doc.seat_number }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="bg-light p-2 rounded">
-                                                <small class="text-muted d-block mb-1">Building / Floor</small>
-                                                <span class="fw-bold small">{{ doc.re_building if is_rescheduled else
-                                                    doc.building }} / {{ doc.re_floor if is_rescheduled else doc.floor
-                                                    }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% else %}
-                            <!-- Selection phase -->
-                            <div id="allocation-view-section">
-                                <h5 class="fw-bold mb-4">Select Entrance Test Center</h5>
-                                <p class="text-muted small">Please choose your preferred center from the options
-                                    assigned to you by the admissions office. Note that seats are available on a
-                                    first-come, first-served basis.</p>
-
-                                <div class="provider-selection bg-light">
-                                    <label class="form-label fw-bold">Available Centers</label>
-                                    <select id="providerDropdown" class="form-select form-select-lg mb-3">
-                                        <option value="" disabled selected>Choose a center...</option>
-                                        {% for p in preferences %}
-                                        <option value="{{ p.provider }}">{{ p.center_name or p.provider }}</option>
-                                        {% endfor %}
-                                    </select>
-
-                                    <div id="centerDetails" style="display:none;"
-                                        class="mt-4 p-3 bg-white rounded border">
-                                        <div class="d-flex align-items-start gap-3">
-                                            <div class="bg-primary bg-opacity-10 p-2 rounded text-primary">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                                    stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                                                    <circle cx="12" cy="10" r="3" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h6 class="fw-bold mb-1" id="selectedCenterName"></h6>
-                                                <p class="text-muted small mb-0" id="selectedCenterAddr"></p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <button id="btnSaveProvider" class="btn btn-primary-adm w-100 mt-4" disabled>
-                                        Confirm Center & Allocate Seat
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Post-Allocation Success (Ajax) -->
-                            <div id="successSection" style="display:none;" class="text-center py-5">
-                                <div class="mb-3 pulse-animation">
-                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#22c55e"
-                                        stroke-width="2.5">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                        <polyline points="22 4 12 14.01 9 11.01" />
-                                    </svg>
-                                </div>
-                                <h4 class="fw-bold">Seat Allocated Successfully!</h4>
-                                <p class="text-muted">Redirecting to confirmed details...</p>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
+                    <h4 class="fw-black text-primary">Entrance Test Performance</h4>
+                    <p class="text-muted" style="max-width: 400px;">Results are typically declared within 7-10 days of the examination. You will be able to view your score and rank here.</p>
                 </div>
             </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Row 2: Active Test Schedule Card (Full Width) -->
+    <!-- Logic: Hide if Attended OR Result Published -->
+    {% set current_status = doc.re_allocation_status if is_rescheduled else doc.allocation_status %}
+    {% if current_status == "Allocated" and not show_result and doc.entrance_test_status not in ["Attended", "Absent"] %}
+    <div class="row mb-4 animate-entrance" style="animation-delay: 0.3s;">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="card-header-gradient"><h5 class="mb-0 fw-bold">Active Test Schedule</h5></div>
+                <div class="card-body-padding">
+                    <div class="row g-5">
+                        <div class="col-lg-7">
+                            <div class="mb-4">
+                                <div class="data-label">Examination Venue</div>
+                                <div class="h4 fw-black text-primary mb-1">{{ doc.re_center_name if is_rescheduled else doc.center_name }}</div>
+                                <p class="text-muted mb-0 lead small">{{ doc.re_center_address if is_rescheduled else doc.center_address }}</p>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="data-label">Test Date</div>
+                                    <div class="data-value">{{ frappe.format_date(doc.re_allocation_date if is_rescheduled else doc.allocation_date) }}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="data-label">Reporting Time</div>
+                                    <div class="data-value text-danger">09:30 AM</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="data-label">Exam Duration</div>
+                                    <div class="data-value">120 Minutes</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="p-4 bg-primary bg-opacity-5 rounded-4 border border-primary border-opacity-10">
+                                <div class="row text-center">
+                                    <div class="col-6 border-end">
+                                        <div class="data-label">Hall / Room</div>
+                                        <div class="h3 fw-black mb-0">{{ doc.re_room_name if is_rescheduled else doc.room_name }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="data-label">Seat Number</div>
+                                        <div class="h3 fw-black text-primary mb-0">{{ doc.re_seat_number if is_rescheduled else doc.seat_number }}</div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-top text-center">
+                                    <button onclick="downloadAdmitCard()" class="btn-action-master w-100 justify-content-center">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        Download Admit Card
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Row 3: Reschedule Section (Full Width) -->
+    <!-- Logic: Only show if Status is NOT Allocated AND Result is NOT shown -->
+    {% if current_status != "Allocated" and not show_result and doc.entrance_test_status not in ["Attended", "Absent"] %}
+    <div class="row mb-4 animate-entrance" style="animation-delay: 0.4s;">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="card-header-gradient" style="background: #475569;"><h5 class="mb-0 fw-bold">Test Center Rescheduling</h5></div>
+                <div class="card-body-padding">
+                    <div class="row g-5">
+                        <div class="col-lg-4">
+                            {% if is_rescheduled and previous_schedule %}
+                            <div class="p-4 rounded-4 border border-warning border-opacity-25 bg-warning bg-opacity-5 h-100">
+                                <h6 class="fw-black text-warning mb-3">Previous Appointment</h6>
+                                <div class="mb-3">
+                                    <div class="data-label">Center</div>
+                                    <div class="fw-bold small">{{ previous_schedule.center }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="data-label">Reason for update</div>
+                                    <div class="text-danger fw-bold small">{{ previous_schedule.reason }}</div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="p-4 rounded-4 bg-light h-100 d-flex flex-column justify-content-center">
+                                <h5 class="fw-black mb-2">Step 1: Selection</h5>
+                                <p class="text-muted small mb-0">Initial seat allocation is pending. Please proceed to select your preferred center.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-lg-8">
+                            <div id="allocation-view-section">
+                                <h4 class="fw-black mb-3">Select New Examination Center</h4>
+                                <p class="text-muted mb-4 small">Available centers are listed below based on real-time seat availability. Once confirmed, this choice cannot be modified.</p>
+                                
+                                <div class="row g-4 align-items-end">
+                                    <div class="col-md-7">
+                                        <label class="data-label">Available Centers</label>
+                                        <select id="providerDropdown" class="form-select form-select-lg mt-2 fw-bold">
+                                            <option value="" disabled selected>Choose a location...</option>
+                                            {% for p in preferences %}
+                                            <option value="{{ p.provider }}">{{ p.center_name or p.provider }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <button id="btnSaveProvider" class="btn-action-master w-100 justify-content-center" disabled>
+                                            Confirm Allocation
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="centerDetails" style="display:none;" class="mt-4 p-4 rounded-4 bg-primary bg-opacity-5 border border-primary border-opacity-10">
+                                    <div class="d-flex gap-3">
+                                        <div class="bg-primary text-white p-2 px-3 rounded-3 h-auto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+                                        <div>
+                                            <h5 class="fw-black text-primary mb-1" id="selectedCenterName"></h5>
+                                            <p class="text-muted small mb-0" id="selectedCenterAddr"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="successSection" style="display:none;" class="text-center py-5">
+                                <div class="spinner-grow text-primary mb-3"></div>
+                                <h3 class="fw-black">Securing Your Selection...</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
 </div>
 
 {% if not no_record %}
@@ -529,71 +396,58 @@
     document.addEventListener('DOMContentLoaded', function () {
         var dropdown = document.getElementById('providerDropdown');
         if (!dropdown) return;
-
         var pageDataElement = document.getElementById('__page-data__');
         if (pageDataElement) {
             var pageData = JSON.parse(pageDataElement.textContent);
-            var centerDetails = document.getElementById('centerDetails');
             var btnSave = document.getElementById('btnSaveProvider');
-            var centerName = document.getElementById('selectedCenterName');
-            var centerAddr = document.getElementById('selectedCenterAddr');
-            var preferences = pageData.preferences || [];
-
+            
             dropdown.addEventListener('change', function () {
-                var val = this.value;
-                var selected = (preferences || []).find(function (p) { return p.provider === val; });
+                var selected = (pageData.preferences || []).find(p => p.provider === this.value);
                 if (!selected) return;
-
+                
                 btnSave.disabled = true;
-                btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Checking availability...';
-
+                btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
+                
                 apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
                     applicant_id: pageData.applicantId,
                     entrance_test_list: pageData.entranceTestList
                 }).then(function (r) {
                     var pinfo = (r || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
                     if (pinfo && pinfo.is_full) {
-                        showToast('<b>' + (selected.center_name || selected.provider) + '</b> is currently full. Please choose another center.', 'error');
+                        showToast('<b>' + (selected.center_name || selected.provider) + '</b> is currently full.', 'error');
                         dropdown.value = '';
-                        centerDetails.style.display = 'none';
-                        btnSave.innerHTML = 'Confirm Center & Allocate Seat';
+                        document.getElementById('centerDetails').style.display = 'none';
+                        btnSave.innerHTML = 'Confirm Allocation';
                     } else {
-                        centerName.textContent = selected.center_name || selected.provider;
-                        centerAddr.textContent = selected.center_address || 'Address not provided';
-                        centerDetails.style.display = 'block';
+                        document.getElementById('centerDetails').style.display = 'block';
+                        document.getElementById('selectedCenterName').textContent = selected.center_name || selected.provider;
+                        document.getElementById('selectedCenterAddr').textContent = selected.center_address || '';
                         btnSave.disabled = false;
-                        btnSave.innerHTML = 'Confirm Center & Allocate Seat';
+                        btnSave.innerHTML = 'Confirm Allocation';
                     }
-                }).catch(function (err) {
-                    console.error(err);
+                }).catch(() => {
                     btnSave.disabled = false;
-                    btnSave.innerHTML = 'Confirm Center & Allocate Seat';
+                    btnSave.innerHTML = 'Confirm Allocation';
                 });
             });
 
             btnSave.addEventListener('click', function () {
                 var selectedProvider = dropdown.value;
-                var allocationName = pageData.allocationName;
-                var isRescheduled = pageData.isRescheduled;
-
-                showConfirm('Confirm seat allocation at <b>' + dropdown.options[dropdown.selectedIndex].text + '</b>? This action is permanent and cannot be reversed.', function () {
+                showConfirm('Are you sure you want to confirm allocation at <b>' + dropdown.options[dropdown.selectedIndex].text + '</b>? This action is permanent.', function() {
                     btnSave.disabled = true;
-                    btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-
+                    btnSave.innerHTML = 'Processing...';
                     apiFetch('slcm.www.eligibility.entrance_test_seat_allocation.save_provider', {
-                        allocation_name: allocationName,
+                        allocation_name: pageData.allocationName,
                         selected_provider: selectedProvider,
-                        is_rescheduled: isRescheduled
-                    }).then(function (res) {
+                        is_rescheduled: pageData.isRescheduled
+                    }).then(() => {
                         document.getElementById('allocation-view-section').style.display = 'none';
                         document.getElementById('successSection').style.display = 'block';
-                        showToast('Seat allocated successfully!', 'success');
-                        setTimeout(function () { window.location.reload(); }, 1500);
-                    }).catch(function (err) {
-                        console.error(err);
-                        showToast(err.message || 'Error while allocating seat.', 'error');
+                        setTimeout(() => window.location.reload(), 1500);
+                    }).catch(err => {
+                        showToast(err.message, 'error');
                         btnSave.disabled = false;
-                        btnSave.innerHTML = 'Confirm Center & Allocate Seat';
+                        btnSave.innerHTML = 'Confirm Allocation';
                     });
                 });
             });
@@ -604,8 +458,7 @@
         var pageDataElement = document.getElementById('__page-data__');
         if (pageDataElement) {
             var pageData = JSON.parse(pageDataElement.textContent);
-            var allocationName = pageData.allocationName;
-            window.location.href = '/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name=' + allocationName;
+            window.location.href = '/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name=' + pageData.allocationName;
         }
     }
 </script>

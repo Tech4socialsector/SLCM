@@ -68,7 +68,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-05 10:13:47.746408",
+ "modified": "2026-03-06 12:46:22.802520",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test List",
@@ -106,7 +106,8 @@
    "read": 1,
    "report": 1,
    "role": "Entrance Test Provider",
-   "share": 1
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
