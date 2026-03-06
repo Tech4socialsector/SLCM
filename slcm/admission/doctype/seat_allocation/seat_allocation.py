@@ -48,6 +48,15 @@ def get_category_priority(admission_cycle, campus, program):
     return priority_map
 
 class SeatAllocation(Document):
+    def autoname(self):
+        if not self.admission_cycle or not self.campus:
+            frappe.throw("Admission Cycle and Campus are required for naming.")
+
+        cycle = self.admission_cycle.replace(" ", "").upper()
+        campus = self.campus.replace(" ", "").upper()
+        level = (self.program_level or "ALL").replace(" ", "").upper()
+
+        self.name = f"SA-{campus}-{cycle}-{level}"
 
     def before_save(self):
         if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):

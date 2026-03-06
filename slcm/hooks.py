@@ -311,8 +311,8 @@ website_route_rules = [
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},
-    {"from_route": "/admission_dashboard", "to_route": "merit-and-schoarship/admission_dashboard"},
-    {"from_route": "/apply", "to_route": "merit-and-schoarship/apply"}
+    {"from_route": "/admission_dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
+    {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"}
 ]
 
 doc_events = {
