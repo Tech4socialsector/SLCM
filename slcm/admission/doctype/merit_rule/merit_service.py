@@ -6,10 +6,12 @@ from collections import defaultdict
 def calculate_merit_with_rule(applicant, rule):
     """
     Calculates total merit score for an applicant based on the given rule.
+    Supports simple fields in Eligibility Result and averaging values from
+    ug_degree_details and pg_degree_details child tables.
     """
     total_score = 0
     
-    # Pre-fetch merit components for efficiency if there are many rows
+    # Pre-fetch merit components for efficiency
     component_map = {}
     component_names = [row.component_type for row in rule.components if row.is_active]
     
@@ -27,14 +29,46 @@ def calculate_merit_with_rule(applicant, rule):
 
         comp_meta = component_map.get(row.component_type)
         if not comp_meta:
-            # Fallback for gracefully handling missing component definitions
-            frappe.logger().warning(f"Merit Component '{row.component_type}' not found for calculation.")
+            frappe.logger().warning(f"Merit Component '{row.component_type}' not found.")
             continue
 
-        # Dynamic attribute lookup
-        val = getattr(applicant, comp_meta.field_name, 0) or 0
-        score = val * (comp_meta.multiplier or 1.0)
+        field_name = comp_meta.field_name
+        val = 0
 
+        # Smart mapping for common field names to child tables
+        resolved_table = None
+        if field_name == "ug_cgpa" or field_name == "ug_degree_details":
+            resolved_table = "ug_degree_details"
+        elif field_name == "pg_cgpa" or field_name == "pg_degree_details":
+            resolved_table = "pg_degree_details"
+
+        if resolved_table:
+            child_rows = applicant.get(resolved_table) or []
+            if child_rows:
+                scores = []
+                for r in child_rows:
+                    row_val = 0
+                    if resolved_table == "ug_degree_details":
+                        row_val = r.get("ug_cgpa") or r.get("percentage_cgpa_obtained") or 0
+                    else:
+                        row_val = r.get("pg_cgpa") or r.get("percentagecgpa_obtained") or 0
+                    scores.append(float(row_val))
+                
+                if scores:
+                    val = sum(scores) / len(scores)
+        
+        # Explicit dot notation fallback: table_field.column_name
+        elif "." in field_name:
+            table_field, child_field = field_name.split(".", 1)
+            child_rows = applicant.get(table_field) or []
+            if child_rows:
+                scores = [getattr(r, child_field, 0) or 0 for r in child_rows]
+                val = sum(scores) / len(scores)
+        else:
+            # Dynamic attribute lookup for main DocType fields
+            val = getattr(applicant, field_name, 0) or 0
+
+        score = val * (comp_meta.multiplier or 1.0)
         total_score += score * (row.weight / 100)
 
     return total_score
@@ -68,10 +102,9 @@ def _rank_applicants(applicant_rows):
 
 def generate_merit_for_level(cycle, campus, program_level):
     """
-    Generates a Merit List for a specific Program Level (UG / PG / Research Cource).
-    Uses the Merit Rule assigned to that program level via Merit Rule Mapping.
+    Generates a Merit List for a specific Program Level.
     """
-    # Check if a Merit List already exists for this program level
+    # Check if a Merit List already exists
     existing = frappe.db.get_value(
         "Merit List",
         {
@@ -85,22 +118,17 @@ def generate_merit_for_level(cycle, campus, program_level):
     if existing:
         existing_doc = frappe.get_doc("Merit List", existing.get("name"))
 
-        # If it is already submitted and has applicants, treat it as final.
         if existing_doc.docstatus == 1 and existing_doc.get("merit_applicants"):
             return existing_doc
 
-        # Otherwise (draft/empty/partial), remove it so we can regenerate cleanly.
-        # This situation commonly happens when a background job previously failed.
         if existing_doc.docstatus == 0:
             frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
             frappe.db.commit()
         elif existing_doc.docstatus == 1 and not existing_doc.get("merit_applicants"):
-            # Very rare: submitted but empty. Cancel then delete.
             existing_doc.cancel()
             frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
             frappe.db.commit()
 
-    # Fetch the active Merit Rule for this program level
     merit_rule_name = frappe.db.get_value(
         "Merit Rule Mapping",
         {
@@ -120,21 +148,18 @@ def generate_merit_for_level(cycle, campus, program_level):
 
     rule = frappe.get_doc("Merit Rule", merit_rule_name)
 
-    # Fetch applicants for this program level
-    applicants = frappe.get_all(
+    # Fetch applicants names only first to iterate and get full docs (to include child tables)
+    applicant_names = frappe.get_all(
         "Eligibility Result",
         filters={
             "admission_cycle": cycle,
             "campus": campus,
             "program_level": program_level
         },
-        fields=[
-            "name", "applicant_id", "candidate_name", "program", "program_level",
-            "hsc_percentage", "entrance_test_score", "interview_score",
-            "ug_cgpa", "pg_cgpa"
-        ]
+        pluck="name"
     )
-    if not applicants:
+    
+    if not applicant_names:
         frappe.throw(
             f"No applicants found for Program Level '{program_level}', "
             f"Campus '{campus}' and Admission Cycle '{cycle}'.",
@@ -149,7 +174,8 @@ def generate_merit_for_level(cycle, campus, program_level):
     merit.generated_on = now_datetime()
     merit.status = "Generated"
 
-    for app in applicants:
+    for name in applicant_names:
+        app = frappe.get_doc("Eligibility Result", name)
         total_score = calculate_merit_with_rule(app, rule)
 
         if total_score < rule.minimum_marks:
@@ -160,11 +186,11 @@ def generate_merit_for_level(cycle, campus, program_level):
             "candidate_name": app.candidate_name,
             "program": app.program,
             "program_level": app.program_level,
-            "hsc_percentage": app.hsc_percentage,
-            "entrance_score": app.entrance_test_score,
-            "interview_score": app.interview_score,
-            "ug_cgpa": app.ug_cgpa,
-            "pg_cgpa": app.pg_cgpa,
+            "hsc_percentage": app.get("hsc_percentage") or 0,
+            "entrance_score": app.get("entrance_test_score") or 0,
+            "interview_score": app.get("interview_score") or 0,
+            "ug_cgpa": 0,
+            "pg_cgpa": 0,
             "total_score": total_score,
             "status": "Selected"
         })
