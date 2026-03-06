@@ -51,3 +51,46 @@ def razorpay_webhook():
                 pass
 
     return "OK"
+
+@frappe.whitelist(allow_guest=True)
+def fle_sign_up(email: str, mobile_no: str) -> tuple[int, str]:
+    if not email or not mobile_no:
+        frappe.throw("Email and Mobile Number are required")
+        
+    user = frappe.db.get("User", {"email": email})
+    if user:
+        if user.enabled:
+            return 0, "Already Registered"
+        else:
+            return 0, "Registered but disabled"
+    
+    from frappe.utils import random_string, escape_html
+    
+    # Use the first part of the email as the first name
+    first_name = email.split('@')[0]
+    
+    user_doc = frappe.get_doc({
+        "doctype": "User",
+        "email": email,
+        "first_name": escape_html(first_name),
+        "mobile_no": escape_html(mobile_no),
+        "enabled": 1,
+        "new_password": random_string(10),
+        "user_type": "Website User",
+        "send_welcome_email": 1
+    })
+    
+    user_doc.flags.ignore_permissions = True
+    user_doc.flags.ignore_password_policy = True
+    user_doc.insert()
+    
+    # Set default signup role as per Portal Settings
+    default_role = frappe.get_single_value("Portal Settings", "default_role")
+    if default_role:
+        user_doc.add_roles(default_role)
+        
+    if user_doc.flags.email_sent:
+        return 1, "Please check your email to verify your account and set a password"
+    else:
+        return 1, "Registration successful. Please check your email for verification"
+
