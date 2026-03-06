@@ -315,6 +315,8 @@ website_route_rules = [
     {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"}
 ]
 
+update_website_context = "slcm.admission.utils.portal.update_website_context"
+
 doc_events = {
     "Student Master": {
         "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
