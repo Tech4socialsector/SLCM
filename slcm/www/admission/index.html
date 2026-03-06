@@ -205,6 +205,19 @@ background:rgba(255,255,255,0.4); }
     justify-content: center;
 }
 .btn-view-details:hover { opacity: 0.9; color: #454343; }
+.btn-apply-closed {
+    display: inline-block;
+    padding: 9px 20px;
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: not-allowed;
+    border: 1.5px solid #e5e7eb;
+    flex: 1;
+    text-align: center;
+}
 .btn-brochure {
     display: inline-flex; align-items: center; gap: 4px;
     border: 1.5px solid var(--primary); color: var(--primary);
@@ -509,11 +522,16 @@ background:rgba(255,255,255,0.4); }
                     </svg>
                 </a>
 
+                {% if p.can_apply %}
                 <button class="btn-apply-now"
-                    onclick="event.stopPropagation(); handleApplyNow('{{ p.program_slug }}', '{{ p.program }}', '{{ p.program_name | replace("'", "&apos;") }}')"
-                    {% if not app_open %}disabled title="Applications closed"{% endif %}>
+                    onclick="event.stopPropagation(); handleApplyNow('{{ p.program_slug }}', '{{ p.program }}', '{{ p.program_name | replace("'", "&apos;") }}')">
                     Apply Now
                 </button>
+                {% else %}
+                <span class="btn-apply-closed" title="Not accepting applications at this time">
+                  {{ p.current_stage_name or "Applications Closed" }}
+                </span>
+                {% endif %}
             </div>
 
             <!-- Brochure row -->

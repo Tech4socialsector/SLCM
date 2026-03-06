@@ -49,7 +49,6 @@ def create_test_data():
             "doctype": "Admission Cycle",
             "cycle_name": cycle_name,
             "admission_year": year_name,
-            "exam_type": "CLAT",
             "status": "Active",
             "application_start": "2040-01-01 00:00:00",
             "application_end": "2040-06-30 23:59:59",
@@ -59,6 +58,7 @@ def create_test_data():
                     "program_name": "BA LLB (Hons)",
                     "seats": 120,
                     "is_active": 1,
+                    "exam_type": "CLAT",
                     "eligibility_hint": "10+2 with minimum 45% marks"
                 },
                 {
@@ -66,6 +66,7 @@ def create_test_data():
                     "program_name": "LLM",
                     "seats": 40,
                     "is_active": 1,
+                    "exam_type": "CLAT",
                     "eligibility_hint": "LLB degree with minimum 55% marks"
                 },
                 {
@@ -73,6 +74,7 @@ def create_test_data():
                     "program_name": "PhD Law",
                     "seats": 20,
                     "is_active": 1,
+                    "exam_type": "CLAT",
                     "eligibility_hint": "LLM with minimum 55% marks"
                 }
             ]

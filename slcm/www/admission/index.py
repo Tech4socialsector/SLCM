@@ -1,4 +1,5 @@
 import frappe
+from slcm.admission.utils.stage_control import can_apply, get_current_stage
 
 login_required = False
 
@@ -50,8 +51,26 @@ def get_context(context):
         from slcm.admission.utils.portal import (
             get_active_programs, get_active_announcements
         )
-        context.programs      = get_active_programs() or []
+        programs      = get_active_programs() or []
         context.announcements = get_active_announcements(limit=6) or []
+
+        # Stage-driven portal control
+        active_cycle_name = active_cycle.name if active_cycle else ""
+        for prog in programs:
+            prog_intake = frappe.db.get_value(
+                "Program", prog.get("program"), "intake_type"
+            ) or "All"
+            
+            if active_cycle_name:
+                prog["can_apply"]          = can_apply(active_cycle_name, prog_intake)
+                current_st                 = get_current_stage(active_cycle_name, prog_intake)
+                prog["current_stage_name"] = current_st.stage_name if current_st else ""
+            else:
+                prog["can_apply"]          = False
+                prog["current_stage_name"] = "Applications Closed"
+
+        context.programs = programs
+
     except Exception as e:
         frappe.log_error(title="Portal Index", message=f"fetch failed: {e}")
         context.programs = []

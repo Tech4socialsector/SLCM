@@ -141,6 +141,15 @@
    "fieldtype": "Data",
    "label": "URL Slug",
    "read_only": 1
+  },
+  {
+   "fieldname": "intake_type",
+   "fieldtype": "Select",
+   "label": "Intake Type",
+   "options": "CLAT\nNLSAT\nDirect Merit",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Determines which admission stages apply to applicants of this program"
   }
  ],
  "image_field": "hero_image",
