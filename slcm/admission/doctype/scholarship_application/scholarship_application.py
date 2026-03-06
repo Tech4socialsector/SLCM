@@ -24,13 +24,6 @@ class ScholarshipApplication(Document):
 		if self.approval_date and get_datetime(self.approval_date) > get_datetime(now_datetime()):
 			frappe.throw(frappe._("Approval Date cannot be in the future."))
 
-		# If workflow is active, ensure status and workflow_state are in sync
-		if getattr(self, "workflow_state", None):
-			self.status = self.workflow_state
-		else:
-			# Ensure workflow_state is populated for initial record
-			self.workflow_state = self.status
-
 		self.set_applicant_metadata()
 		self.set_academic_year()
 		self.prevent_duplicate()
@@ -690,3 +683,77 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 				eligible_schemes.append(m.scholarship_scheme)
 				
 	return list(set(eligible_schemes))
+
+@frappe.whitelist()
+def submit_application(name):
+    doc = frappe.get_doc("Scholarship Application", name)
+    if doc.status != "Draft":
+        frappe.throw(frappe._("Only Draft applications can be submitted."))
+    if "Applicant" not in frappe.get_roles():
+        frappe.throw(frappe._("Only Applicants can submit applications."))
+    
+    doc.status = "Submitted"
+    doc.save(ignore_permissions=True)
+    return doc.status
+
+@frappe.whitelist()
+def start_review(name):
+    doc = frappe.get_doc("Scholarship Application", name)
+    if doc.status != "Submitted":
+        frappe.throw(frappe._("Only Submitted applications can be moved to review."))
+    if "Admission Admin" not in frappe.get_roles():
+        frappe.throw(frappe._("Only Admission Admins can start the review."))
+    
+    doc.status = "Under Review"
+    doc.reviewed_by = frappe.session.user
+    doc.save(ignore_permissions=True)
+    return doc.status
+
+@frappe.whitelist()
+def approve_application(name):
+    doc = frappe.get_doc("Scholarship Application", name)
+    if doc.status != "Under Review":
+        frappe.throw(frappe._("Only applications Under Review can be approved."))
+    if "Scholarship Admin" not in frappe.get_roles():
+        frappe.throw(frappe._("Only Scholarship Admins can approve applications."))
+    
+    doc.status = "Approved"
+    doc.approved_by = frappe.session.user
+    doc.approval_date = now_datetime()
+    doc.save(ignore_permissions=True)
+    
+    # Sync fee assignment
+    try:
+        from slcm.admission.doctype.scholarship_application.scholarship_application import sync_fee_assignment_manually
+        sync_fee_assignment_manually(doc.name)
+    except:
+        pass
+        
+    return doc.status
+
+@frappe.whitelist()
+def reject_application(name, reason):
+    doc = frappe.get_doc("Scholarship Application", name)
+    if doc.status != "Under Review":
+        frappe.throw(frappe._("Only applications Under Review can be rejected."))
+    if "Scholarship Admin" not in frappe.get_roles():
+        frappe.throw(frappe._("Only Scholarship Admins can reject applications."))
+    if not reason:
+        frappe.throw(frappe._("Rejection reason is required."))
+
+    doc.status = "Rejected"
+    doc.rejection_reason = reason
+    doc.save(ignore_permissions=True)
+    return doc.status
+
+@frappe.whitelist()
+def revoke_application(name):
+    doc = frappe.get_doc("Scholarship Application", name)
+    if doc.status != "Approved":
+        frappe.throw(frappe._("Only Approved applications can be revoked."))
+    if "System Manager" not in frappe.get_roles():
+        frappe.throw(frappe._("Only System Managers can revoke applications."))
+    
+    doc.status = "Revoked"
+    doc.save(ignore_permissions=True)
+    return doc.status

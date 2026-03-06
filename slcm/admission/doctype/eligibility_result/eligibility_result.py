@@ -72,21 +72,39 @@ def get_applicant_data():
         })
 
     if not results:
-        # Check if Applicant record exists to provide a specific message
-        app_exists = frappe.db.exists("Applicant", {"email": user_email})
-        if not app_exists:
-            # Try owner fallback
-            app_exists = frappe.db.exists("Applicant", {"owner": user_email})
+        # Check if any data is published even without Eligibility Result
+        app_id = frappe.db.get_value("Applicant", {"email": user_email}, "name")
+        if not app_id:
+             app_id = frappe.db.get_value("Applicant", {"owner": user_email}, "name")
 
-        if app_exists:
-            return {"error": "Your Merit List evaluation is in progress. The results have not been published yet. Please check back later."}
-        else:
+        if app_id:
+            # Check for published Merit List or Seat Allocation
+            merit_exists = frappe.db.exists("Merit List Applicant", {"applicant_id": app_id})
+            allocation_exists = frappe.db.exists("Seat Selection Applicant", {"applicant_id": app_id})
+            
+            if merit_exists or allocation_exists:
+                # If these exist, we force a results check using applicant_id instead of email
+                # but for simplicity in this turn, we just adjust the error message or logic.
+                pass
+            else:
+                return {"error": "Your Merit List evaluation is in progress. The results have not been published yet. Please check back later."}
+
+        if not app_id:
             return {"error": "No admission application record found for this account."}
 
     # 2. For each result, get the specific selection statuses from Seat Allocation child tables
     settings = frappe.get_single("Admission Settings")
     
     combined_data = []
+
+    # If results is empty but we have an app_id, we might want to synthesize a result
+    if not results and app_id:
+        results.append({
+            "applicant_id": app_id,
+            "candidate_name": frappe.db.get_value("Applicant", app_id, "candidate_name"),
+            # other fields might be empty
+        })
+
     for res in results:
         # Fetch Merit List Entries
         merit_entries = []

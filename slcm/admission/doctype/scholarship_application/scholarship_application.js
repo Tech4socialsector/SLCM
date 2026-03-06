@@ -7,20 +7,82 @@ frappe.ui.form.on("Scholarship Application", {
     },
     refresh(frm) {
         frm.trigger("scholarship_scheme_ui");
-        
-        if (frm.doc.status === "Approved") {
-            frm.add_custom_button(__("Sync Fee Assignment"), () => {
-                frappe.call({
-                    method: "slcm.admission.doctype.scholarship_application.scholarship_application.sync_fee_assignment_manually",
-                    args: {
-                        docname: frm.doc.name
-                    },
-                    callback: (r) => {
-                        frm.reload_doc();
-                    }
-                });
+        frm.trigger("setup_workflow_buttons");
+    },
+    setup_workflow_buttons(frm) {
+        if (frm.is_new()) return;
+
+        const status = frm.doc.status;
+        const roles = frappe.user_roles;
+
+        // 1. Submit (Applicant)
+        if (status === "Draft" && roles.includes("Applicant")) {
+            frm.add_custom_button(__("Submit"), () => {
+                frm.trigger("call_workflow_method", "submit_application");
             }).addClass("btn-primary");
         }
+
+        // 2. Start Review (Admission Admin)
+        if (status === "Submitted" && roles.includes("Admission Admin")) {
+            frm.add_custom_button(__("Start Review"), () => {
+                frm.trigger("call_workflow_method", "start_review");
+            }).addClass("btn-primary");
+        }
+
+        // 3. Approve / Reject (Scholarship Admin)
+        if (status === "Under Review" && roles.includes("Scholarship Admin")) {
+            frm.add_custom_button(__("Approve"), () => {
+                frappe.confirm(__("Are you sure you want to approve this scholarship?"), () => {
+                    frm.trigger("call_workflow_method", "approve_application");
+                });
+            }).addClass("btn-success");
+
+            frm.add_custom_button(__("Reject"), () => {
+                frappe.prompt([
+                    {
+                        label: __("Rejection Reason"),
+                        fieldname: "reason",
+                        fieldtype: "Small Text",
+                        reqd: 1
+                    }
+                ], (values) => {
+                    frappe.call({
+                        method: "slcm.admission.doctype.scholarship_application.scholarship_application.reject_application",
+                        args: {
+                            name: frm.doc.name,
+                            reason: values.reason
+                        },
+                        callback: (r) => {
+                            if (!r.exc) {
+                                frm.reload_doc();
+                            }
+                        }
+                    });
+                }, __("Reject Scholarship"), __("Reject"));
+            }).addClass("btn-danger");
+        }
+
+        // 4. Revoke (System Manager)
+        if (status === "Approved" && roles.includes("System Manager")) {
+            frm.add_custom_button(__("Revoke"), () => {
+                frappe.confirm(__("Are you sure you want to revoke this approved scholarship?"), () => {
+                    frm.trigger("call_workflow_method", "revoke_application");
+                });
+            }).addClass("btn-danger");
+        }
+    },
+    call_workflow_method(frm, method) {
+        frappe.call({
+            method: `slcm.admission.doctype.scholarship_application.scholarship_application.${method}`,
+            args: {
+                name: frm.doc.name
+            },
+            callback: (r) => {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
     },
     applicant_id(frm) {
         if (frm.doc.applicant_id) {
