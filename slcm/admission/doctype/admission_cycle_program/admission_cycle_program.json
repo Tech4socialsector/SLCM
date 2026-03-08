@@ -5,6 +5,7 @@
  "engine": "InnoDB",
  "field_order": [
   "program",
+  "intake_type",
   "program_name",
   "brochure_url",
   "col_break_1",
@@ -12,7 +13,6 @@
   "campus",
   "seats",
   "section_break_exam",
-  "exam_type",
   "column_break_zrrv",
   "program_level",
   "section_break_eligibility",
@@ -37,6 +37,15 @@
    "label": "Program",
    "options": "Program",
    "reqd": 1
+  },
+  {
+   "fetch_from": "program.intake_type",
+   "fieldname": "intake_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Intake Type",
+   "options": "CLAT\nNLSAT\nDirect Merit",
+   "read_only": 1
   },
   {
    "fetch_from": "program.program_name",
@@ -76,13 +85,6 @@
    "fieldname": "section_break_exam",
    "fieldtype": "Section Break",
    "label": "Exam Type"
-  },
-  {
-   "description": "Entrance exam required for this program",
-   "fieldname": "exam_type",
-   "fieldtype": "Link",
-   "label": "Exam Type",
-   "options": "Exam Type Config"
   },
   {
    "collapsible": 1,

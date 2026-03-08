@@ -1271,11 +1271,15 @@ def before_submit_applicant(doc, method):
         )
 
 def set_intake_type(doc, method=None):
-    """Set intake_type from Admission Cycle (not Program)."""
-    if doc.admission_cycle:
-        intake = frappe.db.get_value(
-            "Admission Cycle", doc.admission_cycle, "intake_type"
-        )
+    """
+    Copy intake_type from the linked Program.
+    Program is the source of truth for intake type.
+    BA LLB / BCom LLB / BBA LLB = CLAT
+    LLM / LLM Business Law       = NLSAT
+    PhD Law                      = Direct Merit
+    """
+    if doc.program:
+        intake = frappe.db.get_value("Program", doc.program, "intake_type")
         if intake:
             doc.intake_type = intake
 

@@ -24,7 +24,8 @@
   "program_status",
   "section_break_xbux",
   "table_fela",
-  "connections_tab"
+  "connections_tab",
+  "intake_type"
  ],
  "fields": [
   {
@@ -143,13 +144,14 @@
    "read_only": 1
   },
   {
+   "bold": 1,
+   "description": "Determines which admission stages this program follows",
    "fieldname": "intake_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Intake Type",
    "options": "CLAT\nNLSAT\nDirect Merit",
-   "reqd": 1,
-   "in_list_view": 1,
-   "description": "Determines which admission stages apply to applicants of this program"
+   "reqd": 1
   }
  ],
  "image_field": "hero_image",
@@ -160,7 +162,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2026-03-05 14:24:57.026933",
+ "modified": "2026-03-06 11:22:04.238639",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",

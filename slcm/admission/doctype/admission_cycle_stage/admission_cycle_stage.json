@@ -8,6 +8,7 @@
     "stage_name",
     "stage_code",
     "stage_type",
+    "applicable_workflow",
     "sequence_no",
     "col_break_1",
     "is_enabled",
@@ -52,6 +53,13 @@
       "fieldtype": "Select",
       "label": "Stage Type",
       "options": "\nApplication\nScreening\nExam\nInterview\nEvaluation\nMerit\nDocument\nFee\nEnrollment",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "applicable_workflow",
+      "fieldtype": "Select",
+      "label": "Applicable Workflow",
+      "options": "All\nCLAT\nNLSAT\nDirect Merit",
       "in_list_view": 1
     },
     {

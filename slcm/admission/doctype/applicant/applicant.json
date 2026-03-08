@@ -153,6 +153,7 @@
         "fee_waived_on",
         "column_break_fcum",
         "current_stage",
+        "merit_score",
         "portal_last_login"
     ],
     "fields": [
@@ -923,6 +924,13 @@
             "fieldname": "current_stage",
             "fieldtype": "Data",
             "label": "Current Stage",
+            "read_only": 1
+        },
+        {
+            "fieldname": "merit_score",
+            "fieldtype": "Float",
+            "label": "Merit Score",
+            "precision": "2",
             "read_only": 1
         },
         {

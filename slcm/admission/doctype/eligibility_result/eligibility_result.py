@@ -73,12 +73,12 @@ def get_applicant_data():
         for app in applicants:
             results.append({
                 "name": None,
-                "applicant_id": app.applicant_id,
-                "candidate_name": app.candidate_name,
-                "campus": app.campus,
-                "program": app.program,
-                "program_level": app.program_level,
-                "admission_cycle": app.admission_cycle,
+                "applicant_id": app.get("applicant_id"),
+                "candidate_name": app.get("candidate_name"),
+                "campus": app.get("campus"),
+                "program": app.get("program"),
+                "program_level": app.get("program_level"),
+                "admission_cycle": app.get("admission_cycle"),
                 "reservation_category": None,
                 "hsc_percentage": None,
                 "entrance_test_score": None,
@@ -96,39 +96,39 @@ def get_applicant_data():
         merit_entries = []
         if settings.is_merit_list:
             merit_entries = frappe.get_all("Merit List Applicant",
-                filters={"applicant_id": res.applicant_id},
+                filters={"applicant_id": res.get("applicant_id")},
                 fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
             )
             for m in merit_entries:
-                if m.parent:
-                    m.published = frappe.db.get_value("Merit List", m.parent, "status") == "Published"
+                if m.get("parent"):
+                    m["published"] = frappe.db.get_value("Merit List", m.get("parent"), "status") == "Published"
         
         # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",
-            filters={"applicant_id": res.applicant_id},
+            filters={"applicant_id": res.get("applicant_id")},
             fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score"]
         )
         
         # Inject Seat Allocation details
         for s in statuses:
-            if s.parent:
-                s.published = frappe.db.get_value("Seat Allocation", s.parent, "status") == "Published"
+            if s.get("parent"):
+                s["published"] = frappe.db.get_value("Seat Allocation", s.get("parent"), "status") == "Published"
         
-        published_statuses = [s.selection_status for s in statuses if s.published]
+        published_statuses = [s.get("selection_status") for s in statuses if s.get("published")]
         
         available_scholarships = []
         applied_scholarships = []
-        if res.applicant_id and settings.is_scholarship_available:
+        if res.get("applicant_id") and settings.is_scholarship_available:
             from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard, get_applied_scholarships_for_dashboard
             available_scholarships = get_available_scholarships_for_dashboard(
-                res.applicant_id, res.admission_cycle, res.campus, res.program, published_statuses
+                res.get("applicant_id"), res.get("admission_cycle"), res.get("campus"), res.get("program"), published_statuses
             )
-            applied_scholarships = get_applied_scholarships_for_dashboard(res.applicant_id)
+            applied_scholarships = get_applied_scholarships_for_dashboard(res.get("applicant_id"))
 
         combined_data.append({
             "profile": res,
-            "merit": [m for m in merit_entries if m.published],
-            "results": [s for s in statuses if s.published],
+            "merit": [m for m in merit_entries if m.get("published")],
+            "results": [s for s in statuses if s.get("published")],
             "available_scholarships": available_scholarships,
             "applied_scholarships": applied_scholarships
         })

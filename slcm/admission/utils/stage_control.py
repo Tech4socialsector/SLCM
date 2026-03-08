@@ -3,16 +3,21 @@ from frappe.utils import today as get_today
 
 
 def get_intake_for_applicant(applicant_doc_or_name):
-    """Returns intake_type from the applicant's Admission Cycle."""
+    """
+    Returns intake_type from the applicant's Program.
+    Program is the single source of truth.
+    Falls back to 'All' if not set.
+    """
     if isinstance(applicant_doc_or_name, str):
-        applicant = frappe.get_doc("Applicant", applicant_doc_or_name)
+        program = frappe.db.get_value(
+            "Applicant", applicant_doc_or_name, "program"
+        )
     else:
-        applicant = applicant_doc_or_name
-    if not applicant.admission_cycle:
+        program = getattr(applicant_doc_or_name, "program", None)
+
+    if not program:
         return "All"
-    return frappe.db.get_value(
-        "Admission Cycle", applicant.admission_cycle, "intake_type"
-    ) or "All"
+    return frappe.db.get_value("Program", program, "intake_type") or "All"
 
 
 def get_cycle_stages(admission_cycle, intake_type=None):

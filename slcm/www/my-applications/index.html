@@ -26,7 +26,70 @@
 .ma-bc a { color: var(--primary); text-decoration: none; font-weight: 500; }
 .ma-bc a:hover { text-decoration: underline; }
 
-/* ── Header Card (Dark Primary) ── */
+/* ── Horizontal scroll strip ── */
+.app-strip-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  scrollbar-width: thin;
+}
+.app-strip {
+  display: flex;
+  gap: 0.75rem;
+  min-width: max-content;
+}
+
+/* ── Individual strip card ── */
+.app-strip-card {
+  width: 200px;
+  min-width: 200px;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.app-strip-card:hover {
+  border-color: var(--primary, #1a56db);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.app-strip-card.active {
+  border-color: var(--primary, #1a56db);
+  background: #eff6ff;
+  box-shadow: 0 4px 16px rgba(26,86,219,0.15);
+}
+.asc-status-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  position: absolute; top: 0.75rem; right: 0.75rem;
+}
+.asc-program {
+  font-weight: 600; font-size: 0.85rem;
+  color: #111827; margin-bottom: 0.25rem;
+  white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 160px;
+}
+.asc-cycle {
+  font-size: 0.75rem; color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+.asc-badge {
+  display: inline-block;
+  font-size: 0.7rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px;
+  margin-bottom: 0.4rem;
+}
+.asc-id {
+  font-size: 0.7rem; color: #9ca3af;
+}
+
+/* ── Detail panel ── */
+.app-detail-panel { display: none; }
+.app-detail-panel.panel-visible { display: block; }
+
+/* ── Header Card ── */
 .ma-header-card {
     background: var(--primary);
     color: #fff;
@@ -71,8 +134,138 @@
 .ma-field-value { font-size: 14px; font-weight: 500; color: #1f2937; }
 .ma-empty-val { color: #d1d5db; font-style: italic; font-weight: 400; }
 
-/* ── Stage Tracker Integration ── */
-#stage-tracker-wrap { padding: 10px 0; min-height: 140px; }
+/* ── Stage Tracker ─────────────────────────────────────── */
+.stage-tracker-wrap {
+  padding: 8px 0 4px;
+}
+.stage-loading {
+  display: flex; align-items: center; gap: 10px;
+  color: #94a3b8; font-size: 13px; padding: 20px 0;
+}
+.stage-spinner {
+  width: 18px; height: 18px;
+  border: 2px solid #e2e8f0;
+  border-top-color: var(--primary, #1a3c6e);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Pipeline row */
+.stage-pipeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding: 12px 4px 20px;
+  scrollbar-width: none;
+}
+.stage-pipeline::-webkit-scrollbar { display: none; }
+
+/* Individual stage node */
+.stage-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 90px;
+  max-width: 110px;
+  position: relative;
+}
+
+/* Connector lines */
+.stage-connector {
+  flex: 1;
+  height: 2px;
+  min-width: 24px;
+  max-width: 60px;
+  margin-top: 20px; /* aligns with circle center */
+  flex-shrink: 1;
+}
+.stage-connector.solid {
+  background: var(--primary, #1a3c6e);
+}
+.stage-connector.dashed {
+  background: repeating-linear-gradient(
+    to right,
+    #cbd5e1 0px, #cbd5e1 5px,
+    transparent 5px, transparent 10px
+  );
+}
+
+/* Circle */
+.stage-circle {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+/* COMPLETED: filled dark + checkmark */
+.stage-node.completed .stage-circle {
+  background: var(--primary, #1a3c6e);
+  border-color: var(--primary, #1a3c6e);
+  color: #fff;
+}
+
+/* ACTIVE: gold pulsing ring */
+.stage-node.active .stage-circle {
+  background: #fff;
+  border-color: var(--secondary, #c8a14b);
+  color: var(--secondary, #c8a14b);
+  box-shadow: 0 0 0 0 rgba(200, 161, 75, 0.4);
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(200,161,75,0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(200,161,75,0); }
+  100% { box-shadow: 0 0 0 0 rgba(200,161,75,0); }
+}
+
+/* UPCOMING: empty grey */
+.stage-node.upcoming .stage-circle {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+}
+
+/* Stage name label */
+.stage-label {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+  color: #64748b;
+  max-width: 90px;
+}
+.stage-node.completed .stage-label { color: var(--primary, #1a3c6e); }
+.stage-node.active .stage-label {
+  color: var(--secondary, #c8a14b);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* Action button — only on active */
+.stage-action-btn {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center; gap: 4px;
+  padding: 4px 10px;
+  background: var(--secondary, #c8a14b);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.stage-action-btn:hover { opacity: 0.85; color: #fff; }
 
 /* ── Buttons ── */
 .ma-btn { padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
@@ -80,6 +273,111 @@
 .ma-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 .ma-btn-outline { background: rgba(255,255,255,0.1); color: #fff !important; border: 1px solid rgba(255,255,255,0.3); }
 .ma-btn-outline:hover { background: rgba(255,255,255,0.2); }
+.ma-btn-success { background: #059669; color: #fff !important; border: none; }
+
+/* ── Status Cards ── */
+.ma-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.ma-stat-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.25s;
+}
+.ma-stat-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+.ma-stat-icon {
+  width: 44px; height: 44px;
+  background: var(--primary-light, #e8f0fb);
+  color: var(--primary);
+  border-radius: 11px;
+  display: flex; align-items: center;
+  justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.ma-stat-label {
+  font-size: 10px; font-weight: 700;
+  color: #9ca3af; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 2px;
+  display: block;
+}
+.ma-stat-value {
+  font-size: 15px; font-weight: 800; color: #1e293b;
+}
+
+/* ── Data rows ── */
+.ma-data-row {
+  background: #f8fafc; border-radius: 12px;
+  padding: 18px 20px; margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  border: 1px solid transparent; transition: 0.2s;
+}
+.ma-data-row:hover {
+  background: #fff;
+  border-color: var(--primary);
+  transform: translateX(3px);
+}
+.ma-data-main-wrap {
+  display: flex; justify-content: space-between;
+  align-items: center; width: 100%;
+}
+.ma-data-title {
+  font-size: 15px; font-weight: 700;
+  color: #1e293b; margin-bottom: 3px;
+}
+.ma-data-sub { font-size: 13px; color: #64748b; }
+.ma-rank-val {
+  font-size: 22px; font-weight: 800;
+  color: var(--primary); display: block;
+}
+.ma-rank-lab {
+  font-size: 10px; font-weight: 700;
+  color: #64748b; text-transform: uppercase;
+}
+
+/* ── Performance entry list ── */
+.ma-entry-list { display: flex; flex-direction: column; gap: 12px; }
+.ma-entry-row {
+  display: flex; align-items: baseline;
+  justify-content: space-between;
+  font-size: 14px; position: relative;
+}
+.ma-entry-label {
+  color: #64748b; font-weight: 500;
+  background: #fff; padding-right: 8px;
+  z-index: 1; position: relative;
+}
+.ma-entry-dots {
+  flex: 1; border-bottom: 1px dotted #cbd5e1;
+  margin: 0 4px; position: relative; top: -4px;
+}
+.ma-entry-value {
+  font-weight: 700; color: #1e293b;
+  background: #fff; padding-left: 8px;
+  z-index: 1; position: relative;
+}
+
+/* ── Status badge ── */
+.ma-status-pill {
+  padding: 5px 13px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.pill-success { background: #dcfce7; color: #166534; }
+.pill-warning { background: #fef9c3; color: #854d0e; }
+.pill-danger  { background: #fee2e2; color: #991b1b; }
+.pill-info    { background: #dbeafe; color: #1e40af; }
 
 /* ── Mobile ── */
 @media (max-width: 640px) {
@@ -88,6 +386,8 @@
     .ma-header-meta { flex-direction: column; gap: 10px; }
     .ma-actions { flex-direction: column; }
     .ma-btn { width: 100%; justify-content: center; }
+    .ma-stats-row { grid-template-columns: 1fr 1fr; }
+    .ma-data-main-wrap { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 </style>
 {% endblock %}
@@ -96,9 +396,9 @@
 <div class="ma-page">
 <div class="ma-wrap">
 
-    <!-- Breadcrumb -->
+    <!-- a. Breadcrumb -->
     <nav class="ma-bc">
-        <a href="/admission_dashboard">Dashboard</a>
+        <a href="/merit-and-scholarship/admission_dashboard">Dashboard</a>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2.5">
           <polyline points="9 18 15 12 9 6"/>
@@ -106,120 +406,276 @@
         <span>My Application</span>
     </nav>
 
-    {% if applicant %}
-    
-    {% set h = app_summary.header %}
+    {% if applications %}
 
-    <!-- Header Card -->
-    <div class="ma-header-card">
-        <div class="ma-header-top">
-            <div class="ma-header-title">
-                <h1>{{ h.program_name }}</h1>
-                <p>{{ h.cycle }}</p>
+    <!-- HORIZONTAL SCROLL STRIP -->
+    <div class="app-strip-scroll">
+      <div class="app-strip">
+        {% for app in applications %}
+        <div class="app-strip-card {% if active_app and app.name == active_app.name %}active{% endif %}"
+             data-app-id="{{ app.name }}"
+             onclick="selectApp('{{ app.name }}')">
+          <div class="asc-status-dot"
+               style="background:{{ app.header.status_color }}"></div>
+          <div class="asc-program">{{ app.header.program_name }}</div>
+          <div class="asc-cycle">{{ app.header.cycle }}</div>
+          <div class="asc-badge"
+               style="color:{{ app.header.status_color }};
+                      background:{{ app.header.status_bg }}">
+            {{ app.header.status }}
+          </div>
+          <div class="asc-id">{{ app.header.applicant_id }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- DETAIL PANELS -->
+    {% for app in applications %}
+    {% set h = app.header %}
+    <div class="app-detail-panel {% if active_app and app.name == active_app.name %}panel-visible{% endif %}"
+         id="panel-{{ app.name }}">
+
+        <!-- b. Header Card -->
+        <div class="ma-header-card">
+            <div class="ma-header-top">
+                <div class="ma-header-title">
+                    <h1>{{ h.program_name }}</h1>
+                    <p>{{ h.cycle }}</p>
+                </div>
+                <div class="ma-status-badge" style="background: {{ h.status_bg }}; color: {{ h.status_color }};">
+                    {{ h.status }}
+                </div>
             </div>
-            <div class="ma-status-badge" style="background: {{ h.status_bg }}; color: {{ h.status_color }};">
-                {{ h.status }}
+
+            <div class="ma-header-meta">
+                <div class="ma-meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Submitted on {{ h.submitted_on }}
+                </div>
+                <div class="ma-meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    {{ h.applicant_id }}
+                </div>
+                <div class="ma-meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    {{ app.active_stage or h.current_stage }}
+                </div>
+            </div>
+
+            <div class="ma-actions">
+                {% if app.can_edit %}
+                <a href="/application-form/{{ app.name }}" class="ma-btn ma-btn-primary">
+                  ✏️ Continue Application
+                </a>
+                {% endif %}
+
+                {% for btn in app.action_buttons %}
+                <a href="{{ btn.url }}" class="ma-btn ma-btn-{{ btn.type }}">
+                    {{ btn.label }}
+                </a>
+                {% endfor %}
             </div>
         </div>
 
-        <div class="ma-header-meta">
-            <div class="ma-meta-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Submitted on {{ h.submitted_on }}
+        <!-- c. Stage Tracker -->
+        <div class="ma-sec-card">
+            <div class="ma-sec-head">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Application Progress
             </div>
-            <div class="ma-meta-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                {{ h.name }}
-            </div>
-            <div class="ma-meta-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                {{ active_stage or h.current_stage }}
+            <div class="stage-tracker-wrap" id="stageTrackerWrap-{{ app.name }}">
+                <div class="stage-loading" id="stageLoading-{{ app.name }}">
+                  <div class="stage-spinner"></div>
+                  <span>Loading pipeline...</span>
+                </div>
+                <div class="stage-pipeline" id="stagePipeline-{{ app.name }}" style="display:none"></div>
             </div>
         </div>
 
-        <div class="ma-actions">
-            {% if can_edit %}
-            <a href="/application-form/{{ applicant.name }}" class="ma-btn ma-btn-primary">
-              ✏️ Edit Application
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2.5">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </a>
+        <!-- d. Status Cards -->
+        <div class="ma-stats-row">
+          <div class="ma-stat-box">
+            <div class="ma-stat-icon">👤</div>
+            <div>
+              <span class="ma-stat-label">Applicant ID</span>
+              <div class="ma-stat-value">{{ h.applicant_id }}</div>
+            </div>
+          </div>
+          <div class="ma-stat-box">
+            <div class="ma-stat-icon">🎓</div>
+            <div>
+              <span class="ma-stat-label">Program</span>
+              <div class="ma-stat-value">{{ h.program_name }}</div>
+            </div>
+          </div>
+          <div class="ma-stat-box" {% if h.merit_score %}style="border-bottom:3px solid var(--primary)"{% endif %}>
+            <div class="ma-stat-icon">🎯</div>
+            <div>
+              <span class="ma-stat-label">Merit Score</span>
+              <div class="ma-stat-value">{{ h.merit_score or "Pending" }}</div>
+            </div>
+          </div>
+          <div class="ma-stat-box">
+            <div class="ma-stat-icon">🏅</div>
+            <div>
+              <span class="ma-stat-label">Category</span>
+              <div class="ma-stat-value">{{ app.application[4].value or "General" }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- e. Admission Status -->
+        <div class="ma-sec-card">
+          <div class="ma-sec-head">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8l4 4-4 4M8 12h8"/>
+            </svg>
+            Admission Status
+          </div>
+          {% if app.admission_results %}
+            {% for res in app.admission_results %}
+            <div class="ma-data-row">
+              <div class="ma-data-main-wrap">
+                <div>
+                  <div class="ma-data-title">{{ h.program_name }}</div>
+                  <div class="ma-data-sub">
+                    Type: <strong>{{ res.allocation_type or "Regular" }}</strong>
+                    &nbsp;·&nbsp; Score: <strong>{{ res.total_score or "—" }}</strong>
+                    &nbsp;·&nbsp; Rank: <strong>#{{ res.overall_rank or "—" }}</strong>
+                  </div>
+                </div>
+                <span class="ma-status-pill {{ 'pill-success' if res.selection_status == 'Selected' else 'pill-warning' if res.selection_status == 'Waitlisted' else 'pill-danger' }}">
+                  {{ res.selection_status }}
+                </span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted small m-0 p-2">Selection results are being finalized. Check back soon.</p>
+          {% endif %}
+        </div>
+
+        <!-- f. Merit Rankings section -->
+        {% if app.merit_list %}
+        <div class="ma-sec-card">
+          <div class="ma-sec-head">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+            </svg>
+            Merit Rankings
+          </div>
+          {% for merit in app.merit_list %}
+          <div class="ma-data-row">
+            <div class="ma-data-main-wrap">
+              <div>
+                <div class="ma-data-title">Merit List: {{ merit.parent or "Final List" }}</div>
+                <div class="ma-data-sub">
+                  Merit Mark: <strong style="color:var(--primary);">{{ merit.total_score }}</strong>
+                  &nbsp;· Based on cumulative academic performance.
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <span class="ma-rank-val">#{{ merit.overall_rank }}</span>
+                <span class="ma-rank-lab">Overall Rank</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- g. Academic Performance section -->
+        <div class="ma-sec-card">
+          <div class="ma-sec-head">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Academic Performance
+          </div>
+          <div class="ma-entry-list">
+            {% for field in app.academic %}
+            {% if field.value %}
+            <div class="ma-entry-row">
+              <span class="ma-entry-label">{{ field.label }}</span>
+              <span class="ma-entry-dots"></span>
+              <span class="ma-entry-value">{{ field.value }}{% if 'Percentage' in field.label %}%{% endif %}</span>
+            </div>
             {% endif %}
-
-            {% for btn in action_buttons %}
-            <a href="{{ btn.url }}" class="ma-btn {% if 'primary' in btn.class %}ma-btn-primary{% else %}ma-btn-outline{% endif %}" style="{{ btn.style }}">
-                {{ btn.label }}
-            </a>
             {% endfor %}
-        </div>
-    </div>
-
-    <!-- Stage Tracker -->
-    <div class="ma-sec-card">
-        <div class="ma-sec-head">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Application Progress
-        </div>
-        <div id="stage-tracker-wrap">
-            <div style="padding:40px; text-align:center; color:#9ca3af;">Loading pipeline...</div>
-        </div>
-    </div>
-
-    <!-- Personal Information -->
-    <div class="ma-sec-card">
-        <div class="ma-sec-head">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Personal Information
-        </div>
-        <div class="ma-field-grid">
-            {% for f in app_summary.personal %}
-            <div class="ma-field">
-                <div class="ma-field-label">{{ f.label }}</div>
-                <div class="ma-field-value">
-                    {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
-                </div>
+            
+            {% if h.merit_score %}
+            <div class="ma-entry-row" style="padding-top:10px;border-top:1px solid #f1f5f9;margin-top:4px;">
+              <span class="ma-entry-label" style="font-weight:800;color:var(--primary);">Final Merit Score</span>
+              <span class="ma-entry-dots"></span>
+              <span class="ma-entry-value" style="font-size:18px;color:var(--primary);">{{ h.merit_score }}</span>
             </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Academic Details -->
-    <div class="ma-sec-card">
-        <div class="ma-sec-head">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            Academic Details
-        </div>
-        <div class="ma-field-grid">
-            {% for f in app_summary.academic %}
-            <div class="ma-field">
-                <div class="ma-field-label">{{ f.label }}</div>
-                <div class="ma-field-value">
-                    {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
-                </div>
+            {% endif %}
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-size:12px;color:#9ca3af;font-weight:600;">Cycle</span>
+                <span style="font-size:12px;font-weight:700;">{{ h.cycle }}</span>
+              </div>
             </div>
-            {% endfor %}
+          </div>
         </div>
-    </div>
 
-    <!-- Application Info -->
-    <div class="ma-sec-card">
-        <div class="ma-sec-head">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Application Info
-        </div>
-        <div class="ma-field-grid">
-            {% for f in app_summary.application %}
-            <div class="ma-field">
-                <div class="ma-field-label">{{ f.label }}</div>
-                <div class="ma-field-value">
-                    {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
-                </div>
+        <!-- h. Personal Information section -->
+        <div class="ma-sec-card">
+            <div class="ma-sec-head">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Personal Information
             </div>
-            {% endfor %}
+            <div class="ma-field-grid">
+                {% for f in app.personal %}
+                <div class="ma-field">
+                    <div class="ma-field-label">{{ f.label }}</div>
+                    <div class="ma-field-value">
+                        {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
+
+        <!-- i. Academic Details section -->
+        <div class="ma-sec-card">
+            <div class="ma-sec-head">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Academic Details
+            </div>
+            <div class="ma-field-grid">
+                {% for f in app.academic %}
+                <div class="ma-field">
+                    <div class="ma-field-label">{{ f.label }}</div>
+                    <div class="ma-field-value">
+                        {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- j. Application Info section -->
+        <div class="ma-sec-card">
+            <div class="ma-sec-head">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Application Info
+            </div>
+            <div class="ma-field-grid">
+                {% for f in app.application %}
+                <div class="ma-field">
+                    <div class="ma-field-label">{{ f.label }}</div>
+                    <div class="ma-field-value">
+                        {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
     </div>
+    {% endfor %}
 
     {% else %}
     <div class="ma-empty" style="background:#fff; border-radius:20px; padding:80px 40px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.05);">
@@ -228,7 +684,7 @@
         </div>
         <h3 style="font-size:22px; font-weight:800; color:#111827; margin-bottom:12px;">No application found</h3>
         <p style="color:#6b7280; font-size:15px; margin-bottom:32px; max-width:400px; margin-left:auto; margin-right:auto;">You haven't started an application for the current admission cycle yet.</p>
-        <a href="/admission" class="btn-primary-adm" style="padding:12px 28px;">Browse Programs</a>
+        <a href="/admission" class="ma-btn ma-btn-primary" style="background:var(--primary); color:#fff !important;">Browse Programs</a>
     </div>
     {% endif %}
 
@@ -237,20 +693,137 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if applicant %}
-<script src="/assets/slcm/js/stage_tracker.js"></script>
-<link rel="stylesheet" href="/assets/slcm/css/stage_tracker.css">
 <script>
-frappe.ready(function() {
-    if (window.StageTracker) {
-        StageTracker.init({
-            container: '#stage-tracker-wrap',
-            applicant: '{{ applicant.name }}',
-            mode: 'full',
-            csrf: window.csrf_token
-        });
-    }
-});
+(function () {
+  // Active application tracker
+  let activeApp = '{{ active_app.name if active_app else "" }}';
+
+  // Icons per status and stage type (symbols only)
+  const ICONS = {
+    completed: "✓",
+    active: {
+      "Application":  "📋",
+      "Exam":         "🎯",
+      "Interview":    "🎤",
+      "Merit":        "📊",
+      "Offer Letter": "📄",
+      "Fee":          "💳",
+      "Enrollment":   "🎓",
+      "default":      "📍",
+    },
+    upcoming: "🔒",
+  };
+
+  function getIcon(status, stageType) {
+    if (status === "completed") return ICONS.completed;
+    if (status === "upcoming")  return ICONS.upcoming;
+    // active
+    return ICONS.active[stageType] || ICONS.active["default"];
+  }
+
+  function buildPipeline(appName, stages) {
+    const wrap = document.getElementById("stagePipeline-" + appName);
+    if (!wrap) return;
+    wrap.innerHTML = "";
+
+    stages.forEach(function (s, idx) {
+      // Connector BEFORE this node (not before first)
+      if (idx > 0) {
+        const prevStatus = stages[idx - 1].status;
+        const conn = document.createElement("div");
+        conn.className = "stage-connector " +
+          (prevStatus === "completed" ? "solid" : "dashed");
+        wrap.appendChild(conn);
+      }
+
+      // Node
+      const node = document.createElement("div");
+      node.className = "stage-node " + s.status;
+
+      // Circle
+      const circle = document.createElement("div");
+      circle.className = "stage-circle";
+      circle.textContent = getIcon(s.status, s.stage_type);
+      node.appendChild(circle);
+
+      // Label
+      const label = document.createElement("div");
+      label.className = "stage-label";
+      label.textContent = s.stage_name;
+      node.appendChild(label);
+
+      // Action button — ONLY on active stage
+      if (s.status === "active" && s.show_action && s.action_url) {
+        const btn = document.createElement("a");
+        btn.className = "stage-action-btn";
+        btn.href = s.action_url;
+        btn.textContent = s.action_label || "View";
+        node.appendChild(btn);
+      }
+
+      wrap.appendChild(node);
+    });
+  }
+
+  function initTracker(appName) {
+    if (!appName) return;
+    
+    // Reset display
+    const loading = document.getElementById("stageLoading-" + appName);
+    const pipeline = document.getElementById("stagePipeline-" + appName);
+    if (loading) loading.style.display = "flex";
+    if (pipeline) pipeline.style.display = "none";
+
+    frappe.call({
+      method: "slcm.admission.utils.web.get_stage_tracker_data",
+      args:   { applicant_name: appName },
+      callback: function (r) {
+        if (loading) loading.style.display = "none";
+        if (pipeline) {
+          pipeline.style.display = "flex";
+          if (!r.message || !r.message.stages || r.message.stages.length === 0) {
+            pipeline.innerHTML = '<p style="color:#94a3b8;font-size:13px;padding:10px 0">No stages configured for this cycle.</p>';
+            return;
+          }
+          buildPipeline(appName, r.message.stages);
+        }
+      },
+      error: function (err) {
+        if (loading) loading.style.display = "none";
+        if (pipeline) {
+          pipeline.style.display = "flex";
+          pipeline.innerHTML = '<p style="color:#ef4444;font-size:13px">Could not load stages. Please refresh.</p>';
+        }
+        console.error("Stage tracker error:", err);
+      }
+    });
+  }
+
+  // Handle application selection from strip
+  window.selectApp = function(appName) {
+    // Deactivate all strip cards
+    document.querySelectorAll('.app-strip-card')
+      .forEach(c => c.classList.remove('active'));
+    // Activate clicked card
+    const card = document.querySelector('[data-app-id="' + appName + '"]');
+    if (card) card.classList.add('active');
+
+    // Hide all panels
+    document.querySelectorAll('.app-detail-panel')
+      .forEach(p => p.classList.remove('panel-visible'));
+    // Show selected panel
+    const panel = document.getElementById('panel-' + appName);
+    if (panel) panel.classList.add('panel-visible');
+
+    activeApp = appName;
+    initTracker(appName);
+  };
+
+  frappe.ready(function() {
+      if (activeApp) {
+          initTracker(activeApp);
+      }
+  });
+})();
 </script>
-{% endif %}
 {% endblock %}

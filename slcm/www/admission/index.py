@@ -75,10 +75,9 @@ def get_context(context):
                 context.existing_application = existing[0].name
 
         for prog in programs:
-            # Intake type now comes from Admission Cycle, but we may still filter stages by workflow
-            # For Program cards, we check if the cycle itself has an intake_type
+            # Get intake from Program (single source of truth)
             prog_intake = frappe.db.get_value(
-                "Admission Cycle", active_cycle_name, "intake_type"
+                "Program", prog.get("program") or prog.get("name"), "intake_type"
             ) or "All"
             
             if active_cycle_name:

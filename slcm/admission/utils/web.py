@@ -154,6 +154,13 @@ def get_user_type():
         frappe.log_error(f"get_user_type failed: {e}", "Portal")
         return {"user_type": "Website User"}
 
+def _get_stage_seq(stages, stage_name):
+    """Returns sequence number of a stage by name."""
+    for s in stages:
+        if s.stage_name == stage_name:
+            return getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
+    return 0
+
 @frappe.whitelist()
 def get_stage_tracker_data(applicant_name):
     """
@@ -171,9 +178,9 @@ def get_stage_tracker_data(applicant_name):
     if not applicant.admission_cycle:
         return {"stages": [], "app_status": applicant.application_status or ""}
 
-    # Get intake_type from Admission Cycle (not Program)
+    # Get intake_type from Program (not Admission Cycle)
     intake_type = frappe.db.get_value(
-        "Admission Cycle", applicant.admission_cycle, "intake_type"
+        "Program", applicant.program, "intake_type"
     ) or "All"
 
     # Load stages from cycle child table
@@ -191,70 +198,61 @@ def get_stage_tracker_data(applicant_name):
     today = get_today()
     current_stage_name = applicant.current_stage or ""
 
-    # Determine status of each stage
     result_stages = []
-    found_active = False
-
-    def get_seq(s):
-        return getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
 
     for s in stages:
-        sd = str(getattr(s, "start_date", None) or getattr(s, "stage_start_date", None) or "")
-        ed = str(getattr(s, "end_date", None) or getattr(s, "stage_end_date", None) or "")
+        seq  = getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
+        sd   = str(getattr(s, "start_date", None) or "")
+        ed   = str(getattr(s, "end_date", None) or "")
+        name = s.stage_name
 
-        # Determine status
-        if sd and ed:
+        # PRIMARY: use applicant.current_stage to find active
+        if current_stage_name:
+            if name == current_stage_name:
+                status = "active"
+            elif seq < _get_stage_seq(stages, current_stage_name):
+                status = "completed"
+            else:
+                status = "upcoming"
+        # SECONDARY: use date window when current_stage not set
+        elif sd and ed:
             if today > ed:
                 status = "completed"
             elif sd <= today <= ed:
                 status = "active"
-                found_active = True
             else:
-                status = "pending"
-        elif current_stage_name:
-            if s.stage_name == current_stage_name:
-                status = "active"
-                found_active = True
-            elif not found_active:
-                status = "completed"
-            else:
-                status = "pending"
+                status = "upcoming"
         else:
-            status = "pending"
+            status = "upcoming"
 
-        # Check for applicant action on this stage
-        show_action = (
-            status == "active" and
-            bool(getattr(s, "requires_applicant_action", 0))
-        )
+        # Action button: only show on active stage
+        stage_type = getattr(s, "stage_type", "") or ""
         action_url   = getattr(s, "action_url", "") or ""
         action_label = getattr(s, "action_label", "") or ""
 
-        # Override action_url for known stage types
-        stage_type = getattr(s, "stage_type", "") or ""
         if status == "active" and not action_url:
             if stage_type == "Interview":
                 action_url   = "/eligibility/interview_management"
-                action_label = "View Interview"
-                show_action  = True
+                action_label = "Book Interview Slot"
             elif stage_type == "Exam":
                 action_url   = "/eligibility/entrance_test_seat_allocation"
-                action_label = "View Exam Details"
-                show_action  = True
-            elif stage_type == "Offer Letter":
+                action_label = "Choose Preference"
+            elif stage_type in ("Offer Letter", "Fee"):
                 action_url   = "/offer_letter/offer-letter-list"
                 action_label = "View Offer"
-                show_action  = True
+
+        show_action = status == "active" and bool(action_url)
 
         result_stages.append({
-            "stage_name":    s.stage_name,
+            "stage_name":    name,
             "stage_type":    stage_type,
-            "sequence":      get_seq(s),
+            "sequence":      seq,
             "status":        status,
-            "reached_on":    sd if status == "completed" else "",
             "show_action":   show_action,
-            "action_url":    action_url,
-            "action_label":  action_label,
+            "action_url":    action_url if show_action else "",
+            "action_label":  action_label if show_action else "",
+            "start_date":    sd or None,
+            "end_date":      ed or None,
         })
 
     return {
@@ -262,6 +260,7 @@ def get_stage_tracker_data(applicant_name):
         "app_status": applicant.application_status or "",
         "track_type": "normal",
     }
+
 
 
 

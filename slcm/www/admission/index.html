@@ -545,14 +545,12 @@ background:rgba(255,255,255,0.4); }
                     View My Application →
                   </a>
                 {% elif p.can_apply %}
-                <button class="btn-apply-now"
-                    onclick="event.stopPropagation(); handleApplyNow('{{ p.program_slug }}', '{{ p.program }}', '{{ p.program_name | replace("'", "&apos;") }}')">
-                    Apply Now
-                </button>
+                  <a href="/application-form/new-applicant-1?program={{ p.program or p.name }}"
+                     class="btn-apply-now" onclick="event.stopPropagation()">Apply Now →</a>
                 {% else %}
-                <span class="btn-apply-closed" title="Not accepting applications at this time">
-                  {{ p.current_stage_name or "Applications Closed" }}
-                </span>
+                  <span class="btn-apply-closed">
+                    {{ p.current_stage_name or "Applications Closed" }}
+                  </span>
                 {% endif %}
             </div>
 
