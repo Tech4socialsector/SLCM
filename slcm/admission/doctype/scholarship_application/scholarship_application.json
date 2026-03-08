@@ -23,11 +23,9 @@
   "calculated_benefit",
   "column_calculated_2",
   "final_fee_amount",
-  "section_workflow",
-  "applicant_id",
-  "applicant_name",
-  "reviewed_by",
+  "section_status",
   "status",
+  "reviewed_by",
   "column_workflow_2",
   "approved_by",
   "approval_date",
@@ -153,9 +151,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_workflow",
+   "fieldname": "section_status",
    "fieldtype": "Section Break",
-   "label": "Workflow Status"
+   "label": "Application Status"
   },
   {
    "default": "Draft",
@@ -197,15 +195,6 @@
    "fieldtype": "Small Text",
    "label": "Rejection Reason",
    "allow_on_submit": 1
-  },
-  {
-   "fieldname": "workflow_state",
-   "fieldtype": "Link",
-   "label": "Workflow State",
-   "options": "Workflow State",
-   "read_only": 1,
-   "allow_on_submit": 1,
-   "hidden": 1
   }
  ],
  "index_web_pages_for_search": 1,

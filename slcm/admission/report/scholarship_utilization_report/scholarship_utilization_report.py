@@ -7,12 +7,12 @@ from frappe import _
 
 def execute(filters: dict | None = None):
 	columns = [
-		_("Admission Cycle") + ":Link/Admission Cycle:150",
-		_("Campus") + ":Link/Campus:150",
-		_("Program") + ":Link/Program:200",
-		_("Scholarship Scheme") + ":Link/Scholarship Scheme:200",
-		_("Total Beneficiaries") + ":Int:150",
-		_("Total Scholarship Utilized") + ":Currency:200"
+		{"label": _("Admission Cycle"), "fieldname": "admission_cycle", "fieldtype": "Link", "options": "Admission Cycle", "width": 150},
+		{"label": _("Campus"), "fieldname": "campus", "fieldtype": "Link", "options": "Campus", "width": 150},
+		{"label": _("Program"), "fieldname": "program", "fieldtype": "Link", "options": "Program", "width": 200},
+		{"label": _("Scholarship Scheme"), "fieldname": "scholarship_scheme", "fieldtype": "Link", "options": "Scholarship Scheme", "width": 200},
+		{"label": _("Total Beneficiaries"), "fieldname": "total_beneficiaries", "fieldtype": "Int", "width": 150},
+		{"label": _("Total Scholarship Utilized"), "fieldname": "total_utilized", "fieldtype": "Currency", "width": 200}
 	]
 
 	conditions = ""

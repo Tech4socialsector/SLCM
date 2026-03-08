@@ -24,13 +24,6 @@ class ScholarshipApplication(Document):
 		if self.approval_date and get_datetime(self.approval_date) > get_datetime(now_datetime()):
 			frappe.throw(frappe._("Approval Date cannot be in the future."))
 
-		# If workflow is active, ensure status and workflow_state are in sync
-		if getattr(self, "workflow_state", None):
-			self.status = self.workflow_state
-		else:
-			# Ensure workflow_state is populated for initial record
-			self.workflow_state = self.status
-
 		self.set_applicant_metadata()
 		self.set_academic_year()
 		self.prevent_duplicate()
@@ -269,43 +262,74 @@ class ScholarshipApplication(Document):
 				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
 
 	def on_update(self):
-		# Sync status from workflow_state if it exists
-		if getattr(self, "workflow_state", None) and self.status != self.workflow_state:
-			self.db_set("status", self.workflow_state)
-		elif self.status and not getattr(self, "workflow_state", None):
-			self.db_set("workflow_state", self.status)
-
+		"""Called when a Draft (docstatus=0) doc is saved."""
 		self.create_audit_log()
-		
-		old_doc = self.get_doc_before_save()
-		if not old_doc:
-			if self.status == "Approved":
-				self.apply_financial_effects()
-				self.sync_fee_assignment()
-			return
 
-		# Case 1: Status changed from something else to Approved
-		if old_doc.status != "Approved" and self.status == "Approved":
+		old_doc = self.get_doc_before_save()
+		old_status = old_doc.status if old_doc else None
+
+		if old_status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
 			self.sync_fee_assignment()
-		
-		# Case 2: Status changed from Approved to something else
-		elif old_doc.status == "Approved" and self.status != "Approved":
+
+		elif old_status == "Approved" and self.status != "Approved":
 			self.reverse_financial_effects()
 			self.sync_fee_assignment(reverse=True)
-		
-		# Case 3: Remains Approved but benefit changed
-		elif self.status == "Approved" and old_doc.status == "Approved":
+
+		elif self.status == "Approved" and old_status == "Approved":
 			benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
 			if benefit_diff != 0:
-				scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-				new_budget = flt(scheme.utilized_budget or 0) + flt(benefit_diff)
-				scheme.db_set("utilized_budget", new_budget)
-			
-			# Always ensure fee deduction is synced if still approved
+				from slcm.admission.utils.scholarship_availability import update_scheme_usage
+				update_scheme_usage(self.scholarship_scheme, benefit_diff, mapping_name=None, update_count=False)
 			self.sync_fee_assignment()
 
+	def on_submit(self):
+		"""Called when doc is submitted (docstatus 0 → 1)."""
+		self.create_audit_log()
+		if self.status == "Approved":
+			self.apply_financial_effects()
+			self.sync_fee_assignment()
+
+	def on_cancel(self):
+		"""Called when submitted doc is cancelled (docstatus 1 → 2)."""
+		self.create_audit_log()
+		if self.status == "Approved":
+			self.reverse_financial_effects()
+			self.sync_fee_assignment(reverse=True)
+
+	def on_update_after_submit(self):
+		"""
+		Called when a SUBMITTED doc (docstatus=1) is updated via workflow
+		or direct save (e.g. status field changed by admin on submitted doc).
+		This is the key hook for workflow-driven status changes.
+		"""
+		self.create_audit_log()
+
+		old_doc = self.get_doc_before_save()
+		old_status = old_doc.status if old_doc else None
+
+		# Case 1: Status changed TO Approved
+		if old_status != "Approved" and self.status == "Approved":
+			self.apply_financial_effects()
+			self.sync_fee_assignment()
+
+		# Case 2: Status changed FROM Approved
+		elif old_status == "Approved" and self.status != "Approved":
+			self.reverse_financial_effects()
+			self.sync_fee_assignment(reverse=True)
+
+		# Case 3: Still Approved, but benefit may have changed
+		elif self.status == "Approved" and old_status == "Approved":
+			if old_doc:
+				benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
+				if benefit_diff != 0:
+					from slcm.admission.utils.scholarship_availability import update_scheme_usage
+					update_scheme_usage(self.scholarship_scheme, benefit_diff, mapping_name=None, update_count=False)
+			self.sync_fee_assignment()
+
+
 	def on_trash(self):
+		"""Reverse financial effects if an Approved application is deleted."""
 		if self.status == "Approved":
 			self.reverse_financial_effects()
 			self.sync_fee_assignment(reverse=True)
@@ -427,51 +451,43 @@ class ScholarshipApplication(Document):
 			frappe.log_error(title="Scholarship Audit Log Error", message=frappe.get_traceback())
 
 	def apply_financial_effects(self):
-		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		approved_amt = self.calculated_benefit or 0
-
-		new_beneficiaries = (scheme.current_beneficiaries or 0) + 1
-		new_budget = flt(scheme.utilized_budget or 0) + flt(approved_amt)
-		new_status = scheme.status
-
-		# Auto-archive logic
-		if scheme.max_beneficiaries and new_beneficiaries >= scheme.max_beneficiaries:
-			new_status = "Archived"
-
-		if scheme.total_budget and new_budget >= scheme.total_budget:
-			new_status = "Archived"
-
-		scheme.db_set({
-			"current_beneficiaries": new_beneficiaries,
-			"utilized_budget": new_budget,
-			"status": new_status
-		})
+		from slcm.admission.utils.scholarship_availability import update_scheme_usage
+		mapping_name = self.find_mapping()
+		update_scheme_usage(self.scholarship_scheme, self.calculated_benefit, mapping_name=mapping_name)
 
 	def reverse_financial_effects(self):
-		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
+		from slcm.admission.utils.scholarship_availability import update_scheme_usage
+		mapping_name = self.find_mapping()
 		old_doc = self.get_doc_before_save()
-		approved_amt = 0
-		if old_doc:
-			approved_amt = old_doc.calculated_benefit or 0
-		else:
-			approved_amt = self.calculated_benefit or 0
+		benefit = old_doc.calculated_benefit if old_doc else self.calculated_benefit
+		update_scheme_usage(self.scholarship_scheme, benefit, mapping_name=mapping_name, reverse=True)
 
-		new_beneficiaries = max(0, (scheme.current_beneficiaries or 0) - 1)
-		new_budget = max(0, flt(scheme.utilized_budget or 0) - flt(approved_amt))
-		new_status = scheme.status
+	def find_mapping(self):
+		"""
+		Finds the applicable Scholarship Scheme Mapping for this application.
+		"""
+		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
+		applicant_categories = get_applicant_categories(self.applicant_id)
+		
+		mappings = frappe.get_all(
+			"Scholarship Scheme Mapping",
+			filters={
+				"scholarship_scheme": self.scholarship_scheme,
+				"admission_cycle": self.admission_cycle,
+				"campus": self.campus,
+				"is_active": 1
+			},
+			fields=["name", "program", "category"],
+			order_by="program desc, category desc" 
+		)
+		
+		for m in mappings:
+			program_match = not m.program or m.program == self.program
+			category_match = not m.category or m.category in applicant_categories
+			if program_match and category_match:
+				return m.name
+		return None
 
-		# Re-activate logic: if it was archived and now we are below limits
-		if scheme.status == "Archived":
-			bene_ok = not scheme.max_beneficiaries or new_beneficiaries < scheme.max_beneficiaries
-			budget_ok = not scheme.total_budget or new_budget < scheme.total_budget
-			if bene_ok and budget_ok:
-				new_status = "Active"
-
-		scheme.db_set({
-			"current_beneficiaries": new_beneficiaries,
-			"utilized_budget": new_budget,
-			"status": new_status
-		})
 
 @frappe.whitelist()
 def create_scholarship_application(scheme, family_income, income_certificate_data=None, income_certificate_name=None, supporting_documents_data=None, supporting_documents_name=None):
@@ -556,7 +572,13 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			"status": "Submitted"
 		})
 		
+		# Insert with ignore permissions to allow creation from portal
 		app.insert(ignore_permissions=True)
+		
+		# Force the workflow state to 'Submitted' directly.
+		# This bypasses the 'Draft' phase for portal submissions as requested.
+		app.db_set("workflow_state", "Submitted")
+		app.db_set("status", "Submitted")
 		
 		# Update file references
 		if income_cert_url:
@@ -690,3 +712,4 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 				eligible_schemes.append(m.scholarship_scheme)
 				
 	return list(set(eligible_schemes))
+
