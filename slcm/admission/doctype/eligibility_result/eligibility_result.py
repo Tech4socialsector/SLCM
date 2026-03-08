@@ -38,11 +38,15 @@ def get_applicant_data():
         filters={"email": user_email},
         fields=[
             "name", "applicant_id", "candidate_name", "campus", "program", 
-            "program_level", "admission_cycle", "reservation_category",
+            "program_level", "admission_cycle", 
             "hsc_percentage", "entrance_test_score", "interview_score",
             "ug_cgpa", "pg_cgpa"
         ]
     )
+
+    for res in results:
+        # Field no longer exists in DB, initialize to None to prevent UI errors
+        res["reservation_category"] = None
 
     if not results:
         # Fallback to Applicant record if no Eligibility Result found yet
