@@ -47,25 +47,58 @@ def get_context(context):
     else:
         context.previous_schedule = None
 
+    from datetime import timedelta
+    
     # Pick which slot data to show
     if is_rescheduled:
+        f_date = doc.re_interview_date
+        f_time = doc.re_interview_time
+        
+        # Calculate reporting time (1 hour before)
+        rep_time = "—"
+        if f_date and f_time:
+            try:
+                # Combine date and time to calculate offset
+                from frappe.utils import get_datetime
+                dt_str = f"{f_date} {f_time}"
+                dt = get_datetime(dt_str)
+                rep_dt = dt - timedelta(hours=1)
+                rep_time = format_datetime(rep_dt, "hh:mm a")
+            except: pass
+
         context.current_slot = {
             "staff_name": doc.re_staff_name,
             "staff_email": doc.re_staff_email,
             "staff_contact": doc.re_staff_contact,
-            "interview_date": doc.re_interview_date,
-            "interview_time": doc.re_interview_time,
+            "interview_date": formatdate(f_date) if f_date else "—",
+            "interview_time": format_datetime(f"{f_date} {f_time}", "hh:mm a") if (f_date and f_time) else (f_time or "—"),
+            "reporting_time": rep_time,
             "interview_address": doc.re_interview_address,
             "slot_status": doc.re_interview_slot_status,
             "attendance_confirmation": doc.re_interview_attendance_confirmation,
         }
     else:
+        f_date = doc.interview_date
+        f_time = doc.interview_time
+
+        # Calculate reporting time (1 hour before)
+        rep_time = "—"
+        if f_date and f_time:
+            try:
+                from frappe.utils import get_datetime
+                dt_str = f"{f_date} {f_time}"
+                dt = get_datetime(dt_str)
+                rep_dt = dt - timedelta(hours=1)
+                rep_time = format_datetime(rep_dt, "hh:mm a")
+            except: pass
+
         context.current_slot = {
             "staff_name": doc.staff_name,
             "staff_email": doc.staff_email,
             "staff_contact": doc.staff_contact,
-            "interview_date": doc.interview_date,
-            "interview_time": doc.interview_time,
+            "interview_date": formatdate(f_date) if f_date else "—",
+            "interview_time": format_datetime(f"{f_date} {f_time}", "hh:mm a") if (f_date and f_time) else (f_time or "—"),
+            "reporting_time": rep_time,
             "interview_address": doc.interview_address,
             "slot_status": doc.interview_slot_status,
             "attendance_confirmation": doc.interview_attendance_confirmation,

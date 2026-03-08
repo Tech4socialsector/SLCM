@@ -61,6 +61,18 @@ def get_context(context):
     
     # Check if result is published
     context.show_result = (doc.entrance_test_status in ["Attended", "Absent"] and doc.result_published == 1)
+
+    # Reporting time calculation (1 hour before exam)
+    from datetime import timedelta
+    f_date = doc.re_allocation_date if is_rescheduled else doc.allocation_date
+    if f_date:
+        try:
+            rep_dt = f_date - timedelta(hours=1)
+            context.reporting_time = format_datetime(rep_dt, "hh:mm a")
+        except:
+            context.reporting_time = "09:30 AM" # Fallback
+    else:
+        context.reporting_time = "—"
     
     return context
 
@@ -188,18 +200,26 @@ def get_admit_card_html(doc, is_rescheduled):
     f_address = doc.re_center_address if is_rescheduled else doc.center_address
     f_status = doc.re_allocation_status if is_rescheduled else doc.allocation_status
 
-    alloc_date = "—"
+    exam_date_time = "—"
+    reporting_time = "—"
     if f_date:
-        try: alloc_date = format_datetime(f_date, "dd-MM-yyyy")
-        except: alloc_date = str(f_date)
+        try:
+            exam_date_time = format_datetime(f_date, "dd-MM-yyyy hh:mm a")
+            # Calculate reporting time as 1 hour before
+            from datetime import timedelta
+            rep_dt = f_date - timedelta(hours=1)
+            reporting_time = format_datetime(rep_dt, "hh:mm a")
+        except:
+            exam_date_time = str(f_date)
 
     dob = "—"
     if doc.date_of_birth:
-        try: dob = formatdate(doc.date_of_birth)
-        except: dob = str(doc.date_of_birth)
+        try:
+            dob = formatdate(doc.date_of_birth)
+        except:
+            dob = str(doc.date_of_birth)
 
-    issue_date = formatdate(nowdate())
-    exam_date_time = f"{alloc_date} &nbsp;|&nbsp; As per schedule" if alloc_date != "—" else "As per schedule"
+    issue_date = format_datetime(frappe.utils.now_datetime(), "dd-MM-yyyy hh:mm a")
 
     profile_image_url = get_base64_img(doc.profile)
 
@@ -302,7 +322,7 @@ body {{ font-family: "Times New Roman", Times, serif; font-size: 13px; backgroun
         <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">{val(doc.program)}</td></tr>
         <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(doc.applicant)}</td></tr>
         <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">{exam_date_time}</td></tr>
-        <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
+        <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">{reporting_time}</td></tr>
         <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">{val(f_seat)}</span></td></tr>
         <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">{val(f_room)}{f'&nbsp; (Code:&nbsp;{esc(f_code)})' if f_code and f_code.strip() else ""}</td></tr>
         <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">{val(f_building)}{f'&nbsp; &middot;&nbsp; Floor:&nbsp;{esc(f_floor)}' if f_floor and f_floor.strip() else ""}</td></tr>

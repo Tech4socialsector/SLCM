@@ -32,15 +32,16 @@
 
     <style>
         :root {
-            --primary: {{ (portal_config.get('primary_color') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')) or '#1a3c6e' }};
-            --secondary: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
-            --accent: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
-            --primary-light: {{ (portal_config.get('primary_light_color') if portal_config and portal_config.get else (portal_config.primary_light_color if portal_config else '#e8f0fb')) or '#e8f0fb' }};
-            --text: #1a1a2e;
-            --muted: #6c757d;
-            --border: #dee2e6;
-            --card-bg: #ffffff;
-            --bg: #f4f6fb;
+            --primary: #1E3A8A;
+            --primary-hover: #1D4ED8;
+            --secondary: #334155;
+            --accent: #10B981;
+            --primary-light: #F1F5F9;
+            --text: #0F172A;
+            --muted: #64748B;
+            --border: #E2E8F0;
+            --card-bg: #FFFFFF;
+            --bg: #F8FAFC;
         }
     </style>
     {% block theme_vars %}{% endblock %}
@@ -516,7 +517,7 @@
                 <polyline points="14 2 14 8 20 8" />
             </svg>
             My Applications
-        </a>    
+        </a>
         {% endif %}
         <a href="/admission_dashboard" class="drawer-link" onclick="closeDrawer()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -712,7 +713,7 @@
                     const msgs = JSON.parse(d._server_messages);
                     msg = msgs.map(m => JSON.parse(m).message).join('\n');
                 } else if (d.exc) {
-                    try { msg = JSON.parse(d.exc_type) + ': ' + d.exc; } catch(e) { msg = d.exc; }
+                    try { msg = JSON.parse(d.exc_type) + ': ' + d.exc; } catch (e) { msg = d.exc; }
                 }
                 throw new Error(msg);
             }
