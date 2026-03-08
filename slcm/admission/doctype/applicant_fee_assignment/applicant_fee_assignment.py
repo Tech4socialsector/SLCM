@@ -33,6 +33,7 @@ class ApplicantFeeAssignment(Document):
 
 	def calculate_totals(self):
 		total_amount = 0
+		gross_amount = 0
 		for row in self.fee_components:
 			# Calculate tax amount if taxable
 			if row.is_taxable:
@@ -42,9 +43,13 @@ class ApplicantFeeAssignment(Document):
 			
 			row.total_amount = flt(row.amount) + flt(row.tax_amount)
 			total_amount += row.total_amount
+			
+			if row.fee_component != "Scholarship":
+				gross_amount += row.total_amount
 		
-		self.total_amount = total_amount
-		self.final_payable_amount = self.total_amount
+		# total_amount already includes scholarship (since scholarship amount is negative)
+		self.total_amount = gross_amount
+		self.final_payable_amount = total_amount
 
 	def apply_scholarship(self):
 		"""

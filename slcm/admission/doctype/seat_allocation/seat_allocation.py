@@ -4,22 +4,37 @@ from frappe.model.document import Document
 from frappe.utils import now, get_link_to_form, get_datetime, now_datetime
 
 def get_applicant_categories(applicant_id):
+    """
+    Fetches all categories mapped to the applicant.
+    Checks Eligibility Result first, then falls back to the base Applicant record.
+    """
+    if not applicant_id:
+        return []
+
+    # 1. Try from Eligibility Result (primary source of truth for processed apps)
     eligibility = frappe.db.get_value(
         "Eligibility Result",
         {"applicant_id": applicant_id},
         "name"
     )
 
-    if not eligibility:
-        return []
+    categories = []
+    if eligibility:
+        categories = frappe.db.get_all(
+            "Applicant Category",
+            filters={"parent": eligibility, "parenttype": "Eligibility Result"},
+            pluck="category"
+        )
 
-    categories = frappe.db.get_all(
-        "Applicant Category",
-        filters={"parent": eligibility, "parenttype": "Eligibility Result"},
-        pluck="category"
-    )
+    # 2. Try from Applicant (initial source from web form)
+    if not categories:
+        categories = frappe.db.get_all(
+            "Applicant Category",
+            filters={"parent": applicant_id, "parenttype": "Applicant"},
+            pluck="category"
+        )
 
-    return categories
+    return list(set(categories))
 
 def get_category_priority(admission_cycle, campus, program):
     program_row = frappe.db.get_value("Admission Cycle Program", {

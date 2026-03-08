@@ -63,7 +63,7 @@ def get_applicant_data():
             "program": doc.program,
             "program_level": doc.program_level,
             "admission_cycle": doc.admission_cycle,
-            "reservation_category": doc.reservation_category,
+            "reservation_category": ", ".join([c.category for c in doc.category if c.category]) if doc.category else "General",
             "hsc_percentage": doc.hsc_percentage,
             "entrance_test_score": doc.entrance_test_score,
             "interview_score": doc.interview_score,
@@ -77,20 +77,20 @@ def get_applicant_data():
         if not app_id:
              app_id = frappe.db.get_value("Applicant", {"owner": user_email}, "name")
 
-        if app_id:
-            # Check for published Merit List or Seat Allocation
-            merit_exists = frappe.db.exists("Merit List Applicant", {"applicant_id": app_id})
-            allocation_exists = frappe.db.exists("Seat Selection Applicant", {"applicant_id": app_id})
-            
-            if merit_exists or allocation_exists:
-                # If these exist, we force a results check using applicant_id instead of email
-                # but for simplicity in this turn, we just adjust the error message or logic.
-                pass
-            else:
-                return {"error": "Your Merit List evaluation is in progress. The results have not been published yet. Please check back later."}
-
         if not app_id:
             return {"error": "No admission application record found for this account."}
+
+        # Check for published Merit List or Seat Allocation
+        merit_exists = frappe.db.exists("Merit List Applicant", {"applicant_id": app_id})
+        allocation_exists = frappe.db.exists("Seat Selection Applicant", {"applicant_id": app_id})
+        
+        # If neither exists, then it's truly in progress
+        if not merit_exists and not allocation_exists:
+            # Check if any scholarship is published to allow early application
+            scholarship_available = frappe.db.get_single_value("Admission Settings", "is_scholarship_available")
+            if not scholarship_available:
+                return {"error": "Your application is under review. Merit lists and scholarships will be visible here once published."}
+
 
     # 2. For each result, get the specific selection statuses from Seat Allocation child tables
     settings = frappe.get_single("Admission Settings")
@@ -99,10 +99,20 @@ def get_applicant_data():
 
     # If results is empty but we have an app_id, we might want to synthesize a result
     if not results and app_id:
+        app = frappe.get_doc("Applicant", app_id)
         results.append({
             "applicant_id": app_id,
-            "candidate_name": frappe.db.get_value("Applicant", app_id, "candidate_name"),
-            # other fields might be empty
+            "candidate_name": app.candidate_name,
+            "campus": app.campus,
+            "program": app.program,
+            "admission_cycle": app.admission_cycle,
+            "program_level": app.program_level,
+            "reservation_category": ", ".join([c.category for c in app.categories if c.category]) if app.categories else "General",
+            "hsc_percentage": getattr(app, "hsc_percentage", 0),
+            "entrance_test_score": getattr(app, "entrance_test_score", None),
+            "interview_score": getattr(app, "interview_score", None),
+            "ug_cgpa": 0,
+            "pg_cgpa": 0
         })
 
     for res in results:

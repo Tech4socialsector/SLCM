@@ -2,6 +2,8 @@ import frappe
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 from slcm.admission.utils.portal import get_portal_config
 
+no_cache = 1
+
 def get_context(context):
     """
     Provides data to the admission_dashboard.html template.

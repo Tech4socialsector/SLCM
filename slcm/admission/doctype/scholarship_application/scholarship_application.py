@@ -262,38 +262,28 @@ class ScholarshipApplication(Document):
 				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
 
 	def on_update(self):
-		# Sync status from workflow_state if it exists
-		if getattr(self, "workflow_state", None) and self.status != self.workflow_state:
-			self.db_set("status", self.workflow_state)
-		elif self.status and not getattr(self, "workflow_state", None):
-			self.db_set("workflow_state", self.status)
-
 		self.create_audit_log()
 		
+		# For submittable docs, doc_before_save is the most reliable way to get old state
 		old_doc = self.get_doc_before_save()
-		if not old_doc:
-			if self.status == "Approved":
-				self.apply_financial_effects()
-				self.sync_fee_assignment()
-			return
-
+		old_status = old_doc.status if old_doc else None
+		
 		# Case 1: Status changed from something else to Approved
-		if old_doc.status != "Approved" and self.status == "Approved":
+		if old_status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
 			self.sync_fee_assignment()
 		
 		# Case 2: Status changed from Approved to something else
-		elif old_doc.status == "Approved" and self.status != "Approved":
+		elif old_status == "Approved" and self.status != "Approved":
 			self.reverse_financial_effects()
 			self.sync_fee_assignment(reverse=True)
-		
+
 		# Case 3: Remains Approved but benefit changed
-		elif self.status == "Approved" and old_doc.status == "Approved":
+		elif self.status == "Approved" and old_status == "Approved":
 			benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
 			if benefit_diff != 0:
-				scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-				new_budget = flt(scheme.utilized_budget or 0) + flt(benefit_diff)
-				scheme.db_set("utilized_budget", new_budget)
+				from slcm.admission.utils.scholarship_availability import update_scheme_usage
+				update_scheme_usage(self.scholarship_scheme, benefit_diff, mapping_name=None, update_count=False) # Only update budget diff
 			
 			# Always ensure fee deduction is synced if still approved
 			self.sync_fee_assignment()
@@ -420,51 +410,43 @@ class ScholarshipApplication(Document):
 			frappe.log_error(title="Scholarship Audit Log Error", message=frappe.get_traceback())
 
 	def apply_financial_effects(self):
-		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		approved_amt = self.calculated_benefit or 0
-
-		new_beneficiaries = (scheme.current_beneficiaries or 0) + 1
-		new_budget = flt(scheme.utilized_budget or 0) + flt(approved_amt)
-		new_status = scheme.status
-
-		# Auto-archive logic
-		if scheme.max_beneficiaries and new_beneficiaries >= scheme.max_beneficiaries:
-			new_status = "Archived"
-
-		if scheme.total_budget and new_budget >= scheme.total_budget:
-			new_status = "Archived"
-
-		scheme.db_set({
-			"current_beneficiaries": new_beneficiaries,
-			"utilized_budget": new_budget,
-			"status": new_status
-		})
+		from slcm.admission.utils.scholarship_availability import update_scheme_usage
+		mapping_name = self.find_mapping()
+		update_scheme_usage(self.scholarship_scheme, self.calculated_benefit, mapping_name=mapping_name)
 
 	def reverse_financial_effects(self):
-		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
+		from slcm.admission.utils.scholarship_availability import update_scheme_usage
+		mapping_name = self.find_mapping()
 		old_doc = self.get_doc_before_save()
-		approved_amt = 0
-		if old_doc:
-			approved_amt = old_doc.calculated_benefit or 0
-		else:
-			approved_amt = self.calculated_benefit or 0
+		benefit = old_doc.calculated_benefit if old_doc else self.calculated_benefit
+		update_scheme_usage(self.scholarship_scheme, benefit, mapping_name=mapping_name, reverse=True)
 
-		new_beneficiaries = max(0, (scheme.current_beneficiaries or 0) - 1)
-		new_budget = max(0, flt(scheme.utilized_budget or 0) - flt(approved_amt))
-		new_status = scheme.status
+	def find_mapping(self):
+		"""
+		Finds the applicable Scholarship Scheme Mapping for this application.
+		"""
+		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
+		applicant_categories = get_applicant_categories(self.applicant_id)
+		
+		mappings = frappe.get_all(
+			"Scholarship Scheme Mapping",
+			filters={
+				"scholarship_scheme": self.scholarship_scheme,
+				"admission_cycle": self.admission_cycle,
+				"campus": self.campus,
+				"is_active": 1
+			},
+			fields=["name", "program", "category"],
+			order_by="program desc, category desc" 
+		)
+		
+		for m in mappings:
+			program_match = not m.program or m.program == self.program
+			category_match = not m.category or m.category in applicant_categories
+			if program_match and category_match:
+				return m.name
+		return None
 
-		# Re-activate logic: if it was archived and now we are below limits
-		if scheme.status == "Archived":
-			bene_ok = not scheme.max_beneficiaries or new_beneficiaries < scheme.max_beneficiaries
-			budget_ok = not scheme.total_budget or new_budget < scheme.total_budget
-			if bene_ok and budget_ok:
-				new_status = "Active"
-
-		scheme.db_set({
-			"current_beneficiaries": new_beneficiaries,
-			"utilized_budget": new_budget,
-			"status": new_status
-		})
 
 @frappe.whitelist()
 def create_scholarship_application(scheme, family_income, income_certificate_data=None, income_certificate_name=None, supporting_documents_data=None, supporting_documents_name=None):
@@ -549,7 +531,13 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			"status": "Submitted"
 		})
 		
+		# Insert with ignore permissions to allow creation from portal
 		app.insert(ignore_permissions=True)
+		
+		# Force the workflow state to 'Submitted' directly.
+		# This bypasses the 'Draft' phase for portal submissions as requested.
+		app.db_set("workflow_state", "Submitted")
+		app.db_set("status", "Submitted")
 		
 		# Update file references
 		if income_cert_url:
@@ -684,76 +672,3 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 				
 	return list(set(eligible_schemes))
 
-@frappe.whitelist()
-def submit_application(name):
-    doc = frappe.get_doc("Scholarship Application", name)
-    if doc.status != "Draft":
-        frappe.throw(frappe._("Only Draft applications can be submitted."))
-    if "Applicant" not in frappe.get_roles():
-        frappe.throw(frappe._("Only Applicants can submit applications."))
-    
-    doc.status = "Submitted"
-    doc.save(ignore_permissions=True)
-    return doc.status
-
-@frappe.whitelist()
-def start_review(name):
-    doc = frappe.get_doc("Scholarship Application", name)
-    if doc.status != "Submitted":
-        frappe.throw(frappe._("Only Submitted applications can be moved to review."))
-    if "Admission Admin" not in frappe.get_roles():
-        frappe.throw(frappe._("Only Admission Admins can start the review."))
-    
-    doc.status = "Under Review"
-    doc.reviewed_by = frappe.session.user
-    doc.save(ignore_permissions=True)
-    return doc.status
-
-@frappe.whitelist()
-def approve_application(name):
-    doc = frappe.get_doc("Scholarship Application", name)
-    if doc.status != "Under Review":
-        frappe.throw(frappe._("Only applications Under Review can be approved."))
-    if "Scholarship Admin" not in frappe.get_roles():
-        frappe.throw(frappe._("Only Scholarship Admins can approve applications."))
-    
-    doc.status = "Approved"
-    doc.approved_by = frappe.session.user
-    doc.approval_date = now_datetime()
-    doc.save(ignore_permissions=True)
-    
-    # Sync fee assignment
-    try:
-        from slcm.admission.doctype.scholarship_application.scholarship_application import sync_fee_assignment_manually
-        sync_fee_assignment_manually(doc.name)
-    except:
-        pass
-        
-    return doc.status
-
-@frappe.whitelist()
-def reject_application(name, reason):
-    doc = frappe.get_doc("Scholarship Application", name)
-    if doc.status != "Under Review":
-        frappe.throw(frappe._("Only applications Under Review can be rejected."))
-    if "Scholarship Admin" not in frappe.get_roles():
-        frappe.throw(frappe._("Only Scholarship Admins can reject applications."))
-    if not reason:
-        frappe.throw(frappe._("Rejection reason is required."))
-
-    doc.status = "Rejected"
-    doc.rejection_reason = reason
-    doc.save(ignore_permissions=True)
-    return doc.status
-
-@frappe.whitelist()
-def revoke_application(name):
-    doc = frappe.get_doc("Scholarship Application", name)
-    if doc.status != "Approved":
-        frappe.throw(frappe._("Only Approved applications can be revoked."))
-    if "System Manager" not in frappe.get_roles():
-        frappe.throw(frappe._("Only System Managers can revoke applications."))
-    
-    doc.status = "Revoked"
-    doc.save(ignore_permissions=True)
-    return doc.status

@@ -44,24 +44,51 @@ def check_scholarship_availability(scheme_name, applicant_status):
         if scheme.utilized_budget >= scheme.total_budget:
             frappe.throw(frappe._("Scholarship budget exhausted"))
 
-def update_scheme_usage(scheme_name, approved_amount):
+def update_scheme_usage(scheme_name, approved_amount, mapping_name=None, reverse=False, update_count=True):
     """
     Updates the beneficiary count and utilized budget for a scholarship scheme.
-    Auto-archives the scheme if limits are reached.
+    Also updates the intake count on the specific mapping if provided.
     """
     scheme = frappe.get_doc("Scholarship Scheme", scheme_name)
+    
+    factor = -1 if reverse else 1
+    
+    new_beneficiaries = scheme.current_beneficiaries or 0
+    if update_count:
+        new_beneficiaries = max(0, new_beneficiaries + factor)
+        
+    new_budget = max(0, flt(scheme.utilized_budget or 0) + (factor * flt(approved_amount)))
+    
+    new_status = scheme.status
+    if not reverse and update_count:
+        # Auto-archive if limits reached
+        if scheme.max_beneficiaries and new_beneficiaries >= scheme.max_beneficiaries:
+            new_status = "Archived"
+        if scheme.total_budget and new_budget >= scheme.total_budget:
+            new_status = "Archived"
+    elif reverse and update_count:
+        # Re-activate if below limits and was archived
+        if scheme.status == "Archived":
+            bene_ok = not scheme.max_beneficiaries or new_beneficiaries < scheme.max_beneficiaries
+            budget_ok = not scheme.total_budget or new_budget < scheme.total_budget
+            if bene_ok and budget_ok:
+                new_status = "Active"
 
-    scheme.current_beneficiaries += 1
-    scheme.utilized_budget += approved_amount
+    scheme.db_set({
+        "current_beneficiaries": new_beneficiaries,
+        "utilized_budget": new_budget,
+        "status": new_status
+    })
 
-    # Auto close if limits reached
-    if scheme.max_beneficiaries and scheme.current_beneficiaries >= scheme.max_beneficiaries:
-        scheme.status = "Archived"
+    # Update Mapping Count
+    if mapping_name and update_count:
+        current_mapping_count = frappe.db.get_value("Scholarship Scheme Mapping", mapping_name, "current_count") or 0
+        new_mapping_count = max(0, current_mapping_count + factor)
+        frappe.db.set_value("Scholarship Scheme Mapping", mapping_name, "current_count", new_mapping_count)
 
-    if scheme.total_budget and scheme.utilized_budget >= scheme.total_budget:
-        scheme.status = "Archived"
-
-    scheme.save(ignore_permissions=True)
+def flt(v):
+    from frappe.utils import flt as _flt
+    return _flt(v)
 
 def get_applied_scholarships_for_dashboard(applicant_id):
     """
@@ -113,6 +140,7 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
 
     # 2. Filter schemes that are Active and within application dates
     now = now_datetime()
+
     schemes = frappe.get_all(
         "Scholarship Scheme",
         filters={

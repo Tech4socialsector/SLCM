@@ -118,7 +118,22 @@ class ScholarshipScheme(Document):
 			"utilized_budget": self.utilized_budget,
 			"status": status
 		})
+		
+		self.rebuild_mapping_counts()
+		
 		return {"status": "Success", "utilized_budget": self.utilized_budget, "current_beneficiaries": self.current_beneficiaries}
+
+	def rebuild_mapping_counts(self):
+		"""
+		Recalculates current_count for all mappings linked to this scheme.
+		"""
+		mappings = frappe.get_all("Scholarship Scheme Mapping", 
+								filters={"scholarship_scheme": self.name},
+								fields=["name"])
+		
+		for m in mappings:
+			doc = frappe.get_doc("Scholarship Scheme Mapping", m.name)
+			doc.sync_count()
 
 	def autoname(self):
 		if not self.admission_cycle:
