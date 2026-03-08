@@ -23,9 +23,12 @@ def execute():
 			doc.save(ignore_permissions=True)
 
 	# 2. Map existing Admission Cycle workflow_type to exam_type
-	frappe.db.sql("""
-		UPDATE `tabAdmission Cycle` 
-		SET exam_type = workflow_type 
-		WHERE (exam_type IS NULL OR exam_type = '') 
-		AND workflow_type IN ('CLAT', 'NLSAT', 'PACE')
-	""")
+	# Check if columns exist before updating (they might have been removed in newer schema)
+	columns = [c.get('Field') for c in frappe.db.sql("DESC `tabAdmission Cycle`", as_dict=True)]
+	if 'exam_type' in columns and 'workflow_type' in columns:
+		frappe.db.sql("""
+			UPDATE `tabAdmission Cycle` 
+			SET exam_type = workflow_type 
+			WHERE (exam_type IS NULL OR exam_type = '') 
+			AND workflow_type IN ('CLAT', 'NLSAT', 'PACE')
+		""")

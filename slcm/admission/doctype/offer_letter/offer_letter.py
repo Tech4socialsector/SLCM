@@ -138,8 +138,11 @@ class OfferLetter(Document):
                 
                 # Check for lock override
                 if is_locked_state and not self.get("ignore_lock"):
-                    # Exception: Allow setting accepted_on for the first time
-                    if fieldname == "accepted_on" and not db_doc.get("accepted_on"):
+                    # Exception 1: Allow setting accepted_on and offer_status for standard transitions
+                    is_status_accept = fieldname == "offer_status" and self.offer_status == "Accepted"
+                    is_field_accept = fieldname == "accepted_on" and not db_doc.get("accepted_on")
+                    
+                    if is_status_accept or is_field_accept:
                         pass
                     else:
                         self.enforce_lock_override(fieldname)

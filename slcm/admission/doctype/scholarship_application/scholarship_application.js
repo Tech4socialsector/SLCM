@@ -7,20 +7,6 @@ frappe.ui.form.on("Scholarship Application", {
     },
     refresh(frm) {
         frm.trigger("scholarship_scheme_ui");
-        
-        if (frm.doc.status === "Approved") {
-            frm.add_custom_button(__("Sync Fee Assignment"), () => {
-                frappe.call({
-                    method: "slcm.admission.doctype.scholarship_application.scholarship_application.sync_fee_assignment_manually",
-                    args: {
-                        docname: frm.doc.name
-                    },
-                    callback: (r) => {
-                        frm.reload_doc();
-                    }
-                });
-            }).addClass("btn-primary");
-        }
     },
     applicant_id(frm) {
         if (frm.doc.applicant_id) {

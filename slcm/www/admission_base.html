@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>{% block title %}Admissions{% endblock %} — {{ frappe.get_doc("Website Settings").title or "SLCM" }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -462,7 +465,7 @@
             {% endif %}
             <a href="/eligibility/entrance_test_seat_allocation" class="nav-hide-mobile">Entrance Test</a>
             <a href="/eligibility/interview_management" class="nav-hide-mobile">Interview </a>
-            <a href="/admission_dashboard" class="nav-hide-mobile">Merit and Scholarships</a>
+            <a href="/merit-and-scholarship/admission_dashboard" class="nav-hide-mobile">Merit and Scholarships</a>
             {% if frappe.session.user != "Guest" %}
             <a href="/offer_letter/offer-letter-list" class="nav-hide-mobile">Offer Letter</a>
             {% endif %}
@@ -513,7 +516,7 @@
         <a href="/my-applications" class="drawer-link" onclick="closeDrawer()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
+                <polyline points="14 2 14 8 20 8" /> 
             </svg>
             My Applications
         </a>    

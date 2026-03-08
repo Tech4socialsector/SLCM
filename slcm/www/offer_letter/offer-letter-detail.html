@@ -107,8 +107,16 @@
         font-weight: 700;
         color: var(--primary);
     }
+    .fee-row.discount {
+        color: #276749;
+        font-weight: 600;
+        background-color: #f0fff4;
+        border-radius: 6px;
+        padding: 4px 8px;
+        margin-left: -8px;
+        margin-right: -8px;
+    }
 
-    /* Buttons */
     .btn-pay {
         background-color: var(--primary);
         color: #ffffff;
@@ -459,14 +467,14 @@
                 <div class="ui-card">
                     <span class="ui-card-label">{{ _("Fee Details") }}</span>
                     ${fee_breakdown.map(f => `
-                        <div class="fee-row">
-                            <span>${f.component}</span>
+                        <div class="fee-row ${f.is_discount ? 'discount' : ''}">
+                            <span>${f.is_discount ? '🎓 ' : ''}${f.component}</span>
                             <span>${format_currency(f.amount, currency)}</span>
                         </div>
                     `).join('')}
                     
                     <div class="fee-row total">
-                        <span>{{ _("Total") }}</span>
+                        <span>{{ _("Payable Amount") }}</span>
                         <span>${format_currency(offer.payable_amount, currency)}</span>
                     </div>
 

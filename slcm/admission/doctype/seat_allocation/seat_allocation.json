@@ -44,7 +44,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Program Level",
-   "options": "UG\nPG\nResearch Cource"
+   "options": "UG\nPG\nResearch Course"
   },
   {
    "fieldname": "merit_list",

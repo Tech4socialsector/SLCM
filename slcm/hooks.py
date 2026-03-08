@@ -40,7 +40,7 @@ fixtures = [
         ]
     },
     {
-        "doctype":"Workflow",
+        "doctype": "Workflow",
         "filters": [
             ["name", "in", ["Scholarship Application Workflow"]]
         ]

@@ -52,6 +52,14 @@
    "unique": 1
   },
   {
+   "fieldname": "cycle_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Cycle Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "in_list_view": 1,
