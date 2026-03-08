@@ -22,7 +22,7 @@
  "login_required": 1,
  "max_attachment_size": 0,
  "meta_title": "Application Form",
- "modified": "2026-03-06 13:12:33.804051",
+ "modified": "2026-03-08 21:37:28.826576",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "applicant-form",
@@ -58,7 +58,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -83,7 +83,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -97,7 +97,7 @@
    "options": "Email",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -111,7 +111,7 @@
    "options": "\nMale\nFemale\nOthers",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -163,7 +163,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -176,7 +176,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -243,7 +243,7 @@
    "options": "Program",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -257,7 +257,7 @@
    "options": "Campus",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -334,7 +334,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -373,7 +373,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -412,7 +412,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -624,7 +624,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -649,7 +649,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -674,7 +674,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -701,7 +701,7 @@
    "options": "\nUG\nPG\nResearch Course",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -860,6 +860,20 @@
    "show_in_filter": 0
   },
   {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "",
+   "fieldtype": "Section Break",
+   "hidden": 0,
+   "label": "",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "",
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
    "allow_read_on_all_link_options": 1,
    "fieldname": "hsc_group",
    "fieldtype": "Link",
@@ -870,7 +884,7 @@
    "options": "HSC Groups",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -883,7 +897,21 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "",
+   "fieldtype": "Section Break",
+   "hidden": 0,
+   "label": "",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "",
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -908,7 +936,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -1245,11 +1273,23 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
-   "fieldname": "which_of_the_following_applies_to_you_section",
+   "fieldname": "eligibility_for_reservation_tab",
+   "fieldtype": "Page Break",
+   "hidden": 0,
+   "label": "Eligibility For Reservation",
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "information_relating_to_eligibility_for_reservations_section",
    "fieldtype": "Section Break",
    "hidden": 0,
-   "label": "Which of the following applies to you",
+   "label": "Information relating to Eligibility for Reservations",
    "max_length": 0,
    "max_value": 0,
    "precision": "",
@@ -1456,6 +1496,20 @@
   },
   {
    "allow_read_on_all_link_options": 1,
+   "fieldname": "admission_year",
+   "fieldtype": "Link",
+   "hidden": 0,
+   "label": "Admission Year",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "Admission Year",
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 1,
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "hidden": 0,
@@ -1465,7 +1519,7 @@
    "options": "Academic Year",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -1479,21 +1533,7 @@
    "options": "Admission Cycle",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 1,
-   "fieldname": "admission_year",
-   "fieldtype": "Link",
-   "hidden": 0,
-   "label": "Admission Year",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "Admission Year",
-   "precision": "",
-   "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   }
  ]
