@@ -41,6 +41,20 @@ def get_portal_config():
             "submission_message": config.submission_message or "",
             "enable_portal_notifications": config.enable_portal_notifications
                 if config.enable_portal_notifications is not None else 1,
+            "portal_tagline": config.get("portal_tagline") or config.get("portal_subtitle") or "",
+            "institution_since": config.get("institution_since") or "",
+            "hero_cta_label": config.get("hero_cta_label") or "Explore Programs",
+            "hero_cta2_label": config.get("hero_cta2_label") or "Virtual Tour",
+            "footer_address": config.get("footer_address") or "",
+            "footer_phone": config.get("footer_phone") or "",
+            "footer_email": config.get("footer_email") or config.get("contact_email") or "",
+            "social_links": [
+                {
+                    "platform": row.platform,
+                    "url": row.url,
+                    "is_active": row.is_active
+                } for row in (config.social_links or [])
+            ],
         }
     except Exception:
         # DocType not yet configured — return safe defaults
@@ -67,6 +81,14 @@ def get_portal_config():
             "footer_text": "",
             "submission_message": "",
             "enable_portal_notifications": 1,
+            "portal_tagline": "",
+            "institution_since": "",
+            "hero_cta_label": "Explore Programs",
+            "hero_cta2_label": "Virtual Tour",
+            "footer_address": "",
+            "footer_phone": "",
+            "footer_email": "",
+            "social_links": [],
         }
 
 @frappe.whitelist(allow_guest=True)
@@ -122,9 +144,9 @@ def get_active_programs():
             filters={"parent": active_cycle, "is_active": 1},
             fields=[
                 "program", "program_name", "seats", "eligibility_hint",
-                "brochure_url", "program_image as featured_image", "desciption",
+                "brochure_url", "program_image as featured_image", "program_image", "desciption",
                 "program_media", "reservation_policy", "max_applications",
-                "application_count",
+                "application_count", "program_level", "intake_type",
             ],
             order_by="program_name asc"
         )
@@ -133,13 +155,20 @@ def get_active_programs():
         for p in programs:
             p["admission_cycle"] = active_cycle
             # Fetch slug and abbreviation from Program
-            prog_info = frappe.db.get_value("Program", p.program, ["program_slug", "program_shortcode"], as_dict=True)
+            prog_info = frappe.db.get_value("Program", p.program, 
+                ["program_slug", "program_shortcode", "program_duration"], 
+                as_dict=True
+            )
             if prog_info:
-                p["program_slug"] = prog_info.program_slug
+                p["program_slug"] = prog_info.program_slug or _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = prog_info.program_shortcode
+                p["duration"] = f"{prog_info.program_duration} Years" if prog_info.program_duration else ""
             else:
                 p["program_slug"] = _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = ""
+                p["duration"] = ""
+
+            p["description"] = p.get("desciption") or ""
             
             raw = p.get("desciption") or ""
             if raw:
@@ -180,6 +209,35 @@ def get_active_programs():
         return programs
     except Exception as e:
         frappe.log_error(f"get_active_programs failed: {e}", "Portal")
+        return []
+
+def get_active_events(limit=4):
+    """Returns announcements of type Event, sorted by event_date."""
+    try:
+        meta = frappe.get_meta("Portal Announcement")
+        fields_available = [f.fieldname for f in meta.fields]
+        
+        # Base fields we know exist
+        fields = ["name", "title", "summary", "announcement_type", "creation"]
+        
+        # Optional fields
+        optional = ["publish_date", "event_date", "event_venue", "featured_image", "created_by_role"]
+        for f in optional:
+            if f in fields_available:
+                fields.append(f)
+
+        return frappe.get_all(
+            "Portal Announcement",
+            filters={
+                "announcement_type": "Event",
+                "is_active": 1
+            },
+            fields=fields,
+            order_by="event_date asc" if "event_date" in fields_available else "creation desc",
+            limit=limit
+        )
+    except Exception as e:
+        frappe.log_error(f"get_active_events failed: {e}", "Portal")
         return []
 
 @frappe.whitelist(allow_guest=True)

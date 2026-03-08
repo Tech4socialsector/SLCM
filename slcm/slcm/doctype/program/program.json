@@ -24,8 +24,19 @@
   "program_status",
   "section_break_xbux",
   "table_fela",
-  "connections_tab",
-  "intake_type"
+  "portal_details",
+  "intake_type",
+  "program_image",
+  "description",
+  "eligibility_summary",
+  "application_fee",
+  "application_deadline",
+  "brochure_url",
+  "media",
+  "curriculum_items",
+  "career_items",
+  "faculty_items",
+  "connections_tab"
  ],
  "fields": [
   {
@@ -54,12 +65,6 @@
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "connections_tab",
-   "fieldtype": "Tab Break",
-   "label": "Connections",
-   "show_dashboard": 1
   },
   {
    "fieldname": "section_break_xbux",
@@ -152,6 +157,74 @@
    "label": "Intake Type",
    "options": "CLAT\nNLSAT\nDirect Merit",
    "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Program Description"
+  },
+  {
+   "description": "Shown in Admission Details sidebar on program page",
+   "fieldname": "eligibility_summary",
+   "fieldtype": "Text Editor",
+   "label": "Eligibility Summary"
+  },
+  {
+   "description": "e.g. \u20b91000 (Non-refundable)",
+   "fieldname": "application_fee",
+   "fieldtype": "Data",
+   "label": "Application Fee"
+  },
+  {
+   "description": "e.g. June 30, 2026",
+   "fieldname": "application_deadline",
+   "fieldtype": "Data",
+   "label": "Application Deadline"
+  },
+  {
+   "fieldname": "brochure_url",
+   "fieldtype": "Attach",
+   "label": "Brochure File"
+  },
+  {
+   "fieldname": "media",
+   "fieldtype": "Table",
+   "label": "Media Gallery",
+   "options": "Program Media"
+  },
+  {
+   "fieldname": "curriculum_items",
+   "fieldtype": "Table",
+   "label": "Curriculum",
+   "options": "Program Curriculum Item"
+  },
+  {
+   "fieldname": "career_items",
+   "fieldtype": "Table",
+   "label": "Career Prospects",
+   "options": "Program Career Item"
+  },
+  {
+   "fieldname": "faculty_items",
+   "fieldtype": "Table",
+   "label": "Faculty",
+   "options": "Program Faculty Item"
+  },
+  {
+   "fieldname": "portal_details",
+   "fieldtype": "Tab Break",
+   "label": "Portal Details"
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "fieldname": "program_image",
+   "fieldtype": "Attach Image",
+   "label": "Program Image"
   }
  ],
  "image_field": "hero_image",
@@ -162,7 +235,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2026-03-06 11:22:04.238639",
+ "modified": "2026-03-08 23:35:15.358045",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",

@@ -1,398 +1,673 @@
 {% extends "slcm/www/admission_base.html" %}
 
 {% block theme_vars %}
-{% if portal_config and portal_config.get('primary_color') %}
 <style>
-:root {
-    --primary:       {{ portal_config.get('primary_color', '#1a3c6e') }};
-    --secondary:     {{ portal_config.get('secondary_color', '#c8a14b') }};
-    --accent:        {{ portal_config.get('secondary_color', '#c8a14b') }};
-    --primary-light: {{ portal_config.get('primary_light_color', '#e8f0fb') }};
-}
+  :root {
+    {% if portal_config %}
+    --primary:   {{ portal_config.get('primary_color','#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
+    --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
+    {% else %}
+    --primary: #1a3c6e;
+    --secondary: #c8a14b;
+    {% endif %}
+  }
+
+  /* ── Global font ───────────────────────────────────────────── */
+  body, .adm-main, .adm-container {
+    font-family: 'Lexend', system-ui, sans-serif !important;
+    background: #f5f7f8 !important;
+  }
+
+  /* ── Hide base footer on this page ─────────────────────────── */
+  .adm-footer { display: none !important; }
+
+  /* ── Status badges ──────────────────────────────────────────── */
+  .badge-draft      { background:#f1f5f9; color:#64748b; }
+  .badge-submitted  { background:#eff6ff; color:#3b82f6; }
+  .badge-reviewing  { background:#fffbeb; color:#d97706; }
+  .badge-interview  { background:#f0fdf4; color:#16a34a; }
+  .badge-selected   { background:#ecfdf5; color:#059669; }
+  .badge-rejected   { background:#fef2f2; color:#dc2626; }
+  .badge-waitlisted { background:#faf5ff; color:#7c3aed; }
+  .badge-offered    { background:#eff6ff; color:#2563eb; }
+
+  /* ── Stage tracker pulse animation ─────────────────────────── */
+  @keyframes stagePulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(26,60,110,0.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(26,60,110,0); }
+  }
+  .stage-pulse {
+    animation: stagePulse 2s ease-in-out infinite;
+  }
+
+  /* ── Fade in up animation ───────────────────────────────────── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-up {
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+
+  /* ── Card hover lift ────────────────────────────────────────── */
+  .hover-card {
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.25s ease, border-color 0.2s;
+  }
+  .hover-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px -6px rgba(0,0,0,0.1);
+  }
+
+  /* ── Responsive: two-col collapses on mobile ────────────────── */
+  @media (max-width: 768px) {
+    .lg-two-col { grid-template-columns: 1fr !important; }
+  }
+
+  /* ── Next Steps primary-bg card ─────────────────────────────── */
+  #next-steps-card {
+    background: var(--primary) !important;
+    box-shadow: 0 8px 24px -4px rgba(26,60,110,0.3);
+  }
+
+  /* ── Scrollbar styling ──────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 </style>
-{% endif %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
 {% endblock %}
 
-{% block title %}My Application{% endblock %}
-
-{% block page_css %}
-<style>
-/* ── Layout ── */
-.ma-page { background: #f8fafc; min-height: calc(100vh - 60px); padding: 32px 0 80px; }
-.ma-wrap { max-width: 940px; margin: 0 auto; padding: 0 24px; }
-
-/* ── Breadcrumb ── */
-.ma-bc { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b7280; margin-bottom: 24px; }
-.ma-bc a { color: var(--primary); text-decoration: none; font-weight: 500; }
-.ma-bc a:hover { text-decoration: underline; }
-
-/* ── Horizontal scroll strip ── */
-.app-strip-scroll {
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-  margin-bottom: 1.5rem;
-  scrollbar-width: thin;
-}
-.app-strip {
-  display: flex;
-  gap: 0.75rem;
-  min-width: max-content;
-}
-
-/* ── Individual strip card ── */
-.app-strip-card {
-  width: 200px;
-  min-width: 200px;
-  background: #fff;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-.app-strip-card:hover {
-  border-color: var(--primary, #1a56db);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.app-strip-card.active {
-  border-color: var(--primary, #1a56db);
-  background: #eff6ff;
-  box-shadow: 0 4px 16px rgba(26,86,219,0.15);
-}
-.asc-status-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  position: absolute; top: 0.75rem; right: 0.75rem;
-}
-.asc-program {
-  font-weight: 600; font-size: 0.85rem;
-  color: #111827; margin-bottom: 0.25rem;
-  white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; max-width: 160px;
-}
-.asc-cycle {
-  font-size: 0.75rem; color: #6b7280;
-  margin-bottom: 0.5rem;
-}
-.asc-badge {
-  display: inline-block;
-  font-size: 0.7rem; font-weight: 600;
-  padding: 2px 8px; border-radius: 999px;
-  margin-bottom: 0.4rem;
-}
-.asc-id {
-  font-size: 0.7rem; color: #9ca3af;
-}
-
-/* ── Detail panel ── */
-.app-detail-panel { display: none; }
-.app-detail-panel.panel-visible { display: block; }
-
-/* ── Header Card ── */
-.ma-header-card {
-    background: var(--primary);
-    color: #fff;
-    border-radius: 20px;
-    padding: 32px 40px;
-    margin-bottom: 28px;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(26, 60, 110, 0.15);
-    overflow: hidden;
-}
-.ma-header-card::after {
-    content: ''; position: absolute; top: -50px; right: -50px;
-    width: 200px; height: 200px; border-radius: 50%;
-    background: #fff; opacity: 0.05;
-}
-.ma-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-.ma-header-title h1 { font-size: 26px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.5px; }
-.ma-header-title p { opacity: 0.85; font-size: 14px; margin: 0; }
-.ma-status-badge {
-    padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.5px;
-}
-.ma-header-meta { display: flex; gap: 24px; margin-bottom: 24px; font-size: 13px; opacity: 0.9; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 20px; }
-.ma-meta-item { display: flex; align-items: center; gap: 8px; }
-.ma-actions { display: flex; gap: 12px; }
-
-/* ── Section Cards ── */
-.ma-sec-card {
-    background: #fff; border-radius: 18px; border: 1px solid #eef2f6;
-    padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);
-}
-.ma-sec-head {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 20px;
-    padding-bottom: 12px; border-bottom: 1.5px solid #f8fafc;
-}
-.ma-sec-head svg { color: var(--primary); }
-
-/* ── Field Grid ── */
-.ma-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; }
-.ma-field-label { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
-.ma-field-value { font-size: 14px; font-weight: 500; color: #1f2937; }
-.ma-empty-val { color: #d1d5db; font-style: italic; font-weight: 400; }
-
-/* ── Stage Tracker ─────────────────────────────────────── */
-.stage-tracker-wrap {
-  padding: 8px 0 4px;
-}
-.stage-loading {
-  display: flex; align-items: center; gap: 10px;
-  color: #94a3b8; font-size: 13px; padding: 20px 0;
-}
-.stage-spinner {
-  width: 18px; height: 18px;
-  border: 2px solid #e2e8f0;
-  border-top-color: var(--primary, #1a3c6e);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Pipeline row */
-.stage-pipeline {
-  display: flex;
-  align-items: flex-start;
-  gap: 0;
-  overflow-x: auto;
-  padding: 12px 4px 20px;
-  scrollbar-width: none;
-}
-.stage-pipeline::-webkit-scrollbar { display: none; }
-
-/* Individual stage node */
-.stage-node {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-  min-width: 90px;
-  max-width: 110px;
-  position: relative;
-}
-
-/* Connector lines */
-.stage-connector {
-  flex: 1;
-  height: 2px;
-  min-width: 24px;
-  max-width: 60px;
-  margin-top: 20px; /* aligns with circle center */
-  flex-shrink: 1;
-}
-.stage-connector.solid {
-  background: var(--primary, #1a3c6e);
-}
-.stage-connector.dashed {
-  background: repeating-linear-gradient(
-    to right,
-    #cbd5e1 0px, #cbd5e1 5px,
-    transparent 5px, transparent 10px
-  );
-}
-
-/* Circle */
-.stage-circle {
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 800;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-/* COMPLETED: filled dark + checkmark */
-.stage-node.completed .stage-circle {
-  background: var(--primary, #1a3c6e);
-  border-color: var(--primary, #1a3c6e);
-  color: #fff;
-}
-
-/* ACTIVE: gold pulsing ring */
-.stage-node.active .stage-circle {
-  background: #fff;
-  border-color: var(--secondary, #c8a14b);
-  color: var(--secondary, #c8a14b);
-  box-shadow: 0 0 0 0 rgba(200, 161, 75, 0.4);
-  animation: pulse-ring 1.8s ease-out infinite;
-}
-@keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(200,161,75,0.4); }
-  70%  { box-shadow: 0 0 0 10px rgba(200,161,75,0); }
-  100% { box-shadow: 0 0 0 0 rgba(200,161,75,0); }
-}
-
-/* UPCOMING: empty grey */
-.stage-node.upcoming .stage-circle {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-  color: #94a3b8;
-}
-
-/* Stage name label */
-.stage-label {
-  margin-top: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1.3;
-  color: #64748b;
-  max-width: 90px;
-}
-.stage-node.completed .stage-label { color: var(--primary, #1a3c6e); }
-.stage-node.active .stage-label {
-  color: var(--secondary, #c8a14b);
-  font-weight: 800;
-  font-size: 12px;
-}
-
-/* Action button — only on active */
-.stage-action-btn {
-  margin-top: 6px;
-  display: inline-flex;
-  align-items: center; gap: 4px;
-  padding: 4px 10px;
-  background: var(--secondary, #c8a14b);
-  color: #fff;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: opacity 0.2s;
-}
-.stage-action-btn:hover { opacity: 0.85; color: #fff; }
-
-/* ── Buttons ── */
-.ma-btn { padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-.ma-btn-primary { background: #fff; color: var(--primary) !important; border: none; }
-.ma-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.ma-btn-outline { background: rgba(255,255,255,0.1); color: #fff !important; border: 1px solid rgba(255,255,255,0.3); }
-.ma-btn-outline:hover { background: rgba(255,255,255,0.2); }
-.ma-btn-success { background: #059669; color: #fff !important; border: none; }
-
-/* ── Status Cards ── */
-.ma-stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-.ma-stat-box {
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: all 0.25s;
-}
-.ma-stat-box:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-}
-.ma-stat-icon {
-  width: 44px; height: 44px;
-  background: var(--primary-light, #e8f0fb);
-  color: var(--primary);
-  border-radius: 11px;
-  display: flex; align-items: center;
-  justify-content: center;
-  font-size: 18px; flex-shrink: 0;
-}
-.ma-stat-label {
-  font-size: 10px; font-weight: 700;
-  color: #9ca3af; text-transform: uppercase;
-  letter-spacing: 0.05em; margin-bottom: 2px;
-  display: block;
-}
-.ma-stat-value {
-  font-size: 15px; font-weight: 800; color: #1e293b;
-}
-
-/* ── Data rows ── */
-.ma-data-row {
-  background: #f8fafc; border-radius: 12px;
-  padding: 18px 20px; margin-bottom: 12px;
-  display: flex; flex-direction: column; gap: 10px;
-  border: 1px solid transparent; transition: 0.2s;
-}
-.ma-data-row:hover {
-  background: #fff;
-  border-color: var(--primary);
-  transform: translateX(3px);
-}
-.ma-data-main-wrap {
-  display: flex; justify-content: space-between;
-  align-items: center; width: 100%;
-}
-.ma-data-title {
-  font-size: 15px; font-weight: 700;
-  color: #1e293b; margin-bottom: 3px;
-}
-.ma-data-sub { font-size: 13px; color: #64748b; }
-.ma-rank-val {
-  font-size: 22px; font-weight: 800;
-  color: var(--primary); display: block;
-}
-.ma-rank-lab {
-  font-size: 10px; font-weight: 700;
-  color: #64748b; text-transform: uppercase;
-}
-
-/* ── Performance entry list ── */
-.ma-entry-list { display: flex; flex-direction: column; gap: 12px; }
-.ma-entry-row {
-  display: flex; align-items: baseline;
-  justify-content: space-between;
-  font-size: 14px; position: relative;
-}
-.ma-entry-label {
-  color: #64748b; font-weight: 500;
-  background: #fff; padding-right: 8px;
-  z-index: 1; position: relative;
-}
-.ma-entry-dots {
-  flex: 1; border-bottom: 1px dotted #cbd5e1;
-  margin: 0 4px; position: relative; top: -4px;
-}
-.ma-entry-value {
-  font-weight: 700; color: #1e293b;
-  background: #fff; padding-left: 8px;
-  z-index: 1; position: relative;
-}
-
-/* ── Status badge ── */
-.ma-status-pill {
-  padding: 5px 13px; border-radius: 20px;
-  font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.05em;
-}
-.pill-success { background: #dcfce7; color: #166534; }
-.pill-warning { background: #fef9c3; color: #854d0e; }
-.pill-danger  { background: #fee2e2; color: #991b1b; }
-.pill-info    { background: #dbeafe; color: #1e40af; }
-
-/* ── Mobile ── */
-@media (max-width: 640px) {
-    .ma-field-grid { grid-template-columns: 1fr; gap: 16px; }
-    .ma-header-card { padding: 24px; }
-    .ma-header-meta { flex-direction: column; gap: 10px; }
-    .ma-actions { flex-direction: column; }
-    .ma-btn { width: 100%; justify-content: center; }
-    .ma-stats-row { grid-template-columns: 1fr 1fr; }
-    .ma-data-main-wrap { flex-direction: column; align-items: flex-start; gap: 8px; }
-}
-</style>
-{% endblock %}
+{% block title %}{{ "Application Details" if show_detail else "My Applications" }}{% endblock %}
 
 {% block content %}
+
+{% if app_not_found %}
+<div style="padding:60px 20px;text-align:center;">
+  <span class="material-symbols-outlined" style="font-size:56px;color:#e2e8f0;">
+    search_off
+  </span>
+  <h2 style="font-size:22px;font-weight:700;color:#0f172a;margin:16px 0 8px;">
+    Application Not Found
+  </h2>
+  <p style="color:#64748b;font-size:14px;margin-bottom:24px;">
+    This application does not exist or may have been removed.
+  </p>
+  <a href="/merit-and-scholarship/admission_dashboard"
+     style="padding:10px 24px;background:var(--primary);color:white;
+            border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;">
+    Back to Dashboard
+  </a>
+</div>
+
+{% elif access_denied %}
+<div style="padding:60px 20px;text-align:center;">
+  <span class="material-symbols-outlined" style="font-size:56px;color:#e2e8f0;">
+    lock
+  </span>
+  <h2 style="font-size:22px;font-weight:700;color:#0f172a;margin:16px 0 8px;">
+    Access Denied
+  </h2>
+  <p style="color:#64748b;font-size:14px;margin-bottom:24px;">
+    You do not have permission to view this application.
+  </p>
+  <a href="/merit-and-scholarship/admission_dashboard"
+     style="padding:10px 24px;background:var(--primary);color:white;
+            border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;">
+    Back to Dashboard
+  </a>
+</div>
+
+{% elif show_detail %}
+{# ── Safe field extraction helpers ───────────────────────────────── #}
+{% set _app     = selected_app %}
+{% set _aname   = (_app.get('candidate_name') or _app.get('applicant_name') if _app.get else (_app.candidate_name or _app.applicant_name)) or '' %}
+{% set _prog    = (_app.get('program_name') or _app.get('program') if _app.get else (_app.program_name or _app.program)) or 'Program' %}
+{% set _cycle   = (_app.get('admission_cycle') if _app.get else _app.admission_cycle) or '' %}
+{% set _status  = (_app.get('application_status') if _app.get else _app.application_status) or 'Draft' %}
+{% set _stage   = (_app.get('current_stage_name') or _app.get('current_stage') if _app.get else (_app.current_stage_name or _app.current_stage)) or _status %}
+{% set _email   = (_app.get('email') if _app.get else _app.email) or '' %}
+{% set _intake  = (_app.get('intake_type') if _app.get else _app.intake_type) or '' %}
+{% set _appid   = app_name_param or '' %}
+{% set _subdate = submission_date or '' %}
+{% set _narr    = app_narrative or '' %}
+{% set _docs    = app_documents or [] %}
+{% set _stages  = stage_tracker or [] %}
+{% set _steps   = next_steps or [] %}
+{% set _sname   = support_name or '' %}
+{% set _srole   = support_role or '' %}
+{% set _semail  = support_email or '' %}
+{% set _campimg = campus_image or '' %}
+
+{# Status badge class #}
+{% if _status in ['Draft'] %}{% set _badgecls = 'badge-draft' %}
+{% elif _status in ['Submitted'] %}{% set _badgecls = 'badge-submitted' %}
+{% elif _status in ['Under Review','Screening','Evaluation'] %}{% set _badgecls = 'badge-reviewing' %}
+{% elif _status in ['Interview Scheduled','Interview'] %}{% set _badgecls = 'badge-interview' %}
+{% elif _status in ['Selected','Accepted'] %}{% set _badgecls = 'badge-selected' %}
+{% elif _status in ['Rejected'] %}{% set _badgecls = 'badge-rejected' %}
+{% elif _status in ['Waitlisted'] %}{% set _badgecls = 'badge-waitlisted' %}
+{% elif _status in ['Offered'] %}{% set _badgecls = 'badge-offered' %}
+{% else %}{% set _badgecls = 'badge-draft' %}{% endif %}
+
+<!-- ══ OUTER WRAPPER ═══════════════════════════════════════════════ -->
+<div style="min-height:calc(100vh - 60px);background:#f5f7f8;
+            margin:-20px -20px 0;padding:32px 20px 48px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
+
+    <!-- ── BACK BREADCRUMB ─────────────────────────────────────── -->
+    <div class="fade-in-up" style="animation-delay:0s">
+      <a href="/merit-and-scholarship/admission_dashboard"
+         style="display:inline-flex;align-items:center;gap:6px;
+                font-size:13px;font-weight:600;color:#64748b;
+                text-decoration:none;transition:color 0.15s;"
+         onmouseover="this.style.color='var(--primary)'"
+         onmouseout="this.style.color='#64748b'">
+        <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+        Back to Dashboard
+      </a>
+    </div>
+
+    <!-- ══ HERO APPLICATION CARD ════════════════════════════════════ -->
+    <section class="fade-in-up"
+             style="background:white;border-radius:20px;padding:36px 40px;
+                    border:1.5px solid #e2e8f0;
+                    box-shadow:0 2px 12px rgba(0,0,0,0.05);
+                    animation-delay:0.05s;">
+
+      <!-- Header row: Status + App ID | Date Submitted -->
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;
+                  align-items:flex-start;gap:16px;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="{{ _badgecls }}"
+                style="display:inline-block;padding:4px 12px;
+                       border-radius:9999px;font-size:11px;font-weight:700;
+                       text-transform:uppercase;letter-spacing:0.06em;">
+            {{ _status }}
+          </span>
+          <span style="font-size:13px;color:#94a3b8;font-weight:500;">
+            #{{ _appid }}
+          </span>
+        </div>
+        <div style="text-align:right;">
+          <p style="font-size:12px;color:#94a3b8;margin-bottom:2px;">Date Submitted</p>
+          <p style="font-size:15px;font-weight:700;color:#0f172a;">{{ _subdate }}</p>
+        </div>
+      </div>
+
+      <!-- Program name + cycle -->
+      <h1 style="font-size:28px;font-weight:800;color:#0f172a;
+                 line-height:1.2;margin-bottom:4px;">
+        {{ _prog }}
+      </h1>
+      <p style="font-size:14px;color:#64748b;margin-bottom:32px;">
+        {{ _cycle }}{% if _intake %} · {{ _intake }}{% endif %}
+      </p>
+
+      <!-- ── STAGE TRACKER ──────────────────────────────────────── -->
+      {% if _stages %}
+      <div style="position:relative;margin-bottom:36px;">
+
+        {# Calculate progress bar width based on completed+active stages #}
+        {% set ns = namespace(done=0) %}
+        {% for s in _stages %}
+          {% if s.state in ['completed','active'] %}{% set ns.done = ns.done + 1 %}{% endif %}
+        {% endfor %}
+        {% set _pct = ((ns.done / _stages|length) * 100)|int %}
+
+        <!-- Track background -->
+        <div style="position:absolute;top:20px;left:0;width:100%;height:4px;
+                    background:#f1f5f9;border-radius:4px;z-index:0;"></div>
+        <!-- Track fill -->
+        <div style="position:absolute;top:20px;left:0;
+                    width:{{ _pct }}%;height:4px;
+                    background:var(--primary);border-radius:4px;
+                    z-index:1;transition:width 0.6s ease;"></div>
+
+        <!-- Stage nodes -->
+        <div style="position:relative;z-index:2;
+                    display:flex;justify-content:space-between;">
+          {% for s in _stages %}
+          {% set _sstate = s.state if s is mapping else s['state'] %}
+          {% set _slabel = s.name if s is mapping else s['name'] %}
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;
+                      flex:1;min-width:0;">
+
+            {# Circle icon #}
+            {% if _sstate == 'completed' %}
+            <div style="width:40px;height:40px;border-radius:50%;
+                        background:var(--primary);color:white;
+                        display:flex;align-items:center;justify-content:center;
+                        border:4px solid white;
+                        box-shadow:0 0 0 2px var(--primary);flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:18px">check</span>
+            </div>
+            {% elif _sstate == 'active' %}
+            <div class="stage-pulse"
+                 style="width:40px;height:40px;border-radius:50%;
+                        background:var(--primary);color:white;
+                        display:flex;align-items:center;justify-content:center;
+                        border:4px solid white;
+                        box-shadow:0 0 0 2px var(--primary);flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:18px">sync</span>
+            </div>
+            {% else %}
+            <div style="width:40px;height:40px;border-radius:50%;
+                        background:#f1f5f9;color:#94a3b8;
+                        display:flex;align-items:center;justify-content:center;
+                        border:4px solid white;
+                        box-shadow:0 0 0 2px #e2e8f0;flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:18px">radio_button_unchecked</span>
+            </div>
+            {% endif %}
+
+            {# Label #}
+            <span style="font-size:10px;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         text-align:center;
+                         {% if _sstate == 'active' %}color:var(--primary);
+                         {% elif _sstate == 'completed' %}color:#64748b;
+                         {% else %}color:#cbd5e1;{% endif %}
+                         white-space:nowrap;overflow:hidden;
+                         text-overflow:ellipsis;max-width:90px;">
+              {{ _slabel }}
+            </span>
+
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <!-- END STAGE TRACKER -->
+
+      <!-- ── APPLICANT INFO ROW ─────────────────────────────────── -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+                  gap:16px;padding-top:24px;
+                  border-top:1px solid #f1f5f9;">
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">person</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">
+              Applicant
+            </p>
+            <p style="font-size:14px;font-weight:600;color:#0f172a;">
+              {{ _aname }}
+            </p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">event</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">
+              Current Stage
+            </p>
+            <p style="font-size:14px;font-weight:600;color:#0f172a;">
+              {{ _stage }}
+            </p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">alternate_email</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">
+              Contact Email
+            </p>
+            <p style="font-size:14px;font-weight:600;color:var(--primary);
+                      word-break:break-all;">
+              {{ _email }}
+            </p>
+          </div>
+        </div>
+
+      </div>
+      <!-- END INFO ROW -->
+
+    </section>
+    <!-- END HERO APPLICATION CARD -->
+
+    <!-- ══ TWO COLUMN: Main (2/3) + Sidebar (1/3) ═══════════════════ -->
+    <div style="display:grid;grid-template-columns:1fr;gap:24px;">
+      <div class="lg-two-col"
+           style="display:grid;grid-template-columns:2fr 1fr;gap:24px;">
+
+      <!-- ── LEFT COLUMN ─────────────────────────────────────────── -->
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0;">
+
+        <!-- DOCUMENT CHECKLIST -->
+        {% set _doc_count = _docs|length %}
+        {% set ns2 = namespace(verified=0) %}
+        {% for d in _docs %}
+          {% set _vs = (d.get('verification_status') if d.get else d.verification_status) or '' %}
+          {% if _vs in ['Verified','Approved','Uploaded'] or
+               (d.get('file_url') if d.get else d.file_url) %}
+            {% set ns2.verified = ns2.verified + 1 %}
+          {% endif %}
+        {% endfor %}
+
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.15s;">
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <h3 style="font-size:16px;font-weight:700;color:#0f172a;">
+              Document Checklist
+            </h3>
+            {% if _doc_count > 0 %}
+            <span style="font-size:13px;font-weight:500;color:#64748b;">
+              {{ ns2.verified }} of {{ _doc_count }} Completed
+            </span>
+            {% endif %}
+          </div>
+
+          {% if _docs %}
+          <div>
+            {% for doc in _docs %}
+            {% set _dname  = (doc.get('document_name') or doc.get('document_type') if doc.get else (doc.document_name or doc.document_type)) or 'Document' %}
+            {% set _dfurl  = (doc.get('file_url') if doc.get else doc.file_url) or '' %}
+            {% set _dvs    = (doc.get('verification_status') if doc.get else doc.verification_status) or '' %}
+            {% set _ddate  = (doc.get('upload_date') or doc.get('creation') if doc.get else (doc.upload_date or doc.creation)) %}
+            {% set _dremark= (doc.get('remarks') if doc.get else doc.remarks) or '' %}
+
+            {# Determine doc state #}
+            {% if _dfurl and _dvs in ['Verified','Approved'] %}
+              {% set _dstate = 'verified' %}
+            {% elif _dfurl %}
+              {% set _dstate = 'uploaded' %}
+            {% elif _dvs == 'Pending' or _dvs == 'Verification Pending' %}
+              {% set _dstate = 'pending' %}
+            {% else %}
+              {% set _dstate = 'missing' %}
+            {% endif %}
+
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:16px 24px;
+                        border-bottom:1px solid #f8fafc;
+                        {% if _dstate == 'pending' %}background:#fffbeb;{% endif %}
+                        transition:background 0.15s;"
+                 onmouseover="this.style.background='{% if _dstate == 'pending' %}#fef3c7{% else %}#f8fafc{% endif %}'"
+                 onmouseout="this.style.background='{% if _dstate == 'pending' %}#fffbeb{% else %}white{% endif %}'">
+
+              <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
+                <!-- State icon -->
+                {% if _dstate == 'verified' %}
+                <span class="material-symbols-outlined" style="font-size:22px;color:#16a34a;flex-shrink:0;">check_circle</span>
+                {% elif _dstate == 'uploaded' %}
+                <span class="material-symbols-outlined" style="font-size:22px;color:#3b82f6;flex-shrink:0;">check_circle</span>
+                {% elif _dstate == 'pending' %}
+                <span class="material-symbols-outlined" style="font-size:22px;color:#d97706;flex-shrink:0;">pending</span>
+                {% else %}
+                <span class="material-symbols-outlined" style="font-size:22px;color:#cbd5e1;flex-shrink:0;">radio_button_unchecked</span>
+                {% endif %}
+
+                <div style="min-width:0;">
+                  <p style="font-size:14px;font-weight:600;color:#0f172a;
+                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ _dname }}
+                  </p>
+                  <p style="font-size:11px;font-weight:600;
+                             text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;
+                             {% if _dstate == 'pending' %}color:#d97706;font-style:italic;
+                             {% elif _dstate == 'missing' %}color:#94a3b8;
+                             {% else %}color:#94a3b8;{% endif %}">
+                    {% if _dstate == 'verified' %}Verified
+                    {% elif _dstate == 'uploaded' %}
+                      Uploaded{% if _ddate %} · {{ frappe.utils.format_date(_ddate, 'MMM d, yyyy') }}{% endif %}
+                    {% elif _dstate == 'pending' %}{{ _dvs or 'Verification Pending' }}
+                    {% else %}Not Uploaded{% endif %}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Action button -->
+              {% if _dfurl %}
+              <a href="{{ _dfurl }}" target="_blank"
+                 style="font-size:13px;font-weight:600;color:var(--primary);
+                        text-decoration:none;white-space:nowrap;margin-left:12px;"
+                 onmouseover="this.style.textDecoration='underline'"
+                 onmouseout="this.style.textDecoration='none'">
+                View
+              </a>
+              {% elif _dstate == 'pending' %}
+              <a href="/my-applications?app={{ _appid }}&doc={{ (doc.get('name') if doc.get else doc.name) }}"
+                 style="padding:6px 14px;border-radius:8px;font-size:12px;
+                        font-weight:700;color:white;text-decoration:none;
+                        background:var(--primary);white-space:nowrap;margin-left:12px;">
+                Update
+              </a>
+              {% endif %}
+
+            </div>
+            {% endfor %}
+          </div>
+
+          {% else %}
+          <!-- Empty document state -->
+          <div style="padding:32px 24px;text-align:center;">
+            <span class="material-symbols-outlined"
+                  style="font-size:40px;color:#e2e8f0;display:block;margin-bottom:8px;">
+              folder_open
+            </span>
+            <p style="font-size:13px;color:#94a3b8;font-weight:500;">
+              No documents uploaded yet
+            </p>
+          </div>
+          {% endif %}
+
+        </section>
+        <!-- END DOCUMENT CHECKLIST -->
+
+        <!-- APPLICATION NARRATIVE -->
+        {% if _narr %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;padding:24px;
+                        border:1.5px solid #e2e8f0;
+                        animation-delay:0.2s;">
+          <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:14px;">
+            Application Notes
+          </h3>
+          <p style="font-size:13px;color:#475569;line-height:1.7;">
+            {{ _narr }}
+          </p>
+        </section>
+        {% endif %}
+        <!-- END NARRATIVE -->
+
+      </div>
+      <!-- END LEFT COLUMN -->
+
+      <!-- ── RIGHT SIDEBAR ─────────────────────────────────────── -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- NEXT STEPS card (primary bg) -->
+        {% if _steps %}
+        <section class="fade-in-up" id="next-steps-card"
+                 style="border-radius:16px;padding:24px;
+                        color:white;animation-delay:0.1s;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+            <span class="material-symbols-outlined" style="font-size:22px;">bolt</span>
+            <h3 style="font-size:16px;font-weight:700;">Next Steps</h3>
+          </div>
+          <ul style="display:flex;flex-direction:column;gap:14px;list-style:none;
+                     padding:0;margin:0 0 20px;">
+            {% for step in _steps %}
+            {% set _stext = step.text if step is mapping else step['text'] %}
+            {% set _sislink = step.is_link if step is mapping else step['is_link'] %}
+            {% set _slurl  = step.link_url if step is mapping else step['link_url'] %}
+            {% set _slabel = step.link_label if step is mapping else step['link_label'] %}
+            <li style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="margin-top:3px;width:18px;height:18px;border-radius:50%;
+                          border:2px solid rgba(255,255,255,0.4);
+                          display:flex;align-items:center;justify-content:center;
+                          flex-shrink:0;">
+                <div style="width:7px;height:7px;border-radius:50%;
+                             background:white;"></div>
+              </div>
+              <p style="font-size:13px;line-height:1.55;flex:1;">
+                {% if _sislink and _slurl %}
+                <a href="{{ _slurl }}"
+                   style="font-weight:700;color:white;text-decoration:underline;">
+                  {{ _slabel or _slurl }}
+                </a>
+                {{ _stext }}
+                {% else %}
+                {{ _stext }}
+                {% endif %}
+              </p>
+            </li>
+            {% endfor %}
+          </ul>
+          <a href="/my-applications"
+             style="display:block;width:100%;padding:12px;text-align:center;
+                    background:white;color:var(--primary);
+                    font-weight:700;font-size:13px;border-radius:10px;
+                    text-decoration:none;
+                    transition:background 0.15s,opacity 0.15s;"
+             onmouseover="this.style.opacity='0.9'"
+             onmouseout="this.style.opacity='1'">
+            View All Applications
+          </a>
+        </section>
+        {% endif %}
+        <!-- END NEXT STEPS -->
+
+        <!-- SUPPORT & CONTACT -->
+        {% if _sname or _semail %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;padding:24px;
+                        border:1.5px solid #e2e8f0;animation-delay:0.2s;">
+          <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:16px;">
+            Support &amp; Contact
+          </h3>
+
+          {% if _sname %}
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;
+                      border-radius:12px;border:1px solid #f1f5f9;margin-bottom:12px;">
+            <!-- Avatar initials -->
+            <div style="width:44px;height:44px;border-radius:50%;
+                        background:rgba(26,60,110,0.08);
+                        display:flex;align-items:center;justify-content:center;
+                        flex-shrink:0;font-size:16px;font-weight:700;
+                        color:var(--primary);">
+              {{ _sname[0]|upper }}
+            </div>
+            <div>
+              <p style="font-size:14px;font-weight:700;color:#0f172a;">{{ _sname }}</p>
+              {% if _srole %}
+              <p style="font-size:12px;color:#64748b;margin-top:1px;">{{ _srole }}</p>
+              {% endif %}
+              {% if _semail %}
+              <a href="mailto:{{ _semail }}"
+                 style="font-size:12px;color:var(--primary);text-decoration:none;
+                        display:inline-flex;align-items:center;gap:4px;margin-top:4px;"
+                 onmouseover="this.style.textDecoration='underline'"
+                 onmouseout="this.style.textDecoration='none'">
+                <span class="material-symbols-outlined" style="font-size:14px;">mail</span>
+                {{ _semail }}
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          <a href="#"
+             style="display:flex;align-items:center;justify-content:center;gap:8px;
+                    padding:10px;border-radius:10px;font-size:13px;font-weight:600;
+                    color:#475569;text-decoration:none;
+                    border:1.5px solid #e2e8f0;
+                    transition:background 0.15s,color 0.15s;"
+             onmouseover="this.style.background='#f8fafc';this.style.color='var(--primary)'"
+             onmouseout="this.style.background='transparent';this.style.color='#475569'">
+            <span class="material-symbols-outlined" style="font-size:18px">help</span>
+            Help Center
+          </a>
+        </section>
+        {% endif %}
+        <!-- END SUPPORT -->
+
+        <!-- CAMPUS IMAGE (if hero_image is set) -->
+        {% if _campimg %}
+        <div class="fade-in-up"
+             style="border-radius:16px;overflow:hidden;
+                    border:1.5px solid #e2e8f0;
+                    aspect-ratio:4/3;position:relative;
+                    animation-delay:0.3s;">
+          <img src="{{ _campimg }}"
+               alt="Campus"
+               style="width:100%;height:100%;object-fit:cover;">
+          <div style="position:absolute;inset:0;
+                      background:linear-gradient(to top,rgba(0,0,0,0.75) 0%,
+                                  rgba(0,0,0,0.1) 60%,transparent 100%);
+                      display:flex;flex-direction:column;
+                      justify-content:flex-end;padding:16px;">
+            <p style="color:white;font-size:10px;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">
+              Campus
+            </p>
+            <p style="color:white;font-size:13px;font-weight:700;">
+              National Law School of India University
+            </p>
+          </div>
+        </div>
+        {% endif %}
+        <!-- END CAMPUS IMAGE -->
+
+      </div>
+      <!-- END RIGHT SIDEBAR -->
+
+      </div><!-- end lg-two-col -->
+    </div>
+    <!-- END TWO COLUMN -->
+
+    <!-- ── MINIMAL FOOTER ─────────────────────────────────────── -->
+    <footer style="margin-top:24px;padding-top:20px;
+                   border-top:1px solid #e2e8f0;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;
+                  justify-content:space-between;gap:12px;">
+        <p style="font-size:12px;color:#94a3b8;">
+          Admission Portal — National Law School of India University
+        </p>
+        <div style="display:flex;gap:20px;">
+          <a href="/admission" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
+             onmouseover="this.style.color='var(--primary)'"
+             onmouseout="this.style.color='#64748b'">Admissions Home</a>
+          <a href="#" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
+             onmouseover="this.style.color='var(--primary)'"
+             onmouseout="this.style.color='#64748b'">Help Center</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+</div>
+<!-- END OUTER WRAPPER -->
+
+{% else %}
 <div class="ma-page">
 <div class="ma-wrap">
 
@@ -407,7 +682,7 @@
     </nav>
 
     {% if applications %}
-
+...
     <!-- HORIZONTAL SCROLL STRIP -->
     <div class="app-strip-scroll">
       <div class="app-strip">
@@ -690,11 +965,22 @@
 
 </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function () {
+  {% if show_detail %}
+  document.addEventListener('DOMContentLoaded', function() {
+    // Staggered fade-in for detail view
+    var els = document.querySelectorAll('.fade-in-up');
+    els.forEach(function(el) {
+      el.style.animationFillMode = 'forwards';
+    });
+  });
+  {% else %}
+  // ── Legacy List View Script ──
   // Active application tracker
   let activeApp = '{{ active_app.name if active_app else "" }}';
 
@@ -824,6 +1110,7 @@
           initTracker(activeApp);
       }
   });
+  {% endif %}
 })();
 </script>
 {% endblock %}

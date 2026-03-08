@@ -75,4 +75,99 @@ def get_context(context):
     else:
         context.applicant_data = data
 
+    # ── Current user info ─────────────────────────────────────────
+    context.nav_user     = frappe.session.user or ''
+    context.is_guest     = context.nav_user == 'Guest' or not context.nav_user
+    context.user_display = frappe.db.get_value(
+        "User", context.nav_user, "full_name"
+    ) or context.nav_user.split("@")[0] if context.nav_user else ''
+    context.user_first   = (context.user_display or 'U')[0].upper()
+
+    # ── All applicant records for this user (all cycles) ──────────
+    try:
+        _user = context.nav_user
+        # Query by owner
+        apps_by_owner = frappe.get_all(
+            "Applicant",
+            filters={"owner": _user},
+            fields=[
+                "name", "candidate_name as applicant_name", "program",
+                "application_status", "current_stage",
+                "admission_cycle", "creation", "modified"
+            ],
+            ignore_permissions=True
+        )
+        
+        # Query by email
+        apps_by_email = frappe.get_all(
+            "Applicant",
+            filters={"email": _user},
+            fields=[
+                "name", "candidate_name as applicant_name", "program",
+                "application_status", "current_stage",
+                "admission_cycle", "creation", "modified"
+            ],
+            ignore_permissions=True
+        )
+        
+        # Combine and deduplicate
+        combined = {a.name: a for a in (apps_by_owner + apps_by_email)}
+        context.my_applications = sorted(
+            combined.values(), 
+            key=lambda x: x.modified, 
+            reverse=True
+        )[:10]
+
+        for app in context.my_applications:
+            app["program_name"] = frappe.db.get_value("Program", app.program, "program_name") or app.program
+            # Fetch current stage name if current_stage is a link/ID
+            if app.current_stage:
+                app["current_stage_name"] = frappe.db.get_value("Stage Master", app.current_stage, "stage_name") or app.current_stage
+            else:
+                app["current_stage_name"] = ""
+    except Exception as e:
+        frappe.log_error(f"Dashboard applications query failed: {e}", "Dashboard Fix")
+        context.my_applications = []
+
+    # ── Scholarship Schemes (show if any active schemes exist) ─────
+    try:
+        context.scholarships = frappe.get_all(
+            "Scholarship Scheme",
+            filters={"is_active": 1},
+            fields=[
+                "name", "scheme_name", "scheme_type",
+                "coverage_type", "max_amount", "eligibility_criteria"
+            ],
+            limit=3
+        ) or []
+    except Exception:
+        context.scholarships = []
+
+    # ── Portal config extras ───────────────────────────────────────
+    try:
+        _pc = context.portal_config  # already fetched above
+        context.portal_mission = (
+            _pc.get("portal_mission") if _pc and _pc.get else
+            getattr(_pc, "portal_mission", "")
+        ) or ""
+        context.value_cards = (
+            _pc.get("value_cards") if _pc and _pc.get else
+            getattr(_pc, "value_cards", [])
+        ) or []
+    except Exception:
+        context.portal_mission = ""
+        context.value_cards    = []
+
+    # ── Unread messages count (placeholder — Messages not built) ───
+    context.unread_messages = 0
+
+    # ── Hero image from portal config ─────────────────────────────
+    try:
+        context.dashboard_hero_image = (
+            _pc.get("hero_image") if _pc and _pc.get else
+            getattr(_pc, "hero_image", "")
+        ) or ""
+    except Exception:
+        context.dashboard_hero_image = ""
+
     return context

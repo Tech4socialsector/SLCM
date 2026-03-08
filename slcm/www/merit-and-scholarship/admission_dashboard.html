@@ -1,543 +1,625 @@
 {% extends "slcm/www/admission_base.html" %}
 
-{% block title %}Merit & Scholarship Dashboard{% endblock %}
+{% block title %}Dashboard — Admissions{% endblock %}
+
+{% block theme_vars %}
+<style>
+  :root {
+    {% if portal_config %}
+    --primary:   {{ portal_config.get('primary_color','#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
+    --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
+    {% else %}
+    --primary: #1a3c6e;
+    --secondary: #c8a14b;
+    {% endif %}
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+{% endblock %}
 
 {% block page_css %}
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  body, .adm-main, .adm-container {
+    font-family: 'Lexend', system-ui, sans-serif !important;
+    background: #f5f7f8 !important;
+  }
 
-    :root {
-        --dash-primary: var(--primary, #1a3c6e);
-        --dash-secondary: var(--secondary, #c8a14b);
-        --dash-accent: var(--accent, #c8a14b);
-        --dash-success: #10b981;
-        --dash-warning: #f59e0b;
-        --dash-danger: #ef4444;
-        --dash-bg: #f8fafc;
-        --card-shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        --card-shadow-lg: 0 12px 30px -5px rgba(0, 0, 0, 0.1);
-        --radius-xl: 20px;
-        --radius-lg: 16px;
-        --border-light: #f1f5f9;
-    }
+  /* Hide base footer on this page */
+  .adm-footer { display: none !important; }
 
-    .dashboard-wrapper {
-        padding: 0;
-        animation: fadeIn 0.4s ease-out;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        color: #334155;
-    }
+  /* Sidebar active item */
+  .sidebar-active {
+    background: rgba(26,60,110, 0.08);
+    border-right: 3px solid var(--primary);
+    color: var(--primary) !important;
+    font-weight: 700;
+  }
+  .sidebar-active .material-symbols-outlined { color: var(--primary) !important; }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+  /* Sidebar hover */
+  .sidebar-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px;
+    text-decoration: none; color: #475569;
+    font-size: 14px; font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+  .sidebar-link:hover { background: #f1f5f9; color: #1e293b; }
+  .sidebar-link.sidebar-active { color: var(--primary); }
 
-    /* Welcome Hero Card */
-    .welcome-hero {
-        background: linear-gradient(135deg, var(--dash-primary) 0%, #2a5298 100%);
-        border-radius: var(--radius-xl);
-        padding: 40px;
-        color: #fff;
-        margin-bottom: 30px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: var(--card-shadow-lg);
-    }
+  /* Coming soon tooltip */
+  .coming-soon { opacity: 0.5; cursor: not-allowed; }
+  .coming-soon:hover::after {
+    content: "Coming Soon";
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: #1e293b; color: white;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px;
+    white-space: nowrap; pointer-events: none;
+  }
 
-    .welcome-hero::before {
-        content: '';
-        position: absolute; top: -50px; right: -50px; width: 250px; height: 250px;
-        background: rgba(255, 255, 255, 0.08); border-radius: 50%;
-    }
+  /* Fade in up animation */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-up {
+    animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+    opacity: 0;
+  }
 
-    .hero-label {
-        text-transform: uppercase; letter-spacing: 2px; font-size: 11px;
-        font-weight: 700; opacity: 0.85; margin-bottom: 8px; display: block;
-    }
+  /* Ken Burns on hero */
+  @keyframes kenburns {
+    0%   { transform: scale(1); }
+    100% { transform: scale(1.08); }
+  }
+  .ken-burns { animation: kenburns 20s ease-in-out infinite alternate; }
 
-    .hero-title {
-        font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.03em;
-    }
+  /* Card hover lift */
+  .hover-card {
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.25s ease, border-color 0.2s;
+  }
+  .hover-card:hover {
+    transform: translateY(-4px) scale(1.005);
+    box-shadow: 0 12px 28px -8px rgba(0,0,0,0.12);
+    border-color: rgba(26,60,110,0.18) !important;
+  }
 
-    .hero-sub {
-        font-size: 16px; opacity: 0.9; max-width: 600px;
-    }
+  /* Application status badges */
+  .badge-draft      { background:#f1f5f9; color:#64748b; }
+  .badge-submitted  { background:#eff6ff; color:#3b82f6; }
+  .badge-reviewing  { background:#fffbeb; color:#d97706; }
+  .badge-interview  { background:#f0fdf4; color:#16a34a; }
+  .badge-selected   { background:#ecfdf5; color:#059669; }
+  .badge-rejected   { background:#fef2f2; color:#dc2626; }
+  .badge-waitlisted { background:#faf5ff; color:#7c3aed; }
+  .badge-offered    { background:#eff6ff; color:#2563eb; }
 
-    /* Sections */
-    .dash-section {
-        background: #fff; border-radius: var(--radius-xl); padding: 32px;
-        margin-bottom: 30px; border: 1px solid var(--border-light);
-        box-shadow: var(--card-shadow-sm);
-    }
+  /* Gradient bar on scholarship card */
+  .scholarship-bar {
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary) 0%, #6366f1 50%, #a855f7 100%);
+    border-radius: 4px 4px 0 0;
+  }
 
-    .section-head {
-        display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
-    }
-
-    .section-head h2 {
-        font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;
-        display: flex; align-items: center; gap: 12px; letter-spacing: -0.02em;
-    }
-
-    /* Data List Layout (Performance & Scholarship Meta) */
-    .entry-list { display: flex; flex-direction: column; gap: 14px; }
-
-    .entry-row {
-        display: flex; align-items: baseline; justify-content: space-between;
-        font-size: 14px; position: relative;
-    }
-
-    .entry-label {
-        color: #64748b; font-weight: 500; background: #fff; padding-right: 8px;
-        z-index: 1; position: relative;
-    }
-
-    .entry-dots {
-        flex: 1; border-bottom: 1px dotted #cbd5e1; margin: 0 4px;
-        position: relative; top: -4px;
-    }
-
-    .entry-value {
-        font-weight: 700; color: #1e293b; background: #fff; padding-left: 8px;
-        z-index: 1; position: relative;
-    }
-
-    .entry-value.highlight-danger { color: var(--dash-danger); }
-
-    /* Admission/Merit Rows */
-    .data-row {
-        background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 15px;
-        display: flex; flex-direction: column; gap: 12px;
-        transition: 0.2s; border: 1px solid transparent;
-    }
-
-    .data-row:hover { background: #fff; border-color: var(--dash-primary); transform: translateX(4px); }
-
-    .data-main-wrap { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-
-    .data-main h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: #1e293b; }
-    .data-sub { font-size: 13px; color: #64748b; }
-
-    .data-details-grid {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px; padding-top: 12px; border-top: 1px dashed #e2e8f0; width: 100%;
-    }
-
-    .detail-item { font-size: 12px; }
-    .detail-label { color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; display: block; }
-    .detail-value { color: var(--text); font-weight: 700; }
-    .detail-link { color: var(--dash-primary); text-decoration: none; font-weight: 700; }
-    .detail-link:hover { text-decoration: underline; }
-
-    /* Scholarship Grid */
-    .sch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
-
-    /* Application Cards Section */
-    .app-cards-section {
-        background: #fff;
-        border-radius: var(--radius-xl);
-        padding: 32px;
-        margin-bottom: 30px;
-        border: 1px solid var(--border-light);
-        box-shadow: var(--card-shadow-sm);
-    }
-    .app-cards-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-    }
-    .app-cards-title {
-        font-size: 20px;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 0;
-    }
-    .app-cards-browse {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--dash-primary);
-        text-decoration: none;
-    }
-    .app-cards-browse:hover { text-decoration: underline; }
-    .app-cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 18px;
-    }
-    .app-card-item {
-        display: block;
-        text-decoration: none;
-        color: inherit;
-        background: #f8fafc;
-        border: 1.5px solid #f1f5f9;
-        border-radius: 14px;
-        padding: 20px 22px;
-        transition: all 0.2s ease;
-    }
-    .app-card-item:hover {
-        border-color: var(--dash-primary);
-        background: #fff;
-        box-shadow: var(--card-shadow-lg);
-        transform: translateY(-3px);
-        color: inherit;
-    }
-    .app-card-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 8px;
-        margin-bottom: 6px;
-    }
-    .app-card-program {
-        font-size: 15px;
-        font-weight: 800;
-        color: #1e293b;
-        line-height: 1.3;
-    }
-    .app-card-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 700;
-        flex-shrink: 0;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-    .app-card-cycle {
-        font-size: 12px;
-        color: #64748b;
-        margin-bottom: 12px;
-    }
-    .app-card-tags {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 14px;
-    }
-    .app-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 10px;
-        background: #f1f5f9;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #334155;
-    }
-    .app-card-foot {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 12px;
-        border-top: 1px solid #f1f5f9;
-        font-size: 12px;
-        color: #94a3b8;
-    }
-    .app-card-arrow {
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--dash-primary);
-    }
-    .app-cards-empty {
-        background: #fff;
-        border-radius: var(--radius-xl);
-        padding: 60px 32px;
-        text-align: center;
-        margin-bottom: 30px;
-        border: 1px solid var(--border-light);
-    }
-    .app-cards-empty h3 {
-        font-size: 20px;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 0 0 8px;
-    }
-    .app-cards-empty p {
-        font-size: 14px;
-        color: #64748b;
-        margin: 0 0 20px;
-    }
-    .btn-browse-programs {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 22px;
-        background: var(--dash-primary);
-        color: #fff;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 700;
-        text-decoration: none;
-    }
-    .btn-browse-programs:hover { opacity: .9; color: #fff; }
-
-    /* ── Horizontal application strip ── */
-    .app-strip-scroll {
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-      scrollbar-width: thin;
-      scrollbar-color: #cbd5e1 transparent;
-    }
-    .app-strip-scroll::-webkit-scrollbar {
-      height: 4px;
-    }
-    .app-strip-scroll::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .app-strip-scroll::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-    .app-strip {
-      display: flex;
-      gap: 0.75rem;
-      min-width: max-content;
-      padding: 0.25rem 0.25rem 0.5rem;
-    }
-    .app-strip-card {
-      display: block;
-      text-decoration: none;
-      color: inherit;
-      width: 210px;
-      min-width: 210px;
-      background: #f8fafc;
-      border: 1.5px solid #f1f5f9;
-      border-radius: 14px;
-      padding: 16px 18px;
-      transition: all 0.2s ease;
-      position: relative;
-    }
-    .app-strip-card:hover {
-      border-color: var(--dash-primary);
-      background: #fff;
-      box-shadow: var(--card-shadow-lg);
-      transform: translateY(-3px);
-      color: inherit;
-      text-decoration: none;
-    }
-    .asc-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      position: absolute;
-      top: 14px;
-      right: 14px;
-    }
-    .asc-program {
-      font-size: 14px;
-      font-weight: 800;
-      color: #1e293b;
-      line-height: 1.3;
-      margin-bottom: 4px;
-      padding-right: 16px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 170px;
-    }
-    .asc-cycle {
-      font-size: 11px;
-      color: #64748b;
-      margin-bottom: 10px;
-    }
-    .asc-badge {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 10px;
-    }
-    .asc-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: #94a3b8;
-      padding-top: 10px;
-      border-top: 1px solid #f1f5f9;
-    }
-    .asc-arrow {
-      font-weight: 700;
-      color: var(--dash-primary);
-      font-size: 13px;
-    }
-
-    .sch-card {
-        background: #fff; border: 1.5px solid #f1f5f9; border-radius: 16px; padding: 28px;
-        display: flex; flex-direction: column; justify-content: space-between;
-        transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    .sch-card:hover { border-color: var(--dash-primary); box-shadow: var(--card-shadow-lg); transform: translateY(-4px); }
-
-    .sch-card h4 { color: var(--dash-primary); font-size: 18px; font-weight: 800; margin-bottom: 20px; letter-spacing: -0.02em; }
-
-    /* Custom Badges */
-    .status-badge {
-        padding: 6px 14px; border-radius: 20px; font-size: 12px;
-        font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .badge-success { background: #dcfce7; color: #166534; }
-    .badge-warning { background: #fef9c3; color: #854d0e; }
-    .badge-danger { background: #fee2e2; color: #991b1b; }
-    .badge-info { background: #dbeafe; color: #1e40af; }
-
-    .rank-val { font-size: 24px; font-weight: 800; color: var(--dash-primary); display: block; }
-    .rank-lab { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
-
-    @media (max-width: 768px) {
-        .welcome-hero { padding: 32px 24px; }
-        .hero-title { font-size: 24px; }
-        .data-row { flex-direction: column; align-items: flex-start; gap: 12px; }
-        .rank-box { text-align: left; }
-    }
+  /* Icon color variants for value cards */
+  .icon-primary { background: rgba(26,60,110,0.08); color: var(--primary); }
+  .icon-blue    { background: #eff6ff; color: #3b82f6; }
+  .icon-indigo  { background: #eef2ff; color: #6366f1; }
+  .icon-purple  { background: #faf5ff; color: #a855f7; }
+  .icon-green   { background: #f0fdf4; color: #16a34a; }
+  .icon-amber   { background: #fffbeb; color: #d97706; }
+  .icon-rose    { background: #fff1f2; color: #f43f5e; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-wrapper">
 
-    {# ── APPLICATION CARDS EMPTY STATE ── #}
-    {% if not has_applications and not unauthorized and not error %}
-    <div class="app-cards-empty">
-      <div style="font-size:40px;margin-bottom:12px;">📋</div>
-      <h3>No applications yet</h3>
-      <p>Browse programs and start your application.</p>
-      <a href="/admission" class="btn-browse-programs">Browse Programs →</a>
-    </div>
-    {% endif %}
+{# ── Safe config extraction ────────────────────────────────────── #}
+{% if portal_config and portal_config.get %}
+  {% set _title   = portal_config.get('portal_title') or 'Admissions' %}
+  {% set _tagline = portal_config.get('portal_tagline') or portal_config.get('portal_subtitle') or '' %}
+  {% set _mission = portal_config.get('portal_mission') or '' %}
+  {% set _cta_tag = portal_config.get('hero_admission_tag') or (active_cycle.name ~ ' Admissions Open' if active_cycle else 'Admissions Open') %}
+{% elif portal_config %}
+  {% set _title   = portal_config.portal_title or 'Admissions' %}
+  {% set _tagline = portal_config.portal_subtitle or '' %}
+  {% set _mission = portal_config.portal_mission or '' %}
+  {% set _cta_tag = (active_cycle.name ~ ' Admissions Open') if active_cycle else 'Admissions Open' %}
+{% else %}
+  {% set _title='Admissions' %} {% set _tagline='' %} {% set _mission='' %}
+  {% set _cta_tag='Admissions Open' %}
+{% endif %}
 
-    {% if unauthorized %}
-    <div class="dash-section text-center" style="padding: 60px;">
-        <div style="font-size: 60px; margin-bottom: 20px;">🔒</div>
-        <h2 class="mb-3">Authentication Required</h2>
-        <p class="text-muted mb-4">Please log in to your account to view your merit and scholarship details.</p>
-        <a href="/login" class="btn btn-primary-adm">Sign In</a>
-    </div>
-    {% elif error %}
-    <div class="dash-section text-center" style="padding: 60px; border-top: 4px solid var(--dash-danger);">
-        <div style="font-size: 60px; margin-bottom: 20px;">⚠️</div>
-        <h2 class="mb-3">Wait a moment</h2>
-        <p class="text-muted">{{ error }}</p>
-    </div>
-    {% else %}
-    
-    {% for entry in applicant_data %}
-    <!-- Welcome Hero -->
-    <div class="welcome-hero">
-        <div class="row align-items-center">
-            <div class="col-md-9">
-                <span class="hero-label">Applicant Portal</span>
-                <h1 class="hero-title">Welcome back, {{ (entry.profile.candidate_name or "").split(' ')[0] }}!</h1>
-                <p class="hero-sub">Manage your application, view rankings, and explore scholarship opportunities.</p>
-            </div>
-            <div class="col-md-3 text-md-end mt-4 mt-md-0">
-                <div class="d-inline-block text-start p-3" style="background: rgba(255,255,255,0.12); border-radius: 14px; backdrop-filter: blur(8px);">
-                    <div style="font-size: 10px; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em;">Cycle Status</div>
-                    <div style="font-size: 16px; font-weight: 800;">{{ entry.profile.program_level or "Active" }}</div>
-                </div>
-            </div>
+{# Use context vars set by index.py #}
+{% set _user        = nav_user or '' %}
+{% set _is_guest    = is_guest or (_user == 'Guest' or not _user) %}
+{% set _display     = user_display or (_user.split('@')[0] if _user else 'User') %}
+{% set _first       = user_first or (_display[0]|upper if _display else 'U') %}
+{% set _hero_img    = dashboard_hero_image or '' %}
+{% set _apps        = my_applications or [] %}
+{% set _scholarships= scholarships or [] %}
+{% set _vcards      = value_cards or [] %}
+{% set _mission_txt = portal_mission or _mission %}
+{% set _unread      = unread_messages or 0 %}
+
+<!-- ══ OUTER WRAPPER ════════════════════════════════════════════════ -->
+<div style="min-height:calc(100vh - 60px);background:#f5f7f8;
+            margin:-20px -20px 0;padding:32px 20px 40px;">
+  <div style="max-width:1200px;margin:0 auto;">
+
+    <!-- ── 12-COL GRID: sidebar (3) + main (9) ─────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- ══ SIDEBAR ═══════════════════════════════════════════════ -->
+      <aside class="lg:col-span-3 flex flex-col gap-5 fade-in-up" style="animation-delay:0.05s">
+
+        <!-- Main Menu card -->
+        <div style="background:white;border-radius:16px;padding:24px;
+                    border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+          <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;
+                    text-transform:uppercase;color:#94a3b8;margin-bottom:16px;">
+            Main Menu
+          </p>
+          <nav style="display:flex;flex-direction:column;gap:2px;">
+
+            <!-- Dashboard — ACTIVE -->
+            <a href="/merit-and-scholarship/admission_dashboard"
+               class="sidebar-link sidebar-active">
+              <span class="material-symbols-outlined" style="font-size:20px">dashboard</span>
+              Dashboard
+            </a>
+
+            <!-- My Applications — REAL -->
+            <a href="/my-applications" class="sidebar-link">
+              <span class="material-symbols-outlined" style="font-size:20px;color:#94a3b8">description</span>
+              My Applications
+            </a>
+
+            <!-- Scholarships — COMING SOON -->
+            <a href="#" class="sidebar-link coming-soon">
+              <span class="material-symbols-outlined" style="font-size:20px;color:#cbd5e1">card_membership</span>
+              <span style="color:#cbd5e1">Scholarships</span>
+            </a>
+
+            <!-- Messages — COMING SOON with badge -->
+            <a href="#" class="sidebar-link coming-soon">
+              <span class="material-symbols-outlined" style="font-size:20px;color:#cbd5e1">mail</span>
+              <span style="color:#cbd5e1">Messages</span>
+              {% if _unread > 0 %}
+              <span style="margin-left:auto;background:var(--primary);color:white;
+                           font-size:10px;font-weight:700;padding:2px 7px;
+                           border-radius:9999px;">{{ _unread }}</span>
+              {% endif %}
+            </a>
+
+            <!-- Settings — COMING SOON -->
+            <a href="#" class="sidebar-link coming-soon">
+              <span class="material-symbols-outlined" style="font-size:20px;color:#cbd5e1">settings</span>
+              <span style="color:#cbd5e1">Settings</span>
+            </a>
+
+          </nav>
         </div>
-    </div>
 
-    {# ── MY APPLICATIONS STRIP ── #}
-    {% if has_applications %}
-    <div class="app-cards-section">
-      <div class="app-cards-header">
-        <h2 class="app-cards-title">My Applications</h2>
-        <a href="/admission" class="app-cards-browse">Browse Programs →</a>
-      </div>
-      <div class="app-strip-scroll">
-        <div class="app-strip">
-          {% for card in application_cards %}
-          <a href="/my-applications?app={{ card.name }}"
-             class="app-strip-card">
-            <div class="asc-dot"
-                 style="background:{{ card.color }}"></div>
-            <div class="asc-program">{{ card.program_name }}</div>
-            <div class="asc-cycle">{{ card.cycle }}</div>
-            <div class="asc-badge"
-                 style="color:{{ card.color }};background:{{ card.bg }}">
-              {{ card.status }}
-            </div>
-            <div class="asc-meta">
-              <span>⏱ {{ card.stage }}</span>
-              <span class="asc-arrow">→</span>
-            </div>
-          </a>
-          {% endfor %}
+        <!-- Mission card -->
+        {% if _mission_txt %}
+        <div style="border-radius:16px;padding:24px;
+                    background:rgba(26,60,110,0.05);
+                    border:1px solid rgba(26,60,110,0.12);">
+          <h3 style="font-weight:700;font-size:14px;margin-bottom:10px;
+                     display:flex;align-items:center;gap:8px;color:var(--primary)">
+            <span class="material-symbols-outlined" style="font-size:18px">auto_awesome</span>
+            Our Mission
+          </h3>
+          <p style="font-size:13px;color:#475569;line-height:1.65;">
+            {{ _mission_txt }}
+          </p>
         </div>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Available Scholarships -->
-    <div class="dash-section" style="background: #f0f4ff; border-color: #dbeafe;">
-        <div class="section-head">
-            <h2 style="color: var(--dash-primary);">🎁 Available Scholarships</h2>
-        </div>
-        {% if entry.available_scholarships %}
-            <div class="sch-grid">
-                {% for scheme in entry.available_scholarships %}
-                <div class="sch-card">
-                    <div>
-                        <h4>{{ scheme.scheme_name }}</h4>
-                        <div class="entry-list">
-                            <div class="entry-row">
-                                <span class="entry-label">Type</span>
-                                <span class="entry-dots"></span>
-                                <span class="entry-value">{{ scheme.scheme_type or "General" }}</span>
-                            </div>
-                            <div class="entry-row">
-                                <span class="entry-label">Benefit</span>
-                                <span class="entry-dots"></span>
-                                <span class="entry-value">{{ scheme.coverage_type }}</span>
-                            </div>
-                            <div class="entry-row">
-                                <span class="entry-label">Applied on</span>
-                                <span class="entry-dots"></span>
-                                <span class="entry-value">{{ scheme.apply_on }}</span>
-                            </div>
-                            {% if scheme.application_end %}
-                            <div class="entry-row">
-                                <span class="entry-label">Expiry</span>
-                                <span class="entry-dots"></span>
-                                <span class="entry-value highlight-danger">{{ frappe.utils.formatdate(scheme.application_end, "dd MMM yyyy") }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <button class="btn-primary-adm w-100 mt-4" 
-                       onclick="window.location.href='/apply?scheme={{ scheme.name }}'">
-                        Apply Now
-                    </button>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="text-center text-muted m-0 p-4 small">No additional scholarship schemes available for your current status.</p>
         {% endif %}
-    </div>
 
-    <!-- Support Helpdesk -->
-    <div class="dash-section text-center" style="max-width:480px;margin-left:auto;margin-right:auto;">
-        <div style="font-size: 32px; margin-bottom: 12px;">💬</div>
-        <h5 style="font-weight: 700; font-size: 16px;">Support Helpdesk</h5>
-        <p class="small text-muted mb-4">Contact our admissions office for help with scores or scholarship criteria.</p>
-        <a href="mailto:{{ portal_config.contact_email or 'admissions@university.edu' }}" class="btn btn-outline-adm w-100">Contact Team</a>
-    </div>
+      </aside>
+      <!-- END SIDEBAR -->
 
-    {% endfor %}
-    
-    {% endif %}
+      <!-- ══ MAIN CONTENT ══════════════════════════════════════════ -->
+      <main class="lg:col-span-9 flex flex-col gap-8">
+
+        <!-- ── HERO ─────────────────────────────────────────────── -->
+        <section class="relative overflow-hidden fade-in-up"
+                 style="border-radius:20px;min-height:220px;
+                        background:#0f172a;
+                        animation-delay:0.1s;">
+
+          <!-- Background image or gradient -->
+          <div class="ken-burns absolute inset-0"
+               {% if _hero_img %}
+               style="background:url('{{ _hero_img }}') center/cover no-repeat;"
+               {% else %}
+               style="background:linear-gradient(135deg,var(--primary) 0%,#0d2040 60%,#1e1b4b 100%);"
+               {% endif %}
+          ></div>
+          <!-- Dark overlay -->
+          <div class="absolute inset-0"
+               style="background:linear-gradient(to top,rgba(15,23,42,0.92) 0%,rgba(15,23,42,0.35) 100%);">
+          </div>
+
+          <!-- Content -->
+          <div class="relative z-10 flex flex-col md:flex-row items-end justify-between gap-6 p-8">
+            <div>
+              <span style="display:inline-block;padding:4px 12px;
+                           background:var(--primary);color:white;
+                           font-size:10px;font-weight:700;
+                           text-transform:uppercase;letter-spacing:0.08em;
+                           border-radius:9999px;margin-bottom:12px;">
+                {{ _cta_tag }}
+              </span>
+              <h2 style="font-size:26px;font-weight:800;color:white;
+                         line-height:1.25;margin-bottom:8px;">
+                {% if _display and not _is_guest %}
+                Welcome back, {{ _display.split(' ')[0] }}
+                {% else %}
+                {{ _title }}
+                {% endif %}
+              </h2>
+              <p style="font-size:13px;color:#cbd5e1;max-width:420px;line-height:1.55;">
+                {% if _tagline %}{{ _tagline }}
+                {% else %}Track your applications, explore programs, and manage your admission journey.{% endif %}
+              </p>
+            </div>
+            <div style="display:flex;gap:10px;flex-shrink:0;">
+              <a href="/admission#programs"
+                 style="padding:10px 20px;border-radius:10px;font-size:13px;
+                        font-weight:700;color:white;text-decoration:none;
+                        background:var(--primary);
+                        transition:opacity 0.2s;"
+                 onmouseover="this.style.opacity='0.85'"
+                 onmouseout="this.style.opacity='1'">
+                Explore Programs
+              </a>
+              <a href="/admission"
+                 style="padding:10px 20px;border-radius:10px;font-size:13px;
+                        font-weight:700;color:white;text-decoration:none;
+                        background:rgba(255,255,255,0.12);
+                        border:1px solid rgba(255,255,255,0.2);
+                        backdrop-filter:blur(8px);
+                        transition:background 0.2s;"
+                 onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                 onmouseout="this.style.background='rgba(255,255,255,0.12)'">
+                Admissions Home
+              </a>
+            </div>
+          </div>
+        </section>
+        <!-- END HERO -->
+
+        <!-- ── TWO COLUMN: Applications + Scholarships ──────────── -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+          <!-- MY APPLICATIONS ─────────────────────────────────── -->
+          <section class="flex flex-col gap-4 fade-in-up" style="animation-delay:0.2s">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <h3 style="font-size:16px;font-weight:700;display:flex;
+                         align-items:center;gap:8px;color:#0f172a;">
+                <span class="material-symbols-outlined"
+                      style="font-size:20px;color:var(--primary)">article</span>
+                My Applications
+              </h3>
+              <a href="/my-applications"
+                 style="font-size:12px;font-weight:600;color:var(--primary);
+                        text-decoration:none;"
+                 onmouseover="this.style.textDecoration='underline'"
+                 onmouseout="this.style.textDecoration='none'">
+                View All
+              </a>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px;">
+
+              {% if _apps %}
+                {% for app in _apps %}
+                {# Status badge class #}
+                {% set _st = (app.get('application_status') if app.get else app.application_status) or 'Draft' %}
+                {% if _st in ['Draft'] %}{% set _badge='badge-draft' %}
+                {% elif _st in ['Submitted'] %}{% set _badge='badge-submitted' %}
+                {% elif _st in ['Under Review', 'Screening', 'Evaluation'] %}{% set _badge='badge-reviewing' %}
+                {% elif _st in ['Interview Scheduled', 'Interview'] %}{% set _badge='badge-interview' %}
+                {% elif _st in ['Selected', 'Accepted'] %}{% set _badge='badge-selected' %}
+                {% elif _st in ['Rejected'] %}{% set _badge='badge-rejected' %}
+                {% elif _st in ['Waitlisted'] %}{% set _badge='badge-waitlisted' %}
+                {% elif _st in ['Offered'] %}{% set _badge='badge-offered' %}
+                {% else %}{% set _badge='badge-draft' %}{% endif %}
+
+                {% set _pname = (app.get('program_name') or app.get('program') if app.get else (app.program_name or app.program)) or 'Program' %}
+                {% set _cycle = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
+                {% set _stage = (app.get('current_stage_name') if app.get else app.current_stage_name) or '' %}
+                {% set _aname = (app.get('name') if app.get else app.name) or '' %}
+                {% set _mod   = (app.get('modified') if app.get else app.modified) %}
+
+                <a href="/my-applications?app={{ _aname }}"
+                   style="text-decoration:none;"
+                   class="hover-card">
+                  <div style="background:white;padding:16px;border-radius:14px;
+                              border:1.5px solid #e2e8f0;
+                              display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <!-- Icon + name -->
+                    <div style="display:flex;align-items:center;gap:14px;">
+                      <div class="relative overflow-hidden" style="height:160px;">
+                      <img src="{{ app.program_image or '' }}"
+                           alt="{{ app.program_name }}"
+                           style="width:100%;height:160px;object-fit:cover;"
+                           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                      <!-- fallback when no image -->
+                      <div style="display:none;width:100%;height:160px;
+                                  background:linear-gradient(135deg,var(--primary),#1a0030);
+                                  align-items:center;justify-content:center;">
+                        <span class="material-symbols-outlined"
+                              style="font-size:2.5rem;color:rgba(255,255,255,0.4);">
+                          school
+                        </span>
+                      </div>
+                    </div>
+                      <div>
+                        <p style="font-size:13px;font-weight:700;color:#0f172a;
+                                  line-height:1.3;">{{ _pname }}</p>
+                        <p style="font-size:11px;color:#94a3b8;margin-top:2px;">
+                          {{ _cycle }}{% if _stage %} · {{ _stage }}{% endif %}
+                        </p>
+                      </div>
+                    </div>
+                    <!-- Status -->
+                    <div style="text-align:right;flex-shrink:0;">
+                      <span class="{{ _badge }}"
+                            style="display:inline-block;padding:3px 9px;
+                                   border-radius:6px;font-size:10px;font-weight:700;">
+                        {{ _st }}
+                      </span>
+                      {% if _mod %}
+                      <p style="font-size:10px;color:#94a3b8;margin-top:4px;">
+                        {{ frappe.utils.pretty_date(_mod) }}
+                      </p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </a>
+
+                {% endfor %}
+
+              {% else %}
+              <!-- No applications -->
+              <div style="background:white;padding:24px;border-radius:14px;
+                          border:1.5px solid #e2e8f0;text-align:center;">
+                <span class="material-symbols-outlined"
+                      style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px;">
+                  inbox
+                </span>
+                <p style="font-size:13px;color:#94a3b8;font-weight:500;">
+                  No applications yet
+                </p>
+              </div>
+              {% endif %}
+
+              <!-- Start New Application -->
+              <a href="/admission#programs"
+                 style="display:flex;align-items:center;justify-content:center;gap:8px;
+                        padding:16px;border-radius:14px;text-decoration:none;
+                        border:2px dashed #e2e8f0;color:#94a3b8;
+                        font-size:13px;font-weight:600;
+                        transition:color 0.2s,border-color 0.2s,background 0.2s;"
+                 onmouseover="this.style.color='var(--primary)';this.style.borderColor='var(--primary)';this.style.background='rgba(26,60,110,0.03)'"
+                 onmouseout="this.style.color='#94a3b8';this.style.borderColor='#e2e8f0';this.style.background='transparent'">
+                <span class="material-symbols-outlined" style="font-size:20px">add_circle</span>
+                Start New Application
+              </a>
+
+            </div>
+          </section>
+          <!-- END MY APPLICATIONS -->
+
+          <!-- SCHOLARSHIP OPPORTUNITIES ──────────────────────── -->
+          {% if _scholarships %}
+          <section class="flex flex-col gap-4 fade-in-up" style="animation-delay:0.3s">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <h3 style="font-size:16px;font-weight:700;display:flex;
+                         align-items:center;gap:8px;color:#0f172a;">
+                <span class="material-symbols-outlined"
+                      style="font-size:20px;color:var(--primary)">payments</span>
+                Scholarship Opportunities
+              </h3>
+            </div>
+
+            {% set _sch = _scholarships[0] %}
+            {% set _sname = (_sch.get('scheme_name') if _sch.get else _sch.scheme_name) or 'Scholarship' %}
+            {% set _scov  = (_sch.get('coverage_type') if _sch.get else _sch.coverage_type) or '' %}
+            {% set _smax  = (_sch.get('max_amount') if _sch.get else _sch.max_amount) or 0 %}
+            {% set _selig = (_sch.get('eligibility_criteria') if _sch.get else _sch.eligibility_criteria) or '' %}
+            {% set _stype = (_sch.get('scheme_type') if _sch.get else _sch.scheme_type) or '' %}
+
+            <!-- Main scholarship card -->
+            <div class="hover-card"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;">
+              <div class="scholarship-bar"></div>
+              <div style="padding:20px;">
+                <div style="display:flex;justify-content:space-between;
+                            align-items:flex-start;margin-bottom:12px;">
+                  <div>
+                    <h4 style="font-size:14px;font-weight:700;color:#0f172a;">
+                      {{ _sname }}
+                    </h4>
+                    <p style="font-size:11px;color:#94a3b8;margin-top:2px;">
+                      {% if _scov == 'Percentage' and _smax %}
+                        Up to {{ _smax }}% Coverage
+                      {% elif _scov == 'Fixed' and _smax %}
+                        Up to ₹{{ "{:,.0f}".format(_smax) }} Coverage
+                      {% else %}
+                        {{ _stype }} Scholarship
+                      {% endif %}
+                    </p>
+                  </div>
+                  <span style="background:rgba(26,60,110,0.08);color:var(--primary);
+                               font-size:10px;font-weight:700;padding:3px 9px;
+                               border-radius:6px;">
+                    {{ _stype | upper or 'MERIT' }}
+                  </span>
+                </div>
+                {% if _selig %}
+                <p style="font-size:12px;color:#475569;line-height:1.55;margin-bottom:16px;">
+                  {{ _selig[:120] }}{% if _selig|length > 120 %}...{% endif %}
+                </p>
+                {% endif %}
+                <div style="display:flex;align-items:center;justify-content:space-between;
+                            border-top:1px solid #f1f5f9;padding-top:14px;">
+                  {% if _scholarships|length > 1 %}
+                  <p style="font-size:11px;color:#94a3b8;">
+                    +{{ _scholarships|length - 1 }} more scheme{{ 's' if _scholarships|length > 2 }}
+                  </p>
+                  {% else %}
+                  <span></span>
+                  {% endif %}
+                  <a href="#"
+                     style="font-size:13px;font-weight:700;color:var(--primary);
+                            text-decoration:none;"
+                     onmouseover="this.style.textDecoration='underline'"
+                     onmouseout="this.style.textDecoration='none'">
+                    View Details →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pro-tip card -->
+            <div style="background:#f8fafc;border-radius:14px;padding:14px 16px;
+                        border:1px solid #e2e8f0;
+                        display:flex;align-items:center;gap:12px;">
+              <div style="padding:8px;border-radius:10px;background:white;
+                          border:1px solid #e2e8f0;flex-shrink:0;">
+                <span class="material-symbols-outlined"
+                      style="font-size:20px;color:var(--secondary,#c8a14b)">
+                  lightbulb
+                </span>
+              </div>
+              <div>
+                <p style="font-size:12px;font-weight:700;color:#0f172a;">
+                  Pro-tip: Apply Early
+                </p>
+                <p style="font-size:11px;color:#64748b;margin-top:1px;">
+                  Early applications have higher selection rates. Don't wait.
+                </p>
+              </div>
+            </div>
+
+          </section>
+          {% endif %}
+          <!-- END SCHOLARSHIPS -->
+
+        </div>
+        <!-- END TWO COLUMN -->
+
+        <!-- ── VALUE CARDS ───────────────────────────────────────── -->
+        {% if _vcards %}
+        <section class="fade-in-up" style="animation-delay:0.4s">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {% for vc in _vcards %}
+            {% set _vt    = (vc.get('title')       if vc.get else vc.title)       or '' %}
+            {% set _vi    = (vc.get('icon')        if vc.get else vc.icon)        or 'star' %}
+            {% set _vd    = (vc.get('description') if vc.get else vc.description) or '' %}
+            {% set _vcol  = (vc.get('icon_color')  if vc.get else vc.icon_color)  or 'primary' %}
+            <div class="hover-card"
+                 style="background:white;border-radius:16px;padding:24px;
+                        border:1.5px solid #e2e8f0;text-align:center;">
+              <div class="icon-{{ _vcol }}"
+                   style="width:44px;height:44px;border-radius:50%;
+                          display:flex;align-items:center;justify-content:center;
+                          margin:0 auto 16px;">
+                <span class="material-symbols-outlined" style="font-size:22px">
+                  {{ _vi }}
+                </span>
+              </div>
+              <h4 style="font-size:14px;font-weight:700;color:#0f172a;
+                         margin-bottom:6px;">{{ _vt }}</h4>
+              <p style="font-size:12px;color:#64748b;line-height:1.55;">
+                {{ _vd }}
+              </p>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+        <!-- END VALUE CARDS -->
+
+      </main>
+      <!-- END MAIN CONTENT -->
+
+    </div>
+    <!-- END 12-COL GRID -->
+
+    <!-- ── MINIMAL FOOTER ──────────────────────────────────────── -->
+    <footer style="margin-top:48px;padding-top:24px;
+                   border-top:1px solid #e2e8f0;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;
+                  justify-content:space-between;gap:16px;">
+        <!-- Brand -->
+        <div style="display:flex;align-items:center;gap:8px;
+                    opacity:0.5;">
+          <span class="material-symbols-outlined" style="font-size:20px">school</span>
+          <span style="font-size:13px;font-weight:700;">{{ _title }}</span>
+        </div>
+        <!-- Links -->
+        <div style="display:flex;gap:24px;">
+          <a href="#" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
+             onmouseover="this.style.color='var(--primary)'"
+             onmouseout="this.style.color='#64748b'">Help Center</a>
+          <a href="#" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
+             onmouseover="this.style.color='var(--primary)'"
+             onmouseout="this.style.color='#64748b'">Terms of Service</a>
+          <a href="#" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
+             onmouseover="this.style.color='var(--primary)'"
+             onmouseout="this.style.color='#64748b'">Privacy Policy</a>
+        </div>
+        <!-- Copyright -->
+        <p style="font-size:11px;color:#94a3b8;">
+          © {{ frappe.utils.nowdate()[:4] }} {{ _title }}. All rights reserved.
+        </p>
+      </div>
+    </footer>
+
+  </div>
 </div>
+<!-- END OUTER WRAPPER -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Staggered fade-in for all fade-in-up elements
+  var els = document.querySelectorAll('.fade-in-up');
+  els.forEach(function(el) {
+    // Delay is already set via inline style animation-delay
+    el.style.animationFillMode = 'forwards';
+  });
+
+  // Active sidebar item highlight based on current URL
+  var path = window.location.pathname;
+  var links = document.querySelectorAll('.sidebar-link');
+  links.forEach(function(link) {
+    var href = link.getAttribute('href');
+    if (href && href !== '#' && path.startsWith(href)) {
+      // Remove active from dashboard if we're on another page
+      if (href !== '/merit-and-scholarship/admission_dashboard') {
+        document.querySelectorAll('.sidebar-link.sidebar-active').forEach(function(a) {
+          a.classList.remove('sidebar-active');
+        });
+        link.classList.add('sidebar-active');
+      }
+    }
+  });
+});
+</script>
 {% endblock %}

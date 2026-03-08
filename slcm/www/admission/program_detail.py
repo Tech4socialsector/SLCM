@@ -1,207 +1,207 @@
 import frappe
+from slcm.admission.utils.portal import get_portal_config
 
-login_required = False
+no_cache = 1
 
 def get_context(context):
-    import frappe, re
-    frappe.log_error(title="Portal Debug", message=f"program_detail start. form_dict={dict(frappe.form_dict)}")
-
-    # 1. Portal config
+    # ── Portal config + theme ──────────────────────────────────────
     try:
-        from slcm.admission.utils.portal import get_portal_config
         context.portal_config = get_portal_config()
-        frappe.log_error(title="Portal Debug", message=f"portal_config loaded. primary={context.portal_config.get('primary_color')}")
-    except Exception as e:
-        frappe.log_error(title="Portal Debug", message=f"portal_config FAILED: {e}")
-        context.portal_config = {}
+    except Exception:
+        context.portal_config = None
 
-    # 2. Resolve program slug
-    slug = frappe.form_dict.get("name") or frappe.form_dict.get("program_slug") or ""
-    frappe.log_error(title="Portal Debug", message=f"slug={repr(slug)}")
+    # ── Get slug from URL ─────────────────────────────────────────
+    # Supports both:
+    #   /admission/computer-application  (path-based, set by index.py)
+    #   /admission/program_detail?slug=computer-application
+    slug = frappe.form_dict.get("slug") or ""
 
-    def _normalize_slug(s):
-        if not s: return ""
-        s = s.lower()
-        s = re.sub(r'[^a-z0-9]+', '-', s)
-        return s.strip('-')
+    if not slug:
+        # Try reading from path: /admission/program_detail/[slug]
+        try:
+            _path = (getattr(frappe.local, 'path_info', '') or
+                     (frappe.request.path if hasattr(frappe, 'request')
+                      and frappe.request else ''))
+            _parts = [p for p in _path.strip('/').split('/') if p]
+            # /admission/program_detail/ba-llb-hons → parts[2]
+            if len(_parts) >= 3:
+                slug = _parts[2]
+            # /admission/ba-llb-hons → parts[1] (if routed via index)
+            elif len(_parts) == 2:
+                slug = _parts[1]
+        except Exception:
+            pass
 
-    program_name = None
-    # 1. Direct name match
-    if frappe.db.exists("Program", slug):
-        program_name = slug
-    
-    # 2. Direct slug match
-    if not program_name:
-        program_name = frappe.db.get_value("Program", {"program_slug": slug}, "name")
-    
-    # 3. Normalized slug match
-    if not program_name:
-        all_progs = frappe.get_all("Program", fields=["name","program_slug"])
-        slug_norm = _normalize_slug(slug)
-        for p in all_progs:
-            if _normalize_slug(p.program_slug) == slug_norm:
-                program_name = p.name
-                break
-            if _normalize_slug(p.name) == slug_norm:
-                program_name = p.name
-                break
-
-    frappe.log_error(title="Portal Debug", message=f"program_name resolved: {repr(program_name)}")
-
-    if not program_name:
-        frappe.log_error(title="Portal Debug", message=f"Program not found for slug={repr(slug)}")
-        context.program = None
-        context.app_open = False
-        context.no_cache = 1
+    if not slug:
+        frappe.local.response["type"] = "redirect"
+        frappe.local.response["location"] = "/admission"
         return
 
-    # 3. Get active cycle
-    cycle = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
-    frappe.log_error(title="Portal Debug", message=f"active_cycle={repr(cycle)}")
+    # ── Fetch Program by slug ─────────────────────────────────────
+    prog_name = frappe.db.get_value(
+        "Program", {"program_slug": slug}, "name")
 
-    # 4. Get cycle program record
-    cp = None
-    if cycle:
-        cp = frappe.db.get_value(
-            "Admission Cycle Program",
-            {"parent": cycle, "program": program_name},
-            ["program_name", "desciption", "eligibility_hint",
-             "program_media", "reservation_policy", "seats", "brochure_url"],
-            as_dict=True
-        )
-        frappe.log_error(title="Portal Debug", message=f"cycle_program={cp}")
+    if not prog_name:
+        context.program_not_found = True
+        context.program = None
+        _set_empty_context(context, slug)
+        return
 
-    if not cp:
-        # Fallback: get from Program DocType directly
-        frappe.log_error(title="Portal Debug", message=f"No cycle program found, falling back to Program DocType")
+    try:
+        prog = frappe.get_doc("Program", prog_name)
+    except Exception:
+        context.program_not_found = True
+        context.program = None
+        _set_empty_context(context, slug)
+        return
+
+    context.program = prog
+    context.program_not_found = False
+
+    def gf(field, default=""):
         try:
-            prog_doc = frappe.get_doc("Program", program_name)
-            cp = frappe._dict({
-                "program_name": prog_doc.program_name or program_name,
-                "desciption": getattr(prog_doc, 'description', '') or '',
-                "eligibility_hint": '',
-                "program_media": program_name,  # Program Media name = Program name
-                "reservation_policy": None,
-                "seats": 0,
-                "brochure_url": '',
-            })
-        except:
-             cp = frappe._dict({
-                "program_name": program_name,
-                "desciption": '',
-                "eligibility_hint": '',
-                "program_media": program_name,
-                "reservation_policy": None,
-                "seats": 0,
-                "brochure_url": '',
-            })
+            return prog.get(field) or default
+        except Exception:
+            return default
 
-    # 5. Get media
-    images = []
-    videos = []
+    context.prog_name        = gf("program_name")
+    context.prog_level       = gf("program_level")
+    context.prog_duration    = gf("program_duration")
+    context.prog_credits     = gf("graduation_credits")
+    context.prog_dept        = gf("department")
+    context.prog_hero        = gf("hero_image")
+    context.prog_description = gf("description")
+    context.prog_intake      = gf("intake_type")
+    context.prog_eligibility = gf("eligibility_summary")
+    context.prog_app_fee     = gf("application_fee")
+    context.prog_deadline    = gf("application_deadline")
+    context.prog_brochure    = gf("brochure_url")
+    context.prog_slug        = slug
+    context.title            = f"{context.prog_name} — Admissions"
+
+    # ── Media ─────────────────────────────────────────────────────
     try:
-        media_items = frappe.get_all("Media",
-            filters={"parent": cp.program_media, "parentfield": "media_gallery"},
-            fields=["media_type", "file", "caption", "sequence"],
-            order_by="sequence asc"
+        raw = gf("media", [])
+        media = []
+        for m in (raw if isinstance(raw, list) else []):
+            media.append({
+                "type":         _f(m, "media_type") or "Image",
+                "url":          _f(m, "media_url") or "",
+                "external_url": _f(m, "external_url") or "",
+                "caption":      _f(m, "caption") or "",
+                "sort_order":   int(_f(m, "sort_order") or 0),
+            })
+        media.sort(key=lambda x: x["sort_order"])
+        context.prog_media  = media
+        context.prog_images = [m for m in media if m["type"] == "Image"]
+        context.prog_videos = [m for m in media if m["type"] == "Video"]
+    except Exception as ex:
+        frappe.log_error(str(ex), "prog_detail:media")
+        context.prog_media = context.prog_images = context.prog_videos = []
+
+    # ── Curriculum ────────────────────────────────────────────────
+    try:
+        curriculum = []
+        for c in (gf("curriculum_items", []) or []):
+            raw_subj = _f(c, "subjects") or ""
+            curriculum.append({
+                "year_label": _f(c, "year_label") or "",
+                "credits":    _f(c, "credits") or "",
+                "subjects":   [s.strip() for s in
+                               raw_subj.split("\n") if s.strip()],
+            })
+        context.prog_curriculum = curriculum
+    except Exception as ex:
+        frappe.log_error(str(ex), "prog_detail:curriculum")
+        context.prog_curriculum = []
+
+    # ── Career ────────────────────────────────────────────────────
+    try:
+        career = []
+        for c in (gf("career_items", []) or []):
+            career.append({
+                "title":       _f(c, "role_title") or "",
+                "icon":        _f(c, "icon") or "work",
+                "salary":      _f(c, "salary_range") or "",
+                "description": _f(c, "description") or "",
+            })
+        context.prog_career = career
+    except Exception as ex:
+        frappe.log_error(str(ex), "prog_detail:career")
+        context.prog_career = []
+
+    # ── Faculty ───────────────────────────────────────────────────
+    try:
+        faculty = []
+        for f in (gf("faculty_items", []) or []):
+            faculty.append({
+                "name":           _f(f, "faculty_name") or "",
+                "designation":    _f(f, "designation") or "",
+                "specialization": _f(f, "specialization") or "",
+                "photo":          _f(f, "photo") or "",
+                "profile_url":    _f(f, "profile_url") or "",
+            })
+        context.prog_faculty = faculty
+    except Exception as ex:
+        frappe.log_error(str(ex), "prog_detail:faculty")
+        context.prog_faculty = []
+
+    # ── Eligibility Rules ─────────────────────────────────────────
+    try:
+        context.eligibility_rules = frappe.get_all(
+            "Eligibility Rule",
+            filters={"is_active": 1},
+            fields=["rule_name", "qualification_level", "rule_type",
+                    "required_cgpa", "required_percentage",
+                    "description"],
+            limit=5
+        ) or []
+    except Exception:
+        context.eligibility_rules = []
+
+    # ── Active cycle ──────────────────────────────────────────────
+    try:
+        context.active_cycle = frappe.get_last_doc(
+            "Admission Cycle", filters={"status": "Active"})
+    except Exception:
+        context.active_cycle = None
+
+    # ── Support email ─────────────────────────────────────────────
+    try:
+        pc = context.portal_config
+        context.support_email = (
+            (_f(pc, "support_email") if pc else "") or
+            "admissions@nlsiu.ac.in"
         )
-        frappe.log_error(title="Portal Debug", message=f"media_items found: {len(media_items)} for parent={cp.program_media}")
-        for m in media_items:
-            if (m.media_type or "").lower() == "video":
-                videos.append({"file": m.file, "caption": m.caption})
-            else:
-                images.append({"file": m.file, "caption": m.caption})
-    except Exception as e:
-        frappe.log_error(title="Portal Debug", message=f"media fetch FAILED: {e}")
+    except Exception:
+        context.support_email = "admissions@nlsiu.ac.in"
 
-    # 6. Get categories from reservation policy
-    categories = []
+
+def _f(obj, field):
+    """Safe field accessor for both dicts and Frappe Document rows."""
     try:
-        if cp.reservation_policy:
-            cats = frappe.get_all(
-                "Program Reservation Category",
-                filters={"parent": cp.reservation_policy},
-                fields=["category_name", "seats", "application_fee", "percentage"],
-                order_by="idx asc"
-            )
-            categories = cats
-            frappe.log_error(title="Portal Debug", message=f"categories found: {len(categories)}")
-    except Exception as e:
-        frappe.log_error(title="Portal Debug", message=f"categories FAILED: {e}")
+        if hasattr(obj, "get"):
+            return obj.get(field)
+        return getattr(obj, field, None)
+    except Exception:
+        return None
 
-    # 7. Get brochure from Program Media
-    brochure_url = cp.brochure_url or ''
-    try:
-        if cp.program_media:
-            brochure_url = frappe.db.get_value(
-                "Program Media", cp.program_media, "brochure_pdf"
-            ) or brochure_url
-    except Exception as e:
-        frappe.log_error(title="Portal Debug", message=f"brochure FAILED: {e}")
 
-    # 8. Check app window
-    app_open = False
-    try:
-        if cycle:
-            cyc_doc = frappe.get_doc("Admission Cycle", cycle)
-            from frappe.utils import now_datetime, get_datetime
-            now = now_datetime()
-            start = get_datetime(cyc_doc.application_start) if cyc_doc.application_start else None
-            end   = get_datetime(cyc_doc.application_end) if cyc_doc.application_end else None
-            app_open = (not start or now >= start) and (not end or now <= end)
-    except Exception as e:
-        frappe.log_error(title="Portal Debug", message=f"app_open check FAILED: {e}")
-        app_open = True
-
-    # Compute fill badge logic
-    p_fill_badge = ""
-    p_fill_class = ""
-    p_fill_pct   = 0
-    try:
-        received    = int(cp.get("application_count") or 0)
-        total_seats = int(cp.get("max_applications") or cp.seats or 0)
-
-        if total_seats > 0:
-            pct = round((received / total_seats) * 100)
-            p_fill_pct = pct
-            if pct >= 90:
-                p_fill_badge = f"Only {total_seats - received} seats left"
-                p_fill_class = "badge-danger"
-            elif pct >= 70:
-                p_fill_badge = f"{pct}% filled"
-                p_fill_class = "badge-warning"
-            elif pct >= 40:
-                p_fill_badge = f"{pct}% filled"
-                p_fill_class = "badge-info"
-            else:
-                p_fill_badge = "Seats available"
-                p_fill_class = "badge-success"
-    except Exception as e:
-        frappe.log_error(title="Portal Debug", message=f"program_detail fill badge failed: {e}")
-
-    # 9. Build context
-    context.program = frappe._dict({
-        "program":          program_name,
-        "program_name":     cp.program_name or program_name,
-        "description":      cp.desciption or '',
-        "eligibility_hint": cp.eligibility_hint or '',
-        "total_seats":      cp.seats or 0,
-        "brochure_url":     brochure_url,
-        "images":           images,
-        "videos":           videos,
-        "categories":       categories,
-        "program_slug":     slug,
-        "fill_badge":       p_fill_badge,
-        "fill_class":       p_fill_class,
-        "fill_pct":         p_fill_pct,
-    })
-    context.app_open    = app_open
-    context.active_cycle = cycle
-    context.program_slug = slug
-    context.no_cache    = 1
-
-    frappe.log_error(
-        title="Portal Debug",
-        message=f"program_detail DONE. program={program_name} images={len(images)} "
-        f"categories={len(categories)} description_len={len(cp.desciption or '')}"
-    )
+def _set_empty_context(context, slug):
+    """Set safe empty defaults when program not found."""
+    for k in ["prog_name","prog_level","prog_duration","prog_credits",
+              "prog_dept","prog_hero","prog_description","prog_intake",
+              "prog_eligibility","prog_app_fee","prog_deadline",
+              "prog_brochure"]:
+        setattr(context, k, "")
+    context.prog_slug       = slug
+    context.prog_media      = []
+    context.prog_images     = []
+    context.prog_videos     = []
+    context.prog_curriculum = []
+    context.prog_career     = []
+    context.prog_faculty    = []
+    context.eligibility_rules = []
+    context.active_cycle    = None
+    context.support_email   = "admissions@nlsiu.ac.in"
+    context.title           = "Program Not Found"

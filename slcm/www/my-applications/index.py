@@ -9,12 +9,213 @@ def get_context(context):
         frappe.local.flags.redirect_location = "/login?redirect=/my-applications"
         raise frappe.Redirect
 
-    # Portal config
+    # ── Detail mode: if ?app= param provided, load that specific application ──
+    _app_name = frappe.form_dict.get("app") or ""
+
+    # ── Portal config (required for theme vars) ──────────────────
     try:
-        cfg = get_portal_config()
-        context.portal_config = cfg.as_dict() if hasattr(cfg, "as_dict") else dict(cfg)
+        from slcm.admission.utils.portal import get_portal_config
+        portal_config = get_portal_config()
+        context.portal_config = portal_config
     except Exception:
-        context.portal_config = {}
+        portal_config = None
+        context.portal_config = None
+
+    if _app_name:
+        # Security: verify ownership
+        try:
+            applicant = frappe.get_doc("Applicant", _app_name, ignore_permissions=True)
+        except frappe.DoesNotExistError:
+            context.app_not_found = True
+            context.selected_app = None
+            return
+
+        # Check access (robust check: owner or email)
+        _session_user = frappe.session.user
+        if applicant.owner != _session_user and applicant.email != _session_user and \
+           "Admission Admin" not in frappe.get_roles():
+            context.access_denied = True
+            context.selected_app = None
+            return
+
+        context.selected_app = applicant
+
+        # ── Stage tracker ──────────────────────────────────────────────
+        try:
+            cycle_stages = frappe.get_all(
+                "Admission Cycle Stage",
+                filters={"parent": applicant.admission_cycle},
+                fields=["stage_name", "idx"],
+                order_by="idx asc",
+                ignore_permissions=True
+            ) or []
+            # Note: The prompt says Admission Stage Config, but I'll check what exists.
+            # I'll use a safer check for cycle stages.
+        except Exception:
+            cycle_stages = []
+
+        # Determine current stage index
+        current = (applicant.get("current_stage_name") or 
+                   applicant.get("current_stage") or 
+                   applicant.get("application_status") or "")
+        
+        # Check if current stage is a link/ID, fetch name
+        if current and frappe.db.exists("Stage Master", current):
+            current = frappe.db.get_value("Stage Master", current, "stage_name") or current
+
+        stages_with_state = []
+        found_active = False
+        
+        # Try to get stages from Admission Stage Config if Admission Cycle Stage failed
+        if not cycle_stages:
+            try:
+                cycle_stages = frappe.get_all(
+                    "Admission Stage Config",
+                    filters={"admission_cycle": applicant.admission_cycle},
+                    fields=["stage_name", "sequence as idx"],
+                    order_by="sequence asc",
+                    ignore_permissions=True
+                )
+            except Exception: pass
+
+        for s in cycle_stages:
+            sname = (s.get("stage_name") if hasattr(s,"get") else s.stage_name) or ""
+            if sname == current and not found_active:
+                state = "active"
+                found_active = True
+            elif not found_active:
+                state = "completed"
+            else:
+                state = "pending"
+            stages_with_state.append({"name": sname, "state": state})
+
+        # Fallback: if no cycle stages, build from application_status
+        if not stages_with_state:
+            statuses = ["Submitted", "Under Review", "Interview", "Decision"]
+            current_lower = str(current).lower()
+            found = False
+            for st in statuses:
+                if st.lower() == current_lower and not found:
+                    state = "active"; found = True
+                elif not found:
+                    state = "completed"
+                else:
+                    state = "pending"
+                stages_with_state.append({"name": st, "state": state})
+
+        context.stage_tracker = stages_with_state
+
+        # ── Documents ────────────────────────────────────────────────
+        try:
+            context.app_documents = frappe.get_all(
+                "Applicant Document",
+                filters={"applicant": _app_name},
+                fields=[
+                    "name", "document_type", "document_name",
+                    "file_url", "verification_status",
+                    "upload_date", "creation", "remarks"
+                ],
+                order_by="creation asc",
+                ignore_permissions=True
+            ) or []
+        except Exception:
+            context.app_documents = []
+
+        # ── Next steps for current stage ─────────────────────────────
+        try:
+            _pc = frappe.get_doc("Applicant Portal Config")
+            _next_steps = []
+            if _pc:
+                all_steps = (_pc.get("stage_next_steps") or 
+                             getattr(_pc, "stage_next_steps", []) or [])
+                for step in all_steps:
+                    sn = (step.get("stage_name") if hasattr(step,"get") 
+                          else step.stage_name) or ""
+                    if sn.lower() == str(current).lower():
+                        _next_steps.append({
+                            "text":       (step.get("step_text") if hasattr(step,"get") 
+                                           else step.step_text) or "",
+                            "is_link":    (step.get("is_link") if hasattr(step,"get") 
+                                           else step.is_link) or 0,
+                            "link_url":   (step.get("link_url") if hasattr(step,"get") 
+                                           else step.link_url) or "",
+                            "link_label": (step.get("link_label") if hasattr(step,"get") 
+                                           else step.link_label) or "",
+                        })
+
+            # Hardcoded fallback if no config
+            if not _next_steps:
+                fallback = {
+                    "submitted":    ["Ensure all documents are uploaded to the checklist.",
+                                     "Check your email for confirmation of receipt."],
+                    "under review": ["Await evaluation results — you will be notified.",
+                                     "Ensure your contact details are up to date."],
+                    "entrance test":["Download your admit card from the Documents section.",
+                                     "Check the test center location and reporting time."],
+                    "interview":    ["Confirm your interview slot as soon as possible.",
+                                     "Prepare your original documents for verification."],
+                    "merit list":   ["Monitor the portal for merit list publication.",
+                                     "Check your rank and category seat availability."],
+                    "offer":        ["Review your offer letter carefully.",
+                                     "Pay the acceptance fee before the deadline.",
+                                     "Complete document verification to confirm your seat."],
+                }
+                key = str(current).lower()
+                for k, v in fallback.items():
+                    if k in key or key in k:
+                        _next_steps = [{"text": t, "is_link": 0, 
+                                        "link_url": "", "link_label": ""} for t in v]
+                        break
+
+            context.next_steps = _next_steps
+
+            # ── Support contact ───────────────────────────────────────
+            context.support_name  = (
+                _pc.get("support_name") if _pc and hasattr(_pc,"get") 
+                else getattr(_pc,"support_name","")) or ""
+            context.support_role  = (
+                _pc.get("support_role") if _pc and hasattr(_pc,"get") 
+                else getattr(_pc,"support_role","")) or ""
+            context.support_email = (
+                _pc.get("support_email") if _pc and hasattr(_pc,"get") 
+                else getattr(_pc,"support_email","")) or ""
+            context.campus_image  = (
+                _pc.get("hero_image") if _pc and hasattr(_pc,"get") 
+                else getattr(_pc,"hero_image","")) or ""
+
+        except Exception as ex:
+            frappe.log_error(str(ex), "my_applications detail context")
+            context.next_steps    = []
+            context.support_name  = ""
+            context.support_role  = ""
+            context.support_email = ""
+            context.campus_image  = ""
+
+        # ── Narrative / remarks ───────────────────────────────────────
+        try:
+            context.app_narrative = (
+                applicant.get("remarks") or 
+                applicant.get("notes") or 
+                applicant.get("application_notes") or ""
+            )
+        except Exception:
+            context.app_narrative = ""
+
+        # ── Submission date ────────────────────────────────────────────
+        try:
+            context.submission_date = frappe.utils.format_date(
+                applicant.get("creation") or applicant.creation, "MMMM d, yyyy"
+            )
+        except Exception:
+            context.submission_date = ""
+
+        context.app_name_param = _app_name
+        context.show_detail    = True
+        context.title = f"Application Details: {_app_name}"
+        return  # ← exit early; template will render detail view
+
+    # If no ?app= param, fall through to existing list view logic
+    context.show_detail = False
 
     # Status styling
     STATUS_STYLE = {

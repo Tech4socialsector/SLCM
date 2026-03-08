@@ -1,0 +1,42 @@
+{
+  "name": "Program Faculty Item",
+  "doctype": "DocType",
+  "module": "Admission",
+  "istable": 1,
+  "editable_grid": 1,
+  "fields": [
+    {
+      "fieldname": "faculty_name",
+      "fieldtype": "Data",
+      "label": "Name",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "designation",
+      "fieldtype": "Data",
+      "label": "Designation",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "specialization",
+      "fieldtype": "Data",
+      "label": "Specialization",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "photo",
+      "fieldtype": "Attach Image",
+      "label": "Photo"
+    },
+    {
+      "fieldname": "profile_url",
+      "fieldtype": "Data",
+      "label": "Profile URL"
+    }
+  ],
+  "permissions": [
+    {"role": "System Manager",  "read": 1, "write": 1, "create": 1, "delete": 1},
+    {"role": "Admission Admin", "read": 1, "write": 1, "create": 1, "delete": 1}
+  ]
+}
