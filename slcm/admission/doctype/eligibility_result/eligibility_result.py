@@ -115,7 +115,7 @@ def get_applicant_data():
             "pg_cgpa": 0
         })
 
-    for res in results:
+    for res in results:  
         # Fetch Merit List Entries
         merit_entries = []
         if settings.is_merit_list:

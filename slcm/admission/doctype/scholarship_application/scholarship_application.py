@@ -262,33 +262,74 @@ class ScholarshipApplication(Document):
 				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
 
 	def on_update(self):
+		"""Called when a Draft (docstatus=0) doc is saved."""
 		self.create_audit_log()
-		
-		# For submittable docs, doc_before_save is the most reliable way to get old state
+
 		old_doc = self.get_doc_before_save()
 		old_status = old_doc.status if old_doc else None
-		
-		# Case 1: Status changed from something else to Approved
+
 		if old_status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
 			self.sync_fee_assignment()
-		
-		# Case 2: Status changed from Approved to something else
+
 		elif old_status == "Approved" and self.status != "Approved":
 			self.reverse_financial_effects()
 			self.sync_fee_assignment(reverse=True)
 
-		# Case 3: Remains Approved but benefit changed
 		elif self.status == "Approved" and old_status == "Approved":
 			benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
 			if benefit_diff != 0:
 				from slcm.admission.utils.scholarship_availability import update_scheme_usage
-				update_scheme_usage(self.scholarship_scheme, benefit_diff, mapping_name=None, update_count=False) # Only update budget diff
-			
-			# Always ensure fee deduction is synced if still approved
+				update_scheme_usage(self.scholarship_scheme, benefit_diff, mapping_name=None, update_count=False)
 			self.sync_fee_assignment()
 
+	def on_submit(self):
+		"""Called when doc is submitted (docstatus 0 → 1)."""
+		self.create_audit_log()
+		if self.status == "Approved":
+			self.apply_financial_effects()
+			self.sync_fee_assignment()
+
+	def on_cancel(self):
+		"""Called when submitted doc is cancelled (docstatus 1 → 2)."""
+		self.create_audit_log()
+		if self.status == "Approved":
+			self.reverse_financial_effects()
+			self.sync_fee_assignment(reverse=True)
+
+	def on_update_after_submit(self):
+		"""
+		Called when a SUBMITTED doc (docstatus=1) is updated via workflow
+		or direct save (e.g. status field changed by admin on submitted doc).
+		This is the key hook for workflow-driven status changes.
+		"""
+		self.create_audit_log()
+
+		old_doc = self.get_doc_before_save()
+		old_status = old_doc.status if old_doc else None
+
+		# Case 1: Status changed TO Approved
+		if old_status != "Approved" and self.status == "Approved":
+			self.apply_financial_effects()
+			self.sync_fee_assignment()
+
+		# Case 2: Status changed FROM Approved
+		elif old_status == "Approved" and self.status != "Approved":
+			self.reverse_financial_effects()
+			self.sync_fee_assignment(reverse=True)
+
+		# Case 3: Still Approved, but benefit may have changed
+		elif self.status == "Approved" and old_status == "Approved":
+			if old_doc:
+				benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
+				if benefit_diff != 0:
+					from slcm.admission.utils.scholarship_availability import update_scheme_usage
+					update_scheme_usage(self.scholarship_scheme, benefit_diff, mapping_name=None, update_count=False)
+			self.sync_fee_assignment()
+
+
 	def on_trash(self):
+		"""Reverse financial effects if an Approved application is deleted."""
 		if self.status == "Approved":
 			self.reverse_financial_effects()
 			self.sync_fee_assignment(reverse=True)

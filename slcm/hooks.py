@@ -38,6 +38,12 @@ fixtures = [
         "filters": [
             ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin"]]
         ]
+    },
+    {
+        "doctype": "Workflow",
+        "filters": [
+            ["name", "in", ["Scholarship Application Workflow"]]
+        ]
     }
 ]
 # Apps  
