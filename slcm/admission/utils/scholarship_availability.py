@@ -25,6 +25,8 @@ def check_scholarship_availability(scheme_name, applicant_status):
     if scheme.stage_availability == "Post-Offer" and applicant_status not in valid_offer_statuses:
         frappe.throw(frappe._("Scholarship available only after offer issuance"))
 
+    # Anytime is always allowed
+
     # 3. Date window check
     now = now_datetime()
 
@@ -204,6 +206,7 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
         elif scheme.stage_availability == "Post-Offer":
             if not any(s in applicant_statuses for s in valid_post_offer):
                 is_eligible_stage = False
+        # If Anytime, is_eligible_stage remains True
                 
         if not is_eligible_stage:
             continue
