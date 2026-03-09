@@ -23,7 +23,9 @@
         "hsc_group",
         "hsc_percentage",
         "ug_degree_details",
+        "ug_cgpa",
         "pg_degree_details",
+        "pg_cgpa",
         "scores_section",
         "entrance_test_score",
         "interview_score",
@@ -172,10 +174,22 @@
             "options": "UG Degree Detail"
         },
         {
+            "fieldname": "ug_cgpa",
+            "fieldtype": "Float",
+            "label": "UG CGPA",
+            "precision": "2"
+        },
+        {
             "fieldname": "pg_degree_details",
             "fieldtype": "Table",
             "label": "PG Degree Details ",
             "options": "PG Degree Details"
+        },
+        {
+            "fieldname": "pg_cgpa",
+            "fieldtype": "Float",
+            "label": "PG CGPA",
+            "precision": "2"
         },
         {
             "fieldname": "category",

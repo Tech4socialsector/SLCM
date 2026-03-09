@@ -7,7 +7,6 @@ class AdmissionCycle(Document):
 
     def validate(self):
         self._validate_single_active_cycle()
-        self._validate_dates()
         self._validate_programs()
 
     def _validate_single_active_cycle(self):
@@ -23,12 +22,6 @@ class AdmissionCycle(Document):
                     f"Cycle <b>{existing}</b> is already Active. "
                     f"Close it before activating this one."
                 )
-
-    def _validate_dates(self):
-        """Application end must be after start."""
-        if self.application_start and self.application_end:
-            if get_datetime(self.application_end) <= get_datetime(self.application_start):
-                frappe.throw("Application End must be after Application Start.")
 
     def _validate_programs(self):
         """No duplicate program+campus combination in the same cycle."""

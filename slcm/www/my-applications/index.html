@@ -1,565 +1,1438 @@
 {% extends "slcm/www/admission_base.html" %}
 
 {% block theme_vars %}
-{% if portal_config and portal_config.get('primary_color') %}
 <style>
-:root {
-    --primary:       {{ portal_config.get('primary_color', '#1a3c6e') }};
-    --secondary:     {{ portal_config.get('secondary_color', '#c8a14b') }};
-    --accent:        {{ portal_config.get('secondary_color', '#c8a14b') }};
-    --primary-light: {{ portal_config.get('primary_light_color', '#fde8e8') }};
-}
+  :root {
+    {% if portal_config %}
+    --primary:   {{ portal_config.get('primary_color','#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
+    --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
+    {% else %}
+    --primary: #1a3c6e;
+    --secondary: #c8a14b;
+    {% endif %}
+  }
+
+  /* ── Global font ───────────────────────────────────────────── */
+  body, .adm-main, .adm-container {
+    font-family: 'Lexend', system-ui, sans-serif !important;
+    background: #f5f7f8 !important;
+  }
+
+  /* ── Hide base footer on this page ─────────────────────────── */
+  .adm-footer { display: none !important; }
+
+  /* ── Status badges ──────────────────────────────────────────── */
+  .badge-draft      { background:#f1f5f9; color:#64748b; }
+  .badge-submitted  { background:#eff6ff; color:#3b82f6; }
+  .badge-reviewing  { background:#fffbeb; color:#d97706; }
+  .badge-interview  { background:#f0fdf4; color:#16a34a; }
+  .badge-selected   { background:#ecfdf5; color:#059669; }
+  .badge-rejected   { background:#fef2f2; color:#dc2626; }
+  .badge-waitlisted { background:#faf5ff; color:#7c3aed; }
+  .badge-offered    { background:#eff6ff; color:#2563eb; }
+
+  /* ── Stage tracker pulse animation ─────────────────────────── */
+  @keyframes stagePulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(26,60,110,0.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(26,60,110,0); }
+  }
+  .stage-pulse {
+    animation: stagePulse 2s ease-in-out infinite;
+  }
+
+  /* ── Fade in up animation ───────────────────────────────────── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-up {
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+
+  /* ── Card hover lift ────────────────────────────────────────── */
+  .hover-card {
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.25s ease, border-color 0.2s;
+  }
+  .hover-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px -6px rgba(0,0,0,0.1);
+  }
+
+  /* ── Responsive: two-col collapses on mobile ────────────────── */
+  @media (max-width: 768px) {
+    .lg-two-col { grid-template-columns: 1fr !important; }
+  }
+
+  /* ── Next Steps primary-bg card ─────────────────────────────── */
+  #next-steps-card {
+    background: var(--primary) !important;
+    box-shadow: 0 8px 24px -4px rgba(26,60,110,0.3);
+  }
+
+  /* ── Scrollbar styling ──────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 </style>
-{% endif %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
 {% endblock %}
 
-{% block title %}My Applications{% endblock %}
-
-{% block page_css %}
-<style>
-/* ── Layout ─────────────────────────────────────────────────────── */
-.ma-page {
-    background: #f8fafc;
-    min-height: calc(100vh - 60px);
-    padding: 36px 0 72px;
-}
-.ma-wrap {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 0 28px;
-}
-
-/* ── Breadcrumb ──────────────────────────────────────────────────── */
-.ma-bc {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #6b7280;
-    margin-bottom: 28px;
-}
-.ma-bc a {
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-.ma-bc a:hover { text-decoration: underline; }
-.ma-bc svg { flex-shrink: 0; }
-
-/* ── Page header ─────────────────────────────────────────────────── */
-.ma-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 32px;
-    flex-wrap: wrap;
-}
-.ma-header-left h1 {
-    font-size: 28px;
-    font-weight: 800;
-    color: #111827;
-    margin: 0 0 6px;
-    letter-spacing: -0.3px;
-}
-.ma-header-left p {
-    font-size: 14px;
-    color: #6b7280;
-    margin: 0;
-}
-.ma-header-left strong { color: #111827; }
-.btn-new-app {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    background: var(--primary);
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-    flex-shrink: 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.13);
-    transition: opacity 0.15s, transform 0.15s;
-}
-.btn-new-app:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-    color: #fff;
-}
-
-/* ── Stats grid ──────────────────────────────────────────────────── */
-.ma-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 32px;
-}
-        @media (max-width: 600px) {
-            .ma-stats { grid-template-columns: repeat(2, 1fr); }
-            .ma-wrap  { padding: 0 16px; }
-            .ma-card-body { padding: 14px 16px; }
-            .ma-prog-name { font-size: 15px; }
-            .ma-actions { flex-direction: column; }
-            .ma-btn-primary,
-            .ma-btn-secondary { width: 100%; justify-content: center; }
-        }
-        @media (max-width: 380px) {
-            .ma-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
-            .ma-stat  { padding: 14px 12px; }
-            .ma-stat-val { font-size: 24px; }
-        }
-.ma-stat {
-    background: #fff;
-    border-radius: 14px;
-    padding: 20px 18px 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-    border-top: 3px solid var(--primary);
-    position: relative;
-    overflow: hidden;
-}
-.ma-stat::before {
-    content: '';
-    position: absolute;
-    bottom: -10px; right: -10px;
-    width: 60px; height: 60px;
-    border-radius: 50%;
-    background: var(--primary);
-    opacity: 0.05;
-}
-.ma-stat-val {
-    font-size: 32px;
-    font-weight: 800;
-    color: var(--primary);
-    line-height: 1;
-    margin-bottom: 6px;
-    letter-spacing: -1px;
-}
-.ma-stat-lbl {
-    font-size: 12px;
-    font-weight: 600;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* ── Section label ───────────────────────────────────────────────── */
-.ma-section-label {
-    font-size: 13px;
-    font-weight: 700;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.ma-section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #e5e7eb;
-}
-
-/* ── Application card ────────────────────────────────────────────── */
-.ma-list { display: flex; flex-direction: column; gap: 14px; }
-
-.ma-card {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-    overflow: hidden;
-    display: grid;
-    grid-template-columns: 5px 1fr;
-    border: 1.5px solid #f0f0f0;
-    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
-                box-shadow 0.2s ease,
-                border-color 0.2s ease;
-}
-.ma-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 28px rgba(0,0,0,0.11);
-    border-color: var(--primary);
-}
-.ma-card-bar { border-radius: 16px 0 0 16px; }
-.ma-card-body { padding: 20px 24px; }
-
-/* Card top row */
-.ma-card-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-}
-.ma-prog-name {
-    font-size: 17px;
-    font-weight: 700;
-    color: #111827;
-    margin: 0 0 4px;
-    line-height: 1.3;
-}
-.ma-cycle {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: #9ca3af;
-}
-.ma-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 13px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    flex-shrink: 0;
-}
-
-/* Card meta row */
-.ma-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    padding: 12px 0;
-    border-top: 1px solid #f3f4f6;
-    border-bottom: 1px solid #f3f4f6;
-    margin-bottom: 14px;
-}
-.ma-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: #6b7280;
-}
-.ma-meta-item svg { flex-shrink: 0; opacity: 0.7; }
-
-/* Card actions */
-.ma-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.ma-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 18px;
-    background: var(--primary);
-    color: #fff;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: opacity 0.15s;
-}
-.ma-btn-primary:hover { opacity: 0.88; color: #fff; }
-.ma-btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 7px 14px;
-    background: #fff;
-    color: #6b7280;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.15s;
-}
-.ma-btn-secondary:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-}
-
-/* ── Empty state ─────────────────────────────────────────────────── */
-.ma-empty {
-    background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-    padding: 72px 32px;
-    text-align: center;
-}
-.ma-empty-icon {
-    width: 72px;
-    height: 72px;
-    background: var(--primary-light, #fde8e8);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 24px;
-}
-.ma-empty h3 {
-    font-size: 22px;
-    font-weight: 800;
-    color: #111827;
-    margin: 0 0 10px;
-}
-.ma-empty p {
-    font-size: 14px;
-    color: #6b7280;
-    line-height: 1.7;
-    margin: 0 0 28px;
-    max-width: 360px;
-    margin-left: auto;
-    margin-right: auto;
-}
-</style>
-{% endblock %}
+{% block title %}{{ "Application Details" if show_detail else "My Applications" }}{% endblock %}
 
 {% block content %}
+
+{% if app_not_found %}
+<div style="padding:60px 20px;text-align:center;">
+  <span class="material-symbols-outlined" style="font-size:56px;color:#e2e8f0;">
+    search_off
+  </span>
+  <h2 style="font-size:22px;font-weight:700;color:#0f172a;margin:16px 0 8px;">
+    Application Not Found
+  </h2>
+  <p style="color:#64748b;font-size:14px;margin-bottom:24px;">
+    This application does not exist or may have been removed.
+  </p>
+  <a href="/merit-and-scholarship/admission_dashboard"
+     style="padding:10px 24px;background:var(--primary);color:white;
+            border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;">
+    Back to Dashboard
+  </a>
+</div>
+
+{% elif access_denied %}
+<div style="padding:60px 20px;text-align:center;">
+  <span class="material-symbols-outlined" style="font-size:56px;color:#e2e8f0;">
+    lock
+  </span>
+  <h2 style="font-size:22px;font-weight:700;color:#0f172a;margin:16px 0 8px;">
+    Access Denied
+  </h2>
+  <p style="color:#64748b;font-size:14px;margin-bottom:24px;">
+    You do not have permission to view this application.
+  </p>
+  <a href="/merit-and-scholarship/admission_dashboard"
+     style="padding:10px 24px;background:var(--primary);color:white;
+            border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;">
+    Back to Dashboard
+  </a>
+</div>
+
+{% elif show_detail %}
+{# ── Safe field extraction helpers ───────────────────────────────── #}
+{% set _app     = selected_app %}
+{% set _aname   = (_app.get('candidate_name') or _app.get('applicant_name') if _app.get else (_app.candidate_name or _app.applicant_name)) or '' %}
+{% set _prog    = (_app.get('program_name') or _app.get('program') if _app.get else (_app.program_name or _app.program)) or 'Program' %}
+{% set _cycle   = (_app.get('admission_cycle') if _app.get else _app.admission_cycle) or '' %}
+{% set _status  = (_app.get('application_status') if _app.get else _app.application_status) or 'Draft' %}
+{% set _stage   = (_app.get('current_stage_name') or _app.get('current_stage') if _app.get else (_app.current_stage_name or _app.current_stage)) or _status %}
+{% set _email   = (_app.get('email') if _app.get else _app.email) or '' %}
+{% set _intake  = (_app.get('intake_type') if _app.get else _app.intake_type) or '' %}
+{% set _appid   = app_name_param or '' %}
+{% set _subdate = submission_date or '' %}
+{% set _narr    = app_narrative or '' %}
+{% set _docs    = app_documents or [] %}
+{% set _stages  = stage_tracker or [] %}
+{% set _steps   = next_steps or [] %}
+{% set _sname   = support_name or '' %}
+{% set _srole   = support_role or '' %}
+{% set _semail  = support_email or '' %}
+{% set _campimg = campus_image or '' %}
+
+{# Status badge class #}
+{% if _status in ['Draft'] %}{% set _badgecls = 'badge-draft' %}
+{% elif _status in ['Submitted'] %}{% set _badgecls = 'badge-submitted' %}
+{% elif _status in ['Under Review','Screening','Evaluation'] %}{% set _badgecls = 'badge-reviewing' %}
+{% elif _status in ['Interview Scheduled','Interview'] %}{% set _badgecls = 'badge-interview' %}
+{% elif _status in ['Selected','Accepted'] %}{% set _badgecls = 'badge-selected' %}
+{% elif _status in ['Rejected'] %}{% set _badgecls = 'badge-rejected' %}
+{% elif _status in ['Waitlisted'] %}{% set _badgecls = 'badge-waitlisted' %}
+{% elif _status in ['Offered'] %}{% set _badgecls = 'badge-offered' %}
+{% else %}{% set _badgecls = 'badge-draft' %}{% endif %}
+
+<!-- ══ OUTER WRAPPER ═══════════════════════════════════════════════ -->
+<div style="min-height:calc(100vh - 60px);background:#f5f7f8;
+            margin:-20px -20px 0;padding:32px 20px 48px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
+
+    <!-- ── BACK BREADCRUMB ─────────────────────────────────────── -->
+    <div class="fade-in-up" style="animation-delay:0s">
+      <a href="/merit-and-scholarship/admission_dashboard"
+         style="display:inline-flex;align-items:center;gap:6px;
+                font-size:13px;font-weight:600;color:#64748b;
+                text-decoration:none;transition:color 0.15s;"
+         onmouseover="this.style.color='var(--primary)'"
+         onmouseout="this.style.color='#64748b'">
+        <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+        Back to Dashboard
+      </a>
+    </div>
+
+    <!-- ══ HERO APPLICATION CARD ════════════════════════════════════ -->
+    <section class="fade-in-up"
+             style="background:white;border-radius:20px;padding:36px 40px;
+                    border:1.5px solid #e2e8f0;
+                    box-shadow:0 2px 12px rgba(0,0,0,0.05);
+                    animation-delay:0.05s;">
+
+      <!-- Header row: Status + App ID | Date Submitted -->
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;
+                  align-items:flex-start;gap:16px;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="{{ _badgecls }}"
+                style="display:inline-block;padding:4px 12px;
+                       border-radius:9999px;font-size:11px;font-weight:700;
+                       text-transform:uppercase;letter-spacing:0.06em;">
+            {{ _status }}
+          </span>
+          <span style="font-size:13px;color:#94a3b8;font-weight:500;">
+            #{{ _appid }}
+          </span>
+        </div>
+        <div style="text-align:right;">
+          <p style="font-size:12px;color:#94a3b8;margin-bottom:2px;">Date Submitted</p>
+          <p style="font-size:15px;font-weight:700;color:#0f172a;">{{ _subdate }}</p>
+        </div>
+      </div>
+
+      <!-- Program name + cycle -->
+      <h1 style="font-size:28px;font-weight:800;color:#0f172a;
+                 line-height:1.2;margin-bottom:4px;">
+        {{ _prog }}
+      </h1>
+      <p style="font-size:14px;color:#64748b;margin-bottom:32px;">
+        {{ _cycle }}{% if _intake %} · {{ _intake }}{% endif %}
+      </p>
+
+      <!-- ── STAGE TRACKER ──────────────────────────────────────── -->
+      {% if _stages %}
+      <div style="position:relative;margin-bottom:36px;">
+
+        {# Calculate progress bar width based on completed+active stages #}
+        {% set ns = namespace(done=0) %}
+        {% for s in _stages %}
+          {% if s.state in ['completed','active'] %}{% set ns.done = ns.done + 1 %}{% endif %}
+        {% endfor %}
+        {% set _pct = ((ns.done / _stages|length) * 100)|int %}
+
+        <!-- Track background -->
+        <div style="position:absolute;top:20px;left:0;width:100%;height:4px;
+                    background:#f1f5f9;border-radius:4px;z-index:0;"></div>
+        <!-- Track fill -->
+        <div style="position:absolute;top:20px;left:0;
+                    width:{{ _pct }}%;height:4px;
+                    background:var(--primary);border-radius:4px;
+                    z-index:1;transition:width 0.6s ease;"></div>
+
+        <!-- Stage nodes -->
+        <div style="position:relative;z-index:2;
+                    display:flex;justify-content:space-between;">
+          {% for s in _stages %}
+          {% set _sstate = s.state if s is mapping else s['state'] %}
+          {% set _slabel = s.name if s is mapping else s['name'] %}
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;
+                      flex:1;min-width:0;">
+
+            {# Circle icon #}
+            {% if _sstate == 'completed' %}
+            <div style="width:40px;height:40px;border-radius:50%;
+                        background:var(--primary);color:white;
+                        display:flex;align-items:center;justify-content:center;
+                        border:4px solid white;
+                        box-shadow:0 0 0 2px var(--primary);flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:18px">check</span>
+            </div>
+            {% elif _sstate == 'active' %}
+            <div class="stage-pulse"
+                 style="width:40px;height:40px;border-radius:50%;
+                        background:var(--primary);color:white;
+                        display:flex;align-items:center;justify-content:center;
+                        border:4px solid white;
+                        box-shadow:0 0 0 2px var(--primary);flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:18px">sync</span>
+            </div>
+            {% else %}
+            <div style="width:40px;height:40px;border-radius:50%;
+                        background:#f1f5f9;color:#94a3b8;
+                        display:flex;align-items:center;justify-content:center;
+                        border:4px solid white;
+                        box-shadow:0 0 0 2px #e2e8f0;flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:18px">radio_button_unchecked</span>
+            </div>
+            {% endif %}
+
+            {# Label #}
+            <span style="font-size:10px;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         text-align:center;
+                         {% if _sstate == 'active' %}color:var(--primary);
+                         {% elif _sstate == 'completed' %}color:#64748b;
+                         {% else %}color:#cbd5e1;{% endif %}
+                         white-space:nowrap;overflow:hidden;
+                         text-overflow:ellipsis;max-width:90px;">
+              {{ _slabel }}
+            </span>
+
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <!-- END STAGE TRACKER -->
+
+      <!-- ── APPLICANT INFO ROW ─────────────────────────────────── -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+                  gap:16px;padding-top:24px;
+                  border-top:1px solid #f1f5f9;">
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">person</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">Applicant</p>
+            <p style="font-size:14px;font-weight:600;color:#0f172a;">{{ _aname }}</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">event</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">Current Stage</p>
+            <p style="font-size:14px;font-weight:600;color:#0f172a;">{{ _stage }}</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">record_voice_over</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">Interview</p>
+            <p style="font-size:14px;font-weight:600;margin:0;
+                      {% if interview_status %}color:#f59e0b;
+                      {% else %}color:#94a3b8;{% endif %}">
+              {{ interview_status or 'Not Scheduled' }}
+            </p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">payments</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">Payment</p>
+            <p style="font-size:14px;font-weight:600;margin:0;
+                      {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}color:#16a34a;
+                      {% elif fee_payment_status %}color:#f59e0b;
+                      {% else %}color:#94a3b8;{% endif %}">
+              {{ fee_payment_status or 'Pending' }}
+            </p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">alternate_email</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">Contact Email</p>
+            <p style="font-size:14px;font-weight:600;color:var(--primary);
+                      word-break:break-all;">{{ _email }}</p>
+          </div>
+        </div>
+
+      </div>
+      <!-- END INFO ROW -->
+
+    </section>
+    <!-- END HERO APPLICATION CARD -->
+
+    <!-- ══ TWO COLUMN: Main (2/3) + Sidebar (1/3) ═══════════════════ -->
+    <div style="display:grid;grid-template-columns:1fr;gap:24px;">
+      <div class="lg-two-col"
+           style="display:grid;grid-template-columns:2fr 1fr;gap:24px;">
+
+      <!-- ── LEFT COLUMN ─────────────────────────────────────────── -->
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0;">
+
+        <!-- DOCUMENT CHECKLIST -->
+        {% set _doc_count = _docs|length %}
+        {% set ns2 = namespace(verified=0) %}
+        {% for d in _docs %}
+          {% set _vs = (d.get('verification_status') if d.get else d.verification_status) or '' %}
+          {% if _vs in ['Verified','Approved','Uploaded'] or
+               (d.get('file_url') if d.get else d.file_url) %}
+            {% set ns2.verified = ns2.verified + 1 %}
+          {% endif %}
+        {% endfor %}
+
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.15s;">
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <h3 style="font-size:16px;font-weight:700;color:#0f172a;">
+              Document Checklist
+            </h3>
+            {% if _doc_count > 0 %}
+            <span style="font-size:13px;font-weight:500;color:#64748b;">
+              {{ ns2.verified }} of {{ _doc_count }} Completed
+            </span>
+            {% endif %}
+          </div>
+
+          {% if _docs %}
+          <div>
+            {% for doc in _docs %}
+            {% set _dname  = (doc.get('document_name') or doc.get('document_type') if doc.get else (doc.document_name or doc.document_type)) or 'Document' %}
+            {% set _dfurl  = (doc.get('file_url') if doc.get else doc.file_url) or '' %}
+            {% set _dvs    = (doc.get('verification_status') if doc.get else doc.verification_status) or '' %}
+            {% set _ddate  = (doc.get('upload_date') or doc.get('creation') if doc.get else (doc.upload_date or doc.creation)) %}
+            {% set _dremark= (doc.get('remarks') if doc.get else doc.remarks) or '' %}
+
+            {# Determine doc state #}
+            {% if _dfurl and _dvs in ['Verified','Approved'] %}
+              {% set _dstate = 'verified' %}
+            {% elif _dfurl %}
+              {% set _dstate = 'uploaded' %}
+            {% elif _dvs == 'Pending' or _dvs == 'Verification Pending' %}
+              {% set _dstate = 'pending' %}
+            {% else %}
+              {% set _dstate = 'missing' %}
+            {% endif %}
+
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:16px 24px;
+                        border-bottom:1px solid #f8fafc;
+                        {% if _dstate == 'pending' %}background:#fffbeb;{% endif %}
+                        transition:background 0.15s;"
+                 onmouseover="this.style.background='{% if _dstate == 'pending' %}#fef3c7{% else %}#f8fafc{% endif %}'"
+                 onmouseout="this.style.background='{% if _dstate == 'pending' %}#fffbeb{% else %}white{% endif %}'">
+
+              <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
+                <!-- State icon -->
+                {% if _dstate == 'verified' %}
+                <span class="material-symbols-outlined" style="font-size:22px;color:#16a34a;flex-shrink:0;">check_circle</span>
+                {% elif _dstate == 'uploaded' %}
+                <span class="material-symbols-outlined" style="font-size:22px;color:#3b82f6;flex-shrink:0;">check_circle</span>
+                {% elif _dstate == 'pending' %}
+                <span class="material-symbols-outlined" style="font-size:22px;color:#d97706;flex-shrink:0;">pending</span>
+                {% else %}
+                <span class="material-symbols-outlined" style="font-size:22px;color:#cbd5e1;flex-shrink:0;">radio_button_unchecked</span>
+                {% endif %}
+
+                <div style="min-width:0;">
+                  <p style="font-size:14px;font-weight:600;color:#0f172a;
+                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ _dname }}
+                  </p>
+                  <p style="font-size:11px;font-weight:600;
+                             text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;
+                             {% if _dstate == 'pending' %}color:#d97706;font-style:italic;
+                             {% elif _dstate == 'missing' %}color:#94a3b8;
+                             {% else %}color:#94a3b8;{% endif %}">
+                    {% if _dstate == 'verified' %}Verified
+                    {% elif _dstate == 'uploaded' %}
+                      Uploaded{% if _ddate %} · {{ frappe.utils.format_date(_ddate, 'MMM d, yyyy') }}{% endif %}
+                    {% elif _dstate == 'pending' %}{{ _dvs or 'Verification Pending' }}
+                    {% else %}Not Uploaded{% endif %}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Action button -->
+              {% if _dfurl %}
+              <a href="{{ _dfurl }}" target="_blank"
+                 style="font-size:13px;font-weight:600;color:var(--primary);
+                        text-decoration:none;white-space:nowrap;margin-left:12px;"
+                 onmouseover="this.style.textDecoration='underline'"
+                 onmouseout="this.style.textDecoration='none'">
+                View
+              </a>
+              {% elif _dstate == 'pending' %}
+              <a href="/my-applications?app={{ _appid }}&doc={{ (doc.get('name') if doc.get else doc.name) }}"
+                 style="padding:6px 14px;border-radius:8px;font-size:12px;
+                        font-weight:700;color:white;text-decoration:none;
+                        background:var(--primary);white-space:nowrap;margin-left:12px;">
+                Update
+              </a>
+              {% endif %}
+
+            </div>
+            {% endfor %}
+          </div>
+
+          {% else %}
+          <!-- Empty document state -->
+          <div style="padding:32px 24px;text-align:center;">
+            <span class="material-symbols-outlined"
+                  style="font-size:40px;color:#e2e8f0;display:block;margin-bottom:8px;">
+              folder_open
+            </span>
+            <p style="font-size:13px;color:#94a3b8;font-weight:500;">
+              No documents uploaded yet
+            </p>
+          </div>
+          {% endif %}
+
+        </section>
+        <!-- END DOCUMENT CHECKLIST -->
+
+        <!-- APPLICATION NARRATIVE -->
+        {% if _narr %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;padding:24px;
+                        border:1.5px solid #e2e8f0;
+                        animation-delay:0.2s;">
+          <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:14px;">
+            Application Notes
+          </h3>
+          <p style="font-size:13px;color:#475569;line-height:1.7;">
+            {{ _narr }}
+          </p>
+        </section>
+        {% endif %}
+        <!-- END NARRATIVE -->
+
+        <!-- ══ ENTRANCE TEST CARD ════════════════════════════════ -->
+        {% if entrance_test %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.25s;">
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="material-symbols-outlined"
+                    style="font-size:20px;color:var(--primary);">edit_document</span>
+              <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin:0;">
+                Entrance Test
+              </h3>
+            </div>
+            {% if entrance_test.admit_status %}
+            <span style="padding:3px 10px;border-radius:20px;font-size:11px;
+                         font-weight:700;background:#eff6ff;color:#2563eb;">
+              {{ entrance_test.admit_status|upper }}
+            </span>
+            {% endif %}
+          </div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px;">
+
+            <div style="display:flex;align-items:flex-start;
+                        justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <div>
+                <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                           text-transform:uppercase;letter-spacing:0.05em;
+                           margin:0 0 4px;">Test Center</p>
+                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
+                  {{ entrance_test.center_name or '—' }}
+                </p>
+              </div>
+              {% if admit_card_url %}
+              <a href="{{ admit_card_url }}" target="_blank"
+                 style="display:inline-flex;align-items:center;gap:6px;
+                        padding:9px 18px;border-radius:8px;font-size:13px;
+                        font-weight:700;text-decoration:none;color:white;
+                        background:var(--primary);white-space:nowrap;
+                        transition:opacity 0.15s;"
+                 onmouseover="this.style.opacity='0.85'"
+                 onmouseout="this.style.opacity='1'">
+                <span class="material-symbols-outlined" style="font-size:16px;">download</span>
+                Download Admit Card
+              </a>
+              {% endif %}
+            </div>
+
+            {% if entrance_test.test_date or entrance_test.test_time %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              {% if entrance_test.test_date %}
+              <div style="background:#f8fafc;border-radius:10px;padding:12px 16px;">
+                <p style="font-size:11px;color:#94a3b8;font-weight:600;
+                           text-transform:uppercase;letter-spacing:0.05em;margin:0 0 4px;">
+                  Exam Date
+                </p>
+                <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
+                  {{ entrance_test.test_date }}
+                </p>
+              </div>
+              {% endif %}
+              {% if entrance_test.test_time %}
+              <div style="background:#f8fafc;border-radius:10px;padding:12px 16px;">
+                <p style="font-size:11px;color:#94a3b8;font-weight:600;
+                           text-transform:uppercase;letter-spacing:0.05em;margin:0 0 4px;">
+                  Reporting Time
+                </p>
+                <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
+                  {{ entrance_test.test_time }}
+                </p>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {% if entrance_test.center_address %}
+            <div style="display:flex;align-items:flex-start;gap:10px;
+                        padding:12px 16px;background:#f8fafc;border-radius:10px;">
+              <span class="material-symbols-outlined"
+                    style="font-size:18px;color:#94a3b8;margin-top:1px;flex-shrink:0;">
+                location_on
+              </span>
+              <p style="font-size:13px;color:#475569;line-height:1.55;margin:0;">
+                {{ entrance_test.center_address }}
+              </p>
+            </div>
+            {% endif %}
+
+            {% if entrance_test.seat_number %}
+            <p style="font-size:13px;color:#475569;margin:0;display:flex;
+                      align-items:center;gap:8px;">
+              <span class="material-symbols-outlined"
+                    style="font-size:16px;color:#94a3b8;">chair</span>
+              Seat No: <strong style="color:#0f172a;">{{ entrance_test.seat_number }}</strong>
+            </p>
+            {% endif %}
+
+          </div>
+        </section>
+        {% endif %}
+        <!-- END ENTRANCE TEST CARD -->
+
+        <!-- ══ MERIT DETAILS CARD ════════════════════════════════ -->
+        {% if merit_rank or merit_percentile or merit_score_val %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.3s;">
+          <div style="display:flex;align-items:center;gap:10px;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:var(--primary);">military_tech</span>
+            <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin:0;">
+              Merit Details
+            </h3>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;padding:24px;gap:0;">
+            {% if merit_rank %}
+            <div style="padding:8px 16px;
+                        {% if merit_percentile or merit_score_val %}
+                        border-right:1px solid #f1f5f9;{% endif %}">
+              <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         margin:0 0 8px;">All India Rank</p>
+              <p style="font-size:40px;font-weight:800;color:var(--primary);
+                         line-height:1;margin:0;">#{{ merit_rank }}</p>
+            </div>
+            {% endif %}
+            {% if merit_percentile %}
+            <div style="padding:8px 16px;">
+              <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         margin:0 0 8px;">Percentile Score</p>
+              <p style="font-size:40px;font-weight:800;color:#0f172a;
+                         line-height:1;margin:0;">{{ merit_percentile }}</p>
+            </div>
+            {% elif merit_score_val %}
+            <div style="padding:8px 16px;">
+              <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         margin:0 0 8px;">Merit Score</p>
+              <p style="font-size:40px;font-weight:800;color:#0f172a;
+                         line-height:1;margin:0;">{{ merit_score_val }}</p>
+            </div>
+            {% endif %}
+          </div>
+          {% if merit_cat_rank %}
+          <div style="padding:0 24px 16px;">
+            <span style="font-size:12px;color:#64748b;">
+              Category Rank: <strong style="color:#0f172a;">#{{ merit_cat_rank }}</strong>
+            </span>
+          </div>
+          {% endif %}
+        </section>
+        {% endif %}
+        <!-- END MERIT CARD -->
+
+        <!-- ══ SEAT ALLOCATION CARD ══════════════════════════════ -->
+        {% if seat_allocation %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.35s;">
+          <div style="display:flex;align-items:center;gap:10px;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:var(--primary);">event_seat</span>
+            <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin:0;">
+              Seat Allocation Results
+            </h3>
+          </div>
+          <div style="padding:20px 24px;">
+            <div style="display:flex;align-items:flex-start;
+                        justify-content:space-between;gap:14px;
+                        padding:16px;border-radius:12px;
+                        border:1.5px solid #e2e8f0;background:#fafbfc;">
+              <div>
+                <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                           text-transform:uppercase;letter-spacing:0.06em;
+                           margin:0 0 6px;">Allocated Seat</p>
+                {% set _salloc_prog = (seat_allocation.get('program') if seat_allocation.get else seat_allocation.program) or _prog %}
+                {% set _salloc_campus = (seat_allocation.get('campus') if seat_allocation.get else seat_allocation.campus) or '' %}
+                {% set _salloc_type = (seat_allocation.get('allocation_type') if seat_allocation.get else seat_allocation.allocation_type) or '' %}
+                <p style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 4px;">
+                  {{ _salloc_prog }}
+                </p>
+                <p style="font-size:12px;color:#64748b;margin:0;">
+                  {% if _salloc_campus %}{{ _salloc_campus }}{% endif %}
+                  {% if _salloc_type %} · {{ _salloc_type }}{% endif %}
+                </p>
+              </div>
+              {% if seat_status %}
+              <span style="padding:5px 14px;border-radius:20px;font-size:11px;
+                           font-weight:800;white-space:nowrap;flex-shrink:0;
+                           {% if seat_status in ['Confirmed','Allocated'] %}
+                           background:#d1fae5;color:#065f46;
+                           {% elif seat_status == 'Waitlisted' %}
+                           background:#ede9fe;color:#5b21b6;
+                           {% else %}
+                           background:#dbeafe;color:#1d4ed8;{% endif %}">
+                {{ seat_status|upper }}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+        {% endif %}
+        <!-- END SEAT ALLOCATION CARD -->
+
+        <!-- ══ DOWNLOAD ACTIONS ROW ══════════════════════════════ -->
+        {% if offer_letter_url or app_name_param %}
+        <div class="fade-in-up"
+             style="display:flex;flex-wrap:wrap;gap:12px;
+                    animation-delay:0.4s;">
+          {% if app_name_param %}
+          <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
+             target="_blank"
+             style="display:inline-flex;align-items:center;gap:8px;
+                    padding:10px 20px;border-radius:10px;font-size:13px;
+                    font-weight:700;text-decoration:none;color:#475569;
+                    border:1.5px solid #e2e8f0;background:white;
+                    transition:all 0.15s;"
+             onmouseover="this.style.background='#f8fafc';this.style.color='var(--primary)'"
+             onmouseout="this.style.background='white';this.style.color='#475569'">
+            <span class="material-symbols-outlined" style="font-size:18px;">description</span>
+            Download Application
+          </a>
+          {% endif %}
+          {% if offer_letter_url %}
+          <a href="{{ offer_letter_url }}" target="_blank"
+             style="display:inline-flex;align-items:center;gap:8px;
+                    padding:10px 20px;border-radius:10px;font-size:13px;
+                    font-weight:700;text-decoration:none;color:white;
+                    background:#0f172a;transition:opacity 0.15s;"
+             onmouseover="this.style.opacity='0.85'"
+             onmouseout="this.style.opacity='1'">
+            <span class="material-symbols-outlined" style="font-size:18px;">drafts</span>
+            Download Offer Letter
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+        <!-- END DOWNLOAD ACTIONS -->
+
+      </div>
+      <!-- END LEFT COLUMN -->
+
+      <!-- ── RIGHT SIDEBAR ─────────────────────────────────────── -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- NEXT STEPS card (primary bg) -->
+        {% if _steps %}
+        <section class="fade-in-up" id="next-steps-card"
+                 style="border-radius:16px;padding:24px;
+                        color:white;animation-delay:0.1s;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+            <span class="material-symbols-outlined" style="font-size:22px;">bolt</span>
+            <h3 style="font-size:16px;font-weight:700;">Next Steps</h3>
+          </div>
+          <ul style="display:flex;flex-direction:column;gap:14px;list-style:none;
+                     padding:0;margin:0 0 20px;">
+            {% for step in _steps %}
+            {% set _stext = step.text if step is mapping else step['text'] %}
+            {% set _sislink = step.is_link if step is mapping else step['is_link'] %}
+            {% set _slurl  = step.link_url if step is mapping else step['link_url'] %}
+            {% set _slabel = step.link_label if step is mapping else step['link_label'] %}
+            <li style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="margin-top:3px;width:18px;height:18px;border-radius:50%;
+                          border:2px solid rgba(255,255,255,0.4);
+                          display:flex;align-items:center;justify-content:center;
+                          flex-shrink:0;">
+                <div style="width:7px;height:7px;border-radius:50%;
+                             background:white;"></div>
+              </div>
+              <p style="font-size:13px;line-height:1.55;flex:1;">
+                {% if _sislink and _slurl %}
+                <a href="{{ _slurl }}"
+                   style="font-weight:700;color:white;text-decoration:underline;">
+                  {{ _slabel or _slurl }}
+                </a>
+                {{ _stext }}
+                {% else %}
+                {{ _stext }}
+                {% endif %}
+              </p>
+            </li>
+            {% endfor %}
+          </ul>
+          <a href="/my-applications"
+             style="display:block;width:100%;padding:12px;text-align:center;
+                    background:white;color:var(--primary);
+                    font-weight:700;font-size:13px;border-radius:10px;
+                    text-decoration:none;
+                    transition:background 0.15s,opacity 0.15s;"
+             onmouseover="this.style.opacity='0.9'"
+             onmouseout="this.style.opacity='1'">
+            View All Applications
+          </a>
+        </section>
+        {% endif %}
+        <!-- END NEXT STEPS -->
+
+        <!-- ══ PAYMENT DETAILS CARD ══════════════════════════════ -->
+        {% if payment_details %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;padding:24px;
+                        border:1.5px solid #e2e8f0;animation-delay:0.2s;">
+          <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0 0 16px;">
+            Payment Details
+          </h3>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;color:#64748b;">{{ payment_details.fee_label }}</span>
+              <span style="font-size:15px;font-weight:700;color:#0f172a;">
+                {% if payment_details.amount %}₹{{ payment_details.amount|int }}{% endif %}
+              </span>
+            </div>
+            {% if payment_details.transaction_id %}
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;color:#64748b;">Transaction ID</span>
+              <span style="font-size:12px;font-weight:600;color:#0f172a;font-family:monospace;">
+                {{ payment_details.transaction_id }}
+              </span>
+            </div>
+            {% endif %}
+            {% if payment_details.payment_date %}
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;color:#64748b;">Date</span>
+              <span style="font-size:13px;font-weight:600;color:#0f172a;">
+                {{ payment_details.payment_date }}
+              </span>
+            </div>
+            {% endif %}
+          </div>
+          {% if payment_details.status %}
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f5f9;
+                      display:flex;align-items:center;gap:8px;">
+            <span class="material-symbols-outlined"
+                  style="font-size:18px;
+                         {% if payment_details.status in ['Success','Paid','Completed','Fee Paid'] %}
+                         color:#16a34a;{% else %}color:#d97706;{% endif %}">
+              {% if payment_details.status in ['Success','Paid','Completed','Fee Paid'] %}
+              check_circle{% else %}pending{% endif %}
+            </span>
+            <span style="font-size:12px;font-weight:700;text-transform:uppercase;
+                         letter-spacing:0.06em;
+                         {% if payment_details.status in ['Success','Paid','Completed','Fee Paid'] %}
+                         color:#16a34a;{% else %}color:#d97706;{% endif %}">
+              {{ payment_details.status }}
+            </span>
+          </div>
+          {% endif %}
+        </section>
+        {% endif %}
+        <!-- END PAYMENT DETAILS -->
+
+        <!-- SUPPORT & CONTACT -->
+        {% if _sname or _semail %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;padding:24px;
+                        border:1.5px solid #e2e8f0;animation-delay:0.2s;">
+          <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:16px;">
+            Support &amp; Contact
+          </h3>
+
+          {% if _sname %}
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;
+                      border-radius:12px;border:1px solid #f1f5f9;margin-bottom:12px;">
+            <!-- Avatar initials -->
+            <div style="width:44px;height:44px;border-radius:50%;
+                        background:rgba(26,60,110,0.08);
+                        display:flex;align-items:center;justify-content:center;
+                        flex-shrink:0;font-size:16px;font-weight:700;
+                        color:var(--primary);">
+              {{ _sname[0]|upper }}
+            </div>
+            <div>
+              <p style="font-size:14px;font-weight:700;color:#0f172a;">{{ _sname }}</p>
+              {% if _srole %}
+              <p style="font-size:12px;color:#64748b;margin-top:1px;">{{ _srole }}</p>
+              {% endif %}
+              {% if _semail %}
+              <a href="mailto:{{ _semail }}"
+                 style="font-size:12px;color:var(--primary);text-decoration:none;
+                        display:inline-flex;align-items:center;gap:4px;margin-top:4px;"
+                 onmouseover="this.style.textDecoration='underline'"
+                 onmouseout="this.style.textDecoration='none'">
+                <span class="material-symbols-outlined" style="font-size:14px;">mail</span>
+                {{ _semail }}
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          <a href="#"
+             style="display:flex;align-items:center;justify-content:center;gap:8px;
+                    padding:10px;border-radius:10px;font-size:13px;font-weight:600;
+                    color:#475569;text-decoration:none;
+                    border:1.5px solid #e2e8f0;
+                    transition:background 0.15s,color 0.15s;"
+             onmouseover="this.style.background='#f8fafc';this.style.color='var(--primary)'"
+             onmouseout="this.style.background='transparent';this.style.color='#475569'">
+            <span class="material-symbols-outlined" style="font-size:18px">help</span>
+            Help Center
+          </a>
+        </section>
+        {% endif %}
+        <!-- END SUPPORT -->
+
+        <!-- CAMPUS IMAGE (if hero_image is set) -->
+        {% if _campimg %}
+        <div class="fade-in-up"
+             style="border-radius:16px;overflow:hidden;
+                    border:1.5px solid #e2e8f0;
+                    aspect-ratio:4/3;position:relative;
+                    animation-delay:0.3s;">
+          <img src="{{ _campimg }}"
+               alt="Campus"
+               style="width:100%;height:100%;object-fit:cover;">
+          <div style="position:absolute;inset:0;
+                      background:linear-gradient(to top,rgba(0,0,0,0.75) 0%,
+                                  rgba(0,0,0,0.1) 60%,transparent 100%);
+                      display:flex;flex-direction:column;
+                      justify-content:flex-end;padding:16px;">
+            <p style="color:white;font-size:10px;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">
+              Campus
+            </p>
+            <p style="color:white;font-size:13px;font-weight:700;">
+              National Law School of India University
+            </p>
+          </div>
+        </div>
+        {% endif %}
+        <!-- END CAMPUS IMAGE -->
+
+      </div>
+      <!-- END RIGHT SIDEBAR -->
+
+      </div><!-- end lg-two-col -->
+    </div>
+    <!-- END TWO COLUMN -->
+
+    <!-- ── MINIMAL FOOTER ─────────────────────────────────────── -->
+    <footer style="margin-top:24px;padding-top:20px;
+                   border-top:1px solid #e2e8f0;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;
+                  justify-content:space-between;gap:12px;">
+        <p style="font-size:12px;color:#94a3b8;">
+          Admission Portal — National Law School of India University
+        </p>
+        <div style="display:flex;gap:20px;">
+          <a href="/admission" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
+             onmouseover="this.style.color='var(--primary)'"
+             onmouseout="this.style.color='#64748b'">Admissions Home</a>
+          <a href="#" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
+             onmouseover="this.style.color='var(--primary)'"
+             onmouseout="this.style.color='#64748b'">Help Center</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+</div>
+<!-- END OUTER WRAPPER -->
+
+{% else %}
 <div class="ma-page">
 <div class="ma-wrap">
 
-    <!-- Breadcrumb -->
-    <nav class="ma-bc" aria-label="breadcrumb">
-        <a href="/admission">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            Programs
-        </a>
+    <!-- a. Breadcrumb -->
+    <nav class="ma-bc">
+        <a href="/merit-and-scholarship/admission_dashboard">Dashboard</a>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2.5">
-            <polyline points="9 18 15 12 9 6"/>
+          <polyline points="9 18 15 12 9 6"/>
         </svg>
-        <span>My Applications</span>
+        <span>My Application</span>
     </nav>
 
-    <!-- Page header -->
-    <div class="ma-header">
-        <div class="ma-header-left">
-            <h1>My Applications</h1>
-            <p>Welcome back, <strong>{{ candidate_name }}</strong></p>
-        </div>
-        <a href="/admission" class="btn-new-app">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            New Application
-        </a>
-    </div>
-
-    <!-- Stats -->
-    {% set total     = applications | length %}
-    {% set submitted = applications | selectattr('status', 'in',
-        ['Submitted','Under Review','Shortlisted','Offered','Accepted'])
-        | list | length %}
-    {% set offered   = applications | selectattr('status', '==', 'Offered')
-        | list | length %}
-    {% set accepted  = applications | selectattr('status', '==', 'Accepted')
-        | list | length %}
-
-    <div class="ma-stats">
-        <div class="ma-stat">
-            <div class="ma-stat-val" data-count="{{ total }}">{{ total }}</div>
-            <div class="ma-stat-lbl">Total</div>
-        </div>
-        <div class="ma-stat" style="border-top-color:#1d4ed8;">
-            <div class="ma-stat-val" style="color:#1d4ed8;"
-                 data-count="{{ submitted }}">{{ submitted }}</div>
-            <div class="ma-stat-lbl">Submitted</div>
-        </div>
-        <div class="ma-stat" style="border-top-color:#0369a1;">
-            <div class="ma-stat-val" style="color:#0369a1;"
-                 data-count="{{ offered }}">{{ offered }}</div>
-            <div class="ma-stat-lbl">Offered</div>
-        </div>
-        <div class="ma-stat" style="border-top-color:#065f46;">
-            <div class="ma-stat-val" style="color:#065f46;"
-                 data-count="{{ accepted }}">{{ accepted }}</div>
-            <div class="ma-stat-lbl">Accepted</div>
-        </div>
-    </div>
-
-    <!-- Application cards -->
     {% if applications %}
-    <div class="ma-section-label">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-        </svg>
-        {{ total }} Application{{ 's' if total != 1 else '' }}
+...
+    <!-- HORIZONTAL SCROLL STRIP -->
+    <div class="app-strip-scroll">
+      <div class="app-strip">
+        {% for app in applications %}
+        <div class="app-strip-card {% if active_app and app.name == active_app.name %}active{% endif %}"
+             data-app-id="{{ app.name }}"
+             onclick="selectApp('{{ app.name }}')">
+          <div class="asc-status-dot"
+               style="background:{{ app.header.status_color }}"></div>
+          <div class="asc-program">{{ app.header.program_name }}</div>
+          <div class="asc-cycle">{{ app.header.cycle }}</div>
+          <div class="asc-badge"
+               style="color:{{ app.header.status_color }};
+                      background:{{ app.header.status_bg }}">
+            {{ app.header.status }}
+          </div>
+          <div class="asc-id">{{ app.header.applicant_id }}</div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
 
-    <div class="ma-list">
+    <!-- DETAIL PANELS -->
     {% for app in applications %}
-    <div class="ma-card">
-        <!-- Colored left bar -->
-        <div class="ma-card-bar"
-             style="background: {{ app.status_color }};"></div>
+    {% set h = app.header %}
+    <div class="app-detail-panel {% if active_app and app.name == active_app.name %}panel-visible{% endif %}"
+         id="panel-{{ app.name }}">
 
-        <div class="ma-card-body">
-            <!-- Top: program name + status badge -->
-            <div class="ma-card-top">
-                <div>
-                    <div class="ma-prog-name">
-                        {{ app.program_name or app.program or 'Application' }}
-                    </div>
-                    {% if app.admission_cycle %}
-                    <div class="ma-cycle">
-                        <svg width="12" height="12" viewBox="0 0 24 24"
-                             fill="none" stroke="currentColor"
-                             stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2"/>
-                            <line x1="16" y1="2" x2="16" y2="6"/>
-                            <line x1="8" y1="2" x2="8" y2="6"/>
-                            <line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        {{ app.admission_cycle }}
-                    </div>
-                    {% endif %}
+        <!-- b. Header Card -->
+        <div class="ma-header-card">
+            <div class="ma-header-top">
+                <div class="ma-header-title">
+                    <h1>{{ h.program_name }}</h1>
+                    <p>{{ h.cycle }}</p>
                 </div>
-                <span class="ma-status"
-                      style="background: {{ app.status_bg }};
-                             color: {{ app.status_color }};">
-                    <svg width="8" height="8" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="4"
-                                fill="{{ app.status_color }}"/>
-                    </svg>
-                    {{ app.status or 'Draft' }}
-                </span>
+                <div class="ma-status-badge" style="background: {{ h.status_bg }}; color: {{ h.status_color }};">
+                    {{ h.status }}
+                </div>
             </div>
 
-            <!-- Meta row -->
-            <div class="ma-meta">
-                <span class="ma-meta-item">
-                    <svg width="13" height="13" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    {{ app.formatted_date }}
-                </span>
-                <span class="ma-meta-item">
-                    <svg width="13" height="13" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="2">
-                        <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                    {{ app.name }}
-                </span>
-                {% if app.eligibility_status and app.eligibility_status != 'Pending' %}
-                <span class="ma-meta-item"
-                      style="color:{% if app.eligibility_status == 'Eligible' %}
-                             #059669{% else %}#dc2626{% endif %};font-weight:600;">
-                    <svg width="13" height="13" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="2.5">
-                        {% if app.eligibility_status == 'Eligible' %}
-                        <polyline points="20 6 9 17 4 12"/>
-                        {% else %}
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="15" y1="9" x2="9" y2="15"/>
-                        <line x1="9" y1="9" x2="15" y2="15"/>
-                        {% endif %}
-                    </svg>
-                    {{ app.eligibility_status }}
-                </span>
-                {% endif %}
-                {% if app.merit_score %}
-                <span class="ma-meta-item"
-                      style="color:var(--primary);font-weight:700;">
-                    <svg width="13" height="13" viewBox="0 0 24 24"
-                         fill="var(--primary)" stroke="none">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                    Merit: {{ app.merit_score }}
-                </span>
-                {% endif %}
+            <div class="ma-header-meta">
+                <div class="ma-meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Submitted on {{ h.submitted_on }}
+                </div>
+                <div class="ma-meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    {{ h.applicant_id }}
+                </div>
+                <div class="ma-meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    {{ app.active_stage or h.current_stage }}
+                </div>
             </div>
 
-            <!-- Actions -->
             <div class="ma-actions">
-                <a href="/applicant-form/{{ app.name }}"
-                   class="ma-btn-primary">
-                    View Application
-                    <svg width="13" height="13" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="2.5">
-                        <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                </a>
-                {% if app.program_slug %}
-                <a href="/admission/{{ app.program_slug }}"
-                   class="ma-btn-secondary">
-                    <svg width="12" height="12" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    View Program
+                {% if app.can_edit %}
+                <a href="/application-form/{{ app.name }}" class="ma-btn ma-btn-primary">
+                  ✏️ Continue Application
                 </a>
                 {% endif %}
+
+                {% for btn in app.action_buttons %}
+                <a href="{{ btn.url }}" class="ma-btn ma-btn-{{ btn.type }}">
+                    {{ btn.label }}
+                </a>
+                {% endfor %}
             </div>
         </div>
+
+        <!-- c. Stage Tracker -->
+        <div class="ma-sec-card">
+            <div class="ma-sec-head">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Application Progress
+            </div>
+            <div class="stage-tracker-wrap" id="stageTrackerWrap-{{ app.name }}">
+                <div class="stage-loading" id="stageLoading-{{ app.name }}">
+                  <div class="stage-spinner"></div>
+                  <span>Loading pipeline...</span>
+                </div>
+                <div class="stage-pipeline" id="stagePipeline-{{ app.name }}" style="display:none"></div>
+            </div>
+        </div>
+
+        <!-- d. Status Cards -->
+        <div class="ma-stats-row">
+          <div class="ma-stat-box">
+            <div class="ma-stat-icon">👤</div>
+            <div>
+              <span class="ma-stat-label">Applicant ID</span>
+              <div class="ma-stat-value">{{ h.applicant_id }}</div>
+            </div>
+          </div>
+          <div class="ma-stat-box">
+            <div class="ma-stat-icon">🎓</div>
+            <div>
+              <span class="ma-stat-label">Program</span>
+              <div class="ma-stat-value">{{ h.program_name }}</div>
+            </div>
+          </div>
+          <div class="ma-stat-box" {% if h.merit_score %}style="border-bottom:3px solid var(--primary)"{% endif %}>
+            <div class="ma-stat-icon">🎯</div>
+            <div>
+              <span class="ma-stat-label">Merit Score</span>
+              <div class="ma-stat-value">{{ h.merit_score or "Pending" }}</div>
+            </div>
+          </div>
+          <div class="ma-stat-box">
+            <div class="ma-stat-icon">🏅</div>
+            <div>
+              <span class="ma-stat-label">Category</span>
+              <div class="ma-stat-value">{{ app.application[4].value or "General" }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- e. Admission Status -->
+        <div class="ma-sec-card">
+          <div class="ma-sec-head">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8l4 4-4 4M8 12h8"/>
+            </svg>
+            Admission Status
+          </div>
+          {% if app.admission_results %}
+            {% for res in app.admission_results %}
+            <div class="ma-data-row">
+              <div class="ma-data-main-wrap">
+                <div>
+                  <div class="ma-data-title">{{ h.program_name }}</div>
+                  <div class="ma-data-sub">
+                    Type: <strong>{{ res.allocation_type or "Regular" }}</strong>
+                    &nbsp;·&nbsp; Score: <strong>{{ res.total_score or "—" }}</strong>
+                    &nbsp;·&nbsp; Rank: <strong>#{{ res.overall_rank or "—" }}</strong>
+                  </div>
+                </div>
+                <span class="ma-status-pill {{ 'pill-success' if res.selection_status == 'Selected' else 'pill-warning' if res.selection_status == 'Waitlisted' else 'pill-danger' }}">
+                  {{ res.selection_status }}
+                </span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted small m-0 p-2">Selection results are being finalized. Check back soon.</p>
+          {% endif %}
+        </div>
+
+        <!-- f. Merit Rankings section -->
+        {% if app.merit_list %}
+        <div class="ma-sec-card">
+          <div class="ma-sec-head">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+            </svg>
+            Merit Rankings
+          </div>
+          {% for merit in app.merit_list %}
+          <div class="ma-data-row">
+            <div class="ma-data-main-wrap">
+              <div>
+                <div class="ma-data-title">Merit List: {{ merit.parent or "Final List" }}</div>
+                <div class="ma-data-sub">
+                  Merit Mark: <strong style="color:var(--primary);">{{ merit.total_score }}</strong>
+                  &nbsp;· Based on cumulative academic performance.
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <span class="ma-rank-val">#{{ merit.overall_rank }}</span>
+                <span class="ma-rank-lab">Overall Rank</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- g. Academic Performance section -->
+        <div class="ma-sec-card">
+          <div class="ma-sec-head">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Academic Performance
+          </div>
+          <div class="ma-entry-list">
+            {% for field in app.academic %}
+            {% if field.value %}
+            <div class="ma-entry-row">
+              <span class="ma-entry-label">{{ field.label }}</span>
+              <span class="ma-entry-dots"></span>
+              <span class="ma-entry-value">{{ field.value }}{% if 'Percentage' in field.label %}%{% endif %}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+            
+            {% if h.merit_score %}
+            <div class="ma-entry-row" style="padding-top:10px;border-top:1px solid #f1f5f9;margin-top:4px;">
+              <span class="ma-entry-label" style="font-weight:800;color:var(--primary);">Final Merit Score</span>
+              <span class="ma-entry-dots"></span>
+              <span class="ma-entry-value" style="font-size:18px;color:var(--primary);">{{ h.merit_score }}</span>
+            </div>
+            {% endif %}
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-size:12px;color:#9ca3af;font-weight:600;">Cycle</span>
+                <span style="font-size:12px;font-weight:700;">{{ h.cycle }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- h. Personal Information section -->
+        <div class="ma-sec-card">
+            <div class="ma-sec-head">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Personal Information
+            </div>
+            <div class="ma-field-grid">
+                {% for f in app.personal %}
+                <div class="ma-field">
+                    <div class="ma-field-label">{{ f.label }}</div>
+                    <div class="ma-field-value">
+                        {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- i. Academic Details section -->
+        <div class="ma-sec-card">
+            <div class="ma-sec-head">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Academic Details
+            </div>
+            <div class="ma-field-grid">
+                {% for f in app.academic %}
+                <div class="ma-field">
+                    <div class="ma-field-label">{{ f.label }}</div>
+                    <div class="ma-field-value">
+                        {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- j. Application Info section -->
+        <div class="ma-sec-card">
+            <div class="ma-sec-head">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Application Info
+            </div>
+            <div class="ma-field-grid">
+                {% for f in app.application %}
+                <div class="ma-field">
+                    <div class="ma-field-label">{{ f.label }}</div>
+                    <div class="ma-field-value">
+                        {% if f.value %}{{ f.value }}{% else %}<span class="ma-empty-val">—</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
     </div>
     {% endfor %}
-    </div>
 
     {% else %}
-    <!-- Empty state -->
-    <div class="ma-empty">
-        <div class="ma-empty-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                 stroke="var(--primary)" stroke-width="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-            </svg>
+    <div class="ma-empty" style="background:#fff; border-radius:20px; padding:80px 40px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+        <div style="width:80px; height:80px; background:var(--primary-light); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         </div>
-        <h3>No applications yet</h3>
-        <p>You have not applied to any programs in this admission cycle.
-           Browse available programs and click Apply Now to get started.</p>
-        <a href="/admission" class="ma-btn-primary" style="padding:10px 22px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2.5" style="margin-right:6px;">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Browse Programs
-        </a>
+        <h3 style="font-size:22px; font-weight:800; color:#111827; margin-bottom:12px;">No application found</h3>
+        <p style="color:#6b7280; font-size:15px; margin-bottom:32px; max-width:400px; margin-left:auto; margin-right:auto;">You haven't started an application for the current admission cycle yet.</p>
+        <a href="/admission" class="ma-btn ma-btn-primary" style="background:var(--primary); color:#fff !important;">Browse Programs</a>
     </div>
     {% endif %}
 
-</div><!-- .ma-wrap -->
-</div><!-- .ma-page -->
+</div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Animate stat counters
 (function () {
-    var els = document.querySelectorAll('[data-count]');
-    els.forEach(function (el) {
-        var target = parseInt(el.getAttribute('data-count'), 10);
-        if (!target || target === 0) return;
-        var cur = 0;
-        var step = Math.max(1, Math.ceil(target / 20));
-        var t = setInterval(function () {
-            cur = Math.min(cur + step, target);
-            el.textContent = cur;
-            if (cur >= target) clearInterval(t);
-        }, 40);
+  {% if show_detail %}
+  document.addEventListener('DOMContentLoaded', function() {
+    // Staggered fade-in for detail view
+    var els = document.querySelectorAll('.fade-in-up');
+    els.forEach(function(el) {
+      el.style.animationFillMode = 'forwards';
     });
-}());
+  });
+  {% else %}
+  // ── Legacy List View Script ──
+  // Active application tracker
+  let activeApp = '{{ active_app.name if active_app else "" }}';
+
+  // Icons per status and stage type (symbols only)
+  const ICONS = {
+    completed: "✓",
+    active: {
+      "Application":  "📋",
+      "Exam":         "🎯",
+      "Interview":    "🎤",
+      "Merit":        "📊",
+      "Offer Letter": "📄",
+      "Fee":          "💳",
+      "Enrollment":   "🎓",
+      "default":      "📍",
+    },
+    upcoming: "🔒",
+  };
+
+  function getIcon(status, stageType) {
+    if (status === "completed") return ICONS.completed;
+    if (status === "upcoming")  return ICONS.upcoming;
+    // active
+    return ICONS.active[stageType] || ICONS.active["default"];
+  }
+
+  function buildPipeline(appName, stages) {
+    const wrap = document.getElementById("stagePipeline-" + appName);
+    if (!wrap) return;
+    wrap.innerHTML = "";
+
+    stages.forEach(function (s, idx) {
+      // Connector BEFORE this node (not before first)
+      if (idx > 0) {
+        const prevStatus = stages[idx - 1].status;
+        const conn = document.createElement("div");
+        conn.className = "stage-connector " +
+          (prevStatus === "completed" ? "solid" : "dashed");
+        wrap.appendChild(conn);
+      }
+
+      // Node
+      const node = document.createElement("div");
+      node.className = "stage-node " + s.status;
+
+      // Circle
+      const circle = document.createElement("div");
+      circle.className = "stage-circle";
+      circle.textContent = getIcon(s.status, s.stage_type);
+      node.appendChild(circle);
+
+      // Label
+      const label = document.createElement("div");
+      label.className = "stage-label";
+      label.textContent = s.stage_name;
+      node.appendChild(label);
+
+      // Action button — ONLY on active stage
+      if (s.status === "active" && s.show_action && s.action_url) {
+        const btn = document.createElement("a");
+        btn.className = "stage-action-btn";
+        btn.href = s.action_url;
+        btn.textContent = s.action_label || "View";
+        node.appendChild(btn);
+      }
+
+      wrap.appendChild(node);
+    });
+  }
+
+  function initTracker(appName) {
+    if (!appName) return;
+    
+    // Reset display
+    const loading = document.getElementById("stageLoading-" + appName);
+    const pipeline = document.getElementById("stagePipeline-" + appName);
+    if (loading) loading.style.display = "flex";
+    if (pipeline) pipeline.style.display = "none";
+
+    frappe.call({
+      method: "slcm.admission.utils.web.get_stage_tracker_data",
+      args:   { applicant_name: appName },
+      callback: function (r) {
+        if (loading) loading.style.display = "none";
+        if (pipeline) {
+          pipeline.style.display = "flex";
+          if (!r.message || !r.message.stages || r.message.stages.length === 0) {
+            pipeline.innerHTML = '<p style="color:#94a3b8;font-size:13px;padding:10px 0">No stages configured for this cycle.</p>';
+            return;
+          }
+          buildPipeline(appName, r.message.stages);
+        }
+      },
+      error: function (err) {
+        if (loading) loading.style.display = "none";
+        if (pipeline) {
+          pipeline.style.display = "flex";
+          pipeline.innerHTML = '<p style="color:#ef4444;font-size:13px">Could not load stages. Please refresh.</p>';
+        }
+        console.error("Stage tracker error:", err);
+      }
+    });
+  }
+
+  // Handle application selection from strip
+  window.selectApp = function(appName) {
+    // Deactivate all strip cards
+    document.querySelectorAll('.app-strip-card')
+      .forEach(c => c.classList.remove('active'));
+    // Activate clicked card
+    const card = document.querySelector('[data-app-id="' + appName + '"]');
+    if (card) card.classList.add('active');
+
+    // Hide all panels
+    document.querySelectorAll('.app-detail-panel')
+      .forEach(p => p.classList.remove('panel-visible'));
+    // Show selected panel
+    const panel = document.getElementById('panel-' + appName);
+    if (panel) panel.classList.add('panel-visible');
+
+    activeApp = appName;
+    initTracker(appName);
+  };
+
+  frappe.ready(function() {
+      if (activeApp) {
+          initTracker(activeApp);
+      }
+  });
+  {% endif %}
+})();
 </script>
 {% endblock %}

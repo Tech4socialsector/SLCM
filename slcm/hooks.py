@@ -303,7 +303,8 @@ scheduler_events = {
 	"daily": [
 		"slcm.api.service.offer_service.expire_offers",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
-		"slcm.admission.events.send_deadline_reminders"
+		"slcm.admission.events.send_deadline_reminders",
+		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages"
 	]
 }
 
@@ -311,7 +312,7 @@ website_route_rules = [
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},
-    {"from_route": "/admission_dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
+    {"from_route": "/admission-dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
     {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"}
 ]
 

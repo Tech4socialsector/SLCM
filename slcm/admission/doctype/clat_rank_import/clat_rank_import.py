@@ -5,12 +5,14 @@ from frappe.utils import now
 
 class ClatRankImport(Document):
     def validate(self):
-        cycle_type = frappe.db.get_value(
-            "Admission Cycle", self.admission_cycle, "workflow_type"
+        # Check if the cycle has at least one CLAT program.
+        is_clat_cycle = frappe.db.exists(
+            "Admission Cycle Program",
+            {"parent": self.admission_cycle, "exam_type": "CLAT"}
         )
-        if cycle_type != "CLAT":
+        if not is_clat_cycle:
             frappe.throw(
-                "CLAT Rank Import can only be linked to a CLAT Admission Cycle.",
+                "CLAT Rank Import can only be linked to an Admission Cycle that has CLAT programs.",
                 title="Invalid Cycle Type"
             )
 

@@ -5,6 +5,40 @@ from frappe.utils import now, add_days, getdate, today, get_datetime
 
 # ── CONFIG ────────────────────────────────────────────────────────
 @frappe.whitelist(allow_guest=True)
+def api_get_portal_config():
+    """Alias for get_portal_config to match JS expectations."""
+    return get_portal_config()
+
+@frappe.whitelist(allow_guest=True)
+def api_get_announcements(limit=10):
+    """Alias for get_active_announcements to match JS expectations."""
+    return get_active_announcements(limit=limit)
+
+@frappe.whitelist(allow_guest=True)
+def api_get_programs():
+    """Alias for get_active_programs to match JS expectations."""
+    return get_active_programs()
+
+@frappe.whitelist()
+def api_get_my_application():
+    """Returns the current user's application for the active cycle."""
+    user = frappe.session.user
+    if user == "Guest":
+        return None
+    
+    active_cycle = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    if not active_cycle:
+        return None
+        
+    apps = frappe.get_all(
+        "Applicant",
+        filters={"owner": user, "admission_cycle": active_cycle},
+        fields=["*"],
+        limit=1
+    )
+    return apps[0] if apps else None
+
+@frappe.whitelist(allow_guest=True)
 def get_portal_config():
     """
     Returns Applicant Portal Config singleton.
@@ -41,6 +75,20 @@ def get_portal_config():
             "submission_message": config.submission_message or "",
             "enable_portal_notifications": config.enable_portal_notifications
                 if config.enable_portal_notifications is not None else 1,
+            "portal_tagline": config.get("portal_tagline") or config.get("portal_subtitle") or "",
+            "institution_since": config.get("institution_since") or "",
+            "hero_cta_label": config.get("hero_cta_label") or "Explore Programs",
+            "hero_cta2_label": config.get("hero_cta2_label") or "Virtual Tour",
+            "footer_address": config.get("footer_address") or "",
+            "footer_phone": config.get("footer_phone") or "",
+            "footer_email": config.get("footer_email") or config.get("contact_email") or "",
+            "social_links": [
+                {
+                    "platform": row.platform,
+                    "url": row.url,
+                    "is_active": row.is_active
+                } for row in (config.social_links or [])
+            ],
         }
     except Exception:
         # DocType not yet configured — return safe defaults
@@ -67,6 +115,14 @@ def get_portal_config():
             "footer_text": "",
             "submission_message": "",
             "enable_portal_notifications": 1,
+            "portal_tagline": "",
+            "institution_since": "",
+            "hero_cta_label": "Explore Programs",
+            "hero_cta2_label": "Virtual Tour",
+            "footer_address": "",
+            "footer_phone": "",
+            "footer_email": "",
+            "social_links": [],
         }
 
 def update_website_context(context):
@@ -113,6 +169,20 @@ def api_get_hero_slides():
 
 # ── PROGRAMS ──────────────────────────────────────────────────────
 
+@frappe.whitelist()
+def api_get_all_program_statuses(cycle):
+    """Returns mapping of program name to its current application status."""
+    if not cycle or frappe.session.user == "Guest":
+        return {}
+    
+    apps = frappe.get_all(
+        "Applicant",
+        filters={"owner": frappe.session.user, "admission_cycle": cycle},
+        fields=["program", "application_status"]
+    )
+    
+    return {a.program: a.application_status for a in apps}
+
 @frappe.whitelist(allow_guest=True)
 def get_active_programs():
     """
@@ -128,9 +198,9 @@ def get_active_programs():
             filters={"parent": active_cycle, "is_active": 1},
             fields=[
                 "program", "program_name", "seats", "eligibility_hint",
-                "brochure_url", "program_image as featured_image", "desciption",
+                "brochure_url", "program_image", "desciption",
                 "program_media", "reservation_policy", "max_applications",
-                "application_count",
+                "application_count", "program_level", "intake_type",
             ],
             order_by="program_name asc"
         )
@@ -139,13 +209,20 @@ def get_active_programs():
         for p in programs:
             p["admission_cycle"] = active_cycle
             # Fetch slug and abbreviation from Program
-            prog_info = frappe.db.get_value("Program", p.program, ["program_slug", "program_shortcode"], as_dict=True)
+            prog_info = frappe.db.get_value("Program", p.program, 
+                ["program_slug", "program_shortcode", "program_duration"], 
+                as_dict=True
+            )
             if prog_info:
-                p["program_slug"] = prog_info.program_slug
+                p["program_slug"] = prog_info.program_slug or _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = prog_info.program_shortcode
+                p["duration"] = f"{prog_info.program_duration} Years" if prog_info.program_duration else ""
             else:
                 p["program_slug"] = _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = ""
+                p["duration"] = ""
+
+            p["description"] = p.get("desciption") or ""
             
             raw = p.get("desciption") or ""
             if raw:
@@ -187,6 +264,41 @@ def get_active_programs():
     except Exception as e:
         frappe.log_error(f"get_active_programs failed: {e}", "Portal")
         return []
+
+def get_active_events(limit=4):
+    """Returns announcements of type Event, sorted by event_date."""
+    try:
+        meta = frappe.get_meta("Portal Announcement")
+        fields_available = [f.fieldname for f in meta.fields]
+        
+        # Base fields we know exist
+        fields = ["name", "title", "summary", "announcement_type", "creation"]
+        
+        # Optional fields
+        optional = ["publish_date", "event_date", "event_venue", "featured_image", "created_by_role"]
+        for f in optional:
+            if f in fields_available:
+                fields.append(f)
+
+        return frappe.get_all(
+            "Portal Announcement",
+            filters={
+                "announcement_type": "Event",
+                "is_active": 1
+            },
+            fields=fields,
+            order_by="event_date asc" if "event_date" in fields_available else "creation desc",
+            limit=limit
+        )
+    except Exception as e:
+        frappe.log_error(f"get_active_events failed: {e}", "Portal")
+        return []
+
+@frappe.whitelist(allow_guest=True)
+def api_get_program_images(program, cycle):
+    """Returns image gallery for a program in a cycle."""
+    res = api_get_program_detail(program, cycle)
+    return res.get("images") if res else []
 
 @frappe.whitelist(allow_guest=True)
 def api_get_program_detail(program, cycle):
@@ -253,12 +365,31 @@ def api_get_program_detail(program, cycle):
 # ── STATS & ANNOUNCEMENTS ───────────────────────────────────────────
 
 @frappe.whitelist(allow_guest=True)
+def api_get_campus_options():
+    """Returns list of active campuses."""
+    return frappe.get_all("Company", filters={"is_group": 0}, fields=["name", "company_name"])
+
+@frappe.whitelist()
+def api_get_application_fee(program, cycle, category=None):
+    """Returns the application fee for a program and category."""
+    detail = api_get_program_detail(program, cycle)
+    if not detail or not detail.get("categories"):
+        return 0
+    
+    if category:
+        for cat in detail["categories"]:
+            if cat.category_name == category:
+                return cat.application_fee or 0
+    
+    return detail["categories"][0].get("application_fee") or 0
+
+@frappe.whitelist(allow_guest=True)
 def api_get_portal_stats():
     """Returns live stats for the admission dashboard."""
     try:
         active_cycle = frappe.db.get_value(
             "Admission Cycle", {"status": "Active"},
-            ["name", "application_end"], as_dict=True
+            ["name"], as_dict=True
         )
         if not active_cycle: return {}
 
@@ -273,19 +404,39 @@ def api_get_portal_stats():
             else:
                 total_seats += p.seats or 0
 
-        days_left = 0
-        if active_cycle.application_end:
-            delta = get_datetime(active_cycle.application_end) - get_datetime(now())
-            days_left = max(0, delta.days)
-
         return {
             "total_programs": total_programs,
             "total_seats": total_seats,
-            "days_remaining": days_left,
-            "apply_by": active_cycle.application_end
         }
     except Exception:
         return {}
+
+@frappe.whitelist(allow_guest=True)
+def api_get_announcement_detail(ann_name):
+    """Returns full detail for one announcement."""
+    if not ann_name or not frappe.db.exists("Portal Announcement", ann_name):
+        return None
+    doc = frappe.get_doc("Portal Announcement", ann_name)
+    if not doc.is_active:
+        return None
+    return doc.as_dict()
+
+@frappe.whitelist(allow_guest=True)
+def api_increment_view_count(ann_name):
+    """Increments the view count for an announcement."""
+    if not ann_name: return
+    frappe.db.sql("""
+        UPDATE `tabPortal Announcement` 
+        SET view_count = view_count + 1 
+        WHERE name = %s
+    """, ann_name)
+    frappe.db.commit()
+
+@frappe.whitelist()
+def api_mark_notification_read(notification_id):
+    """Alias for web.mark_notifications_read for single ID."""
+    from slcm.admission.utils.web import mark_notifications_read
+    return mark_notifications_read([notification_id])
 
 @frappe.whitelist(allow_guest=True)
 def get_active_announcements(limit=10):
@@ -325,15 +476,5 @@ def api_get_program_media(program_media):
 
 def lock_expired_drafts():
     """Scheduler task to lock drafts after cycle deadline."""
-    expired_cycles = frappe.get_all(
-        "Admission Cycle",
-        filters={"application_end": ["<", now()], "status": "Active"},
-        fields=["name"]
-    )
-    for c in expired_cycles:
-        frappe.db.sql("""
-            UPDATE `tabApplicant` 
-            SET application_status = 'Locked' 
-            WHERE admission_cycle = %s AND application_status = 'Draft'
-        """, c.name)
-    frappe.db.commit()
+    # This logic needs to be updated to use Stages or Deadlines instead of cycle.application_end
+    pass
