@@ -288,7 +288,7 @@
       <!-- END STAGE TRACKER -->
 
       <!-- ── APPLICANT INFO ROW ─────────────────────────────────── -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
                   gap:16px;padding-top:24px;
                   border-top:1px solid #f1f5f9;">
 
@@ -300,12 +300,8 @@
           </div>
           <div>
             <p style="font-size:10px;color:#94a3b8;font-weight:700;
-                      text-transform:uppercase;letter-spacing:0.06em;">
-              Applicant
-            </p>
-            <p style="font-size:14px;font-weight:600;color:#0f172a;">
-              {{ _aname }}
-            </p>
+                      text-transform:uppercase;letter-spacing:0.06em;">Applicant</p>
+            <p style="font-size:14px;font-weight:600;color:#0f172a;">{{ _aname }}</p>
           </div>
         </div>
 
@@ -317,11 +313,42 @@
           </div>
           <div>
             <p style="font-size:10px;color:#94a3b8;font-weight:700;
-                      text-transform:uppercase;letter-spacing:0.06em;">
-              Current Stage
+                      text-transform:uppercase;letter-spacing:0.06em;">Current Stage</p>
+            <p style="font-size:14px;font-weight:600;color:#0f172a;">{{ _stage }}</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">record_voice_over</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">Interview</p>
+            <p style="font-size:14px;font-weight:600;margin:0;
+                      {% if interview_status %}color:#f59e0b;
+                      {% else %}color:#94a3b8;{% endif %}">
+              {{ interview_status or 'Not Scheduled' }}
             </p>
-            <p style="font-size:14px;font-weight:600;color:#0f172a;">
-              {{ _stage }}
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="padding:10px;background:#f8fafc;border-radius:10px;
+                      border:1px solid #e2e8f0;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:#64748b;">payments</span>
+          </div>
+          <div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.06em;">Payment</p>
+            <p style="font-size:14px;font-weight:600;margin:0;
+                      {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}color:#16a34a;
+                      {% elif fee_payment_status %}color:#f59e0b;
+                      {% else %}color:#94a3b8;{% endif %}">
+              {{ fee_payment_status or 'Pending' }}
             </p>
           </div>
         </div>
@@ -334,13 +361,9 @@
           </div>
           <div>
             <p style="font-size:10px;color:#94a3b8;font-weight:700;
-                      text-transform:uppercase;letter-spacing:0.06em;">
-              Contact Email
-            </p>
+                      text-transform:uppercase;letter-spacing:0.06em;">Contact Email</p>
             <p style="font-size:14px;font-weight:600;color:var(--primary);
-                      word-break:break-all;">
-              {{ _email }}
-            </p>
+                      word-break:break-all;">{{ _email }}</p>
           </div>
         </div>
 
@@ -498,6 +521,251 @@
         {% endif %}
         <!-- END NARRATIVE -->
 
+        <!-- ══ ENTRANCE TEST CARD ════════════════════════════════ -->
+        {% if entrance_test %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.25s;">
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="material-symbols-outlined"
+                    style="font-size:20px;color:var(--primary);">edit_document</span>
+              <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin:0;">
+                Entrance Test
+              </h3>
+            </div>
+            {% if entrance_test.admit_status %}
+            <span style="padding:3px 10px;border-radius:20px;font-size:11px;
+                         font-weight:700;background:#eff6ff;color:#2563eb;">
+              {{ entrance_test.admit_status|upper }}
+            </span>
+            {% endif %}
+          </div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px;">
+
+            <div style="display:flex;align-items:flex-start;
+                        justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <div>
+                <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                           text-transform:uppercase;letter-spacing:0.05em;
+                           margin:0 0 4px;">Test Center</p>
+                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
+                  {{ entrance_test.center_name or '—' }}
+                </p>
+              </div>
+              {% if admit_card_url %}
+              <a href="{{ admit_card_url }}" target="_blank"
+                 style="display:inline-flex;align-items:center;gap:6px;
+                        padding:9px 18px;border-radius:8px;font-size:13px;
+                        font-weight:700;text-decoration:none;color:white;
+                        background:var(--primary);white-space:nowrap;
+                        transition:opacity 0.15s;"
+                 onmouseover="this.style.opacity='0.85'"
+                 onmouseout="this.style.opacity='1'">
+                <span class="material-symbols-outlined" style="font-size:16px;">download</span>
+                Download Admit Card
+              </a>
+              {% endif %}
+            </div>
+
+            {% if entrance_test.test_date or entrance_test.test_time %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              {% if entrance_test.test_date %}
+              <div style="background:#f8fafc;border-radius:10px;padding:12px 16px;">
+                <p style="font-size:11px;color:#94a3b8;font-weight:600;
+                           text-transform:uppercase;letter-spacing:0.05em;margin:0 0 4px;">
+                  Exam Date
+                </p>
+                <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
+                  {{ entrance_test.test_date }}
+                </p>
+              </div>
+              {% endif %}
+              {% if entrance_test.test_time %}
+              <div style="background:#f8fafc;border-radius:10px;padding:12px 16px;">
+                <p style="font-size:11px;color:#94a3b8;font-weight:600;
+                           text-transform:uppercase;letter-spacing:0.05em;margin:0 0 4px;">
+                  Reporting Time
+                </p>
+                <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
+                  {{ entrance_test.test_time }}
+                </p>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {% if entrance_test.center_address %}
+            <div style="display:flex;align-items:flex-start;gap:10px;
+                        padding:12px 16px;background:#f8fafc;border-radius:10px;">
+              <span class="material-symbols-outlined"
+                    style="font-size:18px;color:#94a3b8;margin-top:1px;flex-shrink:0;">
+                location_on
+              </span>
+              <p style="font-size:13px;color:#475569;line-height:1.55;margin:0;">
+                {{ entrance_test.center_address }}
+              </p>
+            </div>
+            {% endif %}
+
+            {% if entrance_test.seat_number %}
+            <p style="font-size:13px;color:#475569;margin:0;display:flex;
+                      align-items:center;gap:8px;">
+              <span class="material-symbols-outlined"
+                    style="font-size:16px;color:#94a3b8;">chair</span>
+              Seat No: <strong style="color:#0f172a;">{{ entrance_test.seat_number }}</strong>
+            </p>
+            {% endif %}
+
+          </div>
+        </section>
+        {% endif %}
+        <!-- END ENTRANCE TEST CARD -->
+
+        <!-- ══ MERIT DETAILS CARD ════════════════════════════════ -->
+        {% if merit_rank or merit_percentile or merit_score_val %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.3s;">
+          <div style="display:flex;align-items:center;gap:10px;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:var(--primary);">military_tech</span>
+            <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin:0;">
+              Merit Details
+            </h3>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;padding:24px;gap:0;">
+            {% if merit_rank %}
+            <div style="padding:8px 16px;
+                        {% if merit_percentile or merit_score_val %}
+                        border-right:1px solid #f1f5f9;{% endif %}">
+              <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         margin:0 0 8px;">All India Rank</p>
+              <p style="font-size:40px;font-weight:800;color:var(--primary);
+                         line-height:1;margin:0;">#{{ merit_rank }}</p>
+            </div>
+            {% endif %}
+            {% if merit_percentile %}
+            <div style="padding:8px 16px;">
+              <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         margin:0 0 8px;">Percentile Score</p>
+              <p style="font-size:40px;font-weight:800;color:#0f172a;
+                         line-height:1;margin:0;">{{ merit_percentile }}</p>
+            </div>
+            {% elif merit_score_val %}
+            <div style="padding:8px 16px;">
+              <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         margin:0 0 8px;">Merit Score</p>
+              <p style="font-size:40px;font-weight:800;color:#0f172a;
+                         line-height:1;margin:0;">{{ merit_score_val }}</p>
+            </div>
+            {% endif %}
+          </div>
+          {% if merit_cat_rank %}
+          <div style="padding:0 24px 16px;">
+            <span style="font-size:12px;color:#64748b;">
+              Category Rank: <strong style="color:#0f172a;">#{{ merit_cat_rank }}</strong>
+            </span>
+          </div>
+          {% endif %}
+        </section>
+        {% endif %}
+        <!-- END MERIT CARD -->
+
+        <!-- ══ SEAT ALLOCATION CARD ══════════════════════════════ -->
+        {% if seat_allocation %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.35s;">
+          <div style="display:flex;align-items:center;gap:10px;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <span class="material-symbols-outlined"
+                  style="font-size:20px;color:var(--primary);">event_seat</span>
+            <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin:0;">
+              Seat Allocation Results
+            </h3>
+          </div>
+          <div style="padding:20px 24px;">
+            <div style="display:flex;align-items:flex-start;
+                        justify-content:space-between;gap:14px;
+                        padding:16px;border-radius:12px;
+                        border:1.5px solid #e2e8f0;background:#fafbfc;">
+              <div>
+                <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                           text-transform:uppercase;letter-spacing:0.06em;
+                           margin:0 0 6px;">Allocated Seat</p>
+                {% set _salloc_prog = (seat_allocation.get('program') if seat_allocation.get else seat_allocation.program) or _prog %}
+                {% set _salloc_campus = (seat_allocation.get('campus') if seat_allocation.get else seat_allocation.campus) or '' %}
+                {% set _salloc_type = (seat_allocation.get('allocation_type') if seat_allocation.get else seat_allocation.allocation_type) or '' %}
+                <p style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 4px;">
+                  {{ _salloc_prog }}
+                </p>
+                <p style="font-size:12px;color:#64748b;margin:0;">
+                  {% if _salloc_campus %}{{ _salloc_campus }}{% endif %}
+                  {% if _salloc_type %} · {{ _salloc_type }}{% endif %}
+                </p>
+              </div>
+              {% if seat_status %}
+              <span style="padding:5px 14px;border-radius:20px;font-size:11px;
+                           font-weight:800;white-space:nowrap;flex-shrink:0;
+                           {% if seat_status in ['Confirmed','Allocated'] %}
+                           background:#d1fae5;color:#065f46;
+                           {% elif seat_status == 'Waitlisted' %}
+                           background:#ede9fe;color:#5b21b6;
+                           {% else %}
+                           background:#dbeafe;color:#1d4ed8;{% endif %}">
+                {{ seat_status|upper }}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+        {% endif %}
+        <!-- END SEAT ALLOCATION CARD -->
+
+        <!-- ══ DOWNLOAD ACTIONS ROW ══════════════════════════════ -->
+        {% if offer_letter_url or app_name_param %}
+        <div class="fade-in-up"
+             style="display:flex;flex-wrap:wrap;gap:12px;
+                    animation-delay:0.4s;">
+          {% if app_name_param %}
+          <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
+             target="_blank"
+             style="display:inline-flex;align-items:center;gap:8px;
+                    padding:10px 20px;border-radius:10px;font-size:13px;
+                    font-weight:700;text-decoration:none;color:#475569;
+                    border:1.5px solid #e2e8f0;background:white;
+                    transition:all 0.15s;"
+             onmouseover="this.style.background='#f8fafc';this.style.color='var(--primary)'"
+             onmouseout="this.style.background='white';this.style.color='#475569'">
+            <span class="material-symbols-outlined" style="font-size:18px;">description</span>
+            Download Application
+          </a>
+          {% endif %}
+          {% if offer_letter_url %}
+          <a href="{{ offer_letter_url }}" target="_blank"
+             style="display:inline-flex;align-items:center;gap:8px;
+                    padding:10px 20px;border-radius:10px;font-size:13px;
+                    font-weight:700;text-decoration:none;color:white;
+                    background:#0f172a;transition:opacity 0.15s;"
+             onmouseover="this.style.opacity='0.85'"
+             onmouseout="this.style.opacity='1'">
+            <span class="material-symbols-outlined" style="font-size:18px;">drafts</span>
+            Download Offer Letter
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+        <!-- END DOWNLOAD ACTIONS -->
+
       </div>
       <!-- END LEFT COLUMN -->
 
@@ -555,6 +823,60 @@
         </section>
         {% endif %}
         <!-- END NEXT STEPS -->
+
+        <!-- ══ PAYMENT DETAILS CARD ══════════════════════════════ -->
+        {% if payment_details %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;padding:24px;
+                        border:1.5px solid #e2e8f0;animation-delay:0.2s;">
+          <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0 0 16px;">
+            Payment Details
+          </h3>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;color:#64748b;">{{ payment_details.fee_label }}</span>
+              <span style="font-size:15px;font-weight:700;color:#0f172a;">
+                {% if payment_details.amount %}₹{{ payment_details.amount|int }}{% endif %}
+              </span>
+            </div>
+            {% if payment_details.transaction_id %}
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;color:#64748b;">Transaction ID</span>
+              <span style="font-size:12px;font-weight:600;color:#0f172a;font-family:monospace;">
+                {{ payment_details.transaction_id }}
+              </span>
+            </div>
+            {% endif %}
+            {% if payment_details.payment_date %}
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;color:#64748b;">Date</span>
+              <span style="font-size:13px;font-weight:600;color:#0f172a;">
+                {{ payment_details.payment_date }}
+              </span>
+            </div>
+            {% endif %}
+          </div>
+          {% if payment_details.status %}
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f5f9;
+                      display:flex;align-items:center;gap:8px;">
+            <span class="material-symbols-outlined"
+                  style="font-size:18px;
+                         {% if payment_details.status in ['Success','Paid','Completed','Fee Paid'] %}
+                         color:#16a34a;{% else %}color:#d97706;{% endif %}">
+              {% if payment_details.status in ['Success','Paid','Completed','Fee Paid'] %}
+              check_circle{% else %}pending{% endif %}
+            </span>
+            <span style="font-size:12px;font-weight:700;text-transform:uppercase;
+                         letter-spacing:0.06em;
+                         {% if payment_details.status in ['Success','Paid','Completed','Fee Paid'] %}
+                         color:#16a34a;{% else %}color:#d97706;{% endif %}">
+              {{ payment_details.status }}
+            </span>
+          </div>
+          {% endif %}
+        </section>
+        {% endif %}
+        <!-- END PAYMENT DETAILS -->
 
         <!-- SUPPORT & CONTACT -->
         {% if _sname or _semail %}

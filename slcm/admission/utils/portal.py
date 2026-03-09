@@ -389,7 +389,7 @@ def api_get_portal_stats():
     try:
         active_cycle = frappe.db.get_value(
             "Admission Cycle", {"status": "Active"},
-            ["name", "application_end"], as_dict=True
+            ["name"], as_dict=True
         )
         if not active_cycle: return {}
 
@@ -404,16 +404,9 @@ def api_get_portal_stats():
             else:
                 total_seats += p.seats or 0
 
-        days_left = 0
-        if active_cycle.application_end:
-            delta = get_datetime(active_cycle.application_end) - get_datetime(now())
-            days_left = max(0, delta.days)
-
         return {
             "total_programs": total_programs,
             "total_seats": total_seats,
-            "days_remaining": days_left,
-            "apply_by": active_cycle.application_end
         }
     except Exception:
         return {}
@@ -483,15 +476,5 @@ def api_get_program_media(program_media):
 
 def lock_expired_drafts():
     """Scheduler task to lock drafts after cycle deadline."""
-    expired_cycles = frappe.get_all(
-        "Admission Cycle",
-        filters={"application_end": ["<", now()], "status": "Active"},
-        fields=["name"]
-    )
-    for c in expired_cycles:
-        frappe.db.sql("""
-            UPDATE `tabApplicant` 
-            SET application_status = 'Locked' 
-            WHERE admission_cycle = %s AND application_status = 'Draft'
-        """, c.name)
-    frappe.db.commit()
+    # This logic needs to be updated to use Stages or Deadlines instead of cycle.application_end
+    pass

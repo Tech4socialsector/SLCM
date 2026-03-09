@@ -325,3 +325,104 @@ def get_edit_permission(applicant_name):
         "reason":            "stage_allows",
         "editable_sections": [],   # empty = all sections editable
     }
+
+@frappe.whitelist()
+def download_admit_card(admit_card):
+    """
+    Custom download function for Admit Card that bypasses standard print permissions
+    after verifying that the current user owns the application.
+    """
+    user = frappe.session.user
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
+    
+    try:
+        doc = frappe.get_doc("Entrance Test Seat Allocation", admit_card, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw("Admit Card not found")
+
+    if not applicant_name or doc.applicant != applicant_name:
+        if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
+            frappe.throw("Not authorized", frappe.PermissionError)
+
+    is_rescheduled = (doc.is_rescheduled == 1 or doc.entrance_test_status == "Rescheduled")
+    status = doc.re_allocation_status if is_rescheduled else doc.allocation_status
+    
+    if status not in ["Allocated", "Reallocated"]:
+        frappe.throw("Admit Card is only available after seat allocation is confirmed.")
+
+    field_to_check = "reschedule_admit_card" if is_rescheduled else "admit_card"
+    stored_file_url = getattr(doc, field_to_check)
+
+    if not stored_file_url:
+        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+        stored_file_url = generate_and_store_admit_card(doc.name, is_rescheduled=is_rescheduled)
+        if stored_file_url:
+            doc.reload()
+
+    if stored_file_url:
+        file_doc = frappe.get_doc("File", {"file_url": stored_file_url})
+        frappe.local.response.filename = f"Admit_Card_{doc.applicant}.pdf"
+        frappe.local.response.filecontent = file_doc.get_content()
+        frappe.local.response.type = "download"
+    else:
+        frappe.throw("Admit Card generation failed. Please contact the admission office.")
+
+@frappe.whitelist()
+def download_application(applicant_name):
+    """
+    Generates and downloads the Applicant PDF for the owner.
+    """
+    user = frappe.session.user
+    try:
+        applicant = frappe.get_doc("Applicant", applicant_name, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw("Application not found")
+
+    if applicant.owner != user and applicant.email != user:
+        if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
+            frappe.throw("Not permitted", frappe.PermissionError)
+    
+    frappe.flags.ignore_print_permissions = True
+    pdf_content = frappe.get_print("Applicant", applicant_name, "Applicant Form", as_pdf=True, doc=applicant)
+    
+    frappe.local.response.filename = f"Application_{applicant_name}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
+
+@frappe.whitelist()
+def download_offer_letter(offer_letter):
+    """
+    Generates and downloads the Offer Letter PDF for the owner.
+    """
+    user = frappe.session.user
+    try:
+        ol = frappe.get_doc("Offer Letter", offer_letter, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw("Offer Letter not found")
+
+    applicant_name = ol.applicant
+    applicant = frappe.get_doc("Applicant", applicant_name, ignore_permissions=True)
+    
+    if applicant.owner != user and applicant.email != user:
+        if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
+            frappe.throw("Not permitted", frappe.PermissionError)
+    
+    # Check if PDF already stored
+    if ol.pdf_file:
+        try:
+            file_doc = frappe.get_doc("File", {"file_url": ol.pdf_file})
+            frappe.local.response.filename = f"Offer_Letter_{applicant_name}.pdf"
+            frappe.local.response.filecontent = file_doc.get_content()
+            frappe.local.response.type = "download"
+            return
+        except Exception:
+            pass
+
+    # Generate PDF
+    frappe.flags.ignore_print_permissions = True
+    pdf_content = frappe.get_print("Offer Letter", offer_letter, as_pdf=True, doc=ol)
+    
+    frappe.local.response.filename = f"Offer_Letter_{applicant_name}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
+

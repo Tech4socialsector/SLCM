@@ -253,16 +253,48 @@
         Brochure
       </a>
       {% endif %}
-      <a href="/application-form/new?program={{ _slug }}"
-         style="display:inline-flex;align-items:center;gap:8px;
-                padding:10px 24px;border-radius:10px;font-size:13px;
-                font-weight:700;color:white;text-decoration:none;
-                background:var(--primary);
-                box-shadow:0 4px 12px -2px rgba(26,60,110,0.3);"
-         onmouseover="this.style.opacity='0.88'"
-         onmouseout="this.style.opacity='1'">
-        Apply Now
-      </a>
+
+      {% if frappe.session.user and frappe.session.user != "Guest" and user_app_name %}
+        <a href="/my-applications?app={{ user_app_name }}"
+           style="display:inline-flex;align-items:center;gap:8px;
+                  padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
+                  text-decoration:none;color:#fff;
+                  background:var(--primary,#CB2929);transition:opacity .2s;"
+           onmouseover="this.style.opacity='.85'"
+           onmouseout="this.style.opacity='1'">
+          <span class="material-symbols-outlined" style="font-size:18px;">assignment</span>
+          View Application
+          {% if user_app_status %}
+          <span style="font-size:10px;font-weight:700;letter-spacing:.04em;
+                       background:rgba(255,255,255,.2);padding:2px 8px;
+                       border-radius:20px;margin-left:2px;">
+            {{ user_app_status }}
+          </span>
+          {% endif %}
+        </a>
+      {% elif frappe.session.user and frappe.session.user != "Guest" %}
+        <a href="/application-form/new?program={{ _slug }}"
+           style="display:inline-flex;align-items:center;gap:8px;
+                  padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
+                  text-decoration:none;color:#fff;
+                  background:var(--primary,#CB2929);transition:opacity .2s;"
+           onmouseover="this.style.opacity='.85'"
+           onmouseout="this.style.opacity='1'">
+          <span class="material-symbols-outlined" style="font-size:18px;">edit_square</span>
+          Apply Now
+        </a>
+      {% else %}
+        <a href="/login?redirect=/admission/{{ _slug }}"
+           style="display:inline-flex;align-items:center;gap:8px;
+                  padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
+                  text-decoration:none;color:#fff;
+                  background:var(--primary,#CB2929);transition:opacity .2s;"
+           onmouseover="this.style.opacity='.85'"
+           onmouseout="this.style.opacity='1'">
+          <span class="material-symbols-outlined" style="font-size:18px;">login</span>
+          Apply Now
+        </a>
+      {% endif %}
     </div>
   </div>
 
@@ -804,15 +836,38 @@
           {% endif %}
 
           <div style="padding-top:12px;border-top:1px solid #f1f5f9;">
-            <a href="/application-form/new?program={{ _slug }}"
-               style="display:block;width:100%;padding:13px;text-align:center;
-                      border-radius:10px;background:var(--primary);color:white;
-                      font-weight:700;font-size:14px;text-decoration:none;
-                      box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);"
-               onmouseover="this.style.opacity='0.88'"
-               onmouseout="this.style.opacity='1'">
-              Apply Now
-            </a>
+            {% if frappe.session.user and frappe.session.user != "Guest" and user_app_name %}
+              <a href="/my-applications?app={{ user_app_name }}"
+                 style="display:block;width:100%;padding:13px;text-align:center;
+                        border-radius:10px;background:var(--primary);color:white;
+                        font-weight:700;font-size:14px;text-decoration:none;
+                        box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);"
+                 onmouseover="this.style.opacity='0.88'"
+                 onmouseout="this.style.opacity='1'">
+                View Application
+              </a>
+            {% elif frappe.session.user and frappe.session.user != "Guest" %}
+              <a href="/application-form/new?program={{ _slug }}"
+                 style="display:block;width:100%;padding:13px;text-align:center;
+                        border-radius:10px;background:var(--primary);color:white;
+                        font-weight:700;font-size:14px;text-decoration:none;
+                        box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);"
+                 onmouseover="this.style.opacity='0.88'"
+                 onmouseout="this.style.opacity='1'">
+                Apply Now
+              </a>
+            {% else %}
+              <a href="/login?redirect=/admission/{{ _slug }}"
+                 style="display:block;width:100%;padding:13px;text-align:center;
+                        border-radius:10px;background:var(--primary);color:white;
+                        font-weight:700;font-size:14px;text-decoration:none;
+                        box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);"
+                 onmouseover="this.style.opacity='0.88'"
+                 onmouseout="this.style.opacity='1'">
+                Apply Now
+              </a>
+            {% endif %}
+
             {% if _deadline %}
             <p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">
               Application deadline: {{ _deadline }}

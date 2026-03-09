@@ -931,22 +931,43 @@
 
         <!-- Buttons -->
         <div class="mt-6 flex gap-3">
-          {% if already_applied %}
-          <a href="/my-applications"
-             class="flex-1 rounded-lg py-2.5 text-center text-sm font-bold text-white"
-             style="background:var(--secondary)" onclick="event.stopPropagation()">
-            View My Application
-          </a>
-          {% elif _can %}
-          <a href="/application-form/new-applicant-1?program={{ _pid }}"
-             class="flex-1 rounded-lg py-2.5 text-center text-sm font-bold text-white hover:opacity-90"
-             style="background:var(--primary)" onclick="event.stopPropagation()">
-            Apply Now
-          </a>
+          {% set _ua = user_app_map.get(_pid) or user_app_map.get(_name) or {} %}
+          {% if frappe.session.user != "Guest" and _ua.get('app_name') %}
+            <a href="/my-applications?app={{ _ua.app_name }}"
+               style="display:inline-flex;align-items:center;gap:6px;
+                      padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
+                      text-decoration:none;color:#fff;
+                      background:var(--primary,#CB2929);transition:opacity .2s;"
+               onmouseover="this.style.opacity='.85'"
+               onmouseout="this.style.opacity='1'"
+               onclick="event.stopPropagation()">
+              <span class="material-symbols-outlined" style="font-size:16px;">assignment</span>
+              View Application
+            </a>
+          {% elif frappe.session.user != "Guest" %}
+            <a href="/application-form/new?program={{ _slug or _pid }}"
+               style="display:inline-flex;align-items:center;gap:6px;
+                      padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
+                      text-decoration:none;color:#fff;
+                      background:var(--primary,#CB2929);transition:opacity .2s;"
+               onmouseover="this.style.opacity='.85'"
+               onmouseout="this.style.opacity='1'"
+               onclick="event.stopPropagation()">
+              <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span>
+              Apply Now
+            </a>
           {% else %}
-          <span class="flex-1 cursor-not-allowed rounded-lg bg-slate-100 py-2.5 text-center text-sm font-semibold text-slate-400">
-            {{ _cur or "Closed" }}
-          </span>
+            <a href="/login?redirect=/admission"
+               style="display:inline-flex;align-items:center;gap:6px;
+                      padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
+                      text-decoration:none;color:#fff;
+                      background:var(--primary,#CB2929);transition:opacity .2s;"
+               onmouseover="this.style.opacity='.85'"
+               onmouseout="this.style.opacity='1'"
+               onclick="event.stopPropagation()">
+              <span class="material-symbols-outlined" style="font-size:16px;">login</span>
+              Apply Now
+            </a>
           {% endif %}
           <a href="/admission/{{ _slug }}"
              class="flex-1 rounded-lg py-2.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-200 transition-colors"

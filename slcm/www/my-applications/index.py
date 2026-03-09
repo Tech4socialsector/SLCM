@@ -12,6 +12,20 @@ def get_context(context):
     # ── Detail mode: if ?app= param provided, load that specific application ──
     _app_name = frappe.form_dict.get("app") or ""
 
+    # ── Auto-open application from ?program= param (from admission cards) ──
+    program_filter = frappe.form_dict.get("program") or ""
+    context.program_filter = program_filter
+
+    if not _app_name and program_filter:
+        _found = frappe.db.sql("""
+            SELECT a.name FROM `tabApplicant` a
+            JOIN `tabProgram` p ON a.program = p.name
+            WHERE a.owner = %s AND (p.program_slug = %s OR p.name = %s)
+            LIMIT 1
+        """, (frappe.session.user, program_filter, program_filter))
+        if _found:
+            _app_name = _found[0][0]
+
     # ── Portal config (required for theme vars) ──────────────────
     try:
         from slcm.admission.utils.portal import get_portal_config
@@ -210,6 +224,191 @@ def get_context(context):
             context.submission_date = ""
 
         context.app_name_param = _app_name
+
+        # ── fee_payment_status ────────────────────────────────────
+        context.fee_payment_status = (
+            applicant.get("application_fee_status") or ""
+        )
+
+        # ── interview_status (from Interview Seat Allocation) ─────
+        context.interview_status = ""
+        try:
+            irows = frappe.get_all(
+                "Interview Seat Allocation",
+                filters={"applicant": _app_name},
+                fields=["interview_date", "interview_time",
+                        "interview_slot_status"],
+                order_by="creation desc", limit=1,
+                ignore_permissions=True
+            )
+            if irows:
+                ir      = irows[0]
+                slot_st = ir.get("interview_slot_status") or ""
+                idate   = str(ir.get("interview_date") or "")[:10]
+                itime   = str(ir.get("interview_time") or "")[:5]
+                if idate:
+                    fmt = frappe.utils.format_date(idate, "MMM d, yyyy")
+                    context.interview_status = (
+                        f"{slot_st} · {fmt}" if slot_st else fmt
+                    )
+                    if itime:
+                        context.interview_status += f", {itime}"
+                elif slot_st:
+                    context.interview_status = slot_st
+            elif "interview" in str(
+                applicant.get("application_status") or ""
+            ).lower():
+                context.interview_status = "To be Scheduled"
+        except Exception:
+            pass
+
+        # ── merit (from Applicant Merit DocType) ──────────────────
+        context.merit_rank       = ""
+        context.merit_percentile = ""
+        context.merit_score_val  = ""
+        context.merit_cat_rank   = ""
+        try:
+            mrows = frappe.get_all(
+                "Applicant Merit",
+                filters={"applicant": _app_name},
+                fields=["overall_rank", "merit_score",
+                        "percentile", "category_rank"],
+                order_by="creation desc", limit=1,
+                ignore_permissions=True
+            )
+            if mrows:
+                m = mrows[0]
+                context.merit_rank       = str(m.get("overall_rank") or "").strip()
+                context.merit_percentile = str(m.get("percentile") or "").strip()
+                context.merit_score_val  = str(m.get("merit_score") or "").strip()
+                context.merit_cat_rank   = str(m.get("category_rank") or "").strip()
+            else:
+                ms = applicant.get("merit_score") or ""
+                if ms:
+                    context.merit_score_val = str(ms)
+        except Exception:
+            ms = applicant.get("merit_score") or ""
+            if ms:
+                context.merit_score_val = str(ms)
+
+        # ── seat allocation (from Seat Allocation DocType) ────────
+        context.seat_allocation = None
+        context.seat_status     = ""
+        try:
+            srows = frappe.get_all(
+                "Seat Allocation",
+                filters={"applicant": _app_name},
+                fields=["program", "campus", "category",
+                        "status", "allocation_type"],
+                order_by="creation desc", limit=1,
+                ignore_permissions=True
+            )
+            if srows:
+                context.seat_allocation = srows[0]
+                context.seat_status = (srows[0].get("status") or "").strip()
+        except Exception:
+            pass
+
+        # ── payment details (from Fee Payment DocType) ────────────
+        context.payment_details = None
+        try:
+            prows = frappe.get_all(
+                "Fee Payment",
+                filters={"applicant": _app_name},
+                fields=["fee_type", "amount", "transaction_id",
+                        "payment_date", "status"],
+                order_by="creation desc", limit=1,
+                ignore_permissions=True
+            )
+            if prows:
+                p = prows[0]
+                context.payment_details = {
+                    "fee_label":      p.get("fee_type") or "Application Fee",
+                    "amount":         p.get("amount") or "",
+                    "transaction_id": p.get("transaction_id") or "",
+                    "payment_date":   frappe.utils.format_date(
+                        str(p.get("payment_date") or "")[:10],
+                        "MMM d, yyyy"
+                    ) if p.get("payment_date") else "",
+                    "status": p.get("status") or context.fee_payment_status or "",
+                }
+            elif context.fee_payment_status:
+                context.payment_details = {
+                    "fee_label": "Application Fee",
+                    "amount": "", "transaction_id": "",
+                    "payment_date": "",
+                    "status": context.fee_payment_status,
+                }
+        except Exception:
+            pass
+
+        # ── entrance test (Entrance Test Seat Allocation) ─────────
+        context.entrance_test  = None
+        context.admit_card_url = ""
+        try:
+            etrows = frappe.get_all(
+                "Entrance Test Seat Allocation",
+                filters={"applicant": _app_name},
+                fields=["entrance_test_name", "center_name",
+                        "center_address", "seat_number",
+                        "allocation_status", "admit_card", "name"],
+                order_by="creation desc", limit=1,
+                ignore_permissions=True
+            )
+            if etrows:
+                et        = etrows[0]
+                test_name = et.get("entrance_test_name") or ""
+                test_date = ""
+                test_time = ""
+                if test_name:
+                    try:
+                        td = frappe.get_doc(
+                            "Entrance Test List", test_name,
+                            ignore_permissions=True
+                        )
+                        test_date = frappe.utils.format_date(
+                            str(td.get("test_date") or "")[:10],
+                            "MMMM d, yyyy"
+                        ) if td.get("test_date") else ""
+                        test_time = str(td.get("test_time") or "")
+                    except Exception:
+                        pass
+                context.entrance_test = {
+                    "test_name":      test_name,
+                    "test_date":      test_date,
+                    "test_time":      test_time,
+                    "center_name":    et.get("center_name") or "",
+                    "center_address": et.get("center_address") or "",
+                    "seat_number":    et.get("seat_number") or "",
+                    "admit_status":   et.get("allocation_status") or "",
+                    "admit_name":     et.get("name") or "",
+                }
+                context.admit_card_url = (
+                    f"/api/method/slcm.admission.utils.web.download_admit_card"
+                    f"?admit_card={et.get('name')}"
+                )
+        except Exception as ex:
+            frappe.log_error(title="my_app_et", message=str(ex))
+
+        # ── offer letter URL (from Offer Letter DocType) ──────────
+        context.offer_letter_url = ""
+        try:
+            orows = frappe.get_all(
+                "Offer Letter",
+                filters={"applicant": _app_name},
+                fields=["name", "pdf_file"],
+                order_by="creation desc", limit=1,
+                ignore_permissions=True
+            )
+            if orows:
+                context.offer_letter_url = (
+                    orows[0].get("pdf_file") or
+                    f"/api/method/slcm.admission.utils.web.download_offer_letter"
+                    f"?offer_letter={orows[0].get('name')}"
+                )
+        except Exception:
+            pass
+
         context.show_detail    = True
         context.title = f"Application Details: {_app_name}"
         return  # ← exit early; template will render detail view

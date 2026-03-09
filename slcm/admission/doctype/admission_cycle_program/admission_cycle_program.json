@@ -143,12 +143,14 @@
    "description": "Featured image shown on the program card. Used if no Program Media is linked.",
    "fieldname": "program_image",
    "fieldtype": "Attach Image",
+   "hidden": 1,
    "label": "Program Image"
   },
   {
    "description": "Link to a Program Media record for multiple carousel images on the card.",
    "fieldname": "program_media",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Program Gallery",
    "options": "Program Media",
    "read_only": 1
@@ -163,6 +165,7 @@
    "depends_on": "eval: !doc.program_media",
    "fieldname": "add_program_media",
    "fieldtype": "Button",
+   "hidden": 1,
    "label": "Add/Update Program Media"
   },
   {
@@ -184,8 +187,8 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-08 12:54:54.224350",
- "modified_by": "joyjoy4261@gmail.com",
+ "modified": "2026-03-09 15:10:55.633483",
+ "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle Program",
  "owner": "Administrator",

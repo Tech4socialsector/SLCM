@@ -179,6 +179,43 @@ def _load_program_detail(context, slug):
     except Exception:
         context.active_cycle = None
 
+    # ── user's existing application for this specific program ──
+    context.user_app_name   = ""
+    context.user_app_status = ""
+    if frappe.session.user and frappe.session.user != "Guest":
+        try:
+            _recs = frappe.get_all(
+                "Applicant",
+                filters={
+                    "email":   frappe.session.user,
+                    "program": prog.name
+                },
+                fields=["name", "application_status"],
+                order_by="creation desc",
+                limit=1
+            )
+            if not _recs:
+                # fallback: scan all user apps for program name match
+                _all = frappe.get_all(
+                    "Applicant",
+                    filters={"email": frappe.session.user},
+                    fields=["name", "program", "application_status"],
+                    order_by="creation desc",
+                    limit=30
+                )
+                for _a in _all:
+                    _p = (_a.get("program") or "").strip().lower()
+                    _t = (prog.name or "").strip().lower()
+                    _s = (context.get("prog_slug") or "").strip().lower()
+                    if _p == _t or _p == _s:
+                        _recs = [_a]
+                        break
+            if _recs:
+                context.user_app_name   = _recs[0].get("name") or ""
+                context.user_app_status = _recs[0].get("application_status") or ""
+        except Exception as _ex:
+            frappe.log_error(title="prog_detail_app_lookup", message=str(_ex))
+
     # Support email
     try:
         pc = context.portal_config
@@ -270,26 +307,12 @@ def get_context(context):
     active_cycle = frappe.db.get_value(
         "Admission Cycle",
         {"status": "Active"},
-        ["name", "application_start", "application_end"],
+        ["name"],
         as_dict=True
     )
 
     # ── 4. Is application window open? ───────────────────────────────
-    app_open = False
-    if active_cycle:
-        try:
-            from frappe.utils import now_datetime, get_datetime
-            now_dt    = now_datetime()
-            app_start = get_datetime(active_cycle.application_start) if active_cycle.application_start else None
-            app_end   = get_datetime(active_cycle.application_end)   if active_cycle.application_end   else None
-            if app_start and app_end:
-                app_open = (app_start <= now_dt <= app_end)
-            elif not app_start and not app_end:
-                # Dates not set — treat as open so admin can test
-                app_open = True
-        except Exception as e:
-            frappe.log_error(title="Portal Index", message=f"app_open calculation failed: {e}")
-            app_open = True   # fail open so cards still show Apply Now
+    app_open = True if active_cycle else False
 
     # ── 5. Programs & Announcements ──────────────────────────────────
     try:
@@ -309,38 +332,28 @@ def get_context(context):
         # Stage-driven portal control
         active_cycle_name = active_cycle.name if active_cycle else ""
         
-        # Check if logged-in user already has an application this cycle
-        context.already_applied = False
-        context.existing_application = ""
-        if frappe.session.user != "Guest" and active_cycle_name:
-            existing = frappe.get_all(
-                "Applicant",
-                filters={
-                    "owner": frappe.session.user,
-                    "admission_cycle": active_cycle_name
-                },
-                fields=["name"],
-                limit=1
-            )
-            if existing:
-                context.already_applied = True
-                context.existing_application = existing[0].name
-
-        for prog in programs:
-            # Get intake from Program (single source of truth)
-            prog_intake = frappe.db.get_value(
-                "Program", prog.get("program") or prog.get("name"), "intake_type"
-            ) or "All"
-            
-            if active_cycle_name:
-                prog["can_apply"]          = can_apply(active_cycle_name, prog_intake)
-                current_st                 = get_current_stage(active_cycle_name, prog_intake)
-                prog["current_stage_name"] = current_st.stage_name if current_st else ""
-            else:
-                prog["can_apply"]          = False
-                prog["current_stage_name"] = "Applications Closed"
-
         context.programs = programs
+
+        # ── user_app_map: program_name → {app_name, status} ──
+        context.user_app_map = {}
+        if frappe.session.user and frappe.session.user != "Guest":
+            try:
+                _uapps = frappe.get_all(
+                    "Applicant",
+                    filters={"email": frappe.session.user},
+                    fields=["name", "program", "application_status"],
+                    order_by="creation desc",
+                    limit=50
+                )
+                for _ua in _uapps:
+                    _key = (_ua.get("program") or "").strip()
+                    if _key and _key not in context.user_app_map:
+                        context.user_app_map[_key] = {
+                            "app_name": _ua.get("name") or "",
+                            "status":   _ua.get("application_status") or ""
+                        }
+            except Exception:
+                context.user_app_map = {}
 
     except Exception as e:
         frappe.log_error(title="Portal Index", message=f"fetch failed: {e}")
@@ -358,24 +371,12 @@ def get_context(context):
     # Fallback: compute basic stats from what we already have
     if not context.stats or not context.stats.get('total_programs'):
         try:
-            from frappe.utils import date_diff, today as get_today, getdate
-            _today = get_today()
-            _app_end = active_cycle.application_end if active_cycle else None
-            _days = None
-            if _app_end:
-                try:
-                    _days = date_diff(_app_end, _today)
-                    if _days < 0: _days = 0
-                except Exception:
-                    _days = None
             context.stats = {
                 'total_programs': len(context.programs or []),
                 'total_seats': sum(
                     int(p.get('seats') or p.get('total_seats') or 0)
                     for p in (context.programs or [])
                 ) or None,
-                'days_remaining': _days,
-                'apply_by': _app_end,
             }
         except Exception:
             context.stats = {'total_programs': len(context.programs or [])}
