@@ -55,6 +55,11 @@ def login_fle_user(usr, pwd):
     mobile = user_doc.mobile_no or ""
     
     import urllib.parse
-    query_params = urllib.parse.urlencode({"email": email, "mobile": mobile})
+    import base64
+    
+    query_params = urllib.parse.urlencode({
+        "email_address": email,
+        "candidate_contact_number": mobile
+    })
     
     frappe.local.response["home_page"] = f"/foundations-for-a-legal-education/new?{query_params}"
