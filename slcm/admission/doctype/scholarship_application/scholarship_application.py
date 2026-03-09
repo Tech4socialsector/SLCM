@@ -19,7 +19,7 @@ class ScholarshipApplication(Document):
 		
 	def validate(self):
 		if not self.status:
-			self.status = "Draft"
+			self.status = "Submitted"
 			
 		if self.approval_date and get_datetime(self.approval_date) > get_datetime(now_datetime()):
 			frappe.throw(frappe._("Approval Date cannot be in the future."))
@@ -261,8 +261,75 @@ class ScholarshipApplication(Document):
 			if approved_count >= limit:
 				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
 
+	def create_audit_log(self):
+		"""
+		Records status changes and application creation in the Scholarship Audit Log.
+		"""
+		old_doc = self.get_doc_before_save()
+		
+		is_new = not old_doc
+		if not is_new and old_doc.status == self.status:
+			# Only log if status has changed
+			return
+
+		# Mapping status to action_type allowed in Scholarship Audit Log
+		action_map = {
+			"Submitted": "Apply",
+			"Approved": "Approve",
+			"Rejected": "Reject",
+			"Revoked": "Revoke",
+			"Cancelled": "Revoke"
+		}
+		
+		# If new, use Apply action
+		if is_new:
+			action_type = "Apply"
+			previous_state = {}
+		else:
+			action_type = action_map.get(self.status, "Modify")
+			previous_state = old_doc.as_dict()
+
+		# Determine triggered_by based on user role/session
+		triggered_by = "Admin"
+		if frappe.session.user == self.owner:
+			triggered_by = "Applicant"
+		elif frappe.session.user == "Administrator":
+			triggered_by = "System"
+
+		# Create hash for tamper detection
+		record_string = json.dumps({
+			"application": self.name,
+			"old_status": old_doc.status if old_doc else None,
+			"new_status": self.status,
+			"user": frappe.session.user,
+			"time": str(now_datetime())
+		}, sort_keys=True)
+		record_hash = hashlib.sha256(record_string.encode()).hexdigest()
+
+		try:
+			frappe.get_doc({
+				"doctype": "Scholarship Audit Log",
+				"scholarship_application": self.name,
+				"scholarship_scheme": self.scholarship_scheme,
+				"admission_cycle": self.admission_cycle,
+				"campus": self.campus,
+				"program": self.program,
+				"action_type": action_type,
+				"previous_state": json.dumps(previous_state, indent=4, default=str),
+				"new_state": json.dumps(self.as_dict(), indent=4, default=str),
+				"performed_by": frappe.session.user,
+				"triggered_by": triggered_by,
+				"action_timestamp": now_datetime(),
+				"reason": self.rejection_reason or f"Status changed to {self.status}",
+				"ip_address": frappe.local.request_ip if hasattr(frappe.local, "request_ip") else None,
+				"record_hash": record_hash
+			}).insert(ignore_permissions=True)
+		except Exception as e:
+			# Log to Error Log but don't stop the main Scholarship save
+			frappe.log_error(title="Scholarship Audit Log Error", message=frappe.get_traceback())
+
 	def on_update(self):
-		"""Called when a Draft (docstatus=0) doc is saved."""
+		"""Called when a doc is saved."""
 		self.create_audit_log()
 
 		old_doc = self.get_doc_before_save()
@@ -299,9 +366,8 @@ class ScholarshipApplication(Document):
 
 	def on_update_after_submit(self):
 		"""
-		Called when a SUBMITTED doc (docstatus=1) is updated via workflow
-		or direct save (e.g. status field changed by admin on submitted doc).
-		This is the key hook for workflow-driven status changes.
+		Called when a SUBMITTED doc (docstatus=1) is updated 
+		via direct save (e.g. status field changed by admin on submitted doc).
 		"""
 		self.create_audit_log()
 
@@ -381,35 +447,43 @@ class ScholarshipApplication(Document):
 		frappe.db.commit()
 		frappe.msgprint(msg, indicator=indicator)
 
-	def create_audit_log(self):
-		"""
-		Records status changes and application creation in the Scholarship Audit Log.
-		"""
-		old_doc = self.get_doc_before_save()
-		
-		is_new = not old_doc
-		if not is_new and old_doc.status == self.status:
-			# Only log if status has changed
-			return
+	def apply_financial_effects(self):
+		from slcm.admission.utils.scholarship_availability import update_scheme_usage
+		mapping_name = self.find_mapping()
+		update_scheme_usage(self.scholarship_scheme, self.calculated_benefit, mapping_name=mapping_name)
 
-		# Mapping status to action_type allowed in Scholarship Audit Log
-		action_map = {
-			"Submitted": "Apply",
-			"Under Review": "Review",
-			"Approved": "Approve",
-			"Rejected": "Reject",
-			"Revoked": "Revoke",
-			"Cancelled": "Revoke",
-			"Draft": "Modify"
-		}
+	def reverse_financial_effects(self):
+		from slcm.admission.utils.scholarship_availability import update_scheme_usage
+		mapping_name = self.find_mapping()
+		old_doc = self.get_doc_before_save()
+		benefit = old_doc.calculated_benefit if old_doc else self.calculated_benefit
+		update_scheme_usage(self.scholarship_scheme, benefit, mapping_name=mapping_name, reverse=True)
+
+	def find_mapping(self):
+		"""
+		Finds the applicable Scholarship Scheme Mapping for this application.
+		"""
+		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
+		applicant_categories = get_applicant_categories(self.applicant_id)
 		
-		# If new and already submitted (e.g. from web form), use Apply
-		if is_new:
-			action_type = "Apply" if self.status != "Draft" else "Modify"
-			previous_state = {}
-		else:
-			action_type = action_map.get(self.status, "Modify")
-			previous_state = old_doc.as_dict()
+		mappings = frappe.get_all(
+			"Scholarship Scheme Mapping",
+			filters={
+				"scholarship_scheme": self.scholarship_scheme,
+				"admission_cycle": self.admission_cycle,
+				"campus": self.campus,
+				"is_active": 1
+			},
+			fields=["name", "program", "category"],
+			order_by="program desc, category desc" 
+		)
+		
+		for m in mappings:
+			program_match = not m.program or m.program == self.program
+			category_match = not m.category or m.category in applicant_categories
+			if program_match and category_match:
+				return m.name
+		return None
 
 		# Determine triggered_by based on user role/session
 		triggered_by = "Admin"
@@ -575,9 +649,7 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 		# Insert with ignore permissions to allow creation from portal
 		app.insert(ignore_permissions=True)
 		
-		# Force the workflow state to 'Submitted' directly.
-		# This bypasses the 'Draft' phase for portal submissions as requested.
-		app.db_set("workflow_state", "Submitted")
+		# Set status to Submitted for portal submissions
 		app.db_set("status", "Submitted")
 		
 		# Update file references
