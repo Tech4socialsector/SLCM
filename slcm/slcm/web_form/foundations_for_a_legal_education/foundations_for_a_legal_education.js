@@ -1,112 +1,109 @@
-frappe.ready(function () {
+// --------------------------------------------------
+// Sets the declaration consent as mandatory based on the candidate's age (under 18).
+// --------------------------------------------------
+function toggle_declaration_section() {
+    try {
+        const dob_val = frappe.web_form.get_value('candidate_dob');
+        let is_mandatory = false;
+        let age = null;
 
-    // List of mandatory fields to validate
-    const mandatoryFields = [
-        'email_address',
-        'candidate_name',
-        'where_did_you_hear',
-        'last_class_attended',
-        'latest_board_attended',
-        'year_of_passing'
-    ];
+        if (dob_val) {
+            const dob = new Date(dob_val);
+            const today = new Date();
+            age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
 
-    // Function to check if all mandatory fields are filled
-    function checkMandatoryFields() {
-        let allFilled = true;
-
-        mandatoryFields.forEach(function (fieldName) {
-            const fieldValue = frappe.web_form.get_field(fieldName)
-                ? frappe.web_form.get_field(fieldName).get_value()
-                : null;
-
-            if (!fieldValue || fieldValue.toString().trim() === '') {
-                allFilled = false;
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
             }
-        });
 
-        return allFilled;
-    }
-
-    // Function to update button state
-    function updatePayButton() {
-        const $payBtn = $('button[data-action="pay"], .btn-proceed-to-pay, button:contains("Proceed to Pay")').filter(':visible').first();
-
-        if ($payBtn.length === 0) return;
-
-        if (checkMandatoryFields()) {
-            // Enable the button
-            $payBtn.prop('disabled', false);
-            $payBtn.removeClass('disabled btn-disabled');
-            $payBtn.css({
-                'pointer-events': 'auto',
-                'opacity': '1',
-                'cursor': 'pointer'
-            });
-        } else {
-            // Disable the button
-            $payBtn.prop('disabled', true);
-            $payBtn.addClass('disabled');
-            $payBtn.css({
-                'pointer-events': 'none',
-                'opacity': '0.5',
-                'cursor': 'not-allowed'
-            });
+            if (age < 18) {
+                is_mandatory = true;
+            }
         }
+
+        if (typeof frappe.web_form.set_df_property === 'function') {
+            frappe.web_form.set_df_property('declaration_consent', 'reqd', is_mandatory ? 1 : 0);
+        } else if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['declaration_consent']) {
+            frappe.web_form.fields_dict['declaration_consent'].df.reqd = is_mandatory ? 1 : 0;
+            frappe.web_form.fields_dict['declaration_consent'].refresh();
+        }
+
+    } catch (e) {
+        // Error handling silently in production or log to system console if available
     }
+}
 
-    // Wait for the web form to fully render
-    setTimeout(function () {
-
-        // Initial disable on page load
-        updatePayButton();
-
-        // Attach change/input listeners to each mandatory field
-        mandatoryFields.forEach(function (fieldName) {
-            const field = frappe.web_form.get_field(fieldName);
-            if (!field) return;
-
-            // For input/textarea fields
-            $(field.wrapper).find('input, textarea, select').on('input change blur', function () {
-                updatePayButton();
-            });
-
-            // For Select fields (frappe uses a custom select)
-            if (field.df && field.df.fieldtype === 'Select') {
-                $(field.wrapper).find('select').on('change', function () {
-                    updatePayButton();
-                });
-            }
-
-            // For Link fields
-            if (field.df && field.df.fieldtype === 'Link') {
-                $(field.wrapper).find('input').on('change blur', function () {
-                    updatePayButton();
-                });
-            }
+frappe.ready(function () {
+    // --------------------------------------------------
+    // Master-level Guest Restrictor:
+    // Prevent direct access to the web form without login
+    // --------------------------------------------------
+    if (frappe.session.user === 'Guest') {
+        $('body').removeClass('theme-loaded').css({ 'opacity': '0', 'visibility': 'hidden', 'display': 'none' });
+        frappe.msgprint({
+            title: __('Authentication Required'),
+            indicator: 'red',
+            message: __('You must be logged in to access this application form. Redirecting to login...')
         });
-
-        // Also observe DOM changes in case button renders late
-        const observer = new MutationObserver(function () {
-            updatePayButton();
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        // Disconnect observer after form is stable (10 seconds)
         setTimeout(function () {
-            observer.disconnect();
-        }, 10000);
+            window.location.replace('/login.html');
+        }, 2000);
+        return;
+    }
 
-    }, 800);
+    frappe.web_form.on('candidate_dob', function () {
+        toggle_declaration_section();
+    });
 
-    // Hook into frappe web_form's change event if available
-    if (frappe.web_form) {
-        frappe.web_form.on('change', function () {
-            updatePayButton();
+    // Capitalize each word in all fields dynamically
+    const excluded_fields = ['email_address', 'parent_email_address'];
+    if (frappe.web_form && frappe.web_form.fields_dict) {
+        $.each(frappe.web_form.fields_dict, function (fieldname, field) {
+            if (['Data', 'Small Text', 'Text'].includes(field.df.fieldtype) && !excluded_fields.includes(fieldname)) {
+                frappe.web_form.on(fieldname, function (f, value) {
+                    value = value || frappe.web_form.get_value(fieldname);
+                    if (value && typeof value === 'string') {
+                        const capitalized = value.replace(/\b[a-zA-Z]/g, function (l) { return l.toUpperCase(); });
+                        if (capitalized !== value) {
+                            frappe.web_form.set_value(fieldname, capitalized);
+                        }
+                    }
+                });
+            }
         });
     }
 
+    // Run on load
+    toggle_declaration_section();
+
+    // Pre-fill email and mobile from URL parameters if present
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email');
+    const mobile = params.get('mobile');
+
+    setTimeout(() => {
+        if (email) {
+            frappe.web_form.set_value('email_address', email);
+            if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['email_address']) {
+                frappe.web_form.fields_dict['email_address'].df.read_only = 1;
+                frappe.web_form.fields_dict['email_address'].refresh();
+            }
+        }
+        if (mobile) {
+            frappe.web_form.set_value('candidate_contact_number', mobile);
+            if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['candidate_contact_number']) {
+                frappe.web_form.fields_dict['candidate_contact_number'].df.read_only = 1;
+                frappe.web_form.fields_dict['candidate_contact_number'].refresh();
+            }
+        }
+    }, 500);
+});
+
+
+// Call the global custom header/footer injector
+$(function () {
+    if (typeof inject_fle_header_footer === 'function') {
+        inject_fle_header_footer();
+    }
 });

@@ -148,19 +148,8 @@ window.inject_fle_header_footer = function () {
     $('body').append(footer_html);
 
     // Bind logout click via JS (avoids inline onclick conflicts with Frappe CSP)
-    $(document).on('click', '#fle-logout-btn', function (e) {
-        e.preventDefault();
-        frappe.confirm(
-            'Are you sure you want to logout?',
-            () => {
-                frappe.call({
-                    method: 'logout',
-                    callback: function (r) {
-                        window.location.href = '/fle/login.html';
-                    }
-                });
-            }
-        );
+    $(document).on('click', '#fle-logout-btn', function () {
+        window.location.href = '/login.html';
     });
 
     // Add specific fixes for positioning in Web Forms
