@@ -17,9 +17,7 @@ class EntranceTestGeneration(Document):
    # in entrance_test_generation.py
 
     @frappe.whitelist()
-    def generate_test_list(self, admit_card_format=None):
-        if not admit_card_format:
-            frappe.throw("Admit Card Format is required to generate the Entrance Test List.")
+    def generate_test_list(self):
         if self.status not in ["Draft", "In Progress", "Failed"]: # Included Failed as well
             frappe.throw("Document must be in Draft, In Progress or Failed to generate test list")
 
@@ -86,7 +84,6 @@ class EntranceTestGeneration(Document):
             "campus": self.campus,
             "admission_cycle": self.admission_cycle,
             "program_level": self.program_level,
-            "admit_card_format": admit_card_format,
             "generated_on": frappe.utils.now(),
             "status": "Generated",
             "entrance_test_applicant": []

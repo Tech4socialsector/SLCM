@@ -3,7 +3,7 @@ import frappe
 import json
 
 def get_recent_errors():
-    frappe.init(site="slcm.com")
+    frappe.init(site="slcm.com", sites_path="/home/bsoft/slcm-bench/sites")
     frappe.connect()
     errors = frappe.get_all("Error Log", 
                            fields=["name", "method", "error", "creation"], 

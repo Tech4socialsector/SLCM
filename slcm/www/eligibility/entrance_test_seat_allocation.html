@@ -471,7 +471,9 @@
         "allocationName": "{{ doc.name }}",
         "applicantId": "{{ doc.applicant }}",
         "entranceTestList": "{{ doc.entrance_test_list }}",
-        "isRescheduled": {{ 'true' if is_rescheduled else 'false' }}
+        "isRescheduled": {{ 'true' if is_rescheduled else 'false' }},
+        "admitCard": "{{ doc.admit_card }}",
+        "rescheduleAdmitCard": "{{ doc.reschedule_admit_card }}"
     }
 </script>
 <script>
@@ -540,6 +542,7 @@
         var pageDataElement = document.getElementById('__page-data__');
         if (pageDataElement) {
             var pageData = JSON.parse(pageDataElement.textContent);
+            // Always call the API to ensure the Admit Card is up-to-date with the "Admit Card 2026-2027" format
             window.location.href = '/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name=' + pageData.allocationName;
         }
     }
