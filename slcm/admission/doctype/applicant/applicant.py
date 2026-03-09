@@ -188,8 +188,8 @@ class Applicant(Document):
         cats = set()
 
         sc_st_obc = (getattr(self, "whether_scstobc_ncl", None) or "").strip()
-        if sc_st_obc:
-            cats.add(sc_st_obc)  # Inclusion of "NA", "OBC-NCL", "ST", or "SC"
+        if sc_st_obc and sc_st_obc.lower() != "na":
+            cats.add(sc_st_obc)  # Only include real categories like "OBC-NCL", "ST", or "SC"
 
         if (getattr(self, "pwd", None) or "").strip() == "Yes":
             cats.add("PWD")
@@ -626,15 +626,14 @@ class Applicant(Document):
                     and national_test_result.get("overrides_academic_rule")):
                 return True, ""
 
-            # Rule mappings for this program
+            # Rule mappings for this program (direct link now)
             rule_mappings = frappe.db.sql("""
-                SELECT erm.name, erm.rule, erm.failure_message
+                SELECT erm.name, erm.failure_message
                 FROM `tabEligibility Rule Mapping` erm
-                INNER JOIN `tabProgram Mapping` pm ON pm.parent = erm.name
                 WHERE erm.is_active       = 1
                   AND erm.campus          = %(campus)s
                   AND erm.admission_cycle = %(admission_cycle)s
-                  AND pm.program          = %(program)s
+                  AND erm.program         = %(program)s
             """, {
                 "campus":          self.campus,
                 "admission_cycle": self.admission_cycle,
@@ -755,13 +754,12 @@ class Applicant(Document):
 
     def _get_rule_mappings_for_applicant(self):
         return frappe.db.sql("""
-            SELECT erm.name, erm.rule, erm.failure_message
+            SELECT erm.name, erm.failure_message
             FROM `tabEligibility Rule Mapping` erm
-            INNER JOIN `tabProgram Mapping` pm ON pm.parent = erm.name
             WHERE erm.is_active         = 1
               AND erm.campus            = %(campus)s
               AND erm.admission_cycle   = %(admission_cycle)s
-              AND pm.program            = %(program)s
+              AND erm.program           = %(program)s
         """, {
             "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
@@ -774,25 +772,26 @@ class Applicant(Document):
 
     def _evaluate_mapping_with_category_priority(self, mapping):
         """
-        Priority-based multi-category eligibility engine.
+        Refactored eligibility engine to support MULTIPLE rules per program mapping.
+        One Program -> One Eligibility Rule Mapping -> Multiple Rules (Rule Mapping child).
 
-        CASE A — Applicant's category matches a reservation row:
-            • Winning category's minimum_percentage overrides base rule threshold.
-            • Non-percentage checks (HSC Group, Allowed Degree) still run.
-
-        CASE B — No category match:
-            • Full base rule evaluation (percentage + group + degree).
-
-        Returns (is_eligible: bool, failure_message: str)
+        Applicants must satisfy ALL rules within the mapping to be eligible.
+        Reservation overrides apply to any 'Percentage' type rules.
         """
-        rule_name    = mapping.get("rule")
         mapping_name = mapping.get("name")
-
-        failure_msg = (mapping.get("failure_message") or "").strip() or \
+        failure_msg  = (mapping.get("failure_message") or "").strip() or \
             "You do not meet the eligibility criteria for the selected program."
 
-        base_rule = self._get_base_rule(rule_name)
+        # 1. Fetch ALL rules for this mapping
+        rules_in_mapping = frappe.db.get_all("Rule Mapping",
+            filters={"parent": mapping_name},
+            fields=["rule"]
+        )
 
+        if not rules_in_mapping:
+            return True, ""
+
+        # 2. Get reservation overrides (common for this mapping)
         reservation_rows = frappe.db.sql("""
             SELECT category, priority, minimum_percentage
             FROM `tabRule Mapping Category`
@@ -800,51 +799,58 @@ class Applicant(Document):
             ORDER BY priority ASC
         """, {"mapping_name": mapping_name}, as_dict=True)
 
-        # Derive categories from reservation fields (no child table)
+        # 3. Determine applicant's qualifying category (Priority 1 logic)
         applicant_categories = self._get_applicant_categories()
+        winning_cat = None
 
-        # ── CASE A ──────────────────────────────────────────────────────────
         if applicant_categories and reservation_rows:
             matched = [
                 row for row in reservation_rows
                 if (row.category or "").strip() in applicant_categories
             ]
-
             if matched:
-                # Sort by priority to find the highest priority match (lowest number)
                 matched.sort(key=lambda r: (r.priority if r.priority is not None else 9999))
-                
-                # Only the highest priority match is evaluated
                 winning_cat = matched[0]
-                required_min = flt(winning_cat.minimum_percentage)
-                operator = (base_rule.get("operator") or ">=") if base_rule else ">="
 
-                # If they pass the highest priority category's threshold
-                if self._compare_any_academic_value(base_rule, required_min, operator):
-                    if not base_rule or self._evaluate_non_percentage_checks(base_rule):
-                        self._set_applied_category_info(
-                            category=winning_cat.category,
-                            priority=winning_cat.priority,
-                            minimum=required_min
-                        )
-                        return True, ""
+        # 4. Evaluate EVERY rule in the mapping
+        # Result log info to set later
+        applied_cat  = winning_cat.category if winning_cat else "General"
+        applied_prio = winning_cat.priority if winning_cat else None
+        # We'll log the first rule's threshold or the winning one's override
+        first_required = None
 
-                # If they fail the highest priority category match
-                return False, failure_msg
+        # 4. Evaluate EVERY rule in the mapping (OR Logic — return True if ANY passes)
+        for r_row in rules_in_mapping:
+            base_rule = self._get_base_rule(r_row.rule)
+            if not base_rule:
+                continue
 
-        # ── CASE B ──────────────────────────────────────────────────────────
-        if not base_rule:
-            return True, ""
+            # Reservation override apply to all rules if winning_cat is found
+            if winning_cat:
+                required_val = flt(winning_cat.minimum_percentage)
+            else:
+                required_val = self._get_required_value(base_rule)
 
-        if not self.evaluate_single_rule(base_rule):
-            return False, failure_msg
+            operator = (base_rule.get("operator") or ">=")
+            
+            # Perform academic value comparison
+            passes_threshold = self._compare_any_academic_value(base_rule, required_val, operator)
+            # Perform non-percentage checks (Degrees/HSC Groups)
+            passes_non_percentage = self._evaluate_non_percentage_checks(base_rule)
 
-        self._set_applied_category_info(
-            category="General",
-            priority=None,
-            minimum=self._get_required_value(base_rule)
-        )
-        return True, ""
+            if passes_threshold and passes_non_percentage:
+                # SUCCESS: Found a qualifying path in this mapping
+                self._set_applied_category_info(
+                    category=winning_cat.category if winning_cat else "General",
+                    priority=winning_cat.priority if winning_cat else None,
+                    minimum=required_val
+                )
+                return True, ""
+
+        # If we looped through all alternative rules and none passed
+        return False, failure_msg
+
+
 
     # ──────────────────────────────────────────────
     # STEP 3 — Base rule fetch
