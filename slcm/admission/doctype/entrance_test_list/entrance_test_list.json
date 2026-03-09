@@ -59,10 +59,10 @@
   {
    "fieldname": "admit_card_format",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Admit Card Format",
-   "options": "Print Format",
-   "reqd": 1
+   "options": "Print Format"
   }
  ],
  "grid_page_length": 50,
