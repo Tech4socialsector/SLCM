@@ -48,4 +48,13 @@ def login_fle_user(usr, pwd):
         return
 
     frappe.local.response["message"] = "Logged In"
-    frappe.local.response["home_page"] = "/foundations-for-a-legal-education"
+
+    # Get the user to fetch email and mobile
+    user_doc = frappe.get_doc("User", usr)
+    email = user_doc.email or ""
+    mobile = user_doc.mobile_no or ""
+    
+    import urllib.parse
+    query_params = urllib.parse.urlencode({"email": email, "mobile": mobile})
+    
+    frappe.local.response["home_page"] = f"/foundations-for-a-legal-education/new?{query_params}"

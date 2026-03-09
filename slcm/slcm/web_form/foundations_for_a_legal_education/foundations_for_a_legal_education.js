@@ -59,6 +59,28 @@ frappe.ready(function () {
 
     // Run on load
     toggle_declaration_section();
+
+    // Pre-fill email and mobile from URL parameters if present
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email');
+    const mobile = params.get('mobile');
+
+    setTimeout(() => {
+        if (email) {
+            frappe.web_form.set_value('email_address', email);
+            if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['email_address']) {
+                frappe.web_form.fields_dict['email_address'].df.read_only = 1;
+                frappe.web_form.fields_dict['email_address'].refresh();
+            }
+        }
+        if (mobile) {
+            frappe.web_form.set_value('candidate_contact_number', mobile);
+            if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['candidate_contact_number']) {
+                frappe.web_form.fields_dict['candidate_contact_number'].df.read_only = 1;
+                frappe.web_form.fields_dict['candidate_contact_number'].refresh();
+            }
+        }
+    }, 500);
 });
 
 
