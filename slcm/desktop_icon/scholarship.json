@@ -11,13 +11,26 @@
  "label": "Scholarship",
  "link_to": "Scholarship",
  "link_type": "Workspace Sidebar",
- "modified": "2026-03-03 10:07:03.686412",
+ "modified": "2026-03-06 12:51:45.256222",
  "modified_by": "Administrator",
  "name": "Scholarship",
  "owner": "Administrator",
  "parent_icon": "Admission",
  "restrict_removal": 0,
- "roles": [],
+ "roles": [
+  {
+   "role": "Admission Admin"
+  },
+  {
+   "role": "Campus Admin"
+  },
+  {
+   "role": "Scholarship Admin"
+  },
+  {
+   "role": "Administrator"
+  }
+ ],
  "sidebar": "Scholarship",
  "standard": 1
 }

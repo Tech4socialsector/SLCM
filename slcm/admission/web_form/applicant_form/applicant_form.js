@@ -1,127 +1,164 @@
-frappe.ready(function() {
-    // 1. Navbar Injection (Replicate admission_base.html exactly)
-    function injectPortalNav() {
-        if (document.getElementById('portal-nav-injected')) return;
+frappe.ready(function () {
 
-        // Fetch context data passed from Python
-        var pc = frappe.web_form.context.portal_config || {};
-        var ws = frappe.web_form.context.website_settings || {};
-        var user = frappe.session.user;
-        var title = pc.portal_title || ws.title || "Admissions";
-        var logo = ws.banner_image ? `<img src="${ws.banner_image}" alt="Logo" style="height:36px;width:auto;">` : "";
+	// ── Fields that trigger eligibility re-check ─────────────────────────────
+	var ELIGIBILITY_FIELDS = ['program', 'campus', 'admission_cycle', 'academic_year'];
 
-        var linksHtml = `
-            <a href="/admission" class="nav-hide-mobile">Programs</a>
-            ${user !== "Guest" ? `
-                <a href="/my-applications" class="nav-hide-mobile">My Applications</a>
-                <a href="/eligibility/entrance_test_seat_allocation" class="nav-hide-mobile">Entrance Test</a>
-                <a href="/eligibility/interview_management" class="nav-hide-mobile">Interview</a>
-                <a href="/offer_letter/offer-letter-list" class="nav-hide-mobile">Offer Letter</a>
-            ` : ""}
-        `;
+	// ── Debounce timer handle ────────────────────────────────────────────────
+	var eligibilityTimer = null;
 
-        var drawerLinksHtml = `
-            <a href="/admission" class="drawer-link">Programs</a>
-            ${user !== "Guest" ? `
-                <a href="/my-applications" class="drawer-link">My Applications</a>
-                <a href="/offer_letter/offer-letter-list" class="drawer-link">Offer Letter</a>
-            ` : ""}
-        `;
+	// ── Toast / alert container (injected once) ──────────────────────────────
+	var $alertBox = null;
 
-        var navbarHtml = `
-            <nav class="adm-nav" id="portal-nav-injected">
-                <a href="/admission" class="adm-nav-brand">
-                    ${logo} <span>${title}</span>
-                </a>
-                <div class="adm-nav-links">
-                    ${linksHtml}
-                    <a href="/login" class="nav-btn nav-logout-btn">${user === "Guest" ? "Login / Apply" : "Logout"}</a>
-                </div>
-                <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
-                    <span class="ham-line"></span>
-                    <span class="ham-line"></span>
-                    <span class="ham-line"></span>
-                </button>
-            </nav>
-            <div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
-                ${drawerLinksHtml}
-                <div class="drawer-divider"></div>
-                <a href="/login" class="drawer-link">${user === "Guest" ? "Login" : "Logout"}</a>
-            </div>
-            <div class="drawer-overlay" id="drawer-overlay"></div>
-        `;
+	function ensureAlertBox() {
+		if ($alertBox && $alertBox.length) return;
+		$alertBox = $('<div id="eligibility-alert-box" style="display:none; margin: 16px 0; border-radius: 8px; padding: 14px 18px; font-size: 14px; line-height: 1.6;"></div>');
+		// Insert just before the first .frappe-control or after the first section
+		var $form = $('form.web-form, .web-form-container').first();
+		if ($form.length) {
+			$form.prepend($alertBox);
+		} else {
+			$('body').prepend($alertBox);
+		}
+	}
 
-        var header = document.createElement('div');
-        header.innerHTML = navbarHtml;
-        document.body.insertBefore(header, document.body.firstChild);
+	function showEligibilityAlert(status, rawMessage) {
+		ensureAlertBox();
+		$alertBox.removeClass('alert-eligible alert-ineligible alert-incomplete alert-error');
 
-        // Wire hamburger
-        var btn = document.getElementById('nav-hamburger');
-        var drawer = document.getElementById('mobile-drawer');
-        var overlay = document.getElementById('drawer-overlay');
+		if (status === 'Eligible') {
+			$alertBox
+				.css({
+					background: '#f0fdf4',
+					border: '1px solid #86efac',
+					color: '#166534'
+				})
+				.html('<strong>✅ Eligible</strong> — ' + rawMessage)
+				.slideDown(200);
 
-        if (btn) {
-            btn.onclick = function() {
-                var isOpen = drawer.classList.toggle('open');
-                btn.classList.toggle('open');
-                overlay.classList.toggle('open');
-                document.body.style.overflow = isOpen ? 'hidden' : '';
-            };
-        }
-        if (overlay) {
-            overlay.onclick = function() {
-                drawer.classList.remove('open');
-                btn.classList.remove('open');
-                overlay.classList.remove('open');
-                document.body.style.overflow = '';
-            };
-        }
-    }
+		} else if (status === 'Ineligible') {
+			// rawMessage is an HTML string from frappe.throw() — render it directly
+			$alertBox
+				.css({
+					background: '#fff2f2',
+					border: '1px solid #fca5a5',
+					color: '#991b1b'
+				})
+				.html('<strong>❌ Not Eligible</strong><br>' + rawMessage)
+				.slideDown(200);
 
-    // 2. Stage Tracker Logic
-    function initTracker() {
-        var applicantName = frappe.web_form_doc.name;
-        if (!applicantName || applicantName === 'new') return;
+		} else if (status === 'Incomplete') {
+			$alertBox.slideUp(100);
 
-        // Create container if not exists
-        if (!document.getElementById('stage-tracker-wrap')) {
-            var container = document.createElement('div');
-            container.id = 'stage-tracker-wrap';
-            container.style.cssText = "background:#fff;border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.08);";
-            
-            var form = document.querySelector('.web-form-container');
-            if (form) form.parentNode.insertBefore(container, form);
-        }
+		} else {
+			$alertBox
+				.css({
+					background: '#fef9c3',
+					border: '1px solid #fde047',
+					color: '#854d0e'
+				})
+				.html('<strong>⚠️ </strong>' + rawMessage)
+				.slideDown(200);
+		}
+	}
 
-        // Load & Init Widget
-        frappe.require('/assets/slcm/js/stage_tracker.js', function() {
-            frappe.require('/assets/slcm/css/stage_tracker.css', function() {
-                if (window.StageTracker) {
-                    StageTracker.init({
-                        container: '#stage-tracker-wrap',
-                        applicant: applicantName,
-                        mode: 'full',
-                        csrf: frappe.csrf_token
-                    });
-                }
-            });
-        });
-    }
+	function hideAlert() {
+		if ($alertBox) $alertBox.slideUp(150);
+	}
 
-    // 3. Spacing Fix
-    function fixSpacing() {
-        $('.page-content').css({
-            'padding-top': '0',
-            'margin-top': '0'
-        });
-        $('.main-section').css('padding-top', '0');
-    }
+	// ── Get current doc field values from the web form inputs ────────────────
+	function getDocName() {
+		// Frappe web form stores the doc name in the URL or a hidden input
+		var name = frappe.web_form && frappe.web_form.doc && frappe.web_form.doc.name;
+		if (!name) {
+			// Fallback: read from query param
+			var params = new URLSearchParams(window.location.search);
+			name = params.get('name') || params.get('doc');
+		}
+		return name || null;
+	}
 
-    // Execution
-    injectPortalNav();
-    initTracker();
-    fixSpacing();
-    
-    // Retry tracker injection if form was slow to render
-    setTimeout(initTracker, 1000);
+	function hasAllKeyFields() {
+		var doc = frappe.web_form && frappe.web_form.doc;
+		if (!doc) return false;
+		return !!(doc.program && doc.campus && doc.admission_cycle && doc.academic_year);
+	}
+
+	// ── Run live eligibility check (debounced 800ms) ─────────────────────────
+	function scheduleEligibilityCheck() {
+		clearTimeout(eligibilityTimer);
+		eligibilityTimer = setTimeout(runEligibilityCheck, 800);
+	}
+
+	function runEligibilityCheck() {
+		var docName = getDocName();
+		if (!docName) return;   // new unsaved record — skip (will run on after_save)
+		if (!hasAllKeyFields()) {
+			hideAlert();
+			return;
+		}
+
+		// Show a neutral "checking…" state
+		ensureAlertBox();
+		$alertBox
+			.css({ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155' })
+			.html('<span class="spinner-border spinner-border-sm me-2"></span> Checking eligibility…')
+			.slideDown(150);
+
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.check_eligibility',
+			args: { applicant_name: docName },
+			callback: function (r) {
+				if (r && r.message) {
+					showEligibilityAlert(r.message.status, r.message.message);
+				}
+			},
+			error: function () {
+				showEligibilityAlert('error', 'Could not complete eligibility check. Please save the form to re-run.');
+			}
+		});
+	}
+
+	// ── Bind change listeners to eligibility-relevant fields ─────────────────
+	function bindFieldListeners() {
+		ELIGIBILITY_FIELDS.forEach(function (fieldname) {
+			// Frappe web forms render fields as input/select with data-fieldname
+			$(document).on('change input', '[data-fieldname="' + fieldname + '"] input, [data-fieldname="' + fieldname + '"] select', function () {
+				scheduleEligibilityCheck();
+			});
+
+			// Also listen via frappe.web_form events if available
+			if (frappe.web_form) {
+				frappe.web_form.on(fieldname, 'change', function () {
+					scheduleEligibilityCheck();
+				});
+			}
+		});
+
+		// Also listen for changes in categories table (affects category-priority engine)
+		$(document).on('change', '[data-fieldname="categories"] input, [data-fieldname="categories"] select', function () {
+			scheduleEligibilityCheck();
+		});
+	}
+
+	// ── After save callback — show result of server-side eligibility check ────
+	if (frappe.web_form) {
+		frappe.web_form.after_save = function (doc) {
+			// The server's after_save already ran validate_eligibility.
+			// Re-query to get the stored evaluation_status and show the alert.
+			var status = doc.evaluation_status;
+			if (status === 'Eligible') {
+				showEligibilityAlert('Eligible', __('You meet the eligibility criteria for the selected program.'));
+			} else if (status === 'Ineligible') {
+				showEligibilityAlert('Ineligible', doc.rejected_reason || __('You do not meet the eligibility criteria for the selected program.'));
+			}
+		};
+	}
+
+	// ── Initialise ────────────────────────────────────────────────────────────
+	bindFieldListeners();
+
+	// Run once on page load if doc already exists (edit mode)
+	if (getDocName() && hasAllKeyFields()) {
+		runEligibilityCheck();
+	}
 });

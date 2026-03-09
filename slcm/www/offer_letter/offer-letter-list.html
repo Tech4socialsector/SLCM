@@ -1,36 +1,16 @@
-{% extends "templates/web.html" %}
+{% extends "slcm/www/admission_base.html" %}
 
-{% block page_content %}
-<div id="offer-list-wrapper">
-    <div class="text-center p-5 mt-5" id="loader">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">{{ _("Loading...") }}</span>
-        </div>
-        <p class="mt-3 text-muted">{{ _("Fetching your admission offers...") }}</p>
-    </div>
-</div>
+{% block title %}My Admission Offers{% endblock %}
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+{% block page_css %}
 <style>
-    body {
-        background-color: #f8f9fc !important;
-        font-family: 'Inter', sans-serif;
-    }
-
-    #offer-list-wrapper {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
     .portal-header {
         margin-bottom: 32px;
     }
 
     .portal-header h2 {
         font-weight: 700;
-        color: #1a202c;
+        color: var(--primary);
         margin-bottom: 8px;
     }
 
@@ -74,7 +54,7 @@
     .program-name {
         font-size: 1.15rem;
         font-weight: 700;
-        color: #1a202c;
+        color: var(--primary);
         margin-bottom: 4px;
     }
 
@@ -94,22 +74,22 @@
 
     .status-badge.issued {
         background: #fffaf0;
-        color: #dd6b20;
+        color: var(--warning);
     }
 
     .status-badge.accepted {
         background: #ebf8ff;
-        color: #3182ce;
+        color: var(--info);
     }
 
     .status-badge.payment-completed {
         background: #f0fff4;
-        color: #38a169;
+        color: var(--success);
     }
 
     .status-badge.rejected {
         background: #fff5f5;
-        color: #e53e3e;
+        color: var(--danger);
     }
 
     .card-footer {
@@ -124,11 +104,11 @@
 
     .payable-amount {
         font-weight: 700;
-        color: #1a202c;
+        color: var(--primary);
     }
 
     .view-link {
-        color: #3182ce;
+        color: var(--info);
         font-weight: 600;
         font-size: 0.9rem;
         text-decoration: none;
@@ -140,35 +120,42 @@
         }
     }
 </style>
+{% endblock %}
 
+{% block content %}
+<div id="offer-list-wrapper">
+    <div class="text-center p-5 mt-5" id="loader">
+        <div class="spinner-border" style="color: var(--primary);" role="status">
+            <span class="sr-only">{{ _("Loading...") }}</span>
+        </div>
+        <p class="mt-3 text-muted">{{ _("Fetching your admission offers...") }}</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
     function format_currency(v, c) {
-        if (window.format_currency) return window.format_currency(v, c);
         return (c || "INR") + " " + parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
     }
 
     // Fallback for translation helper
     window._ = window._ || function (s) { return s; };
 
-    frappe.ready(function () {
+    document.addEventListener('DOMContentLoaded', function () {
         fetch_offers();
     });
 
-    function fetch_offers() {
-        frappe.call({
-            method: 'slcm.admission.page.offer_letter_list.offer_letter_list.get_offer_list',
-            args: {
+    async function fetch_offers() {
+        try {
+            const data = await apiFetch('slcm.admission.page.offer_letter_list.offer_letter_list.get_offer_list', {
                 limit_start: 0,
                 limit_page_length: 100
-            },
-            callback: function (r) {
-                if (r.message && !r.message.error) {
-                    render_offer_list(r.message);
-                } else {
-                    render_error(r.message ? r.message.error : "{{ _('Unknown Error') }}");
-                }
-            }
-        });
+            });
+            render_offer_list(data);
+        } catch (e) {
+            render_error(e.message || "{{ _('Unknown Error') }}");
+        }
     }
 
     function render_offer_list(data) {
@@ -202,7 +189,7 @@
                         <div class="campus-name"><i class="fa fa-map-marker mr-1"></i> ${offer.campus}</div>
                         
                         ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
-                            <div class="mt-3 p-2 rounded" style="background: #1a202c; color: #fff; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px;">
+                            <div class="mt-3 p-2 rounded" style="background: var(--primary); color: #fff; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px;">
                                 <small style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; opacity: 0.7;">{{ _("Expiry") }}</small>
                                 <span class="offer-timer" data-deadline="${offer.payment_deadline}" style="font-weight: 700; font-size: 0.85rem; letter-spacing: 0.02em;">--:--:--</span>
                             </div>
@@ -238,7 +225,6 @@
                 const deadline_str = $this.data('deadline');
                 if (!deadline_str) return;
 
-                // Adjust to end of day for consistency
                 let deadline_val = deadline_str;
                 if (deadline_str.length === 10) {
                     deadline_val += " 23:59:59";
@@ -249,7 +235,7 @@
                 const distance = deadline - now;
 
                 if (distance < 0) {
-                    $this.closest('div').css('background', '#e53e3e');
+                    $this.closest('div').css('background', 'var(--danger)');
                     $this.text("{{ _('EXPIRED') }}");
                     return;
                 }
@@ -274,7 +260,7 @@
     function render_error(message) {
         $('#offer-list-wrapper').html(`
         <div class="text-center p-5 mt-5">
-            <i class="fa fa-folder-open fa-3x text-muted mb-4 opacity-25"></i>
+            <i class="fa fa-folder-open fa-3x text-muted mb-4 opacity-25" style="color: var(--primary) !important;"></i>
             <h4 class="text-muted font-weight-bold">{{ _("No Offers Found") }}</h4>
             <p class="text-muted">${message}</p>
         </div>

@@ -222,8 +222,17 @@ class FeeService:
             controller = get_payment_gateway_controller(gateway)
             
             # 3. Prepare Order Details
+            # Use the scholarship-adjusted amount if applicable
+            actual_payable = flt(offer.payable_amount)
+            afa = frappe.db.get_value("Applicant Fee Assignment",
+                {"offer_letter": offer.name, "docstatus": ["!=", 2]},
+                ["final_payable_amount", "scholarship_applied", "scholarship_amount"],
+                as_dict=True)
+            if afa and afa.scholarship_applied and flt(afa.scholarship_amount) > 0:
+                actual_payable = flt(afa.final_payable_amount)
+            
             payment_details = {
-                "amount": flt(offer.payable_amount),
+                "amount": actual_payable,
                 "title": _("Admission Fee"),
                 "description": _("Admission Fee for {0}").format(offer.program),
                 "reference_doctype": "Offer Letter",

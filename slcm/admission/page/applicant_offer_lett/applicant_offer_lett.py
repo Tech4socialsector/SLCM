@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 @frappe.whitelist()
 def get_offer_details(offer_name=None):
@@ -100,6 +101,23 @@ def get_offer_details(offer_name=None):
 
     # Get Online Payment Enabled flag
     online_payment_enabled = frappe.db.get_value("Fee Structure", fee_structure, "online_payment") if fee_structure else False
+
+    # --- Scholarship: Override payable_amount with scholarship-adjusted amount ---
+    afa = frappe.db.get_value("Applicant Fee Assignment", 
+        {"offer_letter": offer_id, "docstatus": ["!=", 2]},
+        ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied"],
+        as_dict=True)
+    
+    if afa and afa.scholarship_applied and flt(afa.scholarship_amount) > 0:
+        # Show the scholarship-reduced amount as the payable amount
+        offer_dict["payable_amount"] = flt(afa.final_payable_amount)
+        
+        # Append scholarship deduction row to fee breakdown
+        fee_data.append({
+            "component": "Scholarship Benefit",
+            "amount": -flt(afa.scholarship_amount),
+            "is_discount": True
+        })
 
     # Get Applicant data safely
     applicant_data = frappe.get_all("Applicant", filters={"name": target_applicant}, fields=["*"], limit=1, ignore_permissions=True)

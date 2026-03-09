@@ -108,8 +108,8 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
 
 def _send_result_notification_email(doc, email):
     """Send a result/rank notification email to the applicant for Interview."""
-    from frappe.utils import get_url_to_form
-    url = get_url_to_form("Interview Seat Allocation", doc.name)
+    from frappe.utils import get_url
+    url = get_url("/eligibility/interview-management")
 
     status_color = "#2e7d32" if doc.interview_status == "Attended" else "#c62828"
     
@@ -272,8 +272,8 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
 def _send_reschedule_email(doc, email):
     """Email notification for interview reschedule."""
     try:
-        from frappe.utils import get_url_to_form
-        url = get_url_to_form("Interview Seat Allocation", doc.name)
+        from frappe.utils import get_url
+        url = get_url("/eligibility/interview-management")
 
         applicant_info = f"""
         <p><strong>Applicant Details</strong><br>
@@ -287,6 +287,7 @@ def _send_reschedule_email(doc, email):
         <p><strong>Previous Interview Details</strong><br>
         Date: {doc.interview_date or '—'}<br>
         Time: {doc.interview_time or '—'}<br>
+        Venue / Address: {doc.interview_address or '—'}<br>
         Staff: {doc.interview_staff_member or '—'}
         </p>
         """
@@ -295,6 +296,7 @@ def _send_reschedule_email(doc, email):
         <p><strong>New Interview Details</strong><br>
         Date: {doc.re_interview_date or '—'}<br>
         Time: {doc.re_interview_time or '—'}<br>
+        Venue / Address: {doc.re_interview_address or '—'}<br>
         Staff: {doc.re_interview_staff_member or ''}
         </p>
         """

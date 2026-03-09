@@ -20,22 +20,6 @@ def applicant_query_conditions(user):
     return ""
 
 
-# --------------------------------------------------
-# Entrance Test Seat Allocation - Email Based
-# --------------------------------------------------
-
-def seat_allocation_query_conditions(user):
-
-    roles = frappe.get_roles(user)
-
-    if "Administrator" in roles or "Entrance Test Admin" in roles:
-        return ""
-
-    if "Applicant" in roles:
-        return f"`tabEntrance Test Seat Allocation`.email = '{user}'"
-
-    return ""
-
 # ==========================================================
 # ENTRANCE TEST PROVIDER - SELF RECORD ONLY
 # ==========================================================
@@ -73,6 +57,9 @@ def seat_allocation_query_conditions(user):
         return ""
 
     roles = frappe.get_roles(user)
+
+    if "Entrance Test Admin" in roles:
+        return ""
 
     # 🔹 ENTRANCE TEST PROVIDER FILTER
     if "Entrance Test Provider" in roles:

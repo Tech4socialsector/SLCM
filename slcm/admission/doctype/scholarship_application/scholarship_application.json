@@ -30,7 +30,8 @@
   "column_workflow_2",
   "approved_by",
   "approval_date",
-  "rejection_reason"
+  "rejection_reason",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -152,21 +153,18 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_workflow",
-   "fieldtype": "Section Break",
-   "label": "Workflow Status"
-  },
-  {
-   "default": "Draft",
+   "allow_on_submit": 1,
+   "default": "Submitted",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nSubmitted\nApproved\nRejected\nRevoked",
+   "options": "Submitted\nApproved\nRejected\nRevoked",
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "reviewed_by",
    "fieldtype": "Link",
    "label": "Reviewed By",
@@ -177,25 +175,42 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "approved_by",
    "fieldtype": "Link",
    "label": "Approved By",
    "options": "User"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "approval_date",
    "fieldtype": "Datetime",
    "label": "Approval Date"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "rejection_reason",
    "fieldtype": "Small Text",
    "label": "Rejection Reason"
+  },
+  {
+   "fieldname": "section_workflow",
+   "fieldtype": "Section Break",
+   "label": "Workflow Status"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-05 17:52:06.741436",
+ "modified": "2026-03-09 10:13:07.982050",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Application",
@@ -216,7 +231,6 @@
   },
   {
    "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,

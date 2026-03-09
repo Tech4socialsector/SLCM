@@ -7,6 +7,7 @@
  "field_order": [
   "section_break_basic",
   "cycle_name",
+  "cycle_code",
   "admission_year",
   "approval_reference",
   "col_break_basic",
@@ -33,6 +34,14 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Cycle Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "cycle_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Cycle Code",
    "reqd": 1,
    "unique": 1
   },

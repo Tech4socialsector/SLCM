@@ -11,38 +11,17 @@ class ScholarshipSchemeMapping(Document):
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))
 		
-		cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code")
-		if not cycle_code:
-			frappe.throw(frappe._("Cycle Code not found in Admission Cycle {0}").format(self.admission_cycle))
-		
 		# Naming Series: SSM-{CYCLE}-.#####
-		self.name = make_autoname(f"SSM-{cycle_code}-.#####")
-
-	def validate(self):
-		self.validate_duplicate_mapping()
-		self.validate_business_rules()
-
-	def validate_duplicate_mapping(self):
-		existing = frappe.db.exists(
-			"Scholarship Scheme Mapping",
-			{
-				"scholarship_scheme": self.scholarship_scheme,
-				"admission_cycle": self.admission_cycle,
-				"program": self.program,
-				"campus": self.campus,
-				"category": self.category,
-				"name": ["!=", self.name]
-			}
-		)
-		if existing:
-			frappe.throw(frappe._("Duplicate scholarship mapping exists."))
+		self.name = make_autoname(f"SSM-{self.admission_cycle}-.#####")
 
 	def validate_business_rules(self):
 		# Admission Cycle must be Active
 		if self.admission_cycle:
-			is_cycle_active = frappe.db.get_value("Admission Cycle", self.admission_cycle, "is_active")
-			if not is_cycle_active:
-				frappe.throw(frappe._("Admission Cycle {0} must be Active").format(self.admission_cycle))
+			cycle_status = frappe.db.get_value("Admission Cycle", self.admission_cycle, "status")
+			if cycle_status != "Active":
+				frappe.throw(frappe._("Admission Cycle {0} must be Active (Current Status: {1})").format(
+					self.admission_cycle, cycle_status
+				))
 
 		# Scholarship Scheme must be Active
 		if self.scholarship_scheme:
@@ -51,5 +30,36 @@ class ScholarshipSchemeMapping(Document):
 				frappe.throw(frappe._("Scholarship Scheme {0} must be Active (Current Status: {1})").format(
 					self.scholarship_scheme, scheme_status
 				))
+
+	@frappe.whitelist()
+	def sync_count(self):
+		"""
+		Recalculates current_count based on approved scholarship applications.
+		"""
+		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
+		
+		apps = frappe.get_all("Scholarship Application", filters={
+			"scholarship_scheme": self.scholarship_scheme,
+			"admission_cycle": self.admission_cycle,
+			"campus": self.campus,
+			"status": "Approved"
+		}, fields=["name", "program", "applicant_id"])
+		
+		count = 0
+		for app in apps:
+			# Check program match
+			program_match = not self.program or self.program == app.program
+			
+			# Check category match
+			category_match = True
+			if self.category:
+				applicant_categories = get_applicant_categories(app.applicant_id)
+				category_match = self.category in applicant_categories
+				
+			if program_match and category_match:
+				count += 1
+				
+		self.db_set("current_count", count)
+		return count
 
 from frappe.utils import flt

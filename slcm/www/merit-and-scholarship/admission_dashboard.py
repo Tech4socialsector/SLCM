@@ -2,6 +2,8 @@ import frappe
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 from slcm.admission.utils.portal import get_portal_config
 
+no_cache = 1
+
 def get_context(context):
     context.portal_config = get_portal_config()
     context.no_cache = 1

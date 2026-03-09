@@ -24,7 +24,7 @@ fixtures = [
     {
         "doctype": "Role",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin"]]
         ]
     },
     {
@@ -36,7 +36,7 @@ fixtures = [
     {
         "doctype": "Role Profile",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin"]]
         ]
     }
 ]
@@ -315,6 +315,8 @@ website_route_rules = [
     {"from_route": "/admission-dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
     {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"}
 ]
+
+update_website_context = "slcm.admission.utils.portal.update_website_context"
 
 doc_events = {
     "Student Master": {
