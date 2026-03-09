@@ -149,3 +149,56 @@ def get_user_type():
     except Exception as e:
         frappe.log_error(f"get_user_type failed: {e}", "Portal")
         return {"user_type": "Website User"}
+
+@frappe.whitelist()
+def submit_application(application_data):
+    """
+    Called from /application-form JS to submit/save application.
+    """
+    if isinstance(application_data, str):
+        import json as _json
+        application_data = _json.loads(application_data)
+        
+    user = frappe.session.user
+    if user == "Guest":
+        # Usually we'd want them to log in, but let's allow it if config says so
+        config = frappe.get_single("Applicant Portal Config")
+        if config.login_required_for_application:
+            frappe.throw("Login required to submit application")
+            
+    # Check if existing applicant for this email
+    email = application_data.get("email") or user
+    existing = frappe.get_all("Applicant", filters={"email": email}, limit=1)
+    
+    if existing:
+        doc = frappe.get_doc("Applicant", existing[0].name)
+    else:
+        doc = frappe.new_doc("Applicant")
+        doc.email = email
+        
+    # List of known phone fields for Applicant
+    phone_fields = ["mobile_number", "alternate_contact", "father_mobile", "mother_mobile", "guardian_mobile"]
+
+    # Update with fields
+    for fieldname, value in application_data.items():
+        if doc.get(fieldname) is not None:
+            if fieldname in phone_fields and value:
+                # Basic formatting for Indian numbers if digits only
+                raw_value = str(value).replace(" ", "").replace("-", "")
+                if raw_value.isdigit() and len(raw_value) == 10:
+                    value = "+91" + raw_value
+                elif raw_value.isdigit() and len(raw_value) > 10 and not raw_value.startswith("+"):
+                    value = "+" + raw_value
+            doc.set(fieldname, value)
+            
+    try:
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+    except frappe.exceptions.InvalidPhoneNumberError as e:
+        frappe.log_error(f"Phone validation failed: {str(e)}", "Admission Form")
+        frappe.throw(f"Validation failed: {str(e)}")
+    except Exception as e:
+        frappe.log_error(f"Submission error: {str(e)}", "Admission Form")
+        frappe.throw(str(e))
+    
+    return doc.name

@@ -1,0 +1,1094 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block title %}Application Form{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    /* Custom styles for application form */
+    :root {
+        --step-dot-size: 32px;
+    }
+
+    .application-form-wrapper {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 32px;
+        margin-top: 24px;
+    }
+
+    @media (max-width: 991px) {
+        .application-form-wrapper {
+            grid-template-columns: 1fr;
+        }
+
+        .sidebar-steps {
+            display: none;
+        }
+    }
+
+    /* Sidebar Styling */
+    .sidebar-steps {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        height: fit-content;
+        position: sticky;
+        top: 92px;
+    }
+
+    .step-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--muted);
+    }
+
+    .step-item:hover {
+        background: #f8fafc;
+    }
+
+    .step-item.active {
+        background: var(--primary-light);
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    .step-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        border: 2px solid #e2e8f0;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .step-item.active .step-icon {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+    }
+
+    .step-item.completed .step-icon {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #fff;
+    }
+
+    /* Form Content Area */
+    .form-content {
+        background: #fff;
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        min-height: 500px;
+        animation: slideIn 0.5s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Steps Progress Bar Top */
+    .steps-progress-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 48px;
+        position: relative;
+        padding: 0 40px;
+    }
+
+    .steps-progress-top::before {
+        content: '';
+        position: absolute;
+        top: 16px;
+        left: 80px;
+        right: 80px;
+        height: 3px;
+        background: #e2e8f0;
+        z-index: 1;
+    }
+
+    .progress-line {
+        position: absolute;
+        top: 16px;
+        left: 80px;
+        height: 3px;
+        background: var(--primary);
+        z-index: 2;
+        transition: width 0.4s ease;
+        width: 0%;
+    }
+
+    .top-step {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .top-step .dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--muted);
+        transition: all 0.3s;
+    }
+
+    .top-step.active .dot {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .top-step.completed .dot {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+    }
+
+    .top-step .label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        transition: all 0.3s;
+    }
+
+    .top-step.active .label {
+        color: var(--primary);
+    }
+
+    /* Field Transitions */
+    .form-step {
+        display: none;
+    }
+
+    .form-step.active {
+        display: block;
+        animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Inputs & Labels */
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1.5px solid #e5e7eb;
+        background: #f9fafb;
+        font-size: 15px;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: #fff;
+        box-shadow: 0 0 0 4px var(--primary-light);
+    }
+
+    .form-control.error {
+        border-color: #ef4444;
+    }
+
+    .error-message {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    /* Section Headings */
+    .section-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .section-divider {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 32px 0;
+    }
+
+    /* Buttons */
+    .buttons-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 48px;
+        padding-top: 24px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-prev {
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: 1.5px solid #e5e7eb;
+        background: #fff;
+        color: var(--muted);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-prev:hover {
+        background: #f9fafb;
+        color: #111827;
+    }
+
+    .btn-next {
+        padding: 12px 32px;
+        border-radius: 8px;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 600;
+        border: 1px solid var(--primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-next:hover {
+        opacity: 0.95;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    }
+
+    /* File Upload Premium Look */
+    .file-upload-zone {
+        border: 2px dashed #e5e7eb;
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+        background: #f9fafb;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .file-upload-zone:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+
+    .file-name {
+        margin-top: 12px;
+        font-size: 14px;
+        color: var(--primary);
+        font-weight: 600;
+        word-break: break-all;
+    }
+
+    /* Loading State */
+    .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .preview-image {
+        max-width: 120px;
+        max-height: 120px;
+        border-radius: 8px;
+        margin: 10px auto;
+        display: none;
+        object-fit: cover;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .file-preview {
+        display: none;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+        padding: 8px 12px;
+        background: var(--primary-light);
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--primary);
+    }
+
+    /* Error Label Styling */
+    .form-group.has-error .form-control {
+        border-color: #ef4444;
+        background-color: #fef2f2;
+    }
+
+    .error-label {
+        color: #ef4444;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="application-form-page">
+    <!-- Top Progress Bar -->
+    <div class="steps-progress-top">
+        <div class="progress-line" id="progressLine"></div>
+        <div class="top-step active" data-step="1">
+            <div class="dot">1</div>
+            <div class="label">PERSONAL</div>
+        </div>
+        <div class="top-step" data-step="2">
+            <div class="dot">2</div>
+            <div class="label">GUARDIAN</div>
+        </div>
+        <div class="top-step" data-step="3">
+            <div class="dot">3</div>
+            <div class="label">ACADEMIC</div>
+        </div>
+        <div class="top-step" data-step="4">
+            <div class="dot">4</div>
+            <div class="label">SUBMIT</div>
+        </div>
+    </div>
+
+    <div class="application-form-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar-steps">
+            <div class="step-item active" data-step="1">
+                <div class="step-icon">1</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 700;">Personal Information</div>
+                    <div style="font-size: 11px; opacity: 0.7;">Full Name, Date of Birth, etc.</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="2">
+                <div class="step-icon">2</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 700;">Parent/Guardian Info</div>
+                    <div style="font-size: 11px; opacity: 0.7;">Father, Mother, Guardian</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="3">
+                <div class="step-icon">3</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 700;">Academic Details</div>
+                    <div style="font-size: 11px; opacity: 0.7;">Class X, Class XII, UG</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="4">
+                <div class="step-icon">4</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 700;">Review & Submit</div>
+                    <div style="font-size: 11px; opacity: 0.7;">Final declaration & submission</div>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 32px; padding: 24px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <span style="font-weight: 700; font-size: 14px; color: #1e293b;">Need Help?</span>
+                </div>
+                <div style="font-size: 12px; color: #64748b; line-height: 1.6; margin-bottom: 20px;">
+                    Our admissions team is here to assist you with any questions or technical issues.
+                </div>
+                <a href="mailto:{{ portal_config.contact_email }}" class="btn-outline-adm"
+                    style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; padding: 12px; text-decoration: none; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #1e293b; font-weight: 600; transition: all 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2z" />
+                        <polyline points="22,9 12,15 2,9" />
+                    </svg>
+                    Contact Support
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Form Content -->
+        <main class="form-content">
+            <form id="applicationForm" novalidate>
+                <!-- START STEP 1 -->
+                <div class="form-step active" id="step1">
+                    <h2 class="section-title">Step 1: Personal Information</h2>
+                    <p style="color: #64748b; margin-bottom: 32px; font-size: 14px;">
+                        Please provide your official identification and contact details as they appear on your passport
+                        or ID.
+                    </p>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>Candidate Photo <span style="color: red;">*</span></label>
+                                <div class="file-upload-zone" id="photo-upload"
+                                    onclick="document.getElementById('photoInput').click()">
+                                    <div style="margin-bottom: 12px; color: var(--primary);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path
+                                                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                            <circle cx="12" cy="13" r="4" />
+                                        </svg>
+                                    </div>
+                                    <div style="font-size: 14px; font-weight: 700; color: #1f2937;">Upload Passport
+                                        Photo</div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">PNG, JPG, JPEG (Max
+                                        1MB)</div>
+                                    <input type="file" name="candidate_photo" accept="image/*" style="display:none;"
+                                        id="photoInput">
+
+                                    <img id="photoPreview" class="preview-image">
+                                    <div id="photoFileName" class="file-name"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="candidate_name">Full Legal Name <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="candidate_name" id="candidate_name"
+                                    placeholder="John Doe" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="date_of_birth">Date of Birth <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control datepicker" name="date_of_birth"
+                                    id="date_of_birth" placeholder="YYYY-MM-DD" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="gender">Gender <span style="color: red;">*</span></label>
+                                <select class="form-control" name="gender" id="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="nationality">Nationality <span style="color: red;">*</span></label>
+                                <select class="form-control" name="nationality" id="nationality" required>
+                                    <option value="">Select Country</option>
+                                    {% for n in nationalities %}
+                                    <option value="{{ n.name }}">{{ n.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+                    <div
+                        style="font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px;">
+                        Contact Details</div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="email">Email Address <span style="color: red;">*</span></label>
+                                <input type="email" class="form-control" name="email" id="email"
+                                    placeholder="alex@example.com"
+                                    value="{{ frappe.session.user if frappe.session.user != 'Guest' else '' }}"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="mobile_number">Phone Number <span style="color: red;">*</span></label>
+                                <input type="tel" class="form-control" name="mobile_number" id="mobile_number"
+                                    placeholder="+1 (555) 000-0000" required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="correspondence_address">Permanent Residential Address <span
+                                        style="color: red;">*</span></label>
+                                <textarea class="form-control" name="correspondence_address" id="correspondence_address"
+                                    rows="3" placeholder="Enter your full street address, city, and zip code"
+                                    required></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="city">City <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="city" id="city" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="state">State <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="state" id="state" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="pincode">Pincode <span style="color: red;">*</span></label>
+                                <input type="number" class="form-control" name="pincode" id="pincode" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="buttons-footer">
+                        <div></div>
+                        <button type="button" class="btn-next" onclick="nextStep(2)">
+                            Next Step
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- START STEP 2 -->
+                <div class="form-step" id="step2">
+                    <h2 class="section-title">Step 2: Parent / Guardian Information</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Father's Name <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="father_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Mother's Name <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="mother_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Father Mobile <span style="color: red;">*</span></label>
+                                <input type="tel" class="form-control" name="father_mobile" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Mother Mobile <span style="color: red;">*</span></label>
+                                <input type="tel" class="form-control" name="mother_mobile" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+                    <div class="form-group">
+                        <label class="d-flex align-items-center gap-2">
+                            <input type="checkbox" name="guardian_required" id="guardian_required"
+                                onchange="toggleGuardian(this.checked)">
+                            <span>Legal Guardian Required?</span>
+                        </label>
+                    </div>
+
+                    <div id="guardian_fields" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Guardian Name</label>
+                                    <input type="text" class="form-control" name="guardian_name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Guardian Mobile</label>
+                                    <input type="tel" class="form-control" name="guardian_mobile">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="buttons-footer">
+                        <button type="button" class="btn-prev" onclick="prevStep(1)">Previous</button>
+                        <button type="button" class="btn-next" onclick="nextStep(3)">Next Step</button>
+                    </div>
+                </div>
+
+                <!-- START STEP 3 -->
+                <div class="form-step" id="step3">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <div
+                            style="padding: 8px; background: var(--primary-light); border-radius: 8px; color: var(--primary);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                            </svg>
+                        </div>
+                        <h2 class="section-title" style="margin: 0;">Step 3: Academic Details</h2>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label>Class X School <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="class_x_school" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Percentage <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="class_x_percentage" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label>Class XII School <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="class_xii_school" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Percentage <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" name="class_xii_cgpa" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Class X Marksheet <span style="color: red;">*</span></label>
+                                <div class="file-upload-zone"
+                                    onclick="document.getElementById('marksheetXInput').click()">
+                                    <div style="margin-bottom: 8px; color: var(--primary);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path
+                                                d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                                            <path d="M8 7h6" />
+                                            <path d="M8 11h8" />
+                                        </svg>
+                                    </div>
+                                    <div style="font-size: 13px; font-weight: 700;">Upload X Marksheet</div>
+                                    <input type="file" name="class_x_marksheet" style="display:none;"
+                                        id="marksheetXInput">
+                                    <div id="previewX" class="file-preview">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                            <polyline points="22 4 12 14.01 9 11.01" />
+                                        </svg>
+                                        <span id="marksheetXName"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Class XII Marksheet <span style="color: red;">*</span></label>
+                                <div class="file-upload-zone"
+                                    onclick="document.getElementById('marksheetXIIInput').click()">
+                                    <div style="margin-bottom: 8px; color: var(--primary);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path
+                                                d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                                            <path d="M8 7h6" />
+                                            <path d="M8 11h8" />
+                                        </svg>
+                                    </div>
+                                    <div style="font-size: 13px; font-weight: 700;">Upload XII Marksheet</div>
+                                    <input type="file" name="class_xii_marksheet" style="display:none;"
+                                        id="marksheetXIIInput">
+                                    <div id="previewXII" class="file-preview">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                            <polyline points="22 4 12 14.01 9 11.01" />
+                                        </svg>
+                                        <span id="marksheetXIIName"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="buttons-footer">
+                        <button type="button" class="btn-prev" onclick="prevStep(2)">Previous</button>
+                        <button type="button" class="btn-next" onclick="nextStep(4)">Next Step</button>
+                    </div>
+                </div>
+
+                <!-- START STEP 4 -->
+                <div class="form-step" id="step4">
+                    <h2 class="section-title">Step 4: Review & Submit</h2>
+                    <div id="reviewSummary" class="review-container"></div>
+                    <div style="background: #f8fafc; padding: 24px; border-radius: 12px; margin-top: 32px;">
+                        <label class="d-flex align-items-center gap-3">
+                            <input type="checkbox" name="declaration_undertaking" required>
+                            <span>I declare that all information is true.</span>
+                        </label>
+                    </div>
+                    <div class="buttons-footer">
+                        <button type="button" class="btn-prev" onclick="prevStep(3)">Previous</button>
+                        <button type="submit" class="btn-next">Submit Application</button>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    (function () {
+        console.log("Application Form Script Initializing...");
+
+        let currentStep = 1;
+
+        // Define all functions in a scope and attach to window
+        function updateUI() {
+            console.log("Updating UI for step:", currentStep);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            const activeStep = document.getElementById('step' + currentStep);
+            if (activeStep) activeStep.classList.add('active');
+
+            document.querySelectorAll('.step-item').forEach(item => {
+                const itemStep = parseInt(item.getAttribute('data-step'));
+                item.classList.toggle('active', itemStep === currentStep);
+                item.classList.toggle('completed', itemStep < currentStep);
+            });
+
+            document.querySelectorAll('.top-step').forEach(dot => {
+                const dotStep = parseInt(dot.getAttribute('data-step'));
+                dot.classList.toggle('active', dotStep === currentStep);
+                dot.classList.toggle('completed', dotStep < currentStep);
+            });
+
+            if (currentStep === 4) generateReviewSummary();
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const line = document.getElementById('progressLine');
+            if (line) {
+                const progress = ((currentStep - 1) / 3) * 100;
+                line.style.width = progress + '%';
+            }
+        }
+
+        function validateStep(step) {
+            const stepEl = document.getElementById('step' + step);
+            if (!stepEl) return true;
+
+            const inputs = stepEl.querySelectorAll('input[required], select[required], textarea[required]');
+            let valid = true;
+
+            stepEl.querySelectorAll('.error-label').forEach(e => e.remove());
+            stepEl.querySelectorAll('.form-group').forEach(e => e.classList.remove('has-error'));
+
+            inputs.forEach(input => {
+                let isInvalid = false;
+                let errorMsg = 'This field is required';
+
+                const val = input.value.trim();
+                if (!val || (input.type === 'checkbox' && !input.checked)) {
+                    isInvalid = true;
+                } else if (input.type === 'tel') {
+                    // Normalize and check length
+                    const digits = val.replace(/[^0-9]/g, "");
+                    if (digits.length < 10) {
+                        isInvalid = true;
+                        errorMsg = 'Please enter a valid 10-digit number';
+                    }
+                } else if (input.type === 'email') {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(val)) {
+                        isInvalid = true;
+                        errorMsg = 'Please enter a valid email address';
+                    }
+                }
+
+                if (isInvalid) {
+                    valid = false;
+                    const formGroup = input.closest('.form-group');
+                    if (formGroup) {
+                        formGroup.classList.add('has-error');
+                        const error = document.createElement('div');
+                        error.className = 'error-label';
+                        error.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        ${errorMsg}
+                    `;
+                        formGroup.appendChild(error);
+                    }
+                }
+            });
+
+            if (!valid) {
+                showToast('Please check the highlighted fields', 'error');
+            }
+            return valid;
+        }
+
+        function generateReviewSummary() {
+            const form = document.getElementById('applicationForm');
+            if (!form) return;
+            const formData = new FormData(form);
+            const summary = document.getElementById('reviewSummary');
+            if (summary) {
+                summary.innerHTML = `
+                <div style="border: 1px solid #eee; padding: 20px; border-radius: 8px; background: #fff;">
+                    <p><strong>Name:</strong> ${formData.get('candidate_name') || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${formData.get('email') || 'N/A'}</p>
+                    <p><strong>Mobile:</strong> ${formData.get('mobile_number') || 'N/A'}</p>
+                    <p><strong>Father:</strong> ${formData.get('father_name') || 'N/A'}</p>
+                    <p><strong>Mother:</strong> ${formData.get('mother_name') || 'N/A'}</p>
+                </div>
+            `;
+            }
+        }
+
+        // Attach to window
+        window.nextStep = function (step) {
+            if (!validateStep(currentStep)) return;
+            currentStep = step;
+            updateUI();
+        };
+
+        window.prevStep = function (step) {
+            currentStep = step;
+            updateUI();
+        };
+
+        window.toggleGuardian = function (checked) {
+            const fields = document.getElementById('guardian_fields');
+            if (fields) fields.style.display = checked ? 'block' : 'none';
+        };
+
+        // DOM Ready logic
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log("DOM Ready - Initializing components");
+
+            // Real-time numeric restriction for phone
+            document.querySelectorAll('input[type="tel"]').forEach(input => {
+                input.addEventListener('input', function (e) {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            });
+
+            // Handle individual validation for all required fields on blur
+            document.querySelectorAll('input[required], select[required], textarea[required]').forEach(input => {
+                input.addEventListener('blur', function () {
+                    if (this.value.trim() !== '') {
+                        // Re-validate just this field
+                        const formGroup = this.closest('.form-group');
+                        if (formGroup) {
+                            formGroup.classList.remove('has-error');
+                            const errLabel = formGroup.querySelector('.error-label');
+                            if (errLabel) errLabel.remove();
+
+                            // Specific checks
+                            let err = null;
+                            if (this.type === 'tel' && this.value.replace(/[^0-9]/g, "").length < 10) {
+                                err = 'Please enter a valid 10-digit number';
+                            } else if (this.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value.trim())) {
+                                err = 'Please enter a valid email address';
+                            }
+
+                            if (err) {
+                                formGroup.classList.add('has-error');
+                                const errorEl = document.createElement('div');
+                                errorEl.className = 'error-label';
+                                errorEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ${err}`;
+                                formGroup.appendChild(errorEl);
+                            }
+                        }
+                    }
+                });
+            });
+
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr(".datepicker", {
+                    dateFormat: "Y-m-d",
+                    allowInput: true,
+                    disableMobile: "true"
+                });
+            }
+
+            const photoInput = document.getElementById('photoInput');
+            if (photoInput) {
+                photoInput.addEventListener('change', function () {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        const photoFileName = document.getElementById('photoFileName');
+                        const photoPreview = document.getElementById('photoPreview');
+                        const photoUploadZone = document.getElementById('photo-upload');
+
+                        if (photoFileName) photoFileName.textContent = file.name;
+
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            if (photoPreview) {
+                                photoPreview.src = e.target.result;
+                                photoPreview.style.display = 'block';
+                            }
+                            if (photoUploadZone) {
+                                const iconWrap = photoUploadZone.querySelector('svg');
+                                if (iconWrap && iconWrap.parentElement) iconWrap.parentElement.style.display = 'none';
+                                const textWraps = photoUploadZone.querySelectorAll('div');
+                                textWraps.forEach(div => {
+                                    if (div !== photoFileName && !div.contains(photoPreview)) div.style.display = 'none';
+                                });
+                            }
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            const academicInputs = [
+                { id: 'marksheetXInput', nameId: 'marksheetXName', previewId: 'previewX' },
+                { id: 'marksheetXIIInput', nameId: 'marksheetXIIName', previewId: 'previewXII' }
+            ];
+
+            academicInputs.forEach(item => {
+                const input = document.getElementById(item.id);
+                if (input) {
+                    input.addEventListener('change', function () {
+                        if (this.files && this.files[0]) {
+                            const nameEl = document.getElementById(item.nameId);
+                            const prevEl = document.getElementById(item.previewId);
+                            if (nameEl) nameEl.textContent = this.files[0].name;
+                            if (prevEl) prevEl.style.display = 'flex';
+                        }
+                    });
+                }
+            });
+
+            const appForm = document.getElementById('applicationForm');
+            if (appForm) {
+                appForm.onsubmit = async function (e) {
+                    e.preventDefault();
+                    if (!validateStep(4)) return;
+                    const overlay = document.getElementById('loadingOverlay');
+                    if (overlay) overlay.style.display = 'flex';
+
+                    try {
+                        const formData = new FormData(this);
+                        const data = {};
+                        for (let [key, value] of formData.entries()) {
+                            if (!(value instanceof File)) data[key] = value;
+                        }
+                        data.guardian_required = document.getElementById('guardian_required')?.checked ? 1 : 0;
+
+                        const res = await apiFetch('slcm.admission.utils.web.submit_application', { application_data: data });
+                        if (res) {
+                            showToast('Application submitted successfully!', 'success');
+                            setTimeout(() => window.location.href = '/admission-status?name=' + res, 2000);
+                        }
+                    } catch (err) {
+                        showToast(err.message || "An error occurred", 'error');
+                    } finally {
+                        if (overlay) overlay.style.display = 'none';
+                    }
+                };
+            }
+        });
+
+        console.log("Application Form Script Loaded Successfully");
+    })();
+</script>
+{% endblock %}

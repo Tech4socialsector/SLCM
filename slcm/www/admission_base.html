@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Admissions{% endblock %} — {{ frappe.get_doc("Website Settings").title or "SLCM" }}</title>
+    <link rel="icon"
+        href="{{ frappe.get_doc('Website Settings').favicon or '/assets/frappe/images/frappe-favicon.svg' }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
 
     <style>
@@ -31,10 +33,37 @@
 
     <style>
         :root {
-            --primary: {{ (portal_config.get('primary_color') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')) or '#1a3c6e' }};
-            --secondary: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
-            --accent: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
-            --primary-light: {{ (portal_config.get('primary_light_color') if portal_config and portal_config.get else (portal_config.primary_light_color if portal_config else '#e8f0fb')) or '#e8f0fb' }};
+            --primary: {
+                    {
+                    (portal_config.get('primary_color') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')) or '#1a3c6e'
+                }
+            }
+
+            ;
+
+            --secondary: {
+                    {
+                    (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b'
+                }
+            }
+
+            ;
+
+            --accent: {
+                    {
+                    (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b'
+                }
+            }
+
+            ;
+
+            --primary-light: {
+                    {
+                    (portal_config.get('primary_light_color') if portal_config and portal_config.get else (portal_config.primary_light_color if portal_config else '#e8f0fb')) or '#e8f0fb'
+                }
+            }
+
+            ;
             --text: #1a1a2e;
             --muted: #6c757d;
             --border: #dee2e6;
@@ -675,7 +704,7 @@
     </div>
 
     <div id="toast-container"
-        style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;">
+        style="position:fixed;top:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;">
     </div>
 
     <div id="confirm-overlay"
@@ -709,7 +738,7 @@
                     const msgs = JSON.parse(d._server_messages);
                     msg = msgs.map(m => JSON.parse(m).message).join('\n');
                 } else if (d.exc) {
-                    try { msg = JSON.parse(d.exc_type) + ': ' + d.exc; } catch(e) { msg = d.exc; }
+                    try { msg = JSON.parse(d.exc_type) + ': ' + d.exc; } catch (e) { msg = d.exc; }
                 }
                 throw new Error(msg);
             }
