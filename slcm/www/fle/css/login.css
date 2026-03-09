@@ -17,7 +17,6 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    /* Critical for pushing footer to bottom */
 }
 
 /* --- Header --- */
@@ -40,9 +39,9 @@ body {
 
 .logo-container {
     flex: 0 0 160px;
-    /* Fixed width for logo */
     display: flex;
     justify-content: flex-start;
+    align-items: center;
 }
 
 .logo-img {
@@ -59,11 +58,69 @@ body {
     padding: 0 15px;
 }
 
+/* --- Header Spacer / Logout Area --- */
 .header-spacer {
     flex: 0 0 160px;
-    /* Perfectly balances the logo container */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
+/* --- Logout Button --- */
+.logout-btn,
+button.fle-logout-btn,
+#fle-logout-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    background-color: var(--brand-maroon) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 5px !important;
+    padding: 8px 18px !important;
+    font-size: 12px !important;
+    font-family: 'Merriweather', Georgia, serif !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    box-shadow: 0 2px 5px rgba(151, 23, 44, 0.35) !important;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
+    text-decoration: none !important;
+    line-height: 1 !important;
+}
+
+.logout-btn:hover,
+button.fle-logout-btn:hover,
+#fle-logout-btn:hover {
+    background-color: #7a1224 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(151, 23, 44, 0.45) !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+.logout-btn:active,
+button.fle-logout-btn:active,
+#fle-logout-btn:active {
+    transform: translateY(0px) !important;
+    background-color: #5a0d1a !important;
+}
+
+.logout-btn svg,
+button.fle-logout-btn svg,
+#fle-logout-btn svg {
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+    vertical-align: middle !important;
+    stroke: #ffffff !important;
+}
+
+/* --- University Name & Department --- */
 .university-name {
     color: var(--brand-maroon);
     font-size: 0.9rem;
@@ -108,7 +165,6 @@ body {
 /* --- Main Content --- */
 .main-content {
     flex: 1 0 auto;
-    /* Grows to fill space, pushes footer down */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -149,35 +205,49 @@ body {
     cursor: pointer;
 }
 
+.btn-maroon:hover {
+    background-color: #7a1224;
+    color: white;
+}
+
 /* --- Footer --- */
 .sticky-footer {
     flex-shrink: 0;
-    /* Prevents footer from squishing */
     background: var(--brand-maroon);
-    /* Match nav color */
     color: #ffffff;
     text-align: center;
     padding: 20px;
     font-size: 12px;
     width: 100%;
+    box-sizing: border-box;
 }
 
-/* Mobile handling */
+/* --- Mobile --- */
 @media (max-width: 768px) {
     .header-top {
         flex-direction: column;
+        gap: 10px;
     }
 
     .header-spacer {
-        display: none;
+        flex: 0 0 auto;
+        width: 100%;
+        justify-content: center;
     }
 
     .logo-container {
-        margin-bottom: 10px;
+        flex: 0 0 auto;
         justify-content: center;
     }
 
     .department-name {
         font-size: 1.2rem;
+    }
+
+    .logout-btn,
+    button.fle-logout-btn,
+    #fle-logout-btn {
+        width: 100% !important;
+        justify-content: center !important;
     }
 }

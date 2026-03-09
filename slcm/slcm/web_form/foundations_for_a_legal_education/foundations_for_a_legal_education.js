@@ -42,12 +42,12 @@ frappe.ready(function () {
     // Capitalize each word in all fields dynamically
     const excluded_fields = ['email_address', 'parent_email_address'];
     if (frappe.web_form && frappe.web_form.fields_dict) {
-        $.each(frappe.web_form.fields_dict, function(fieldname, field) {
+        $.each(frappe.web_form.fields_dict, function (fieldname, field) {
             if (['Data', 'Small Text', 'Text'].includes(field.df.fieldtype) && !excluded_fields.includes(fieldname)) {
-                frappe.web_form.on(fieldname, function(f, value) {
+                frappe.web_form.on(fieldname, function (f, value) {
                     value = value || frappe.web_form.get_value(fieldname);
                     if (value && typeof value === 'string') {
-                        const capitalized = value.replace(/\b[a-zA-Z]/g, function(l) { return l.toUpperCase(); });
+                        const capitalized = value.replace(/\b[a-zA-Z]/g, function (l) { return l.toUpperCase(); });
                         if (capitalized !== value) {
                             frappe.web_form.set_value(fieldname, capitalized);
                         }
@@ -85,7 +85,7 @@ frappe.ready(function () {
 
 
 // Call the global custom header/footer injector
-$(function() {
+$(function () {
     if (typeof inject_fle_header_footer === 'function') {
         inject_fle_header_footer();
     }
