@@ -16,21 +16,6 @@
   "programs",
   "section_break_stages",
   "stages",
-  "section_break_application",
-  "application_start",
-  "application_end",
-  "section_break_evaluation",
-  "evaluation_start",
-  "evaluation_end",
-  "col_break_eval",
-  "interview_start",
-  "interview_end",
-  "section_break_offer",
-  "offer_start",
-  "offer_end",
-  "col_break_offer",
-  "acceptance_start",
-  "acceptance_end",
   "section_break_rounds",
   "enable_multiple_rounds",
   "section_break_remarks",
@@ -111,96 +96,6 @@
    "options": "Admission Cycle Stage"
   },
   {
-   "fieldname": "section_break_application",
-   "fieldtype": "Section Break",
-   "hidden": 1,
-   "label": "Application Window"
-  },
-  {
-   "fieldname": "application_start",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Application Start",
-   "reqd": 1
-  },
-  {
-   "fieldname": "application_end",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Application End",
-   "reqd": 1
-  },
-  {
-   "fieldname": "section_break_evaluation",
-   "fieldtype": "Section Break",
-   "hidden": 1,
-   "label": "Evaluation & Interview Window"
-  },
-  {
-   "fieldname": "evaluation_start",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Evaluation Start"
-  },
-  {
-   "fieldname": "evaluation_end",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Evaluation End"
-  },
-  {
-   "fieldname": "col_break_eval",
-   "fieldtype": "Column Break",
-   "hidden": 1
-  },
-  {
-   "fieldname": "interview_start",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Interview Start"
-  },
-  {
-   "fieldname": "interview_end",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Interview End"
-  },
-  {
-   "fieldname": "section_break_offer",
-   "fieldtype": "Section Break",
-   "hidden": 1,
-   "label": "Offer & Acceptance Window"
-  },
-  {
-   "fieldname": "offer_start",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Offer Start"
-  },
-  {
-   "fieldname": "offer_end",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Offer End"
-  },
-  {
-   "fieldname": "col_break_offer",
-   "fieldtype": "Column Break",
-   "hidden": 1
-  },
-  {
-   "fieldname": "acceptance_start",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Acceptance Start"
-  },
-  {
-   "fieldname": "acceptance_end",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Acceptance End"
-  },
-  {
    "fieldname": "section_break_rounds",
    "fieldtype": "Section Break",
    "label": "Admission Rounds"
@@ -224,7 +119,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-05 16:59:05.128203",
+ "modified": "2026-03-09 10:58:33.658909",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

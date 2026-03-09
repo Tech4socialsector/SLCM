@@ -55,50 +55,61 @@ def _load_program_detail(context, slug):
 
     # Media (child table "media" / Program Media)
     try:
-        raw = gf("media", []) or []
-        media = []
-        import re
-        for m in (raw if isinstance(raw, list) else []):
-            mtype  = _pf(m, "media_type") or "Image"
-            murl   = _pf(m, "media_url") or ""
-            exturl = _pf(m, "external_url") or ""
+        def _normalize_video_url(url):
+            """Convert watch URLs to embed URLs."""
+            if not url:
+                return url
+            import re
+            # youtu.be/ID
+            m = re.search(r'youtu\.be/([^?&]+)', url)
+            if m:
+                return 'https://www.youtube.com/embed/' + m.group(1)
+            # youtube.com/watch?v=ID
+            m = re.search(r'youtube\.com/watch\?v=([^&]+)', url)
+            if m:
+                return 'https://www.youtube.com/embed/' + m.group(1)
+            # vimeo.com/ID
+            m = re.search(r'vimeo\.com/(\d+)', url)
+            if m:
+                return 'https://player.vimeo.com/video/' + m.group(1)
+            return url
 
-            # Determine the single "best URL" for display / iframe
-            # Prefer external_url if set, otherwise media_url
-            display_url = exturl if exturl else murl
+        media_list = []
+        for m in (prog.get("media") or []):
+            ext_url  = _pf(m, "external_url") or ""
+            med_url  = _pf(m, "media_url") or ""
+            mtype    = _pf(m, "media_type") or "Image"
 
-            # Detect if this is a video embed URL
-            is_video_url = any(x in display_url.lower() for x in
-                               ["youtube.com", "youtu.be", "vimeo.com",
-                                "youtube-nocookie.com"])
+            # Auto-detect video from URL if type not set
+            if not mtype or mtype == "Image":
+                combined = (ext_url + med_url).lower()
+                if any(x in combined for x in ["youtube", "youtu.be", "vimeo"]):
+                    mtype = "Video"
 
-            # Force type to Video if URL looks like video
-            if is_video_url:
-                mtype = "Video"
+            # Prefer external_url over media_url; normalize video URLs
+            raw_url = ext_url if ext_url else med_url
+            if mtype == "Video":
+                display_url = _normalize_video_url(raw_url)
+            else:
+                display_url = raw_url
 
-            # Normalize YouTube URLs to embed format
-            if "youtu.be/" in display_url:
-                vid_id = display_url.split("youtu.be/")[-1].split("?")[0]
-                display_url = f"https://www.youtube.com/embed/{vid_id}"
-            elif "youtube.com/watch" in display_url:
-                vid_id_match = re.search(r"v=([^&]+)", display_url)
-                if vid_id_match:
-                    display_url = f"https://www.youtube.com/embed/{vid_id_match.group(1)}"
-            elif "vimeo.com/" in display_url and "/video/" not in display_url:
-                vid_id = display_url.rstrip("/").split("/")[-1]
-                display_url = f"https://player.vimeo.com/video/{vid_id}"
+            media_list.append(frappe._dict({
+                "media_type":   mtype,
+                "type":         mtype, # alias
+                "media_url":    med_url,
+                "external_url": ext_url,
+                "display_url":  display_url,
+                "url":          display_url, # alias
+                "caption":      _pf(m, "caption") or "",
+                "is_hero":      _pf(m, "is_hero") or 0,
+                "sort_order":   _pf(m, "sort_order") or 0,
+            }))
 
-            media.append({
-                "type":        mtype,
-                "url":         display_url,   # normalized URL
-                "caption":     _pf(m, "caption") or "",
-                "sort_order":  int(_pf(m, "sort_order") or 0),
-                "thumb":       murl if mtype == "Image" else "",
-            })
-        media.sort(key=lambda x: x["sort_order"])
-        context.prog_media  = media
-        context.prog_images = [m for m in media if m["type"] == "Image"]
-        context.prog_videos = [m for m in media if m["type"] == "Video"]
+        # Sort by sort_order, hero first
+        media_list.sort(key=lambda x: (not x.is_hero, x.sort_order))
+        context.prog_media  = media_list
+        context.prog_images = [m for m in media_list if m.media_type == "Image"]
+        context.prog_videos = [m for m in media_list if m.media_type == "Video"]
     except Exception as ex:
         frappe.log_error(str(ex), "prog_detail:media")
         context.prog_media = context.prog_images = context.prog_videos = []

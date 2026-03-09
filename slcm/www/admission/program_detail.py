@@ -70,6 +70,7 @@ def get_context(context):
     context.prog_credits     = gf("graduation_credits")
     context.prog_dept        = gf("department")
     context.prog_hero        = gf("hero_image")
+    context.prog_image       = gf("program_image")
     context.prog_description = gf("description")
     context.prog_intake      = gf("intake_type")
     context.prog_eligibility = gf("eligibility_summary")
@@ -79,22 +80,63 @@ def get_context(context):
     context.prog_slug        = slug
     context.title            = f"{context.prog_name} — Admissions"
 
-    # ── Media ─────────────────────────────────────────────────────
+    # Media (child table "media" / Program Media)
     try:
-        raw = gf("media", [])
-        media = []
-        for m in (raw if isinstance(raw, list) else []):
-            media.append({
-                "type":         _f(m, "media_type") or "Image",
-                "url":          _f(m, "media_url") or "",
-                "external_url": _f(m, "external_url") or "",
+        def _normalize_video_url(url):
+            """Convert watch URLs to embed URLs."""
+            if not url:
+                return url
+            import re
+            # youtu.be/ID
+            m = re.search(r'youtu\.be/([^?&]+)', url)
+            if m:
+                return 'https://www.youtube.com/embed/' + m.group(1)
+            # youtube.com/watch?v=ID
+            m = re.search(r'youtube\.com/watch\?v=([^&]+)', url)
+            if m:
+                return 'https://www.youtube.com/embed/' + m.group(1)
+            # vimeo.com/ID
+            m = re.search(r'vimeo\.com/(\d+)', url)
+            if m:
+                return 'https://player.vimeo.com/video/' + m.group(1)
+            return url
+
+        media_list = []
+        for m in (prog.get("media") or []):
+            ext_url  = _f(m, "external_url") or ""
+            med_url  = _f(m, "media_url") or ""
+            mtype    = _f(m, "media_type") or "Image"
+
+            # Auto-detect video from URL if type not set
+            if not mtype or mtype == "Image":
+                combined = (ext_url + med_url).lower()
+                if any(x in combined for x in ["youtube", "youtu.be", "vimeo"]):
+                    mtype = "Video"
+
+            # Prefer external_url over media_url; normalize video URLs
+            raw_url = ext_url if ext_url else med_url
+            if mtype == "Video":
+                display_url = _normalize_video_url(raw_url)
+            else:
+                display_url = raw_url
+
+            media_list.append(frappe._dict({
+                "media_type":   mtype,
+                "type":         mtype, # alias
+                "media_url":    med_url,
+                "external_url": ext_url,
+                "display_url":  display_url,
+                "url":          display_url, # alias
                 "caption":      _f(m, "caption") or "",
-                "sort_order":   int(_f(m, "sort_order") or 0),
-            })
-        media.sort(key=lambda x: x["sort_order"])
-        context.prog_media  = media
-        context.prog_images = [m for m in media if m["type"] == "Image"]
-        context.prog_videos = [m for m in media if m["type"] == "Video"]
+                "is_hero":      _f(m, "is_hero") or 0,
+                "sort_order":   _f(m, "sort_order") or 0,
+            }))
+
+        # Sort by sort_order, hero first
+        media_list.sort(key=lambda x: (not x.is_hero, x.sort_order))
+        context.prog_media  = media_list
+        context.prog_images = [m for m in media_list if m.media_type == "Image"]
+        context.prog_videos = [m for m in media_list if m.media_type == "Video"]
     except Exception as ex:
         frappe.log_error(str(ex), "prog_detail:media")
         context.prog_media = context.prog_images = context.prog_videos = []
@@ -190,7 +232,7 @@ def _f(obj, field):
 def _set_empty_context(context, slug):
     """Set safe empty defaults when program not found."""
     for k in ["prog_name","prog_level","prog_duration","prog_credits",
-              "prog_dept","prog_hero","prog_description","prog_intake",
+              "prog_dept","prog_hero","prog_image","prog_description","prog_intake",
               "prog_eligibility","prog_app_fee","prog_deadline",
               "prog_brochure"]:
         setattr(context, k, "")

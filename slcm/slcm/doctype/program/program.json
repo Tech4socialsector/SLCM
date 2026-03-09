@@ -235,7 +235,8 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2026-03-08 23:35:15.358045",
+ "make_attachments_public": 1,
+ "modified": "2026-03-09 11:03:36.598597",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",

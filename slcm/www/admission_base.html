@@ -31,10 +31,11 @@
 
         <style>
             :root {
-                --primary: {{ (portal_config.get('primary_color') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')) or '#1a3c6e' }};
-                --secondary: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
-                --accent: {{ (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b' }};
-                --primary-light: {{ (portal_config.get('primary_light_color') if portal_config and portal_config.get else (portal_config.primary_light_color if portal_config else '#e8f0fb')) or '#e8f0fb' }};
+                /* Defaults that child pages can override */
+                --primary: #1a3c6e;
+                --secondary: #c8a14b;
+                --accent: #c8a14b;
+                --primary-light: #e8f0fb;
                 --text: #1a1a2e;
                 --muted: #6c757d;
                 --border: #dee2e6;
@@ -105,7 +106,7 @@
             /* Avatar button hover ring */
             #adm-avatar-btn:hover {
                 border-color: rgba(255, 255, 255, 0.7) !important;
-                box-shadow: 0 0 0 3px rgba(26, 60, 110, 0.2) !important;
+                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
             }
 
             /* Prevent text-select on avatar letter */
@@ -564,7 +565,8 @@
                     <!-- Divider -->
                     <div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>
                     <!-- Logout -->
-                    <a href="/api/method/logout"
+                    <a href="javascript:void(0);"
+                       id="logout-btn"
                        style="display:flex;align-items:center;gap:10px;
                               padding:12px 16px;text-decoration:none;color:#ef4444;
                               font-size:14px;font-weight:600;transition:background 0.15s;"
@@ -626,7 +628,7 @@
                 </svg>
                 Programs
             </a>
-            <a href="/merit-and-scholarship/admission_dashboard" class="drawer-link" onclick="closeDrawer()">
+            <!-- <a href="/merit-and-scholarship/admission_dashboard" class="drawer-link" onclick="closeDrawer()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                     <polyline points="22 4 12 14.01 9 11.01" />
@@ -646,7 +648,7 @@
                     <polyline points="14 2 14 8 20 8" />
                 </svg>
                 Offer Letter
-            </a>
+            </a> -->
 
             <div class="drawer-divider"></div>
             {% if frappe.session.user and frappe.session.user != "Guest" %}

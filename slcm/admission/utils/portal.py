@@ -5,6 +5,40 @@ from frappe.utils import now, add_days, getdate, today, get_datetime
 
 # ── CONFIG ────────────────────────────────────────────────────────
 @frappe.whitelist(allow_guest=True)
+def api_get_portal_config():
+    """Alias for get_portal_config to match JS expectations."""
+    return get_portal_config()
+
+@frappe.whitelist(allow_guest=True)
+def api_get_announcements(limit=10):
+    """Alias for get_active_announcements to match JS expectations."""
+    return get_active_announcements(limit=limit)
+
+@frappe.whitelist(allow_guest=True)
+def api_get_programs():
+    """Alias for get_active_programs to match JS expectations."""
+    return get_active_programs()
+
+@frappe.whitelist()
+def api_get_my_application():
+    """Returns the current user's application for the active cycle."""
+    user = frappe.session.user
+    if user == "Guest":
+        return None
+    
+    active_cycle = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    if not active_cycle:
+        return None
+        
+    apps = frappe.get_all(
+        "Applicant",
+        filters={"owner": user, "admission_cycle": active_cycle},
+        fields=["*"],
+        limit=1
+    )
+    return apps[0] if apps else None
+
+@frappe.whitelist(allow_guest=True)
 def get_portal_config():
     """
     Returns Applicant Portal Config singleton.
@@ -129,6 +163,20 @@ def api_get_hero_slides():
 
 # ── PROGRAMS ──────────────────────────────────────────────────────
 
+@frappe.whitelist()
+def api_get_all_program_statuses(cycle):
+    """Returns mapping of program name to its current application status."""
+    if not cycle or frappe.session.user == "Guest":
+        return {}
+    
+    apps = frappe.get_all(
+        "Applicant",
+        filters={"owner": frappe.session.user, "admission_cycle": cycle},
+        fields=["program", "application_status"]
+    )
+    
+    return {a.program: a.application_status for a in apps}
+
 @frappe.whitelist(allow_guest=True)
 def get_active_programs():
     """
@@ -144,7 +192,7 @@ def get_active_programs():
             filters={"parent": active_cycle, "is_active": 1},
             fields=[
                 "program", "program_name", "seats", "eligibility_hint",
-                "brochure_url", "program_image as featured_image", "program_image", "desciption",
+                "brochure_url", "program_image", "desciption",
                 "program_media", "reservation_policy", "max_applications",
                 "application_count", "program_level", "intake_type",
             ],
@@ -241,6 +289,12 @@ def get_active_events(limit=4):
         return []
 
 @frappe.whitelist(allow_guest=True)
+def api_get_program_images(program, cycle):
+    """Returns image gallery for a program in a cycle."""
+    res = api_get_program_detail(program, cycle)
+    return res.get("images") if res else []
+
+@frappe.whitelist(allow_guest=True)
 def api_get_program_detail(program, cycle):
     """Returns full detail for one program including media and categories."""
     try:
@@ -305,6 +359,25 @@ def api_get_program_detail(program, cycle):
 # ── STATS & ANNOUNCEMENTS ───────────────────────────────────────────
 
 @frappe.whitelist(allow_guest=True)
+def api_get_campus_options():
+    """Returns list of active campuses."""
+    return frappe.get_all("Company", filters={"is_group": 0}, fields=["name", "company_name"])
+
+@frappe.whitelist()
+def api_get_application_fee(program, cycle, category=None):
+    """Returns the application fee for a program and category."""
+    detail = api_get_program_detail(program, cycle)
+    if not detail or not detail.get("categories"):
+        return 0
+    
+    if category:
+        for cat in detail["categories"]:
+            if cat.category_name == category:
+                return cat.application_fee or 0
+    
+    return detail["categories"][0].get("application_fee") or 0
+
+@frappe.whitelist(allow_guest=True)
 def api_get_portal_stats():
     """Returns live stats for the admission dashboard."""
     try:
@@ -338,6 +411,33 @@ def api_get_portal_stats():
         }
     except Exception:
         return {}
+
+@frappe.whitelist(allow_guest=True)
+def api_get_announcement_detail(ann_name):
+    """Returns full detail for one announcement."""
+    if not ann_name or not frappe.db.exists("Portal Announcement", ann_name):
+        return None
+    doc = frappe.get_doc("Portal Announcement", ann_name)
+    if not doc.is_active:
+        return None
+    return doc.as_dict()
+
+@frappe.whitelist(allow_guest=True)
+def api_increment_view_count(ann_name):
+    """Increments the view count for an announcement."""
+    if not ann_name: return
+    frappe.db.sql("""
+        UPDATE `tabPortal Announcement` 
+        SET view_count = view_count + 1 
+        WHERE name = %s
+    """, ann_name)
+    frappe.db.commit()
+
+@frappe.whitelist()
+def api_mark_notification_read(notification_id):
+    """Alias for web.mark_notifications_read for single ID."""
+    from slcm.admission.utils.web import mark_notifications_read
+    return mark_notifications_read([notification_id])
 
 @frappe.whitelist(allow_guest=True)
 def get_active_announcements(limit=10):
