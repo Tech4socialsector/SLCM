@@ -11,23 +11,24 @@ window.inject_fle_header_footer = function () {
 
     const header_html = `
     <header class="sticky-header">
-        <div class="header-top">
-            <div class="logo-container">
-                <img src="/files/nlsiu-logo.jpg" alt="Logo" class="logo-img">
+        <div class="header-top" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <div class="logo-container">
+                    <img src="/files/nlsiu-logo.jpg" alt="Logo" class="logo-img">
+                </div>
+                <div class="brand-text">
+                    <h5 class="university-name">National Law School of India University, Bengaluru</h5>
+                    <h1 class="department-name">Foundations for a Legal Education Certificate Course</h1>
+                </div>
             </div>
-            <div class="brand-text">
-                <h5 class="university-name">National Law School of India University, Bengaluru</h5>
-                <h1 class="department-name">Foundations for a Legal Education Certificate Course</h1>
-            </div>
-            <div class="header-spacer"></div>
         </div>
         <nav class="navbar-navy">
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/data-tab="courses" class="nav-item" target="_blank">OVERVIEW</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item" target="_blank">OVERVIEW</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">COURSES</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FACULTY</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FEE</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FAQs</a>
-            <a href="https://pace.nls.ac.in/contact-us/" class="nav-item">Contact Us</a>
+            <a href="https://pace.nls.ac.in/contact-us/" class="nav-item">CONTACT US</a>
         </nav>
     </header>
     `;

@@ -60,27 +60,44 @@ frappe.ready(function () {
     // Run on load
     toggle_declaration_section();
 
-    // Pre-fill email and mobile from URL parameters if present
+    // Pre-fill email and mobile from encoded URL parameters if present
     const params = new URLSearchParams(window.location.search);
-    const email = params.get('email');
-    const mobile = params.get('mobile');
 
-    setTimeout(() => {
-        if (email) {
-            frappe.web_form.set_value('email_address', email);
-            if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['email_address']) {
-                frappe.web_form.fields_dict['email_address'].df.read_only = 1;
-                frappe.web_form.fields_dict['email_address'].refresh();
+    let param_email = params.get('email_address');
+    let param_mobile = params.get('candidate_contact_number');
+
+    function try_set_fields() {
+        const set_read_only = (fieldname, val) => {
+            if (val) {
+                // Safely update the value
+                if (frappe.web_form.get_value(fieldname) !== val) {
+                    frappe.web_form.set_value(fieldname, val);
+                }
+                const $input = $('[data-fieldname="' + fieldname + '"] input');
+                if ($input.length && $input.val() !== val) {
+                    $input.val(val).trigger('change');
+                }
+                if (frappe.web_form.fields_dict && frappe.web_form.fields_dict[fieldname]) {
+                    frappe.web_form.fields_dict[fieldname].df.read_only = 1;
+                    frappe.web_form.set_df_property(fieldname, 'read_only', 1);
+                }
             }
-        }
-        if (mobile) {
-            frappe.web_form.set_value('candidate_contact_number', mobile);
-            if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['candidate_contact_number']) {
-                frappe.web_form.fields_dict['candidate_contact_number'].df.read_only = 1;
-                frappe.web_form.fields_dict['candidate_contact_number'].refresh();
-            }
-        }
-    }, 500);
+        };
+
+        set_read_only('email_address', param_email);
+        set_read_only('candidate_contact_number', param_mobile);
+    }
+
+    frappe.web_form.after_load = () => {
+        try_set_fields();
+    };
+
+    let set_attempts = 0;
+    let interval = setInterval(() => {
+        try_set_fields();
+        set_attempts++;
+        if (set_attempts > 20) clearInterval(interval);
+    }, 100);
 });
 
 
