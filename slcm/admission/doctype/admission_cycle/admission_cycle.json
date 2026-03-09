@@ -7,6 +7,7 @@
  "field_order": [
   "section_break_basic",
   "cycle_name",
+  "cycle_code",
   "admission_year",
   "approval_reference",
   "col_break_basic",
@@ -217,7 +218,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-05 16:59:05.128203",
+ "modified": "2026-03-09 10:58:33.771278",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

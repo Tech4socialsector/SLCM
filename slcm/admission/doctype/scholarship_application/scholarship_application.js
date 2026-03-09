@@ -7,6 +7,47 @@ frappe.ui.form.on("Scholarship Application", {
     },
     refresh(frm) {
         frm.trigger("scholarship_scheme_ui");
+        
+        if (!frm.is_new() && (frappe.user_roles.includes("Scholarship Admin") || frappe.user_roles.includes("System Manager"))) {
+            if (frm.doc.status === "Submitted") {
+                frm.add_custom_button(__("Approve"), () => {
+                    frappe.confirm(__("Are you sure you want to approve this scholarship application?"), () => {
+                        frm.set_value("status", "Approved");
+                        frm.set_value("approved_by", frappe.session.user);
+                        frm.set_value("approval_date", frappe.datetime.now_datetime());
+                        frm.save().then(() => {
+                            frappe.msgprint(__("Scholarship Application Approved"));
+                        });
+                    });
+                }).addClass("btn-primary");
+
+                frm.add_custom_button(__("Reject"), () => {
+                    frappe.prompt([
+                        {
+                            label: __("Rejection Reason"),
+                            fieldname: "reason",
+                            fieldtype: "Small Text",
+                            reqd: 1
+                        }
+                    ], (values) => {
+                        frm.set_value("status", "Rejected");
+                        frm.set_value("rejection_reason", values.reason);
+                        frm.save().then(() => {
+                            frappe.msgprint(__("Scholarship Application Rejected"));
+                        });
+                    }, __("Reject Scholarship Application"), __("Submit"));
+                }).addClass("btn-danger");
+            } else if (frm.doc.status === "Approved") {
+                frm.add_custom_button(__("Revoke"), () => {
+                    frappe.confirm(__("Are you sure you want to revoke this approved scholarship?"), () => {
+                        frm.set_value("status", "Revoked");
+                        frm.save().then(() => {
+                            frappe.msgprint(__("Scholarship Application Revoked"));
+                        });
+                    });
+                }).addClass("btn-danger");
+            }
+        }
     },
     applicant_id(frm) {
         if (frm.doc.applicant_id) {
