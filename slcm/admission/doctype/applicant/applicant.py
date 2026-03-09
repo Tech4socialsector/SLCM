@@ -772,11 +772,11 @@ class Applicant(Document):
 
     def _evaluate_mapping_with_category_priority(self, mapping):
         """
-        Refactored eligibility engine to support MULTIPLE rules per program mapping.
-        One Program -> One Eligibility Rule Mapping -> Multiple Rules (Rule Mapping child).
+        Comprehensive eligibility engine:
+        Checks ALL categories the applicant belongs to (against the mapping table)
+        AND the 'General' (default) path using 'OR' logic.
 
-        Applicants must satisfy ALL rules within the mapping to be eligible.
-        Reservation overrides apply to any 'Percentage' type rules.
+        Result: Eligible if ANY (Category, Rule) combination passes.
         """
         mapping_name = mapping.get("name")
         failure_msg  = (mapping.get("failure_message") or "").strip() or \
@@ -791,7 +791,7 @@ class Applicant(Document):
         if not rules_in_mapping:
             return True, ""
 
-        # 2. Get reservation overrides (common for this mapping)
+        # 2. Get reservation overrides defined for this mapping
         reservation_rows = frappe.db.sql("""
             SELECT category, priority, minimum_percentage
             FROM `tabRule Mapping Category`
@@ -799,55 +799,48 @@ class Applicant(Document):
             ORDER BY priority ASC
         """, {"mapping_name": mapping_name}, as_dict=True)
 
-        # 3. Determine applicant's qualifying category (Priority 1 logic)
+        # 3. Identify all evaluation paths (Matched categories + General)
         applicant_categories = self._get_applicant_categories()
-        winning_cat = None
+        
+        # Path 1: Categories matching the mapping table
+        matched_categories = [
+            row for row in reservation_rows
+            if (row.category or "").strip() in applicant_categories
+        ]
+        
+        # evaluation_paths = [MatchedCategoryRow1, MatchedCategoryRow2, ..., None (for General)]
+        evaluation_paths = matched_categories + [None]
 
-        if applicant_categories and reservation_rows:
-            matched = [
-                row for row in reservation_rows
-                if (row.category or "").strip() in applicant_categories
-            ]
-            if matched:
-                matched.sort(key=lambda r: (r.priority if r.priority is not None else 9999))
-                winning_cat = matched[0]
+        # 4. Nested OR Evaluation: Success if ANY (Path, Rule) combination passes
+        for cat_row in evaluation_paths:
+            for r_row in rules_in_mapping:
+                base_rule = self._get_base_rule(r_row.rule)
+                if not base_rule:
+                    continue
 
-        # 4. Evaluate EVERY rule in the mapping
-        # Result log info to set later
-        applied_cat  = winning_cat.category if winning_cat else "General"
-        applied_prio = winning_cat.priority if winning_cat else None
-        # We'll log the first rule's threshold or the winning one's override
-        first_required = None
+                # Threshold: Category Override or Rule Default
+                if cat_row:
+                    required_val = flt(cat_row.minimum_percentage)
+                else:
+                    required_val = self._get_required_value(base_rule)
 
-        # 4. Evaluate EVERY rule in the mapping (OR Logic — return True if ANY passes)
-        for r_row in rules_in_mapping:
-            base_rule = self._get_base_rule(r_row.rule)
-            if not base_rule:
-                continue
+                operator = (base_rule.get("operator") or ">=")
+                
+                # Perform academic value comparison
+                passes_threshold = self._compare_any_academic_value(base_rule, required_val, operator)
+                # Perform non-percentage checks (Degrees/HSC Groups)
+                passes_non_percentage = self._evaluate_non_percentage_checks(base_rule)
 
-            # Reservation override apply to all rules if winning_cat is found
-            if winning_cat:
-                required_val = flt(winning_cat.minimum_percentage)
-            else:
-                required_val = self._get_required_value(base_rule)
+                if passes_threshold and passes_non_percentage:
+                    # ELIGIBLE: Found a valid qualifying path
+                    self._set_applied_category_info(
+                        category=cat_row.category if cat_row else "General",
+                        priority=cat_row.priority if cat_row else None,
+                        minimum=required_val
+                    )
+                    return True, ""
 
-            operator = (base_rule.get("operator") or ">=")
-            
-            # Perform academic value comparison
-            passes_threshold = self._compare_any_academic_value(base_rule, required_val, operator)
-            # Perform non-percentage checks (Degrees/HSC Groups)
-            passes_non_percentage = self._evaluate_non_percentage_checks(base_rule)
-
-            if passes_threshold and passes_non_percentage:
-                # SUCCESS: Found a qualifying path in this mapping
-                self._set_applied_category_info(
-                    category=winning_cat.category if winning_cat else "General",
-                    priority=winning_cat.priority if winning_cat else None,
-                    minimum=required_val
-                )
-                return True, ""
-
-        # If we looped through all alternative rules and none passed
+        # If all paths and all rules failed
         return False, failure_msg
 
 
