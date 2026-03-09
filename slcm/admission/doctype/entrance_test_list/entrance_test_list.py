@@ -451,17 +451,14 @@ def _get_remaining_capacity(provider_name):
 @frappe.whitelist()
 def generate_and_store_admit_card(allocation, is_rescheduled=False):
     """
-    Generates the admit card using the print format specified in Entrance Test List
+    Generates the admit card using the manual template (bypassing Print Formats)
     and attaches it to the Entrance Test Seat Allocation record.
     If is_rescheduled is True, stores in reschedule_admit_card field.
     """
     if isinstance(allocation, str):
         allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation)
         
-    etl_name = allocation.entrance_test_list
-    etl = frappe.get_doc("Entrance Test List", etl_name)
-    
-    # Always use the Manual HTML Template for generation (bypassing Frappe Print Format)
+    # Generate PDF using the manual template in the eligibility portal
     pdf_content = None
     try:
         from slcm.www.eligibility.entrance_test_seat_allocation import get_admit_card_html
