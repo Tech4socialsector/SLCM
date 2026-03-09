@@ -485,83 +485,6 @@ class ScholarshipApplication(Document):
 				return m.name
 		return None
 
-		# Determine triggered_by based on user role/session
-		triggered_by = "Admin"
-		if frappe.session.user == self.owner:
-			triggered_by = "Applicant"
-		elif frappe.session.user == "Administrator":
-			triggered_by = "System"
-
-		# Create hash for tamper detection
-		record_string = json.dumps({
-			"application": self.name,
-			"old_status": old_doc.status if old_doc else None,
-			"new_status": self.status,
-			"user": frappe.session.user,
-			"time": str(now_datetime())
-		}, sort_keys=True)
-		record_hash = hashlib.sha256(record_string.encode()).hexdigest()
-
-		try:
-			frappe.get_doc({
-				"doctype": "Scholarship Audit Log",
-				"scholarship_application": self.name,
-				"scholarship_scheme": self.scholarship_scheme,
-				"admission_cycle": self.admission_cycle,
-				"campus": self.campus,
-				"program": self.program,
-				"action_type": action_type,
-				"previous_state": json.dumps(previous_state, indent=4, default=str),
-				"new_state": json.dumps(self.as_dict(), indent=4, default=str),
-				"performed_by": frappe.session.user,
-				"triggered_by": triggered_by,
-				"action_timestamp": now_datetime(),
-				"reason": self.rejection_reason or f"Status changed to {self.status}",
-				"ip_address": frappe.local.request_ip if hasattr(frappe.local, "request_ip") else None,
-				"record_hash": record_hash
-			}).insert(ignore_permissions=True)
-		except Exception as e:
-			# Log to Error Log but don't stop the main Scholarship save
-			frappe.log_error(title="Scholarship Audit Log Error", message=frappe.get_traceback())
-
-	def apply_financial_effects(self):
-		from slcm.admission.utils.scholarship_availability import update_scheme_usage
-		mapping_name = self.find_mapping()
-		update_scheme_usage(self.scholarship_scheme, self.calculated_benefit, mapping_name=mapping_name)
-
-	def reverse_financial_effects(self):
-		from slcm.admission.utils.scholarship_availability import update_scheme_usage
-		mapping_name = self.find_mapping()
-		old_doc = self.get_doc_before_save()
-		benefit = old_doc.calculated_benefit if old_doc else self.calculated_benefit
-		update_scheme_usage(self.scholarship_scheme, benefit, mapping_name=mapping_name, reverse=True)
-
-	def find_mapping(self):
-		"""
-		Finds the applicable Scholarship Scheme Mapping for this application.
-		"""
-		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
-		applicant_categories = get_applicant_categories(self.applicant_id)
-		
-		mappings = frappe.get_all(
-			"Scholarship Scheme Mapping",
-			filters={
-				"scholarship_scheme": self.scholarship_scheme,
-				"admission_cycle": self.admission_cycle,
-				"campus": self.campus,
-				"is_active": 1
-			},
-			fields=["name", "program", "category"],
-			order_by="program desc, category desc" 
-		)
-		
-		for m in mappings:
-			program_match = not m.program or m.program == self.program
-			category_match = not m.category or m.category in applicant_categories
-			if program_match and category_match:
-				return m.name
-		return None
-
 
 @frappe.whitelist()
 def create_scholarship_application(scheme, family_income, income_certificate_data=None, income_certificate_name=None, supporting_documents_data=None, supporting_documents_name=None):
@@ -784,4 +707,3 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 				eligible_schemes.append(m.scholarship_scheme)
 				
 	return list(set(eligible_schemes))
-
