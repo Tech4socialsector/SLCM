@@ -1,0 +1,121 @@
+{% extends "templates/web.html" %}
+
+{% block style %}
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/login.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <header class="sticky-header">
+        <div class="header-top">
+            <div class="logo-container">
+                <img src="/files/nlsiu-logo.jpg" alt="Logo" class="logo-img">
+            </div>
+
+            <div class="brand-text">
+                <h5 class="university-name">National Law School of India University, Bengaluru</h5>
+                <h1 class="department-name">Foundations for a Legal Education Certificate Course</h1>
+            </div>
+
+            <div class="header-spacer"></div>
+        </div>
+
+        <nav class="navbar-navy">
+            <a href="#" class="nav-item">OVERVIEW</a>
+            <a href="#" class="nav-item">COURSES</a>
+            <a href="#" class="nav-item">FACULTY</a>
+            <a href="#" class="nav-item">FEE</a>
+            <a href="#" class="nav-item">FAQs</a>
+            <a href="#" class="nav-item">Contact Us</a>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="auth-card">
+            <div id="login-form">
+                <h3 class="text-center" style="color: var(--brand-maroon); margin-bottom: 25px;">myNLS Login</h3>
+                <div class="form-group mb-3">
+                    <label class="small font-weight-bold">EMAIL OR USERNAME</label>
+                    <input type="text" id="login_id" class="form-control">
+                </div>
+                <div class="form-group mb-4">
+                    <label class="small font-weight-bold">PASSWORD</label>
+                    <input type="password" id="login_pwd" class="form-control">
+                </div>
+                <button class="btn btn-maroon" onclick="login_user()">Sign In</button>
+                <div class="text-center mt-3">
+                    <span class="small">New user?</span>
+                    <span class="text-primary" style="cursor:pointer; font-weight:700;" onclick="toggleForm()"> Register
+                        Here</span>
+                </div>
+            </div>
+
+            <div id="reg-form" style="display: none;">
+                <h3 class="text-center" style="color: var(--brand-maroon); margin-bottom: 25px;">Create Account</h3>
+                <div class="form-group mb-4">
+                    <label class="small font-weight-bold">EMAIL ADDRESS <span class="text-danger">*</span></label>
+                    <input type="email" id="reg_email" class="form-control" placeholder="Please Enter" maxlength="80">
+                </div>
+                <div class="form-group mb-3">
+                    <label class="small font-weight-bold">MOBILE NUMBER <span class="text-danger">*</span></label>
+                    <input type="text" id="mobile_number" class="form-control" placeholder="Please Enter"
+                        maxlength="10">
+                </div>
+                <button class="btn btn-maroon" onclick="register_user()">Register</button>
+                <div class="text-center mt-3">
+                    <span class="small">Already have an account?</span>
+                    <span class="text-primary" style="cursor:pointer; font-weight:700;" onclick="toggleForm()">
+                        Login</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="sticky-footer">
+        © 2026 National Law School of India University. All Rights Reserved.
+    </footer>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    function toggleForm() {
+        $('#login-form').toggle();
+        $('#reg-form').toggle();
+    }
+
+    function login_user() {
+        const usr = $('#login_id').val();
+        const pwd = $('#login_pwd').val();
+        if (!usr || !pwd) return frappe.msgprint('Please fill all fields');
+
+        frappe.call({
+            method: "slcm.api.user.login_fle_user",
+            args: { usr, pwd },
+            callback: r => {
+                if (r.message == "Logged In") {
+                    window.location.replace(r.home_page || "/foundations-for-a-legal-education");
+                    return false;
+                } else if (r.message) {
+                    frappe.msgprint(r.message);
+                }
+            }
+        });
+    }
+
+    function register_user() {
+        const email = $('#reg_email').val();
+        const mobile_number = $('#mobile_number').val();
+        if (!email || !mobile_number) return frappe.msgprint('Please fill all fields');
+
+        frappe.call({
+            method: "slcm.api.user.register_fle_user",
+            args: { email: email, mobile_number: mobile_number },
+            callback: r => {
+                if (r.message && r.message.status == "success") frappe.msgprint(r.message.message);
+            }
+        });
+    }
+</script>
+{% endblock %}
