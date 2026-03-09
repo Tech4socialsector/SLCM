@@ -22,12 +22,12 @@ window.inject_fle_header_footer = function () {
             <div class="header-spacer"></div>
         </div>
         <nav class="navbar-navy">
-            <a href="#" class="nav-item">OVERVIEW</a>
-            <a href="#" class="nav-item">COURSES</a>
-            <a href="#" class="nav-item">FACULTY</a>
-            <a href="#" class="nav-item">FEE</a>
-            <a href="#" class="nav-item">FAQs</a>
-            <a href="#" class="nav-item">Contact Us</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/data-tab="courses" class="nav-item" target="_blank">OVERVIEW</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">COURSES</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FACULTY</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FEE</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FAQs</a>
+            <a href="https://pace.nls.ac.in/contact-us/" class="nav-item">Contact Us</a>
         </nav>
     </header>
     `;
