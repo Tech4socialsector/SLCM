@@ -1,6 +1,7 @@
 import frappe
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 from slcm.admission.utils.portal import get_portal_config
+from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard, get_applied_scholarships_for_dashboard
 
 no_cache = 1
 
@@ -95,7 +96,7 @@ def get_context(context):
             fields=[
                 "name", "candidate_name as applicant_name", "program",
                 "application_status", "current_stage",
-                "admission_cycle", "creation", "modified"
+                "admission_cycle", "creation", "modified", "campus"
             ],
             ignore_permissions=True
         )
@@ -107,7 +108,7 @@ def get_context(context):
             fields=[
                 "name", "candidate_name as applicant_name", "program",
                 "application_status", "current_stage",
-                "admission_cycle", "creation", "modified"
+                "admission_cycle", "creation", "modified", "campus"
             ],
             ignore_permissions=True
         )
@@ -133,17 +134,82 @@ def get_context(context):
 
     # ── Scholarship Schemes (show if any active schemes exist) ─────
     try:
-        context.scholarships = frappe.get_all(
-            "Scholarship Scheme",
-            filters={"is_active": 1},
-            fields=[
-                "name", "scheme_name", "scheme_type",
-                "coverage_type", "max_amount", "eligibility_criteria"
-            ],
-            limit=3
-        ) or []
-    except Exception:
+        available_scholarships = []
+        applied_scholarships = []
+        entrance_tests = []
+        seen_schemes = set()
+        seen_applications = set()
+        
+        for app in context.my_applications:
+            # Get Entrance Test details
+            try:
+                etrows = frappe.get_all(
+                    "Entrance Test Seat Allocation",
+                    filters={"applicant": app.name},
+                    fields=["entrance_test_name", "center_name",
+                            "center_address", "seat_number",
+                            "allocation_status", "name"],
+                    order_by="creation desc", limit=1,
+                    ignore_permissions=True
+                )
+                if etrows:
+                    et = etrows[0]
+                    test_name = et.get("entrance_test_name") or ""
+                    test_date = ""
+                    test_time = ""
+                    if test_name:
+                        try:
+                            td = frappe.get_doc("Entrance Test List", test_name, ignore_permissions=True)
+                            test_date = frappe.utils.format_date(str(td.get("test_date") or "")[:10], "MMMM d, yyyy") if td.get("test_date") else ""
+                            test_time = str(td.get("test_time") or "")
+                        except Exception: pass
+                    
+                    entrance_tests.append({
+                        "app_id": app.name,
+                        "program_name": app.program_name,
+                        "test_name": test_name,
+                        "test_date": test_date,
+                        "test_time": test_time,
+                        "center_name": et.get("center_name") or "",
+                        "center_address": et.get("center_address") or "",
+                        "seat_number": et.get("seat_number") or "",
+                        "admit_status": et.get("allocation_status") or "",
+                        "admit_card_url": f"/api/method/slcm.admission.utils.web.download_admit_card?admit_card={et.get('name')}"
+                    })
+            except Exception: pass
+
+            # Get Applied Scholarships
+            apps = get_applied_scholarships_for_dashboard(app.name)
+            for a in apps:
+                if a.name not in seen_applications:
+                    # Enrich with scheme name
+                    a["scheme_name"] = frappe.db.get_value("Scholarship Scheme", a.scholarship_scheme, "scheme_name") or a.scholarship_scheme
+                    applied_scholarships.append(a)
+                    seen_applications.add(a.name)
+
+            if not all([app.admission_cycle, app.campus, app.program]):
+                continue
+                
+            schemes = get_available_scholarships_for_dashboard(
+                app.name, 
+                app.admission_cycle, 
+                app.campus, 
+                app.program, 
+                [app.application_status] if app.application_status else []
+            )
+            for s in schemes:
+                if s.name not in seen_schemes:
+                    available_scholarships.append(s)
+                    seen_schemes.add(s.name)
+        
+        context.scholarships = available_scholarships[:5]
+        context.applied_scholarships = sorted(applied_scholarships, key=lambda x: x.creation, reverse=True)
+        context.entrance_tests = entrance_tests
+    except Exception as e:
+        frappe.log_error(f"Scholarship/ET fetch failed: {e}", "Dashboard Fix")
         context.scholarships = []
+        context.applied_scholarships = []
+        context.entrance_tests = []
 
     # ── Portal config extras ───────────────────────────────────────
     try:

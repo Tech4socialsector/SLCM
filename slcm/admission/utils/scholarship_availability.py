@@ -147,7 +147,13 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             "name": ["in", applicable_schemes],
             "status": "Active"
         },
-        fields=["name", "scheme_name", "scheme_type", "coverage_type", "coverage_value", "apply_on", "stage_availability", "application_start", "application_end", "max_beneficiaries", "current_beneficiaries", "total_budget", "utilized_budget", "exclusive_scheme"]
+        fields=[
+            "name", "scheme_name", "scheme_type", "coverage_type", 
+            "coverage_value", "apply_on", "stage_availability", 
+            "application_start", "application_end", "max_beneficiaries", 
+            "current_beneficiaries", "total_budget", "utilized_budget", 
+            "exclusive_scheme", "max_amount", "eligibility_criteria"
+        ]
     )
     
     available = []

@@ -32,10 +32,10 @@
         <style>
             :root {
                 /* Defaults that child pages can override */
-                --primary: #1a3c6e;
-                --secondary: #c8a14b;
-                --accent: #c8a14b;
-                --primary-light: #e8f0fb;
+                --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+                --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+                --accent: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+                --primary-light: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }}15;
                 --text: #1a1a2e;
                 --muted: #6c757d;
                 --border: #dee2e6;
