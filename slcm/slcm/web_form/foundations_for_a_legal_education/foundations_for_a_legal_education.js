@@ -1,109 +1,112 @@
-// --------------------------------------------------
-// Sets the declaration consent as mandatory based on the candidate's age (under 18).
-// --------------------------------------------------
-function toggle_declaration_section() {
-    try {
-        const dob_val = frappe.web_form.get_value('candidate_dob');
-        let is_mandatory = false;
-        let age = null;
-
-        if (dob_val) {
-            const dob = new Date(dob_val);
-            const today = new Date();
-            age = today.getFullYear() - dob.getFullYear();
-            const m = today.getMonth() - dob.getMonth();
-
-            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-                age--;
-            }
-
-            if (age < 18) {
-                is_mandatory = true;
-            }
-        }
-
-        if (typeof frappe.web_form.set_df_property === 'function') {
-            frappe.web_form.set_df_property('declaration_consent', 'reqd', is_mandatory ? 1 : 0);
-        } else if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['declaration_consent']) {
-            frappe.web_form.fields_dict['declaration_consent'].df.reqd = is_mandatory ? 1 : 0;
-            frappe.web_form.fields_dict['declaration_consent'].refresh();
-        }
-
-    } catch (e) {
-        // Error handling silently in production or log to system console if available
-    }
-}
-
 frappe.ready(function () {
-    frappe.web_form.on('candidate_dob', function () {
-        toggle_declaration_section();
-    });
 
-    // Capitalize each word in all fields dynamically
-    const excluded_fields = ['email_address', 'parent_email_address'];
-    if (frappe.web_form && frappe.web_form.fields_dict) {
-        $.each(frappe.web_form.fields_dict, function (fieldname, field) {
-            if (['Data', 'Small Text', 'Text'].includes(field.df.fieldtype) && !excluded_fields.includes(fieldname)) {
-                frappe.web_form.on(fieldname, function (f, value) {
-                    value = value || frappe.web_form.get_value(fieldname);
-                    if (value && typeof value === 'string') {
-                        const capitalized = value.replace(/\b[a-zA-Z]/g, function (l) { return l.toUpperCase(); });
-                        if (capitalized !== value) {
-                            frappe.web_form.set_value(fieldname, capitalized);
-                        }
-                    }
+    // List of mandatory fields to validate
+    const mandatoryFields = [
+        'email_address',
+        'candidate_name',
+        'where_did_you_hear',
+        'last_class_attended',
+        'latest_board_attended',
+        'year_of_passing'
+    ];
+
+    // Function to check if all mandatory fields are filled
+    function checkMandatoryFields() {
+        let allFilled = true;
+
+        mandatoryFields.forEach(function (fieldName) {
+            const fieldValue = frappe.web_form.get_field(fieldName)
+                ? frappe.web_form.get_field(fieldName).get_value()
+                : null;
+
+            if (!fieldValue || fieldValue.toString().trim() === '') {
+                allFilled = false;
+            }
+        });
+
+        return allFilled;
+    }
+
+    // Function to update button state
+    function updatePayButton() {
+        const $payBtn = $('button[data-action="pay"], .btn-proceed-to-pay, button:contains("Proceed to Pay")').filter(':visible').first();
+
+        if ($payBtn.length === 0) return;
+
+        if (checkMandatoryFields()) {
+            // Enable the button
+            $payBtn.prop('disabled', false);
+            $payBtn.removeClass('disabled btn-disabled');
+            $payBtn.css({
+                'pointer-events': 'auto',
+                'opacity': '1',
+                'cursor': 'pointer'
+            });
+        } else {
+            // Disable the button
+            $payBtn.prop('disabled', true);
+            $payBtn.addClass('disabled');
+            $payBtn.css({
+                'pointer-events': 'none',
+                'opacity': '0.5',
+                'cursor': 'not-allowed'
+            });
+        }
+    }
+
+    // Wait for the web form to fully render
+    setTimeout(function () {
+
+        // Initial disable on page load
+        updatePayButton();
+
+        // Attach change/input listeners to each mandatory field
+        mandatoryFields.forEach(function (fieldName) {
+            const field = frappe.web_form.get_field(fieldName);
+            if (!field) return;
+
+            // For input/textarea fields
+            $(field.wrapper).find('input, textarea, select').on('input change blur', function () {
+                updatePayButton();
+            });
+
+            // For Select fields (frappe uses a custom select)
+            if (field.df && field.df.fieldtype === 'Select') {
+                $(field.wrapper).find('select').on('change', function () {
+                    updatePayButton();
+                });
+            }
+
+            // For Link fields
+            if (field.df && field.df.fieldtype === 'Link') {
+                $(field.wrapper).find('input').on('change blur', function () {
+                    updatePayButton();
                 });
             }
         });
+
+        // Also observe DOM changes in case button renders late
+        const observer = new MutationObserver(function () {
+            updatePayButton();
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Disconnect observer after form is stable (10 seconds)
+        setTimeout(function () {
+            observer.disconnect();
+        }, 10000);
+
+    }, 800);
+
+    // Hook into frappe web_form's change event if available
+    if (frappe.web_form) {
+        frappe.web_form.on('change', function () {
+            updatePayButton();
+        });
     }
 
-    // Run on load
-    toggle_declaration_section();
-
-    // Pre-fill email and mobile from encoded URL parameters if present
-    const params = new URLSearchParams(window.location.search);
-
-    let param_email = params.get('email_address');
-    let param_mobile = params.get('candidate_contact_number');
-
-    function try_set_fields() {
-        const set_read_only = (fieldname, val) => {
-            if (val) {
-                // Safely update the value
-                if (frappe.web_form.get_value(fieldname) !== val) {
-                    frappe.web_form.set_value(fieldname, val);
-                }
-                const $input = $('[data-fieldname="' + fieldname + '"] input');
-                if ($input.length && $input.val() !== val) {
-                    $input.val(val).trigger('change');
-                }
-                if (frappe.web_form.fields_dict && frappe.web_form.fields_dict[fieldname]) {
-                    frappe.web_form.fields_dict[fieldname].df.read_only = 1;
-                    frappe.web_form.set_df_property(fieldname, 'read_only', 1);
-                }
-            }
-        };
-
-        set_read_only('email_address', param_email);
-        set_read_only('candidate_contact_number', param_mobile);
-    }
-
-    frappe.web_form.after_load = () => {
-        try_set_fields();
-    };
-
-    let set_attempts = 0;
-    let interval = setInterval(() => {
-        try_set_fields();
-        set_attempts++;
-        if (set_attempts > 20) clearInterval(interval);
-    }, 100);
-});
-
-
-// Call the global custom header/footer injector
-$(function () {
-    if (typeof inject_fle_header_footer === 'function') {
-        inject_fle_header_footer();
-    }
 });
