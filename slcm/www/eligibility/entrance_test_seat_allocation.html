@@ -473,7 +473,9 @@
         "entranceTestList": "{{ doc.entrance_test_list }}",
         "isRescheduled": {{ 'true' if is_rescheduled else 'false' }},
         "admitCard": "{{ doc.admit_card }}",
-        "rescheduleAdmitCard": "{{ doc.reschedule_admit_card }}"
+        "rescheduleAdmitCard": "{{ doc.reschedule_admit_card }}",
+        "doc": {{ doc_json|safe if doc_json else '{}' }},
+        "branding": {{ campus_branding|tojson|safe if campus_branding else '{}' }}
     }
 </script>
 <script>
@@ -540,11 +542,224 @@
 
     function downloadAdmitCard() {
         var pageDataElement = document.getElementById('__page-data__');
-        if (pageDataElement) {
-            var pageData = JSON.parse(pageDataElement.textContent);
-            // Always call the API to ensure the Admit Card is up-to-date with the "Admit Card 2026-2027" format
-            window.location.href = '/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name=' + pageData.allocationName;
+        if (!pageDataElement) return;
+        var pageData = JSON.parse(pageDataElement.textContent);
+
+        const doc = pageData.doc;
+        const branding = pageData.branding;
+        const is_rescheduled = pageData.isRescheduled;
+
+        const esc = (v) => { if (!v) return ""; return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); };
+        const val = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
+        const fmtDate = (v) => { if (!v) return "—"; try { return new Date(v).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return v; } };
+
+        const admit_no = doc.admit_card_number || ("AC-" + doc.name);
+
+        const f_date = is_rescheduled ? doc.re_allocation_date : doc.allocation_date;
+        const f_test = is_rescheduled ? (doc.re_entrance_test_name || doc.re_entrance_test_list) : (doc.entrance_test_name || doc.entrance_test_list);
+        const f_seat = is_rescheduled ? doc.re_seat_number : doc.seat_number;
+        const f_room = is_rescheduled ? doc.re_room_name : doc.room_name;
+        const f_code = is_rescheduled ? doc.re_room_code : doc.room_code;
+        const f_building = is_rescheduled ? doc.re_building : doc.building;
+        const f_floor = is_rescheduled ? doc.re_floor : doc.floor;
+        const f_center = is_rescheduled ? doc.re_center_name : doc.center_name;
+        const f_address = is_rescheduled ? doc.re_center_address : doc.center_address;
+        const f_status = is_rescheduled ? doc.re_allocation_status : doc.allocation_status;
+
+        const alloc_date = fmtDate(f_date);
+        const dob = fmtDate(doc.date_of_birth);
+        const issue_date = new Date().toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+        const exam_date_time = alloc_date !== "—" ? alloc_date + " &nbsp;|&nbsp; As per schedule" : "As per schedule";
+
+        let profile_image_url = doc.profile;
+        if (profile_image_url && !profile_image_url.startsWith('http')) {
+            profile_image_url = '/files/' + encodeURIComponent(profile_image_url.replace(/^.*[\\\/]/, ""));
         }
+
+        const campus_display_name = branding.campus_name || doc.campus || "Institution of Legal Education";
+        const campus_logo_url = branding.logo ? (branding.logo.startsWith("http") ? branding.logo : '/files/' + encodeURIComponent(branding.logo.replace(/^.*[\\\/]/, ""))) : null;
+
+        const centre_parts = [f_center, f_address].filter(v => v && v.trim());
+        const centre_full = centre_parts.length ? centre_parts.map(esc).join(", ") : "—";
+
+        function headerHTML() {
+            return `
+                <div class="header" style="background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e;">
+                  <div class="logo-box" style="width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+                    ${campus_logo_url
+                    ? `<img src="${campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`
+                    : `<div class="logo-inner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+                          <span class="logo-icon" style="font-size: 28px; line-height: 1; color: #7b1c1c;">⚖</span>
+                          <span class="logo-text" style="font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-align: center; letter-spacing: 0.5px; line-height: 1.2;">LAW<br>SCHOOL</span>
+                        </div>`
+                }
+                  </div>
+                  <div class="hdr-center" style="flex: 1; text-align: center;">
+                    <div class="univ-name" style="font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;">${esc(campus_display_name)}</div>
+                    <div class="univ-sub" style="font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
+                  </div>
+                </div>`;
+        }
+
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Admit Card - ${esc(admit_no)}</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Times New Roman", Times, serif; font-size: 13px; background: #c8c8c8; color: #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.card-page { width: 710px; margin: 20px auto; background: #fff; border: 1.5px solid #555; }
+.header { background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e; }
+.logo-box { width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+.univ-name { font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2; }
+.univ-sub { font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px; }
+.title-row { text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }
+.title-row .t1 { font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }
+.title-row .t2 { font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }
+.info-wrap { border: 1.5px solid #888; margin: 12px 14px; display: flex; }
+.info-tbl { flex: 1; border-collapse: collapse; }
+.info-tbl tr { border-bottom: 1px solid #ccc; }
+.info-tbl tr:last-child { border-bottom: none; }
+.info-tbl td { padding: 5.5px 8px; font-size: 12.5px; vertical-align: middle; line-height: 1.5; }
+.info-tbl td.lb { font-weight: bold; font-family: Arial, sans-serif; width: 36%; white-space: nowrap; color: #000; }
+.info-tbl td.sp { width: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; text-align: center; padding: 0; }
+.info-tbl td.vl { font-family: "Times New Roman", Times, serif; font-size: 13px; color: #000; }
+.seat-pill { display: inline-block; background: #1a237e; color: #fff; font-weight: bold; font-family: Arial, sans-serif; font-size: 13px; padding: 2px 14px; border-radius: 2px; letter-spacing: 1px; }
+.status-pill { display: inline-block; border: 1px solid #4caf50; color: #1b5e20; background: #f0fdf0; font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px; }
+.photo-col { width: 135px; flex-shrink: 0; border-left: 1.5px solid #888; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 8px; min-height: 250px; gap: 8px; }
+.photo-box-inner { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.photo-frame { width: 120px; height: 150px; border: 1.5px solid #555; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center; }
+.photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+.photo-cap { font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3; }
+.sig-note { text-align: center; font-style: italic; font-size: 11.5px; font-family: "Times New Roman", Times, serif; padding: 6px 14px 3px; color: #000; }
+.sig-tbl { border-collapse: collapse; width: calc(100% - 28px); margin: 0 14px 16px; border: 1.5px solid #888; }
+.sig-tbl td { border: 1.5px solid #888; padding: 0; width: 50%; }
+.sig-hdr { font-weight: bold; font-family: Arial, sans-serif; font-size: 12px; color: #000; text-align: center; padding: 5px 8px 4px; border-bottom: 1.5px solid #888; display: block; }
+.sig-body { height: 54px; display: block; }
+.inst-outer { border: 1.5px solid #888; margin: 12px 14px 16px; padding: 14px 18px 18px; }
+.inst-main-title { font-size: 13.5px; font-weight: bold; font-family: Arial, sans-serif; text-align: center; color: #000; margin-bottom: 10px; }
+.sec-title { font-size: 12.5px; font-weight: bold; font-family: Arial, sans-serif; color: #000; margin: 10px 0 3px; }
+.il { list-style: none; margin: 0; padding: 0; }
+.il > li { display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; padding-left: 18px; }
+.il > li .mk { flex-shrink: 0; min-width: 16px; }
+.sl { list-style: none; margin: 2px 0 2px 52px; padding: 0; }
+.sl li { display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; }
+.sl li .mk { flex-shrink: 0; min-width: 22px; font-style: italic; }
+.pg-footer { padding: 6px 14px 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; }
+.pg-footer span { font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }
+@media print { body { background: #fff; margin: 0; } .card-page { width: 100%; margin: 0; border: 1.5px solid #555; } .p1 { page-break-after: always; } .p2 { page-break-before: always; } }
+</style>
+</head>
+<body>
+<div class="card-page p1">
+  ${headerHTML()}
+  <div class="title-row">
+    <div class="t1">Admit Card (${val(f_test)})</div>
+    <div class="t2">Admission to ${doc.program_level ? esc(doc.program_level) : "the Programme"} &nbsp;|&nbsp; ${val(doc.academic_year)} &nbsp;|&nbsp; ${val(doc.admission_cycle)}</div>
+  </div>
+  <div class="info-wrap">
+    <table class="info-tbl">
+      <tbody>
+        <tr><td class="lb">Admit Card Number</td><td class="sp">:</td><td class="vl"><strong>${val(admit_no)}</strong></td></tr>
+        <tr><td class="lb">Candidate's Name</td><td class="sp">:</td><td class="vl">${val(doc.candidate_name)}</td></tr>
+        <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">${val(dob)}</td></tr>
+        <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">${val(doc.father_name)}</td></tr>
+        <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">${val(doc.mother_name)}</td></tr>
+        <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">${val(doc.gender)}</td></tr>
+        <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">${val(doc.program)}</td></tr>
+        <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">${val(doc.applicant)}</td></tr>
+        <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">${exam_date_time}</td></tr>
+        <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
+        <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">${val(f_seat)}</span></td></tr>
+        <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">${val(f_room)}${f_code && f_code.trim() ? "&nbsp; (Code:&nbsp;" + esc(f_code) + ")" : ""}</td></tr>
+        <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">${val(f_building)}${f_floor && f_floor.trim() ? "&nbsp; &middot;&nbsp; Floor:&nbsp;" + esc(f_floor) : ""}</td></tr>
+        <tr><td class="lb">Allocation Status</td><td class="sp">:</td><td class="vl"><span class="status-pill">${val(f_status)}</span></td></tr>
+        <tr><td class="lb">Test Centre Name &amp;&nbsp;Address</td><td class="sp">:</td><td class="vl" style="font-size:11.5px;">${centre_full}</td></tr>
+      </tbody>
+    </table>
+    <div class="photo-col">
+      <div class="photo-box-inner">
+        <div class="photo-frame">
+          ${profile_image_url ? `<img src="${profile_image_url}" alt="Candidate Photo">` : `<div class="photo-ph">👤</div>`}
+        </div>
+        <div class="photo-cap">Candidate's Photograph</div>
+      </div>
+      <div class="photo-sig-box" style="width: 100%; text-align: center; margin-top: auto; padding-bottom: 5px;">
+        <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
+        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333;">Candidate's Signature</div>
+      </div>
+    </div>
+  </div>
+  <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>
+  <table class="sig-tbl">
+    <tr>
+      <td><span class="sig-hdr">Candidate's Signature</span><span class="sig-body"></span></td>
+      <td><span class="sig-hdr">Invigilator's Signature</span><span class="sig-body"></span></td>
+    </tr>
+  </table>
+</div>
+<div class="card-page p2">
+  <div class="inst-outer">
+    <div class="inst-main-title">Instructions to Candidates</div>
+    <div class="sec-title">1.&nbsp;&nbsp; General Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates should check and review their admit cards carefully and make sure that their Name, Date of Birth, and other personal details mentioned in the admit card are as per the details filled by them in the application form. In case of any discrepancy, please contact the Examination Cell immediately.</span></li>
+      <li><span class="mk">b.</span><span>Please carry a printed copy of this admit card to the test centre.</span></li>
+    </ul>
+    <div class="sec-title">2.&nbsp;&nbsp; Reporting to the Test Centre &amp; Test Timings</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates will be allowed to enter the premises of the test centre 30 minutes before the examination start time and should be seated in the examination hall at least 15 minutes before commencement.</span></li>
+      <li><span class="mk">b.</span><span>Candidates should carry a Government-issued photo ID card, preferably the one uploaded with the application form. The ID card will be checked at the time of entry into the centre.</span></li>
+      <li><span class="mk">c.</span><span>Candidates who arrive at the test centre beyond the scheduled entry cut-off time will not be permitted entry.</span></li>
+      <li><span class="mk">d.</span><span>Once the test commences, Candidates will not be permitted to leave the examination hall until the test is completed, and all the Question Booklets and OMR response sheets have been collected by the invigilator/s.</span></li>
+    </ul>
+    <div class="sec-title">3.&nbsp;&nbsp; Pre-Test Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates shall be required to follow all directions issued by the Centre Coordinators and the Institution representatives at their respective test centres.</span></li>
+      <li><span class="mk">b.</span><span>Candidates must maintain all protocols in place at their respective test centres.</span></li>
+    </ul>
+    <div class="sec-title">4.&nbsp;&nbsp; Permitted Items</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates will only be permitted to carry the following inside the Test Centre:</span></li>
+    </ul>
+    <ul class="sl">
+      <li><span class="mk">i.</span><span>Admit Card (In case the photograph on the Admit Card is not clear, candidates should carry a self-attested passport size photograph).</span></li>
+      <li><span class="mk">ii.</span><span>Government Issued Photo ID (preferably the one uploaded with the application form).</span></li>
+      <li><span class="mk">iii.</span><span>Black or Blue Ballpoint pen.</span></li>
+      <li><span class="mk">iv.</span><span>A transparent water bottle.</span></li>
+      <li><span class="mk">v.</span><span>A face mask (the Candidate may be asked to remove the face mask for ascertainment of identity).</span></li>
+      <li><span class="mk">vi.</span><span>An analogue watch. <strong>Note:</strong> Smart Watches are not permitted.</span></li>
+    </ul>
+    <div class="sec-title">5.&nbsp;&nbsp; Admissions Test Related Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>An attendance sheet will be circulated during the admissions test. The requisite details should be filled in the attendance sheet.</span></li>
+      <li><span class="mk">b.</span><span>Candidates will be provided with a Question Booklet and/or answer sheets. Candidates should use black/blue ball point pen <strong>only</strong> to enter the admit card number and other required details.</span></li>
+    </ul>
+    <div class="sec-title">6.&nbsp;&nbsp; Documents to be retained by the Candidate after the test</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>The admit card, with the invigilator's signature, should be retained by the candidate and produced at the Institution at the time of admission.</span></li>
+    </ul>
+    <div class="sec-title">7.&nbsp;&nbsp; Malpractice</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>The use of any unfair means by a Candidate shall result in their disqualification and cancellation of their test.</span></li>
+      <li><span class="mk">b.</span><span>Possession of electronic devices, including mobile phones, smart watches, etc., is strictly prohibited.</span></li>
+    </ul>
+  </div>
+  <div class="pg-footer">
+    <span>Doc: <strong>${val(doc.name)}</strong> &nbsp;·&nbsp; Generated: <strong>${val(issue_date)}</strong></span>
+    <span>${val(admit_no)}</span>
+  </div>
+</div>
+<script>window.print();<\/script>
+</body>
+</html>`;
+
+        const win = window.open("", "_blank", "width=800,height=900");
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
     }
 </script>
 {% endif %}

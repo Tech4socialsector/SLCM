@@ -73,6 +73,16 @@ def get_context(context):
             context.reporting_time = "09:30 AM" # Fallback
     else:
         context.reporting_time = "—"
+    # Branding & JSON for client-side generation
+    campus_branding = {"campus_name": doc.campus or "Institution of Legal Education", "logo": None}
+    try:
+        if doc.campus:
+            campus = frappe.get_doc("Campus", doc.campus)
+            campus_branding["campus_name"] = campus.campus_name or doc.campus
+            campus_branding["logo"] = campus.logo
+    except: pass
+    context.campus_branding = campus_branding
+    context.doc_json = frappe.as_json(doc.as_dict())
     
     return context
 
@@ -296,9 +306,38 @@ img {{ max-width: none !important; }}
   display: inline-block; border: 1px solid #4caf50; color: #1b5e20; background: #f0fdf0;
   font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px;
 }}
-.photo-col {{ width: 140px; flex-shrink: 0; border-left: 1.5px solid #888; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 10px 8px; gap: 8px; }}
-.photo-frame {{ width: 120px; height: 150px; border: 2px solid #555; overflow: hidden; background: #eee; display: block; }}
-.photo-frame img {{ width: 120px; height: 150px; display: block; max-width: none !important; }}
+.photo-col { 
+  width: 140px; 
+  flex-shrink: 0; 
+  border-left: 1.5px solid #888; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: 10px 8px; 
+  min-height: 250px; 
+}
+.photo-box-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.photo-frame { 
+  width: 120px; 
+  height: 150px; 
+  border: 1.5px solid #555; 
+  overflow: hidden; 
+  background: #eee; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
+.photo-frame img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+}
 .photo-ph {{ font-size: 36px; color: #aaa; text-align: center; line-height: 150px; }}
 .photo-cap {{
   font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3;
@@ -353,11 +392,16 @@ img {{ max-width: none !important; }}
       </tbody>
     </table>
     <div class="photo-col">
-      <div class="photo-frame">
-        {f'<img src="{profile_image_url}" alt="Candidate Photo">' if profile_image_url else '<div class="photo-ph">👤</div>'}
+      <div class="photo-box-inner">
+        <div class="photo-frame">
+          {f'<img src="{profile_image_url}" alt="Candidate Photo">' if profile_image_url else '<div class="photo-ph">👤</div>'}
+        </div>
+        <div class="photo-cap">Candidate's Photograph</div>
       </div>
-      <div class="photo-cap">Candidate's Photograph</div>
-      <div class="photo-gap"></div>
+      <div class="photo-sig-box" style="width: 100%; text-align: center; margin-top: auto; padding-bottom: 5px;">
+        <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
+        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333;">Candidate's Signature</div>
+      </div>
     </div>
   </div>
   <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>
