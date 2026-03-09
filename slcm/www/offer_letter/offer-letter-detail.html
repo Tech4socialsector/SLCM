@@ -1,122 +1,19 @@
 {% extends "slcm/www/admission_base.html" %}
 
-{% block content %}
-<div id="offer-detail-wrapper">
-    <div class="text-center p-5 mt-5" id="loader">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">{{ _("Loading...") }}</span>
-        </div>
-        <p class="mt-3 text-muted">{{ _("Fetching your admission offer...") }}</p>
-    </div>
-</div>
+{% block title %}Offer Letter Detail{% endblock %}
 
-<!-- Global Processing Overlay -->
-<div id="processing-overlay" class="custom-modal" style="display:none; background-color: rgba(26, 32, 44, 0.8);">
-    <div class="d-flex flex-column align-items-center justify-content-center h-100 text-white w-100">
-        <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"></div>
-        <h4 class="mt-4 font-weight-bold" id="processing-msg">{{ _("Processing...") }}</h4>
-        <p class="text-white-50 small">{{ _("Please do not refresh the page.") }}</p>
-    </div>
-</div>
-
-<!-- Fee Breakdown Modal -->
-<div id="payment-modal" class="custom-modal">
-    <div class="custom-modal-content">
-        <div class="custom-modal-header">
-            <h4>{{ _("Admission Fee Payment") }}</h4>
-            <span class="close-modal" onclick="close_payment_modal()">&times;</span>
-        </div>
-        <div class="custom-modal-body" id="payment-modal-body">
-            <!-- Breakdown injected here -->
-        </div>
-    </div>
-</div>
-
-<!-- Generic Confirmation Modal -->
-<div id="confirmation-modal" class="custom-modal">
-    <div class="custom-modal-content">
-        <div class="custom-modal-header">
-            <h4 id="conf-modal-title">{{ _("Confirm Action") }}</h4>
-            <span class="close-modal" onclick="close_confirmation_modal()">&times;</span>
-        </div>
-        <div class="custom-modal-body p-4">
-            <div class="text-center mb-4">
-                <div class="icon-circle bg-light-primary text-primary mx-auto mb-3"
-                    style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ebf8ff;">
-                    <i class="fa fa-question-circle-o fa-2x"></i>
-                </div>
-                <p id="conf-modal-msg" class="text-muted"></p>
-            </div>
-            <div class="d-flex gap-3" style="gap: 12px;">
-                <button class="btn btn-secondary flex-grow-1 py-2" style="border-radius: 10px;"
-                    onclick="close_confirmation_modal()">{{ _("Cancel") }}</button>
-                <button id="conf-modal-btn" class="btn btn-primary flex-grow-1 py-2"
-                    style="border-radius: 10px; background-color: var(--primary);">{{ _("Confirm") }}</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Success Modal -->
-<div id="success-modal" class="custom-modal">
-    <div class="custom-modal-content">
-        <div class="custom-modal-body p-5 text-center">
-            <div class="mb-4">
-                <div class="bg-success text-white mx-auto mb-3"
-                    style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <i class="fa fa-check fa-2x"></i>
-                </div>
-                <h3 class="font-weight-bold color-dark" id="success-title">{{ _("Success!") }}</h3>
-                <p id="success-msg" class="text-muted mb-0"></p>
-            </div>
-            <button class="btn btn-primary w-100 py-3" style="border-radius: 12px; background-color: var(--primary);"
-                onclick="location.reload()">{{ _("Close") }}</button>
-        </div>
-    </div>
-</div>
-
+{% block page_css %}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
 <style>
-    body {
-        background-color: var(--bg) !important;
-        font-family: 'Inter', sans-serif;
-    }
-
     #offer-detail-wrapper {
-        max-width: 1200px;
-        margin: 0 auto;
         padding: 0;
-    }
-
-    /* Navbar/Header Simulation or Styling */
-    .portal-sub-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 20px;
-        margin-bottom: 20px;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .back-link {
-        color: var(--primary);
-        text-decoration: none;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .back-link:hover {
-        text-decoration: underline;
     }
 
     /* Cards */
     .ui-card {
         background: #ffffff;
         border-radius: 16px;
-        border: 1px solid var(--border);
+        border: 1px solid #eef2f7;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         margin-bottom: 24px;
         padding: 24px;
@@ -149,22 +46,22 @@
     }
 
     .status-dot.issued {
-        background-color: #ed8936;
+        background-color: var(--warning, #ed8936);
         box-shadow: 0 0 0 4px rgba(237, 137, 54, 0.2);
     }
 
     .status-dot.accepted {
-        background-color: var(--primary);
-        box-shadow: 0 0 0 4px var(--primary-light);
+        background-color: var(--info, #3182ce);
+        box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.2);
     }
 
     .status-dot.payment-completed {
-        background-color: #38a169;
+        background-color: var(--success, #38a169);
         box-shadow: 0 0 0 4px rgba(56, 161, 105, 0.2);
     }
 
     .status-dot.rejected {
-        background-color: #e53e3e;
+        background-color: var(--danger, #e53e3e);
         box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.2);
     }
 
@@ -186,13 +83,12 @@
     .summary-item .value {
         font-size: 0.95rem;
         font-weight: 600;
-        color: #1a202c;
+        color: var(--primary);
     }
 
     .summary-item .value.amount {
         font-size: 1.25rem;
         font-weight: 700;
-        color: var(--primary);
     }
 
     .fee-row {
@@ -206,13 +102,21 @@
     .fee-row.total {
         margin-top: 24px;
         padding-top: 24px;
-        border-top: 1px solid var(--border);
+        border-top: 1px solid #eef2f7;
         font-size: 1rem;
         font-weight: 700;
         color: var(--primary);
     }
+    .fee-row.discount {
+        color: #276749;
+        font-weight: 600;
+        background-color: #f0fff4;
+        border-radius: 6px;
+        padding: 4px 8px;
+        margin-left: -8px;
+        margin-right: -8px;
+    }
 
-    /* Buttons */
     .btn-pay {
         background-color: var(--primary);
         color: #ffffff;
@@ -233,7 +137,7 @@
     .btn-download-outline {
         background-color: transparent;
         color: var(--primary);
-        border: 1px solid var(--primary);
+        border: 1px solid #eef2f7;
         border-radius: 10px;
         width: 100%;
         padding: 12px;
@@ -244,11 +148,10 @@
         justify-content: center;
         gap: 8px;
         text-decoration: none;
-        transition: background-color 0.2s;
     }
 
     .btn-download-outline:hover {
-        background-color: var(--primary-light);
+        background-color: #f7fafc;
         color: var(--primary);
     }
 
@@ -287,7 +190,6 @@
 
     .letter-content {
         font-family: 'Georgia', serif;
-        /* Or Times New Roman */
         color: #2d3748;
         line-height: 1.6;
     }
@@ -297,17 +199,6 @@
         .row {
             flex-direction: column-reverse;
         }
-
-        #offer-detail-wrapper {
-            padding: 0;
-        }
-    }
-
-    .footer-text {
-        text-align: center;
-        padding: 40px;
-        color: #a0aec0;
-        font-size: 0.85rem;
     }
 
     /* Modal Styles */
@@ -338,15 +229,8 @@
     }
 
     @keyframes modalSlide {
-        from {
-            transform: translateY(-30px);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
+        from { transform: translateY(-30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
 
     .custom-modal-header {
@@ -374,52 +258,104 @@
         transition: color 0.2s;
     }
 
-    .close-modal:hover {
-        color: #4a5568;
-    }
+    .close-modal:hover { color: #4a5568; }
 
-    .custom-modal-body {
-        padding: 32px;
-    }
+    .custom-modal-body { padding: 32px; }
 
-    .border-bottom-dashed {
-        border-bottom: 1px dashed #e2e8f0;
-    }
+    .border-bottom-dashed { border-bottom: 1px dashed #e2e8f0; }
 
-    .color-dark {
-        color: #1a202c;
-    }
+    .color-dark { color: var(--primary); }
 
-    .bg-light-primary {
-        background-color: var(--primary-light);
-    }
+    .bg-light-primary { background-color: #ebf8ff; }
 
-    .gap-3 {
-        gap: 1rem;
-    }
+    .gap-3 { gap: 1rem; }
 
-    .flex-grow-1 {
-        flex-grow: 1;
-    }
-
-    .icon-circle.text-primary {
-        color: var(--primary) !important;
-    }
-
-    .spinner-border.text-primary {
-        color: var(--primary) !important;
-    }
+    .flex-grow-1 { flex-grow: 1; }
 </style>
+{% endblock %}
 
+{% block content %}
+<div id="offer-detail-wrapper">
+    <div class="text-center p-5 mt-5" id="loader">
+        <div class="spinner-border" style="color: var(--primary);" role="status">
+            <span class="sr-only">{{ _("Loading...") }}</span>
+        </div>
+        <p class="mt-3 text-muted">{{ _("Fetching your admission offer...") }}</p>
+    </div>
+</div>
+
+<!-- Global Processing Overlay -->
+<div id="processing-overlay" class="custom-modal" style="display:none; background-color: rgba(26, 32, 44, 0.8);">
+    <div class="d-flex flex-column align-items-center justify-content-center h-100 text-white w-100">
+        <div class="spinner-border" style="width: 3rem; height: 3rem; color: var(--primary);" role="status"></div>
+        <h4 class="mt-4 font-weight-bold" id="processing-msg">{{ _("Processing...") }}</h4>
+        <p class="text-white-50 small">{{ _("Please do not refresh the page.") }}</p>
+    </div>
+</div>
+
+<!-- Fee Breakdown Modal -->
+<div id="payment-modal" class="custom-modal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h4>{{ _("Admission Fee Payment") }}</h4>
+            <span class="close-modal" onclick="close_payment_modal()">&times;</span>
+        </div>
+        <div class="custom-modal-body" id="payment-modal-body">
+            <!-- Breakdown injected here -->
+        </div>
+    </div>
+</div>
+
+<!-- Generic Confirmation Modal -->
+<div id="confirmation-modal" class="custom-modal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h4 id="conf-modal-title">{{ _("Confirm Action") }}</h4>
+            <span class="close-modal" onclick="close_confirmation_modal()">&times;</span>
+        </div>
+        <div class="custom-modal-body p-4">
+            <div class="text-center mb-4">
+                <div class="icon-circle mx-auto mb-3"
+                    style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: var(--primary); color: #fff;">
+                    <i class="fa fa-question-circle-o fa-2x"></i>
+                </div>
+                <p id="conf-modal-msg" class="text-muted"></p>
+            </div>
+            <div class="d-flex gap-3" style="gap: 12px;">
+                <button class="btn btn-secondary flex-grow-1 py-2" style="border-radius: 10px;"
+                    onclick="close_confirmation_modal()">{{ _("Cancel") }}</button>
+                <button id="conf-modal-btn" class="btn btn-primary flex-grow-1 py-2"
+                    style="border-radius: 10px; background-color: var(--primary);">{{ _("Confirm") }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="success-modal" class="custom-modal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-body p-5 text-center">
+            <div class="mb-4">
+                <div class="bg-success text-white mx-auto mb-3"
+                    style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa fa-check fa-2x"></i>
+                </div>
+                <h3 class="font-weight-bold color-dark" id="success-title">{{ _("Success!") }}</h3>
+                <p id="success-msg" class="text-muted mb-0"></p>
+            </div>
+            <button class="btn btn-primary w-100 py-3" style="border-radius: 12px; background-color: var(--primary);"
+                onclick="location.reload()">{{ _("Close") }}</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     let cur_offer_data = null;
     let payment_processed = false;
 
-    function portal_format_currency(v, c) {
+    function format_currency(v, c) {
         return (c || "INR") + " " + parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
     }
 
@@ -429,70 +365,35 @@
     document.addEventListener('DOMContentLoaded', function () {
         const urlParams = new URLSearchParams(window.location.search);
         const offer_name = urlParams.get('offer');
-        if (offer_name) {
-            fetch_offer_details(offer_name);
-        } else {
-            render_error("No offer specified.");
-        }
+        fetch_offer_details(offer_name);
     });
 
     async function fetch_offer_details(offer_name) {
         try {
-            const message = await apiFetch('slcm.api.service.offer_service.get_offer_details', {
-                offer_name: offer_name
-            });
-            if (message && !message.error) {
-                cur_offer_data = message;
-                render_offer_detail(message);
+            const data = await apiFetch('slcm.admission.page.applicant_offer_lett.applicant_offer_lett.get_offer_details', { offer_name: offer_name });
+            if (data && !data.error) {
+                cur_offer_data = data;
+                render_offer_detail(data);
             } else {
-                render_error(message ? message.error : "{{ _('Offer not found') }}");
+                render_error(data ? data.error : "{{ _('Offer not found') }}");
             }
-        } catch (err) {
-            console.error(err);
-            // Fallback for getting details if the specific service method is different
-            try {
-                const message = await apiFetch('slcm.admission.page.applicant_offer_lett.applicant_offer_lett.get_offer_details', {
-                    offer_name: offer_name
-                });
-                if (message && !message.error) {
-                    cur_offer_data = message;
-                    render_offer_detail(message);
-                    return;
-                }
-            } catch (e2) { }
-            render_error(err.message || "{{ _('Connection Error') }}");
+        } catch (e) {
+            render_error(e.message || "{{ _('Offer not found') }}");
         }
     }
 
     function start_expiry_timer(deadline_str) {
         if (!deadline_str) return;
 
-        // Normalise to end-of-day if date-only string
+        const timer_el = $('#expiry-timer-display');
+        if (!timer_el.length) return;
+
         let deadline_val = deadline_str;
-        if (deadline_str.length === 10) {
+        if (deadline_str.length === 10) { 
             deadline_val = deadline_str + " 23:59:59";
         }
+
         const deadline = new Date(deadline_val).getTime();
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-
-        // Only reveal the card in the LAST 24 HOURS before deadline
-        const now_check = new Date().getTime();
-        const dist_check = deadline - now_check;
-
-        if (dist_check > TWENTY_FOUR_HOURS || dist_check < 0) {
-            $('#expiry-timer-card').hide();
-            return;
-        }
-
-        $('#expiry-timer-card').show();
-        const timer_el = $('#expiry-timer-display');
-
-        // Blinking bell for urgency
-        setInterval(function () {
-            $('#expiry-bell-icon').css('opacity', function (_, val) {
-                return parseFloat(val) > 0.5 ? 0.15 : 1;
-            });
-        }, 700);
 
         const x = setInterval(function () {
             const now = new Date().getTime();
@@ -500,7 +401,8 @@
 
             if (distance < 0) {
                 clearInterval(x);
-                timer_el.html('<span>&#9888; EXPIRED</span>');
+                timer_el.text("{{ _('EXPIRED') }}");
+                timer_el.css('color', '#feb2b2');
                 return;
             }
 
@@ -508,26 +410,21 @@
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            const hh = String(hours).padStart(2, '0');
-            const mm = String(minutes).padStart(2, '0');
-            const ss = String(seconds).padStart(2, '0');
+            const display =
+                (hours < 10 ? "0" + hours : hours) + " : " +
+                (minutes < 10 ? "0" + minutes : minutes) + " : " +
+                (seconds < 10 ? "0" + seconds : seconds) + " more";
 
-            timer_el.html(hh + ' : ' + mm + ' : ' + ss);
+            timer_el.html(display);
         }, 1000);
     }
 
     function render_offer_detail(data) {
         const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid, online_payment_enabled } = data;
         const wrapper = $('#offer-detail-wrapper');
-        const status_class = (offer.offer_status || "").toLowerCase().replace(/ /g, '-');
+        const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
 
         let html = `
-        <div class="portal-sub-header">
-            <a href="/offer_letter/offer-letter-list" class="back-link">
-                <i class="fa fa-arrow-left"></i> Back
-            </a>
-        </div>
-
         <div class="row">
             <!-- Sidebar -->
             <div class="col-lg-4">
@@ -540,24 +437,16 @@
                 </div>
 
                 ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
-                    <div id="expiry-timer-card" class="ui-card" style="display:none; background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%); border: none; position:relative; overflow:hidden;">
-                        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(255,255,255,0.05);border-radius:50%;"></div>
-                        <div style="position:absolute;bottom:-30px;left:-10px;width:100px;height:100px;background:rgba(255,255,255,0.04);border-radius:50%;"></div>
-                        <span class="ui-card-label" style="color:rgba(255,255,255,0.8);display:flex;align-items:center;gap:6px;">
-                            <span id="expiry-bell-icon" style="font-size:0.9rem;">&#128276;</span>
-                            {{ _("URGENT \u2014 Offer Expiry Alert") }}
-                        </span>
-                        <div id="expiry-timer-display" style="color:#fff;font-size:2rem;font-weight:900;letter-spacing:0.08em;margin-bottom:8px;font-variant-numeric:tabular-nums;">
+                    <div class="ui-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border: none;">
+                        <span class="ui-card-label" style="color: rgba(255,255,255,0.6);">{{ _("Offer Expiry Timer") }}</span>
+                        <div id="expiry-timer-display" style="color: #fff; font-size: 1.5rem; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 8px;">
                             -- : -- : --
                         </div>
-                        <div style="color:rgba(255,255,255,0.85);font-size:0.75rem;font-weight:600;margin-bottom:8px;">
-                            <i class="fa fa-calendar-o mr-1"></i> {{ _("Deadline") }}: ${offer.payment_deadline}
-                        </div>
-                        <div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;font-size:0.72rem;color:#fff;font-weight:500;line-height:1.5;">
-                            &#9888; {{ _("Act now! Your offer expires in less than 24 hours. Accept and pay to secure your seat.") }}
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.75rem; font-weight: 500;">
+                            <i class="fa fa-calendar-o mr-1"></i> {{ _("Deadline") }}: ${offer.payment_deadline.split(' ')[0]}
                         </div>
                     </div>
-                ` : ''}  
+                ` : ''}
 
                 <div class="ui-card">
                     <span class="ui-card-label">{{ _("Summary") }}</span>
@@ -569,46 +458,24 @@
                         <span class="label">{{ _("Campus") }}</span>
                         <div class="value">${offer.campus}</div>
                     </div>
-                    ${offer.payment_deadline ? `
-                    <div class="summary-item">
-                        <span class="label"><i class="fa fa-calendar-o mr-1"></i> {{ _("Payment Deadline") }}</span>
-                        <div class="value" style="color: #c05621; font-weight: 700;">${offer.payment_deadline}</div>
-                    </div>
-                    ` : ''}
                     <div class="summary-item">
                         <span class="label">{{ _("Payable Amount") }}</span>
-                        <div class="value amount">
-                            ${portal_format_currency(offer.payable_amount, currency)}
-                            ${offer.scholarship_amount > 0 ? `
-                                <div style="font-size: 0.65rem; color: #059669; font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
-                                    <i class="fa fa-gift"></i> {{ _("Scholarship Adjusted") }}
-                                </div>
-                            ` : ''}
-                        </div>
+                        <div class="value amount">${format_currency(offer.payable_amount, currency)}</div>
                     </div>
                 </div>
 
                 <div class="ui-card">
                     <span class="ui-card-label">{{ _("Fee Details") }}</span>
                     ${fee_breakdown.map(f => `
-                        <div class="fee-row">
-                            <span>${f.component}</span>
-                            <span>${portal_format_currency(f.amount, currency)}</span>
+                        <div class="fee-row ${f.is_discount ? 'discount' : ''}">
+                            <span>${f.is_discount ? '🎓 ' : ''}${f.component}</span>
+                            <span>${format_currency(f.amount, currency)}</span>
                         </div>
                     `).join('')}
-
-                    ${offer.scholarship_amount > 0 ? `
-                        <div class="fee-row" style="color:#059669;">
-                            <span style="display:flex;align-items:center;gap:6px;">
-                                <i class="fa fa-gift"></i> {{ _("Scholarship Benefit") }}
-                            </span>
-                            <span style="font-weight:700;">- ${portal_format_currency(offer.scholarship_amount, currency)}</span>
-                        </div>
-                    ` : ''}
-
+                    
                     <div class="fee-row total">
-                        <span>{{ _("Total") }}</span>
-                        <span>${portal_format_currency(offer.payable_amount, currency)}</span>
+                        <span>{{ _("Payable Amount") }}</span>
+                        <span>${format_currency(offer.payable_amount, currency)}</span>
                     </div>
 
                     <div class="mt-4">
@@ -623,7 +490,7 @@
                         </a>
 
                         ${offer.offer_status === 'Payment Completed' || is_fee_paid || (applicant && applicant.application_status === 'Fee Paid') ? `
-                            <button class="btn btn-pay mt-2" style="background-color: #38a169;" onclick="handle_download_receipt()">
+                            <button class="btn btn-pay mt-2" style="background-color: var(--success);" onclick="handle_download_receipt()">
                                 <i class="fa fa-file-text-o mr-2"></i> {{ _("Download Receipt") }}
                             </button>
                         ` : ''}
@@ -660,7 +527,6 @@
     }
 
     function handle_primary_action() {
-        if (!cur_offer_data) return;
         if (cur_offer_data.offer.offer_status === 'Issued') {
             handle_accept();
         } else {
@@ -678,13 +544,8 @@
     }
 
     function handle_accept() {
-        show_confirmation({
-            title: "{{ _('Admission Offer Acceptance') }}",
-            message: "{{ _('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions. Please note: all other active offers will be automatically rejected.') }}",
-            btn_label: "{{ _('Yes, Accept Offer') }}",
-            on_confirm: function () {
-                execute_acceptance();
-            }
+        showConfirm("{{ _('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions. Please note: all other active offers will be automatically rejected.') }}", function () {
+            execute_acceptance();
         });
     }
 
@@ -697,7 +558,9 @@
                     applicant: cur_offer_data.offer.applicant,
                     reason: 'Applicant accepted another offer ' + cur_offer_data.offer.name
                 });
+                
                 hide_processing();
+
                 if (cur_offer_data.online_payment_enabled) {
                     showToast("{{ _('Offer accepted successfully. Proceeding to fee payment.') }}", "success");
                     setTimeout(() => handle_pay_fee(), 1000);
@@ -709,30 +572,11 @@
                 }
             } else {
                 hide_processing();
-                showToast("{{ _('Failed to accept offer.') }}", "error");
             }
-        } catch (err) {
-            console.error(err);
+        } catch (e) {
             hide_processing();
-            showToast(err.message || "{{ _('Error accepting offer') }}", "error");
+            showToast(e.message, "error");
         }
-    }
-
-    function show_confirmation(options) {
-        $('#conf-modal-title').text(options.title || "{{ _('Confirm Action') }}");
-        $('#conf-modal-msg').text(options.message || "");
-        $('#conf-modal-btn').text(options.btn_label || "{{ _('Confirm') }}");
-
-        $('#conf-modal-btn').off('click').on('click', function () {
-            close_confirmation_modal();
-            if (options.on_confirm) options.on_confirm();
-        });
-
-        $('#confirmation-modal').fadeIn(200);
-    }
-
-    function close_confirmation_modal() {
-        $('#confirmation-modal').fadeOut(200);
     }
 
     function show_success(options) {
@@ -746,7 +590,7 @@
 
         let fee_html = `
             <div class="text-center mb-4">
-                <div style="font-size: 2.5rem; font-weight: 800; color: #1a202c;">${portal_format_currency(offer.payable_amount, currency)}</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">${format_currency(offer.payable_amount, currency)}</div>
                 <div class="text-muted small text-uppercase font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total Payable Amount") }}</div>
             </div>
             
@@ -756,17 +600,9 @@
                     ${fee_breakdown.map(f => `
                         <div class="d-flex justify-content-between py-2 border-bottom-dashed">
                             <span class="text-muted">${f.component}</span>
-                            <span class="font-weight-bold color-dark">${portal_format_currency(f.amount, currency)}</span>
+                            <span class="font-weight-bold color-dark">${format_currency(f.amount, currency)}</span>
                         </div>
                     `).join('')}
-                    ${offer.scholarship_amount > 0 ? `
-                        <div class="d-flex justify-content-between py-2 border-bottom-dashed" style="color:#059669;">
-                            <span style="display:flex;align-items:center;gap:6px;">
-                                <i class="fa fa-gift"></i> {{ _("Scholarship Benefit") }}
-                            </span>
-                            <span class="font-weight-bold">- ${portal_format_currency(offer.scholarship_amount, currency)}</span>
-                        </div>
-                    ` : ''}
                 </div>
             </div>
 
@@ -776,7 +612,7 @@
                 </div>
             </div>
 
-            <button class="btn-pay mt-4 w-100 py-3" style="font-size: 1rem; border-radius: 12px;" onclick="proceed_to_payment()">
+            <button class="btn-pay mt-4 w-100 py-3" style="font-size: 1rem; border-radius: 12px; background-color: var(--primary);" onclick="proceed_to_payment()">
                 {{ _("Proceed to Payment") }}
             </button>
         `;
@@ -785,9 +621,7 @@
         $('#payment-modal').fadeIn(200);
     }
 
-    function close_payment_modal() {
-        $('#payment-modal').fadeOut(200);
-    }
+    function close_payment_modal() { $('#payment-modal').fadeOut(200); }
 
     function proceed_to_payment() {
         close_payment_modal();
@@ -797,21 +631,19 @@
     async function initiate_payment() {
         show_processing("{{ _('Launching Secure Gateway...') }}");
         try {
-            const message = await apiFetch('slcm.api.service.offer_service.create_offer_razorpay_order', { offer_name: cur_offer_data.offer.name });
+            const data = await apiFetch('slcm.api.service.offer_service.create_offer_razorpay_order', { offer_name: cur_offer_data.offer.name });
             hide_processing();
-            if (message) {
-                open_razorpay_modal(message);
-            } else {
-                showToast("{{ _('Failed to create payment order.') }}", "error");
+            if (data) {
+                open_razorpay_modal(data);
             }
-        } catch (err) {
-            console.error(err);
+        } catch (e) {
             hide_processing();
-            showToast(err.message || "{{ _('Error creating payment order') }}", "error");
+            showToast(e.message, "error");
         }
     }
 
     function open_razorpay_modal(data) {
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || "#1a202c";
         const options = {
             key: data.key_id,
             amount: data.amount,
@@ -819,14 +651,12 @@
             name: "{{ _('Admission Fee') }}",
             description: "{{ _('Offer Acceptance Fee Payment') }}",
             order_id: data.order_id,
-            handler: function (response) {
-                verify_payment(response);
-            },
+            handler: function (response) { verify_payment(response); },
             prefill: {
                 name: cur_offer_data.applicant.candidate_name,
                 email: cur_offer_data.applicant.email || ""
             },
-            theme: { color: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || "#1a202c" },
+            theme: { color: primaryColor },
             modal: {
                 ondismiss: function () {
                     if (!payment_processed) {
@@ -855,28 +685,24 @@
         }
     }
 
-    async function log_payment_failure(offer_name, order_id, error_data) {
-        try {
-            await apiFetch("slcm.api.service.fee_service.log_payment_failure", {
-                offer_name: offer_name,
-                order_id: order_id,
-                error_data: error_data
-            });
-        } catch (e) {
-            console.error("Failed to log payment failure:", e);
-        }
+    function log_payment_failure(offer_name, order_id, error_data) {
+        apiFetch("slcm.api.service.fee_service.log_payment_failure", {
+            offer_name: offer_name,
+            order_id: order_id,
+            error_data: error_data
+        });
     }
 
     async function verify_payment(response) {
         show_processing("{{ _('Verifying Payment Status...') }}");
         try {
-            const message = await apiFetch('slcm.api.service.offer_service.verify_offer_payment', {
+            const r = await apiFetch('slcm.api.service.offer_service.verify_offer_payment', {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
                 offer_name: cur_offer_data.offer.name
             });
-            if (message && message.status === 'success') {
+            if (r && r.status === 'success') {
                 payment_processed = true;
                 show_processing("{{ _('Payment Successful! Finalizing...') }}");
                 setTimeout(() => window.location.reload(), 1500);
@@ -884,49 +710,41 @@
                 hide_processing();
                 alert("{{ _('Payment verification failed. Please contact support.') }}");
             }
-        } catch (err) {
-            console.error(err);
+        } catch (e) {
             hide_processing();
-            alert(err.message || "{{ _('Payment verification failed') }}");
+            showToast(e.message, "error");
         }
     }
 
     function handle_download() {
-        if (!cur_offer_data) return;
         const offer = cur_offer_data.offer;
         let file_url = offer.offer_letter_pdf;
-
         if (!file_url) {
             file_url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Offer Letter&name=${encodeURIComponent(offer.name)}&format=Offer Letter&no_letterhead=0`;
         }
-
         window.open(file_url, '_blank');
     }
 
     async function handle_download_receipt() {
-        if (!cur_offer_data) return;
         const offer = cur_offer_data.offer;
         try {
-            const message = await apiFetch('frappe.client.get_value', {
+            const r = await apiFetch('frappe.client.get_value', {
                 doctype: 'Applicant Payment Receipt',
                 filters: { offer_letter: offer.name, docstatus: 1 },
                 fieldname: 'name'
             });
-            if (message && message.name) {
+            if (r && r.name) {
                 const format = offer.receipt_print_format || 'Applicant Payment Receipt Format';
-                const url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant Payment Receipt&name=${encodeURIComponent(message.name)}&format=${encodeURIComponent(format)}&no_letterhead=1`;
+                const url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant Payment Receipt&name=${encodeURIComponent(r.name)}&format=${encodeURIComponent(format)}&no_letterhead=1`;
                 window.open(url, '_blank');
             } else {
-                alert("{{ _('Payment Receipt not found. It might still be generating, please refresh in a moment.') }}");
+                showToast("{{ _('Payment Receipt not found. It might still be generating, please refresh in a moment.') }}", "info");
             }
-        } catch (err) {
-            console.error(err);
-            alert(err.message || "{{ _('Error finding receipt') }}");
-        }
+        } catch (e) { showToast(e.message, "error"); }
     }
 
     function render_error(message) {
-        $('#offer-detail-wrapper').html(`<div class="text-center p-5 mt-5"><h4>{{ _("Error") }}</h4><p>${message}</p><a href="/offer_letter/offer-letter-list" class="btn btn-primary">{{ _("Back to List") }}</a></div>`);
+        $('#offer-detail-wrapper').html(`<div class="text-center p-5 mt-5"><h4>{{ _("Error") }}</h4><p>${message}</p><a href="/offer_letter/offer-letter-list" class="btn btn-primary-adm">{{ _("Back to List") }}</a></div>`);
     }
 </script>
 {% endblock %}

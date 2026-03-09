@@ -6,9 +6,21 @@ class ProgramReservationPolicy(Document):
 
     def validate(self):
         self._validate_unique_per_cycle_program()
+        self._validate_unique_priorities()
         self._validate_seat_sum()
         self._recalculate_summary()
         self._update_row_available_seats()
+
+    def _validate_unique_priorities(self):
+        priorities = []
+        for row in (self.categories or []):
+            if row.priority in priorities:
+                frappe.throw(
+                    f"Duplicate priority <b>{row.priority}</b> found for category <b>{row.category_name}</b>. "
+                    "Each category must have a unique priority to ensure deterministic seat allocation.",
+                    title="Duplicate Priority"
+                )
+            priorities.append(row.priority)
 
     def _validate_unique_per_cycle_program(self):
         existing = frappe.db.get_value(

@@ -6,7 +6,7 @@ import hashlib
 import json
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
-from frappe.utils import now_datetime, flt
+from frappe.utils import now_datetime, flt, get_datetime
 
 
 class ScholarshipApplication(Document):
@@ -16,12 +16,14 @@ class ScholarshipApplication(Document):
 		
 		# Naming Series: SA-{CYCLE}-.#####
 		self.name = make_autoname(f"SA-{self.admission_cycle}-.#####")
-
+		
 	def validate(self):
 		if not self.status:
-			# Web forms pass empty strings for read_only status fields, bypassing the Draft default
 			self.status = "Submitted"
 			
+		if self.approval_date and get_datetime(self.approval_date) > get_datetime(now_datetime()):
+			frappe.throw(frappe._("Approval Date cannot be in the future."))
+
 		self.set_applicant_metadata()
 		self.set_academic_year()
 		self.prevent_duplicate()
@@ -259,38 +261,141 @@ class ScholarshipApplication(Document):
 			if approved_count >= limit:
 				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
 
-	def on_update(self):
-		self.create_audit_log()
-		
+	def create_audit_log(self):
+		"""
+		Records status changes and application creation in the Scholarship Audit Log.
+		"""
 		old_doc = self.get_doc_before_save()
-		if not old_doc:
-			if self.status == "Approved":
-				self.apply_financial_effects()
-				self.sync_fee_assignment()
+		
+		is_new = not old_doc
+		if not is_new and old_doc.status == self.status:
+			# Only log if status has changed
 			return
 
-		# Case 1: Status changed from something else to Approved
-		if old_doc.status != "Approved" and self.status == "Approved":
+		# Mapping status to action_type allowed in Scholarship Audit Log
+		action_map = {
+			"Submitted": "Apply",
+			"Approved": "Approve",
+			"Rejected": "Reject",
+			"Revoked": "Revoke",
+			"Cancelled": "Revoke"
+		}
+		
+		# If new, use Apply action
+		if is_new:
+			action_type = "Apply"
+			previous_state = {}
+		else:
+			action_type = action_map.get(self.status, "Modify")
+			previous_state = old_doc.as_dict()
+
+		# Determine triggered_by based on user role/session
+		triggered_by = "Admin"
+		if frappe.session.user == self.owner:
+			triggered_by = "Applicant"
+		elif frappe.session.user == "Administrator":
+			triggered_by = "System"
+
+		# Create hash for tamper detection
+		record_string = json.dumps({
+			"application": self.name,
+			"old_status": old_doc.status if old_doc else None,
+			"new_status": self.status,
+			"user": frappe.session.user,
+			"time": str(now_datetime())
+		}, sort_keys=True)
+		record_hash = hashlib.sha256(record_string.encode()).hexdigest()
+
+		try:
+			frappe.get_doc({
+				"doctype": "Scholarship Audit Log",
+				"scholarship_application": self.name,
+				"scholarship_scheme": self.scholarship_scheme,
+				"admission_cycle": self.admission_cycle,
+				"campus": self.campus,
+				"program": self.program,
+				"action_type": action_type,
+				"previous_state": json.dumps(previous_state, indent=4, default=str),
+				"new_state": json.dumps(self.as_dict(), indent=4, default=str),
+				"performed_by": frappe.session.user,
+				"triggered_by": triggered_by,
+				"action_timestamp": now_datetime(),
+				"reason": self.rejection_reason or f"Status changed to {self.status}",
+				"ip_address": frappe.local.request_ip if hasattr(frappe.local, "request_ip") else None,
+				"record_hash": record_hash
+			}).insert(ignore_permissions=True)
+		except Exception as e:
+			# Log to Error Log but don't stop the main Scholarship save
+			frappe.log_error(title="Scholarship Audit Log Error", message=frappe.get_traceback())
+
+	def on_update(self):
+		"""Called when a doc is saved."""
+		self.create_audit_log()
+
+		old_doc = self.get_doc_before_save()
+		old_status = old_doc.status if old_doc else None
+
+		if old_status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
 			self.sync_fee_assignment()
-		
-		# Case 2: Status changed from Approved to something else
-		elif old_doc.status == "Approved" and self.status != "Approved":
+
+		elif old_status == "Approved" and self.status != "Approved":
 			self.reverse_financial_effects()
 			self.sync_fee_assignment(reverse=True)
-		
-		# Case 3: Remains Approved but benefit changed
-		elif self.status == "Approved" and old_doc.status == "Approved":
+
+		elif self.status == "Approved" and old_status == "Approved":
 			benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
 			if benefit_diff != 0:
-				scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-				new_budget = flt(scheme.utilized_budget or 0) + flt(benefit_diff)
-				scheme.db_set("utilized_budget", new_budget)
-			
-			# Always ensure fee deduction is synced if still approved
+				from slcm.admission.utils.scholarship_availability import update_scheme_usage
+				update_scheme_usage(self.scholarship_scheme, benefit_diff, mapping_name=None, update_count=False)
 			self.sync_fee_assignment()
 
+	def on_submit(self):
+		"""Called when doc is submitted (docstatus 0 → 1)."""
+		self.create_audit_log()
+		if self.status == "Approved":
+			self.apply_financial_effects()
+			self.sync_fee_assignment()
+
+	def on_cancel(self):
+		"""Called when submitted doc is cancelled (docstatus 1 → 2)."""
+		self.create_audit_log()
+		if self.status == "Approved":
+			self.reverse_financial_effects()
+			self.sync_fee_assignment(reverse=True)
+
+	def on_update_after_submit(self):
+		"""
+		Called when a SUBMITTED doc (docstatus=1) is updated 
+		via direct save (e.g. status field changed by admin on submitted doc).
+		"""
+		self.create_audit_log()
+
+		old_doc = self.get_doc_before_save()
+		old_status = old_doc.status if old_doc else None
+
+		# Case 1: Status changed TO Approved
+		if old_status != "Approved" and self.status == "Approved":
+			self.apply_financial_effects()
+			self.sync_fee_assignment()
+
+		# Case 2: Status changed FROM Approved
+		elif old_status == "Approved" and self.status != "Approved":
+			self.reverse_financial_effects()
+			self.sync_fee_assignment(reverse=True)
+
+		# Case 3: Still Approved, but benefit may have changed
+		elif self.status == "Approved" and old_status == "Approved":
+			if old_doc:
+				benefit_diff = flt(self.calculated_benefit) - flt(old_doc.calculated_benefit)
+				if benefit_diff != 0:
+					from slcm.admission.utils.scholarship_availability import update_scheme_usage
+					update_scheme_usage(self.scholarship_scheme, benefit_diff, mapping_name=None, update_count=False)
+			self.sync_fee_assignment()
+
+
 	def on_trash(self):
+		"""Reverse financial effects if an Approved application is deleted."""
 		if self.status == "Approved":
 			self.reverse_financial_effects()
 			self.sync_fee_assignment(reverse=True)
@@ -386,121 +491,44 @@ class ScholarshipApplication(Document):
 			indicator="blue"
 		)
 
-	def create_audit_log(self):
-		"""
-		Records status changes and application creation in the Scholarship Audit Log.
-		"""
+	def apply_financial_effects(self):
+		from slcm.admission.utils.scholarship_availability import update_scheme_usage
+		mapping_name = self.find_mapping()
+		update_scheme_usage(self.scholarship_scheme, self.calculated_benefit, mapping_name=mapping_name)
+
+	def reverse_financial_effects(self):
+		from slcm.admission.utils.scholarship_availability import update_scheme_usage
+		mapping_name = self.find_mapping()
 		old_doc = self.get_doc_before_save()
+		benefit = old_doc.calculated_benefit if old_doc else self.calculated_benefit
+		update_scheme_usage(self.scholarship_scheme, benefit, mapping_name=mapping_name, reverse=True)
+
+	def find_mapping(self):
+		"""
+		Finds the applicable Scholarship Scheme Mapping for this application.
+		"""
+		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
+		applicant_categories = get_applicant_categories(self.applicant_id)
 		
-		is_new = not old_doc
-		if not is_new and old_doc.status == self.status:
-			# Only log if status has changed
-			return
-
-		# Mapping status to action_type allowed in Scholarship Audit Log
-		action_map = {
-			"Submitted": "Apply",
-			"Under Review": "Review",
-			"Approved": "Approve",
-			"Rejected": "Reject",
-			"Revoked": "Revoke",
-			"Cancelled": "Revoke",
-			"Draft": "Modify"
-		}
-		
-		# If new and already submitted (e.g. from web form), use Apply
-		if is_new:
-			action_type = "Apply" if self.status != "Draft" else "Modify"
-			previous_state = {}
-		else:
-			action_type = action_map.get(self.status, "Modify")
-			previous_state = old_doc.as_dict()
-
-		# Determine triggered_by based on user role/session
-		triggered_by = "Admin"
-		if frappe.session.user == self.owner:
-			triggered_by = "Applicant"
-		elif frappe.session.user == "Administrator":
-			triggered_by = "System"
-
-		# Create hash for tamper detection
-		record_string = json.dumps({
-			"application": self.name,
-			"old_status": old_doc.status if old_doc else None,
-			"new_status": self.status,
-			"user": frappe.session.user,
-			"time": str(now_datetime())
-		}, sort_keys=True)
-		record_hash = hashlib.sha256(record_string.encode()).hexdigest()
-
-		try:
-			frappe.get_doc({
-				"doctype": "Scholarship Audit Log",
-				"scholarship_application": self.name,
+		mappings = frappe.get_all(
+			"Scholarship Scheme Mapping",
+			filters={
 				"scholarship_scheme": self.scholarship_scheme,
 				"admission_cycle": self.admission_cycle,
 				"campus": self.campus,
-				"program": self.program,
-				"action_type": action_type,
-				"previous_state": json.dumps(previous_state, indent=4, default=str),
-				"new_state": json.dumps(self.as_dict(), indent=4, default=str),
-				"performed_by": frappe.session.user,
-				"triggered_by": triggered_by,
-				"action_timestamp": now_datetime(),
-				"reason": self.rejection_reason or f"Status changed to {self.status}",
-				"ip_address": frappe.local.request_ip if hasattr(frappe.local, "request_ip") else None,
-				"record_hash": record_hash
-			}).insert(ignore_permissions=True)
-		except Exception as e:
-			# Log to Error Log but don't stop the main Scholarship save
-			frappe.log_error(title="Scholarship Audit Log Error", message=frappe.get_traceback())
+				"is_active": 1
+			},
+			fields=["name", "program", "category"],
+			order_by="program desc, category desc" 
+		)
+		
+		for m in mappings:
+			program_match = not m.program or m.program == self.program
+			category_match = not m.category or m.category in applicant_categories
+			if program_match and category_match:
+				return m.name
+		return None
 
-	def apply_financial_effects(self):
-		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		approved_amt = self.calculated_benefit or 0
-
-		new_beneficiaries = (scheme.current_beneficiaries or 0) + 1
-		new_budget = flt(scheme.utilized_budget or 0) + flt(approved_amt)
-		new_status = scheme.status
-
-		# Auto-archive logic
-		if scheme.max_beneficiaries and new_beneficiaries >= scheme.max_beneficiaries:
-			new_status = "Archived"
-
-		if scheme.total_budget and new_budget >= scheme.total_budget:
-			new_status = "Archived"
-
-		scheme.db_set({
-			"current_beneficiaries": new_beneficiaries,
-			"utilized_budget": new_budget,
-			"status": new_status
-		})
-
-	def reverse_financial_effects(self):
-		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		old_doc = self.get_doc_before_save()
-		approved_amt = 0
-		if old_doc:
-			approved_amt = old_doc.calculated_benefit or 0
-		else:
-			approved_amt = self.calculated_benefit or 0
-
-		new_beneficiaries = max(0, (scheme.current_beneficiaries or 0) - 1)
-		new_budget = max(0, flt(scheme.utilized_budget or 0) - flt(approved_amt))
-		new_status = scheme.status
-
-		# Re-activate logic: if it was archived and now we are below limits
-		if scheme.status == "Archived":
-			bene_ok = not scheme.max_beneficiaries or new_beneficiaries < scheme.max_beneficiaries
-			budget_ok = not scheme.total_budget or new_budget < scheme.total_budget
-			if bene_ok and budget_ok:
-				new_status = "Active"
-
-		scheme.db_set({
-			"current_beneficiaries": new_beneficiaries,
-			"utilized_budget": new_budget,
-			"status": new_status
-		})
 
 @frappe.whitelist()
 def create_scholarship_application(scheme, family_income, income_certificate_data=None, income_certificate_name=None, supporting_documents_data=None, supporting_documents_name=None):
@@ -585,7 +613,11 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			"status": "Submitted"
 		})
 		
+		# Insert with ignore permissions to allow creation from portal
 		app.insert(ignore_permissions=True)
+		
+		# Set status to Submitted for portal submissions
+		app.db_set("status", "Submitted")
 		
 		# Update file references
 		if income_cert_url:

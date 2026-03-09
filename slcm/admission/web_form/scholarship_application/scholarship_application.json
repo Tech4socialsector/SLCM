@@ -131,7 +131,7 @@
             "fieldname": "status",
             "fieldtype": "Select",
             "label": "Status",
-            "options": "Draft\nSubmitted\nUnder Review\nApproved\nRejected\nRevoked",
+            "options": "Draft\nSubmitted\nApproved\nRejected\nRevoked",
             "read_only": 1
         },
         {

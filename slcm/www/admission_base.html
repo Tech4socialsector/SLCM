@@ -4,10 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>{% block title %}Admissions{% endblock %} — {{ frappe.get_doc("Website Settings").title or "SLCM" }}</title>
     <link rel="icon"
         href="{{ frappe.get_doc('Website Settings').favicon or '/assets/frappe/images/frappe-favicon.svg' }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <style>
         header.navbar,
@@ -33,42 +37,16 @@
 
     <style>
         :root {
-            --primary: {
-                    {
-                    (portal_config.get('primary_color') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')) or '#1a3c6e'
-                }
-            }
-
-            ;
-
-            --secondary: {
-                    {
-                    (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b'
-                }
-            }
-
-            ;
-
-            --accent: {
-                    {
-                    (portal_config.get('secondary_color') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')) or '#c8a14b'
-                }
-            }
-
-            ;
-
-            --primary-light: {
-                    {
-                    (portal_config.get('primary_light_color') if portal_config and portal_config.get else (portal_config.primary_light_color if portal_config else '#e8f0fb')) or '#e8f0fb'
-                }
-            }
-
-            ;
-            --text: #1a1a2e;
-            --muted: #6c757d;
-            --border: #dee2e6;
-            --card-bg: #ffffff;
-            --bg: #f4f6fb;
+            --primary: #1E3A8A;
+            --primary-hover: #1D4ED8;
+            --secondary: #334155;
+            --accent: #10B981;
+            --primary-light: #F1F5F9;
+            --text: #0F172A;
+            --muted: #64748B;
+            --border: #E2E8F0;
+            --card-bg: #FFFFFF;
+            --bg: #F8FAFC;
         }
     </style>
     {% block theme_vars %}{% endblock %}
@@ -487,9 +465,11 @@
             <a href="/admission" class="nav-hide-mobile">Programs</a>
             {% if frappe.session.user != "Guest" %}
             <a href="/my-applications" class="nav-hide-mobile">My Applications</a>
-            <a href="/eligibility/entrance_test_seat_allocation" class="nav-hide-mobile">Entrance Test Seat
-                Allocation</a>
-            <a href="/eligibility/interview_management" class="nav-hide-mobile">Interview Management</a>
+            {% endif %}
+            <a href="/eligibility/entrance_test_seat_allocation" class="nav-hide-mobile">Entrance Test</a>
+            <a href="/eligibility/interview_management" class="nav-hide-mobile">Interview </a>
+            <a href="/merit-and-scholarship/admission_dashboard" class="nav-hide-mobile">Merit and Scholarships</a>
+            {% if frappe.session.user != "Guest" %}
             <a href="/offer_letter/offer-letter-list" class="nav-hide-mobile">Offer Letter</a>
             {% endif %}
 
@@ -539,12 +519,12 @@
         <a href="/my-applications" class="drawer-link" onclick="closeDrawer()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
+                <polyline points="14 2 14 8 20 8" /> 
             </svg>
             My Applications
         </a>
         {% endif %}
-        <a href="/merit-and-schoarship/admission_dashboard" class="drawer-link" onclick="closeDrawer()">
+        <a href="/admission_dashboard" class="drawer-link" onclick="closeDrawer()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
