@@ -109,20 +109,15 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
     else:
         return confirm_applicant_preference(allocation_name, selected_provider)
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def download_admit_card(allocation_name):
     """
     Downloads the Admit Card. Prioritizes the stored file (BASE or RE).
-    If missing, triggers generation+storage then serves the result.
+    Accessible without login if the file is already generated.
+    Always regenerates for logged-in users to ensure accuracy.
     """
-    # Security check
-    user = frappe.session.user
-    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
     doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
     
-    if not applicant_name or doc.applicant != applicant_name:
-        frappe.throw(_("Not authorized"), frappe.PermissionError)
-
     is_rescheduled = (doc.is_rescheduled == 1 or doc.entrance_test_status == "Rescheduled")
     status = doc.re_allocation_status if is_rescheduled else doc.allocation_status
     
@@ -130,30 +125,28 @@ def download_admit_card(allocation_name):
         frappe.throw(_("Admit Card is only available after seat allocation is confirmed."))
 
     field_to_check = "reschedule_admit_card" if is_rescheduled else "admit_card"
-    stored_file_url = getattr(doc, field_to_check)
-
-    # If file not stored, attempt to generate AND store it
-    if not stored_file_url:
+    
+    # Always regenerate the Admit Card PDF to reflect potential changes in data/layout
+    if frappe.session.user == "Guest":
+        stored_file_url = getattr(doc, field_to_check)
+        if not stored_file_url:
+            frappe.throw(_("Admit Card not yet generated. Please login to generate it."), frappe.PermissionError)
+    else:
         from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
         stored_file_url = generate_and_store_admit_card(doc.name, is_rescheduled=is_rescheduled)
         if stored_file_url:
             doc.reload()
 
     if stored_file_url:
-        # Serve the successfully stored/found file
-        filename = f"Admit_Card_{doc.applicant}_{'RE' if is_rescheduled else 'BASE'}.pdf"
-        file_doc = frappe.get_doc("File", {"file_url": stored_file_url})
-        
-        frappe.local.response.filename = filename
-        frappe.local.response.filecontent = file_doc.get_content()
-        frappe.local.response.type = "download"
+        # Redirect to the public file URL for direct download
+        frappe.local.response.type = "redirect"
+        frappe.local.response.location = stored_file_url
     else:
-        # If both dynamic and manual generation failed to store, throw error
         frappe.throw(_("Admit Card generation failed. Please contact the admission office."))
 
 def get_admit_card_html(doc, is_rescheduled):
     """
-    EXACT port of generate_admit_card_pdf from Desk JS.
+    EXACT port of generate_admit_card_pdf template from Desk JS.
     """
     def esc(v): return escape_html(str(v if v is not None else ""))
     def val(v): return esc(v) if (v and str(v).strip() != "") else "—"
@@ -163,30 +156,22 @@ def get_admit_card_html(doc, is_rescheduled):
     def get_base64_img(file_url):
         if not file_url: return None
         try:
-            # Handle cases where URL might have query parameters
-            if "?" in file_url:
-                file_url = file_url.split("?")[0]
-            
+            if "?" in file_url: file_url = file_url.split("?")[0]
             if file_url.startswith(("http://", "https://")):
                 from urllib.parse import urlparse
                 file_url = urlparse(file_url).path
-
-            # Clean path
-            if not file_url.startswith("/"):
-                file_url = "/" + file_url
-
-            if not frappe.db.exists("File", {"file_url": file_url}):
-                return None
-
+            if not file_url.startswith("/"): file_url = "/" + file_url
+            if file_url.startswith("/private/files/"):
+                file_url = file_url.replace("/private/files/", "/files/")
+            
+            if not frappe.db.exists("File", {"file_url": file_url}): return None
             file_doc = frappe.get_doc("File", {"file_url": file_url})
             content = file_doc.get_content()
             if not content: return None
-            
             mtype = mimetypes.guess_type(file_url)[0] or "image/png"
             b64 = base64.b64encode(content).decode()
             return f"data:{mtype};base64,{b64}"
-        except Exception:
-            return None
+        except Exception: return None
 
     # Pick fields based on is_rescheduled
     f_date = doc.re_allocation_date if is_rescheduled else doc.allocation_date
@@ -200,26 +185,15 @@ def get_admit_card_html(doc, is_rescheduled):
     f_address = doc.re_center_address if is_rescheduled else doc.center_address
     f_status = doc.re_allocation_status if is_rescheduled else doc.allocation_status
 
-    exam_date_time = "—"
-    reporting_time = "—"
+    alloc_date = "—"
     if f_date:
-        try:
-            exam_date_time = format_datetime(f_date, "dd-MM-yyyy hh:mm a")
-            # Calculate reporting time as 1 hour before
-            from datetime import timedelta
-            rep_dt = f_date - timedelta(hours=1)
-            reporting_time = format_datetime(rep_dt, "hh:mm a")
-        except:
-            exam_date_time = str(f_date)
+        try: alloc_date = formatdate(f_date)
+        except: alloc_date = str(f_date)
 
-    dob = "—"
-    if doc.date_of_birth:
-        try:
-            dob = formatdate(doc.date_of_birth)
-        except:
-            dob = str(doc.date_of_birth)
+    dob = formatdate(doc.date_of_birth) if doc.date_of_birth else "—"
+    issue_date = formatdate(nowdate())
 
-    issue_date = format_datetime(frappe.utils.now_datetime(), "dd-MM-yyyy hh:mm a")
+    exam_date_time = f"{alloc_date} &nbsp;|&nbsp; As per schedule" if alloc_date != "—" else "As per schedule"
 
     profile_image_url = get_base64_img(doc.profile)
 
@@ -228,10 +202,8 @@ def get_admit_card_html(doc, is_rescheduled):
     try:
         campus = frappe.get_doc("Campus", doc.campus)
         if campus.campus_name: campus_display_name = campus.campus_name
-        if campus.logo:
-            campus_logo_url = get_base64_img(campus.logo)
-    except:
-        pass
+        if campus.logo: campus_logo_url = get_base64_img(campus.logo)
+    except: pass
 
     centre_parts = [f_center, f_address]
     centre_full = ", ".join([esc(p) for p in centre_parts if p and p.strip()]) or "—"
@@ -239,32 +211,72 @@ def get_admit_card_html(doc, is_rescheduled):
     header_html = f"""
         <div class="header">
           <div class="logo-box">
-            {f'<img src="{campus_logo_url}" alt="Campus Logo">' if campus_logo_url else '<div class="logo-inner"><span class="logo-icon">⚖</span><span class="logo-text">LAW<br>SCHOOL</span></div>'}
+            {f'<img src="{campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">' if campus_logo_url else '<div class="logo-inner"><span class="logo-icon">⚖</span><span class="logo-text">LAW<br>SCHOOL</span></div>'}
           </div>
           <div class="hdr-center">
             <div class="univ-name">{esc(campus_display_name)}</div>
             <div class="univ-sub">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
           </div>
-        </div>
-    """
+        </div>"""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<title>Admit Card - {esc(admit_no)}</title>
 <style>
 *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
-body {{ font-family: "Times New Roman", Times, serif; font-size: 13px; background: #fff; color: #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }}
-.card-page {{ width: 710px; margin: 0 auto; background: #fff; border: 1.5px solid #555; page-break-after: always; }}
-.header {{ background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e; }}
-.logo-box {{ width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }}
-.logo-box img {{ max-width: 100%; max-height: 100%; object-fit: contain; }}
-.logo-inner {{ display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }}
+body {{
+  font-family: "Times New Roman", Times, serif;
+  font-size: 13px;
+  background: #fff;
+  color: #000;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}}
+img {{ max-width: none !important; }}
+.card-page {{
+  width: 710px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1.5px solid #555;
+  page-break-after: always;
+}}
+.header {{
+  background: #7b1c1c;
+  display: flex;
+  align-items: center;
+  padding: 10px 18px;
+  gap: 16px;
+  border-bottom: 3px solid #5a0e0e;
+}}
+.logo-box {{
+  width: 74px;
+  height: 74px;
+  background: #fff;
+  border: 2px solid rgba(255,255,255,0.6);
+  border-radius: 3px;
+  display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+}}
+.logo-box img {{ width: 70px; height: 70px; object-fit: contain; }}
+.logo-inner {{
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}}
 .logo-icon {{ font-size: 28px; line-height: 1; color: #7b1c1c; }}
-.logo-text {{ font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-align: center; letter-spacing: 0.5px; line-height: 1.2; }}
+.logo-text {{
+  font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
+  text-align: center; letter-spacing: 0.5px; line-height: 1.2;
+}}
 .hdr-center {{ flex: 1; text-align: center; }}
-.univ-name {{ font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2; }}
-.univ-sub {{ font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px; }}
+.univ-name {{
+  font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
+  text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;
+}}
+.univ-sub {{
+  font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80);
+  letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;
+}}
 .title-row {{ text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }}
 .title-row .t1 {{ font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }}
 .title-row .t2 {{ font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }}
@@ -276,13 +288,21 @@ body {{ font-family: "Times New Roman", Times, serif; font-size: 13px; backgroun
 .info-tbl td.lb {{ font-weight: bold; font-family: Arial, sans-serif; width: 36%; white-space: nowrap; color: #000; }}
 .info-tbl td.sp {{ width: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; text-align: center; padding: 0; }}
 .info-tbl td.vl {{ font-family: "Times New Roman", Times, serif; font-size: 13px; color: #000; }}
-.seat-pill {{ display: inline-block; background: #1a237e; color: #fff; font-weight: bold; font-family: Arial, sans-serif; font-size: 13px; padding: 2px 14px; border-radius: 2px; letter-spacing: 1px; }}
-.status-pill {{ display: inline-block; border: 1px solid #4caf50; color: #1b5e20; background: #f0fdf0; font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px; }}
-.photo-col {{ width: 135px; flex-shrink: 0; border-left: 1.5px solid #888; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 10px 8px; gap: 8px; }}
-.photo-frame {{ width: 110px; height: 130px; border: 1.5px solid #555; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center; }}
-.photo-frame img {{ width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }}
-.photo-ph {{ font-size: 36px; color: #aaa; text-align: center; }}
-.photo-cap {{ font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3; }}
+.seat-pill {{
+  display: inline-block; background: #1a237e; color: #fff; font-weight: bold;
+  font-family: Arial, sans-serif; font-size: 13px; padding: 2px 14px; border-radius: 2px; letter-spacing: 1px;
+}}
+.status-pill {{
+  display: inline-block; border: 1px solid #4caf50; color: #1b5e20; background: #f0fdf0;
+  font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px;
+}}
+.photo-col {{ width: 140px; flex-shrink: 0; border-left: 1.5px solid #888; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 10px 8px; gap: 8px; }}
+.photo-frame {{ width: 120px; height: 150px; border: 2px solid #555; overflow: hidden; background: #eee; display: block; }}
+.photo-frame img {{ width: 120px; height: 150px; display: block; max-width: none !important; }}
+.photo-ph {{ font-size: 36px; color: #aaa; text-align: center; line-height: 150px; }}
+.photo-cap {{
+  font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3;
+}}
 .sig-note {{ text-align: center; font-style: italic; font-size: 11.5px; font-family: "Times New Roman", Times, serif; padding: 6px 14px 3px; color: #000; }}
 .sig-tbl {{ border-collapse: collapse; width: calc(100% - 28px); margin: 0 14px 16px; border: 1.5px solid #888; }}
 .sig-tbl td {{ border: 1.5px solid #888; padding: 0; width: 50%; }}
@@ -296,7 +316,9 @@ body {{ font-family: "Times New Roman", Times, serif; font-size: 13px; backgroun
 .il > li {{ display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; padding-left: 18px; }}
 .il > li .mk {{ flex-shrink: 0; min-width: 16px; }}
 .sl {{ list-style: none; margin: 2px 0 2px 52px; padding: 0; }}
-.sl li {{ display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; }}
+.sl li {{
+  display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65;
+}}
 .sl li .mk {{ flex-shrink: 0; min-width: 22px; font-style: italic; }}
 .pg-footer {{ padding: 6px 14px 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; }}
 .pg-footer span {{ font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }}
@@ -322,7 +344,7 @@ body {{ font-family: "Times New Roman", Times, serif; font-size: 13px; backgroun
         <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">{val(doc.program)}</td></tr>
         <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(doc.applicant)}</td></tr>
         <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">{exam_date_time}</td></tr>
-        <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">{reporting_time}</td></tr>
+        <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
         <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">{val(f_seat)}</span></td></tr>
         <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">{val(f_room)}{f'&nbsp; (Code:&nbsp;{esc(f_code)})' if f_code and f_code.strip() else ""}</td></tr>
         <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">{val(f_building)}{f'&nbsp; &middot;&nbsp; Floor:&nbsp;{esc(f_floor)}' if f_floor and f_floor.strip() else ""}</td></tr>
@@ -335,6 +357,7 @@ body {{ font-family: "Times New Roman", Times, serif; font-size: 13px; backgroun
         {f'<img src="{profile_image_url}" alt="Candidate Photo">' if profile_image_url else '<div class="photo-ph">👤</div>'}
       </div>
       <div class="photo-cap">Candidate's Photograph</div>
+      <div class="photo-gap"></div>
     </div>
   </div>
   <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>
@@ -398,7 +421,7 @@ body {{ font-family: "Times New Roman", Times, serif; font-size: 13px; backgroun
     </ul>
   </div>
   <div class="pg-footer">
-    <span>Doc: <strong>{val(doc.name)}</strong> &nbsp;·&nbsp; Generated: <strong>{val(issue_date)}</strong> &nbsp;·&nbsp; System-generated.</span>
+    <span>Doc: <strong>{val(doc.name)}</strong> &nbsp;·&nbsp; Generated: <strong>{val(issue_date)}</strong> &nbsp;·&nbsp; System-generated. No physical signature required.</span>
     <span>{val(admit_no)}</span>
   </div>
 </div>

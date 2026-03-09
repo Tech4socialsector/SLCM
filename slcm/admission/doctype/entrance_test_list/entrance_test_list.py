@@ -461,34 +461,24 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False):
     etl_name = allocation.entrance_test_list
     etl = frappe.get_doc("Entrance Test List", etl_name)
     
-    # Try flexible generation first
+    # Always use the Manual HTML Template for generation (bypassing Frappe Print Format)
     pdf_content = None
-    if etl.admit_card_format:
-        try:
-            pdf_content = frappe.get_print(
-                allocation.doctype, 
-                allocation.name, 
-                etl.admit_card_format, 
-                as_pdf=True
-            )
-        except Exception as e:
-            frappe.log_error(f"Flexible PDF Generation Failed for {allocation.name}, falling back to manual: {str(e)}", "Admit Card Error")
-    
-    # Internal Fallback to Manual Template if flexible failed or format missing
-    if not pdf_content:
-        try:
-            from slcm.www.eligibility.entrance_test_seat_allocation import get_admit_card_html
-            from frappe.utils.pdf import get_pdf
-            
-            html = get_admit_card_html(allocation, is_rescheduled)
-            pdf_content = get_pdf(html)
-        except Exception as e:
-            frappe.log_error(f"Manual Fallback PDF Generation Error for {allocation.name}: {str(e)}", "Admit Card Error")
-            return None
+    try:
+        from slcm.www.eligibility.entrance_test_seat_allocation import get_admit_card_html
+        from frappe.utils.pdf import get_pdf
+        
+        html = get_admit_card_html(allocation, is_rescheduled)
+        pdf_content = get_pdf(html)
+    except Exception as e:
+        frappe.log_error(f"Manual PDF Generation Error for {allocation.name}: {str(e)}", "Admit Card Error")
+        return None
     
     field_to_update = "reschedule_admit_card" if is_rescheduled else "admit_card"
-    file_name = f"Admit_Card_{allocation.applicant}_{'RE' if is_rescheduled else 'BASE'}.pdf"
-    
+    # Ensure the Admit Card is saved in public storage with the requested naming convention
+    file_name = f"Admit_Card_{allocation.applicant}.pdf"
+    if is_rescheduled:
+        file_name = f"Admit_Card_{allocation.applicant}_Rescheduled.pdf"
+
     # Remove old file from the SPECIFIC field if exists
     old_file_url = getattr(allocation, field_to_update)
     if old_file_url:
@@ -503,10 +493,9 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False):
         "attached_to_name": allocation.name,
         "attached_to_field": field_to_update,
         "content": pdf_content,
-        "is_private": 1
+        "is_private": 0
     })
-    _file.save(ignore_permissions=True)
-    
+    _file.save(ignore_permissions=True)    
     # Update allocation record
     values = {
         field_to_update: _file.file_url,

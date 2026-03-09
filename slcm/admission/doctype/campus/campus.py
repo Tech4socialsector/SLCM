@@ -4,6 +4,7 @@ from frappe.model.document import Document
 
 
 class Campus(Document):
+    pass
 
 	# def validate(self):
 	# 	self.validate_intake_capacity()
@@ -11,13 +12,6 @@ class Campus(Document):
 	# def validate_intake_capacity(self):
 	# 	if self.intake_capacity and self.intake_capacity <= 0:
 	# 		frappe.throw(_("Intake Capacity must be greater than 0."))
-
-	def on_trash(self):
-		if frappe.db.exists("Program Offering", {"campus": self.name}):
-			frappe.throw(
-				_("Cannot delete Campus '{0}' as it is linked to one or more Program Offering records.")
-				.format(self.name)
-			)
 
 	# def on_update(self):
 	# 	self.sync_with_admission_year()

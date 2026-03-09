@@ -221,7 +221,7 @@
    "fieldname": "stage_availability",
    "fieldtype": "Select",
    "label": "Stage Availability",
-   "options": "Post-Selection\nPost-Offer",
+   "options": "Anytime\nPost-Selection\nPost-Offer",
    "reqd": 1
   },
   {
