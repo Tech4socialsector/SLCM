@@ -118,7 +118,6 @@ class Applicant(Document):
 
     def on_submit(self):
         self.db_set("application_status", "Submitted")
-        self.db_set("submitted_on", now())
         log_audit_trail(
             self.doctype, self.name,
             "Submitted", "application_status",

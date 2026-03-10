@@ -9,6 +9,7 @@
     href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css">
 <style>
     /* ═══════════════════════════════════════════════
    DESIGN TOKENS — follow Applicant Portal Config theme
@@ -195,20 +196,24 @@
         border-radius: 50px;
         font-size: .75rem;
         font-weight: 600;
-        color: var(--slate-400);
+        color: var(--slate-500);
         transition: var(--transition);
         white-space: nowrap;
         border: 2px solid transparent;
-    }
-
-    .step-pill.active .step-pill-inner {
         background: var(--navy-light);
-        color: var(--navy);
         border-color: var(--navy-light);
     }
 
+    .step-pill.active .step-pill-inner {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+    }
+
     .step-pill.done .step-pill-inner {
-        color: var(--emerald);
+        background: var(--emerald);
+        color: #fff;
+        border-color: var(--emerald);
     }
 
     .step-num {
@@ -225,6 +230,12 @@
         transition: var(--transition);
     }
 
+    .step-pill .step-num {
+        background: var(--navy-light);
+        border-color: var(--navy-light);
+        color: var(--slate-500);
+    }
+
     .step-pill.done .step-num {
         background: var(--emerald);
         border-color: var(--emerald);
@@ -232,15 +243,15 @@
     }
 
     .step-pill.active .step-num {
-        background: var(--navy);
-        border-color: var(--navy);
+        background: var(--primary);
+        border-color: var(--primary);
         color: #fff;
     }
 
     .step-connector {
         width: 24px;
         height: 2px;
-        background: var(--slate-200);
+        background: var(--navy-light);
         flex-shrink: 0;
         transition: var(--transition);
     }
@@ -257,110 +268,59 @@
     }
 
     /* ═══════════════════════════════════════════════
-   MAIN GRID: SIDEBAR + CONTENT
+   MAIN LAYOUT: full-width, no sidebar
 ═══════════════════════════════════════════════ */
     .portal-grid {
-        display: grid;
-        grid-template-columns: 248px 1fr;
-        gap: 1.75rem;
-        align-items: start;
+        display: block;
+        max-width: 100%;
     }
 
-    /* ═══════════════════════════════════════════════
-   SIDEBAR
-═══════════════════════════════════════════════ */
+    .portal-grid main {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    /* Sidebar removed — Application Steps no longer on right */
     .portal-sidebar {
-        position: sticky;
-        top: 80px;
+        display: none !important;
     }
 
-    .sidebar-card {
-        background: var(--white);
-        border-radius: var(--radius);
-        padding: 1.5rem;
-        box-shadow: var(--shadow-md);
+    .save-indicator-top {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .8rem;
+        color: var(--slate-500);
         margin-bottom: 1rem;
     }
 
-    .sidebar-label {
-        font-size: .65rem;
-        font-weight: 800;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        color: var(--slate-400);
-        margin-bottom: 1rem;
-        padding-left: .25rem;
-    }
-
-    .sb-step {
-        display: flex;
-        align-items: center;
-        gap: .85rem;
-        padding: .7rem .85rem;
-        border-radius: var(--radius-sm);
-        cursor: pointer;
-        transition: var(--transition);
-        margin-bottom: .1rem;
-    }
-
-    .sb-step:hover {
-        background: var(--slate-100);
-    }
-
-    .sb-step.active {
-        background: var(--navy-light);
-    }
-
-    .sb-step.done .sb-icon {
-        background: var(--emerald);
-        border-color: var(--emerald);
-        color: #fff;
-    }
-
-    .sb-step.active .sb-icon {
-        background: var(--navy);
-        border-color: var(--navy);
-        color: #fff;
-    }
-
-    .sb-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 2px solid var(--slate-200);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: .7rem;
-        font-weight: 800;
+    .save-indicator-top svg {
         flex-shrink: 0;
-        color: var(--slate-400);
-        transition: var(--transition);
     }
 
-    .sb-label {
-        font-size: .82rem;
-        font-weight: 500;
-        color: var(--slate-600);
-        line-height: 1.3;
+    /* Responsive: single column on small screens */
+    @media (max-width: 640px) {
+        .form-row.cols-2,
+        .form-row.cols-3,
+        .form-row.cols-4 {
+            grid-template-columns: 1fr;
+        }
+        .portal-wrapper {
+            padding: 1rem 1rem 3rem;
+        }
     }
 
-    .sb-step.active .sb-label {
-        color: var(--navy);
-        font-weight: 700;
-    }
-
-    .sb-step.done .sb-label {
-        color: var(--emerald);
+    /* Legacy sidebar styles — elements hidden */
+    .sidebar-card {
+        display: none;
     }
 
     .save-indicator {
         font-size: .75rem;
-        color: var(--slate-400);
+        color: var(--slate-500);
         display: flex;
         align-items: center;
         gap: .5rem;
-        padding: .5rem 0 0;
     }
 
     /* ═══════════════════════════════════════════════
@@ -641,11 +601,11 @@
         display: flex;
     }
 
-    /* Photo upload */
+    /* Photo upload — square preview */
     .photo-upload-area {
-        width: 110px;
-        height: 110px;
-        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        border-radius: 8px;
         border: 3px dashed var(--slate-200);
         display: flex;
         flex-direction: column;
@@ -677,6 +637,7 @@
         height: 100%;
         object-fit: cover;
         display: none;
+        border-radius: 6px;
     }
 
     .photo-placeholder {
@@ -1099,7 +1060,31 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 1rem;
         margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-save-draft {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .75rem 1.5rem;
+        border: 2px solid var(--slate-300);
+        border-radius: 50px;
+        background: var(--white);
+        font-family: var(--font-body);
+        font-size: .88rem;
+        font-weight: 700;
+        color: var(--slate-600);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-save-draft:hover {
+        border-color: var(--emerald);
+        color: var(--emerald);
+        background: var(--emerald-bg);
     }
 
     .btn-prev {
@@ -1153,7 +1138,8 @@
     }
 
     .btn-next svg,
-    .btn-prev svg {
+    .btn-prev svg,
+    .btn-save-draft svg {
         width: 18px;
         height: 18px;
     }
@@ -1313,8 +1299,8 @@
 ═══════════════════════════════════════════════ */
     #toastContainer {
         position: fixed;
-        bottom: 2rem;
-        right: 2rem;
+        top: 1.25rem;
+        right: 1.25rem;
         z-index: 9999;
         display: flex;
         flex-direction: column;
@@ -1346,6 +1332,39 @@
     .toast-item.error {
         border-color: var(--red);
     }
+
+    .toast-item.eligibility-error {
+        align-items: flex-start;
+        max-width: 420px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    .toast-item.eligibility-error .toast-body {
+        flex: 1;
+        min-width: 0;
+        font-weight: 500;
+        line-height: 1.5;
+        white-space: normal;
+    }
+    .toast-item.eligibility-error .toast-title {
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .toast-item.eligibility-error .toast-programs {
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+        border-top: 1px solid var(--slate-200);
+        padding-top: 0.5rem;
+    }
+    .toast-item.eligibility-error .toast-programs div {
+        padding: 0.25rem 0;
+        border-bottom: 1px solid var(--slate-100);
+    }
+    .toast-item.eligibility-error .toast-programs div:last-child {
+        border-bottom: none;
+    }
+    .toast-item.eligibility-error .eligible-yes { color: var(--emerald); }
+    .toast-item.eligibility-error .eligible-no { color: var(--red); }
 
     @keyframes toastIn {
         from {
@@ -1431,32 +1450,13 @@
         <div class="progress-pct" id="progressPct">0%</div>
     </div>
 
-    <!-- ═══ PORTAL GRID ═══ -->
+    <!-- ═══ PORTAL GRID (full width, no sidebar) ═══ -->
     <div class="portal-grid">
+        <div class="save-indicator save-indicator-top" id="saveIndicator">
+            <span id="saveText" style="color:var(--slate-500);font-size:.85rem;"></span>
+        </div>
 
-        <!-- SIDEBAR -->
-        <aside class="portal-sidebar">
-            <div class="sidebar-card">
-                <div class="sidebar-label">Application Steps</div>
-                <nav id="sidebarSteps"><!-- injected --></nav>
-                <div class="save-indicator" id="saveIndicator">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span id="saveText">Draft saved</span>
-                </div>
-            </div>
-            <div class="sidebar-card">
-                <div class="sidebar-label">Need Help?</div>
-                <p style="font-size:.8rem;color:var(--slate-400);margin:0 0 .75rem;">Contact our admissions office for
-                    assistance.</p>
-                <a href="mailto:admissions@nlsiu.ac.in"
-                    style="font-size:.8rem;font-weight:700;color:var(--navy);text-decoration:none;">admissions@nlsiu.ac.in</a>
-            </div>
-        </aside>
-
-        <!-- MAIN -->
+        <!-- MAIN FORM -->
         <main>
             <form id="appForm" novalidate>
 
@@ -1472,7 +1472,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2>Student Information</h2>
+                                <h2>Personal Information</h2>
                                 <p>Provide your official identification and contact details</p>
                             </div>
                         </div>
@@ -1481,7 +1481,7 @@
                         <div style="display:flex;gap:2rem;align-items:flex-start;margin-bottom:1.5rem;">
                             <div>
                                 <div class="fg" style="align-items:center;">
-                                    <label style="margin-bottom:.5rem;">Photo</label>
+                                    <label style="margin-bottom:.5rem;">Student Photo (Max 1MB - Supported formats png, jpeg, jpg)</label>
                                     <div class="photo-upload-area" id="photoUploadArea"
                                         onclick="document.getElementById('candidatePhoto').click()">
                                         <input type="file" id="candidatePhoto" name="candidate_photo"
@@ -1498,13 +1498,14 @@
                                     </div>
                                     <span
                                         style="font-size:.68rem;color:var(--slate-400);margin-top:.35rem;text-align:center;">Max
-                                        1MB<br>PNG/JPG</span>
+                                        1 MB<br>PNG/JPG</span>
                                 </div>
                             </div>
                             <div style="flex:1;">
                                 <div class="form-row cols-1">
                                     <div class="fg">
-                                        <label>Full Name (As per Secondary School Certificate) <span
+                                        <label>Candidate's Name
+                                            <span
                                                 class="req">*</span></label>
                                         <input type="text" class="fc" name="candidate_name"
                                             placeholder="e.g. Rahul Kumar Sharma" required>
@@ -1520,7 +1521,7 @@
                                         <span class="field-error" id="err_email">Valid email is required</span>
                                     </div>
                                     <div class="fg">
-                                        <label>Mobile Number <span class="req">*</span></label>
+                                        <label>Mobile Number of Candidate <span class="req">*</span></label>
                                         <div class="phone-wrap" id="pw_mobile_number">
                                             <select class="phone-code" name="mobile_number_cc"
                                                 onchange="onPhoneChange('mobile_number')">
@@ -1543,7 +1544,7 @@
 
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>Alternate Mobile Number</label>
+                                <label>Alternate Contact Number</label>
                                 <div class="phone-wrap" id="pw_alternate_contact">
                                     <select class="phone-code" name="alternate_contact_cc"
                                         onchange="onPhoneChange('alternate_contact')">
@@ -1562,7 +1563,7 @@
                             <div class="fg">
                                 <label>Date of Birth <span class="req">*</span></label>
                                 <input type="text" class="fc flatpickr" name="date_of_birth" id="date_of_birth"
-                                    placeholder="YYYY-MM-DD" required>
+                                    placeholder="DD/MM/YYYY" required>
                                 <span class="field-error" id="err_date_of_birth">Date of birth is required (must be
                                     17+)</span>
                             </div>
@@ -1588,20 +1589,33 @@
                             </div>
                             <div class="fg">
                                 <label>Religion</label>
-                                <input type="text" class="fc" name="religion"
-                                    placeholder="e.g. Hindu, Muslim, Christian">
+                                <select class="fc" name="religion">
+                                    <option value="">Select Religion</option>
+                                    <option value="Hindu">Hindu</option>
+                                    <option value="Muslim">Muslim</option>
+                                    <option value="Christian">Christian</option>
+                                    <option value="Sikh">Sikh</option>
+                                    <option value="Buddhist">Buddhist</option>
+                                    <option value="Jain">Jain</option>
+                                    <option value="Other">Other</option>
+                                </select>
                             </div>
                             <div class="fg">
-                                <label>Annual Household Income (₹)</label>
-                                <input type="number" class="fc" name="annual_house_hold_income"
-                                    placeholder="e.g. 500000" min="0">
+                                <label>Current Annual Household Income (in INR)</label>
+                                <select class="fc" name="annual_house_hold_income">
+                                    <option value="">Select Income Range</option>
+                                    <option value="Less than ₹1 Lakh">Less than ₹1 Lakh</option>
+                                    <option value="₹1 – 2.5 Lakh">₹1 – 2.5 Lakh</option>
+                                    <option value="₹2.5 – 5 Lakh">₹2.5 – 5 Lakh</option>
+                                    <option value="₹5 – 10 Lakh">₹5 – 10 Lakh</option>
+                                    <option value="Above ₹10 Lakh">Above ₹10 Lakh</option>
+                                </select>
                             </div>
                         </div>
 
                         <div class="form-row cols-1" style="margin-top:.5rem;">
                             <div class="fg">
-                                <label>Identification Proof (Aadhar/Voter ID/Passport) <span class="hint">Max 1MB —
-                                        PNG/JPG</span></label>
+                                <label>ID Proof</label>
                                 <div class="file-zone" id="fz_id_proof">
                                     <input type="file" name="id_proof" id="id_proof"
                                         accept="image/png,image/jpeg,image/jpg"
@@ -1652,7 +1666,7 @@
                             </div>
                             <div class="fg">
                                 <label>Campus <span class="req">*</span></label>
-                                <select class="fc" name="campus" id="campus" required onchange="triggerEligibility()">
+                                <select class="fc" name="campus" id="campus" required onchange="collectFormData()">
                                     <option value="">Select Campus</option>
                                     {% for c in campuses %}
                                     <option value="{{ c.name }}">{{ c.name }}</option>
@@ -1663,7 +1677,7 @@
                             <div class="fg">
                                 <label>Admission Cycle <span class="req">*</span></label>
                                 <select class="fc" name="admission_cycle" id="admission_cycle" required
-                                    onchange="triggerEligibility()">
+                                    onchange="collectFormData()">
                                     <option value="">Select Cycle</option>
                                     {% for ac in admission_cycles %}
                                     <option value="{{ ac.name }}">{{ ac.name }}</option>
@@ -1674,7 +1688,7 @@
                             <div class="fg">
                                 <label>Academic Year <span class="req">*</span></label>
                                 <select class="fc" name="academic_year" id="academic_year" required
-                                    onchange="triggerEligibility()">
+                                    onchange="collectFormData()">
                                     <option value="">Select Academic Year</option>
                                     {% for ay in academic_years %}
                                     <option value="{{ ay.name }}">{{ ay.name }}</option>
@@ -1721,17 +1735,17 @@
                             </div>
                         </div>
 
-                        <div class="section-sub">Father's Details</div>
+                        <div class="section-sub">Father Details</div>
                         <div class="form-row cols-2">
                             <div class="fg"><label>Father's Name</label><input type="text" class="fc" name="father_name"
                                     placeholder="Full name"></div>
                             <div class="fg">
-                                <label>Father's Email</label>
+                                <label>Father Email ID</label>
                                 <input type="email" class="fc" name="father_email" placeholder="father@example.com">
                                 <span class="field-error" id="err_father_email">Invalid email format</span>
                             </div>
                             <div class="fg">
-                                <label>Father's Mobile</label>
+                                <label>Father Mobile Number</label>
                                 <div class="phone-wrap" id="pw_father_mobile">
                                     <select class="phone-code" name="father_mobile_cc"
                                         onchange="onPhoneChange('father_mobile')">
@@ -1746,21 +1760,21 @@
                                 </div>
                                 <span class="field-error" id="err_father_mobile"></span>
                             </div>
-                            <div class="fg"><label>Father's Occupation</label><input type="text" class="fc"
+                            <div class="fg"><label>Father Occupation</label><input type="text" class="fc"
                                     name="father_occupation" placeholder="e.g. Engineer, Teacher"></div>
                         </div>
 
-                        <div class="section-sub">Mother's Details</div>
+                        <div class="section-sub">Mother Details</div>
                         <div class="form-row cols-2">
                             <div class="fg"><label>Mother's Name</label><input type="text" class="fc" name="mother_name"
                                     placeholder="Full name"></div>
                             <div class="fg">
-                                <label>Mother's Email</label>
+                                <label>Mother Email ID</label>
                                 <input type="email" class="fc" name="mother_email" placeholder="mother@example.com">
                                 <span class="field-error" id="err_mother_email">Invalid email format</span>
                             </div>
                             <div class="fg">
-                                <label>Mother's Mobile</label>
+                                <label>Mother Mobile Number</label>
                                 <div class="phone-wrap" id="pw_mother_mobile">
                                     <select class="phone-code" name="mother_mobile_cc"
                                         onchange="onPhoneChange('mother_mobile')">
@@ -1775,7 +1789,7 @@
                                 </div>
                                 <span class="field-error" id="err_mother_mobile"></span>
                             </div>
-                            <div class="fg"><label>Mother's Occupation</label><input type="text" class="fc"
+                            <div class="fg"><label>Mother Occupation</label><input type="text" class="fc"
                                     name="mother_occupation" placeholder="e.g. Doctor, Homemaker"></div>
                         </div>
 
@@ -1784,9 +1798,8 @@
                                 <input type="checkbox" name="guardian_required" id="guardian_required"
                                     onchange="toggleGuardian(this.checked)" value="1">
                                 <div>
-                                    <div class="toggle-row-label">Add Legal Guardian</div>
-                                    <div class="toggle-row-sub">If contact details of both parents are not available,
-                                        enter details of a legal guardian</div>
+                                    <div class="toggle-row-label">If contact details of both parents are not available, would you like to enter the details of a legal guardian?</div>
+                                    <div class="toggle-row-sub"></div>
                                 </div>
                             </label>
                         </div>
@@ -1832,10 +1845,24 @@
                                     placeholder="Door No., Street, Area" rows="2"></textarea></div>
                         </div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>City</label><input type="text" class="fc" name="city"
-                                    placeholder="City"></div>
-                            <div class="fg"><label>State</label><input type="text" class="fc" name="state"
-                                    placeholder="State"></div>
+                            <div class="fg">
+                                <label>State</label>
+                                <select class="fc" name="state" id="state">
+                                    <option value="">Select State</option>
+                                    {% for s in states %}
+                                    <option value="{{ s.name }}">{{ s.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label>City</label>
+                                <select class="fc" name="city" id="city">
+                                    <option value="">Select City</option>
+                                    {% for c in cities %}
+                                    <option value="{{ c }}">{{ c }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div class="fg"><label>Pincode</label><input type="number" class="fc" name="pincode"
                                     placeholder="6-digit pincode" min="100000" max="999999"></div>
                         </div>
@@ -1871,29 +1898,29 @@
                                 be submitted by <strong>December 31, 2026</strong>.</span>
                         </div>
 
-                        <div class="section-sub">Class X Details</div>
+                        <div class="section-sub">Academic Qualification - Class X Details</div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>School / College / University <span
+                            <div class="fg"><label>Year of Completion (Class X)</label><input type="text" class="fc"
+                                    name="class_x_year_of_completion" placeholder="e.g. 2018" maxlength="4"></div>
+                            <div class="fg"><label>School/College/University (Class X) <span
                                         class="req">*</span></label><input type="text" class="fc" name="class_x_school"
                                     placeholder="School name" required><span class="field-error"
                                     id="err_class_x_school">School name is required</span></div>
-                            <div class="fg"><label>Board <span class="req">*</span></label><input type="text" class="fc"
+                            <div class="fg"><label>Board (Class X) <span class="req">*</span></label><input type="text" class="fc"
                                     name="class_x_board" placeholder="e.g. CBSE, ICSE" required><span
                                     class="field-error" id="err_class_x_board">Board is required</span></div>
-                            <div class="fg"><label>Year of Completion</label><input type="text" class="fc"
-                                    name="class_x_year_of_completion" placeholder="e.g. 2018" maxlength="4"></div>
                             <div class="fg">
-                                <label>Percentage of Marks <span class="req">*</span></label>
+                                <label>Percentage/CGPA obtained (Class X) <span class="req">*</span></label>
                                 <input type="number" class="fc" name="class_x_percentage" placeholder="e.g. 85.50"
                                     min="0" max="100" step="0.01" required
                                     oninput="validatePercentage(this, 'class_x_percentage')">
                                 <span class="field-error" id="err_class_x_percentage">Valid percentage (0–100) is
                                     required</span>
                             </div>
-                            <div class="fg"><label>CGPA (if applicable)</label><input type="number" class="fc"
+                            <div class="fg"><label>If CGPA, maximum CGPA (Class X)</label><input type="number" class="fc"
                                     name="class_x_cgpa" placeholder="Max CGPA" step="0.01"></div>
                             <div class="fg">
-                                <label>Class X Marksheet <span class="hint">Max 2MB — PDF/PNG/JPG</span></label>
+                                <label>Class X Marksheet</label>
                                 <div class="file-zone">
                                     <input type="file" name="class_x_marksheet" accept=".pdf,image/png,image/jpeg"
                                         onchange="handleFileUpload('class_x_marksheet', this)">
@@ -1907,20 +1934,22 @@
                             </div>
                         </div>
 
-                        <div class="section-sub">Class XII / Equivalent Details</div>
+                        <div class="section-sub">Class XII/Equivalent Details</div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>Name of Examination</label><input type="text" class="fc"
+                            <div class="fg"><label>Name of Examination (Class XII/Equivalent)</label><input type="text" class="fc"
                                     name="class_xii_name_of_examination" placeholder="e.g. AISSCE, ISC"></div>
-                            <div class="fg"><label>School / College / University</label><input type="text" class="fc"
-                                    name="class_xii_school" placeholder="School name"></div>
-                            <div class="fg"><label>Board</label><input type="text" class="fc" name="class_xii_board"
-                                    placeholder="e.g. CBSE, State Board"></div>
-                            <div class="fg"><label>Year of Completion</label><input type="text" class="fc"
+                            <div class="fg"><label>Year of Completion (Class XII/Equivalent)</label><input type="text" class="fc"
                                     name="class_xii_year_of_completion" placeholder="e.g. 2020" maxlength="4"></div>
-                            <div class="fg"><label>CGPA (if applicable)</label><input type="number" class="fc"
+                            <div class="fg"><label>School/College/University (Class XII/Equivalent)</label><input type="text" class="fc"
+                                    name="class_xii_school" placeholder="School name"></div>
+                            <div class="fg"><label>Board (Class XII/Equivalent)</label><input type="text" class="fc" name="class_xii_board"
+                                    placeholder="e.g. CBSE, State Board"></div>
+                            <div class="fg"><label>Percentage/CGPA obtained (Class XII/Equivalent)</label><input type="number" class="fc"
+                                    name="class_xii_percentage" placeholder="e.g. 85" min="0" max="100" step="0.01"></div>
+                            <div class="fg"><label>If CGPA, maximum CGPA (Class XII/Equivalent)</label><input type="number" class="fc"
                                     name="class_xii_cgpa" placeholder="Max CGPA" step="0.01"></div>
                             <div class="fg">
-                                <label>Class XII Marksheet <span class="hint">Max 2MB</span></label>
+                                <label>Class XII Marksheet</label>
                                 <div class="file-zone">
                                     <input type="file" name="class_xii_marksheet" accept=".pdf,image/png,image/jpeg"
                                         onchange="handleFileUpload('class_xii_marksheet', this)">
@@ -1938,7 +1967,7 @@
                         <div class="form-row cols-2">
                             <div class="fg">
                                 <label>XII Group</label>
-                                <select class="fc" name="hsc_group" id="hsc_group" onchange="triggerEligibility()">
+                                <select class="fc" name="hsc_group" id="hsc_group" onchange="collectFormData()">
                                     <option value="">Select HSC Group</option>
                                     {% for g in hsc_groups %}
                                     <option value="{{ g.name }}">{{ g.name }}</option>
@@ -1949,7 +1978,7 @@
                                 <label>XII Percentage <span class="req">*</span></label>
                                 <input type="number" class="fc" name="hsc_percentage" id="hsc_percentage"
                                     placeholder="e.g. 75.00" min="0" max="100" step="0.01"
-                                    oninput="validateHSCPercentage(this)" onblur="triggerEligibility()">
+                                    oninput="validateHSCPercentage(this)" onblur="collectFormData()">
                                 <span class="field-error" id="err_hsc_percentage">HSC percentage must be between 35 and
                                     100</span>
                             </div>
@@ -1960,7 +1989,7 @@
                             <div class="section-sub">UG Degree Details</div>
                             <div class="form-row cols-2" style="margin-bottom:.75rem;">
                                 <div class="fg">
-                                    <label>Have you completed your UG Degree? <span class="req">*</span></label>
+                                    <label>Have you completed your UG degree <span class="req">*</span></label>
                                     <select class="fc" name="ug_degree_completion" id="ug_degree_completion">
                                         <option value="">Select</option>
                                         <option value="Completed">Completed</option>
@@ -1974,11 +2003,11 @@
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Degree / Program</th>
-                                            <th>College / University</th>
-                                            <th>Year of Completion</th>
-                                            <th>Percentage / CGPA</th>
-                                            <th>Max CGPA</th>
+                                            <th>Name of Degree (UG)</th>
+                                            <th>College/University (UG Degree)</th>
+                                            <th>Year of Completion (UG Degree)</th>
+                                            <th>Percentage/CGPA obtained (UG Degree)</th>
+                                            <th>If CGPA, maximum CGPA (UG Degree)</th>
                                             <th style="width:40px;"></th>
                                         </tr>
                                     </thead>
@@ -2004,7 +2033,7 @@
                             <div class="fg">
                                 <label>National Test Name</label>
                                 <select class="fc" name="national_test_name" id="national_test_name"
-                                    onchange="triggerEligibility()">
+                                    onchange="collectFormData()">
                                     <option value="">Select National Test</option>
                                     {% for t in national_tests %}
                                     <option value="{{ t.name }}">{{ t.name }}</option>
@@ -2015,7 +2044,7 @@
                                 <label>Percentage / Score</label>
                                 <input type="number" class="fc" name="percentage" id="test_percentage"
                                     placeholder="e.g. 78.5" min="0" max="100" step="0.01"
-                                    oninput="triggerEligibility()">
+                                    oninput="collectFormData()">
                             </div>
                         </div>
 
@@ -2108,7 +2137,8 @@
                         </div>
 
                         <!-- Eligibility Result -->
-                        <div id="eligibilityResult" style="display:none;margin-top:1.5rem;"></div>
+                        <!-- Eligibility message shown only on Submit, not during form fill -->
+                        <div id="eligibilityResult" style="display:none !important;margin-top:1.5rem;"></div>
                     </div>
                 </div>
 
@@ -2141,7 +2171,7 @@
                                     question</span>
                             </div>
                             <div class="fg" id="workExpYearsField" style="display:none;">
-                                <label>How many years of work experience? <span class="req">*</span></label>
+                                <label>How many years of work experience do you have? <span class="req">*</span></label>
                                 <select class="fc" name="years_of_work_experience" id="years_of_work_experience">
                                     <option value="">Select range</option>
                                     <option value="1 to 2 years">1 to 2 years</option>
@@ -2172,10 +2202,10 @@
                             </div>
                         </div>
 
-                        <div class="section-sub">Reservation Category</div>
+                        <div class="section-sub">Eligibility for Reservations</div>
                         <div class="form-row cols-1" style="margin-bottom:1rem;">
                             <div class="fg">
-                                <label>Select Applicable Categories</label>
+                                <label>Whether SC/ST/OBC-NCL</label>
                                 <div class="checkbox-group" id="categoryGroup">
                                     <!-- Categories from Admission Category doctype - populated dynamically -->
                                     <label class="check-chip"><input type="checkbox" name="categories" value="SC"
@@ -2195,8 +2225,7 @@
                         <!-- Caste Certificate — shown if SC/ST/OBC/OBC-NCL selected -->
                         <div id="casteCertSection" style="display:none;">
                             <div class="fg" style="margin-bottom:1.25rem;">
-                                <label>Caste Certificate <span class="req">*</span> <span class="hint">Max 5MB —
-                                        PDF/PNG/JPG</span></label>
+                                <label>Caste Certificate <span class="req">*</span></label>
                                 <div class="file-zone">
                                     <input type="file" name="caste_certificate" accept=".pdf,image/png,image/jpeg"
                                         onchange="handleFileUpload('caste_certificate', this)">
@@ -2248,7 +2277,7 @@
                         <div class="section-sub">Person with Disability (PWD)</div>
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>Whether PWD? <span class="req">*</span></label>
+                                <label>Whether Person with Disability (PWD) <span class="req">*</span></label>
                                 <select class="fc" name="pwd" required onchange="togglePWD(this.value)">
                                     <option value="">Select</option>
                                     <option value="Yes">Yes</option>
@@ -2260,7 +2289,7 @@
                         <div id="pwdSection" style="display:none;">
                             <div class="form-row cols-2" style="margin-top:1rem;">
                                 <div class="fg">
-                                    <label>Scribe required for the test? <span class="req">*</span></label>
+                                    <label>Whether scribe required for the test <span class="req">*</span></label>
                                     <select class="fc" name="pwd_required_test" id="pwd_required_test"
                                         onchange="toggleScribe(this.value)">
                                         <option value="">Select</option>
@@ -2272,7 +2301,7 @@
                             </div>
                             <div id="scribeSection" style="display:none;margin-top:1rem;">
                                 <div class="fg">
-                                    <label>Scribe arrangement <span class="req">*</span></label>
+                                    <label>Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you? <span class="req">*</span></label>
                                     <select class="fc" name="scribe_allotment" id="scribe_allotment">
                                         <option value="">Select</option>
                                         <option value="I require NLSIU to arrange a scribe for me">I require NLSIU to
@@ -2284,8 +2313,7 @@
                                 </div>
                             </div>
                             <div class="fg" style="margin-top:1rem;">
-                                <label>PWD Certificate <span class="req">*</span> <span class="hint">Max 5MB —
-                                        PDF/PNG/JPG</span></label>
+                                <label>PWD Certificate <span class="req">*</span></label>
                                 <div class="file-zone">
                                     <input type="file" name="pwd_certificate" accept=".pdf,image/png,image/jpeg"
                                         onchange="handleFileUpload('pwd_certificate', this)">
@@ -2303,7 +2331,7 @@
                         <div class="section-sub">Karnataka Category</div>
                         <div class="form-row cols-1">
                             <div class="fg">
-                                <label>Whether Karnataka Category? <span class="req">*</span></label>
+                                <label>Whether Karnataka category <span class="req">*</span></label>
                                 <select class="fc" name="karnataka_category" required
                                     onchange="toggleKarnataka(this.value)">
                                     <option value="">Select</option>
@@ -2314,15 +2342,13 @@
                             </div>
                         </div>
                         <div id="karnatakaSection" style="display:none;">
-                            <p style="font-size:.83rem;color:var(--slate-600);margin-bottom:1rem;">Select all that apply
-                                to you:</p>
+                            <p style="font-size:.83rem;color:var(--slate-600);margin-bottom:1rem;">Which of the following applies to you (checkboxes):</p>
                             <div style="display:flex;flex-direction:column;gap:.85rem;">
                                 <label class="toggle-row">
                                     <input type="checkbox" name="ka_study_7yrs" id="ka_study_7yrs" value="1"
                                         onchange="toggleKACertField('ka_study_7yrs', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Studied for not less than 7 years in a recognised
-                                            educational institution in Karnataka</div>
+                                        <div class="toggle-row-label">Studied for not less than 7 years in a recognized educational institution in Karnataka</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_study_7yrs" style="display:none;padding-left:1.5rem;">
@@ -2345,8 +2371,7 @@
                                     <input type="checkbox" name="ka_defence_child" id="ka_defence_child" value="1"
                                         onchange="toggleKACertField('ka_defence_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of Defence / Ex-Serviceman (Karnataka
-                                            domicile)</div>
+                                        <div class="toggle-row-label">Child of defence personnel/ex-serviceman (Karnataka domicile)</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_defence_child" style="display:none;padding-left:1.5rem;">
@@ -2369,8 +2394,7 @@
                                     <input type="checkbox" name="ka_govt_child" id="ka_govt_child" value="1"
                                         onchange="toggleKACertField('ka_govt_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of Karnataka cadre AIS employee
-                                            (IAS/IFS/IPS)</div>
+                                        <div class="toggle-row-label">Child of an employee of the Karnataka State Government (serving or retired)</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_govt_child" style="display:none;padding-left:1.5rem;">
@@ -2393,8 +2417,7 @@
                                     <input type="checkbox" name="ka_ais_child" id="ka_ais_child" value="1"
                                         onchange="toggleKACertField('ka_ais_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of CAPF employee with Karnataka domicile
-                                        </div>
+                                        <div class="toggle-row-label">Child of a serving or retired employee belonging to the Karnataka cadre of the All India Services (IAS/IFS/IPS)</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_ais_child" style="display:none;padding-left:1.5rem;">
@@ -2417,8 +2440,7 @@
                                     <input type="checkbox" name="ka_capf_child" id="ka_capf_child" value="1"
                                         onchange="toggleKACertField('ka_capf_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of Central Armed Police Force employee
-                                            (Karnataka domicile)</div>
+                                        <div class="toggle-row-label">Child of a working or retired employee in the Central Armed Police Force service (Karnataka domicile)</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_capf_child" style="display:none;padding-left:1.5rem;">
@@ -2455,7 +2477,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2>Preference of Test Center</h2>
+                                <h2>Preference of Test Centre</h2>
                                 <p>Indicate your preferred test center locations in priority order</p>
                             </div>
                         </div>
@@ -2510,7 +2532,7 @@
                         </div>
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>Where did you hear about the programme? <span class="req">*</span></label>
+                                <label>Where Did You Hear About the Programme? <span class="req">*</span></label>
                                 <select class="fc" name="source_of_information" required
                                     onchange="togglePleaseSpecify(this.value)">
                                     <option value="">Select Source</option>
@@ -2538,8 +2560,7 @@
 
                         <div class="form-row cols-1" style="margin-top:.5rem;">
                             <div class="fg">
-                                <label>Curriculum Vitae (CV) <span class="hint">Max 5MB — DOC/DOCX/PDF | Max 2
-                                        pages</span></label>
+                                <label>Curriculum Vitae (CV)</label>
                                 <div class="file-zone">
                                     <input type="file" name="cv" accept=".pdf,.doc,.docx"
                                         onchange="handleFileUpload('cv', this)">
@@ -2587,8 +2608,7 @@
                                     style="width:18px;height:18px;margin-top:.2rem;accent-color:var(--navy);flex-shrink:0;"
                                     onchange="onDeclarationChange(this)">
                                 <span style="font-size:.88rem;line-height:1.7;color:var(--slate-700);">
-                                    I declare that the information provided is true and that false information may lead
-                                    to disqualification.
+                                    Undertaking of truthful information — I declare that the information provided is true and that false information may lead to disqualification.
                                 </span>
                             </label>
                         </div>
@@ -2598,8 +2618,7 @@
                                 <input type="checkbox" name="consent_third_party" id="consent_third_party"
                                     style="width:18px;height:18px;margin-top:.2rem;accent-color:var(--navy);flex-shrink:0;">
                                 <span style="font-size:.85rem;line-height:1.7;color:var(--slate-600);">
-                                    I consent to my details being shared with third party affiliates. <strong>Please
-                                        Note: The Application Fee is non-refundable.</strong>
+                                    Consent to details being shared with third party affiliates. <strong>Please Note: The Application Fee is non-refundable.</strong>
                                 </span>
                             </label>
                         </div>
@@ -2608,22 +2627,20 @@
                     </div>
                 </div>
 
-                <!-- NAV BUTTONS -->
+                <!-- NAV BUTTONS: Back | Save Draft | Next Step -->
                 <div class="nav-buttons">
                     <button type="button" class="btn-prev" id="prevBtn" onclick="handlePrev()"
-                        style="visibility:hidden;">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Previous
+                        style="visibility:hidden;" title="Go to previous step">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                        Back
+                    </button>
+                    <button type="button" class="btn-save-draft" id="saveDraftBtn" onclick="saveDraft()" title="Save your progress and continue later">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        Save Draft
                     </button>
                     <button type="button" class="btn-next" id="nextBtn" onclick="handleNext()">
                         Next Step
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </button>
                 </div>
 
@@ -2687,6 +2704,7 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
 <script>
     // ═══════════════════════════════════════════════════════
     //  MASTER DATA FROM SERVER
@@ -2704,6 +2722,9 @@
     // Program from URL (e.g. /admission Apply Now) — pre-fill and lock
     const PREFILL_PROGRAM = {{ (prefill_program or '') | tojson }};
     const PROGRAM_READONLY = {{ 'true' if program_readonly else 'false' }};
+
+    // Form config by admission cycle (entrance test / program levels) — for conditional sections
+    const FORM_CONFIG = {{ (form_config or {}) | tojson }};
 
     // Pre-fill from existing applicant doc
     let formData = {{ applicant_data | tojson }};
@@ -2728,14 +2749,66 @@
     // ═══════════════════════════════════════════════════════
     //  INIT
     // ═══════════════════════════════════════════════════════
+    const PHONE_COUNTRY_CODES = [
+        { code: '+91', label: '🇮🇳 +91' }, { code: '+1', label: '🇺🇸 +1' }, { code: '+44', label: '🇬🇧 +44' },
+        { code: '+971', label: '🇦🇪 +971' }, { code: '+61', label: '🇦🇺 +61' }, { code: '+81', label: '🇯🇵 +81' },
+        { code: '+86', label: '🇨🇳 +86' }, { code: '+33', label: '🇫🇷 +33' }, { code: '+49', label: '🇩🇪 +49' },
+        { code: '+39', label: '🇮🇹 +39' }, { code: '+34', label: '🇪🇸 +34' }, { code: '+31', label: '🇳🇱 +31' },
+        { code: '+65', label: '🇸🇬 +65' }, { code: '+60', label: '🇲🇾 +60' }, { code: '+62', label: '🇮🇩 +62' },
+        { code: '+63', label: '🇵🇭 +63' }, { code: '+64', label: '🇳🇿 +64' }, { code: '+27', label: '🇿🇦 +27' },
+        { code: '+55', label: '🇧🇷 +55' }, { code: '+52', label: '🇲🇽 +52' }, { code: '+966', label: '🇸🇦 +966' },
+        { code: '+974', label: '🇶🇦 +974' }, { code: '+973', label: '🇧🇭 +973' }, { code: '+968', label: '🇴🇲 +968' },
+        { code: '+20', label: '🇪🇬 +20' }, { code: '+92', label: '🇵🇰 +92' }, { code: '+880', label: '🇧🇩 +880' },
+        { code: '+94', label: '🇱🇰 +94' }, { code: '+977', label: '🇳🇵 +977' }, { code: '+234', label: '🇳🇬 +234' },
+        { code: '+254', label: '🇰🇪 +254' }, { code: '+353', label: '🇮🇪 +353' }, { code: '+46', label: '🇸🇪 +46' },
+        { code: '+47', label: '🇳🇴 +47' }, { code: '+45', label: '🇩🇰 +45' }, { code: '+358', label: '🇫🇮 +358' },
+    ];
+
     document.addEventListener('DOMContentLoaded', () => {
         buildProgressStrip();
         buildSidebar();
-        initFlatpickr();
+        initPhoneCountryCodes();
         populateExistingData();
+        initFlatpickr();
         applyProgramFromUrl();
         updateUI();
+        initSearchableSelects();
+        toggleSaveDraftVisibility();
     });
+
+    function toggleSaveDraftVisibility() {
+        const btn = document.getElementById('saveDraftBtn');
+        if (!btn) return;
+        const isDraft = (formData && formData.docstatus === 0 && (!formData.application_status || formData.application_status === 'Draft'));
+        btn.style.display = isDraft ? '' : 'none';
+    }
+
+    function initSearchableSelects() {
+        if (typeof Choices === 'undefined') return;
+        // Only apply to .fc selects; keep phone-code as native so dropdown opens correctly
+        document.querySelectorAll('select.fc').forEach(sel => {
+            if (sel.disabled || sel.closest('[style*="display: none"]')) return;
+            if (sel.id === 'program' && sel.classList.contains('program-readonly')) return;
+            try {
+                new Choices(sel, {
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Type to search…',
+                    itemSelectText: '',
+                    allowHTML: false
+                });
+            } catch (e) { /* ignore duplicates or errors */ }
+        });
+    }
+
+    function initPhoneCountryCodes() {
+        const opts = PHONE_COUNTRY_CODES.map(({ code, label }) => `<option value="${code}">${label}</option>`).join('');
+        document.querySelectorAll('select.phone-code').forEach(sel => {
+            const current = sel.value;
+            sel.innerHTML = opts;
+            if (current && PHONE_COUNTRY_CODES.some(c => c.code === current)) sel.value = current;
+            else sel.value = '+91';
+        });
+    }
 
     function applyProgramFromUrl() {
         if (!PREFILL_PROGRAM) return;
@@ -2787,6 +2860,7 @@
 
     function buildSidebar() {
         const nav = document.getElementById('sidebarSteps');
+        if (!nav) return;
         nav.innerHTML = '';
         STEPS.forEach(step => {
             const el = document.createElement('div');
@@ -2816,32 +2890,34 @@
     }
 
     function updateUI() {
-        // Banner
         const stepNames = STEPS.map(s => s.label);
-        document.getElementById('bannerSubtitle').textContent = `Step ${currentStep} of ${TOTAL_STEPS} — ${stepNames[currentStep - 1]}`;
-        document.getElementById('stepBadge').textContent = `Step ${currentStep} / ${TOTAL_STEPS}`;
+        const bannerSub = document.getElementById('bannerSubtitle');
+        const stepBadge = document.getElementById('stepBadge');
+        if (bannerSub) bannerSub.textContent = `Step ${currentStep} of ${TOTAL_STEPS} — ${stepNames[currentStep - 1]}`;
+        if (stepBadge) stepBadge.textContent = `Step ${currentStep} / ${TOTAL_STEPS}`;
 
-        // Progress
         const pct = Math.round(((currentStep - 1) / (TOTAL_STEPS - 1)) * 100);
-        document.getElementById('progressPct').textContent = pct + '%';
+        const progressPct = document.getElementById('progressPct');
+        if (progressPct) progressPct.textContent = pct + '%';
 
-        // Progress pills
+        // Progress pills: completed = green (done), current = dark blue (active), incomplete = light blue
         STEPS.forEach(step => {
             const pill = document.getElementById('prog_' + step.id);
             if (!pill) return;
             pill.classList.remove('active', 'done');
-            if (step.id === currentStep) pill.classList.add('active');
-            else if (step.id < currentStep || completedSteps.has(step.id)) {
+            const stepNumEl = pill.querySelector('.step-num');
+            if (step.id === currentStep) {
+                pill.classList.add('active');
+                if (stepNumEl) stepNumEl.textContent = step.icon;
+            } else if (step.id < currentStep || completedSteps.has(step.id)) {
                 pill.classList.add('done');
-                pill.querySelector('.step-num').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>`;
+                if (stepNumEl) stepNumEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>`;
             } else {
-                pill.querySelector('.step-num').textContent = step.icon;
+                if (stepNumEl) stepNumEl.textContent = step.icon;
             }
 
             const conn = document.getElementById('conn_' + step.id);
-            if (conn) {
-                conn.classList.toggle('done', step.id < currentStep || completedSteps.has(step.id));
-            }
+            if (conn) conn.classList.toggle('done', step.id < currentStep || completedSteps.has(step.id));
         });
 
         // Sidebar
@@ -2872,7 +2948,6 @@
         if (!validateCurrentStep()) return;
         collectFormData();
         completedSteps.add(currentStep);
-        autoSave();
         if (currentStep < TOTAL_STEPS) {
             showStep(currentStep + 1);
         } else {
@@ -2895,8 +2970,9 @@
 
     function showError(fieldName, message) {
         const errEl = document.getElementById('err_' + fieldName);
+        const msg = (message || (errEl && errEl.textContent) || 'This field is required').trim();
         if (errEl) {
-            if (message) errEl.textContent = message;
+            errEl.textContent = msg;
             errEl.classList.add('show');
         }
         const input = document.querySelector(`[name="${fieldName}"]`);
@@ -2907,14 +2983,24 @@
                 input.classList.add('is-error');
             }
         }
+        showToast(msg, 'error');
     }
 
     function validateEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
+    function scrollToFirstError() {
+        const firstErr = document.querySelector('.field-error.show');
+        if (firstErr) {
+            firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
     function validateCurrentStep() {
         clearErrors();
+        const banner = document.getElementById('formValidationBanner');
+        if (banner) banner.style.display = 'none';
         let valid = true;
 
         switch (currentStep) {
@@ -2927,7 +3013,10 @@
             case 7: valid = validateStep7(); break;
             case 8: valid = validateStep8(); break;
         }
-        if (!valid) showToast('Please fix the highlighted errors before proceeding.', 'error');
+        if (!valid) {
+            showToast('Please fix the highlighted errors before proceeding.', 'error');
+            scrollToFirstError();
+        }
         return valid;
     }
 
@@ -3192,7 +3281,7 @@
                 onProgramLevelChange(prog.program_level);
             }
         }
-        triggerEligibility();
+        collectFormData();
     }
 
     function onProgramLevelChange(level) {
@@ -3336,7 +3425,7 @@
         if (formData[key] && formData[key][idx]) {
             formData[key][idx][field] = value;
         }
-        if (type === 'ug') triggerEligibility();
+        if (type === 'ug') collectFormData();
     }
 
     function removeRow(type, btn) {
@@ -3459,14 +3548,16 @@
             </div>`;
         }
 
+        const headerText = isEligible ? 'Eligibility check passed' : 'You are not eligible for the selected program';
+        const messageText = (result.message || '').trim() || (isEligible ? 'You meet the eligibility criteria.' : 'Please review the reason below and contact admissions if you have questions.');
         resultDiv.innerHTML = `
         <div class="elig-panel ${cls}">
             <div class="elig-panel-header">
                 ${icon}
-                ${isEligible ? 'Eligibility Check Passed' : 'Not Eligible for Selected Program'}
+                ${headerText}
             </div>
             <div class="elig-panel-body">
-                ${result.message ? `<p style="margin:0 0 .5rem;font-size:.85rem;">${result.message}</p>` : ''}
+                <p style="margin:0 0 .5rem;font-size:.9rem;font-weight:600;">${(messageText || '').replace(/</g, '&lt;')}</p>
                 ${programTableHTML}
             </div>
         </div>`;
@@ -3475,28 +3566,40 @@
     // ═══════════════════════════════════════════════════════
     //  FILE HANDLING
     // ═══════════════════════════════════════════════════════
+    const MAX_FILE_SIZE_MB = 5;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
     function handlePhotoUpload(input) {
-        if (input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                document.getElementById('photoPreview').src = e.target.result;
-                document.getElementById('photoPreview').style.display = 'block';
-                document.getElementById('photoPlaceholder').style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
-            formData.candidate_photo = input.files[0].name;
+        if (!input.files[0]) return;
+        const file = input.files[0];
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            showToast(`File size must be ${MAX_FILE_SIZE_MB} MB or less.`, 'error');
+            input.value = '';
+            return;
         }
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('photoPreview').src = e.target.result;
+            document.getElementById('photoPreview').style.display = 'block';
+            document.getElementById('photoPlaceholder').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+        formData.candidate_photo = file.name;
     }
 
     function handleFileUpload(fieldName, input) {
-        if (input.files[0]) {
-            const file = input.files[0];
-            const preview = document.getElementById('fp_' + fieldName);
-            const nameEl = document.getElementById('fp_' + fieldName + '_name');
-            if (preview) preview.classList.add('show');
-            if (nameEl) nameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(0)}KB)`;
-            formData[fieldName] = file.name;
+        if (!input.files[0]) return;
+        const file = input.files[0];
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            showToast(`File size must be ${MAX_FILE_SIZE_MB} MB or less.`, 'error');
+            input.value = '';
+            return;
         }
+        const preview = document.getElementById('fp_' + fieldName);
+        const nameEl = document.getElementById('fp_' + fieldName + '_name');
+        if (preview) preview.classList.add('show');
+        if (nameEl) nameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(0)}KB)`;
+        formData[fieldName] = file.name;
     }
 
     // ═══════════════════════════════════════════════════════
@@ -3510,7 +3613,7 @@
             'mother_name', 'mother_email', 'mother_occupation', 'guardian_name', 'guardian_email',
             'correspondence_address', 'city', 'state', 'pincode', 'class_x_school', 'class_x_board',
             'class_x_year_of_completion', 'class_x_percentage', 'class_x_cgpa', 'class_xii_name_of_examination',
-            'class_xii_school', 'class_xii_board', 'class_xii_year_of_completion', 'class_xii_cgpa',
+            'class_xii_school', 'class_xii_board', 'class_xii_year_of_completion', 'class_xii_percentage', 'class_xii_cgpa',
             'hsc_group', 'hsc_percentage', 'national_test_name', 'percentage', 'other_degree',
             'other_degree_details', 'phd_program_type', 'proposed_phd_topic', 'ug_degree_completion',
             'post_degree_work_experience', 'years_of_work_experience', 'ews', 'pwd', 'pwd_required_test',
@@ -3521,11 +3624,14 @@
             if (el) formData[f] = el.value;
         });
 
-        // Phone fields
+        // Phone fields: combine country code + number for Frappe Phone field (e.g. +919876543210)
         ['mobile_number', 'alternate_contact', 'father_mobile', 'mother_mobile', 'guardian_mobile'].forEach(f => {
-            const cc = form.elements[f + '_cc']?.value || '+91';
-            const num = form.elements[f + '_num']?.value || '';
-            if (num) formData[f] = cc + num;
+            const ccEl = form.elements[f + '_cc'];
+            const numEl = form.elements[f + '_num'];
+            const cc = (ccEl && ccEl.value) ? String(ccEl.value).trim() : '+91';
+            const num = (numEl && numEl.value) ? String(numEl.value).replace(/\D/g, '') : '';
+            const combined = (cc.replace(/^\+/, '') ? (cc.startsWith('+') ? cc : '+' + cc) : '+91') + num;
+            formData[f] = combined;
         });
 
         // Checkboxes
@@ -3545,13 +3651,30 @@
     // ═══════════════════════════════════════════════════════
     //  PRE-FILL EXISTING DATA
     // ═══════════════════════════════════════════════════════
+    function parsePhoneStored(stored) {
+        if (!stored || typeof stored !== 'string') return { cc: '+91', num: '' };
+        const match = stored.match(/^(\+\d{1,4})(.*)$/);
+        if (match) return { cc: match[1], num: (match[2] || '').replace(/\D/g, '') };
+        return { cc: '+91', num: stored.replace(/\D/g, '') };
+    }
+
     function populateExistingData() {
         if (!formData || Object.keys(formData).length === 0) return;
 
         const form = document.getElementById('appForm');
+        const phoneFields = ['mobile_number', 'alternate_contact', 'father_mobile', 'mother_mobile', 'guardian_mobile'];
+
         Object.keys(formData).forEach(key => {
             const val = formData[key];
             if (val === null || val === undefined) return;
+            if (phoneFields.includes(key)) {
+                const { cc, num } = parsePhoneStored(val);
+                const ccEl = form.elements[key + '_cc'];
+                const numEl = form.elements[key + '_num'];
+                if (ccEl) ccEl.value = cc;
+                if (numEl) numEl.value = num;
+                return;
+            }
             const el = form.elements[key];
             if (el) {
                 if (el.type === 'checkbox') el.checked = val == 1 || val === true;
@@ -3637,7 +3760,7 @@
     }
 
     // ═══════════════════════════════════════════════════════
-    //  FORM SUBMISSION
+    //  FORM SUBMISSION (with eligibility check before submit)
     // ═══════════════════════════════════════════════════════
     async function submitForm() {
         if (!validateStep8()) {
@@ -3648,6 +3771,26 @@
         collectFormData();
         const btn = document.getElementById('nextBtn');
         btn.disabled = true;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Checking eligibility…';
+
+        try {
+            // Run eligibility rules before submit — block if ineligible
+            const eligRes = await apiFetch('slcm.www.application_form.index.check_portal_eligibility', { applicant_data: JSON.stringify(formData) });
+            if (eligRes && eligRes.eligible === false) {
+                const msg = eligRes.message || 'You are not eligible for the selected program.';
+                showEligibilityError(eligRes);
+                showValidationBanner(msg, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                return;
+            }
+        } catch (e) {
+            showToast('Eligibility check failed. Please try again or save and submit.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+            return;
+        }
+
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Submitting…';
 
         try {
@@ -3655,9 +3798,12 @@
 
             const message = res || {};
             if (message.name && !message.error) {
-                // Show success
+                if (message.docstatus !== undefined) formData.docstatus = message.docstatus;
+                if (message.application_status) formData.application_status = message.application_status;
+                toggleSaveDraftVisibility();
                 document.getElementById('appForm').style.display = 'none';
-                document.querySelector('.nav-buttons').style.display = 'none';
+                const navBtns = document.querySelector('.nav-buttons');
+                if (navBtns) navBtns.style.display = 'none';
                 document.getElementById('successScreen').style.display = 'block';
 
                 const now = new Date();
@@ -3666,13 +3812,15 @@
                 document.getElementById('finalProgram').textContent = formData.program || '—';
                 document.getElementById('finalCampus').textContent = formData.campus || '—';
 
-                // Hide sidebar UI
-                document.querySelector('.portal-banner').style.display = 'none';
-                document.querySelector('.progress-strip').style.display = 'none';
+                const banner = document.querySelector('.portal-banner');
+                if (banner) banner.style.display = 'none';
+                const progressStrip = document.querySelector('.progress-strip');
+                if (progressStrip) progressStrip.style.display = 'none';
             } else if (message.error) {
                 showToast(message.error, 'error');
+                showValidationBanner(message.error, 'error');
                 btn.disabled = false;
-                btn.innerHTML = 'Submit Application';
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
             }
         } catch (e) {
             let msg = 'Submission failed. Please try again.';
@@ -3680,31 +3828,60 @@
                 msg = e.message.replace(/<[^>]+>/g, '').trim() || msg;
             }
             showToast(msg, 'error');
+            showValidationBanner(msg, 'error');
             btn.disabled = false;
             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
         }
     }
 
+    function showValidationBanner(msg, type) {
+        let el = document.getElementById('formValidationBanner');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'formValidationBanner';
+            el.setAttribute('role', 'alert');
+            el.style.cssText = 'padding:1rem 1.25rem;margin-bottom:1rem;border-radius:var(--radius-sm);font-size:0.9rem;display:flex;align-items:flex-start;gap:0.75rem;';
+            const form = document.getElementById('appForm');
+            if (form && form.parentNode) form.parentNode.insertBefore(el, form);
+        }
+        el.style.background = type === 'error' ? 'var(--red-bg)' : 'var(--amber-bg)';
+        el.style.border = type === 'error' ? '1px solid var(--red)' : '1px solid var(--amber)';
+        el.style.color = type === 'error' ? 'var(--red)' : 'var(--slate-700)';
+        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>${(msg || '').replace(/</g, '&lt;')}</span>`;
+        el.style.display = 'block';
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     // ═══════════════════════════════════════════════════════
-    //  AUTO-SAVE
+    //  SAVE DRAFT (no auto-save)
     // ═══════════════════════════════════════════════════════
-    let saveTimer = null;
-    function autoSave() {
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(async () => {
-            try {
-                const res = await apiFetch('slcm.www.application_form.index.save_form', { data: JSON.stringify(formData) });
+    async function saveDraft() {
+        collectFormData();
+        const saveText = document.getElementById('saveText');
+        const btn = document.getElementById('saveDraftBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span style="animation:spin 1s linear infinite">⏳</span> Saving…'; }
+        try {
+            const res = await apiFetch('slcm.www.application_form.index.save_form', { data: JSON.stringify(formData) });
+            const message = res || {};
+            if (message.error) {
+                if (saveText) saveText.textContent = 'Save failed';
+                showToast(message.error, 'error');
+            } else {
+                if (message.docstatus !== undefined) formData.docstatus = message.docstatus;
+                if (message.application_status) formData.application_status = message.application_status;
+                toggleSaveDraftVisibility();
                 const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const message = res || {};
-                if (message.error) {
-                    document.getElementById('saveText').textContent = 'Auto-save failed';
-                } else {
-                    document.getElementById('saveText').textContent = `Saved at ${t}`;
-                }
-            } catch (e) {
-                document.getElementById('saveText').textContent = 'Save failed';
+                if (saveText) saveText.textContent = `Draft saved at ${t}`;
+                showToast('Draft saved. You can continue later.', 'success');
             }
-        }, 2000);
+        } catch (e) {
+            if (saveText) saveText.textContent = 'Save failed';
+            showToast('Could not save draft. Try again.', 'error');
+        }
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg> Save Draft';
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -3713,6 +3890,8 @@
     function initFlatpickr() {
         flatpickr('#date_of_birth', {
             dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd/m/Y',
             maxDate: new Date(new Date().setFullYear(new Date().getFullYear() - 17)),
             onChange: ([date]) => {
                 formData.date_of_birth = date ? date.toISOString().split('T')[0] : '';
@@ -3721,10 +3900,59 @@
     }
 
     // ═══════════════════════════════════════════════════════
-    //  TOAST
+    //  TOAST & ELIGIBILITY ERROR DISPLAY
     // ═══════════════════════════════════════════════════════
+    function decodeHtmlEntities(str) {
+        if (!str || typeof str !== 'string') return '';
+        const el = document.createElement('div');
+        el.innerHTML = str
+            .replace(/&mdash;/g, '—')
+            .replace(/&nbsp;/g, '\u00A0')
+            .replace(/&middot;/g, '·')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"');
+        return el.textContent || str;
+    }
+
+    function escapeHtml(s) {
+        return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function formatEligibilityForToast(eligRes) {
+        let mainMsg = (eligRes.message || 'You are not eligible for the selected program.').trim();
+        mainMsg = decodeHtmlEntities(mainMsg);
+        mainMsg = mainMsg.split(/\n/).map(s => escapeHtml(s)).join('<br>');
+        const programs = eligRes.programs || [];
+        let html = `<div class="toast-title">${mainMsg}</div>`;
+        if (programs.length > 0) {
+            html += '<div class="toast-programs"><strong>Programs at this campus</strong>';
+            programs.forEach(p => {
+                const name = escapeHtml(p.program || '');
+                const status = p.eligible ? '<span class="eligible-yes">Eligible</span>' : '<span class="eligible-no">Not Eligible</span>';
+                const reason = escapeHtml((p.reason || '').trim());
+                html += `<div><strong>${name}</strong> — ${status}${reason ? `<br><span style="font-size:.78rem;color:var(--slate-600);">${reason}</span>` : ''}</div>`;
+            });
+            html += '</div>';
+        }
+        return html;
+    }
+
+    function showEligibilityError(eligRes) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'toast-item error eligibility-error';
+        const icon = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--red);flex-shrink:0"><path d="M6 18L18 6M6 6l12 12"/></svg>';
+        toast.innerHTML = icon + '<div class="toast-body">' + formatEligibilityForToast(eligRes) + '</div>';
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 8000);
+    }
+
     function showToast(msg, type = 'info') {
         const container = document.getElementById('toastContainer');
+        if (!container) return;
         const toast = document.createElement('div');
         toast.className = `toast-item ${type}`;
 
@@ -3734,7 +3962,7 @@
             info: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--navy)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
         };
 
-        toast.innerHTML = `${icons[type] || icons.info}<span>${msg}</span>`;
+        toast.innerHTML = `${icons[type] || icons.info}<span>${(msg || '').toString().replace(/</g, '&lt;')}</span>`;
         container.appendChild(toast);
         setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 4000);
     }

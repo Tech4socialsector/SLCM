@@ -123,7 +123,87 @@ def get_context(context):
     except Exception:
         context.national_tests = []
 
+    # ── States (from State doctype) ─────────────────────────────────────
+    try:
+        context.states = frappe.get_all(
+            "State",
+            fields=["name"],
+            order_by="name asc"
+        )
+    except Exception:
+        context.states = []
+
+    # ── Cities (static list; no City doctype — extend as needed) ────────
+    context.cities = get_common_cities()
+
+    # ── Form config: admission cycle → entrance test / program levels ───
+    # Used to show/hide sections by program (e.g. PhD section only for Research Course)
+    context.form_config = get_form_config_for_cycles()
+
     return context
+
+
+def get_common_cities():
+    """Return a list of common city names for the City select. Override or extend via DocType if needed."""
+    return [
+        "Bengaluru", "Mumbai", "Delhi", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad",
+        "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam",
+        "Patna", "Vadodara", "Ghaziabad", "Ludhiana", "Agra", "Nashik", "Faridabad", "Meerut",
+        "Rajkot", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad", "Amritsar", "Allahabad",
+        "Ranchi", "Howrah", "Coimbatore", "Jabalpur", "Gwalior", "Vijayawada", "Jodhpur",
+        "Madurai", "Raipur", "Kota", "Chandigarh", "Guwahati", "Solapur", "Tiruchirappalli",
+        "Bareilly", "Mysore", "Tirunelveli", "Gurgaon", "Aligarh", "Bhubaneswar", "Salem",
+        "Warangal", "Mira-Bhayandar", "Thiruvananthapuram", "Bhiwandi", "Saharanpur",
+        "Other",
+    ]
+
+
+def get_form_config_for_cycles():
+    """
+    Returns a dict keyed by admission_cycle name: which program_levels and
+    intake_types exist in that cycle (from Admission Cycle Program + Program).
+    Enables the form to show fields relevant to the selected program/entrance test.
+    """
+    out = {}
+    try:
+        cycles = frappe.get_all(
+            "Admission Cycle",
+            fields=["name"],
+            filters={"status": "Active"},
+            order_by="name desc"
+        )
+        for c in cycles or []:
+            cycle_name = c.name
+            programs = frappe.get_all(
+                "Admission Cycle Program",
+                filters={"parent": cycle_name},
+                fields=["program", "program_level", "intake_type"]
+            )
+            if not programs:
+                # Fallback: get program_level from Program link
+                programs = frappe.db.sql("""
+                    SELECT acp.program, p.program_level, acp.intake_type
+                    FROM `tabAdmission Cycle Program` acp
+                    LEFT JOIN `tabProgram` p ON p.name = acp.program
+                    WHERE acp.parent = %s
+                """, (cycle_name,), as_dict=True)
+            levels = set()
+            intake_types = set()
+            for row in programs or []:
+                prog = row.get("program") if isinstance(row, dict) else getattr(row, "program", None)
+                pl = (row.get("program_level") if isinstance(row, dict) else getattr(row, "program_level", None)) or (frappe.db.get_value("Program", prog, "program_level") if prog else None)
+                it = row.get("intake_type") if isinstance(row, dict) else getattr(row, "intake_type", None)
+                if pl:
+                    levels.add(pl)
+                if it:
+                    intake_types.add(it)
+            out[cycle_name] = {
+                "program_levels": list(levels),
+                "intake_types": list(intake_types),
+            }
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Application Form — form_config")
+    return out
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -178,6 +258,26 @@ def save_form(data):
             continue
         if key in valid_scalar_fields or key in child_table_fields:
             sanitized[key] = value
+
+    # ── Build phone fields (Frappe Phone field: country code + number, e.g. +919876543210) ─
+    PHONE_FIELDS = ("mobile_number", "alternate_contact", "father_mobile", "mother_mobile", "guardian_mobile")
+    for field in PHONE_FIELDS:
+        if field not in valid_scalar_fields:
+            continue
+        combined = sanitized.get(field)
+        cc_key = field + "_cc"
+        num_key = field + "_num"
+        if not combined and (cc_key in data or num_key in data):
+            cc = (data.get(cc_key) or "+91")
+            if isinstance(cc, str) and not cc.startswith("+"):
+                cc = "+" + cc
+            num = (data.get(num_key) or "")
+            if isinstance(num, str):
+                num = "".join(c for c in num if c.isdigit())
+            combined = (cc or "+91") + num
+        if combined is not None and isinstance(combined, str):
+            val = combined.strip()
+            sanitized[field] = val if val else None
 
     # ── Find or create Applicant doc ─────────────────────────────────
     try:
@@ -246,10 +346,13 @@ def save_form(data):
 
             return {
                 "status": "success",
-                "name":   doc.name,
-                "message": _("Application submitted successfully.")
+                "name": doc.name,
+                "message": _("Application submitted successfully."),
+                "docstatus": doc.docstatus,
+                "application_status": getattr(doc, "application_status", None),
             }
         else:
+            doc.application_status = "Draft"
             if doc.is_new():
                 doc.insert(ignore_permissions=True)
             else:
@@ -259,8 +362,10 @@ def save_form(data):
 
             return {
                 "status": "draft",
-                "name":   doc.name,
-                "message": _("Draft saved.")
+                "name": doc.name,
+                "message": _("Draft saved."),
+                "docstatus": doc.docstatus,
+                "application_status": doc.application_status,
             }
 
     except frappe.ValidationError as e:
