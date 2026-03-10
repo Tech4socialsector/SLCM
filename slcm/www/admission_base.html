@@ -549,7 +549,7 @@
                       </div>
                     </div>
                     <!-- Dashboard -->
-                    <a href="/merit-and-scholarship/admission_dashboard"
+                    <!-- <a href="/merit-and-scholarship/admission_dashboard"
                        style="display:flex;align-items:center;gap:10px;
                               padding:12px 16px;text-decoration:none;color:#334155;
                               font-size:14px;font-weight:600;transition:background 0.15s;"
@@ -557,9 +557,9 @@
                        onmouseout="this.style.background='transparent'">
                       <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">dashboard</span>
                       Dashboard
-                    </a>
+                    </a> -->
                     <!-- My Applications -->
-                    <a href="/my-applications"
+                    <!-- <a href="/my-applications"
                        style="display:flex;align-items:center;gap:10px;
                               padding:12px 16px;text-decoration:none;color:#334155;
                               font-size:14px;font-weight:600;transition:background 0.15s;"
@@ -567,7 +567,7 @@
                        onmouseout="this.style.background='transparent'">
                       <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">description</span>
                       My Applications
-                    </a>
+                    </a> -->
                     <!-- Profile -->
                     <a href="/merit-and-scholarship/admission_dashboard?panel=profile"
                        style="display:flex;align-items:center;gap:10px;
@@ -1084,15 +1084,8 @@
                 var logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', function () {
-                        showConfirm('Are you sure you want to logout?', async function () {
-                            try {
-                                await fetch('/api/method/logout', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': window.csrf_token },
-                                    body: 'csrf_token=' + encodeURIComponent(window.csrf_token)
-                                });
-                            } catch (e) { }
-                            window.location.href = '/login';
+                        showConfirm('Are you sure you want to logout?', function () {
+                            window.location.href = '/logout';
                         });
                     });
                 }

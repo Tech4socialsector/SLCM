@@ -1,6 +1,6 @@
 import frappe
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def check_existing_application(admission_cycle=None):
     """
     Returns existing application name if user already applied in this cycle.
@@ -29,7 +29,7 @@ def check_existing_application(admission_cycle=None):
         }
     return {"exists": False, "name": ""}
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def mark_notifications_read(names=None):
     """Marks unread notifications as read. If names provided, only those."""
     user = frappe.session.user
@@ -70,7 +70,7 @@ def mark_notifications_read(names=None):
         frappe.log_error(f"mark_notifications_read failed: {e}", "Portal")
         return {"success": False}
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def get_portal_notifications():
     try:
         user = frappe.session.user
@@ -144,7 +144,7 @@ def get_public_announcements():
         frappe.log_error(f"get_public_announcements failed: {e}", "Portal")
         return []
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def get_user_type():
     """Returns user_type for the currently logged-in user"""
     try:
@@ -161,7 +161,7 @@ def _get_stage_seq(stages, stage_name):
             return getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
     return 0
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def get_stage_tracker_data(applicant_name):
     """
     Returns stage pipeline for /my-applications stage tracker widget.
@@ -264,7 +264,7 @@ def get_stage_tracker_data(applicant_name):
 
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def get_edit_permission(applicant_name):
     """
     Returns whether the current applicant can edit their application.
@@ -326,7 +326,7 @@ def get_edit_permission(applicant_name):
         "editable_sections": [],   # empty = all sections editable
     }
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def download_admit_card(admit_card):
     """
     Custom download function for Admit Card that bypasses standard print permissions
@@ -367,7 +367,7 @@ def download_admit_card(admit_card):
     else:
         frappe.throw("Admit Card generation failed. Please contact the admission office.")
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def download_application(applicant_name):
     """
     Generates and downloads the Applicant PDF for the owner.
@@ -389,7 +389,7 @@ def download_application(applicant_name):
     frappe.local.response.filecontent = pdf_content
     frappe.local.response.type = "download"
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "GET"])
 def download_offer_letter(offer_letter):
     """
     Generates and downloads the Offer Letter PDF for the owner.

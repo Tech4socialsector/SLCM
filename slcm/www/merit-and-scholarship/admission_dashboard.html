@@ -102,14 +102,18 @@
     background: #f8fafc;
     color: #1e293b;
   }
-  /* Sidebar must be flex-column so logout sticks to bottom */
+  /* Sidebar container must be flex-column */
   .adm-sidebar-menu,
-  #adm-sidebar-nav,
-  [class*="adm-sidebar"] > div {
+  #adm-sidebar-nav {
     display: flex !important;
     flex-direction: column !important;
   }
-</style>
+  /* Menu items must be horizontal */
+  .adm-menu-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+  }</style>
 {% endblock %}
 
 {% block content %}
@@ -182,7 +186,7 @@
             </div>
 
             <div class="adm-menu-item" data-panel="scholarships"
-                 onclick="showPanel('scholarships')"
+                 onclick="window.location.href='/merit-and-scholarship/scholarships'"
                  style="display:flex;align-items:center;gap:12px;padding:12px 16px;
                         border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
                         color:#64748b;transition:all 0.15s;margin-bottom:4px;">
@@ -199,22 +203,17 @@
               Change Password
             </div>
 
-            <!-- Spacer pushes logout to bottom -->
-            <div style="flex:1;min-height:16px;"></div>
-
-            <!-- Divider -->
-            <div style="height:1px;background:#f1f5f9;margin:8px 0 4px;"></div>
-
             <!-- Logout -->
-            <a href="/api/method/logout"
-               style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                      border-radius:10px;font-size:14px;font-weight:600;
-                      color:#ef4444;text-decoration:none;transition:background 0.15s;"
-               onmouseover="this.style.background='#fff5f5'"
-               onmouseout="this.style.background='transparent'">
+            <div class="adm-menu-item"
+                 onclick="window.location.href='/logout'"
+                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
+                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
+                        color:#ef4444;transition:all 0.15s;margin-bottom:4px;"
+                 onmouseover="this.style.background='#fff5f5'"
+                 onmouseout="this.style.background='transparent'">
               <span style="font-family:'Material Symbols Outlined';font-size:20px;color:#ef4444;">logout</span>
               Logout
-            </a>
+            </div>
 
           </nav>
         </div>
@@ -272,14 +271,14 @@
                                border-radius:9999px;margin-bottom:12px;">
                     {{ _cta_tag }}
                   </span>
-                  <h2 style="font-size:26px;font-weight:800;color:white;
+                  <!-- <h2 style="font-size:26px;font-weight:800;color:white;
                              line-height:1.25;margin-bottom:8px;">
                     {% if _display and not _is_guest %}
                     Welcome back, {{ _display.split(' ')[0] }}
                     {% else %}
                     {{ _title }}
                     {% endif %}
-                  </h2>
+                  </h2> -->
                   <p style="font-size:13px;color:#cbd5e1;max-width:420px;line-height:1.55;">
                     {% if _tagline %}{{ _tagline }}
                     {% else %}Track your applications, explore programs, and manage your admission journey.{% endif %}
@@ -487,47 +486,52 @@
         {% set _pfirst = _pname.split()[0] if _pname else 'A' %}
 
         <div id="panel-profile" class="adm-panel-section" style="display:none;padding:32px 0;">
-          <div style="margin-bottom:28px;">
-            <h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0;">My Profile</h2>
+          <div style="margin-bottom:32px; text-align:center;">
+            <h2 style="font-size:24px;font-weight:800;color:#1e293b;margin:0;">My Profile</h2>
             <p style="font-size:14px;color:#64748b;margin:6px 0 0;">View and update your personal information.</p>
           </div>
 
-          <div style="display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start;">
-            <!-- LEFT CARD: Avatar -->
-            <div style="background:#fff;border-radius:16px;padding:28px 20px;border:1px solid rgba(26,60,110,0.08);box-shadow:0 2px 12px rgba(0,0,0,0.04);text-align:center;position:relative;">
-              <div style="position:relative;width:88px;height:88px;margin:0 auto 16px;cursor:pointer;" onclick="document.getElementById('profile-photo-input').click()" title="Click to change photo">
-                <div id="profile-avatar-display" style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:3px solid var(--primary,#1a3c6e);position:relative;">
+          <div style="display:flex; flex-direction:column; gap:32px; align-items:center; max-width: 800px; margin: 0 auto;">
+            
+            <!-- TOP: Avatar and Basic Info (Centered) -->
+            <div style="text-align:center; position:relative;">
+              <div style="position:relative;width:120px;height:120px;margin:0 auto 20px;cursor:pointer;" onclick="document.getElementById('profile-photo-input').click()" title="Click to change photo">
+                <div id="profile-avatar-display" style="width:120px;height:120px;border-radius:50%;overflow:hidden;border:4px solid #fff;box-shadow: 0 4px 12px rgba(0,0,0,0.1);position:relative; background: #fff;">
                   {% if _pphoto %}
                   <img id="profile-avatar-img" src="{{ _pphoto }}" alt="Profile Photo" style="width:100%;height:100%;object-fit:cover;display:block;"/>
                   {% else %}
-                  <div id="profile-avatar-initials" style="width:100%;height:100%;background:var(--primary,#1a3c6e);color:white;font-size:32px;font-weight:800;display:flex;align-items:center;justify-content:center;">
+                  <div id="profile-avatar-initials" style="width:100%;height:100%;background:var(--primary,#1a3c6e);color:white;font-size:42px;font-weight:800;display:flex;align-items:center;justify-content:center;">
                     {{ _pfirst[0] | upper }}
                   </div>
                   {% endif %}
                 </div>
-                <div style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:var(--primary,#1a3c6e);border:2px solid #fff;display:flex;align-items:center;justify-content:center;">
-                  <span style="font-family:'Material Symbols Outlined';font-size:14px;color:white;line-height:1;">photo_camera</span>
+                <div style="position:absolute;bottom:4px;right:4px;width:32px;height:32px;border-radius:50%;background:var(--primary,#1a3c6e);border:3.5px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                  <span style="font-family:'Material Symbols Outlined';font-size:16px;color:white;line-height:1;">photo_camera</span>
                 </div>
               </div>
+              
               <input type="file" id="profile-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="handleProfilePhotoUpload(this)"/>
               <div id="profile-photo-status" style="font-size:11px;color:#94a3b8;margin-bottom:8px;min-height:16px;"></div>
-              <div style="font-size:16px;font-weight:700;color:#1e293b;word-break:break-word;">{{ _pname or 'Applicant' }}</div>
-              <div style="font-size:12px;color:#94a3b8;margin-top:4px;word-break:break-all;">{{ _pemail or '' }}</div>
-              {% if _pstatus %}
-              <div style="margin-top:14px;">
-                <span style="background:#f1f5f9;color:#64748b;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;">{{ _pstatus }}</span>
+              
+              <div style="font-size:20px;font-weight:800;color:#1e293b;margin-bottom:4px;">{{ _pname or 'Applicant' }}</div>
+              <div style="font-size:14px;color:#64748b;margin-bottom:12px;">{{ _pemail or '' }}</div>
+              
+              <!-- {% if _pstatus %}
+              <div style="display: flex; justify-content: center;">
+                <span style="background:rgba(26,60,110,0.08);color:var(--primary);font-size:11px;font-weight:700;padding:5px 14px;border-radius:999px; text-transform: uppercase; letter-spacing: 0.05em;">{{ _pstatus }}</span>
               </div>
-              {% endif %}
+              {% endif %} -->
             </div>
 
-            <!-- RIGHT CARD: Details -->
-            <div style="background:#fff;border-radius:16px;padding:28px 24px;border:1px solid rgba(26,60,110,0.08);box-shadow:0 2px 12px rgba(0,0,0,0.04);">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-                <h3 style="font-size:16px;font-weight:700;color:#1e293b;margin:0;">Personal Details</h3>
-                <button onclick="openProfileEditModal()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;color:#fff;background:var(--primary,#1a3c6e);transition:opacity 0.15s;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-                  <span style="font-family:'Material Symbols Outlined';font-size:16px;">edit</span> Edit Details
+            <!-- BOTTOM CARD: Personal Details -->
+            <div style="background:#fff;border-radius:24px;padding:32px;border:1px solid rgba(26,60,110,0.08);box-shadow:0 4px 20px rgba(0,0,0,0.04); width:100%;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+                <h3 style="font-size:18px;font-weight:800;color:#1e293b;margin:0;">Personal Information</h3>
+                <button onclick="openProfileEditModal()" style="display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;color:#fff;background:var(--primary,#1a3c6e);transition:all 0.2s;" onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)';" onmouseout="this.style.opacity='1'; this.style.transform='none';">
+                  <span style="font-family:'Material Symbols Outlined';font-size:18px;">edit</span> Edit Details
                 </button>
               </div>
+              
               {% set _fields = [
                 ('Full Name',       _pd.get('candidate_name','')),
                 ('Email',           _pd.get('email','')),
@@ -535,19 +539,17 @@
                 ('Date of Birth',   _pd.get('date_of_birth','')),
                 ('Gender',          _pd.get('gender','')),
                 ('Nationality',     _pd.get('nationality','')),
-                ('Religion',        _pd.get('religion','')),
-                ('Father\'s Name',  _pd.get('father_name','')),
-                ('Mother\'s Name',  _pd.get('mother_name','')),
                 ('Address',         _pd.get('correspondence_address','')),
                 ('City',            _pd.get('city','')),
                 ('State',           _pd.get('state','')),
                 ('Pincode',         _pd.get('pincode','')),
               ] %}
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;">
+              
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:24px;">
                 {% for label, val in _fields %}
-                <div>
-                  <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">{{ label }}</div>
-                  <div style="font-size:14px;font-weight:500;color:{{ '#1e293b' if val else '#cbd5e1' }};">{{ val or 'Not set' }}</div>
+                <div style="padding: 4px 0;">
+                  <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">{{ label }}</div>
+                  <div style="font-size:15px;font-weight:600;color:{{ '#1e293b' if val else '#cbd5e1' }};">{{ val or 'Not set' }}</div>
                 </div>
                 {% endfor %}
               </div>
@@ -601,18 +603,6 @@
       <div>
         <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Nationality</label>
         <input id="edit-nationality" type="text" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'"/>
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Religion</label>
-        <input id="edit-religion" type="text" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'"/>
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Father's Name</label>
-        <input id="edit-father" type="text" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'"/>
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Mother's Name</label>
-        <input id="edit-mother" type="text" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'"/>
       </div>
       <div style="grid-column:1/-1;">
         <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Correspondence Address</label>
@@ -680,9 +670,6 @@ function openProfileEditModal() {
   document.getElementById('edit-dob').value        = pd.date_of_birth     || '';
   document.getElementById('edit-gender').value     = pd.gender            || '';
   document.getElementById('edit-nationality').value= pd.nationality       || '';
-  document.getElementById('edit-religion').value   = pd.religion          || '';
-  document.getElementById('edit-father').value     = pd.father_name       || '';
-  document.getElementById('edit-mother').value     = pd.mother_name       || '';
   document.getElementById('edit-address').value    = pd.correspondence_address || '';
   document.getElementById('edit-city').value       = pd.city              || '';
   document.getElementById('edit-state').value      = pd.state             || '';
@@ -704,36 +691,36 @@ if (document.getElementById('profile-edit-modal')) {
     });
 }
 
-function saveProfileEdits() {
+async function saveProfileEdits() {
   var btn = document.getElementById('profile-save-btn');
   var msg = document.getElementById('profile-edit-msg');
   btn.disabled = true; btn.textContent = 'Saving…'; msg.textContent = '';
 
-  frappe.call({
-    method: 'slcm.admission.api.profile.update_profile',
-    args: {
+  try {
+    const args = {
       mobile_number:         document.getElementById('edit-mobile').value,
       date_of_birth:         document.getElementById('edit-dob').value,
       gender:                document.getElementById('edit-gender').value,
       nationality:           document.getElementById('edit-nationality').value,
-      religion:              document.getElementById('edit-religion').value,
-      father_name:           document.getElementById('edit-father').value,
-      mother_name:           document.getElementById('edit-mother').value,
       correspondence_address:document.getElementById('edit-address').value,
       city:                  document.getElementById('edit-city').value,
       state:                 document.getElementById('edit-state').value,
       pincode:               document.getElementById('edit-pincode').value,
-    },
-    callback: function(r) {
-      btn.disabled = false; btn.textContent = 'Save Changes';
-      if (r && r.message && r.message.status === 'ok') {
-        msg.style.color = '#16a34a'; msg.textContent = '✓ Profile updated successfully.';
-        setTimeout(function() { window.location.reload(); }, 900);
-      } else {
-        msg.style.color = '#dc2626'; msg.textContent = 'Something went wrong. Please try again.';
-      }
+    };
+    
+    const message = await apiFetch('slcm.admission.api.profile.update_profile', args);
+    btn.disabled = false; btn.textContent = 'Save Changes';
+    
+    if (message && message.status === 'ok') {
+      msg.style.color = '#16a34a'; msg.textContent = '✓ Profile updated successfully.';
+      setTimeout(function() { window.location.reload(); }, 900);
+    } else {
+      msg.style.color = '#dc2626'; msg.textContent = 'Something went wrong. Please try again.';
     }
-  });
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Save Changes';
+    msg.style.color = '#dc2626'; msg.textContent = e.message || 'Error saving profile. Please try again.';
+  }
 }
 
 // ── Profile Photo Upload ─────────────────────────────────────────────
@@ -769,20 +756,21 @@ function handleProfilePhotoUpload(input) {
   fetch('/api/method/upload_file', {
     method: 'POST',
     body: formData,
-    headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token }
+    headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
   })
   .then(res => res.json())
-  .then(data => {
+  .then(async data => {
     if (data && data.message && data.message.file_url) {
-      frappe.call({
-        method: 'slcm.admission.api.profile.update_profile',
-        args: { candidate_photo: data.message.file_url },
-        callback: function(r) {
-          if (r && r.message && r.message.status === 'ok') {
-            statusEl.textContent = '✓ Photo updated'; statusEl.style.color = '#16a34a';
-          }
+      try {
+        const message = await apiFetch('slcm.admission.api.profile.update_profile', { 
+          candidate_photo: data.message.file_url 
+        });
+        if (message && message.status === 'ok') {
+          statusEl.textContent = '✓ Photo updated'; statusEl.style.color = '#16a34a';
         }
-      });
+      } catch (e) {
+        statusEl.textContent = 'Error updating photo'; statusEl.style.color = '#dc2626';
+      }
     }
   });
 }
