@@ -7,9 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "eligibility_rule_mapping_section",
+  "program",
   "rule",
   "admission_cycle",
-  "program",
   "campus",
   "column_break_enee",
   "reservation_category",
@@ -19,9 +19,9 @@
  "fields": [
   {
    "fieldname": "rule",
-   "fieldtype": "Link",
-   "label": "Rule",
-   "options": "Eligibility Rule",
+   "fieldtype": "Table MultiSelect",
+   "label": "Rules",
+   "options": "Rule Mapping",
    "reqd": 1
   },
   {
@@ -33,9 +33,9 @@
   },
   {
    "fieldname": "program",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Link",
    "label": "Program",
-   "options": "Program Mapping",
+   "options": "Program",
    "reqd": 1
   },
   {
@@ -78,7 +78,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 11:09:00.240333",
+ "modified": "2026-03-10 02:06:07.887536",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",

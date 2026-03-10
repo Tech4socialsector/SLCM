@@ -68,19 +68,18 @@ class Applicant(Document):
                 "EWS Certificate is mandatory for EWS category.",
                 title="Missing Document"
             )
-        
-        caste_categories = {"SC", "ST", "OBC", "OBC-NCL"}
-        applicant_caste_categories = [
-            row.category for row in (self.categories or [])
-            if row.category in caste_categories
-        ]
-        
-        if applicant_caste_categories and not self.caste_certificate:
+
+        # Derive caste categories from the whether_scstobc_ncl field
+        caste_categories = {"SC", "ST", "OBC-NCL"}
+        applicant_cats = self._get_applicant_categories()
+        matched_caste = applicant_cats & caste_categories
+
+        if matched_caste and not self.caste_certificate:
             frappe.throw(
-                f"Caste Certificate is mandatory for {', '.join(applicant_caste_categories)} category.",
+                f"Caste Certificate is mandatory for {', '.join(sorted(matched_caste))} category.",
                 title="Missing Document"
             )
-            
+
         if self.pwd == "Yes" and not self.pwd_certificate:
             frappe.throw(
                 "PwD Certificate is mandatory for PwD category.",
@@ -168,6 +167,36 @@ class Applicant(Document):
                             break
                 except Exception:
                     pass
+
+    # ──────────────────────────────────────────────
+    # APPLICANT CATEGORY HELPER
+    # ──────────────────────────────────────────────
+
+    def _get_applicant_categories(self):
+        """
+        Derive the applicant's Admission Category set from the existing
+        reservation fields in the eligibility_for_reservation_tab.
+
+        Field → Admission Category mapping (static, matches DB records):
+          whether_scstobc_ncl  (not "NA")  →  OBC-NCL / ST / SC
+          pwd == "Yes"                     →  PWD
+          karnataka_category == "Yes"      →  Karnataka category
+
+        Returns a set of category name strings.
+        """
+        cats = set()
+
+        sc_st_obc = (getattr(self, "whether_scstobc_ncl", None) or "").strip()
+        if sc_st_obc and sc_st_obc.lower() != "na":
+            cats.add(sc_st_obc)  # Only include real categories like "OBC-NCL", "ST", or "SC"
+
+        if (getattr(self, "pwd", None) or "").strip() == "Yes":
+            cats.add("PWD")
+
+        if (getattr(self, "karnataka_category", None) or "").strip() == "Yes":
+            cats.add("Karnataka category")
+
+        return cats
 
     # ──────────────────────────────────────────────
     # CHILD TABLE VALUE HELPERS
@@ -454,24 +483,15 @@ class Applicant(Document):
             is_prog_eligible, reason = self._check_eligibility_for_program(prog_name)
             is_selected = (prog_name == self.program)
 
-            if is_prog_eligible:
-                eligible_count += 1
-                dot_color    = "#27ae60"
-                status_label = _("Eligible")
-                status_color = "#27ae60"
-                reason_html  = "<span style='color:#999;'>—</span>"
-                row_bg       = "#fff"
-            else:
+            if not is_prog_eligible:
                 ineligible_count += 1
-                dot_color    = "#e74c3c"
-                status_label = _("Not Eligible")
-                status_color = "#e74c3c"
-                reason_html  = (
-                    "<span style='font-size:12px;color:#555;'>{0}</span>".format(
-                        frappe.utils.escape_html(reason or "")
-                    )
-                )
-                row_bg = "#fff"
+                continue
+
+            eligible_count += 1
+            dot_color    = "#27ae60"
+            status_label = _("Eligible")
+            status_color = "#27ae60"
+            row_bg       = "#fff"
 
             # Program name cell — bold + "Selected" badge for the active program
             if is_selected:
@@ -512,9 +532,6 @@ class Applicant(Document):
                         "></span>
                         <span style="font-size:13px;font-weight:500;color:{status_color};">{status}</span>
                     </td>
-                    <td style="padding:10px 12px;vertical-align:middle;border-bottom:1px solid #eee;">
-                        {reason}
-                    </td>
                 </tr>
             """.format(
                 row_bg       = row_bg,
@@ -522,7 +539,6 @@ class Applicant(Document):
                 dot          = dot_color,
                 status_color = status_color,
                 status       = status_label,
-                reason       = reason_html,
             )
 
         # ── Summary counts ───────────────────────────────────────────────────
@@ -533,21 +549,13 @@ class Applicant(Document):
             '<strong style="color:#2c3e50;">{ec}</strong>'
             '<span style="font-size:12px;color:#888;">{el}</span>'
             '</span>'
-            '<span style="color:#ccc;">/</span>'
-            '<span style="display:inline-flex;align-items:center;gap:6px;">'
-            '<span style="display:inline-block;width:8px;height:8px;background:#e74c3c;border-radius:50%;"></span>'
-            '<strong style="color:#2c3e50;">{ic}</strong>'
-            '<span style="font-size:12px;color:#888;">{il}</span>'
-            '</span>'
             '<span style="font-size:12px;color:#aaa;">({total}&nbsp;{tl})</span>'
             '</div>'
         ).format(
             ec    = eligible_count,
-            el    = _("eligible"),
-            ic    = ineligible_count,
-            il    = _("not eligible"),
+            el    = _("eligible programs found"),
             total = eligible_count + ineligible_count,
-            tl    = _("total"),
+            tl    = _("total same-level programs"),
         )
 
         # ── Section heading ──────────────────────────────────────────────────
@@ -557,7 +565,7 @@ class Applicant(Document):
             '<span style="font-size:12px;color:#888;">&mdash;&nbsp;{campus}&nbsp;&middot;&nbsp;{cycle}&nbsp;&middot;&nbsp;{level}</span>'
             '</div>'
         ).format(
-            heading = _("Available Programs"),
+            heading = _("Suggested Eligible Programs"),
             campus  = frappe.utils.escape_html(self.campus or ""),
             cycle   = frappe.utils.escape_html(self.admission_cycle or ""),
             level   = frappe.utils.escape_html(selected_program_level or ""),
@@ -573,9 +581,8 @@ class Applicant(Document):
             '<table style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; font-size: 13px;">'
             '<thead>'
             '<tr style="background-color:#f8f9fa;">'
-            '<th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;width:40%;border-bottom:2px solid #e0e0e0;">{col1}</th>'
-            '<th style="padding:10px 12px;text-align:center;font-weight:600;color:#555;width:20%;border-bottom:2px solid #e0e0e0;">{col2}</th>'
-            '<th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;">{col3}</th>'
+            '<th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;width:70%;border-bottom:2px solid #e0e0e0;">{col1}</th>'
+            '<th style="padding:10px 12px;text-align:center;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;">{col2}</th>'
             '</tr>'
             '</thead>'
             '<tbody>'
@@ -588,8 +595,7 @@ class Applicant(Document):
             heading = heading_html,
             summary = summary_html,
             col1    = _("Program"),
-            col2    = _("Eligibility"),
-            col3    = _("Reason (if not eligible)"),
+            col2    = _("Status"),
             rows    = rows_html,
         )
 
@@ -619,15 +625,14 @@ class Applicant(Document):
                     and national_test_result.get("overrides_academic_rule")):
                 return True, ""
 
-            # Rule mappings for this program
+            # Rule mappings for this program (direct link now)
             rule_mappings = frappe.db.sql("""
-                SELECT erm.name, erm.rule, erm.failure_message
+                SELECT erm.name, erm.failure_message
                 FROM `tabEligibility Rule Mapping` erm
-                INNER JOIN `tabProgram Mapping` pm ON pm.parent = erm.name
                 WHERE erm.is_active       = 1
                   AND erm.campus          = %(campus)s
                   AND erm.admission_cycle = %(admission_cycle)s
-                  AND pm.program          = %(program)s
+                  AND erm.program         = %(program)s
             """, {
                 "campus":          self.campus,
                 "admission_cycle": self.admission_cycle,
@@ -748,13 +753,12 @@ class Applicant(Document):
 
     def _get_rule_mappings_for_applicant(self):
         return frappe.db.sql("""
-            SELECT erm.name, erm.rule, erm.failure_message
+            SELECT erm.name, erm.failure_message
             FROM `tabEligibility Rule Mapping` erm
-            INNER JOIN `tabProgram Mapping` pm ON pm.parent = erm.name
             WHERE erm.is_active         = 1
               AND erm.campus            = %(campus)s
               AND erm.admission_cycle   = %(admission_cycle)s
-              AND pm.program            = %(program)s
+              AND erm.program           = %(program)s
         """, {
             "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
@@ -767,25 +771,26 @@ class Applicant(Document):
 
     def _evaluate_mapping_with_category_priority(self, mapping):
         """
-        Priority-based multi-category eligibility engine.
+        Comprehensive eligibility engine:
+        Checks ALL categories the applicant belongs to (against the mapping table)
+        AND the 'General' (default) path using 'OR' logic.
 
-        CASE A — Applicant's category matches a reservation row:
-            • Winning category's minimum_percentage overrides base rule threshold.
-            • Non-percentage checks (HSC Group, Allowed Degree) still run.
-
-        CASE B — No category match:
-            • Full base rule evaluation (percentage + group + degree).
-
-        Returns (is_eligible: bool, failure_message: str)
+        Result: Eligible if ANY (Category, Rule) combination passes.
         """
-        rule_name    = mapping.get("rule")
         mapping_name = mapping.get("name")
-
-        failure_msg = (mapping.get("failure_message") or "").strip() or \
+        failure_msg  = (mapping.get("failure_message") or "").strip() or \
             "You do not meet the eligibility criteria for the selected program."
 
-        base_rule = self._get_base_rule(rule_name)
+        # 1. Fetch ALL rules for this mapping
+        rules_in_mapping = frappe.db.get_all("Rule Mapping",
+            filters={"parent": mapping_name},
+            fields=["rule"]
+        )
 
+        if not rules_in_mapping:
+            return True, ""
+
+        # 2. Get reservation overrides defined for this mapping
         reservation_rows = frappe.db.sql("""
             SELECT category, priority, minimum_percentage
             FROM `tabRule Mapping Category`
@@ -793,52 +798,51 @@ class Applicant(Document):
             ORDER BY priority ASC
         """, {"mapping_name": mapping_name}, as_dict=True)
 
-        applicant_categories = set(
-            (row.category or "").strip()
-            for row in (self.categories or [])
-            if row.category
-        )
+        # 3. Identify all evaluation paths (Matched categories + General)
+        applicant_categories = self._get_applicant_categories()
+        
+        # Path 1: Categories matching the mapping table
+        matched_categories = [
+            row for row in reservation_rows
+            if (row.category or "").strip() in applicant_categories
+        ]
+        
+        # evaluation_paths = [MatchedCategoryRow1, MatchedCategoryRow2, ..., None (for General)]
+        evaluation_paths = matched_categories + [None]
 
-        # ── CASE A ──────────────────────────────────────────────────────────
-        if applicant_categories and reservation_rows:
-            matched = [
-                row for row in reservation_rows
-                if (row.category or "").strip() in applicant_categories
-            ]
+        # 4. Nested OR Evaluation: Success if ANY (Path, Rule) combination passes
+        for cat_row in evaluation_paths:
+            for r_row in rules_in_mapping:
+                base_rule = self._get_base_rule(r_row.rule)
+                if not base_rule:
+                    continue
 
-            if matched:
-                matched.sort(key=lambda r: (r.priority if r.priority is not None else 9999))
-                winning = matched[0]
+                # Threshold: Category Override or Rule Default
+                if cat_row:
+                    required_val = flt(cat_row.minimum_percentage)
+                else:
+                    required_val = self._get_required_value(base_rule)
 
-                required_min = flt(winning.minimum_percentage)
-                operator     = (base_rule.get("operator") or ">=") if base_rule else ">="
+                operator = (base_rule.get("operator") or ">=")
+                
+                # Perform academic value comparison
+                passes_threshold = self._compare_any_academic_value(base_rule, required_val, operator)
+                # Perform non-percentage checks (Degrees/HSC Groups)
+                passes_non_percentage = self._evaluate_non_percentage_checks(base_rule)
 
-                if not self._compare_any_academic_value(base_rule, required_min, operator):
-                    return False, failure_msg
+                if passes_threshold and passes_non_percentage:
+                    # ELIGIBLE: Found a valid qualifying path
+                    self._set_applied_category_info(
+                        category=cat_row.category if cat_row else "General",
+                        priority=cat_row.priority if cat_row else None,
+                        minimum=required_val
+                    )
+                    return True, ""
 
-                if base_rule and not self._evaluate_non_percentage_checks(base_rule):
-                    return False, failure_msg
+        # If all paths and all rules failed
+        return False, failure_msg
 
-                self._set_applied_category_info(
-                    category=winning.category,
-                    priority=winning.priority,
-                    minimum=required_min
-                )
-                return True, ""
 
-        # ── CASE B ──────────────────────────────────────────────────────────
-        if not base_rule:
-            return True, ""
-
-        if not self.evaluate_single_rule(base_rule):
-            return False, failure_msg
-
-        self._set_applied_category_info(
-            category="General",
-            priority=None,
-            minimum=self._get_required_value(base_rule)
-        )
-        return True, ""
 
     # ──────────────────────────────────────────────
     # STEP 3 — Base rule fetch
@@ -1161,9 +1165,8 @@ class Applicant(Document):
             "national_test_rule_used": national_test_rule_used,
             "program_eligibility_details": program_details_html,
             "reservation_category": [
-                {"category": row.category}
-                for row in (self.categories or [])
-                if row.category
+                {"category": cat}
+                for cat in self._get_applicant_categories()
             ]
         }
 
