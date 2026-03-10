@@ -15,13 +15,11 @@ class EligibilityResult(Document):
         and Interview Seat Allocation.
         """
         if self.applicant_id and not self.category:
-            app_categories = frappe.get_all(
-                "Applicant Category",
-                filters={"parent": self.applicant_id, "parenttype": "Applicant"},
-                fields=["category"]
-            )
-            for row in app_categories:
-                self.append("category", {"category": row.category})
+            from slcm.admission.doctype.applicant.applicant import Applicant
+            app_doc = frappe.get_doc("Applicant", self.applicant_id)
+            app_categories = app_doc._get_applicant_categories()
+            for cat in app_categories:
+                self.append("category", {"category": cat})
 
 @frappe.whitelist()
 def get_applicant_data():
