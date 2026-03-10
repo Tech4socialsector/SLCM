@@ -219,6 +219,23 @@
 window.inject_fle_header_footer = function () {
     if ($('.sticky-header').length > 0) return;
 
+    // ── 0. Global CSS refinement for FLE ──────────────────────────────────────
+    if ($('#fle-global-refinements').length === 0) {
+        $('head').append(`
+        <style id="fle-global-refinements">
+            /* Hide Home button in FLE status pages */
+            body[data-path*="payment-failed"] a:contains("Home"),
+            body[data-path*="payment-cancel"] a:contains("Home"),
+            .fle-actions a.btn-outline-secondary:contains("Home"),
+            .page-card a.btn-outline-secondary:contains("Home"),
+            .fle-actions a:contains("Home"),
+            .page-card a:contains("Home") {
+                display: none !important;
+            }
+        </style>
+        `);
+    }
+
     // ── 1. Load Google Fonts ──────────────────────────────────────────────────
     $('head').append('<link rel="preconnect" href="https://fonts.googleapis.com">');
     $('head').append('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
@@ -476,10 +493,22 @@ window.inject_fle_header_footer = function () {
             .page-actions {
                 display: flex !important;
                 flex-wrap: wrap !important;
-                gap: 10px !important;
+                gap: 12px !important;
                 align-items: center !important;
-                justify-content: flex-end !important;
-                padding: 20px 0 12px 0 !important;
+                justify-content: center !important;
+                padding: 24px 0 16px 0 !important;
+            }
+
+            /* ── Explicit margin between every sibling button ── */
+            .web-form-footer .btn + .btn,
+            .web-form-footer button + button,
+            .web-form-footer .btn + button,
+            .web-form-footer button + .btn,
+            .page-actions .btn + .btn,
+            .page-actions button + button,
+            .form-footer .btn + .btn,
+            .form-footer button + button {
+                margin-left: 8px !important;
             }
 
             /* ── Generic font fallback for all other .btn ── */
@@ -715,7 +744,7 @@ window.inject_fle_header_footer = function () {
 
             /* ── Footer ── */
             .sticky-footer {
-                background-color:#1a1a1a!important; color:#cccccc!important;
+                background-color:#8b0000 !important; color:#ffffff!important;
                 text-align:center!important; padding:18px 24px!important;
                 font-size:12px!important; font-family:'Merriweather',Georgia,serif!important;
                 font-weight:300!important; letter-spacing:0.3px!important;
@@ -999,11 +1028,108 @@ window.inject_fle_header_footer = function () {
         footers.forEach(function (footer) {
             footer.style.setProperty('display', 'flex', 'important');
             footer.style.setProperty('flex-wrap', 'wrap', 'important');
-            footer.style.setProperty('gap', '10px', 'important');
+            footer.style.setProperty('gap', '12px', 'important');
             footer.style.setProperty('align-items', 'center', 'important');
-            footer.style.setProperty('justify-content', 'flex-end', 'important');
-            footer.style.setProperty('padding', '20px 0 12px 0', 'important');
+            footer.style.setProperty('justify-content', 'center', 'important');
+            footer.style.setProperty('padding', '24px 0 16px 0', 'important');
         });
+    }
+};
+
+
+/**
+ * ── Special Handler: Payment Cancel/Failed Pages ──────────────────────────────
+ * Change "Continue" -> "Try again", redirect to the web form, hide Home button
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+window.handle_payment_status_pages = function () {
+    function patchStatusPage() {
+        // 1. Target buttons specifically
+        // payment-cancel has .page-card a.btn-primary ("Continue")
+        // payment-failed has .fle-actions a ("Try Again" and "Home")
+
+        var allButtons = $('.page-card a, .fle-actions a, .page-card button');
+
+        allButtons.each(function () {
+            var $el = $(this);
+            var text = $el.text().trim().toLowerCase();
+
+            // Handle "Try again" / "Continue"
+            if (text.indexOf('try again') !== -1 || text.indexOf('continue') !== -1) {
+                $el.text('Try again');
+                $el.attr('href', '/foundations-for-a-legal-education/new');
+
+                // Auto-edit trigger
+                $el.off('click.autoedit').on('click.autoedit', function () {
+                    sessionStorage.setItem('fle_auto_edit', '1');
+                });
+
+                // Style it
+                $el.css({
+                    'background-color': '#8B0000',
+                    'border-color': '#8B0000',
+                    'color': '#ffffff',
+                    'font-family': "'Merriweather', Georgia, serif",
+                    'font-weight': '700',
+                    'padding': '10px 22px',
+                    'border-radius': '5px',
+                    'text-transform': 'none',
+                    'letter-spacing': '0.5px',
+                    'display': 'inline-flex',
+                    'align-items': 'center',
+                    'justify-content': 'center',
+                    'text-decoration': 'none'
+                });
+            }
+
+            // Handle "Home"
+            if (text === 'home') {
+                $el.attr('style', 'display: none !important');
+                $el.hide();
+            }
+        });
+
+        // 2. Card styling
+        $('.page-card').css({
+            'font-family': "'Merriweather', Georgia, serif",
+            'border-radius': '10px',
+            'box-shadow': '0 4px 20px rgba(0,0,0,0.08)'
+        });
+        $('.page-card p').css('font-weight', '300');
+        $('.indicator.red').css('font-weight', '700');
+    }
+
+    // Run multiple times
+    patchStatusPage();
+    setTimeout(patchStatusPage, 100);
+    setTimeout(patchStatusPage, 500);
+    setTimeout(patchStatusPage, 1500);
+    setTimeout(patchStatusPage, 3000);
+};
+
+
+/**
+ * ── Auto-Edit Mode Trigger ──────────────────────────────────────────────────
+ * Detects return from payment-failed/cancel and clicks "Edit" automatically
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+window.check_auto_edit_mode = function () {
+    var path = window.location.pathname;
+    // Only target the foundations web form
+    if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
+
+    if (sessionStorage.getItem('fle_auto_edit') === '1') {
+        function triggerEdit() {
+            var editBtn = $('.edit-button');
+            if (editBtn.length > 0) {
+                sessionStorage.removeItem('fle_auto_edit');
+                editBtn[0].click();
+            }
+        }
+        // Poll briefly for the edit button
+        triggerEdit();
+        setTimeout(triggerEdit, 500);
+        setTimeout(triggerEdit, 1500);
     }
 };
 
@@ -1019,11 +1145,25 @@ function try_inject_fle_theme() {
         '/payment-success', '/payment-failed', '/payment-cancel',
         '/fle-success-page', '/integration-request', '/foundations-for-a-legal-education'
     ];
+
+    var isStatusPage = path.indexOf('/payment-cancel') !== -1 || path.indexOf('/payment-failed') !== -1 || path.indexOf('/payment-success') !== -1;
+    var isFoundationsPage = path.indexOf('/foundations-for-a-legal-education') !== -1;
+
     for (var i = 0; i < valid_routes.length; i++) {
         if (path.indexOf(valid_routes[i]) !== -1) {
             if (typeof inject_fle_header_footer === 'function') inject_fle_header_footer();
+
+            // Special case for foundations auto-edit
+            if (isFoundationsPage) {
+                if (typeof check_auto_edit_mode === 'function') check_auto_edit_mode();
+            }
             break;
         }
+    }
+
+    // Always run status page handler on relevant routes
+    if (isStatusPage) {
+        if (typeof handle_payment_status_pages === 'function') handle_payment_status_pages();
     }
 }
 
