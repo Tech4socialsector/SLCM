@@ -919,8 +919,7 @@
    "fieldname": "current_stage",
    "fieldtype": "Link",
    "label": "Current Stage",
-   "options": "Stages",
-   "read_only": 1
+   "options": "Stages"
   },
   {
    "fieldname": "merit_score",
@@ -1025,7 +1024,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-09 22:39:56.643082",
+ "modified": "2026-03-10 18:16:37.678498",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
