@@ -131,57 +131,79 @@ def save_form(data):
     """
     Save (draft) or submit (final) an Applicant document.
 
-    Fixes from original:
-    ────────────────────
-    1. Uses frappe.session.user directly (no need for email param from untrusted input).
-    2. Properly sanitises only valid Applicant fields — prevents injection via unknown keys.
-    3. Child tables are cleared and re-appended correctly using doc.set() + doc.append().
-    4. Raises HTTP 400 for ValidationError instead of silently returning error dict,
-       so JS can catch it and surface the message to the user.
-    5. Removed __submit flag manipulation that bypassed before_submit hook checks.
-    6. Returns consistent response shape: {"name": ..., "status": "success"|"draft"}.
+    KEY FIX NOTES
+    ─────────────
+    - Never use frappe.local.response.http_status_code + return to signal errors.
+      frappe.call() on the JS side treats any non-200 as a thrown exception, and the
+      error message ends up inside e.responseJSON._server_messages (a JSON-encoded
+      string), NOT e.responseJSON.message. This is what caused the generic
+      "Submission failed" message.
+    - Instead we always return a plain dict with a top-level "error" key for failures
+      and a "name" key for successes. The JS checks these keys on res.message.
+    - doc.submit() must also use ignore_permissions=True; without it, the Applicant
+      role raises a PermissionError that was being silently swallowed.
+    - frappe.parse_json() safely handles both str and dict inputs.
     """
+    # Frappe may pass data as a JSON string or already-parsed dict
     if isinstance(data, str):
         data = frappe.parse_json(data)
+    if not isinstance(data, dict):
+        return {"error": "Invalid data format."}
 
     user = frappe.session.user
     if user == "Guest":
-        frappe.throw(_("You must be logged in to save an application."), frappe.AuthenticationError)
+        return {"error": _("You must be logged in to save an application.")}
 
     email = frappe.db.get_value("User", user, "email") or user
-
-    # ── Validate required submission fields ──────────────────────────
     is_submit = bool(data.get("__submit"))
 
     # ── Get valid fields from DocType meta ───────────────────────────
-    meta = frappe.get_meta("Applicant")
-    valid_scalar_fields = {f.fieldname for f in meta.fields if f.fieldtype not in ("Table", "Section Break", "Column Break", "Tab Break", "HTML", "Button")}
+    try:
+        meta = frappe.get_meta("Applicant")
+    except Exception:
+        return {"error": _("Applicant DocType not found. Please contact the administrator.")}
+
+    SKIP_TYPES = {"Table", "Section Break", "Column Break", "Tab Break", "HTML", "Button"}
+    valid_scalar_fields = {f.fieldname for f in meta.fields if f.fieldtype not in SKIP_TYPES}
     child_table_fields  = {"ug_degree_details", "pg_degree_details", "categories"}
 
-    # ── Sanitise data ────────────────────────────────────────────────
+    # ── Sanitise — only accept known fields ──────────────────────────
     sanitized = {}
     for key, value in data.items():
         if key.startswith("__"):
             continue
-        if key in valid_scalar_fields:
+        if key in valid_scalar_fields or key in child_table_fields:
             sanitized[key] = value
-        elif key in child_table_fields:
-            sanitized[key] = value  # handled separately below
 
-    # ── Find or create doc ───────────────────────────────────────────
-    existing_name = frappe.db.get_value("Applicant", {"email": email}, "name")
+    # ── Find or create Applicant doc ─────────────────────────────────
+    try:
+        existing_name = frappe.db.get_value("Applicant", {"email": email}, "name")
+    except Exception:
+        existing_name = None
 
-    if existing_name:
-        doc = frappe.get_doc("Applicant", existing_name)
-    else:
-        doc = frappe.new_doc("Applicant")
-        doc.email = email
+    try:
+        if existing_name:
+            doc = frappe.get_doc("Applicant", existing_name)
+        else:
+            doc = frappe.new_doc("Applicant")
+            doc.email = email
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "save_form — get/new doc")
+        return {"error": _("Could not load application record: {0}").format(str(e))}
 
     # ── Apply scalar fields ──────────────────────────────────────────
     scalar_data = {k: v for k, v in sanitized.items() if k not in child_table_fields}
-    doc.update(scalar_data)
+    try:
+        doc.update(scalar_data)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "save_form — doc.update")
+        return {"error": _("Error setting fields: {0}").format(str(e))}
 
     # ── Apply child tables ───────────────────────────────────────────
+    # Strip internal Frappe row-keys so append() doesn't try to match existing rows
+    _INTERNAL_KEYS = {"name", "idx", "doctype", "parent", "parentfield", "parenttype",
+                      "owner", "creation", "modified", "modified_by", "docstatus"}
+
     for ct_field in child_table_fields:
         if ct_field in sanitized:
             doc.set(ct_field, [])
@@ -189,61 +211,77 @@ def save_form(data):
             if isinstance(rows, list):
                 for row in rows:
                     if isinstance(row, dict):
-                        # Strip meta keys frappe adds
-                        clean_row = {k: v for k, v in row.items() if not k.startswith("__") and k not in ("name", "idx", "doctype", "parent", "parentfield", "parenttype")}
-                        doc.append(ct_field, clean_row)
+                        clean_row = {
+                            k: v for k, v in row.items()
+                            if k not in _INTERNAL_KEYS and not k.startswith("__")
+                        }
+                        try:
+                            doc.append(ct_field, clean_row)
+                        except Exception:
+                            pass  # Skip malformed rows silently
 
-    # ── Ensure email is always set ───────────────────────────────────
+    # Always stamp the authenticated email — do not trust form input
     doc.email = email
 
+    # ── Save or Submit ───────────────────────────────────────────────
     try:
         doc.flags.ignore_permissions = True
 
         if is_submit:
-            # Applicant is usually not a submittable doctype in this system.
-            # We set the application_status to "Submitted" to signify completion.
-            if hasattr(doc, "application_status"):
-                doc.application_status = "Submitted"
-            
-            doc.save(ignore_permissions=True)
-            
-            # If there's any workflow or specific logic that requires submit, 
-            # it should be handled via status change or by making the DocType submittable.
-            # doc.submit() # -> Removed to avoid BusinessLogicError
-            
+            # Save first so we have a persistent record, then submit
+            if not doc.name or doc.is_new():
+                doc.insert(ignore_permissions=True)
+            else:
+                doc.save(ignore_permissions=True)
+
+            frappe.db.commit()   # commit the save before submitting
+
+            doc.flags.ignore_permissions = True
+            doc.submit()
             frappe.db.commit()
+
             return {
-                "status":  "success",
-                "name":    doc.name,
+                "status": "success",
+                "name":   doc.name,
                 "message": _("Application submitted successfully.")
             }
         else:
-            doc.save(ignore_permissions=True)
+            if doc.is_new():
+                doc.insert(ignore_permissions=True)
+            else:
+                doc.save(ignore_permissions=True)
+
             frappe.db.commit()
+
             return {
-                "status":  "draft",
-                "name":    doc.name,
+                "status": "draft",
+                "name":   doc.name,
                 "message": _("Draft saved.")
             }
 
     except frappe.ValidationError as e:
         frappe.db.rollback()
-        frappe.local.response.http_status_code = 400
-        frappe.local.response["message"] = {"error": str(e)}
-        return
+        # Return the validation message directly — JS will display it to user
+        return {"error": str(e)}
+
+    except frappe.MandatoryError as e:
+        frappe.db.rollback()
+        return {"error": _("Required fields missing: {0}").format(str(e))}
+
+    except frappe.DuplicateEntryError as e:
+        frappe.db.rollback()
+        return {"error": _("A duplicate entry was found: {0}").format(str(e))}
 
     except frappe.PermissionError:
         frappe.db.rollback()
-        frappe.local.response.http_status_code = 403
-        frappe.local.response["message"] = {"error": _("You do not have permission to perform this action.")}
-        return
+        return {"error": _("You do not have permission to submit this application.")}
 
-    except Exception:
+    except Exception as e:
         frappe.db.rollback()
-        frappe.log_error(frappe.get_traceback(), "Application Form — save_form Error")
-        frappe.local.response.http_status_code = 500
-        frappe.local.response["message"] = {"error": _("An internal error occurred. Please try again.")}
-        return
+        frappe.log_error(frappe.get_traceback(), "Application Form — save_form")
+        # Return the raw exception message so we can see it during development.
+        # In production you'd replace str(e) with a generic message.
+        return {"error": _("Submission error: {0}").format(str(e))}
 
 
 # ═══════════════════════════════════════════════════════════════════
