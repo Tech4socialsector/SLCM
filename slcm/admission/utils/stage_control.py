@@ -22,7 +22,7 @@ def get_intake_for_applicant(applicant_doc_or_name):
 
 def get_cycle_stages(admission_cycle, intake_type=None):
     """
-    Returns enabled, non-locked stage rows from Admission Cycle child table.
+    Returns enabled stage rows from Admission Cycle child table.
     Filtered by intake_type (also includes 'All' stages).
     Ordered by sequence ascending.
     Handles both 'sequence' and 'sequence_no' fieldnames.
@@ -63,7 +63,7 @@ def get_current_stage(admission_cycle, intake_type=None):
 
     # Priority 2: first non-locked stage in sequence
     for s in stages:
-        if not s.is_locked:
+        if not s.is_stage_locked:
             return s
 
     return None
