@@ -9,6 +9,7 @@
   "cycle_name",
   "cycle_code",
   "admission_year",
+  "academic_year",
   "approval_reference",
   "col_break_basic",
   "status",
@@ -125,10 +126,17 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2026-03-09 10:58:33.658909",
+ "modified": "2026-03-10 15:27:20.214426",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

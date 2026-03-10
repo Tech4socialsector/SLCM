@@ -2,6 +2,28 @@
 
 {% block title %}Offer Letter Detail{% endblock %}
 
+{% block theme_vars %}
+<style>
+  :root {
+    {% if portal_config %}
+    --primary:   {{ portal_config.get('primary_color', '#1a3c6e') if portal_config.get else (portal_config.primary_color or '#1a3c6e') }};
+    --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config.get else (portal_config.secondary_color or '#c8a14b') }};
+    --success: #38a169;
+    --warning: #ed8936;
+    --info: #3182ce;
+    --danger: #e53e3e;
+    {% else %}
+    --primary: #1a3c6e;
+    --secondary: #c8a14b;
+    --success: #38a169;
+    --warning: #ed8936;
+    --info: #3182ce;
+    --danger: #e53e3e;
+    {% endif %}
+  }
+</style>
+{% endblock %}
+
 {% block page_css %}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -275,12 +297,17 @@
 {% endblock %}
 
 {% block content %}
-<div id="offer-detail-wrapper">
-    <div class="text-center p-5 mt-5" id="loader">
-        <div class="spinner-border" style="color: var(--primary);" role="status">
-            <span class="sr-only">{{ _("Loading...") }}</span>
+<div class="adm-container" style="padding-top:16px;">
+    <a href="/my-applications" class="btn-outline-adm" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:20px;text-decoration:none;">
+        <span>←</span> Back to My Applications
+    </a>
+    <div id="offer-detail-wrapper">
+        <div class="text-center p-5 mt-5" id="loader">
+            <div class="spinner-border" style="color: var(--primary);" role="status">
+                <span class="sr-only">{{ _("Loading...") }}</span>
+            </div>
+            <p class="mt-3 text-muted">{{ _("Fetching your admission offer...") }}</p>
         </div>
-        <p class="mt-3 text-muted">{{ _("Fetching your admission offer...") }}</p>
     </div>
 </div>
 
@@ -484,8 +511,13 @@
                                 ${offer.offer_status === 'Issued' ? '{{ _("Accept & Pay Fee") }}' : '{{ _("Pay Fee") }}'}
                             </button>
                         ` : ''}
+                        ${offer.offer_status === 'Issued' ? `
+                            <button class="btn btn-download-outline mt-2" style="border-color: var(--danger); color: var(--danger);" onclick="handle_reject()">
+                                <i class="fa fa-times"></i> {{ _("Reject Offer") }}
+                            </button>
+                        ` : ''}
                         
-                        <a href="javascript:void(0)" class="btn btn-download-outline" onclick="handle_download()">
+                        <a href="javascript:void(0)" class="btn btn-download-outline mt-2" onclick="handle_download()">
                             <i class="fa fa-download"></i> {{ _("Download PDF") }}
                         </a>
 
@@ -547,6 +579,33 @@
         showConfirm("{{ _('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions. Please note: all other active offers will be automatically rejected.') }}", function () {
             execute_acceptance();
         });
+    }
+
+    function handle_reject() {
+        showConfirm("{{ _('Are you sure you want to reject this admission offer? This action cannot be undone.') }}", function () {
+            execute_reject();
+        });
+    }
+
+    async function execute_reject() {
+        show_processing("{{ _('Processing...') }}");
+        try {
+            await apiFetch('slcm.api.service.offer_service.reject_offer', {
+                offer_name: cur_offer_data.offer.name,
+                reason: 'Rejected by applicant from portal'
+            });
+            hide_processing();
+            show_success({
+                title: "{{ _('Offer Declined') }}",
+                message: "{{ _('You have declined this admission offer. Redirecting to My Applications.') }}"
+            });
+            document.getElementById('success-modal').querySelector('button').onclick = function () {
+                window.location.href = '/my-applications';
+            };
+        } catch (e) {
+            hide_processing();
+            showToast(e.message || "{{ _('Could not reject offer. Please try again.') }}", "error");
+        }
     }
 
     async function execute_acceptance() {
@@ -744,7 +803,7 @@
     }
 
     function render_error(message) {
-        $('#offer-detail-wrapper').html(`<div class="text-center p-5 mt-5"><h4>{{ _("Error") }}</h4><p>${message}</p><a href="/offer_letter/offer-letter-list" class="btn btn-primary-adm">{{ _("Back to List") }}</a></div>`);
+        $('#offer-detail-wrapper').html(`<div class="text-center p-5 mt-5"><h4>{{ _("Error") }}</h4><p>${message}</p><a href="/my-applications" class="btn btn-primary-adm" style="margin-right:8px;">{{ _("My Applications") }}</a><a href="/offer_letter/offer-letter-list" class="btn btn-outline-adm">{{ _("Offer Letter List") }}</a></div>`);
     }
 </script>
 {% endblock %}

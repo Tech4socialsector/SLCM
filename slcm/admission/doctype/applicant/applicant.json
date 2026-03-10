@@ -225,8 +225,10 @@
   },
   {
    "fieldname": "religion",
-   "fieldtype": "Data",
-   "label": "Religion"
+   "fieldtype": "Select",
+   "label": "Religion",
+   "options": "\nHindu\nMuslim\nChristian\nSikh\nBuddhist\nJain\nOther",
+   "placeholder": "Select Religion"
   },
   {
    "fieldname": "nationality",
@@ -562,18 +564,24 @@
   },
   {
    "fieldname": "first_preference",
-   "fieldtype": "Data",
-   "label": "First Preference"
+   "fieldtype": "Link",
+   "label": "First Preference",
+   "options": "Entrance Test Provider",
+   "reqd": 1
   },
   {
    "fieldname": "second_preference",
-   "fieldtype": "Data",
-   "label": "Second Preference"
+   "fieldtype": "Link",
+   "label": "Second Preference",
+   "options": "Entrance Test Provider",
+   "reqd": 1
   },
   {
    "fieldname": "third_preference",
-   "fieldtype": "Data",
-   "label": "Third Preference"
+   "fieldtype": "Link",
+   "label": "Third Preference",
+   "options": "Entrance Test Provider",
+   "reqd": 1
   },
   {
    "fieldname": "other_information_tab",
@@ -795,8 +803,9 @@
   },
   {
    "fieldname": "annual_house_hold_income",
-   "fieldtype": "Currency",
+   "fieldtype": "Select",
    "label": "Annual House Hold Income",
+   "options": "0 - 3,00,000\n3,00,001 - 8,00,000\n15,00,001 - 25,00,000\n8,00,001 - 15,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
    "precision": "2"
   },
   {
@@ -1024,7 +1033,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-10 12:44:50.164692",
+ "modified": "2026-03-10 16:39:07.374627",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

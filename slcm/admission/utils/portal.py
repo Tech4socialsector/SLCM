@@ -200,7 +200,7 @@ def get_active_programs():
                 "program", "program_name", "seats", "eligibility_hint",
                 "brochure_url", "program_image", "desciption",
                 "program_media", "reservation_policy", "max_applications",
-                "application_count", "program_level", "intake_type",
+                "application_count", "program_level", "intake_type", "campus",
             ],
             order_by="program_name asc"
         )

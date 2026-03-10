@@ -733,7 +733,7 @@
         <!-- END SEAT ALLOCATION CARD -->
 
         <!-- ══ DOWNLOAD ACTIONS ROW ══════════════════════════════ -->
-        {% if offer_letter_url or app_name_param %}
+        {% if offer_letter_url or offer_letter_name or app_name_param %}
         <div class="fade-in-up"
              style="display:flex;flex-wrap:wrap;gap:12px;
                     animation-delay:0.4s;">
@@ -751,16 +751,29 @@
             Download Application
           </a>
           {% endif %}
+          {% if offer_letter_name %}
+          <a href="/offer_letter/offer-letter-detail?offer={{ offer_letter_name }}"
+             style="display:inline-flex;align-items:center;gap:8px;
+                    padding:10px 20px;border-radius:10px;font-size:13px;
+                    font-weight:700;text-decoration:none;color:white;
+                    background:var(--primary);transition:opacity 0.15s;"
+             onmouseover="this.style.opacity='0.85'"
+             onmouseout="this.style.opacity='1'">
+            <span class="material-symbols-outlined" style="font-size:18px;">drafts</span>
+            View Offer Letter
+          </a>
+          {% endif %}
           {% if offer_letter_url %}
           <a href="{{ offer_letter_url }}" target="_blank"
              style="display:inline-flex;align-items:center;gap:8px;
                     padding:10px 20px;border-radius:10px;font-size:13px;
-                    font-weight:700;text-decoration:none;color:white;
-                    background:#0f172a;transition:opacity 0.15s;"
-             onmouseover="this.style.opacity='0.85'"
-             onmouseout="this.style.opacity='1'">
-            <span class="material-symbols-outlined" style="font-size:18px;">drafts</span>
-            Download Offer Letter
+                    font-weight:700;text-decoration:none;color:#475569;
+                    border:1.5px solid #e2e8f0;background:white;
+                    transition:all 0.15s;"
+             onmouseover="this.style.background='#f8fafc';this.style.color='var(--primary)'"
+             onmouseout="this.style.background='white';this.style.color='#475569'">
+            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+            Download Offer Letter PDF
           </a>
           {% endif %}
         </div>
@@ -1003,6 +1016,30 @@
         </svg>
         <span>My Application</span>
     </nav>
+
+    <!-- Offer Letters section: only applications that have an offer letter -->
+    {% if offer_letter_entries %}
+    <section class="ma-sec-card" style="margin-bottom:24px;">
+        <div class="ma-sec-head" style="display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);">drafts</span>
+            Offer Letters
+        </div>
+        <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Applications with an admission offer. View details, accept or reject, pay fee, and download documents.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+            {% for o in offer_letter_entries %}
+            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.06)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
+                <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">{{ o.offer_status or 'Issued' }}</div>
+                <div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:4px;">{{ o.program_name or o.program or 'Program' }}</div>
+                <div style="font-size:13px;color:#64748b;margin-bottom:14px;">{{ o.campus_name or o.campus or '' }}</div>
+                <a href="/offer_letter/offer-letter-detail?offer={{ o.offer_name }}" class="ma-btn ma-btn-primary" style="display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">visibility</span>
+                    View Offer Letter
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
 
     {% if applications %}
 ...
