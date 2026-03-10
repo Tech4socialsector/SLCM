@@ -467,7 +467,11 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False):
         html = get_admit_card_html(allocation, is_rescheduled)
         pdf_content = get_pdf(html)
     except Exception as e:
-        frappe.log_error(f"Manual PDF Generation Error for {allocation.name}: {str(e)}", "Admit Card Error")
+        import traceback
+        frappe.log_error(
+            message=traceback.format_exc(),
+            title=f"Admit Card Generation Error for {allocation.name}"
+        )
         return None
     
     field_to_update = "reschedule_admit_card" if is_rescheduled else "admit_card"

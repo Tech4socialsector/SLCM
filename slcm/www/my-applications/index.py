@@ -379,50 +379,94 @@ def get_context(context):
         # ── entrance test (Entrance Test Seat Allocation) ─────────
         context.entrance_test  = None
         context.admit_card_url = ""
+        context.et_doc = None
+        context.et_is_rescheduled = False
+        context.et_preferences = []
+        context.et_show_result = False
+        context.et_reporting_time = ""
+        context.et_campus_branding = {}
+        context.et_doc_json = "{}"
+        
         try:
-            etrows = frappe.get_all(
+            et_rows = frappe.get_all(
                 "Entrance Test Seat Allocation",
                 filters={"applicant": _app_name},
-                fields=["entrance_test_name", "center_name",
-                        "center_address", "seat_number",
-                        "allocation_status", "admit_card", "name"],
+                fields=["*"],
                 order_by="creation desc", limit=1,
                 ignore_permissions=True
             )
-            if etrows:
-                et        = etrows[0]
-                test_name = et.get("entrance_test_name") or ""
+            if et_rows:
+                et_doc = frappe.get_doc("Entrance Test Seat Allocation", et_rows[0].name, ignore_permissions=True)
+                context.et_doc = et_doc
+                
+                # Rescheduled logic
+                is_rescheduled = (et_doc.is_rescheduled == 1 or et_doc.entrance_test_status == "Rescheduled")
+                context.et_is_rescheduled = is_rescheduled
+                
+                # Preferences
+                raw_prefs = et_doc.re_assigned_preferences if is_rescheduled else et_doc.assigned_preferences
+                context.et_preferences = []
+                for p in raw_prefs:
+                    context.et_preferences.append({
+                        "provider": p.provider,
+                        "center_name": p.center_name,
+                        "center_address": p.center_address
+                    })
+                
+                # Result published logic
+                context.et_show_result = (et_doc.entrance_test_status in ["Attended", "Absent"] and et_doc.result_published == 1)
+                
+                # Reporting time (1 hour before)
+                from datetime import timedelta
+                f_date = et_doc.re_allocation_date if is_rescheduled else et_doc.allocation_date
+                if f_date:
+                    try:
+                        rep_dt = f_date - timedelta(hours=1)
+                        context.et_reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
+                    except:
+                        context.et_reporting_time = "09:30 AM"
+                else:
+                    context.et_reporting_time = "—"
+                
+                # Branding
+                campus_branding = {"campus_name": et_doc.campus or "Institution of Legal Education", "logo": None}
+                try:
+                    if et_doc.campus:
+                        campus = frappe.get_doc("Campus", et_doc.campus)
+                        campus_branding["campus_name"] = campus.campus_name or et_doc.campus
+                        campus_branding["logo"] = campus.logo
+                except: pass
+                context.et_campus_branding = campus_branding
+                context.et_doc_json = frappe.as_json(et_doc.as_dict())
+
+                # Legacy fields for backward compatibility in templates
+                test_name = et_doc.entrance_test_name or ""
                 test_date = ""
                 test_time = ""
                 if test_name:
                     try:
-                        td = frappe.get_doc(
-                            "Entrance Test List", test_name,
-                            ignore_permissions=True
-                        )
-                        test_date = frappe.utils.format_date(
-                            str(td.get("test_date") or "")[:10],
-                            "MMMM d, yyyy"
-                        ) if td.get("test_date") else ""
+                        td = frappe.get_doc("Entrance Test List", test_name, ignore_permissions=True)
+                        test_date = frappe.utils.format_date(str(td.get("test_date") or "")[:10], "MMMM d, yyyy") if td.get("test_date") else ""
                         test_time = str(td.get("test_time") or "")
-                    except Exception:
-                        pass
+                    except: pass
+
+                f_center = et_doc.re_center_name if is_rescheduled else et_doc.center_name
+                f_address = et_doc.re_center_address if is_rescheduled else et_doc.center_address
+                f_seat = et_doc.re_seat_number if is_rescheduled else et_doc.seat_number
+
                 context.entrance_test = {
-                    "test_name":      test_name,
-                    "test_date":      test_date,
-                    "test_time":      test_time,
-                    "center_name":    et.get("center_name") or "",
-                    "center_address": et.get("center_address") or "",
-                    "seat_number":    et.get("seat_number") or "",
-                    "admit_status":   et.get("allocation_status") or "",
-                    "admit_name":     et.get("name") or "",
+                    "test_name": test_name,
+                    "test_date": test_date or frappe.utils.format_date(f_date, "MMMM d, yyyy") if f_date else "",
+                    "test_time": test_time or frappe.utils.format_datetime(f_date, "hh:mm a") if f_date else "",
+                    "center_name": f_center or "",
+                    "center_address": f_address or "",
+                    "seat_number": f_seat or "",
+                    "admit_status": (et_doc.re_allocation_status if is_rescheduled else et_doc.allocation_status) or "",
+                    "admit_name": et_doc.name,
                 }
-                context.admit_card_url = (
-                    f"/api/method/slcm.admission.utils.web.download_admit_card"
-                    f"?admit_card={et.get('name')}"
-                )
+                context.admit_card_url = f"/api/method/slcm.admission.utils.web.download_admit_card?admit_card={et_doc.name}"
         except Exception as ex:
-            frappe.log_error(title="my_app_et", message=str(ex))
+            frappe.log_error(title="my_app_et_details", message=frappe.get_traceback())
 
         # ── offer letter URL (from Offer Letter DocType) ──────────
         context.offer_letter_url = ""
@@ -442,6 +486,78 @@ def get_context(context):
                 )
         except Exception:
             pass
+
+        # ── interview management (Interview Seat Allocation) ──────
+        context.interview_doc = None
+        context.interview_is_rescheduled = False
+        context.interview_current_slot = None
+        context.interview_show_result = False
+        context.interview_show_feedback = False
+        context.interview_feedback_submitted = False
+        context.interview_attendance_options = ["Will Attend", "Will Not Attend", "Need Reschedule"]
+
+        try:
+            i_rows = frappe.get_all(
+                "Interview Seat Allocation",
+                filters={"applicant": _app_name},
+                fields=["*"],
+                order_by="creation desc", limit=1,
+                ignore_permissions=True
+            )
+            if i_rows:
+                i_doc = frappe.get_doc("Interview Seat Allocation", i_rows[0].name, ignore_permissions=True)
+                context.interview_doc = i_doc
+                
+                is_rescheduled = (i_doc.is_rescheduled == 1 or i_doc.interview_slot_status == "Rescheduled")
+                context.interview_is_rescheduled = is_rescheduled
+                
+                from datetime import timedelta
+                from frappe.utils import get_datetime
+
+                # Pick slot data
+                if is_rescheduled:
+                    f_date = i_doc.re_interview_date
+                    f_time = i_doc.re_interview_time
+                    rep_time = "—"
+                    if f_date and f_time:
+                        try:
+                            dt = get_datetime(f"{f_date} {f_time}")
+                            rep_time = frappe.utils.format_datetime(dt - timedelta(hours=1), "hh:mm a")
+                        except: pass
+                    context.interview_current_slot = {
+                        "staff_name": i_doc.re_staff_name,
+                        "interview_date": frappe.utils.format_date(f_date) if f_date else "—",
+                        "interview_time": frappe.utils.format_datetime(f"{f_date} {f_time}", "hh:mm a") if (f_date and f_time) else (f_time or "—"),
+                        "reporting_time": rep_time,
+                        "interview_address": i_doc.re_interview_address,
+                        "attendance_confirmation": i_doc.re_interview_attendance_confirmation,
+                    }
+                else:
+                    f_date = i_doc.interview_date
+                    f_time = i_doc.interview_time
+                    rep_time = "—"
+                    if f_date and f_time:
+                        try:
+                            dt = get_datetime(f"{f_date} {f_time}")
+                            rep_time = frappe.utils.format_datetime(dt - timedelta(hours=1), "hh:mm a")
+                        except: pass
+                    context.interview_current_slot = {
+                        "staff_name": i_doc.staff_name,
+                        "interview_date": frappe.utils.format_date(f_date) if f_date else "—",
+                        "interview_time": frappe.utils.format_datetime(f"{f_date} {f_time}", "hh:mm a") if (f_date and f_time) else (f_time or "—"),
+                        "reporting_time": rep_time,
+                        "interview_address": i_doc.interview_address,
+                        "attendance_confirmation": i_doc.interview_attendance_confirmation,
+                    }
+
+                context.interview_show_result = (
+                    i_doc.interview_status in ["Attended", "Absent", "Selected", "Rejected", "Withheld"]
+                    and i_doc.result_published == 1
+                )
+                context.interview_show_feedback = (i_doc.result_published == 1)
+                context.interview_feedback_submitted = bool(i_doc.feedback)
+        except Exception as ex:
+            frappe.log_error(title="my_app_interview_details", message=frappe.get_traceback())
 
         context.show_detail    = True
         context.title = f"Application Details: {_app_name}"
