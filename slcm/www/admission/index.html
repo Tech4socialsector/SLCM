@@ -6,301 +6,671 @@
 {% block theme_vars %}
 <style>
     :root {
-        {% if portal_config %}
-        --primary:   {{ portal_config.get('primary_color', '#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
-        --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
-        --accent:    {{ portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
-        {% endif %}
+            {
+            % if portal_config %
+        }
+
+        --primary: {
+                {
+                portal_config.get('primary_color', '#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e'
+            }
+        }
+
+        ;
+
+        --secondary: {
+                {
+                portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b'
+            }
+        }
+
+        ;
+
+        --accent: {
+                {
+                portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b'
+            }
+        }
+
+        ;
+
+            {
+            % endif %
+        }
     }
 </style>
 {% endblock %}
 
 {% block page_css %}
 <style>
-.stats-bar { display:flex; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.07); overflow:hidden;
-margin-bottom:28px; }
-.stats-bar-item { flex:1; text-align:center; padding:20px 12px; border-right:1px solid var(--border); }
-.stats-bar-item:last-child { border-right:none; }
-.stats-bar-value { font-size:26px; font-weight:700; color:var(--primary); }
-.stats-bar-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
-.announce-strip { background:var(--primary-light); border:1px solid #c8d8f0; border-radius:10px; padding:10px 20px;
-margin-bottom:24px; display:flex; gap:28px; align-items:center; overflow-x:auto; font-size:13px; color:var(--primary);
-font-weight:500; }
-.announce-strip span::before { content:"📢 "; }
-.hero-wrap { position:relative; border-radius:12px; overflow:hidden; margin-bottom:28px; height:280px;
-background:var(--primary); }
-.hero-slide { display:none; height:280px; position:relative; }
-.hero-slide.active { display:block; }
-.hero-slide img { width:100%; height:280px; object-fit:cover; }
-.hero-slide-caption { position:absolute; bottom:0; left:0; right:0;
-background:linear-gradient(transparent,rgba(0,0,0,0.55)); color:#fff; padding:20px 24px; font-size:16px;
-font-weight:600; }
-.hero-dots { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:15; }
-.hero-dot { width:8px; height:8px; border-radius:50%; border:none; padding:0; cursor:pointer;
-background:rgba(255,255,255,0.4); }
-.hero-dot.active { background:#fff; }
-.hero-nav {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    background: rgba(0,0,0,0.35); color: #fff; border: none;
-    width: 44px; height: 44px; border-radius: 50%; font-size: 24px;
-    cursor: pointer; display: flex; align-items: center;
-    justify-content: center; z-index: 10; transition: background 0.2s;
-}
-.hero-nav:hover { background: rgba(0,0,0,0.6); }
-.hero-prev { left: 12px; }
-.hero-next { right: 12px; }
+    .stats-bar {
+        display: flex;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+        margin-bottom: 28px;
+    }
 
-/* ── Program Grid ── */
-.section-programs, .section-announcements {
-    padding: 20px 0 40px;
-}
-.section-header {
-    margin-bottom: 28px;
-}
-.section-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: var(--text);
-    margin: 0 0 4px;
-}
-.section-sub {
-    font-size: 14px;
-    color: var(--muted);
-    margin: 0;
-}
-.prog-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
-}
-.prog-card {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
-                box-shadow 0.22s ease;
-    outline: none;
-    border: 1.5px solid transparent;
-}
-.prog-card:hover, .prog-card:focus {
-    transform: translateY(-6px) scale(1.015);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.13);
-    border-color: var(--primary);
-}
-.prog-thumb {
-    position: relative;
-    height: 180px;
-    overflow: hidden;
-    background: var(--primary-light);
-}
-.prog-thumb img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    transition: transform 0.35s ease;
-}
-.prog-card:hover .prog-thumb img {
-    transform: scale(1.05);
-}
-.prog-thumb-placeholder {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 72px; font-weight: 900;
-    color: var(--primary); opacity: 0.12;
-}
-.fill-bar-track {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    height: 4px; background: rgba(255,255,255,0.3);
-}
-.fill-bar-fill {
-    height: 4px; transition: width 0.6s ease;
-    border-radius: 0 2px 2px 0;
-}
-.fill-danger  { background: #ef4444; }
-.fill-warning { background: #f59e0b; }
-.fill-info    { background: #3b82f6; }
-.fill-success { background: #10b981; }
-.prog-status-badge {
-    position: absolute; top: 12px; right: 12px;
-    font-size: 11px; font-weight: 700; padding: 3px 10px;
-    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
-    z-index: 5;
-}
-.badge-open   { background: #d1fae5; color: #065f46; }
-.badge-closed { background: #fee2e2; color: #991b1b; }
-.prog-body { padding: 18px 20px 20px; }
-.prog-name {
-    font-size: 17px; font-weight: 700;
-    color: var(--text); margin: 0 0 8px; line-height: 1.3;
-}
-.fill-badge {
-    display: inline-block; font-size: 11px; font-weight: 600;
-    padding: 3px 9px; border-radius: 20px; margin-bottom: 10px;
-}
-.fill-badge.fill-danger  { background: #fee2e2; color: #991b1b; }
-.fill-badge.fill-warning { background: #fef3c7; color: #92400e; }
-.fill-badge.fill-info    { background: #dbeafe; color: #1e40af; }
-.fill-badge.fill-success { background: #d1fae5; color: #065f46; }
-.prog-desc {
-    font-size: 13px; color: var(--muted); line-height: 1.6;
-    margin-bottom: 12px; min-height: 40px;
-}
-.prog-meta-row {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    margin-bottom: 14px;
-}
-.prog-meta-item {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 12px; color: var(--muted);
-}
-.prog-actions {
-    display: flex; gap: 8px; align-items: center;
-}
-.btn-apply-now {
-    display: inline-flex; align-items: center;
-    background: var(--primary, #c8a14b); color: #fff;
-    padding: 8px 14px; border-radius: 8px;
-    font-size: 13px; font-weight: 600;
-    border: 1px solid #d1d5db; cursor: pointer;
-    transition: background 0.15s, opacity 0.15s;
-    white-space: nowrap;
-    flex: 1; justify-content: center;
-}
-.btn-apply-now:hover:not(:disabled) {
-    background: #fdf9f3; color: #141313;
-}
-.btn-apply-now:disabled {
-    opacity: 0.5; cursor: not-allowed;
-}
-.prog-brochure-row {
-    margin-top: 12px; padding-top: 8px;
-    border-top: 1px solid var(--border);
-}
-.btn-brochure-link {
-    display: inline-flex; align-items: center; gap: 5px;
-    color: var(--muted); font-size: 12px;
-    text-decoration: none; transition: color 0.15s;
-}
-.btn-brochure-link:hover { color: var(--primary); }
+    .stats-bar-item {
+        flex: 1;
+        text-align: center;
+        padding: 20px 12px;
+        border-right: 1px solid var(--border);
+    }
 
-.btn-view-details {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    .stats-bar-item:last-child {
+        border-right: none;
+    }
 
-    background: #ffffff;        /* white background */
-    color: #141414;                /* dark text */
-    border: 1px solid #d1d5db;  /* light border */
+    .stats-bar-value {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--primary);
+    }
 
-    padding: 8px 16px;
-    border-radius: 8px;
+    .stats-bar-label {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 4px;
+    }
 
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
+    .announce-strip {
+        background: var(--primary-light);
+        border: 1px solid #c8d8f0;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 28px;
+        align-items: center;
+        overflow-x: auto;
+        font-size: 13px;
+        color: var(--primary);
+        font-weight: 500;
+    }
 
-    transition: none;           /* remove hover animation */
-    flex: 1;
-    justify-content: center;
-}
-.btn-view-details:hover { opacity: 0.9; color: #454343; }
-.btn-brochure {
-    display: inline-flex; align-items: center; gap: 4px;
-    border: 1.5px solid var(--primary); color: var(--primary);
-    padding: 7px 12px; border-radius: 8px;
-    font-size: 12px; font-weight: 600;
-    text-decoration: none; transition: all 0.15s; white-space: nowrap;
-}
-.btn-brochure:hover {
-    background: var(--primary); color: #fff;
-}
-.empty-programs {
-    grid-column: 1/-1; text-align: center;
-    padding: 60px 20px; color: var(--muted);
-}
+    .announce-strip span::before {
+        content: "📢 ";
+    }
 
-/* ── Announcement Grid ── */
-.ann-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-}
-.ann-card {
-    background: #fff; border-radius: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    overflow: hidden; cursor: pointer;
-    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
-                box-shadow 0.22s ease;
-    border: 1.5px solid transparent;
-}
-.ann-card:hover, .ann-card:focus {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 28px rgba(0,0,0,0.12);
-    border-color: var(--secondary);
-    outline: none;
-}
-.ann-img {
-    height: 150px; overflow: hidden;
-    background: var(--primary-light);
-}
-.ann-img img {
-    width: 100%; height: 100%;
-    object-fit: cover; transition: transform 0.35s ease;
-}
-.ann-card:hover .ann-img img { transform: scale(1.05); }
-.ann-img-placeholder {
-    height: 150px;
-    display: flex; align-items: center;
-    justify-content: center; color: var(--primary); opacity: 0.35;
-    background: var(--primary-light);
-}
-.ann-body { padding: 16px 18px 18px; }
-.ann-type-badge {
-    display: inline-block; font-size: 10px; font-weight: 700;
-    padding: 2px 8px; border-radius: 20px;
-    text-transform: uppercase; letter-spacing: 0.5px;
-    margin-bottom: 8px;
-}
-.ann-badge-event        { background: #dbeafe; color: #1e40af; }
-.ann-badge-announcement { background: #fef3c7; color: #92400e; }
-.ann-badge-alert        { background: #fee2e2; color: #991b1b; }
-.ann-badge-notice       { background: #e0e7ff; color: #3730a3; }
-.ann-badge-news         { background: #d1fae5; color: #065f46; }
-.ann-badge-general      { background: #f3f4f6; color: #374151; }
-.ann-title {
-    font-size: 15px; font-weight: 700;
-    color: var(--text); margin: 0 0 6px; line-height: 1.35;
-}
-.ann-summary {
-    font-size: 13px; color: var(--muted);
-    line-height: 1.5; margin: 0 0 10px;
-}
-.ann-meta {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    margin-bottom: 12px;
-}
-.ann-meta-item {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 11px; color: var(--muted);
-}
-.ann-author { font-style: italic; }
-.ann-view-link {
-    display: inline-flex; align-items: center; gap: 4px;
-    color: var(--primary); font-size: 13px; font-weight: 600;
-    text-decoration: none;
-}
-.ann-view-link:hover { text-decoration: underline; }
+    .hero-wrap {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 28px;
+        height: 280px;
+        background: var(--primary);
+    }
 
-        @media (max-width: 600px) {
-            .prog-grid { grid-template-columns: 1fr !important; }
-            .ann-grid  { grid-template-columns: 1fr !important; }
-            .stats-bar { flex-wrap: wrap; gap: 8px; }
-            .stats-bar > * { flex: 1 1 calc(50% - 8px); min-width: 0; }
-            .hero-section { padding: 24px 16px; }
-            .hero-section h1 { font-size: 22px; }
-            .adm-container { padding: 0 14px; }
+    .hero-slide {
+        display: none;
+        height: 280px;
+        position: relative;
+    }
+
+    .hero-slide.active {
+        display: block;
+    }
+
+    .hero-slide img {
+        width: 100%;
+        height: 280px;
+        object-fit: cover;
+    }
+
+    .hero-slide-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+        color: #fff;
+        padding: 20px 24px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .hero-dots {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+        z-index: 15;
+    }
+
+    .hero-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    .hero-dot.active {
+        background: #fff;
+    }
+
+    .hero-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.35);
+        color: #fff;
+        border: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        font-size: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: background 0.2s;
+    }
+
+    .hero-nav:hover {
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .hero-prev {
+        left: 12px;
+    }
+
+    .hero-next {
+        right: 12px;
+    }
+
+    /* ── Program Grid ── */
+    .section-programs,
+    .section-announcements {
+        padding: 20px 0 40px;
+    }
+
+    .section-header {
+        margin-bottom: 28px;
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text);
+        margin: 0 0 4px;
+    }
+
+    .section-sub {
+        font-size: 14px;
+        color: var(--muted);
+        margin: 0;
+    }
+
+    .prog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 24px;
+    }
+
+    .prog-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.22s ease;
+        outline: none;
+        border: 1.5px solid transparent;
+    }
+
+    .prog-card:hover,
+    .prog-card:focus {
+        transform: translateY(-6px) scale(1.015);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.13);
+        border-color: var(--primary);
+    }
+
+    .prog-thumb {
+        position: relative;
+        height: 180px;
+        overflow: hidden;
+        background: var(--primary-light);
+    }
+
+    .prog-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.35s ease;
+    }
+
+    .prog-card:hover .prog-thumb img {
+        transform: scale(1.05);
+    }
+
+    .prog-thumb-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 72px;
+        font-weight: 900;
+        color: var(--primary);
+        opacity: 0.12;
+    }
+
+    .fill-bar-track {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .fill-bar-fill {
+        height: 4px;
+        transition: width 0.6s ease;
+        border-radius: 0 2px 2px 0;
+    }
+
+    .fill-danger {
+        background: #ef4444;
+    }
+
+    .fill-warning {
+        background: #f59e0b;
+    }
+
+    .fill-info {
+        background: #3b82f6;
+    }
+
+    .fill-success {
+        background: #10b981;
+    }
+
+    .prog-status-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        z-index: 5;
+    }
+
+    .badge-open {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-closed {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .prog-body {
+        padding: 18px 20px 20px;
+    }
+
+    .prog-name {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 8px;
+        line-height: 1.3;
+    }
+
+    .fill-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+    }
+
+    .fill-badge.fill-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .fill-badge.fill-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .fill-badge.fill-info {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .fill-badge.fill-success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .prog-desc {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 12px;
+        min-height: 40px;
+    }
+
+    .prog-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .prog-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .prog-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-apply-now {
+        display: inline-flex;
+        align-items: center;
+        background: var(--primary, #c8a14b);
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid #d1d5db;
+        cursor: pointer;
+        transition: background 0.15s, opacity 0.15s;
+        white-space: nowrap;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-apply-now:hover:not(:disabled) {
+        background: #fdf9f3;
+        color: #141313;
+    }
+
+    .btn-apply-now:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .prog-brochure-row {
+        margin-top: 12px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-brochure-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--muted);
+        font-size: 12px;
+        text-decoration: none;
+        transition: color 0.15s;
+    }
+
+    .btn-brochure-link:hover {
+        color: var(--primary);
+    }
+
+    .btn-view-details {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+
+        background: #ffffff;
+        /* white background */
+        color: #141414;
+        /* dark text */
+        border: 1px solid #d1d5db;
+        /* light border */
+
+        padding: 8px 16px;
+        border-radius: 8px;
+
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+
+        transition: none;
+        /* remove hover animation */
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-view-details:hover {
+        opacity: 0.9;
+        color: #454343;
+    }
+
+    .btn-brochure {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1.5px solid var(--primary);
+        color: var(--primary);
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+
+    .btn-brochure:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .empty-programs {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--muted);
+    }
+
+    /* ── Announcement Grid ── */
+    .ann-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .ann-card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.22s ease;
+        border: 1.5px solid transparent;
+    }
+
+    .ann-card:hover,
+    .ann-card:focus {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+        border-color: var(--secondary);
+        outline: none;
+    }
+
+    .ann-img {
+        height: 150px;
+        overflow: hidden;
+        background: var(--primary-light);
+    }
+
+    .ann-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.35s ease;
+    }
+
+    .ann-card:hover .ann-img img {
+        transform: scale(1.05);
+    }
+
+    .ann-img-placeholder {
+        height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        opacity: 0.35;
+        background: var(--primary-light);
+    }
+
+    .ann-body {
+        padding: 16px 18px 18px;
+    }
+
+    .ann-type-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .ann-badge-event {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .ann-badge-announcement {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .ann-badge-alert {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .ann-badge-notice {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .ann-badge-news {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .ann-badge-general {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .ann-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 6px;
+        line-height: 1.35;
+    }
+
+    .ann-summary {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+        margin: 0 0 10px;
+    }
+
+    .ann-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .ann-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--muted);
+    }
+
+    .ann-author {
+        font-style: italic;
+    }
+
+    .ann-view-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .ann-view-link:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+        .prog-grid {
+            grid-template-columns: 1fr !important;
         }
+
+        .ann-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .stats-bar {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .stats-bar>* {
+            flex: 1 1 calc(50% - 8px);
+            min-width: 0;
+        }
+
+        .hero-section {
+            padding: 24px 16px;
+        }
+
+        .hero-section h1 {
+            font-size: 22px;
+        }
+
+        .adm-container {
+            padding: 0 14px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -373,7 +743,7 @@ background:rgba(255,255,255,0.4); }
         {% if _scap %}<div class="hero-slide-caption">{{ _scap }}</div>{% endif %}
     </div>
     {% endfor %}
-    
+
     <button class="hero-nav hero-prev" id="heroPrev" aria-label="Previous">&#8249;</button>
     <button class="hero-nav hero-next" id="heroNext" aria-label="Next">&#8250;</button>
 
@@ -428,122 +798,116 @@ background:rgba(255,255,255,0.4); }
     </div>
 
     <div class="prog-grid">
-    {% for p in programs %}
-    <article class="prog-card" tabindex="0"
-             onclick="window.location='/admission/{{ p.program_slug }}'"
-             role="button"
-             aria-label="View {{ p.program_name }} details">
+        {% for p in programs %}
+        <article class="prog-card" tabindex="0" onclick="window.location='/admission/{{ p.program_slug }}'"
+            role="button" aria-label="View {{ p.program_name }} details">
 
-        <!-- Thumbnail / placeholder -->
-        <div class="prog-thumb">
-            {% set _pimg = p.featured_image or p.get('featured_image') %}
-            {% if _pimg %}
-            <img src="{{ _pimg }}" alt="{{ p.program_name }}"
-                 loading="lazy">
-            {% else %}
-            <div class="prog-thumb-placeholder">
-                {{ (p.program_abbreviation or p.program_name[0]) | upper }}
-            </div>
-            {% endif %}
+            <!-- Thumbnail / placeholder -->
+            <div class="prog-thumb">
+                {% set _pimg = p.featured_image or p.get('featured_image') %}
+                {% if _pimg %}
+                <img src="{{ _pimg }}" alt="{{ p.program_name }}" loading="lazy">
+                {% else %}
+                <div class="prog-thumb-placeholder">
+                    {{ (p.program_abbreviation or p.program_name[0]) | upper }}
+                </div>
+                {% endif %}
 
-            <!-- Fill bar overlay at bottom of image -->
-            {% if p.fill_pct %}
-            <div class="fill-bar-track">
-                <div class="fill-bar-fill {{ p.fill_class }}"
-                     style="width:{{ p.fill_pct }}%"></div>
-            </div>
-            {% endif %}
+                <!-- Fill bar overlay at bottom of image -->
+                {% if p.fill_pct %}
+                <div class="fill-bar-track">
+                    <div class="fill-bar-fill {{ p.fill_class }}" style="width:{{ p.fill_pct }}%"></div>
+                </div>
+                {% endif %}
 
-            <!-- Status badge top-right -->
-            <span class="prog-status-badge {% if app_open %}badge-open{% else %}badge-closed{% endif %}">
-                {% if app_open %}Open{% else %}Closed{% endif %}
-            </span>
-        </div>
-
-        <!-- Card body -->
-        <div class="prog-body">
-            <h3 class="prog-name">{{ p.program_name }}</h3>
-
-            <!-- Fill capacity badge -->
-            {% if p.fill_badge %}
-            <span class="fill-badge {{ p.fill_class }}">{{ p.fill_badge }}</span>
-            {% endif %}
-
-            <!-- Plain description (20 words) -->
-            {% if p.desc_short %}
-            <p class="prog-desc">{{ p.desc_short }}</p>
-            {% endif %}
-
-            <!-- Seats row -->
-            <div class="prog-meta-row">
-                <span class="prog-meta-item">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    {{ p.seats or 0 }} seats
+                <!-- Status badge top-right -->
+                <span class="prog-status-badge {% if app_open %}badge-open{% else %}badge-closed{% endif %}">
+                    {% if app_open %}Open{% else %}Closed{% endif %}
                 </span>
-                {% if p.eligibility_hint %}
-                <span class="prog-meta-item">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    {{ p.eligibility_hint | truncate(40, True) }}
-                </span>
+            </div>
+
+            <!-- Card body -->
+            <div class="prog-body">
+                <h3 class="prog-name">{{ p.program_name }}</h3>
+
+                <!-- Fill capacity badge -->
+                {% if p.fill_badge %}
+                <span class="fill-badge {{ p.fill_class }}">{{ p.fill_badge }}</span>
+                {% endif %}
+
+                <!-- Plain description (20 words) -->
+                {% if p.desc_short %}
+                <p class="prog-desc">{{ p.desc_short }}</p>
+                {% endif %}
+
+                <!-- Seats row -->
+                <div class="prog-meta-row">
+                    <span class="prog-meta-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        {{ p.seats or 0 }} seats
+                    </span>
+                    {% if p.eligibility_hint %}
+                    <span class="prog-meta-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        {{ p.eligibility_hint | truncate(40, True) }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Action row -->
+                <div class="prog-actions">
+                    <a href="/admission/{{ p.program_slug }}" class="btn-view-details"
+                        onclick="event.stopPropagation()">
+                        View Details
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                    </a>
+
+                    <button class="btn-apply-now"
+                        onclick="event.stopPropagation(); handleApplyNow('{{ p.program_slug }}', '{{ p.program }}', '{{ p.program_name | replace("'", "&apos;") }}'
+                        )" {% if not app_open %}disabled title="Applications closed" {% endif %}>
+                        Apply Now
+                    </button>
+                </div>
+
+                <!-- Brochure row -->
+                {% if p.brochure_url %}
+                <div class="prog-brochure-row">
+                    <a href="{{ p.brochure_url }}" target="_blank" class="btn-brochure-link"
+                        onclick="event.stopPropagation()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download Brochure
+                    </a>
+                </div>
                 {% endif %}
             </div>
+        </article>
+        {% else %}
 
-            <!-- Action row -->
-            <div class="prog-actions">
-                <a href="/admission/{{ p.program_slug }}"
-                   class="btn-view-details"
-                   onclick="event.stopPropagation()">
-                    View Details
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                </a>
-
-                <button class="btn-apply-now"
-                    onclick="event.stopPropagation(); handleApplyNow('{{ p.program_slug }}', '{{ p.program }}', '{{ p.program_name | replace("'", "&apos;") }}')"
-                    {% if not app_open %}disabled title="Applications closed"{% endif %}>
-                    Apply Now
-                </button>
-            </div>
-
-            <!-- Brochure row -->
-            {% if p.brochure_url %}
-            <div class="prog-brochure-row">
-                <a href="{{ p.brochure_url }}" target="_blank"
-                   class="btn-brochure-link" onclick="event.stopPropagation()">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Download Brochure
-                </a>
-            </div>
-            {% endif %}
+        <div class="empty-programs">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <p>No programs available for this cycle.</p>
         </div>
-    </article>
-    {% else %}
-
-    <div class="empty-programs">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-             stroke="var(--muted)" stroke-width="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-        </svg>
-        <p>No programs available for this cycle.</p>
-    </div>
-    {% endfor %}
+        {% endfor %}
     </div><!-- .prog-grid -->
 </section>
 
@@ -557,100 +921,96 @@ background:rgba(255,255,255,0.4); }
     </div>
 
     <div class="ann-grid">
-    {% for a in announcements %}
-    <article class="ann-card ann-type-{{ (a.announcement_type or 'general') | lower }}"
-             onclick="window.location='/announcement/{{ a.name }}'"
-             role="button" tabindex="0"
-             aria-label="Read {{ a.title }}">
+        {% for a in announcements %}
+        <article class="ann-card ann-type-{{ (a.announcement_type or 'general') | lower }}"
+            onclick="window.location='/announcement/{{ a.name }}'" role="button" tabindex="0"
+            aria-label="Read {{ a.title }}">
 
-        <!-- Featured image -->
-        {% if a.featured_image %}
-        <div class="ann-img">
-            <img src="{{ a.featured_image }}" alt="{{ a.title }}" loading="lazy">
-        </div>
-        {% else %}
-        <div class="ann-img ann-img-placeholder">
-            {% if a.announcement_type == 'Event' %}
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
+            <!-- Featured image -->
+            {% if a.featured_image %}
+            <div class="ann-img">
+                <img src="{{ a.featured_image }}" alt="{{ a.title }}" loading="lazy">
+            </div>
             {% else %}
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="1.5">
-                <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <div class="ann-body">
-            <!-- Type badge -->
-            <span class="ann-type-badge ann-badge-{{ (a.announcement_type or 'general') | lower }}">
-                {{ a.announcement_type or 'General' }}
-            </span>
-
-            <h3 class="ann-title">{{ a.title }}</h3>
-
-            {% if a.summary %}
-            <p class="ann-summary">{{ a.summary | truncate(100, True) }}</p>
-            {% endif %}
-
-            <!-- Meta: date + venue for events -->
-            <div class="ann-meta">
-                {% if a.announcement_type == 'Event' and a.event_date %}
-                <span class="ann-meta-item">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                    {{ frappe.utils.formatdate(a.event_date, "dd MMM yyyy") }}
-                </span>
-                {% elif a.publish_date %}
-                <span class="ann-meta-item">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    {{ frappe.utils.formatdate(a.publish_date, "dd MMM yyyy") }}
-                </span>
-                {% endif %}
-                {% if a.event_venue %}
-                <span class="ann-meta-item">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                        <circle cx="12" cy="10" r="3"/>
-                    </svg>
-                    {{ a.event_venue }}
-                </span>
-                {% endif %}
-                {% if a.created_by_role %}
-                <span class="ann-meta-item ann-author">
-                    {{ a.created_by_role }}
-                </span>
+            <div class="ann-img ann-img-placeholder">
+                {% if a.announcement_type == 'Event' %}
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                {% else %}
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
                 {% endif %}
             </div>
+            {% endif %}
 
-            <a href="/announcement/{{ a.name }}"
-               class="ann-view-link" onclick="event.stopPropagation()">
-                View Details
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2.5">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </a>
-        </div>
-    </article>
-    {% endfor %}
+            <div class="ann-body">
+                <!-- Type badge -->
+                <span class="ann-type-badge ann-badge-{{ (a.announcement_type or 'general') | lower }}">
+                    {{ a.announcement_type or 'General' }}
+                </span>
+
+                <h3 class="ann-title">{{ a.title }}</h3>
+
+                {% if a.summary %}
+                <p class="ann-summary">{{ a.summary | truncate(100, True) }}</p>
+                {% endif %}
+
+                <!-- Meta: date + venue for events -->
+                <div class="ann-meta">
+                    {% if a.announcement_type == 'Event' and a.event_date %}
+                    <span class="ann-meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        {{ frappe.utils.formatdate(a.event_date, "dd MMM yyyy") }}
+                    </span>
+                    {% elif a.publish_date %}
+                    <span class="ann-meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        {{ frappe.utils.formatdate(a.publish_date, "dd MMM yyyy") }}
+                    </span>
+                    {% endif %}
+                    {% if a.event_venue %}
+                    <span class="ann-meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        {{ a.event_venue }}
+                    </span>
+                    {% endif %}
+                    {% if a.created_by_role %}
+                    <span class="ann-meta-item ann-author">
+                        {{ a.created_by_role }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <a href="/announcement/{{ a.name }}" class="ann-view-link" onclick="event.stopPropagation()">
+                    View Details
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </a>
+            </div>
+        </article>
+        {% endfor %}
     </div><!-- .ann-grid -->
 </section>
 {% endif %}
@@ -661,17 +1021,17 @@ background:rgba(255,255,255,0.4); }
     function handleApplyNow(slug, programId, programName) {
         var isLoggedIn = (window.session_user && window.session_user !== 'Guest');
         var formUrl = '/applicant-form/new?program=' + encodeURIComponent(programId);
-        
+
         if (!isLoggedIn) {
             window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
             return;
         }
-        
+
         showConfirm(
             'Apply for <strong>' + programName + '</strong>?<br>' +
             '<span style="font-size:13px;color:var(--muted);">' +
             'You will be taken to the application form.</span>',
-            function() {
+            function () {
                 window.location.href = formUrl;
             }
         );
@@ -701,8 +1061,8 @@ background:rgba(255,255,255,0.4); }
 
             var prevBtn = document.getElementById('heroPrev');
             var nextBtn = document.getElementById('heroNext');
-            if (prevBtn) prevBtn.addEventListener('click', function() { window.goHeroSlide(idx - 1); });
-            if (nextBtn) nextBtn.addEventListener('click', function() { window.goHeroSlide(idx + 1); });
+            if (prevBtn) prevBtn.addEventListener('click', function () { window.goHeroSlide(idx - 1); });
+            if (nextBtn) nextBtn.addEventListener('click', function () { window.goHeroSlide(idx + 1); });
 
             dots.forEach(function (dot) {
                 dot.addEventListener('click', function () {
@@ -713,7 +1073,7 @@ background:rgba(255,255,255,0.4); }
     });
 
     async function handleApply(program, programName, level, cycle) {
-        var formUrl = '/application-form/new?program=' + encodeURIComponent(program)
+        var formUrl = '/application_form/new?program=' + encodeURIComponent(program)
             + '&level=' + encodeURIComponent(level);
 
         if (LOGIN_REQUIRED && window.session_user === 'Guest') {
@@ -721,7 +1081,7 @@ background:rgba(255,255,255,0.4); }
             return;
         }
 
-        showConfirm('Apply for ' + programName + '?', async function() {
+        showConfirm('Apply for ' + programName + '?', async function () {
             try {
                 var result = await apiFetch(
                     'slcm.admission.utils.web.check_existing_application',
@@ -731,12 +1091,12 @@ background:rgba(255,255,255,0.4); }
                     showConfirm(
                         'You already have an application for ' + programName +
                         ' (Status: ' + result.status + ').\nStart a new one?',
-                        function() { window.location.href = formUrl; }
+                        function () { window.location.href = formUrl; }
                     );
                 } else {
                     window.location.href = formUrl;
                 }
-            } catch(e) {
+            } catch (e) {
                 showToast('Could not check applications. Proceeding...', 'info');
                 window.location.href = formUrl;
             }

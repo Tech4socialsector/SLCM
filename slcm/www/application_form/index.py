@@ -24,7 +24,7 @@ def get_context(context):
 
     # Guard — portal requires login
     if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect-to=/application-form"
+        frappe.local.flags.redirect_location = "/login?redirect-to=/application_form"
         raise frappe.Redirect
 
     context.no_cache    = 1
