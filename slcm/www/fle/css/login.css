@@ -3,6 +3,27 @@
     --nav-navy: #212529;
 }
 
+/* Hide Frappe default header elements */
+header.navbar,
+.navbar.navbar-expand-lg,
+.navbar.navbar-expand,
+#navbar-main,
+.web-header,
+.top-bar,
+body>nav,
+.breadcrumb-container,
+.page-head,
+.navbar-user-icon,
+.avatar-frame,
+.avatar,
+.navbar-light {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+}
+
 /* Ensure the body takes up full height without hidden overflow */
 html,
 body {
@@ -38,10 +59,7 @@ body {
 }
 
 .logo-container {
-    flex: 0 0 160px;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
+    display: none !important;
 }
 
 .logo-img {
