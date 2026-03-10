@@ -760,7 +760,7 @@ window.inject_fle_header_footer = function () {
             <div class="logo-container">
                 <a href="https://pace.nls.ac.in/" target="_blank" rel="noopener noreferrer">
                     <img
-                        src="/files/nlsiu-logo.jpeg.jpeg"
+                        src="/files/nlsiu-logo.jpeg"
                         alt="NLSIU Logo"
                         class="logo-img"
                         onerror="this.onerror=null; this.style.display='none';"
