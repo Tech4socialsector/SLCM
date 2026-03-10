@@ -332,13 +332,13 @@
           </button>
         </div>
       </div>
-      <div class="lp-check">
+      <!-- <div class="lp-check">
         <input type="checkbox" id="lp-remember">
         <label for="lp-remember">Keep me logged in</label>
-      </div>
+      </div> -->
       <button class="lp-btn" id="lp-login-btn" onclick="doLogin()">
         <div class="lp-btn-spin" id="lp-login-spin"></div>
-        <span id="lp-login-label">Sign In to Portal</span>
+        <span id="lp-login-label">Login</span>
       </button>
     </div>
 
@@ -350,25 +350,25 @@
                placeholder="Your full name" autocomplete="name">
       </div>
       <div class="lp-field">
-        <label class="lp-label" for="reg-email">Email Address</label>
-        <input class="lp-input" type="email" id="reg-email"
-               placeholder="your @email.com" autocomplete="email">
-      </div>
-      <div class="lp-field">
         <label class="lp-label" for="reg-mobile">Mobile Number</label>
         <input class="lp-input" type="tel" id="reg-mobile"
                placeholder="e.g. 9876543210" autocomplete="tel">
         <div class="lp-field-hint">A verification email will be sent to set your password.</div>
       </div>
+      <div class="lp-field">
+        <label class="lp-label" for="reg-email">Email Address</label>
+        <input class="lp-input" type="email" id="reg-email"
+               placeholder="your @email.com" autocomplete="email">
+      </div>
       <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
         <div class="lp-btn-spin" id="lp-reg-spin"></div>
         <span class="material-symbols-outlined">person_add</span>
-        <span id="lp-reg-label">Create Account</span>
+        <span id="lp-reg-label">Register</span>
       </button>
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Already registered?
         <a href="#" onclick="lpTab('login');return false;"
-           style="color:var(--primary);font-weight:600;text-decoration:none;">Sign in</a>
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
 
@@ -579,7 +579,7 @@ async function doLogin() {
 
   btn.disabled = true;
   spin.style.display = 'block';
-  label.textContent = 'Signing in…';
+  label.textContent = 'Login…';
 
   var fd = new FormData();
   fd.append('usr', document.getElementById('lp-email').value.trim());
@@ -621,13 +621,13 @@ async function doLogin() {
       lpToast(errMsg, 'error');
       btn.disabled = false;
       spin.style.display = 'none';
-      label.textContent = 'Sign In to Portal';
+      label.textContent = 'Login';
     }
   } catch(e) {
     lpToast('Connection error. Please try again.', 'error');
     btn.disabled = false;
     spin.style.display = 'none';
-    label.textContent = 'Sign In to Portal';
+    label.textContent = 'Login';
   }
 }
 

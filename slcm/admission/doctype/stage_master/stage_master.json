@@ -6,9 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "stage_name",
-  "sequence_number",
-  "column_break_ooxk",
-  "is_mandatory"
+  "stage_code"
  ],
  "fields": [
   {
@@ -20,28 +18,16 @@
    "unique": 1
   },
   {
-   "fieldname": "sequence_number",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Sequence Number",
-   "reqd": 1,
-   "unique": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_mandatory",
-   "fieldtype": "Check",
-   "label": "Is Mandatory"
-  },
-  {
-   "fieldname": "column_break_ooxk",
-   "fieldtype": "Column Break"
+   "fieldname": "stage_code",
+   "fieldtype": "Data",
+   "label": "Stage Code",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 12:04:16.935585",
+ "modified": "2026-03-10 10:58:33.282801",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Stage Master",
@@ -62,7 +48,7 @@
   }
  ],
  "row_format": "Dynamic",
- "sort_field": "sequence_number",
+ "sort_field": "creation",
  "sort_order": "ASC",
  "states": []
 }

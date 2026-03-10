@@ -383,7 +383,7 @@ def download_application(applicant_name):
             frappe.throw("Not permitted", frappe.PermissionError)
     
     frappe.flags.ignore_print_permissions = True
-    pdf_content = frappe.get_print("Applicant", applicant_name, "Applicant Form", as_pdf=True, doc=applicant)
+    pdf_content = frappe.get_print("Applicant", applicant_name, "Applicant Application Form", as_pdf=True, doc=applicant)
     
     frappe.local.response.filename = f"Application_{applicant_name}.pdf"
     frappe.local.response.filecontent = pdf_content
