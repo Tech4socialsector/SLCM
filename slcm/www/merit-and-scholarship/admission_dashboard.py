@@ -272,10 +272,13 @@ def get_context(context):
                     order_by='creation desc'
                 )
             context.profile_data = _ap[0] if _ap else {}
+            context.profile_data_json = frappe.as_json(context.profile_data)
         else:
             context.profile_data = {}
+            context.profile_data_json = "{}"
     except Exception:
         context.profile_data = {}
+        context.profile_data_json = "{}"
 
     # ── Derive first name for navbar ──────────────────────────────────
     try:

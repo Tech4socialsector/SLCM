@@ -188,9 +188,9 @@
    "allow_on_submit": 1,
    "default": "Submitted",
    "fieldname": "application_status",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Application Status",
-   "options": "Submitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nFee Paid"
+   "options": "Applicant Status"
   },
   {
    "fieldname": "personal_information_tab",
@@ -1024,7 +1024,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-10 18:16:37.678498",
+ "modified": "2026-03-11 00:36:51.930141",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
