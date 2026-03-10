@@ -47,13 +47,13 @@ fixtures = [
 
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
-# web_include_js = "/assets/slcm/js/slcm.js"
+web_include_js = ["/assets/slcm/js/fle_theme.js"]
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "slcm/public/scss/website"
 
 # include js, css files in header of web form
-# webform_include_js = {"doctype": "public/js/doctype.js"}
+webform_include_js = {"Foundations for a Legal Education": "public/js/fle_theme.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
 # include js in page

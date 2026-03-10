@@ -24,6 +24,11 @@
   "section_break_education",
   "last_examination_attended",
   "last_institution_attended",
+  "last_class_attended",
+  "if_others1",
+  "latest_board_attended",
+  "if_others2",
+  "year_of_passing",
   "section_break_parent",
   "parent_name",
   "parent_contact_number",
@@ -38,8 +43,6 @@
   "section_break_declaration",
   "declaration_text",
   "declaration_consent",
-  "know_more_about_the_fle_programme_at_section",
-  "footer_link",
   "section_break_status",
   "enrollment_status",
   "payment_status",
@@ -47,7 +50,9 @@
   "lms_account_created",
   "generated_password_temp",
   "paid_amount",
-  "payment_id"
+  "payment_id",
+  "know_more_about_the_fle_programme_at_section",
+  "footer_link"
  ],
  "fields": [
   {
@@ -110,9 +115,11 @@
   {
    "fieldname": "candidate_dob",
    "fieldtype": "Date",
-   "label": "Candidate's Date of Birth"
+   "label": "Candidate's Date of Birth",
+   "reqd": 1
   },
   {
+   "default": "India",
    "fieldname": "candidate_nationality",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -139,11 +146,13 @@
   {
    "fieldname": "last_examination_attended",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Last examination attended along with the year of passing"
   },
   {
    "fieldname": "last_institution_attended",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Last institution attended"
   },
   {
@@ -298,13 +307,46 @@
    "fieldname": "footer_link",
    "fieldtype": "HTML",
    "label": "Footer Link",
-   "options": "<a href=\"https://pace.nls.ac.in/programmes/foundations-for-a-legal-education\"\ntarget=\"_blank\"\nrel=\"noopener noreferrer\"\nstyle=\"color: blue;\">\nhttps://pace.nls.ac.in/programmes/foundations-for-a-legal-education\n</a>"
+   "options": "<a href=\"https://pace.nls.ac.in/programmes/foundations-for-a-legal-education\"\ntarget=\"_blank\"\nrel=\"noopener noreferrer\"\nstyle=\"color:#007bff; font-weight:600; text-decoration:none;\">\n\ud83d\udd17 Visit Here\n</a>"
+  },
+  {
+   "fieldname": "latest_board_attended",
+   "fieldtype": "Select",
+   "label": "Latest Board attended",
+   "options": "\nCBSE\nICSE\nState Board\nCAIE\nIB\nNIOS(Open Schooling)\nCISCE\nOthers",
+   "reqd": 1
+  },
+  {
+   "fieldname": "year_of_passing",
+   "fieldtype": "Link",
+   "label": "Year of passing",
+   "options": "Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "last_class_attended",
+   "fieldtype": "Select",
+   "label": "Last examination attended",
+   "options": "\n10th\n12th\nUG\nPG\nOthers",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.last_class_attended==\"Others\"",
+   "fieldname": "if_others1",
+   "fieldtype": "Data",
+   "label": "If Others, Mention here"
+  },
+  {
+   "depends_on": "eval: doc.latest_board_attended==\"Others\"",
+   "fieldname": "if_others2",
+   "fieldtype": "Data",
+   "label": "If Others, Mention here"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 21:59:05.447645",
+ "modified": "2026-03-09 04:50:51.494506",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
