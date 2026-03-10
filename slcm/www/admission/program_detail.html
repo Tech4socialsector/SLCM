@@ -273,7 +273,7 @@
           {% endif %}
         </a>
       {% elif frappe.session.user and frappe.session.user != "Guest" %}
-        <a href="applicant-form/new?program={{ _slug }}"
+        <a href="/applicant-form/new?program={{ _name }}"
            style="display:inline-flex;align-items:center;gap:8px;
                   padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
                   text-decoration:none;color:#fff;
@@ -847,7 +847,7 @@
                 View Application
               </a>
             {% elif frappe.session.user and frappe.session.user != "Guest" %}
-              <a href="applicant-form/new?program={{ _slug }}"
+              <a href="/applicant-form/new?program={{ _name }}"
                  style="display:block;width:100%;padding:13px;text-align:center;
                         border-radius:10px;background:var(--primary);color:white;
                         font-weight:700;font-size:14px;text-decoration:none;
