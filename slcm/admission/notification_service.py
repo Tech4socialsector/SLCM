@@ -81,6 +81,8 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     doc_context["merit_total_score"] = merit_total_score
     doc_context["total_score"] = merit_total_score
 
+    from frappe.utils import get_url
+    
     args = {
         "doc": doc_context,
         "candidate_name": safe_name,
@@ -92,7 +94,9 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         "new_status": new_status,
         "allocation_name": allocation_name,
         "merit_total_score": merit_total_score,
-        "total_score": merit_total_score
+        "total_score": merit_total_score,
+        "get_url": get_url,
+        "base_url": get_url()
     }
  
     try:
@@ -162,45 +166,23 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
  
 def notify_published_allocation(allocation_name):
     """
-    Sends bulk email notifications to all applicants in the cycle/campus
-    associated with this Seat Allocation when it is Published.
+    Sends email notifications ONLY to the applicants listed in the 
+    Seat Allocation document.
     """
     allocation = frappe.get_doc("Seat Allocation", allocation_name)
     
-    # 1. Map existing statuses from the Seat Allocation
-    allocated_status_map = {}
-    allocated_rows_map = {}
-    for row in (allocation.selection_applicant or []):
-        allocated_status_map[row.applicant_id] = row.selection_status
-        allocated_rows_map[row.applicant_id] = row
+    if not allocation.selection_applicant:
+        frappe.logger().info(f"Notification: No applicants found in {allocation_name}. Skipping.")
+        return
+
+    frappe.logger().info(f"Notification: Publishing {allocation_name}. Notifying {len(allocation.selection_applicant)} applicants.")
  
-    # 2. Fetch all Eligibility Results for this cycle and campus
-    # This ensures even those NOT in the Merit List (Ineligible etc.) get a notification
-    filters = {
-        "admission_cycle": allocation.admission_cycle,
-        "campus": allocation.campus
-    }
-    # Filter by program level if the Seat Allocation is specific
-    if allocation.program_level:
-        filters["program_level"] = allocation.program_level
- 
-    all_applicants = frappe.get_all("Eligibility Result", filters=filters, fields=["name", "program"])
- 
-    frappe.logger().info(f"Notification: Bulk publishing {allocation_name}. Candidates in allocation: {len(allocated_status_map)}, Total applicants to notify: {len(all_applicants)}")
- 
-    for res in all_applicants:
-        status = allocated_status_map.get(res.name)
-        row = allocated_rows_map.get(res.name)
-        
-        if not status:
-            # Applicant not in seat allocation (eligibility failed or merit row missing)
-            status = "Rejected"
-            
+    for row in allocation.selection_applicant:
         notify_status_change(
-            applicant=res.name,
-            program=res.program,
+            applicant=row.applicant_id,
+            program=row.program,
             old_status="Draft",
-            new_status=status,
+            new_status=row.selection_status,
             allocation_name=allocation_name,
             admission_cycle=allocation.admission_cycle,
             row=row

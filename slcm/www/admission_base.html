@@ -512,29 +512,26 @@
                 </a>
 
                 {% else %}
-                <!-- Logged in: avatar circle + dropdown -->
-                <div class="adm-avatar-wrap" style="position:relative;">
-                  <div style="display:flex;align-items:center;gap:8px;cursor:pointer;"
-                       onclick="toggleAvatarMenu(event)">
-                    <button id="adm-avatar-btn"
-                            style="width:40px;height:40px;border-radius:50%;
-                                   background:var(--primary,#1a3c6e);color:white;
-                                   border:2.5px solid rgba(255,255,255,0.3);
-                                   font-weight:800;font-size:16px;cursor:pointer;
-                                   display:flex;align-items:center;justify-content:center;
-                                   transition:border-color 0.2s, box-shadow 0.2s;"
-                            title="{{ _nav_user }}"
-                            aria-haspopup="true" aria-expanded="false">
-                      {{ _first_letter }}
-                    </button>
-                    {% set _display_name = first_name if first_name is defined and first_name
-                       else (_nav_user.split('@')[0] | title) %}
-                    <span class="adm-nav-firstname"
-                          style="font-size:14px;font-weight:600;color:#fff;
-                                 white-space:nowrap;line-height:1;">
-                      {{ _display_name }}
-                    </span>
-                  </div>
+                <!-- Logged in: avatar circle + full name + dropdown -->
+                {% set _full_name = frappe.db.get_value("User", _nav_user, "full_name") or _nav_user %}
+                <div class="adm-avatar-wrap" style="position:relative; display:flex; align-items:center; gap:10px;">
+                  <button id="adm-avatar-btn"
+                          onclick="toggleAvatarMenu(event)"
+                          style="width:38px;height:38px;border-radius:50%;
+                                 background:rgba(255,255,255,0.15);color:white;
+                                 border:2px solid rgba(255,255,255,0.3);
+                                 font-weight:800;font-size:15px;cursor:pointer;
+                                 display:flex;align-items:center;justify-content:center;
+                                 transition:all 0.2s;"
+                          title="{{ _nav_user }}"
+                          aria-haspopup="true" aria-expanded="false">
+                    {{ _first_letter }}
+                  </button>
+                  <span style="color:white; font-size:13px; font-weight:600; opacity:0.95; cursor:pointer;" 
+                        class="nav-hide-mobile"
+                        onclick="toggleAvatarMenu(event)">
+                    {{ _full_name }}
+                  </span>
 
                   <!-- Dropdown menu -->
                   <div id="adm-avatar-menu"

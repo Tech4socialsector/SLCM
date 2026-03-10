@@ -33,7 +33,6 @@
   "campus",
   "section_break_azsq",
   "title",
-  "categories",
   "section_break_rnvz",
   "rejected_reason",
   "parent_and_guardian_details",
@@ -112,6 +111,7 @@
   "years_of_work_experience",
   "eligibility_for_reservation_tab",
   "information_relating_to_eligibility_for_reservations_section",
+  "whether_scstobc_ncl",
   "ews",
   "ews_certificate",
   "caste_certificate",
@@ -828,12 +828,6 @@
    "options": "Admission Cycle"
   },
   {
-   "fieldname": "categories",
-   "fieldtype": "Table",
-   "label": "Categories",
-   "options": "Applicant Category"
-  },
-  {
    "fieldname": "hsc_percentage",
    "fieldtype": "Percent",
    "label": "Xll Percentage ",
@@ -1003,6 +997,12 @@
   {
    "fieldname": "column_break_qiha",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "whether_scstobc_ncl",
+   "fieldtype": "Select",
+   "label": "Whether SC/ST/OBC-NCL",
+   "options": "NA\nOBC-NCL\nST\nSC"
   }
  ],
  "grid_page_length": 50,
@@ -1025,7 +1025,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-10 12:14:24.591287",
+ "modified": "2026-03-09 22:39:56.643082",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
