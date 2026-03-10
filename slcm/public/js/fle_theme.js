@@ -246,44 +246,24 @@ window.inject_fle_header_footer = function () {
     if ($('#fle-form-font-style').length === 0) {
         $('head').append(`
         <style id="fle-form-font-style">
-            /* ── Root font variable override ── */
-            :root {
-                --font-stack: 'Merriweather', Georgia, 'Times New Roman', serif;
-            }
+            :root { --font-stack: 'Merriweather', Georgia, 'Times New Roman', serif; }
 
-            /* ── Universal body & layout ── */
-            body,
-            .web-form-wrapper,
-            .web-form-page,
-            .form-layout,
-            .page-container,
-            .page-content,
-            .container,
-            .container-fluid,
-            .row,
-            .col,
+            body, .web-form-wrapper, .web-form-page, .form-layout, .page-container,
+            .page-content, .container, .container-fluid, .row, .col,
             p, span, div, label, a, li, td, th {
                 font-family: 'Merriweather', Georgia, 'Times New Roman', serif !important;
             }
 
-            /* ── All headings ── */
-            h1, h2, h3, h4, h5, h6,
-            .page-title,
-            .web-form-page h1,
-            .web-form-page h2,
-            .web-form-page h3,
-            .web-form-page h4 {
+            h1, h2, h3, h4, h5, h6, .page-title,
+            .web-form-page h1, .web-form-page h2,
+            .web-form-page h3, .web-form-page h4 {
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-weight: 700 !important;
                 color: #1a1a1a !important;
             }
 
-            /* ── Section headings inside the form ── */
-            .web-form-page .section-head,
-            .web-form-wrapper .section-head,
-            .form-section .section-head,
-            .section-head,
-            h2.section-head {
+            .web-form-page .section-head, .web-form-wrapper .section-head,
+            .form-section .section-head, .section-head, h2.section-head {
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-size: 18px !important;
                 font-weight: 700 !important;
@@ -292,13 +272,8 @@ window.inject_fle_header_footer = function () {
                 margin-bottom: 16px !important;
             }
 
-            /* ── Field labels ── */
-            .control-label,
-            .frappe-control .control-label,
-            label.control-label,
-            .web-form-page label,
-            .web-form-wrapper label,
-            .form-group label {
+            .control-label, .frappe-control .control-label, label.control-label,
+            .web-form-page label, .web-form-wrapper label, .form-group label {
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-size: 12px !important;
                 font-weight: 400 !important;
@@ -306,294 +281,83 @@ window.inject_fle_header_footer = function () {
                 letter-spacing: 0.3px !important;
             }
 
-            /* ── All Frappe control wrappers ── */
-            .frappe-control,
-            .frappe-control *,
-            .form-group,
-            .form-group * {
+            .frappe-control, .frappe-control *, .form-group, .form-group * {
                 font-family: 'Merriweather', Georgia, serif !important;
             }
 
-            /* ── Input fields ── */
-            input[type="text"],
-            input[type="email"],
-            input[type="tel"],
-            input[type="number"],
-            input[type="date"],
-            input[type="password"],
-            input[type="search"],
-            select,
-            textarea,
-            .form-control,
-            .frappe-control input,
-            .frappe-control select,
-            .frappe-control textarea,
-            .frappe-control .input-with-feedback,
-            .frappe-control .like-disabled-input,
-            .input-with-feedback,
-            .like-disabled-input,
-            .web-form-page input,
-            .web-form-page select,
-            .web-form-page textarea {
+            input[type="text"], input[type="email"], input[type="tel"],
+            input[type="number"], input[type="date"], input[type="password"],
+            input[type="search"], select, textarea, .form-control,
+            .frappe-control input, .frappe-control select, .frappe-control textarea,
+            .frappe-control .input-with-feedback, .frappe-control .like-disabled-input,
+            .input-with-feedback, .like-disabled-input,
+            .web-form-page input, .web-form-page select, .web-form-page textarea {
                 font-family: 'Merriweather', Georgia, 'Times New Roman', serif !important;
                 font-size: 13.5px !important;
                 font-weight: 300 !important;
                 color: #1a1a1a !important;
             }
 
-            /* ── Select / dropdown options ── */
-            select option,
-            .dropdown-menu,
-            .dropdown-item,
-            .select-items,
-            .select-item {
+            select option, .dropdown-menu, .dropdown-item, .select-items, .select-item {
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-size: 13px !important;
             }
 
-            /* ── Help / description text ── */
-            .help-box,
-            .frappe-control .help-box,
-            .text-muted,
-            small,
-            .form-text {
+            .help-box, .frappe-control .help-box, .text-muted, small, .form-text {
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-size: 11.5px !important;
                 font-weight: 300 !important;
             }
 
-            /* ── Breadcrumb / meta text ── */
-            .breadcrumb-area,
-            .form-meta,
-            .indicator,
-            .page-breadcrumbs,
-            .breadcrumb,
-            .breadcrumb-item,
-            .breadcrumb-item a {
+            .breadcrumb-area, .form-meta, .indicator, .page-breadcrumbs,
+            .breadcrumb, .breadcrumb-item, .breadcrumb-item a {
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-size: 12px !important;
             }
 
-            /* ══════════════════════════════════════════════════════════════
-               FORM ACTION BUTTONS — Branded, consistent, single-line
-               Targets: Save as Draft, Discard, Proceed to Pay, Delete
-            ══════════════════════════════════════════════════════════════ */
-
-            /* ── Base reset for ALL buttons in web form footer ── */
-            .web-form-footer .btn,
-            .web-form-footer button,
-            .page-actions .btn,
-            .page-actions button,
-            .form-footer .btn,
-            .form-footer button {
-                all: unset !important;
-                box-sizing: border-box !important;
-                display: inline-flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                white-space: nowrap !important;
-                font-family: 'Merriweather', Georgia, serif !important;
-                font-size: 13px !important;
-                font-weight: 700 !important;
-                letter-spacing: 0.5px !important;
-                padding: 10px 22px !important;
-                border-radius: 5px !important;
-                cursor: pointer !important;
-                transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
-                text-decoration: none !important;
-                line-height: 1 !important;
-                min-height: 38px !important;
-            }
-
-            /* ── "Proceed to Pay" — primary CTA, dark red filled ── */
-            .web-form-footer .btn-primary,
-            .web-form-footer button.btn-primary,
-            .page-actions .btn-primary,
-            .form-footer .btn-primary {
-                background-color: #8B0000 !important;
-                color: #ffffff !important;
-                border: 2px solid #8B0000 !important;
-                box-shadow: 0 2px 6px rgba(139,0,0,0.35) !important;
-            }
-            .web-form-footer .btn-primary:hover,
-            .page-actions .btn-primary:hover,
-            .form-footer .btn-primary:hover {
-                background-color: #6a0000 !important;
-                border-color: #6a0000 !important;
-                transform: translateY(-1px) !important;
-                box-shadow: 0 4px 12px rgba(139,0,0,0.4) !important;
-                color: #ffffff !important;
-            }
-            .web-form-footer .btn-primary:active,
-            .page-actions .btn-primary:active {
-                transform: translateY(0) !important;
-                background-color: #5a0000 !important;
-            }
-
-            /* ── "Save as Draft" — outlined red ── */
-            .web-form-footer .btn-default,
-            .web-form-footer button.btn-default,
-            .page-actions .btn-default,
-            .form-footer .btn-default {
-                background-color: #ffffff !important;
-                color: #8B0000 !important;
-                border: 2px solid #8B0000 !important;
-                box-shadow: none !important;
-            }
-            .web-form-footer .btn-default:hover,
-            .page-actions .btn-default:hover,
-            .form-footer .btn-default:hover {
-                background-color: #fff4f4 !important;
-                transform: translateY(-1px) !important;
-                box-shadow: 0 2px 8px rgba(139,0,0,0.15) !important;
-                color: #8B0000 !important;
-            }
-
-            /* ── "Discard" — neutral grey outlined ── */
-            .web-form-footer .btn-secondary,
-            .web-form-footer button.btn-secondary,
-            .page-actions .btn-secondary,
-            .form-footer .btn-secondary {
-                background-color: #ffffff !important;
-                color: #555555 !important;
-                border: 2px solid #cccccc !important;
-                box-shadow: none !important;
-            }
-            .web-form-footer .btn-secondary:hover,
-            .page-actions .btn-secondary:hover,
-            .form-footer .btn-secondary:hover {
-                background-color: #f5f5f5 !important;
-                border-color: #aaaaaa !important;
-                transform: translateY(-1px) !important;
-                color: #333333 !important;
-            }
-
-            /* ── "Delete" — danger, red text outlined ── */
-            .web-form-footer .btn-danger,
-            .web-form-footer button.btn-danger,
-            .page-actions .btn-danger,
-            .form-footer .btn-danger {
-                background-color: #ffffff !important;
-                color: #cc0000 !important;
-                border: 2px solid #cc0000 !important;
-                box-shadow: none !important;
-            }
-            .web-form-footer .btn-danger:hover,
-            .page-actions .btn-danger:hover,
-            .form-footer .btn-danger:hover {
-                background-color: #fff0f0 !important;
-                transform: translateY(-1px) !important;
-                box-shadow: 0 2px 8px rgba(204,0,0,0.15) !important;
-                color: #aa0000 !important;
-            }
-
-            /* ── Footer button row layout ── */
-            .web-form-footer,
-            .form-footer,
-            .page-actions {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                gap: 12px !important;
-                align-items: center !important;
-                justify-content: center !important;
-                padding: 24px 0 16px 0 !important;
-            }
-
-            /* ── Explicit margin between every sibling button ── */
-            .web-form-footer .btn + .btn,
-            .web-form-footer button + button,
-            .web-form-footer .btn + button,
-            .web-form-footer button + .btn,
-            .page-actions .btn + .btn,
-            .page-actions button + button,
-            .form-footer .btn + .btn,
-            .form-footer button + button {
-                margin-left: 8px !important;
-            }
-
-            /* ── Generic font fallback for all other .btn ── */
-            .btn,
-            button,
-            .btn-sm,
-            .btn-lg,
-            input[type="submit"],
-            input[type="button"],
-            input[type="reset"] {
+            /* ── Generic font fallback for buttons (appearance only, no layout) ── */
+            .btn, button, .btn-sm, .btn-lg,
+            input[type="submit"], input[type="button"], input[type="reset"] {
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-weight: 700 !important;
                 letter-spacing: 0.5px !important;
                 white-space: nowrap !important;
             }
 
-            /* ── Upload / attach area ── */
-            .attach-btn,
-            .attach-label,
-            .input-area,
-            .attached-file,
-            .attached-file-link,
-            .file-uploader,
-            .file-uploader * {
+            .attach-btn, .attach-label, .input-area, .attached-file,
+            .attached-file-link, .file-uploader, .file-uploader * {
                 font-family: 'Merriweather', Georgia, serif !important;
             }
 
-            /* ── Required asterisk ── */
-            .reqd,
-            .required,
-            .asterisk {
-                color: #8B0000 !important;
-            }
+            .reqd, .required, .asterisk { color: #8B0000 !important; }
 
-            /* ── Modal / alert boxes ── */
-            .modal,
-            .modal *,
-            .alert,
-            .alert * {
+            .modal, .modal *, .alert, .alert * {
                 font-family: 'Merriweather', Georgia, serif !important;
             }
 
-            /* ── Web form page title area ── */
-            .web-form-page .page-title,
-            .web-form-page .title-area,
+            .web-form-page .page-title, .web-form-page .title-area,
             .web-form-page .subtitle {
                 font-family: 'Merriweather', Georgia, serif !important;
             }
 
-            /* ── Indicator badges (Not Saved, Saved, etc.) ── */
-            .indicator-pill,
-            .indicator,
-            .badge {
+            .indicator-pill, .indicator, .badge {
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-size: 11px !important;
             }
 
-            /* ── Table cells if any ── */
             table, thead, tbody, tr, td, th {
                 font-family: 'Merriweather', Georgia, serif !important;
             }
 
-            /* ── Link colors consistent with brand ── */
-            .web-form-page a,
-            .web-form-wrapper a {
-                color: #8B0000 !important;
-            }
-            .web-form-page a:hover,
-            .web-form-wrapper a:hover {
-                color: #6a0000 !important;
-            }
+            .web-form-page a, .web-form-wrapper a { color: #8B0000 !important; }
+            .web-form-page a:hover, .web-form-wrapper a:hover { color: #6a0000 !important; }
 
-            /* ── FIELD LABEL CASE FIX — override Frappe's uppercase labels ── */
-            .control-label,
-            .frappe-control .control-label,
-            label.control-label,
-            .web-form-page label,
-            .web-form-wrapper label,
-            .form-group label,
-            .field-area label,
-            .frappe-control label,
-            .web-form-page .control-label,
-            .web-form-wrapper .control-label,
-            .section-body .control-label,
-            .form-column .control-label {
+            /* ── FIELD LABEL CASE FIX ── */
+            .control-label, .frappe-control .control-label, label.control-label,
+            .web-form-page label, .web-form-wrapper label, .form-group label,
+            .field-area label, .frappe-control label,
+            .web-form-page .control-label, .web-form-wrapper .control-label,
+            .section-body .control-label, .form-column .control-label {
                 text-transform: capitalize !important;
                 letter-spacing: 0.2px !important;
                 font-size: 13px !important;
@@ -602,26 +366,16 @@ window.inject_fle_header_footer = function () {
                 font-family: 'Merriweather', Georgia, serif !important;
             }
 
-            /* ── Section headings — keep bold, not uppercase ── */
-            .section-head,
-            .web-form-page .section-head,
-            .web-form-wrapper .section-head,
-            .form-section .section-head {
+            .section-head, .web-form-page .section-head,
+            .web-form-wrapper .section-head, .form-section .section-head {
                 text-transform: none !important;
                 font-size: 18px !important;
                 font-weight: 700 !important;
                 color: #1a1a1a !important;
             }
 
-            /* ── Navbar items keep uppercase intentionally ── */
-            .navbar-navy .nav-item {
-                text-transform: uppercase !important;
-            }
-
-            /* ── Logout button keeps uppercase intentionally ── */
-            button.fle-logout-btn {
-                text-transform: uppercase !important;
-            }
+            .navbar-navy .nav-item { text-transform: uppercase !important; }
+            button.fle-logout-btn  { text-transform: uppercase !important; }
         </style>`);
     }
 
@@ -639,9 +393,7 @@ window.inject_fle_header_footer = function () {
                 display:flex!important; align-items:center!important;
                 flex:0 0 auto!important; margin-right:16px!important;
             }
-            .sticky-header .logo-container a {
-                display:inline-block!important; line-height:0!important;
-            }
+            .sticky-header .logo-container a { display:inline-block!important; line-height:0!important; }
             .sticky-header .logo-img {
                 display:block!important; height:70px!important; width:auto!important;
                 max-width:120px!important; object-fit:contain!important;
@@ -726,7 +478,6 @@ window.inject_fle_header_footer = function () {
             .fle-modal-btn-confirm.loading { pointer-events:none; opacity:0.85; }
             @keyframes fle-spin { to { transform:rotate(360deg); } }
 
-            /* ── Navbar navy ── */
             .navbar-navy {
                 background-color:#8B0000!important; display:flex!important; flex-wrap:wrap!important;
                 justify-content:center!important; gap:0!important; padding:0!important;
@@ -742,7 +493,6 @@ window.inject_fle_header_footer = function () {
                 background-color:rgba(255,255,255,0.15)!important; color:#ffffff!important;
             }
 
-            /* ── Footer ── */
             .sticky-footer {
                 background-color:#8b0000 !important; color:#ffffff!important;
                 text-align:center!important; padding:18px 24px!important;
@@ -759,12 +509,8 @@ window.inject_fle_header_footer = function () {
         <div class="header-top">
             <div class="logo-container">
                 <a href="https://pace.nls.ac.in/" target="_blank" rel="noopener noreferrer">
-                    <img
-                        src="/files/nlsiu-logo.jpeg"
-                        alt="NLSIU Logo"
-                        class="logo-img"
-                        onerror="this.onerror=null; this.style.display='none';"
-                    >
+                    <img src="/files/nlsiu-logo.jpeg" alt="NLSIU Logo" class="logo-img"
+                         onerror="this.onerror=null; this.style.display='none';">
                 </a>
             </div>
             <div class="brand-text">
@@ -868,9 +614,8 @@ window.inject_fle_header_footer = function () {
     $('body').css('padding-top', '150px');
     $('.sticky-footer').css({ 'margin-top': 'auto', 'width': '100%' });
 
-    // ── 9. Force visibility via direct style after a short delay ──────────────
+    // ── 9. Force visibility + fonts after a short delay ───────────────────────
     setTimeout(function () {
-        // Logout button
         var btn = document.getElementById('fle-logout-btn');
         if (btn) {
             btn.style.setProperty('display', 'inline-flex', 'important');
@@ -884,14 +629,12 @@ window.inject_fle_header_footer = function () {
             btn.style.setProperty('cursor', 'pointer', 'important');
             btn.style.setProperty('z-index', '9999', 'important');
         }
-        // Logout area
         var area = document.querySelector('.header-logout-area');
         if (area) {
             area.style.setProperty('display', 'flex', 'important');
             area.style.setProperty('align-items', 'center', 'important');
             area.style.setProperty('visibility', 'visible', 'important');
         }
-        // Logo
         var logoImg = document.querySelector('.sticky-header .logo-img');
         if (logoImg) {
             logoImg.style.setProperty('display', 'block', 'important');
@@ -906,165 +649,77 @@ window.inject_fle_header_footer = function () {
             logoCont.style.setProperty('visibility', 'visible', 'important');
         }
 
-        // ── Force Merriweather + correct case on all form elements ───────────
-        var formEls = document.querySelectorAll(
+        // Font + case fix
+        document.querySelectorAll(
             'input, select, textarea, label, .control-label, .section-head, ' +
-            '.frappe-control, .form-control, .help-box, .btn, button, ' +
+            '.frappe-control, .form-control, .help-box, ' +
             '.web-form-page *, .web-form-wrapper *'
-        );
-        formEls.forEach(function (el) {
+        ).forEach(function (el) {
             el.style.setProperty('font-family', "'Merriweather', Georgia, serif", 'important');
         });
 
-        // Fix label casing — capitalize, not uppercase
-        var labelEls = document.querySelectorAll(
+        document.querySelectorAll(
             '.control-label, label.control-label, .web-form-page label, ' +
             '.web-form-wrapper label, .frappe-control label, .form-group label'
-        );
-        labelEls.forEach(function (el) {
+        ).forEach(function (el) {
             el.style.setProperty('text-transform', 'capitalize', 'important');
             el.style.setProperty('letter-spacing', '0.2px', 'important');
         });
 
-        // Section heads — normal case, not uppercase
-        var sectionHeads = document.querySelectorAll('.section-head');
-        sectionHeads.forEach(function (el) {
+        document.querySelectorAll('.section-head').forEach(function (el) {
             el.style.setProperty('text-transform', 'none', 'important');
         });
 
-        // Apply branded button styles
-        applyButtonStyles();
     }, 200);
 
-    // ── 10. Re-apply fonts + case + buttons after Frappe re-renders the DOM ──
+    // ── 10. Re-apply fonts after Frappe re-renders ────────────────────────────
     setTimeout(function () {
-        var formEls = document.querySelectorAll(
+        document.querySelectorAll(
             'input, select, textarea, label, .control-label, .section-head, ' +
-            '.frappe-control, .form-control, .help-box, .btn, button, ' +
+            '.frappe-control, .form-control, .help-box, ' +
             '.web-form-page *, .web-form-wrapper *'
-        );
-        formEls.forEach(function (el) {
+        ).forEach(function (el) {
             el.style.setProperty('font-family', "'Merriweather', Georgia, serif", 'important');
         });
 
-        var labelEls = document.querySelectorAll(
+        document.querySelectorAll(
             '.control-label, label.control-label, .web-form-page label, ' +
             '.web-form-wrapper label, .frappe-control label, .form-group label'
-        );
-        labelEls.forEach(function (el) {
+        ).forEach(function (el) {
             el.style.setProperty('text-transform', 'capitalize', 'important');
             el.style.setProperty('letter-spacing', '0.2px', 'important');
         });
 
-        var sectionHeads = document.querySelectorAll('.section-head');
-        sectionHeads.forEach(function (el) {
+        document.querySelectorAll('.section-head').forEach(function (el) {
             el.style.setProperty('text-transform', 'none', 'important');
         });
-
-        applyButtonStyles();
     }, 1000);
 
-    // ── Helper: branded styles for all form action buttons ───────────────────
-    function applyButtonStyles() {
-        var footerBtns = document.querySelectorAll(
-            '.web-form-footer .btn, .page-actions .btn, .form-footer .btn, ' +
-            '.web-form-footer button, .page-actions button, .form-footer button'
-        );
-
-        footerBtns.forEach(function (btn) {
-            // Skip logout button — it has its own styles
-            if (btn.id === 'fle-logout-btn' || btn.classList.contains('fle-logout-btn')) return;
-
-            // Base styles
-            btn.style.setProperty('display', 'inline-flex', 'important');
-            btn.style.setProperty('align-items', 'center', 'important');
-            btn.style.setProperty('justify-content', 'center', 'important');
-            btn.style.setProperty('white-space', 'nowrap', 'important');
-            btn.style.setProperty('font-family', "'Merriweather', Georgia, serif", 'important');
-            btn.style.setProperty('font-size', '13px', 'important');
-            btn.style.setProperty('font-weight', '700', 'important');
-            btn.style.setProperty('letter-spacing', '0.5px', 'important');
-            btn.style.setProperty('padding', '10px 22px', 'important');
-            btn.style.setProperty('border-radius', '5px', 'important');
-            btn.style.setProperty('cursor', 'pointer', 'important');
-            btn.style.setProperty('min-height', '38px', 'important');
-            btn.style.setProperty('line-height', '1', 'important');
-            btn.style.setProperty('text-decoration', 'none', 'important');
-            btn.style.setProperty('box-sizing', 'border-box', 'important');
-            btn.style.setProperty('transition', 'background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease', 'important');
-
-            var cls = (btn.className || '').toString();
-            var label = (btn.textContent || btn.innerText || '').trim().toLowerCase();
-
-            if (cls.indexOf('btn-primary') !== -1 || label.indexOf('proceed') !== -1 || label.indexOf('pay') !== -1 || label.indexOf('submit') !== -1) {
-                // Proceed to Pay — filled dark red
-                btn.style.setProperty('background-color', '#8B0000', 'important');
-                btn.style.setProperty('color', '#ffffff', 'important');
-                btn.style.setProperty('border', '2px solid #8B0000', 'important');
-                btn.style.setProperty('box-shadow', '0 2px 6px rgba(139,0,0,0.35)', 'important');
-            } else if (cls.indexOf('btn-danger') !== -1 || label === 'delete') {
-                // Delete — white bg, red border + text
-                btn.style.setProperty('background-color', '#ffffff', 'important');
-                btn.style.setProperty('color', '#cc0000', 'important');
-                btn.style.setProperty('border', '2px solid #cc0000', 'important');
-                btn.style.setProperty('box-shadow', 'none', 'important');
-            } else if (cls.indexOf('btn-secondary') !== -1 || label === 'discard') {
-                // Discard — white bg, grey border
-                btn.style.setProperty('background-color', '#ffffff', 'important');
-                btn.style.setProperty('color', '#555555', 'important');
-                btn.style.setProperty('border', '2px solid #cccccc', 'important');
-                btn.style.setProperty('box-shadow', 'none', 'important');
-            } else {
-                // Save as Draft / all other defaults — white bg, red border
-                btn.style.setProperty('background-color', '#ffffff', 'important');
-                btn.style.setProperty('color', '#8B0000', 'important');
-                btn.style.setProperty('border', '2px solid #8B0000', 'important');
-                btn.style.setProperty('box-shadow', 'none', 'important');
-            }
-        });
-
-        // Fix footer row layout
-        var footers = document.querySelectorAll('.web-form-footer, .page-actions, .form-footer');
-        footers.forEach(function (footer) {
-            footer.style.setProperty('display', 'flex', 'important');
-            footer.style.setProperty('flex-wrap', 'wrap', 'important');
-            footer.style.setProperty('gap', '12px', 'important');
-            footer.style.setProperty('align-items', 'center', 'important');
-            footer.style.setProperty('justify-content', 'center', 'important');
-            footer.style.setProperty('padding', '24px 0 16px 0', 'important');
-        });
-    }
+    // NOTE: applyButtonStyles() has been REMOVED from global.js.
+    // All web form footer button styling is now owned exclusively by
+    // applyFooterButtonStyles() inside webform.js.
 };
 
 
 /**
  * ── Special Handler: Payment Cancel/Failed Pages ──────────────────────────────
- * Change "Continue" -> "Try again", redirect to the web form, hide Home button
- * ─────────────────────────────────────────────────────────────────────────────
  */
 window.handle_payment_status_pages = function () {
     function patchStatusPage() {
-        // 1. Target buttons specifically
-        // payment-cancel has .page-card a.btn-primary ("Continue")
-        // payment-failed has .fle-actions a ("Try Again" and "Home")
-
         var allButtons = $('.page-card a, .fle-actions a, .page-card button');
 
         allButtons.each(function () {
             var $el = $(this);
             var text = $el.text().trim().toLowerCase();
 
-            // Handle "Try again" / "Continue"
             if (text.indexOf('try again') !== -1 || text.indexOf('continue') !== -1) {
                 $el.text('Try again');
                 $el.attr('href', '/foundations-for-a-legal-education/new');
 
-                // Auto-edit trigger
                 $el.off('click.autoedit').on('click.autoedit', function () {
                     sessionStorage.setItem('fle_auto_edit', '1');
                 });
 
-                // Style it
                 $el.css({
                     'background-color': '#8B0000',
                     'border-color': '#8B0000',
@@ -1082,14 +737,12 @@ window.handle_payment_status_pages = function () {
                 });
             }
 
-            // Handle "Home"
             if (text === 'home') {
                 $el.attr('style', 'display: none !important');
                 $el.hide();
             }
         });
 
-        // 2. Card styling
         $('.page-card').css({
             'font-family': "'Merriweather', Georgia, serif",
             'border-radius': '10px',
@@ -1099,7 +752,6 @@ window.handle_payment_status_pages = function () {
         $('.indicator.red').css('font-weight', '700');
     }
 
-    // Run multiple times
     patchStatusPage();
     setTimeout(patchStatusPage, 100);
     setTimeout(patchStatusPage, 500);
@@ -1110,12 +762,9 @@ window.handle_payment_status_pages = function () {
 
 /**
  * ── Auto-Edit Mode Trigger ──────────────────────────────────────────────────
- * Detects return from payment-failed/cancel and clicks "Edit" automatically
- * ─────────────────────────────────────────────────────────────────────────────
  */
 window.check_auto_edit_mode = function () {
     var path = window.location.pathname;
-    // Only target the foundations web form
     if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
 
     if (sessionStorage.getItem('fle_auto_edit') === '1') {
@@ -1126,7 +775,6 @@ window.check_auto_edit_mode = function () {
                 editBtn[0].click();
             }
         }
-        // Poll briefly for the edit button
         triggerEdit();
         setTimeout(triggerEdit, 500);
         setTimeout(triggerEdit, 1500);
@@ -1146,14 +794,14 @@ function try_inject_fle_theme() {
         '/fle-success-page', '/integration-request', '/foundations-for-a-legal-education'
     ];
 
-    var isStatusPage = path.indexOf('/payment-cancel') !== -1 || path.indexOf('/payment-failed') !== -1 || path.indexOf('/payment-success') !== -1;
+    var isStatusPage = path.indexOf('/payment-cancel') !== -1 ||
+        path.indexOf('/payment-failed') !== -1 ||
+        path.indexOf('/payment-success') !== -1;
     var isFoundationsPage = path.indexOf('/foundations-for-a-legal-education') !== -1;
 
     for (var i = 0; i < valid_routes.length; i++) {
         if (path.indexOf(valid_routes[i]) !== -1) {
             if (typeof inject_fle_header_footer === 'function') inject_fle_header_footer();
-
-            // Special case for foundations auto-edit
             if (isFoundationsPage) {
                 if (typeof check_auto_edit_mode === 'function') check_auto_edit_mode();
             }
@@ -1161,7 +809,6 @@ function try_inject_fle_theme() {
         }
     }
 
-    // Always run status page handler on relevant routes
     if (isStatusPage) {
         if (typeof handle_payment_status_pages === 'function') handle_payment_status_pages();
     }
