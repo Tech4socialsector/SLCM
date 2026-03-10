@@ -4,7 +4,7 @@ from frappe import _dict
 from frappe.utils import now_datetime, get_url_to_form
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True)
 def upload_interview_result():
     """
     POST API endpoint to upload/store a single interview result.
@@ -124,7 +124,7 @@ def upload_interview_result():
         return {"status": "error", "message": f"An error occurred: {str(e)}", "error_type": "ServerError"}
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True)
 def upload_bulk_interview_results():
     """
     POST endpoint to upload bulk interview results.
@@ -181,7 +181,7 @@ def upload_bulk_interview_results():
         return {"status": "error", "message": f"Bulk upload failed: {str(e)}", "error_type": "ServerError"}
 
 
-@frappe.whitelist(allow_guest=True, methods=["GET"])
+@frappe.whitelist(allow_guest=True)
 def get_interview_result_by_applicant(applicant):
     """
     GET endpoint to fetch Interview Seat Allocation for an applicant.

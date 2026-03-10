@@ -4,7 +4,7 @@ from frappe import _dict
 from frappe.utils import now_datetime, get_url_to_form
 
 
-@frappe.whitelist(allow_guest=True, methods=['POST'])
+@frappe.whitelist(allow_guest=True)
 def upload_entrance_test_result():
     """
     POST API endpoint to upload/store entrance test results.
@@ -140,7 +140,7 @@ def upload_entrance_test_result():
         }
 
 
-@frappe.whitelist(allow_guest=True, methods=['POST'])
+@frappe.whitelist(allow_guest=True)
 def upload_bulk_entrance_test_results():
     """
     POST API endpoint to upload/store bulk entrance test results.
@@ -246,7 +246,7 @@ def upload_bulk_entrance_test_results():
         }
 
 
-@frappe.whitelist(allow_guest=True, methods=['GET'])
+@frappe.whitelist(allow_guest=True)
 def get_result_by_applicant(applicant):
     """
     GET API endpoint to retrieve entrance test result for a specific applicant.

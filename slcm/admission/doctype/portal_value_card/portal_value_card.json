@@ -1,0 +1,43 @@
+{
+  "name": "Portal Value Card",
+  "doctype": "DocType",
+  "module": "Admission",
+  "istable": 1,
+  "editable_grid": 1,
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Title",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "icon",
+      "fieldtype": "Data",
+      "label": "Material Symbol Icon Name",
+      "in_list_view": 1,
+      "reqd": 1,
+      "description": "Use any Material Symbols name e.g. diversity_3, star, handshake"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Description",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "icon_color",
+      "fieldtype": "Select",
+      "label": "Icon Color",
+      "options": "primary\nblue\nindigo\npurple\ngreen\namber\nrose",
+      "default": "primary",
+      "in_list_view": 1
+    }
+  ],
+  "permissions": [
+    { "role": "System Manager",  "read": 1, "write": 1, "create": 1, "delete": 1 },
+    { "role": "Admission Admin", "read": 1, "write": 1, "create": 1, "delete": 1 }
+  ]
+}

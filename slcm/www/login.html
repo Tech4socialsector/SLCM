@@ -1,320 +1,720 @@
+{% set _pc = portal_config %}
+{% set _primary   = (_pc.primary_color   if _pc else None) or primary_color   or "#CB2929" %}
+{% set _secondary = (_pc.secondary_color if _pc else None) or secondary_color or "#8B1A1A" %}
+{% set _name      = (_pc.portal_title    if _pc else None) or institution_name or "NLSIU" %}
+{% set _logo      = (_pc.logo            if _pc else None) or portal_logo      or "" %}
+{% set _tagline   = (_pc.portal_tagline  if _pc else None) or portal_tagline   or "Shaping Tomorrow's Legal Minds" %}
+{% set _support   = (_pc.support_email   if _pc else None) or support_email    or "" %}
+{% set _redir     = redirect_to or "/admission" %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — {{ frappe.get_doc("Website Settings").app_name or "Admissions" }}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
-    
-    {% block theme_vars %}
-    <style>
-        :root {
-            {% if portal_config %}
-            {% if portal_config.get %}
-            --primary:   {{ portal_config.get('primary_color') or '#1a3c6e' }};
-            --secondary: {{ portal_config.get('secondary_color') or '#c8a14b' }};
-            --accent:    {{ portal_config.get('secondary_color') or '#c8a14b' }};
-            {% else %}
-            --primary:   {{ portal_config.primary_color or '#1a3c6e' }};
-            --secondary: {{ portal_config.secondary_color or '#c8a14b' }};
-            --accent:    {{ portal_config.secondary_color or '#c8a14b' }};
-            {% endif %}
-            {% endif %}
-        }
-    </style>
-    {% endblock %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — {{ _name }} Admission Portal</title>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&display=swap">
+  <style>
+    :root {
+      --primary:   {{ _primary }};
+      --secondary: {{ _secondary }};
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'Lexend', sans-serif; background: #f1f3f5; overflow-x: hidden; }
 
-    <style>
-        :root {
-            --primary: {{ portal_config.primary_color if portal_config else "#1a3c6e" }};
-            --secondary: {{ portal_config.secondary_color if portal_config else "#c8a14b" }};
-            --primary-light: #e8f0fb;
-            --accent: {{ portal_config.secondary_color if portal_config else "#c8a14b" }};
-            --border: #dee2e6;
-            --muted: #6c757d;
-        }
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f4f6fb; margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
-        .login-wrapper { flex: 1; display: flex; align-items: stretch; min-height: 100vh; }
-        .login-left { flex: 0 0 420px; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 40px; box-shadow: 2px 0 12px rgba(0,0,0,0.08); z-index: 1; }
-        .login-logo { text-align: center; margin-bottom: 32px; }
-        .login-logo img { height: 56px; margin-bottom: 12px; }
-        .login-logo h1 { font-size: 22px; font-weight: 800; color: var(--primary); margin: 0; }
-        .login-logo p { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
-        .login-tabs { display: flex; width: 100%; border-bottom: 2px solid var(--border); margin-bottom: 28px; }
-        .login-tab { flex: 1; text-align: center; padding: 10px; font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
-        .login-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-        .form-group { margin-bottom: 16px; width: 100%; }
-        .form-group label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
-        .form-group input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
-        .form-group input:focus { border-color: var(--primary); }
-        .btn-login { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
-        .btn-login:hover { background: #142f58; }
-        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
-        .form-error { color: #dc3545; font-size: 13px; margin-top: 8px; display: none; }
-        .form-success { color: #198754; font-size: 13px; margin-top: 8px; display: none; }
-        .forgot-link { font-size: 12px; color: var(--primary); text-decoration: none; display: block; text-align: right; margin-top: -8px; margin-bottom: 12px; }
-        .login-right { flex: 1; background: var(--primary); padding: 48px 40px; overflow-y: auto; max-height: 100vh; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent; }
-.login-right::-webkit-scrollbar { width: 5px; }
-.login-right::-webkit-scrollbar-track { background: transparent; }
-.login-right::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
-.login-right::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
-        .login-right h2 { color: rgba(255,255,255,0.9); font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-        .notices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-.notice-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); cursor: pointer; padding: 0; transition: transform 0.2s, box-shadow 0.2s; }
-.notice-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
-        .notice-card-title { color: var(--primary); font-size: 13px; font-weight: 700; margin-bottom: 6px; line-height: 1.35; }
-.notice-card-meta { color: var(--muted); font-size: 11px; display: flex; align-items: center; gap: 4px; }
-        .section-divider { border-color: rgba(255,255,255,0.15); margin: 24px 0; }
-        @media (max-width: 768px) { .login-wrapper { flex-direction: column; } .login-left { flex: none; width: 100%; padding: 32px 24px; box-shadow: none; } .login-right { padding: 32px 24px; } }
-    </style>
+    /* ─── TOAST ─── */
+    #lp-toast-wrap {
+      position: fixed; top: 20px; right: 20px; z-index: 99999;
+      display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+    }
+    .lp-toast {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 18px; border-radius: 10px; min-width: 260px; max-width: 360px;
+      font-size: 13px; font-weight: 600; color: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      animation: toastIn .25s ease; pointer-events: auto;
+    }
+    .lp-toast.success { background: #16a34a; }
+    .lp-toast.error   { background: #dc2626; }
+    .lp-toast.info    { background: #2563eb; }
+    .lp-toast .material-symbols-outlined { font-size: 20px; flex-shrink: 0; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ─── LAYOUT ─── */
+    .lp-wrap { display: flex; min-height: 100vh; }
+
+    /* ─── LEFT ─── */
+    .lp-left {
+      width: 460px; flex: 0 0 460px;
+      background: #fff; display: flex; flex-direction: column;
+      justify-content: center; padding: 52px 48px;
+      box-shadow: 4px 0 24px rgba(0,0,0,.07); position: relative; z-index: 2;
+    }
+    @media (max-width: 860px) {
+      .lp-left  { flex: 1; width: 100%; padding: 36px 24px; }
+      .lp-right { display: none; }
+    }
+
+    /* brand */
+    .lp-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 44px; }
+    .lp-brand-icon {
+      width: 50px; height: 50px; border-radius: 13px;
+      background: var(--primary); display: flex; align-items: center;
+      justify-content: center; color: #fff; flex-shrink: 0; overflow: hidden;
+    }
+    .lp-brand-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .lp-brand-icon .material-symbols-outlined { font-size: 26px; }
+    .lp-brand-name { font-size: 18px; font-weight: 800; color: var(--primary); line-height: 1.2; }
+    .lp-brand-sub  { font-size: 10px; font-weight: 600; letter-spacing: .12em;
+                     text-transform: uppercase; color: #9ca3af; margin-top: 2px; }
+    .lp-heading { font-size: 28px; font-weight: 900; color: #111827; margin-bottom: 6px; }
+    .lp-sub     { font-size: 13px; color: #6b7280; margin-bottom: 30px; line-height: 1.5; }
+
+    /* tabs */
+    .lp-tabs { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 28px; }
+    .lp-tab {
+      padding: 9px 22px; font-size: 13px; font-weight: 600;
+      background: none; border: none; cursor: pointer; color: #9ca3af;
+      border-bottom: 3px solid transparent; margin-bottom: -2px;
+      font-family: inherit; transition: color .2s, border-color .2s;
+    }
+    .lp-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* form fields */
+    .lp-field { margin-bottom: 18px; }
+    .lp-label { display: block; font-size: 12px; font-weight: 700;
+                color: #374151; margin-bottom: 6px; letter-spacing: .02em; }
+    .lp-input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid #d1d5db;
+      border-radius: 8px; font-size: 13px; color: #111827;
+      font-family: inherit; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .lp-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+    .lp-input.invalid { border-color: #ef4444; }
+    .lp-input::placeholder { color: #9ca3af; }
+    .lp-row   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .lp-forgot { font-size: 12px; color: var(--primary); font-weight: 600; text-decoration: none; }
+    .lp-forgot:hover { text-decoration: underline; }
+    .pw-wrap { position: relative; }
+    .pw-btn  {
+      position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: #9ca3af;
+      display: flex; align-items: center; padding: 0;
+    }
+    .pw-btn .material-symbols-outlined { font-size: 18px; }
+    .lp-field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+
+    /* checkbox */
+    .lp-check { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+    .lp-check input { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; }
+    .lp-check label { font-size: 12px; color: #4b5563; cursor: pointer; }
+
+    /* buttons */
+    .lp-btn {
+      width: 100%; padding: 13px; background: var(--primary); color: #fff;
+      border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit; letter-spacing: .03em;
+      transition: opacity .2s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .lp-btn:hover   { opacity: .9; }
+    .lp-btn:active  { transform: scale(.99); }
+    .lp-btn:disabled { opacity: .65; cursor: not-allowed; }
+    .lp-btn .material-symbols-outlined { font-size: 18px; }
+    .lp-btn-spin {
+      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .6s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* support */
+    .lp-support { margin-top: 40px; }
+    .lp-support-title {
+      font-size: 10px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: #9ca3af; margin-bottom: 14px;
+    }
+    .lp-support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .lp-support-link {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: #6b7280; text-decoration: none; transition: color .2s;
+    }
+    .lp-support-link:hover { color: var(--primary); }
+    .lp-support-link .material-symbols-outlined { font-size: 17px; }
+
+    /* ─── RIGHT ─── */
+    .lp-right {
+      flex: 1; position: relative; overflow: hidden; background: #0d1b2a;
+    }
+    .lp-right-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; opacity: .28;
+    }
+    .lp-right-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(140deg,
+        color-mix(in srgb, var(--primary) 82%, #000) 0%, #0a1628 65%);
+      opacity: .85;
+    }
+    .lp-right-body {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      height: 100%; min-height: 100vh; padding: 48px 44px; color: #fff;
+      overflow-y: auto;
+    }
+    .lp-tagline { font-size: 36px; font-weight: 900; line-height: 1.15;
+                  margin-bottom: 28px; max-width: 400px; }
+
+    /* glass card */
+    .glass {
+      background: rgba(255,255,255,.08); backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.15);
+      border-radius: 14px; padding: 20px 22px; margin-bottom: 14px;
+    }
+    .glass-head  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .glass-title { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 700; }
+    .glass-icon  {
+      width: 26px; height: 26px; border-radius: 50%; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--primary); flex-shrink: 0;
+    }
+    .glass-icon .material-symbols-outlined { font-size: 14px; }
+    .glass-badge { font-size: 9px; font-weight: 700; letter-spacing: .1em;
+                   text-transform: uppercase; opacity: .65; }
+
+    /* announcement rows */
+    .ann-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 6px; border-radius: 8px; cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      transition: background .15s;
+    }
+    .ann-row:last-child { border-bottom: none; }
+    .ann-row:hover { background: rgba(255,255,255,.07); }
+    .ann-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .ann-text { flex: 1; min-width: 0; }
+    .ann-title { font-size: 13px; font-weight: 600; line-height: 1.4;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ann-summary { font-size: 11px; opacity: .6; margin-top: 2px;
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ann-row .material-symbols-outlined { font-size: 16px; opacity: .45; margin-top: 3px; }
+
+    .type-General   { background: #60a5fa; }
+    .type-Important { background: #f87171; }
+    .type-Alert     { background: #f87171; }
+    .type-Event     { background: #34d399; }
+    .type-Deadline  { background: #fbbf24; }
+    .type-default   { background: rgba(255,255,255,.4); }
+
+    /* dates grid */
+    .dates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .date-card  { background: rgba(255,255,255,.1); border-radius: 9px; padding: 12px; }
+    .date-label { font-size: 9px; font-weight: 700; letter-spacing: .1em;
+                  text-transform: uppercase; opacity: .6; margin-bottom: 4px; }
+    .date-val   { font-size: 20px; font-weight: 900; line-height: 1; }
+    .date-sub   { font-size: 10px; opacity: .55; margin-top: 3px; }
+
+    /* social proof */
+    .lp-social { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+    .lp-social-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary); border: 2px solid #fff;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+    .lp-social-icon .material-symbols-outlined { font-size: 18px; }
+    .lp-social-text { font-size: 12px; font-weight: 500; opacity: .8; }
+
+    /* ─── ANNOUNCEMENT MODAL ─── */
+    .ann-modal-bg {
+      display: none; position: fixed; inset: 0; z-index: 8000;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .ann-modal-bg.open { display: flex; }
+    .ann-modal {
+      background: #fff; border-radius: 16px; width: 100%; max-width: 520px;
+      max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,.25);
+      animation: modalIn .2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(14px) scale(.97); }
+      to   { opacity: 1; transform: none; }
+    }
+    .ann-mhead {
+      padding: 20px 22px 16px; border-bottom: 1px solid #e5e7eb;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    }
+    .ann-mtitle { font-size: 17px; font-weight: 800; color: #111827; line-height: 1.3; }
+    .ann-mclose {
+      background: #f3f4f6; border: none; border-radius: 50%;
+      width: 30px; height: 30px; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; color: #6b7280;
+    }
+    .ann-mclose:hover { background: #e5e7eb; }
+    .ann-mclose .material-symbols-outlined { font-size: 17px; }
+    .ann-mmeta {
+      padding: 10px 22px; background: #f9fafb;
+      display: flex; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid #e5e7eb;
+    }
+    .ann-mmeta-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; }
+    .ann-mmeta-item .material-symbols-outlined { font-size: 15px; color: var(--primary); }
+    .ann-mimg  { width: 100%; max-height: 200px; object-fit: cover; display: none; }
+    .ann-mbody { padding: 18px 22px; }
+    .ann-msummary { font-size: 14px; color: #374151; font-weight: 500;
+                    margin-bottom: 12px; line-height: 1.6; display: none; }
+    .ann-mcontent { font-size: 13px; color: #4b5563; line-height: 1.7; }
+    .ann-mcontent p  { margin-bottom: 10px; }
+    .ann-mcontent ul { padding-left: 18px; margin-bottom: 10px; }
+  </style>
 </head>
 <body>
 
-<div class="login-wrapper">
-    <div class="login-left">
-        <input type="hidden" id="redirect-after-login" value="{{ redirect_to or '/my-applications' }}">
-        <div class="login-logo">
-            {% set ws = frappe.get_doc("Website Settings") %}
-            {% if ws.banner_image %}<img src="{{ ws.banner_image }}" alt="Logo">{% endif %}
-            <h1>{{ (portal_config.portal_title if portal_config and portal_config.portal_title else ws.title) or "Admissions" }}</h1>
-            <p>Admission Portal</p>
-        </div>
-        <div class="login-tabs" style="width:100%;">
-            <div class="login-tab active" id="tab-login" onclick="switchTab('login')">Login</div>
-            <div class="login-tab" id="tab-signup" onclick="switchTab('signup')">Register</div>
-        </div>
-        <div id="login-form" style="width:100%;">
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="login-email" placeholder="your @email.com" autocomplete="email">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password">
-            </div>
-            <a href="/update-password" class="forgot-link">Forgot password?</a>
-            <div class="form-error" id="login-error"></div>
-            <button class="btn-login" id="login-btn" onclick="doLogin()">Login</button>
-        </div>
-        <div id="signup-form" style="width:100%;display:none;">
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="signup-name" placeholder="Your full name">
-            </div>
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="signup-email" placeholder="your @email.com" autocomplete="email">
-            </div>
-            <div class="form-error" id="signup-error"></div>
-            <div class="form-success" id="signup-success"></div>
-            <button class="btn-login" id="signup-btn" onclick="doRegister()">Create Account</button>
-            <p style="font-size:12px;color:var(--muted);margin-top:16px;text-align:center;">A verification email will be sent to activate your account.</p>
-        </div>
+<!-- Toast container -->
+<div id="lp-toast-wrap"></div>
+
+<div class="lp-wrap">
+
+  <!-- ══════════ LEFT ══════════ -->
+  <div class="lp-left">
+    <input type="hidden" id="lp-redir" value="{{ _redir }}">
+
+    <!-- Brand -->
+    <div class="lp-brand">
+      <div class="lp-brand-icon">
+        {% if _logo %}
+          <img src="{{ _logo }}" alt="{{ _name }}">
+        {% else %}
+          <span class="material-symbols-outlined">account_balance</span>
+        {% endif %}
+      </div>
+      <div>
+        <div class="lp-brand-name">{{ _name }}</div>
+        <div class="lp-brand-sub">Admissions Portal</div>
+      </div>
     </div>
-    <div class="login-right">
-        <div style="text-align:center;color:rgba(255,255,255,0.5);padding:60px 0;">
-            <div style="font-size:40px;margin-bottom:12px;">🎓</div>
-            <p>Welcome to the Admissions Portal</p>
+
+    <h2 class="lp-heading">Welcome Back</h2>
+    <p class="lp-sub">Sign in to access your application and track your status.</p>
+
+    <!-- Tabs -->
+    <div class="lp-tabs">
+      <button class="lp-tab active" id="tab-login"    onclick="lpTab('login')">Login</button>
+      <button class="lp-tab"        id="tab-register" onclick="lpTab('register')">Register</button>
+    </div>
+
+    <div id="panel-login">
+      <div class="lp-field">
+        <label class="lp-label" for="lp-email">Username</label>
+        <input class="lp-input" type="text" id="lp-email"
+               placeholder="username or email" autocomplete="username">
+      </div>
+      <div class="lp-field">
+        <div class="lp-row">
+          <label class="lp-label" for="lp-pwd" style="margin-bottom:0;">Password</label>
+          <a href="/update-password" class="lp-forgot">Forgot password?</a>
+        </div>
+        <div class="pw-wrap">
+          <input class="lp-input" type="password" id="lp-pwd"
+                 placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="pw-btn" onclick="lpTogglePw()">
+            <span class="material-symbols-outlined" id="lp-eye">visibility</span>
+          </button>
+        </div>
+      </div>
+      <div class="lp-check">
+        <input type="checkbox" id="lp-remember">
+        <label for="lp-remember">Keep me logged in</label>
+      </div>
+      <button class="lp-btn" id="lp-login-btn" onclick="doLogin()">
+        <div class="lp-btn-spin" id="lp-login-spin"></div>
+        <span id="lp-login-label">Sign In to Portal</span>
+      </button>
+    </div>
+
+    <!-- ── REGISTER PANEL ── -->
+    <div id="panel-register" style="display:none;">
+      <div class="lp-field">
+        <label class="lp-label" for="reg-name">Full Name</label>
+        <input class="lp-input" type="text" id="reg-name"
+               placeholder="Your full name" autocomplete="name">
+      </div>
+      <div class="lp-field">
+        <label class="lp-label" for="reg-email">Email Address</label>
+        <input class="lp-input" type="email" id="reg-email"
+               placeholder="your @email.com" autocomplete="email">
+        <div class="lp-field-hint">A verification email will be sent to set your password.</div>
+      </div>
+      <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
+        <div class="lp-btn-spin" id="lp-reg-spin"></div>
+        <span class="material-symbols-outlined">person_add</span>
+        <span id="lp-reg-label">Create Account</span>
+      </button>
+      <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
+        Already registered?
+        <a href="#" onclick="lpTab('login');return false;"
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Sign in</a>
+      </p>
+    </div>
+
+    <!-- Support -->
+    <div class="lp-support">
+      <div class="lp-support-title">Support &amp; Links</div>
+      <div class="lp-support-grid">
+        <a href="{% if _support %}mailto:{{ _support }}{% else %}/admission{% endif %}"
+           class="lp-support-link">
+          <span class="material-symbols-outlined">help_outline</span>
+          Help &amp; Support
+        </a>
+        <a href="/admission" class="lp-support-link">
+          <span class="material-symbols-outlined">public</span>
+          Programs Portal
+        </a>
+      </div>
+    </div>
+  </div><!-- end left -->
+
+  <!-- ══════════ RIGHT ══════════ -->
+  <div class="lp-right">
+    {% if _pc and (_pc.hero_image or _pc.portal_hero) %}
+    <img src="{{ _pc.hero_image or _pc.portal_hero }}" class="lp-right-bg" alt="">
+    {% endif %}
+    <div class="lp-right-overlay"></div>
+    <div class="lp-right-body">
+
+      <h2 class="lp-tagline">{{ _tagline }}</h2>
+
+      <!-- Announcements -->
+      <div class="glass">
+        <div class="glass-head">
+          <div class="glass-title">
+            <div class="glass-icon">
+              <span class="material-symbols-outlined">campaign</span>
+            </div>
+            Campus Announcements
+          </div>
+          <span class="glass-badge">Latest Updates</span>
         </div>
         {% if announcements %}
-        <h2 style="color:#fff;">Announcements</h2>
-        <div class="notices-grid">
-            {% for a in announcements %}
-        <div class="notice-card" onclick="window.location='/announcement/{{ a.name }}'">
-
-            {% if a.featured_image %}
-            <img src="{{ a.featured_image }}" alt="{{ a.title }}"
-                 style="width:100%;height:130px;object-fit:cover;
-                        display:block;">
-            {% else %}
-            <div style="width:100%;height:80px;
-                        background:linear-gradient(135deg,
-                            var(--primary-light,#fde8e8),
-                            rgba(26,60,110,0.08));
-                        display:flex;align-items:center;justify-content:center;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                     stroke="var(--primary,#1a3c6e)" stroke-width="1.5">
-                    {% if a.announcement_type == 'Event' %}
-                    <rect x="3" y="4" width="18" height="18" rx="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                    {% else %}
-                    <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                    {% endif %}
-                </svg>
+          {% for ann in announcements %}
+          {% set _t = ann.announcement_type or "General" %}
+          <div class="ann-row" onclick="lpAnnOpen({{ loop.index0 }})">
+            <div class="ann-dot type-{{ _t }}"></div>
+            <div class="ann-text">
+              <div class="ann-title">{{ ann.title }}</div>
+              {% if ann.summary %}<div class="ann-summary">{{ ann.summary }}</div>{% endif %}
             </div>
-            {% endif %}
-
-            <div style="padding:12px 14px;">
-                {% if a.announcement_type %}
-                <span style="font-size:10px;font-weight:700;
-                             text-transform:uppercase;letter-spacing:0.5px;
-                             padding:2px 8px;border-radius:20px;
-                             background:{% if a.announcement_type == 'Event' %}#dbeafe{% elif a.announcement_type == 'Alert' %}#fee2e2{% else %}#fef3c7{% endif %};
-                             color:{% if a.announcement_type == 'Event' %}#1e40af{% elif a.announcement_type == 'Alert' %}#991b1b{% else %}#92400e{% endif %};">
-                    {{ a.announcement_type }}
-                </span>
-                {% endif %}
-                <div style="font-weight:600;font-size:13px;
-                            margin-top:6px;color:#1a1a1a;line-height:1.35;
-                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                    {{ a.title }}
-                </div>
-                {% set display_date = a.event_date if a.announcement_type == 'Event' and a.event_date else a.publish_date %}
-                {% if display_date %}
-                <div style="font-size:11px;color:#6b7280;margin-top:4px;
-                            display:flex;align-items:center;gap:4px;">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    {{ frappe.utils.formatdate(display_date, "dd MMM yyyy") }}
-                </div>
-                {% endif %}
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="ann-row" style="cursor:default;">
+            <div class="ann-dot type-default"></div>
+            <div class="ann-text">
+              <div class="ann-title">Admissions open for {{ _name }}</div>
+              <div class="ann-summary">Check the portal for deadlines and requirements</div>
             </div>
-        </div>
-        {% endfor %}
-        </div>
-        <hr class="section-divider">
+          </div>
         {% endif %}
+      </div>
+
+      <!-- Important Dates -->
+      <div class="glass">
+        <div class="glass-head">
+          <div class="glass-title">
+            <div class="glass-icon">
+              <span class="material-symbols-outlined">event</span>
+            </div>
+            Important Dates
+          </div>
+          <span class="glass-badge">Deadlines</span>
+        </div>
         {% if events %}
-        <h2 style="color:#fff;">Important Dates</h2>
-        <div class="notices-grid">
-            {% for e in events %}
-            <div class="notice-card" style="padding:0;cursor:pointer;"
-     onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.13)';"
-     onmouseout="this.style.transform='';this.style.boxShadow='0 1px 4px rgba(0,0,0,0.08)';">
-    <div style="background:linear-gradient(135deg,var(--primary),#a01f1f);
-                padding:14px 16px 10px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-10px;right:-10px;width:60px;height:60px;
-                    border-radius:50%;background:rgba(255,255,255,0.08);"></div>
-        <div style="position:absolute;bottom:-16px;right:16px;width:40px;height:40px;
-                    border-radius:50%;background:rgba(255,255,255,0.06);"></div>
-        <span style="font-size:10px;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.6px;color:rgba(255,255,255,0.75);
-                     background:rgba(255,255,255,0.15);padding:2px 8px;
-                     border-radius:20px;">Important Date</span>
-        <svg style="position:absolute;top:12px;right:14px;opacity:0.4;"
-             width="20" height="20" viewBox="0 0 24 24" fill="none"
-             stroke="#fff" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-    </div>
-    <div style="padding:12px 16px 14px;">
-        <div class="notice-card-title">{{ e.title }}</div>
-        {% if e.event_date %}
-        <div class="notice-card-meta">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            {{ frappe.utils.formatdate(e.event_date, "dd MMM yyyy") }}
+        <div class="dates-grid">
+          {% for ev in events %}
+          <div class="date-card"
+               {% if ev.event_registration_url %}
+               style="cursor:pointer;"
+               onclick="window.open('{{ ev.event_registration_url }}','_blank')"
+               {% endif %}>
+            <div class="date-label">{{ ev.title }}</div>
+            <div class="date-val">{{ ev.date_display or "TBA" }}</div>
+            {% if ev.summary %}<div class="date-sub">{{ ev.summary | truncate(28) }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="dates-grid">
+          <div class="date-card"><div class="date-label">Application Opens</div><div class="date-val">Mar 01</div></div>
+          <div class="date-card"><div class="date-label">Last Date</div><div class="date-val">Apr 30</div></div>
         </div>
         {% endif %}
-    </div>
-</div>
-            {% endfor %}
+      </div>
+
+      <!-- Social proof -->
+      <div class="lp-social">
+        <div class="lp-social-icon">
+          <span class="material-symbols-outlined">school</span>
         </div>
-        <hr class="section-divider">
-        {% endif %}        
+        <span class="lp-social-text">Join thousands of students applying this year</span>
+      </div>
+
     </div>
+  </div><!-- end right -->
+</div><!-- end lp-wrap -->
+
+<!-- ══════════ ANNOUNCEMENT MODAL ══════════ -->
+<div class="ann-modal-bg" id="ann-modal-bg" onclick="lpAnnClose(event)">
+  <div class="ann-modal">
+    <div class="ann-mhead">
+      <div class="ann-mtitle" id="ann-mtitle">—</div>
+      <button class="ann-mclose" onclick="lpAnnClose({target:document.getElementById('ann-modal-bg')})">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="ann-mmeta" id="ann-mmeta"></div>
+    <img id="ann-mimg" class="ann-mimg" src="" alt="">
+    <div class="ann-mbody">
+      <div class="ann-msummary" id="ann-msummary"></div>
+      <div class="ann-mcontent" id="ann-mcontent"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-    function switchTab(tab) {
-        document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-        document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
-        document.getElementById('login-form').style.display  = tab === 'login'  ? 'block' : 'none';
-        document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
+/* ── DATA ── */
+var LP_ANN = [
+  {% for ann in announcements %}
+  {
+    title:   {{ ann.title | tojson }},
+    type:    {{ (ann.announcement_type or "General") | tojson }},
+    summary: {{ (ann.summary or "") | tojson }},
+    content: {{ (ann.content or "") | tojson }},
+    image:   {{ (ann.featured_image or "") | tojson }},
+    date:    {{ ((ann.published_on or (ann.publish_date | string) or "") | string)[:10] | tojson }}
+  }{% if not loop.last %},{% endif %}
+  {% endfor %}
+];
+
+var LP_CSRF = "{{ csrf_token or '' }}";
+
+/* ── TOAST ── */
+function lpToast(msg, type) {
+  type = type || 'info';
+  var icons = { success: 'check_circle', error: 'error', info: 'info' };
+  var el = document.createElement('div');
+  el.className = 'lp-toast ' + type;
+  el.innerHTML = '<span class="material-symbols-outlined">' + icons[type] + '</span>' + msg;
+  document.getElementById('lp-toast-wrap').appendChild(el);
+  setTimeout(function() {
+    el.style.transition = 'opacity .3s';
+    el.style.opacity = '0';
+    setTimeout(function() { el.remove(); }, 300);
+  }, 3800);
+}
+
+/* ── TABS ── */
+function lpTab(t) {
+  document.getElementById('panel-login').style.display    = t==='login'    ? '' : 'none';
+  document.getElementById('panel-register').style.display = t==='register' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active',    t==='login');
+  document.getElementById('tab-register').classList.toggle('active', t==='register');
+}
+
+function lpTogglePw() {
+  var i = document.getElementById('lp-pwd');
+  var e = document.getElementById('lp-eye');
+  i.type = i.type==='password' ? 'text' : 'password';
+  e.textContent = i.type==='password' ? 'visibility' : 'visibility_off';
+}
+
+/* ── VALIDATION ── */
+function lpValidate(fields) {
+  var ok = true;
+  fields.forEach(function(f) {
+    var el = document.getElementById(f.id);
+    el.classList.remove('invalid');
+    if (!el.value.trim()) {
+      el.classList.add('invalid');
+      lpToast(f.msg, 'error');
+      ok = false;
+    } else if (f.type === 'email') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value.trim())) {
+        el.classList.add('invalid');
+        lpToast('Please enter a valid email address.', 'error');
+        ok = false;
+      }
     }
-    function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
-    function hideError(id) { document.getElementById(id).style.display = 'none'; }
-    
-    async function doLogin() {
-        const email    = (document.getElementById('login-email')?.value || '').trim();
-        const password = document.getElementById('login-password')?.value || '';
-        const errEl    = document.getElementById('login-error');
-        const btn      = document.getElementById('login-btn');
-        const redir    = document.getElementById('redirect-after-login')?.value
-                         || '/my-applications';
+  });
+  return ok;
+}
 
-        if (!email || !password) {
-            errEl.textContent = 'Please enter your email and password.';
-            errEl.style.display = 'block';
-            return;
-        }
-        btn.disabled = true;
-        btn.textContent = 'Logging in...';
-        errEl.style.display = 'none';
+/* ── LOGIN ── */
+async function doLogin() {
+  // Validate
+  if (!lpValidate([
+    { id: 'lp-email', type: 'text', msg: 'Please enter your username.' },
+    { id: 'lp-pwd',   type: 'text', msg: 'Please enter your password.' }
+  ])) return;
 
-        try {
-            // Step 1: Login
-            const resp = await fetch('/api/method/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ usr: email, pwd: password, cmd: 'login' })
-            });
-            const data = await resp.json();
+  var btn   = document.getElementById('lp-login-btn');
+  var spin  = document.getElementById('lp-login-spin');
+  var label = document.getElementById('lp-login-label');
+  var redir = document.getElementById('lp-redir').value || '/admission';
 
-            if (!data.full_name || data.full_name === 'Guest') {
-                const msg = data.message || 'Login failed. Check your credentials.';
-                errEl.textContent = (msg === 'No App')
-                    ? 'Incorrect email or password.'
-                    : msg;
-                errEl.style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = 'Login';
-                return;
-            }
+  btn.disabled = true;
+  spin.style.display = 'block';
+  label.textContent = 'Signing in…';
 
-            // Step 2: Detect user type using /api/method/frappe.client.get_value
-            // This uses the now-active session cookie, no CSRF token needed for GET
-            try {
-                const utResp = await fetch(
-                    '/api/method/frappe.client.get_value' +
-                    '?doctype=User&filters=' + encodeURIComponent(JSON.stringify([[
-                        'User','name','=',email
-                    ]])) + '&fieldname=user_type',
-                    { method: 'GET', headers: { 'Accept': 'application/json' } }
-                );
-                const utData = await utResp.json();
-                const userType = (utData.message || {}).user_type || 'Website User';
-                window.location.href = (userType === 'System User') ? '/desk' : redir;
-            } catch (_) {
-                // Fallback: portal users always go to /my-applications
-                window.location.href = redir;
-            }
+  var fd = new FormData();
+  fd.append('usr', document.getElementById('lp-email').value.trim());
+  fd.append('pwd', document.getElementById('lp-pwd').value);
+  fd.append('cmd', 'login');
 
-        } catch (e) {
-            errEl.textContent = 'Network error. Please try again.';
-            errEl.style.display = 'block';
-            btn.disabled = false;
-            btn.textContent = 'Login';
-        }
+  try {
+    var resp = await fetch('/api/method/login', {
+      method: 'POST', body: fd,
+      headers: { 'X-Frappe-CSRF-Token': LP_CSRF }
+    });
+    var data = await resp.json();
+
+    // Frappe returns {"message":"Logged In"} on success
+    if (resp.ok && (data.message === 'Logged In' || data.home_page)) {
+      lpToast('Login successful! Redirecting…', 'success');
+      setTimeout(function() {
+        // Check user type for desk redirect
+        fetch('/api/method/frappe.client.get_value?doctype=User&filters=' +
+          encodeURIComponent(JSON.stringify([['User','name','=',
+            document.getElementById('lp-email').value.trim()]])) +
+          '&fieldname=user_type', { method: 'GET' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          var ut = (d.message || {}).user_type || 'Website User';
+          window.location.href = (ut === 'System User') ? '/desk' : redir;
+        })
+        .catch(function() { window.location.href = redir; });
+      }, 800);
+    } else {
+      var errMsg = data.message || 'Invalid credentials. Please try again.';
+      if (errMsg === 'No App') errMsg = 'Incorrect email or password.';
+      lpToast(errMsg, 'error');
+      btn.disabled = false;
+      spin.style.display = 'none';
+      label.textContent = 'Sign In to Portal';
     }
+  } catch(e) {
+    lpToast('Connection error. Please try again.', 'error');
+    btn.disabled = false;
+    spin.style.display = 'none';
+    label.textContent = 'Sign In to Portal';
+  }
+}
 
-    async function doRegister() {
-        hideError('signup-error'); document.getElementById('signup-success').style.display = 'none';
-        const name = document.getElementById('signup-name').value.trim();
-        const email = document.getElementById('signup-email').value.trim();
-        if (!name || !email) { showError('signup-error', 'Please fill all required fields.'); return; }
-        const btn = document.getElementById('signup-btn');
-        btn.disabled = true; btn.textContent = 'Creating account...';
-        try {
-            const resp = await fetch('/api/method/frappe.core.doctype.user.user.sign_up', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.csrf_token }, body: JSON.stringify({ email: email, full_name: name, redirect_to: '/my-applications' }) });
-            const data = await resp.json();
-            if (data.message && data.message[0] === 1) { const el = document.getElementById('signup-success'); el.textContent = 'Account created! Check your email for verification.'; el.style.display = 'block'; }
-            else { showError('signup-error', (data.message ? data.message[1] : 'Registration failed')); }
-        } catch(e) { showError('signup-error', 'Error occurred.'); } finally { btn.disabled = false; btn.textContent = 'Create Account'; }
+/* ── REGISTER ── */
+async function doRegister() {
+  if (!lpValidate([
+    { id: 'reg-name',  type: 'text',  msg: 'Please enter your full name.' },
+    { id: 'reg-email', type: 'email', msg: 'Please enter a valid email address.' }
+  ])) return;
+
+  var btn   = document.getElementById('lp-reg-btn');
+  var spin  = document.getElementById('lp-reg-spin');
+  var label = document.getElementById('lp-reg-label');
+
+  btn.disabled = true;
+  spin.style.display = 'block';
+  label.textContent = 'Creating account…';
+
+  var name  = document.getElementById('reg-name').value.trim();
+  var email = document.getElementById('reg-email').value.trim();
+
+  try {
+    var resp = await fetch('/api/method/frappe.core.doctype.user.user.sign_up', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': LP_CSRF
+      },
+      body: JSON.stringify({
+        email: email,
+        full_name: name,
+        redirect_to: '/admission'
+      })
+    });
+    var data = await resp.json();
+
+    // Frappe sign_up returns [1, "msg"] on success, [0, "msg"] on failure
+    var result = data.message;
+    if (result && result[0] === 1) {
+      lpToast('Account created! Check your email to set your password.', 'success');
+      // Clear fields and switch to login
+      document.getElementById('reg-name').value  = '';
+      document.getElementById('reg-email').value = '';
+      setTimeout(function() { lpTab('login'); }, 2000);
+    } else {
+      var msg = (result && result[1]) ? result[1] : 'Registration failed. Please try again.';
+      lpToast(msg, 'error');
     }
+  } catch(e) {
+    lpToast('Connection error. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    spin.style.display = 'none';
+    label.textContent = 'Create Account';
+  }
+}
+
+/* ── ANNOUNCEMENT MODAL ── */
+function lpAnnOpen(idx) {
+  var a = LP_ANN[idx];
+  if (!a) return;
+  document.getElementById('ann-mtitle').textContent = a.title;
+
+  var meta = '';
+  if (a.type) meta += '<span class="ann-mmeta-item"><span class="material-symbols-outlined">label</span>' + a.type + '</span>';
+  if (a.date) meta += '<span class="ann-mmeta-item"><span class="material-symbols-outlined">calendar_today</span>' + a.date + '</span>';
+  document.getElementById('ann-mmeta').innerHTML = meta;
+
+  var img = document.getElementById('ann-mimg');
+  if (a.image) { img.src = a.image; img.style.display = 'block'; }
+  else          { img.style.display = 'none'; }
+
+  var sum = document.getElementById('ann-msummary');
+  if (a.summary) { sum.textContent = a.summary; sum.style.display = 'block'; }
+  else            { sum.style.display = 'none'; }
+
+  document.getElementById('ann-mcontent').innerHTML = a.content || '<p style="color:#9ca3af;font-size:13px;">No additional details.</p>';
+  document.getElementById('ann-modal-bg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function lpAnnClose(evt) {
+  if (evt && evt.target !== document.getElementById('ann-modal-bg')) return;
+  document.getElementById('ann-modal-bg').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') lpAnnClose({ target: document.getElementById('ann-modal-bg') });
+});
+
+/* Enter key triggers login */
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  var panelLogin = document.getElementById('panel-login');
+  if (panelLogin && panelLogin.style.display !== 'none') doLogin();
+});
 </script>
+
 </body>
 </html>

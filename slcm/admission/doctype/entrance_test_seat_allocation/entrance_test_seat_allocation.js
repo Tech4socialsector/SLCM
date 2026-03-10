@@ -334,13 +334,40 @@ function _handle_admit_card_download(frm, is_rescheduled) {
     return;
   }
 
-  frappe.show_alert({ message: __("Downloading Admit Card…"), indicator: "blue" }, 3);
+  frappe.show_alert({ message: __("Storing & Generating Admit Card…"), indicator: "blue" }, 3);
 
-  // Link to the same Python download method used in the web portal
-  const url = frappe.urllib.get_full_url(
-    `/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name=${frm.doc.name}`
-  );
-  window.open(url, "_blank");
+  // Trigger server-side storage first
+  frappe.call({
+    method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.generate_and_store_admit_card",
+    args: {
+      allocation: frm.doc.name,
+      is_rescheduled: is_rescheduled
+    },
+    callback: function (r) {
+      if (!r.exc) {
+        frm.reload_doc(() => {
+          _generate_local_print(frm, is_rescheduled);
+        });
+      } else {
+        _generate_local_print(frm, is_rescheduled);
+      }
+    }
+  });
+}
+
+function _generate_local_print(frm, is_rescheduled) {
+  if (!frm.doc.campus) {
+    generate_admit_card_pdf(frm.doc, frm, {}, is_rescheduled);
+    return;
+  }
+
+  frappe.db.get_value("Campus", frm.doc.campus, ["campus_name", "logo"], (r_val) => {
+    const branding = {
+      campus_name: r_val.campus_name || frm.doc.campus,
+      logo: r_val.logo || null
+    };
+    generate_admit_card_pdf(frm.doc, frm, branding, is_rescheduled);
+  });
 }
 
 // ============================================================
@@ -637,14 +664,20 @@ body {
   border-left: 1.5px solid #888;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   padding: 10px 8px;
+  min-height: 250px;
+  gap: 8px;
+}
+.photo-box-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 .photo-frame {
-  width: 110px;
-  height: 130px;
+  width: 120px;
+  height: 150px;
   border: 1.5px solid #555;
   overflow: hidden;
   background: #eee;
@@ -898,14 +931,19 @@ body {
     </table>
     <!-- Photo -->
     <div class="photo-col">
-      <div class="photo-frame">
-        ${profile_image_url
+      <div class="photo-box-inner">
+        <div class="photo-frame">
+          ${profile_image_url
       ? `<img src="${profile_image_url}" alt="Candidate Photo">`
-      : `<div class="photo-ph">👤</div>`}
+      : `<div class="photo-ph">👤</div>`
+    }
+        </div>
+        <div class="photo-cap">Candidate's Photograph</div>
       </div>
-      <div class="photo-cap">Candidate's Photograph</div>
-      <!-- blank area below photo filled with horizontal guide lines -->
-      <div class="photo-gap"></div>
+      <div class="photo-sig-box" style="width: 100%; text-align: center; margin-top: auto; padding-bottom: 5px;">
+        <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
+        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333;">Candidate's Signature</div>
+      </div>
     </div>
   </div>
 

@@ -1,29 +1,33 @@
 import frappe
 
-@frappe.whitelist(allow_guest=True)
-def check_existing_application(program):
+@frappe.whitelist()
+def check_existing_application(admission_cycle=None):
     """
-    Called from the /admission page JS before redirecting to application form.
-    Checks if the logged-in user already has an application for this program.
+    Returns existing application name if user already applied in this cycle.
+    Called from /admission page before showing Apply Now.
     """
-    user = frappe.session.user
-    if user == "Guest":
-        return {"exists": False}
+    if frappe.session.user == "Guest":
+        return {"exists": False, "name": ""}
 
-    existing = frappe.db.get_value(
+    filters = {"owner": frappe.session.user}
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+
+    existing = frappe.get_all(
         "Applicant",
-        {"email": user, "program": program},
-        ["name", "application_status", "applicant_id"],
-        as_dict=True
+        filters=filters,
+        fields=["name", "admission_cycle", "application_status"],
+        order_by="creation desc",
+        limit=1
     )
     if existing:
         return {
-            "exists": True,
-            "status": existing.application_status or "Draft",
-            "name": existing.name,
-            "applicant_id": existing.applicant_id or existing.name
+            "exists":  True,
+            "name":    existing[0].name,
+            "status":  existing[0].application_status,
+            "cycle":   existing[0].admission_cycle,
         }
-    return {"exists": False}
+    return {"exists": False, "name": ""}
 
 @frappe.whitelist()
 def mark_notifications_read(names=None):

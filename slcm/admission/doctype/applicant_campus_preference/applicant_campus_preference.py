@@ -77,8 +77,11 @@ class ApplicantCampusPreference(Document):
                 )
 
     def set_workflow_type(self):
+        # Look up exam_type from the Admission Cycle Program child table for this program
         workflow = frappe.db.get_value(
-            "Admission Cycle", self.admission_cycle, "workflow_type"
+            "Admission Cycle Program",
+            {"parent": self.admission_cycle, "program": self.program},
+            "exam_type"
         )
         if workflow:
             self.workflow_type = workflow
