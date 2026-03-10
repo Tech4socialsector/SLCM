@@ -30,8 +30,12 @@ frappe.ui.form.on('Eligibility Rule Mapping', {
 frappe.ui.form.on('Rule Mapping Category', {
     minimum_percentage: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
-        if (row.minimum_percentage && frm.doc.rule) {
-            frappe.db.get_value('Eligibility Rule', frm.doc.rule, 'unit_type', (r) => {
+        // rule is now a Table MultiSelect, so frm.doc.rule is a list of child docs
+        let selected_rules = (frm.doc.rule || []).map(r => r.rule).filter(Boolean);
+
+        if (row.minimum_percentage && selected_rules.length > 0) {
+            // Check the unit_type of the first rule for validation
+            frappe.db.get_value('Eligibility Rule', selected_rules[0], 'unit_type', (r) => {
                 if (!r) return;
 
                 let unit_type = r.unit_type;
