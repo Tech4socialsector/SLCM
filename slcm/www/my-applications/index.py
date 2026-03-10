@@ -50,7 +50,7 @@ def get_context(context):
 
     if _prof_app:
         context.prof_candidate_name  = _prof_app.candidate_name or context.prof_candidate_name
-        context.prof_dob             = _prof_app.date_of_birth
+        context.prof_dob             = str(_prof_app.date_of_birth) if _prof_app.date_of_birth else None
         context.prof_gender          = _prof_app.gender
         context.prof_nationality     = _prof_app.nationality
         context.prof_religion        = _prof_app.religion
@@ -698,7 +698,7 @@ def get_context(context):
             },
             "personal": [
                 {"label": "Full Name", "value": app_doc.candidate_name},
-                {"label": "Date of Birth", "value": frappe.utils.formatdate(app_doc.date_of_birth, "dd MMM yyyy") if app_doc.date_of_birth else None},
+                {"label": "Date of Birth", "value": str(app_doc.date_of_birth) if app_doc.date_of_birth else None},
                 {"label": "Gender", "value": app_doc.gender},
                 {"label": "Nationality", "value": app_doc.nationality},
                 {"label": "Email", "value": app_doc.email},
