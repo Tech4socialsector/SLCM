@@ -277,6 +277,47 @@
         flex-shrink: 0;
     }
 
+    .application-form-back-row {
+        margin-bottom: 1rem;
+    }
+
+    .btn-back-to-admission {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--navy);
+        background: var(--white);
+        border: 2px solid var(--navy-light);
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-back-to-admission:hover {
+        background: var(--navy-light);
+        border-color: var(--navy);
+        color: var(--navy);
+    }
+
+    .submitted-application-banner {
+        background: var(--amber-bg);
+        border: 1px solid var(--amber);
+        color: var(--slate-800);
+        padding: 1rem 1.25rem;
+        border-radius: var(--radius-sm);
+        margin-bottom: 1.25rem;
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+
+    .submitted-application-banner strong {
+        color: var(--amber);
+    }
+
     /* ═══════════════════════════════════════════════
    MAIN LAYOUT: full-width, no sidebar
 ═══════════════════════════════════════════════ */
@@ -620,6 +661,12 @@
     }
 
     .phone-wrap.is-error {
+        border-color: var(--red);
+        background: var(--red-bg);
+    }
+
+    .fg.is-error input.fc,
+    .fg.is-error .flatpickr input {
         border-color: var(--red);
         background: var(--red-bg);
     }
@@ -1551,6 +1598,14 @@
         <div class="banner-step-badge" id="stepBadge">Step 1 / 8</div>
     </div> -->
 
+    <!-- ═══ Back to admission listing ─── -->
+    <div class="application-form-back-row">
+        <a href="/admission" class="btn-back-to-admission" title="Back to program listing">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Programs
+        </a>
+    </div>
+
     <!-- ═══ PROGRESS STRIP ═══ -->
     <div class="progress-strip">
         <div class="progress-steps" id="progressSteps">
@@ -1558,6 +1613,13 @@
         </div>
         <div class="progress-pct" id="progressPct">0%</div>
     </div>
+
+    <!-- ═══ Submitted application notice (read-only view) ─── -->
+    {% if application_submitted %}
+    <div id="submittedApplicationBanner" class="submitted-application-banner" role="alert">
+        <strong>Application already submitted.</strong> You have one application per admission cycle. You may edit your application below; only these fields cannot be changed after submission: Email Address, Candidate's Name, Mobile Number of Candidate.
+    </div>
+    {% endif %}
 
     <!-- ═══ PORTAL GRID (full width, no sidebar) ═══ -->
     <div class="portal-grid">
@@ -1652,8 +1714,8 @@
                                         <option value="+971">🇦🇪 +971</option>
                                         <option value="+61">🇦🇺 +61</option>
                                     </select>
-                                    <input type="tel" class="phone-num" name="mobile_number_num"
-                                        placeholder="10-digit number" maxlength="15"
+                                    <input type="tel" class="phone-num phone-num-digits" name="mobile_number_num"
+                                        placeholder="10-digit number" maxlength="15" inputmode="numeric"
                                         oninput="onPhoneChange('mobile_number')">
                                 </div>
                                 <span class="field-error" id="err_mobile_number">Valid 10-digit mobile number required</span>
@@ -1669,8 +1731,8 @@
                                         <option value="+971">🇦🇪 +971</option>
                                         <option value="+61">🇦🇺 +61</option>
                                     </select>
-                                    <input type="tel" class="phone-num" name="alternate_contact_num"
-                                        placeholder="Alternate number" maxlength="15"
+                                    <input type="tel" class="phone-num phone-num-digits" name="alternate_contact_num"
+                                        placeholder="Alternate number" maxlength="15" inputmode="numeric"
                                         oninput="onPhoneChange('alternate_contact')">
                                 </div>
                                 <span class="field-error" id="err_alternate_contact"></span>
@@ -1835,8 +1897,8 @@
                                         <option value="+44">🇬🇧 +44</option>
                                         <option value="+971">🇦🇪 +971</option>
                                     </select>
-                                    <input type="tel" class="phone-num" name="father_mobile_num"
-                                        placeholder="Mobile number" maxlength="15"
+                                    <input type="tel" class="phone-num phone-num-digits" name="father_mobile_num"
+                                        placeholder="Mobile number" maxlength="15" inputmode="numeric"
                                         oninput="onPhoneChange('father_mobile')">
                                 </div>
                                 <span class="field-error" id="err_father_mobile"></span>
@@ -1864,8 +1926,8 @@
                                         <option value="+44">🇬🇧 +44</option>
                                         <option value="+971">🇦🇪 +971</option>
                                     </select>
-                                    <input type="tel" class="phone-num" name="mother_mobile_num"
-                                        placeholder="Mobile number" maxlength="15"
+                                    <input type="tel" class="phone-num phone-num-digits" name="mother_mobile_num"
+                                        placeholder="Mobile number" maxlength="15" inputmode="numeric"
                                         oninput="onPhoneChange('mother_mobile')">
                                 </div>
                                 <span class="field-error" id="err_mother_mobile"></span>
@@ -1904,8 +1966,8 @@
                                             <option value="+44">🇬🇧 +44</option>
                                             <option value="+971">🇦🇪 +971</option>
                                         </select>
-                                        <input type="tel" class="phone-num" name="guardian_mobile_num"
-                                            placeholder="Mobile number" maxlength="15"
+                                        <input type="tel" class="phone-num phone-num-digits" name="guardian_mobile_num"
+                                            placeholder="Mobile number" maxlength="15" inputmode="numeric"
                                             oninput="onPhoneChange('guardian_mobile')">
                                     </div>
                                     <span class="field-error" id="err_guardian_mobile">Guardian mobile is
@@ -2787,6 +2849,10 @@
     const PREFILL_PROGRAM = {{ (prefill_program or '') | tojson }};
     const PROGRAM_READONLY = {{ 'true' if program_readonly else 'false' }};
 
+    // Application already submitted for this cycle — show read-only, block save/submit
+    const APPLICATION_SUBMITTED = {{ 'true' if application_submitted else 'false' }};
+    const READONLY_AFTER_SUBMIT = {{ (readonly_after_submit or []) | tojson }};
+
     // Form config by admission cycle (entrance test / program levels) — for conditional sections
     const FORM_CONFIG = {{ (form_config or {}) | tojson }};
 
@@ -2912,10 +2978,31 @@
         populateExistingData();
         initFlatpickr();
         applyProgramFromUrl();
+        applySubmittedReadOnly();
         updateUI();
         initSearchableSelects();
         toggleSaveDraftVisibility();
     });
+
+    function applySubmittedReadOnly() {
+        if (!APPLICATION_SUBMITTED || !Array.isArray(READONLY_AFTER_SUBMIT) || READONLY_AFTER_SUBMIT.length === 0) return;
+        const form = document.getElementById('appForm');
+        if (!form) return;
+        const phoneWrapIds = { mobile_number: 'pw_mobile_number' };
+        READONLY_AFTER_SUBMIT.forEach(fieldName => {
+            if (phoneWrapIds[fieldName]) {
+                const wrap = document.getElementById(phoneWrapIds[fieldName]);
+                if (wrap) wrap.querySelectorAll('input, select').forEach(el => { el.disabled = true; el.readOnly = true; });
+            } else {
+                const el = form.elements[fieldName];
+                if (el) {
+                    if (el.type === 'checkbox') el.disabled = true;
+                    else { el.readOnly = true; el.disabled = true; }
+                }
+            }
+        });
+        // When submitted, only email, candidate_name, mobile are read-only; applicant may edit and save other fields
+    }
 
     function initNumericInputs() {
         const form = document.getElementById('appForm');
@@ -2923,7 +3010,10 @@
         form.addEventListener('input', function(e) {
             const t = e.target;
             if (!t || !t.classList) return;
-            if (t.classList.contains('numeric-integer')) {
+            if (t.classList.contains('phone-num-digits')) {
+                t.value = t.value.replace(/\D/g, '');
+                if (t.value.length > 15) t.value = t.value.slice(0, 15);
+            } else if (t.classList.contains('numeric-integer')) {
                 t.value = t.value.replace(/\D/g, '');
                 const maxLen = parseInt(t.getAttribute('maxlength'), 10);
                 if (maxLen && t.value.length > maxLen) t.value = t.value.slice(0, maxLen);
@@ -2934,6 +3024,25 @@
                 t.value = v;
             }
         });
+    }
+
+    function getPhoneNumDigits(fieldBase) {
+        const numEl = document.querySelector(`[name="${fieldBase}_num"]`);
+        return (numEl && numEl.value) ? numEl.value.replace(/\D/g, '') : '';
+    }
+
+    function validatePhoneLength(fieldBase, required, minLen, maxLen) {
+        minLen = minLen || 10;
+        maxLen = maxLen || 15;
+        const digits = getPhoneNumDigits(fieldBase);
+        if (required) {
+            if (digits.length < minLen) return { ok: false, msg: 'Valid ' + minLen + '-digit mobile number required' };
+            if (digits.length > maxLen) return { ok: false, msg: 'Phone number must not exceed ' + maxLen + ' digits' };
+        } else {
+            if (digits.length > 0 && digits.length < minLen) return { ok: false, msg: 'Phone number must be at least ' + minLen + ' digits' };
+            if (digits.length > maxLen) return { ok: false, msg: 'Phone number must not exceed ' + maxLen + ' digits' };
+        }
+        return { ok: true };
     }
 
     function toggleSaveDraftVisibility() {
@@ -3126,6 +3235,7 @@
         document.querySelectorAll('.field-error.show').forEach(e => e.classList.remove('show'));
         document.querySelectorAll('.fc.is-error').forEach(e => e.classList.remove('is-error'));
         document.querySelectorAll('.phone-wrap.is-error').forEach(e => e.classList.remove('is-error'));
+        document.querySelectorAll('.fg.is-error').forEach(e => e.classList.remove('is-error'));
     }
 
     function showError(fieldName, message) {
@@ -3137,12 +3247,14 @@
             errEl.textContent = msg;
             errEl.classList.add('show');
         }
-        const input = document.querySelector(`[name="${fieldName}"]`);
+        let input = document.querySelector(`[name="${fieldName}"]`);
+        if (!input && fieldName === 'date_of_birth') input = document.getElementById('date_of_birth');
         if (input) {
             if (input.classList.contains('phone-num')) {
                 input.closest('.phone-wrap')?.classList.add('is-error');
             } else {
                 input.classList.add('is-error');
+                if (fieldName === 'date_of_birth') input.closest('.fg')?.classList.add('is-error');
             }
         }
         // Field-level message is shown above; only the generic toast is shown once by validateCurrentStep
@@ -3195,24 +3307,31 @@
         if (!f('admission_cycle')) { showError('admission_cycle'); v = false; }
         if (!f('academic_year')) { showError('academic_year'); v = false; }
 
-        const dob = f('date_of_birth');
+        const dobInput = document.getElementById('date_of_birth');
+        const dob = (dobInput && dobInput.value) ? dobInput.value.trim() : (f('date_of_birth') || '');
         if (!dob) { showError('date_of_birth'); v = false; }
         else {
             const age = (new Date() - new Date(dob)) / (365.25 * 24 * 3600 * 1000);
             if (age < 17) { showError('date_of_birth', 'Applicant must be at least 17 years old'); v = false; }
         }
 
-        // Mobile
-        const mobNum = document.querySelector('[name="mobile_number_num"]')?.value;
-        if (!mobNum || mobNum.length < 10) { showError('mobile_number', 'Valid 10-digit mobile number required'); v = false; }
+        // Mobile (required): 10–15 digits
+        const mobCheck = validatePhoneLength('mobile_number', true);
+        if (!mobCheck.ok) { showError('mobile_number', mobCheck.msg); v = false; }
+
+        // Optional phones: if any digits entered, require 10–15 digits
+        ['alternate_contact', 'father_mobile', 'mother_mobile'].forEach(fieldBase => {
+            const check = validatePhoneLength(fieldBase, false);
+            if (!check.ok) { showError(fieldBase, check.msg); v = false; }
+        });
 
         // Parent & Guardian (within Student Information)
         const guardianReq = document.getElementById('guardian_required')?.checked;
         if (guardianReq) {
             const gName = document.querySelector('[name="guardian_name"]')?.value?.trim();
-            const gMob = document.querySelector('[name="guardian_mobile_num"]')?.value;
             if (!gName) { showError('guardian_name'); v = false; }
-            if (!gMob || gMob.length < 10) { showError('guardian_mobile', 'Guardian mobile is required'); v = false; }
+            const gCheck = validatePhoneLength('guardian_mobile', true);
+            if (!gCheck.ok) { showError('guardian_mobile', gCheck.msg); v = false; }
         }
         ['father_email', 'mother_email', 'guardian_email'].forEach(fn => {
             const val = document.querySelector(`[name="${fn}"]`)?.value?.trim();
@@ -4098,15 +4217,21 @@
     //  FLATPICKR DATE PICKERS
     // ═══════════════════════════════════════════════════════
     function initFlatpickr() {
-        flatpickr('#date_of_birth', {
+        const dobInput = document.getElementById('date_of_birth');
+        if (!dobInput) return;
+        const existingDate = (formData && formData.date_of_birth) ? formData.date_of_birth.trim() : (dobInput.value || '').trim();
+        if (existingDate) dobInput.value = existingDate;
+        const fp = flatpickr(dobInput, {
             dateFormat: 'Y-m-d',
             altInput: true,
             altFormat: 'd/m/Y',
+            defaultDate: existingDate || null,
             maxDate: new Date(new Date().setFullYear(new Date().getFullYear() - 17)),
             onChange: ([date]) => {
                 formData.date_of_birth = date ? date.toISOString().split('T')[0] : '';
             }
         });
+        if (existingDate && fp) { formData.date_of_birth = existingDate; }
     }
 
     // ═══════════════════════════════════════════════════════
