@@ -20,7 +20,7 @@ class Applicant(Document):
 
         This caused duplicate/double-save calls for both paths when no throw occurred.
 
-        CORRECTED FLOW: 
+        CORRECTED FLOW:
           - validate_eligibility() handles ALL saves internally:
               • Ineligible: saves BEFORE throw (required — throw exits the stack)
               • Eligible:   saves at the END of validate_eligibility()

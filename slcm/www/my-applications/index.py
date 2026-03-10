@@ -1,5 +1,6 @@
 import frappe
-from frappe.utils import flt
+from slcm.admission.utils.portal import get_portal_config
+from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 
 login_required = True
 
@@ -437,42 +438,25 @@ def get_context(context):
         context.applications = []
         return context
 
-        # 3. Fetch linked Offer and Fee details
-        offer = frappe.db.get_value("Offer Letter", {
-            "applicant": app.name,
-            "offer_status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
-        }, ["name", "payable_amount", "offer_status"], as_dict=True)
-
-        if offer:
-            app["offer_name"] = offer.name
-            app["payable_amount"] = offer.payable_amount
-            app["offer_status_on_letter"] = offer.offer_status
-            
-            # Get scholarship amount from snapshot if available
-            scholarship = frappe.db.get_value("Offer Fee Snapshot", 
-                {"offer_id": offer.name}, "scholarship_amount")
-            app["scholarship_amount"] = flt(scholarship) or 0
-
-    notifications = []
-    try:
-        applicant_names = frappe.get_all(
-            "Applicant",
-            filters={"email": frappe.session.user},
-            pluck="name"
-        )
-        if applicant_names:
-            notifications = frappe.get_all(
-                "Applicant Notification",
-                filters={"applicant": ["in", applicant_names],
-                         "is_read": 0},
-                fields=["name", "applicant",
-                        "message", "notification_type",
-                        "is_read", "created_on as creation"],
-                order_by="created_on desc",
-                limit=20
-            )
-    except Exception as e:
-        frappe.log_error("notifications: " + str(e), "Portal Debug")
+    # 2. Determine which application to show
+    target_app_id = frappe.form_dict.get('app')
+    
+    applications = []
+    active_app_summary = None
+    
+    for entry in data_list:
+        prof = entry.get("profile", {})
+        app_id = prof.get("applicant_id")
+        if not app_id: continue
+        
+        # Load the full doc for detail sections
+        app_doc = frappe.get_doc("Applicant", app_id)
+        
+        status = app_doc.application_status or "Draft"
+        style = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
+        
+        program_name = frappe.db.get_value("Program", app_doc.program, "program_name") or app_doc.program or "Application"
+        program_slug = frappe.db.get_value("Program", app_doc.program, "program_slug") or ""
 
         summary = {
             "name": app_doc.name,
@@ -524,9 +508,9 @@ def get_context(context):
         # Build action buttons for this summary
         actions = []
         if status == "Draft":
-            actions.append({"label": "Continue Application", "url": "/application-form/" + app_doc.name, "type": "primary"})
+            actions.append({"label": "Continue Application", "url": "/application_form/" + app_doc.name, "type": "primary"})
         elif status == "Offer Issued":
-            actions.append({"label": "Accept Offer", "url": "/application-form/" + app_doc.name, "type": "success"})
+            actions.append({"label": "Accept Offer", "url": "/application_form/" + app_doc.name, "type": "success"})
             if program_slug:
                 actions.append({"label": "View Program", "url": "/admission/" + program_slug, "type": "outline"})
         else:

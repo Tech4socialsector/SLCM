@@ -4,39 +4,303 @@
 
 {% block theme_vars %}
 <style>
-    :root {
-            {
-            % if portal_config %
-        }
+  :root {
+    {% if portal_config %}
+    --primary:   {{ portal_config.get('primary_color','#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
+    --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
+    {% else %}
+    --primary: #1a3c6e;
+    --secondary: #c8a14b;
+    {% endif %}
+  }
 
-        --primary: {
-                {
-                portal_config.get('primary_color', '#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e'
-            }
-        }
+  /* Tab underline */
+  .prog-tab { cursor: pointer; padding: 12px 20px;
+              font-size: 13px; font-weight: 700;
+              border-bottom: 3px solid transparent;
+              color: #64748b; transition: color 0.2s, border-color 0.2s;
+              white-space: nowrap; }
+  .prog-tab:hover { color: #1e293b; }
+  .prog-tab.active { color: var(--primary);
+                     border-bottom-color: var(--primary); }
 
-        ;
+  /* Media gallery legacy — kept for backward compat if any */
+  .media-thumb {
+    border-radius: 10px; overflow: hidden; cursor: pointer;
+    aspect-ratio: 16/9; background: #e2e8f0;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .media-thumb:hover { transform: scale(1.02);
+                       box-shadow: 0 8px 20px -4px rgba(0,0,0,0.15); }
+  .media-thumb img, .media-thumb iframe {
+    width: 100%; height: 100%; object-fit: cover; border: none; }
 
-        --secondary: {
-                {
-                portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b'
-            }
-        }
+  /* Curriculum accordion */
+  .curric-card { border-radius: 12px; border: 1.5px solid #e2e8f0;
+                 background: white; overflow: hidden;
+                 transition: border-color 0.2s; }
+  .curric-card.active-card { border-color: var(--primary); }
+  .curric-header { display: flex; justify-content: space-between;
+                   align-items: center; padding: 18px 20px;
+                   cursor: pointer; }
+  .curric-body { padding: 0 20px 18px;
+                 border-top: 1px solid #f1f5f9; }
 
-        ;
+  /* Career cards */
+  .career-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px; border-radius: 12px;
+    background: rgba(26,60,110,0.04);
+    border: 1px solid rgba(26,60,110,0.08);
+    transition: background 0.2s, transform 0.2s;
+  }
+  .career-card:hover { background: rgba(26,60,110,0.08);
+                       transform: translateY(-2px); }
 
-        --accent: {
-                {
-                portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b'
-            }
-        }
+  /* Faculty cards */
+  .faculty-card {
+    background: white; border-radius: 14px;
+    border: 1.5px solid #e2e8f0; padding: 20px;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .faculty-card:hover { transform: translateY(-4px);
+                        box-shadow: 0 10px 24px -6px rgba(0,0,0,0.1); }
 
-        ;
+  /* Lightbox overlay legacy */
+  #lb-overlay { display: none; position: fixed; inset: 0; z-index: 9999;
+                background: rgba(0,0,0,0.92);
+                align-items: center; justify-content: center; }
+  #lb-overlay.open { display: flex; }
+  #lb-img { max-width: 90vw; max-height: 85vh;
+            border-radius: 8px; object-fit: contain; }
 
-            {
-            % endif %
-        }
-    }
+  /* ── Program detail specific styles ── */
+  #pd-tab-nav button {
+    cursor: pointer; padding: 14px 22px;
+    font-size: 13px; font-weight: 700;
+    border: none; background: none; white-space: nowrap;
+    border-bottom: 3px solid transparent; color: #64748b;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  #pd-tab-nav button:hover { color: #1e293b; }
+  #pd-tab-nav button.pd-active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+  #pd-tab-nav::-webkit-scrollbar { display: none; }
+
+  .pd-curric-card {
+    border-radius: 12px; border: 1.5px solid #e2e8f0;
+    background: white; overflow: hidden;
+  }
+  .pd-curric-card.pd-open { border-color: var(--primary); }
+
+  .pd-career-card {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 16px; border-radius: 12px;
+    background: rgba(26,60,110,0.04);
+    border: 1px solid rgba(26,60,110,0.08);
+    transition: background 0.2s, transform 0.15s;
+  }
+  .pd-career-card:hover {
+    background: rgba(26,60,110,0.09);
+    transform: translateY(-2px);
+  }
+
+  .pd-faculty-card {
+    background: white; border-radius: 14px;
+    border: 1.5px solid #e2e8f0; padding: 20px;
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center; gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .pd-faculty-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px -6px rgba(0,0,0,0.1);
+  }
+
+  /* ── New Gallery Styles ────────────────────────────────────────── */
+  .pd-gallery-section { width:100%; }
+
+  .pd-gallery-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pd-gallery-strip::-webkit-scrollbar { height: 4px; }
+  .pd-gallery-strip::-webkit-scrollbar-thumb {
+    background: #ccc; border-radius: 4px;
+  }
+
+  .pd-gthumb {
+    flex: 0 0 180px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    scroll-snap-align: start;
+    background: #111;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative;
+  }
+  .pd-gthumb:hover { border-color: var(--primary); transform: translateY(-2px); }
+
+  .pd-gthumb-video {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: linear-gradient(135deg,#1a1a2e,#16213e);
+  }
+
+  .pd-gmodal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.92);
+    align-items: center; justify-content: center;
+  }
+  .pd-gmodal-overlay.pd-gopen { display: flex; }
+
+  .pd-gmodal-box {
+    display: flex;
+    width: 94vw; height: 88vh;
+    max-width: 1200px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #111;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+  }
+
+  .pd-gmodal-sidebar {
+    width: 160px;
+    flex: 0 0 160px;
+    background: #0d0d0d;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+  }
+  .pd-gmodal-sidebar::-webkit-scrollbar { width: 3px; }
+  .pd-gmodal-sidebar::-webkit-scrollbar-thumb { background:#333; border-radius:3px; }
+
+  .pd-gside-thumb {
+    flex: 0 0 90px;
+    height: 90px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s;
+    background: #1a1a1a;
+    position: relative;
+  }
+  .pd-gside-thumb:hover,
+  .pd-gside-thumb.pd-gside-active { border-color: var(--primary); }
+
+  .pd-gside-video-ph {
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(135deg,#1a1a2e,#16213e);
+  }
+
+  .pd-gside-cap {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.6);
+    color: #eee; font-size: 9px;
+    margin: 0; padding: 2px 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .pd-gmodal-main {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    overflow: hidden;
+  }
+
+  .pd-gviewer {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pd-gviewer img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain; border-radius: 4px;
+  }
+  .pd-gviewer iframe {
+    width: 100%; height: 100%; border: none;
+  }
+
+  .pd-gnav {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    border: none; cursor: pointer;
+    color: #fff; border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10; transition: background 0.2s;
+  }
+  .pd-gnav:hover { background: var(--primary); }
+  .pd-gnav-prev { left: 12px; }
+  .pd-gnav-next { right: 12px; }
+
+  .pd-gclose {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,0,0,0.6); border: none;
+    color: #fff; cursor: pointer;
+    border-radius: 50%; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 11; transition: background 0.2s;
+  }
+  .pd-gclose:hover { background: var(--primary); }
+
+  .pd-gcaption {
+    position: absolute; bottom: 36px;
+    left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    color: #eee; font-size: 13px;
+    padding: 4px 14px; border-radius: 20px;
+    max-width: 70%; text-align: center;
+    pointer-events: none;
+  }
+  .pd-gcounter {
+    position: absolute; bottom: 10px; right: 14px;
+    color: #888; font-size: 12px;
+  }
+
+  @media (max-width: 640px) {
+    .pd-gmodal-sidebar { display: none; }
+    .pd-gmodal-box { width: 100vw; height: 100vh; border-radius: 0; }
+  }
+
+  /* PD Responsive grid */
+  #pd-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 1023px) {
+    #pd-grid { grid-template-columns: 1fr; }
+    #pd-sidebar { position: relative !important; top: auto !important; }
+  }
+
+  @keyframes pdFadeUp {
+    from { opacity:0; transform:translateY(14px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .pd-fade { animation: pdFadeUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
 </style>
 <!-- Fonts loaded in <head> so icons render before JS -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,634 +314,78 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-    .stats-bar {
-        display: flex;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-        overflow: hidden;
-        margin-bottom: 28px;
-    }
-
-    .stats-bar-item {
-        flex: 1;
-        text-align: center;
-        padding: 20px 12px;
-        border-right: 1px solid var(--border);
-    }
-
-    .stats-bar-item:last-child {
-        border-right: none;
-    }
-
-    .stats-bar-value {
-        font-size: 26px;
-        font-weight: 700;
-        color: var(--primary);
-    }
-
-    .stats-bar-label {
-        font-size: 11px;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 4px;
-    }
-
-    .announce-strip {
-        background: var(--primary-light);
-        border: 1px solid #c8d8f0;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin-bottom: 24px;
-        display: flex;
-        gap: 28px;
-        align-items: center;
-        overflow-x: auto;
-        font-size: 13px;
-        color: var(--primary);
-        font-weight: 500;
-    }
-
-    .announce-strip span::before {
-        content: "📢 ";
-    }
-
-    .hero-wrap {
-        position: relative;
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 28px;
-        height: 280px;
-        background: var(--primary);
-    }
-
-    .hero-slide {
-        display: none;
-        height: 280px;
-        position: relative;
-    }
-
-    .hero-slide.active {
-        display: block;
-    }
-
-    .hero-slide img {
-        width: 100%;
-        height: 280px;
-        object-fit: cover;
-    }
-
-    .hero-slide-caption {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
-        color: #fff;
-        padding: 20px 24px;
-        font-size: 16px;
-        font-weight: 600;
-    }
-
-    .hero-dots {
-        position: absolute;
-        bottom: 12px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 6px;
-        z-index: 15;
-    }
-
-    .hero-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        border: none;
-        padding: 0;
-        cursor: pointer;
-        background: rgba(255, 255, 255, 0.4);
-    }
-
-    .hero-dot.active {
-        background: #fff;
-    }
-
-    .hero-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(0, 0, 0, 0.35);
-        color: #fff;
-        border: none;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        font-size: 24px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-        transition: background 0.2s;
-    }
-
-    .hero-nav:hover {
-        background: rgba(0, 0, 0, 0.6);
-    }
-
-    .hero-prev {
-        left: 12px;
-    }
-
-    .hero-next {
-        right: 12px;
-    }
-
-    /* ── Program Grid ── */
-    .section-programs,
-    .section-announcements {
-        padding: 20px 0 40px;
-    }
-
-    .section-header {
-        margin-bottom: 28px;
-    }
-
-    .section-title {
-        font-size: 24px;
-        font-weight: 800;
-        color: var(--text);
-        margin: 0 0 4px;
-    }
-
-    .section-sub {
-        font-size: 14px;
-        color: var(--muted);
-        margin: 0;
-    }
-
-    .prog-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 24px;
-    }
-
-    .prog-card {
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-        overflow: hidden;
-        cursor: pointer;
-        transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
-            box-shadow 0.22s ease;
-        outline: none;
-        border: 1.5px solid transparent;
-    }
-
-    .prog-card:hover,
-    .prog-card:focus {
-        transform: translateY(-6px) scale(1.015);
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.13);
-        border-color: var(--primary);
-    }
-
-    .prog-thumb {
-        position: relative;
-        height: 180px;
-        overflow: hidden;
-        background: var(--primary-light);
-    }
-
-    .prog-thumb img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.35s ease;
-    }
-
-    .prog-card:hover .prog-thumb img {
-        transform: scale(1.05);
-    }
-
-    .prog-thumb-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 72px;
-        font-weight: 900;
-        color: var(--primary);
-        opacity: 0.12;
-    }
-
-    .fill-bar-track {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.3);
-    }
-
-    .fill-bar-fill {
-        height: 4px;
-        transition: width 0.6s ease;
-        border-radius: 0 2px 2px 0;
-    }
-
-    .fill-danger {
-        background: #ef4444;
-    }
-
-    .fill-warning {
-        background: #f59e0b;
-    }
-
-    .fill-info {
-        background: #3b82f6;
-    }
-
-    .fill-success {
-        background: #10b981;
-    }
-
-    .prog-status-badge {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 3px 10px;
-        border-radius: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        z-index: 5;
-    }
-
-    .badge-open {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .badge-closed {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .prog-body {
-        padding: 18px 20px 20px;
-    }
-
-    .prog-name {
-        font-size: 17px;
-        font-weight: 700;
-        color: var(--text);
-        margin: 0 0 8px;
-        line-height: 1.3;
-    }
-
-    .fill-badge {
-        display: inline-block;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 3px 9px;
-        border-radius: 20px;
-        margin-bottom: 10px;
-    }
-
-    .fill-badge.fill-danger {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .fill-badge.fill-warning {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .fill-badge.fill-info {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .fill-badge.fill-success {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .prog-desc {
-        font-size: 13px;
-        color: var(--muted);
-        line-height: 1.6;
-        margin-bottom: 12px;
-        min-height: 40px;
-    }
-
-    .prog-meta-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 14px;
-    }
-
-    .prog-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 12px;
-        color: var(--muted);
-    }
-
-    .prog-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .btn-apply-now {
-        display: inline-flex;
-        align-items: center;
-        background: var(--primary, #c8a14b);
-        color: #fff;
-        padding: 8px 14px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        border: 1px solid #d1d5db;
-        cursor: pointer;
-        transition: background 0.15s, opacity 0.15s;
-        white-space: nowrap;
-        flex: 1;
-        justify-content: center;
-    }
-
-    .btn-apply-now:hover:not(:disabled) {
-        background: #fdf9f3;
-        color: #141313;
-    }
-
-    .btn-apply-now:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .prog-brochure-row {
-        margin-top: 12px;
-        padding-top: 8px;
-        border-top: 1px solid var(--border);
-    }
-
-    .btn-brochure-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        color: var(--muted);
-        font-size: 12px;
-        text-decoration: none;
-        transition: color 0.15s;
-    }
-
-    .btn-brochure-link:hover {
-        color: var(--primary);
-    }
-
-    .btn-view-details {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-
-        background: #ffffff;
-        /* white background */
-        color: #141414;
-        /* dark text */
-        border: 1px solid #d1d5db;
-        /* light border */
-
-        padding: 8px 16px;
-        border-radius: 8px;
-
-        font-size: 13px;
-        font-weight: 600;
-        text-decoration: none;
-
-        transition: none;
-        /* remove hover animation */
-        flex: 1;
-        justify-content: center;
-    }
-
-    .btn-view-details:hover {
-        opacity: 0.9;
-        color: #454343;
-    }
-
-    .btn-brochure {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        border: 1.5px solid var(--primary);
-        color: var(--primary);
-        padding: 7px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.15s;
-        white-space: nowrap;
-    }
-
-    .btn-brochure:hover {
-        background: var(--primary);
-        color: #fff;
-    }
-
-    .empty-programs {
-        grid-column: 1/-1;
-        text-align: center;
-        padding: 60px 20px;
-        color: var(--muted);
-    }
-
-    /* ── Announcement Grid ── */
-    .ann-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 20px;
-    }
-
-    .ann-card {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-        overflow: hidden;
-        cursor: pointer;
-        transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
-            box-shadow 0.22s ease;
-        border: 1.5px solid transparent;
-    }
-
-    .ann-card:hover,
-    .ann-card:focus {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-        border-color: var(--secondary);
-        outline: none;
-    }
-
-    .ann-img {
-        height: 150px;
-        overflow: hidden;
-        background: var(--primary-light);
-    }
-
-    .ann-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.35s ease;
-    }
-
-    .ann-card:hover .ann-img img {
-        transform: scale(1.05);
-    }
-
-    .ann-img-placeholder {
-        height: 150px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary);
-        opacity: 0.35;
-        background: var(--primary-light);
-    }
-
-    .ann-body {
-        padding: 16px 18px 18px;
-    }
-
-    .ann-type-badge {
-        display: inline-block;
-        font-size: 10px;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
-    }
-
-    .ann-badge-event {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .ann-badge-announcement {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .ann-badge-alert {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .ann-badge-notice {
-        background: #e0e7ff;
-        color: #3730a3;
-    }
-
-    .ann-badge-news {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .ann-badge-general {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    .ann-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--text);
-        margin: 0 0 6px;
-        line-height: 1.35;
-    }
-
-    .ann-summary {
-        font-size: 13px;
-        color: var(--muted);
-        line-height: 1.5;
-        margin: 0 0 10px;
-    }
-
-    .ann-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
-
-    .ann-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 11px;
-        color: var(--muted);
-    }
-
-    .ann-author {
-        font-style: italic;
-    }
-
-    .ann-view-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        color: var(--primary);
-        font-size: 13px;
-        font-weight: 600;
-        text-decoration: none;
-    }
-
-    .ann-view-link:hover {
-        text-decoration: underline;
-    }
-
-    @media (max-width: 600px) {
-        .prog-grid {
-            grid-template-columns: 1fr !important;
-        }
-
-        .ann-grid {
-            grid-template-columns: 1fr !important;
-        }
-
-        .stats-bar {
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .stats-bar>* {
-            flex: 1 1 calc(50% - 8px);
-            min-width: 0;
-        }
-
-        .hero-section {
-            padding: 24px 16px;
-        }
-
-        .hero-section h1 {
-            font-size: 22px;
-        }
-
-        .adm-container {
-            padding: 0 14px;
-        }
-    }
+  /* Apply Lexend globally on this page */
+  body, .adm-main, .adm-container { font-family: 'Lexend', system-ui, sans-serif !important; }
+
+  /* Hide the base template footer — this page has its own */
+  .adm-footer { display: none !important; }
+
+  /* Full-bleed breakout utility */
+  .full-bleed {
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    width: 100vw;
+    position: relative;
+  }
+
+  /* Hero slide */
+  .hero-slide {
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    position: absolute;
+    inset: 0;
+  }
+  .hero-slide.active { opacity: 1; z-index: 10; }
+
+  /* Ken Burns */
+  .ken-burns { animation: kenburns 20s ease-in-out infinite alternate; }
+  @keyframes kenburns {
+    0%   { transform: scale(1); }
+    100% { transform: scale(1.12) translateY(-2%); }
+  }
+
+  /* Slide content stagger */
+  .slide-content > * {
+    opacity: 0; transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+  .active .slide-content > *          { opacity: 1; transform: translateY(0); }
+  .active .slide-content > *:nth-child(1) { transition-delay: 0.2s; }
+  .active .slide-content > *:nth-child(2) { transition-delay: 0.4s; }
+  .active .slide-content > *:nth-child(3) { transition-delay: 0.6s; }
+  .active .slide-content > *:nth-child(4) { transition-delay: 0.8s; }
+
+  /* Scroll fade-up */
+  .fade-card {
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  }
+  .fade-card.visible { opacity: 1; transform: translateY(0); }
+
+  /* Back to top */
+  #back-to-top { opacity:0; visibility:hidden; transition:all 0.3s ease; }
+  #back-to-top.visible { opacity:1; visibility:visible; }
+
+  /* Program card hover lift */
+  .prog-card {
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.25s ease;
+  }
+  .prog-card:hover {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: 0 20px 48px rgba(0,0,0,0.14);
+  }
+
+  /* Announcement card hover */
+  .ann-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .ann-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+
+  /* Event card hover */
+  .evt-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .evt-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+
+  /* Responsive: hide overflow */
+  body { overflow-x: hidden; }
 </style>
 {% endblock %}
 
@@ -810,172 +518,62 @@
       </div>
       {% endif %}
     </div>
-    {% endfor %}
-
-    <button class="hero-nav hero-prev" id="heroPrev" aria-label="Previous">&#8249;</button>
-    <button class="hero-nav hero-next" id="heroNext" aria-label="Next">&#8250;</button>
-
-    {% set total_slides = (_slides | length + (1 if _hero_img else 0)) %}
-    {% if total_slides > 1 %}
-    <div class="hero-dots" id="heroDots">
-        {% for i in range(total_slides) %}
-        <button class="hero-dot {% if loop.first %}active{% endif %}" data-idx="{{ loop.index0 }}"></button>
-        {% endfor %}
+    <div style="display:flex;gap:10px;flex-shrink:0;">
+      {% if _brochure %}
+      <a href="{{ _brochure }}" target="_blank"
+         style="display:inline-flex;align-items:center;gap:8px;
+                padding:10px 20px;border-radius:10px;
+                background:#f1f5f9;color:#475569;font-size:13px;
+                font-weight:700;text-decoration:none;
+                border:1.5px solid #e2e8f0;"
+         onmouseover="this.style.background='#e2e8f0'"
+         onmouseout="this.style.background='#f1f5f9'">
+        <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+        Brochure
+      </a>
+      {% endif %}
+      <a href="/application_form/new?program={{ _slug }}"
+         style="display:inline-flex;align-items:center;gap:8px;
+                padding:10px 24px;border-radius:10px;font-size:13px;
+                font-weight:700;color:white;text-decoration:none;
+                background:var(--primary);
+                box-shadow:0 4px 12px -2px rgba(26,60,110,0.3);"
+         onmouseover="this.style.opacity='0.88'"
+         onmouseout="this.style.opacity='1'">
+        Apply Now
+      </a>
     </div>
   </div>
 
-<!-- Announcement banner -->
-{% if _show_ann and _ann_text %}
-<div
-    style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:12px 20px;margin-bottom:20px;font-size:14px;color:#856404;">
-    📢 {{ _ann_text | safe }}
-</div>
-{% endif %}
-
-<!-- Stats bar -->
-{% if stats %}
-<div class="stats-bar">
-    <div class="stats-bar-item">
-        <div class="stats-bar-value">{{ stats.total_programs or (programs | length) }}</div>
-        <div class="stats-bar-label">Programs</div>
-    </div>
-    <div class="stats-bar-item">
-        <div class="stats-bar-value">{{ stats.total_seats or "—" }}</div>
-        <div class="stats-bar-label">Total Seats</div>
-    </div>
-    <div class="stats-bar-item">
-        <div class="stats-bar-value">{{ stats.days_remaining if stats.days_remaining is not none else "—" }}</div>
-        <div class="stats-bar-label">Days Left</div>
-    </div>
-    <div class="stats-bar-item">
-        <div class="stats-bar-value" style="font-size:18px;">
-            {{ frappe.utils.formatdate(stats.apply_by, "dd MMM") if stats.apply_by else "—" }}
-        </div>
-        <div class="stats-bar-label">Apply By</div>
-    </div>
-</div>
-{% endif %}
-
-<!-- ═══ PROGRAMS SECTION ═══ -->
-<section class="section-programs">
-    <div class="section-header">
-        <h2 class="section-title">Programs</h2>
-        <p class="section-sub">{{ programs|length }} program{{ 's' if programs|length != 1 }} available this cycle</p>
-    </div>
-
-    <div class="prog-grid">
-        {% for p in programs %}
-        <article class="prog-card" tabindex="0" onclick="window.location='/admission/{{ p.program_slug }}'"
-            role="button" aria-label="View {{ p.program_name }} details">
-
-            <!-- Thumbnail / placeholder -->
-            <div class="prog-thumb">
-                {% set _pimg = p.featured_image or p.get('featured_image') %}
-                {% if _pimg %}
-                <img src="{{ _pimg }}" alt="{{ p.program_name }}" loading="lazy">
-                {% else %}
-                <div class="prog-thumb-placeholder">
-                    {{ (p.program_abbreviation or p.program_name[0]) | upper }}
-                </div>
-                {% endif %}
-
-                <!-- Fill bar overlay at bottom of image -->
-                {% if p.fill_pct %}
-                <div class="fill-bar-track">
-                    <div class="fill-bar-fill {{ p.fill_class }}" style="width:{{ p.fill_pct }}%"></div>
-                </div>
-                {% endif %}
-
-                <!-- Status badge top-right -->
-                <span class="prog-status-badge {% if app_open %}badge-open{% else %}badge-closed{% endif %}">
-                    {% if app_open %}Open{% else %}Closed{% endif %}
-                </span>
-            </div>
-
-            <!-- Card body -->
-            <div class="prog-body">
-                <h3 class="prog-name">{{ p.program_name }}</h3>
-
-                <!-- Fill capacity badge -->
-                {% if p.fill_badge %}
-                <span class="fill-badge {{ p.fill_class }}">{{ p.fill_badge }}</span>
-                {% endif %}
-
-                <!-- Plain description (20 words) -->
-                {% if p.desc_short %}
-                <p class="prog-desc">{{ p.desc_short }}</p>
-                {% endif %}
-
-                <!-- Seats row -->
-                <div class="prog-meta-row">
-                    <span class="prog-meta-item">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                        </svg>
-                        {{ p.seats or 0 }} seats
-                    </span>
-                    {% if p.eligibility_hint %}
-                    <span class="prog-meta-item">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        {{ p.eligibility_hint | truncate(40, True) }}
-                    </span>
-                    {% endif %}
-                </div>
-
-                <!-- Action row -->
-                <div class="prog-actions">
-                    <a href="/admission/{{ p.program_slug }}" class="btn-view-details"
-                        onclick="event.stopPropagation()">
-                        View Details
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                    </a>
-
-                    <button class="btn-apply-now"
-                        onclick="event.stopPropagation(); handleApplyNow('{{ p.program_slug }}', '{{ p.program }}', '{{ p.program_name | replace("'", "&apos;") }}'
-                        )" {% if not app_open %}disabled title="Applications closed" {% endif %}>
-                        Apply Now
-                    </button>
-                </div>
-
-                <!-- Brochure row -->
-                {% if p.brochure_url %}
-                <div class="prog-brochure-row">
-                    <a href="{{ p.brochure_url }}" target="_blank" class="btn-brochure-link"
-                        onclick="event.stopPropagation()">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        Download Brochure
-                    </a>
-                </div>
-                {% endif %}
-            </div>
-        </article>
+  {# ══ GALLERY STRIP ══ #}
+  {% if _media %}
+  <section class="pd-gallery-section pd-fade" style="padding:24px 0 0 0; animation-delay:0.08s;">
+    <div class="pd-gallery-strip" id="pdGalleryStrip">
+      {% for item in _media %}
+      {% set _loop_index = loop.index0 %}
+      <div class="pd-gthumb"
+           onclick="pdGalleryOpen({{ _loop_index }})"
+           title="{{ item.caption or item.type }}">
+        {% if item.type == "Image" %}
+          <img src="{{ item.url }}" alt="{{ item.caption or 'Image' }}"
+               loading="lazy"
+               style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
         {% else %}
-
-        <div class="empty-programs">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-            </svg>
-            <p>No programs available for this cycle.</p>
-        </div>
-        {% endfor %}
-    </div><!-- .prog-grid -->
-</section>
+          <div class="pd-gthumb-video">
+            <span class="material-symbols-outlined" style="font-size:2rem;color:#fff;">
+              play_circle
+            </span>
+            {% if item.caption %}
+            <p style="font-size:11px;color:#eee;margin:4px 0 0;text-align:center;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                      max-width:140px;">{{ item.caption }}</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
 
   <!-- GALLERY MODAL -->
   <div id="pdGalleryModal" class="pd-gmodal-overlay" onclick="pdGalleryClose(event)">
@@ -1022,121 +620,544 @@
   </div>
   {% endif %}
 
-    <div class="ann-grid">
-        {% for a in announcements %}
-        <article class="ann-card ann-type-{{ (a.announcement_type or 'general') | lower }}"
-            onclick="window.location='/announcement/{{ a.name }}'" role="button" tabindex="0"
-            aria-label="Read {{ a.title }}">
-
-            <!-- Featured image -->
-            {% if a.featured_image %}
-            <div class="ann-img">
-                <img src="{{ a.featured_image }}" alt="{{ a.title }}" loading="lazy">
+  <div id="pd-grid" style="margin-top:24px;" class="pd-fade" style="animation-delay:0.1s;">
+    <div>
+      <div style="background:white;border-radius:16px;border:1.5px solid #e2e8f0;overflow:hidden;">
+        <div id="pd-tab-nav" style="display:flex;border-bottom:1px solid #f1f5f9;overflow-x:auto;">
+          <button class="pd-active" onclick="pdTab(this,'pd-curriculum')">Curriculum</button>
+          <button onclick="pdTab(this,'pd-eligibility')">Eligibility</button>
+          <button onclick="pdTab(this,'pd-career')">Career Prospects</button>
+          <button onclick="pdTab(this,'pd-faculty')">Faculty</button>
+        </div>
+        <div id="pd-curriculum" style="padding:28px;">
+          <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">What You'll Study</h3>
+          {% if _curric %}
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            {% for item in _curric %}
+            {% set _yl = item.year_label if item is mapping else item['year_label'] %}
+            {% set _cr = item.credits if item is mapping else item['credits'] %}
+            {% set _sj = item.subjects if item is mapping else item['subjects'] %}
+            {% set _ix = loop.index0 %}
+            <div id="pdc-{{ _ix }}" class="pd-curric-card {% if _ix == 0 %}pd-open{% endif %}">
+              <div onclick="pdCurric({{ _ix }})" style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;cursor:pointer;">
+                <h4 id="pdc-h-{{ _ix }}" style="font-size:15px;font-weight:700;margin:0;color:{% if _ix == 0 %}var(--primary){% else %}#0f172a{% endif %};">{{ _yl }}</h4>
+                {% if _cr %}<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;">{{ _cr }}</span>{% endif %}
+              </div>
+              <div id="pdc-b-{{ _ix }}" style="{% if _ix != 0 %}display:none;{% endif %}padding:0 20px 18px;border-top:1px solid #f1f5f9;">
+                {% if _sj %}<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;">{% for subj in _sj %}<li style="display:flex;align-items:center;gap:10px;font-size:14px;color:#475569;"><span class="material-symbols-outlined" style="font-size:18px;color:var(--primary);flex-shrink:0;">check_circle</span>{{ subj }}</li>{% endfor %}</ul>
+                {% else %}<p style="font-size:13px;color:#94a3b8;font-style:italic;margin:0;">Subjects will be updated soon.</p>{% endif %}
+              </div>
             </div>
-            {% else %}
-            <div class="ann-img ann-img-placeholder">
-                {% if a.announcement_type == 'Event' %}
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                {% else %}
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                {% endif %}
+            {% endfor %}
+          </div>
+          {% else %}<div style="padding:32px;text-align:center;"><span class="material-symbols-outlined" style="font-size:44px;color:#e2e8f0;display:block;margin-bottom:8px;">menu_book</span><p style="font-size:13px;color:#94a3b8;margin:0;">Curriculum details coming soon.</p></div>{% endif %}
+        </div>
+        <div id="pd-eligibility" style="padding:28px;display:none;">
+          <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">Eligibility Criteria</h3>
+          {% if _elig %}<div style="font-size:14px;color:#475569;line-height:1.75;margin-bottom:20px;">{{ _elig | safe }}</div>{% endif %}
+          {% if _erules %}<div style="display:flex;flex-direction:column;gap:12px;">{% for rule in _erules %}{% set _rn = (rule.get('rule_name') if rule.get else rule.rule_name) or '' %}{% set _rql = (rule.get('qualification_level') if rule.get else rule.qualification_level) or '' %}{% set _rrt = (rule.get('rule_type') if rule.get else rule.rule_type) or '' %}{% set _rcg = (rule.get('required_cgpa') if rule.get else rule.required_cgpa) or '' %}{% set _rpc = (rule.get('required_percentage') if rule.get else rule.required_percentage) or '' %}{% set _rds = (rule.get('description') if rule.get else rule.description) or '' %}<div style="padding:16px 20px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;"><div style="display:flex;align-items:center;gap:10px;{% if _rds %}margin-bottom:8px;{% endif %}"><span class="material-symbols-outlined" style="font-size:20px;color:var(--primary);flex-shrink:0;">verified</span><div><p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">{{ _rn }}</p>{% if _rql or _rrt %}<p style="font-size:12px;color:#64748b;margin:2px 0 0;">{{ _rql }}{% if _rql and _rrt %} · {% endif %}{{ _rrt }}{% if _rcg %} · Min CGPA: {{ _rcg }}{% endif %}{% if _rpc %} · Min {{ _rpc }}%{% endif %}</p>{% endif %}</div></div>{% if _rds %}<p style="font-size:13px;color:#475569;line-height:1.6;margin:0 0 0 30px;">{{ _rds }}</p>{% endif %}</div>{% endfor %}</div>{% endif %}
+          {% if not _elig and not _erules %}<div style="padding:32px;text-align:center;"><span class="material-symbols-outlined" style="font-size:44px;color:#e2e8f0;display:block;margin-bottom:8px;">checklist</span><p style="font-size:13px;color:#94a3b8;margin:0;">Eligibility details will be updated soon.</p></div>{% endif %}
+        </div>
+        <div id="pd-career" style="padding:28px;display:none;">
+          <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">Career Opportunities</h3>
+          {% if _career %}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">{% for c in _career %}{% set _ct = c.title if c is mapping else c['title'] %}{% set _ci = c.icon if c is mapping else c['icon'] %}{% set _cs = c.salary if c is mapping else c['salary'] %}{% set _cd = c.description if c is mapping else c['description'] %}<div class="pd-career-card"><span class="material-symbols-outlined" style="font-size:32px;color:var(--primary);flex-shrink:0;margin-top:2px;">{{ _ci or 'work' }}</span><div><p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">{{ _ct }}</p>{% if _cs %}<p style="font-size:12px;color:#64748b;margin:3px 0 0;">{{ _cs }}</p>{% endif %}{% if _cd %}<p style="font-size:12px;color:#94a3b8;margin:5px 0 0;line-height:1.5;">{{ _cd }}</p>{% endif %}</div></div>{% endfor %}</div>
+          {% else %}<div style="padding:32px;text-align:center;"><span class="material-symbols-outlined" style="font-size:44px;color:#e2e8f0;display:block;margin-bottom:8px;">business_center</span><p style="font-size:13px;color:#94a3b8;margin:0;">Career information coming soon.</p></div>{% endif %}
+        </div>
+        <div id="pd-faculty" style="padding:28px;display:none;">
+          <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">Faculty</h3>
+          {% if _faculty %}<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:16px;">{% for f in _faculty %}{% set _fn = f.name if f is mapping else f['name'] %}{% set _fd = f.designation if f is mapping else f['designation'] %}{% set _fs = f.specialization if f is mapping else f['specialization'] %}{% set _fp = f.photo if f is mapping else f['photo'] %}{% set _fu = f.profile_url if f is mapping else f['profile_url'] %}<div class="pd-faculty-card">{% if _fp %}<img src="{{ _fp }}" alt="{{ _fn }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid rgba(26,60,110,0.1);">{% else %}<div style="width:64px;height:64px;border-radius:50%;background:rgba(26,60,110,0.08);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--primary);">{{ _fn[0]|upper if _fn else 'F' }}</div>{% endif %}<p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">{{ _fn }}</p>{% if _fd %}<p style="font-size:12px;color:#64748b;margin:0;">{{ _fd }}</p>{% endif %}{% if _fs %}<p style="font-size:11px;color:#94a3b8;margin:0;">{{ _fs }}</p>{% endif %}{% if _fu %}<a href="{{ _fu }}" style="font-size:12px;color:var(--primary);font-weight:600;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">View Profile</a>{% endif %}</div>{% endfor %}</div>
+          {% else %}<div style="padding:32px;text-align:center;"><span class="material-symbols-outlined" style="font-size:44px;color:#e2e8f0;display:block;margin-bottom:8px;">groups</span><p style="font-size:13px;color:#94a3b8;margin:0;">Faculty profiles coming soon.</p></div>{% endif %}
+        </div>
+      </div>
+      {% if _desc %}<div style="background:white;border-radius:16px;padding:28px;border:1.5px solid #e2e8f0;margin-top:20px;"><h3 style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 14px;">About This Program</h3><div style="font-size:14px;color:#475569;line-height:1.78;">{{ _desc | safe }}</div></div>{% endif %}
+    </div>
+    <div id="pd-sidebar" style="position:sticky;top:80px;">
+      <div style="background:white;border-radius:16px;padding:28px;border:1.5px solid #e2e8f0;margin-bottom:16px;">
+        <h4 style="font-size:16px;font-weight:700;color:#0f172a;margin:0 0 20px;">Admission Details</h4>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          {% if _intake %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Admission Via</p><p style="font-size:14px;color:#475569;margin:0;">{{ _intake }}</p></div>{% endif %}
+          {% if _dur %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Duration</p><p style="font-size:14px;color:#475569;margin:0;">{{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)</p></div>{% endif %}
+          {% if _elig %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Eligibility</p><div style="font-size:13px;color:#475569;line-height:1.6;">{{ _elig[:180] | striptags }}{% if _elig|length > 180 %}…{% endif %}</div></div>{% elif _erules %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Eligibility</p>{% set _fr = _erules[0] %}<p style="font-size:13px;color:#475569;margin:0;line-height:1.6;">{{ (_fr.get('description') if _fr.get else _fr.description) or (_fr.get('rule_name') if _fr.get else _fr.rule_name) or 'See Eligibility tab for details.' }}</p></div>{% endif %}
+          {% if _fee %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Application Fee</p><p style="font-size:14px;color:#475569;margin:0;">{{ _fee }}</p></div>{% endif %}
+          <div style="padding-top:12px;border-top:1px solid #f1f5f9;"><a href="/application_form/new?program={{ _slug }}" style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">Apply Now</a>{% if _deadline %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Application deadline: {{ _deadline }}</p>{% elif active_cycle %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Cycle: {{ active_cycle.name }}</p>{% endif %}</div>
+        </div>
+      </div>
+      <div style="background:#0f172a;border-radius:16px;padding:28px;position:relative;overflow:hidden;"><div style="position:relative;z-index:2;"><h4 style="font-size:16px;font-weight:700;color:white;margin:0 0 8px;">Questions?</h4><p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0 0 20px;">Connect with our admissions team to learn more about this program.</p><a href="mailto:{{ support_email or 'admissions@nlsiu.ac.in' }}" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--secondary);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Contact Admissions<span class="material-symbols-outlined" style="font-size:18px;">arrow_forward</span></a></div><div style="position:absolute;right:-18px;bottom:-18px;opacity:0.1;"><span class="material-symbols-outlined" style="font-size:120px;color:white;">contact_support</span></div></div>
+    </div>
+  </div>
+  <footer style="margin-top:40px;padding-top:20px;border-top:1px solid #e2e8f0;"><div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;"><p style="font-size:12px;color:#94a3b8;margin:0;">National Law School of India University — Admissions Portal</p><div style="display:flex;gap:20px;"><a href="/admission" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">All Programs</a><a href="/merit-and-scholarship/admission_dashboard" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">Dashboard</a></div></div></footer>
+</div>
+</div>
+{% endif %}
+
+{% else %}
+{# ── EXISTING LISTING VIEW ─────────────────────────────────────── #}
+{# ── Config extraction ─────────────────────────────── #}
+{% if portal_config and portal_config.get %}
+  {% set _title    = portal_config.get('portal_title')    or 'Admissions' %}
+  {% set _tagline  = portal_config.get('portal_tagline')  or portal_config.get('portal_subtitle') or '' %}
+  {% set _since    = portal_config.get('institution_since') or '' %}
+  {% set _slides   = portal_config.get('slideshow_images') or [] %}
+  {% set _hero_img = portal_config.get('hero_image') or '' %}
+  {% set _show_ann = portal_config.get('show_announcement') or 0 %}
+  {% set _ann_text = portal_config.get('header_announcement') or '' %}
+  {% set _login_req= portal_config.get('login_required_for_application') %}
+  {% set _cta1     = portal_config.get('hero_cta_label')  or 'Explore Programs' %}
+  {% set _cta2     = portal_config.get('hero_cta2_label') or 'Virtual Tour' %}
+  {% set _f_addr   = portal_config.get('footer_address')  or '' %}
+  {% set _f_phone  = portal_config.get('footer_phone')    or '' %}
+  {% set _f_email  = portal_config.get('footer_email') or portal_config.get('contact_email') or '' %}
+{% elif portal_config %}
+  {% set _title    = portal_config.portal_title    or 'Admissions' %}
+  {% set _tagline  = portal_config.portal_subtitle or '' %}
+  {% set _since    = portal_config.institution_since or '' %}
+  {% set _slides   = portal_config.slideshow_images or [] %}
+  {% set _hero_img = portal_config.hero_image or '' %}
+  {% set _show_ann = portal_config.show_announcement or 0 %}
+  {% set _ann_text = portal_config.header_announcement or '' %}
+  {% set _login_req= portal_config.login_required_for_application %}
+  {% set _cta1     = portal_config.hero_cta_label  or 'Explore Programs' %}
+  {% set _cta2     = portal_config.hero_cta2_label or 'Virtual Tour' %}
+  {% set _f_addr   = portal_config.footer_address  or '' %}
+  {% set _f_phone  = portal_config.footer_phone    or '' %}
+  {% set _f_email  = portal_config.contact_email   or '' %}
+{% else %}
+  {% set _title='Admissions' %} {% set _tagline='' %} {% set _since='' %}
+  {% set _slides=[] %} {% set _hero_img='' %}
+  {% set _show_ann=0 %} {% set _ann_text='' %} {% set _login_req=1 %}
+  {% set _cta1='Explore Programs' %} {% set _cta2='Virtual Tour' %}
+  {% set _f_addr='' %} {% set _f_phone='' %} {% set _f_email='' %}
+{% endif %}
+
+{% set _total_slides = (_slides|length) + (1 if _hero_img else 0) %}
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<div class="full-bleed" style="height:600px;overflow:hidden;">
+
+  <!-- Slide: hero_image (if set) -->
+  {% if _hero_img %}
+  <div class="hero-slide active">
+    <div class="ken-burns absolute inset-0 bg-cover bg-center"
+         style="background-image:linear-gradient(to bottom,rgba(16,24,34,0.4),rgba(16,24,34,0.85)),url('{{ _hero_img }}')"></div>
+    <div class="slide-content relative z-10 flex h-full flex-col items-center justify-center px-6 text-center mx-auto" style="max-width:1200px">
+      {% if _since %}<span class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm">Est. {{ _since }} • Excellence in Education</span>{% endif %}
+      <h1 class="max-w-4xl text-5xl font-black leading-tight text-white md:text-7xl">{{ _title }}</h1>
+      {% if _tagline %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</p>{% endif %}
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="#programs" class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform" style="background:var(--primary)">{{ _cta1 }}</a>
+        <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Slides: slideshow_images -->
+  {% for slide in _slides %}
+  {% set _simg = slide.get('image') if slide.get else slide.image %}
+  {% set _scap = slide.get('caption') if slide.get else slide.caption %}
+  {% set _ssub = slide.get('subtitle') if slide.get else '' %}
+  {% set _stag = slide.get('tag') if slide.get else '' %}
+  <div class="hero-slide {% if not _hero_img and loop.first %}active{% endif %}">
+    <div class="ken-burns absolute inset-0 bg-cover bg-center"
+         style="background-image:linear-gradient(to bottom,rgba(16,24,34,0.4),rgba(16,24,34,0.85)),url('{{ _simg or '' }}')"></div>
+    <div class="slide-content relative z-10 flex h-full flex-col items-center justify-center px-6 text-center mx-auto" style="max-width:1200px">
+      {% if _stag %}<span class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm">{{ _stag }}</span>{% endif %}
+      <h1 class="max-w-4xl text-5xl font-black leading-tight text-white md:text-7xl">{{ _scap or _title }}</h1>
+      {% if _ssub %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _ssub }}</p>{% endif %}
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="#programs" class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform" style="background:var(--primary)">{{ _cta1 }}</a>
+        <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Fallback: no images configured -->
+  {% if _total_slides == 0 %}
+  <div class="hero-slide active">
+    <div class="ken-burns absolute inset-0"
+         style="background:linear-gradient(135deg,var(--primary) 0%,#0d2040 60%,#1a1a2e 100%)"></div>
+    <!-- subtle radial overlay for depth -->
+    <div class="absolute inset-0" style="background:radial-gradient(ellipse at 30% 60%,rgba(255,255,255,0.06) 0%,transparent 60%)"></div>
+    <div class="slide-content relative z-10 flex h-full flex-col items-center justify-center px-6 text-center mx-auto" style="max-width:1200px">
+      {% if _since %}<span class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white">Est. {{ _since }} • Excellence in Education</span>{% endif %}
+      <h1 class="max-w-4xl text-5xl font-black leading-tight text-white md:text-7xl">{{ _title }}</h1>
+      {% if _tagline %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</p>{% endif %}
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="#programs" class="rounded-xl bg-white px-8 py-4 text-lg font-bold hover:scale-105 transition-transform" style="color:var(--primary)">{{ _cta1 }}</a>
+        <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+<!-- END HERO -->
+
+<!-- ══ ANNOUNCEMENT BANNER ══════════════════════════════════════════ -->
+{% if (_show_ann and _ann_text) or (active_cycle and active_cycle.application_end) %}
+<div class="full-bleed" style="position:relative;z-index:20;margin-top:-48px;">
+  <div style="max-width:960px;margin:0 auto;padding:0 16px;">
+    <div class="flex flex-col items-center justify-between gap-6 rounded-2xl bg-white p-6 shadow-xl md:flex-row md:p-8"
+         style="border:1px solid rgba(26,60,110,0.15);">
+      <div class="flex items-center gap-4">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+             style="background:rgba(26,60,110,0.08);color:var(--primary)">
+          <span class="material-symbols-outlined">campaign</span>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">
+            {% if _show_ann and _ann_text %}{{ _ann_text | safe }}
+            {% else %}Admissions {{ active_cycle.name }} Now Open!{% endif %}
+          </h3>
+          {% if active_cycle and active_cycle.application_end %}
+          <p class="text-slate-500 text-sm">
+            Applications closing on <strong>{{ frappe.utils.formatdate(active_cycle.application_end, "dd MMM yyyy") }}</strong>
+          </p>
+          {% endif %}
+        </div>
+      </div>
+      <a href="#programs"
+         class="w-full whitespace-nowrap rounded-xl px-8 py-3 font-bold text-white hover:opacity-90 md:w-auto text-center"
+         style="background:var(--primary)">
+        Apply Today
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+<!-- END BANNER -->
+
+<!-- ══ STATS BAR ════════════════════════════════════════════════════ -->
+<!-- {% if stats %}
+<div class="mt-16 grid grid-cols-2 overflow-hidden rounded-2xl bg-white shadow-sm md:grid-cols-4"
+     style="border:1px solid rgba(26,60,110,0.08);">
+  <div class="border-b border-r border-slate-100 p-6 text-center md:border-b-0">
+    <div class="text-3xl font-black" style="color:var(--primary)">{{ stats.total_programs or (programs|length) }}</div>
+    <div class="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">Programs</div>
+  </div>
+  <div class="border-b border-slate-100 p-6 text-center md:border-b-0 md:border-r">
+    <div class="text-3xl font-black" style="color:var(--primary)">{{ stats.total_seats or "—" }}</div>
+    <div class="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">Total Seats</div>
+  </div>
+  <div class="border-r border-slate-100 p-6 text-center">
+    <div class="text-3xl font-black" style="color:var(--primary)">{{ stats.days_remaining if stats.days_remaining is not none else "—" }}</div>
+    <div class="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">Days Left</div>
+  </div>
+  <div class="p-6 text-center">
+    <div class="text-2xl font-black" style="color:var(--primary)">{{ frappe.utils.formatdate(stats.apply_by,"dd MMM") if stats.apply_by else "—" }}</div>
+    <div class="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">Apply By</div>
+  </div>
+</div>
+{% endif %} -->
+<!-- END STATS -->
+
+<!-- ══ PROGRAMS ══════════════════════════════════════════════════════ -->
+<section id="programs" class="py-20">
+  <div class="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
+    <div>
+      <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Academic Programs</h2>
+      <p class="mt-2 text-slate-500">
+        {{ programs|length }} program{{ 's' if programs|length != 1 }}
+        {% if active_cycle %} available — {{ active_cycle.name }}{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="grid gap-8" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
+    {% for p in programs %}
+    {% set _slug  = p.get('program_slug') if p.get else (p.program_slug or '') %}
+    {% set _img   = p.get('program_image') or p.get('featured_image') if p.get else (p.program_image or p.featured_image or '') %}
+    {% set _name  = p.get('program_name') if p.get else (p.program_name or '') %}
+    {% set _abbr  = p.get('program_abbreviation') if p.get else (p.program_abbreviation or '') %}
+    {% set _desc  = (p.get('desc_short') or (p.get('desciption') or '')[:120]) if p.get else ((p.desc_short or '') or (p.desciption or '')[:120]) %}
+    {% set _seats = (p.get('seats') or p.get('total_seats') or 0) if p.get else (p.seats or p.total_seats or 0) %}
+    {% set _dur   = p.get('duration') or '' if p.get else (p.duration or '') %}
+    {% set _level = p.get('program_level') or '' if p.get else (p.program_level or '') %}
+    {% set _can   = p.get('can_apply') if p.get else p.can_apply %}
+    {% set _cur   = p.get('current_stage_name') or '' if p.get else (p.current_stage_name or '') %}
+    {% set _bro   = p.get('brochure_url') or '' if p.get else (p.brochure_url or '') %}
+    {% set _pid   = p.get('program') or p.get('name') if p.get else (p.program or p.name or '') %}
+
+    <article class="prog-card fade-card flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm"
+             style="border:1.5px solid rgba(26,60,110,0.06);cursor:pointer;"
+             onclick="window.location='/admission/{{ _slug }}'"
+             tabindex="0" role="button" aria-label="View {{ _name }}">
+
+      <!-- Image -->
+      <div class="relative overflow-hidden" style="height:208px;">
+        {% set _pimg = _img %}
+        {% if _pimg %}
+        <img src="{{ _pimg }}" alt="{{ _name }}" loading="lazy"
+             class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+        <!-- fallback when image fails -->
+        <div style="display:none;width:100%;height:100%;
+                    background:linear-gradient(135deg,var(--primary),#0d2040);
+                    align-items:center;justify-content:center;">
+          <span style="font-family:'Material Symbols Outlined';font-size:4rem;
+                       color:rgba(255,255,255,0.35);">school</span>
+        </div>
+        {% else %}
+        <div class="flex h-full w-full items-center justify-center text-8xl font-black"
+             style="background:linear-gradient(135deg,var(--primary),#0d2040);color:white;opacity:0.2;">
+          {{ (_abbr or _name[0]) | upper }}
+        </div>
+        {% endif %}
+        {% if _level %}
+        <div class="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold"
+             style="color:var(--primary)">{{ _level }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Body -->
+      <div class="flex flex-1 flex-col p-6">
+        <!-- Status -->
+        {% if _can %}
+        <span class="mb-3 inline-block w-fit rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">Applications Open</span>
+        {% elif _cur %}
+        <span class="mb-3 inline-block w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{{ _cur }}</span>
+        {% else %}
+        <span class="mb-3 inline-block w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">Closed</span>
+        {% endif %}
+
+        <h4 class="text-xl font-bold text-slate-900">{{ _name }}</h4>
+        {% if _desc %}<p class="mt-2 flex-grow text-sm leading-relaxed text-slate-500">{{ _desc }}</p>{% endif %}
+
+        <!-- Meta -->
+        <div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
+          <!-- {% if _seats %}<span>👥 {{ _seats }} seats</span>{% endif %} -->
+          {% if _dur %}<span>🕐 {{ _dur }}</span>{% endif %}
+        </div>
+
+        <!-- Buttons -->
+        <div class="mt-6 flex gap-3">
+          {% set _ua = user_app_map.get(_pid) or user_app_map.get(_name) or {} %}
+          {% if frappe.session.user != "Guest" and _ua.get('app_name') %}
+            <a href="/my-applications?app={{ _ua.app_name }}"
+               style="display:inline-flex;align-items:center;gap:6px;
+                      padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
+                      text-decoration:none;color:#fff;
+                      background:var(--primary,#CB2929);transition:opacity .2s;"
+               onmouseover="this.style.opacity='.85'"
+               onmouseout="this.style.opacity='1'"
+               onclick="event.stopPropagation()">
+              <span class="material-symbols-outlined" style="font-size:16px;">assignment</span>
+              View Application
+            </a>
+          {% elif frappe.session.user != "Guest" %}
+            <a href="/application_form/new?program={{ _slug or _pid }}"
+               style="display:inline-flex;align-items:center;gap:6px;
+                      padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
+                      text-decoration:none;color:#fff;
+                      background:var(--primary,#CB2929);transition:opacity .2s;"
+               onmouseover="this.style.opacity='.85'"
+               onmouseout="this.style.opacity='1'"
+               onclick="event.stopPropagation()">
+              <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span>
+              Apply Now
+            </a>
+          {% else %}
+            <a href="/login?redirect=/admission"
+               style="display:inline-flex;align-items:center;gap:6px;
+                      padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
+                      text-decoration:none;color:#fff;
+                      background:var(--primary,#CB2929);transition:opacity .2s;"
+               onmouseover="this.style.opacity='.85'"
+               onmouseout="this.style.opacity='1'"
+               onclick="event.stopPropagation()">
+              <span class="material-symbols-outlined" style="font-size:16px;">login</span>
+              Apply Now
+            </a>
+          {% endif %}
+          <a href="/admission/{{ _slug }}"
+             class="flex-1 rounded-lg py-2.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+             style="background:rgba(26,60,110,0.08);color:var(--primary)"
+             onclick="event.stopPropagation()">
+            Details
+          </a>
+        </div>
+
+        {% if _bro %}
+        <div class="mt-3 border-t border-slate-100 pt-3">
+          <a href="{{ _bro }}" target="_blank"
+             class="flex items-center gap-1 text-xs text-slate-400 hover:underline transition-colors"
+             style="color:var(--muted,#94a3b8)" onclick="event.stopPropagation()">
+            <span class="material-symbols-outlined" style="font-size:14px">download</span>
+            Download Brochure
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+
+    {% else %}
+    <div class="py-16 text-center text-slate-400" style="grid-column:1/-1">
+      <span class="material-symbols-outlined" style="font-size:48px;display:block;margin-bottom:12px">menu_book</span>
+      No programs available for this cycle.
+    </div>
+    {% endfor %}
+  </div>
+</section>
+<!-- END PROGRAMS -->
+
+<!-- ══ ANNOUNCEMENTS & EVENTS ════════════════════════════════════════ -->
+{% if announcements or events %}
+<div class="full-bleed py-20" style="background:#f0f4f8;">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
+    <div class="grid grid-cols-1 gap-16 lg:grid-cols-2">
+
+      <!-- Announcements -->
+      {% if announcements %}
+      <div>
+        <div class="mb-8 flex items-center gap-3">
+          <span class="material-symbols-outlined" style="color:var(--primary)">notifications_active</span>
+          <h3 class="text-2xl font-bold text-slate-900">Latest Announcements</h3>
+        </div>
+        <div class="space-y-4">
+          {% for a in announcements[:4] %}
+          {% set _adate = a.get('publish_date') or a.get('creation') if a.get else (a.publish_date or a.creation) %}
+          <div class="ann-card fade-card flex cursor-pointer gap-4 rounded-xl bg-white p-5 shadow-sm"
+               style="border:1px solid rgba(26,60,110,0.07)"
+               onclick="window.location='/announcement/{{ a.get('name') if a.get else a.name }}'">
+            <div class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg font-bold"
+                 style="background:rgba(26,60,110,0.08);color:var(--primary)">
+              {% if _adate %}
+              <span class="text-xs uppercase font-bold">{{ frappe.utils.formatdate(_adate,"MMM") }}</span>
+              <span class="text-lg leading-none font-black">{{ frappe.utils.formatdate(_adate,"dd") }}</span>
+              {% else %}
+              <span class="material-symbols-outlined text-lg">article</span>
+              {% endif %}
+            </div>
+            <div>
+              <h5 class="font-bold text-slate-900">{{ a.get('title') if a.get else a.title }}</h5>
+              {% set _asum = a.get('summary') if a.get else (a.summary or '') %}
+              {% if _asum %}<p class="mt-1 text-sm text-slate-500">{{ _asum[:90] }}...</p>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Events -->
+      {% if events %}
+      <div>
+        <div class="mb-8 flex items-center gap-3">
+          <span class="material-symbols-outlined" style="color:var(--primary)">event</span>
+          <h3 class="text-2xl font-bold text-slate-900">Upcoming Events</h3>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {% for e in events[:3] %}
+          {% set _etype  = e.get('announcement_type') or 'Event' if e.get else (e.announcement_type or 'Event') %}
+          {% set _edate  = e.get('event_date') or e.get('publish_date') if e.get else (e.event_date or e.publish_date) %}
+          {% set _etime  = e.get('event_time') or '' if e.get else (e.event_time or '') %}
+          {% set _evenue = e.get('event_venue') or '' if e.get else (e.event_venue or '') %}
+          <div class="evt-card fade-card cursor-pointer rounded-2xl p-6 shadow-sm"
+               style="background:#1e293b;color:white;"
+               onclick="window.location='/announcement/{{ e.get('name') if e.get else e.name }}'">
+            <div class="mb-4 text-xs font-bold uppercase tracking-wider" style="color:var(--secondary)">{{ _etype }}</div>
+            <h5 class="text-lg font-bold text-white">{{ e.get('title') if e.get else e.title }}</h5>
+            {% if _edate or _etime %}
+            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+              <span class="material-symbols-outlined" style="font-size:14px">schedule</span>
+              <span>{% if _edate %}{{ frappe.utils.formatdate(_edate,"dd MMM yyyy") }}{% endif %}{% if _etime %} • {{ _etime }}{% endif %}</span>
             </div>
             {% endif %}
-
-            <div class="ann-body">
-                <!-- Type badge -->
-                <span class="ann-type-badge ann-badge-{{ (a.announcement_type or 'general') | lower }}">
-                    {{ a.announcement_type or 'General' }}
-                </span>
-
-                <h3 class="ann-title">{{ a.title }}</h3>
-
-                {% if a.summary %}
-                <p class="ann-summary">{{ a.summary | truncate(100, True) }}</p>
-                {% endif %}
-
-                <!-- Meta: date + venue for events -->
-                <div class="ann-meta">
-                    {% if a.announcement_type == 'Event' and a.event_date %}
-                    <span class="ann-meta-item">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        {{ frappe.utils.formatdate(a.event_date, "dd MMM yyyy") }}
-                    </span>
-                    {% elif a.publish_date %}
-                    <span class="ann-meta-item">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        {{ frappe.utils.formatdate(a.publish_date, "dd MMM yyyy") }}
-                    </span>
-                    {% endif %}
-                    {% if a.event_venue %}
-                    <span class="ann-meta-item">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                        </svg>
-                        {{ a.event_venue }}
-                    </span>
-                    {% endif %}
-                    {% if a.created_by_role %}
-                    <span class="ann-meta-item ann-author">
-                        {{ a.created_by_role }}
-                    </span>
-                    {% endif %}
-                </div>
-
-                <a href="/announcement/{{ a.name }}" class="ann-view-link" onclick="event.stopPropagation()">
-                    View Details
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                </a>
+            {% if _evenue %}
+            <div class="mt-1 flex items-center gap-2 text-xs text-slate-400">
+              <span class="material-symbols-outlined" style="font-size:14px">location_on</span>
+              <span>{{ _evenue }}</span>
             </div>
-        </article>
-        {% endfor %}
-    </div><!-- .ann-grid -->
-</section>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <!-- Calendar card -->
+          <div class="evt-card fade-card flex cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center shadow-lg"
+               style="background:var(--primary);color:white;"
+               onclick="window.location='/academic-calendar'">
+            <span class="material-symbols-outlined text-white mb-2" style="font-size:40px">calendar_month</span>
+            <p class="font-bold text-white">View Full Academic Calendar</p>
+            <span class="mt-3 rounded-lg px-4 py-2 text-xs font-bold text-white"
+                  style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2)">
+              Open Calendar
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
 {% endif %}
-{% endblock %}
 
-{% block extra_js %}
+<!-- GALLERY MODAL JS -->
 <script>
-    function handleApplyNow(slug, programId, programName) {
-        var isLoggedIn = (window.session_user && window.session_user !== 'Guest');
-        var formUrl = '/applicant-form/new?program=' + encodeURIComponent(programId);
+const _pdMedia = [
+  {% for item in (prog_media or []) %}
+  {
+    type:    "{{ item.type }}",
+    url:     "{{ item.url | replace('"', '\\"') }}",
+    caption: "{{ (item.caption or '') | replace('"', '\\"') }}"
+  }{% if not loop.last %},{% endif %}
+  {% endfor %}
+];
 
-        if (!isLoggedIn) {
-            window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
-            return;
-        }
+let _pdCurrent = 0;
 
-        showConfirm(
-            'Apply for <strong>' + programName + '</strong>?<br>' +
-            '<span style="font-size:13px;color:var(--muted);">' +
-            'You will be taken to the application form.</span>',
-            function () {
-                window.location.href = formUrl;
-            }
-        );
+function pdGalleryOpen(idx) {
+  _pdCurrent = idx;
+  const m = document.getElementById("pdGalleryModal");
+  if (m) m.classList.add("pd-gopen");
+  pdGalleryRender();
+  document.addEventListener("keydown", _pdKeyHandler);
+}
+
+function pdGalleryClose(evt) {
+  if (evt && evt.target !== document.getElementById("pdGalleryModal")) return;
+  const m = document.getElementById("pdGalleryModal");
+  if (m) m.classList.remove("pd-gopen");
+  // Clear iframe to stop video playback
+  const v = document.getElementById("pdGViewer");
+  if (v) v.innerHTML = "";
+  document.removeEventListener("keydown", _pdKeyHandler);
+}
+
+function _pdKeyHandler(e) {
+  if (e.key === "ArrowLeft")  pdGalleryStep(-1);
+  if (e.key === "ArrowRight") pdGalleryStep(1);
+  if (e.key === "Escape") {
+    pdGalleryClose();
+  }
+}
+
+function pdGalleryGo(idx) {
+  _pdCurrent = idx;
+  pdGalleryRender();
+}
+
+function pdGalleryStep(dir) {
+  if (!_pdMedia.length) return;
+  _pdCurrent = (_pdCurrent + dir + _pdMedia.length) % _pdMedia.length;
+  pdGalleryRender();
+}
+
+function pdGalleryRender() {
+  const item = _pdMedia[_pdCurrent];
+  if (!item) return;
+
+  // Main viewer
+  const viewer = document.getElementById("pdGViewer");
+  if (viewer) {
+    if (item.type === "Video") {
+      let src = item.url;
+      src += (src.includes("?") ? "&" : "?") + "autoplay=1";
+      viewer.innerHTML = `<iframe src="${src}" style="width:100%;height:100%;"
+        allow="autoplay;encrypted-media;fullscreen"
+        allowfullscreen frameborder="0"></iframe>`;
+    } else {
+      viewer.innerHTML = `<img src="${item.url}" alt="${item.caption || ''}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:4px;">`;
     }
   }
 
@@ -1148,10 +1169,316 @@
   const count = document.getElementById("pdGCounter");
   if (count) count.textContent = (_pdCurrent + 1) + " / " + _pdMedia.length;
 
-            var prevBtn = document.getElementById('heroPrev');
-            var nextBtn = document.getElementById('heroNext');
-            if (prevBtn) prevBtn.addEventListener('click', function () { window.goHeroSlide(idx - 1); });
-            if (nextBtn) nextBtn.addEventListener('click', function () { window.goHeroSlide(idx + 1); });
+  // Sidebar active state
+  document.querySelectorAll(".pd-gside-thumb").forEach((el, i) => {
+    el.classList.toggle("pd-gside-active", i === _pdCurrent);
+  });
+
+  // Scroll sidebar so active thumb is visible
+  const activeThumb = document.getElementById("pdST" + _pdCurrent);
+  if (activeThumb) {
+    activeThumb.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+}
+</script>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════════════ -->
+<div class="full-bleed" style="background:#0f172a;padding:80px 0 40px;">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
+    <div class="grid grid-cols-1 gap-12 lg:grid-cols-12">
+
+      <!-- Brand -->
+      <div class="lg:col-span-4">
+        <div class="mb-6 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg" style="background:var(--primary)">
+            <span class="material-symbols-outlined text-white">school</span>
+          </div>
+          <h2 class="text-2xl font-bold text-white">{{ _title }}</h2>
+        </div>
+        {% if _tagline %}<p class="mb-8 max-w-sm text-sm leading-relaxed text-slate-400">{{ _tagline }}</p>{% endif %}
+
+        {% if social_links %}
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:24px;">
+          {% for s in social_links %}
+          {% set _surl      = s.get('url')      if s.get else s.url %}
+          {% set _splatform = s.get('platform') if s.get else s.platform %}
+          {% set _sactive   = s.get('is_active') if s.get else s.is_active %}
+
+          {% if _sactive and _surl %}
+          <a href="{{ _surl }}"
+             target="_blank"
+             rel="noopener noreferrer"
+             title="{{ _splatform }}"
+             style="display:flex;align-items:center;justify-content:center;
+                    width:40px;height:40px;border-radius:50%;
+                    background:rgba(255,255,255,0.06);
+                    border:1px solid rgba(255,255,255,0.1);
+                    color:#94a3b8;text-decoration:none;
+                    transition:background 0.2s,color 0.2s,border-color 0.2s;"
+             onmouseover="this.style.background='var(--primary)';this.style.color='#fff';this.style.borderColor='var(--primary)'"
+             onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='#94a3b8';this.style.borderColor='rgba(255,255,255,0.1)'">
+
+            {# ── FACEBOOK ────────────────────────────────────────────────── #}
+            {% if _splatform == 'Facebook' %}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.254h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+            </svg>
+
+            {# ── INSTAGRAM ───────────────────────────────────────────────── #}
+            {% elif _splatform == 'Instagram' %}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+
+            {# ── X (TWITTER) ─────────────────────────────────────────────── #}
+            {% elif _splatform == 'X (Twitter)' %}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/>
+            </svg>
+
+            {# ── LINKEDIN ────────────────────────────────────────────────── #}
+            {% elif _splatform == 'LinkedIn' %}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+
+            {# ── YOUTUBE ─────────────────────────────────────────────────── #}
+            {% elif _splatform == 'YouTube' %}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
+            </svg>
+
+            {# ── WHATSAPP ────────────────────────────────────────────────── #}
+            {% elif _splatform == 'WhatsApp' %}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+            </svg>
+
+            {# ── TELEGRAM ────────────────────────────────────────────────── #}
+            {% elif _splatform == 'Telegram' %}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+            </svg>
+
+            {# ── THREADS ─────────────────────────────────────────────────── #}
+            {% elif _splatform == 'Threads' %}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.75-1.757-.513-.586-1.308-.883-2.359-.89h-.029c-.844 0-1.992.232-2.721 1.32L7.734 7.847c.98-1.454 2.568-2.256 4.478-2.256h.044c3.194.02 5.097 1.975 5.287 5.388.108.046.217.093.321.142 1.49.7 2.58 1.761 3.154 3.07.797 1.82.871 4.79-1.548 7.158-1.85 1.81-4.094 2.628-7.284 2.651Zm-.235-9.688c-.964.055-1.766.332-2.323.801-.47.406-.72.932-.687 1.48.072 1.219 1.627 1.61 2.54 1.558 1.099-.063 2.404-.466 2.967-2.876a11.267 11.267 0 0 0-2.497-.963Z"/>
+            </svg>
+
+            {# ── PINTEREST ───────────────────────────────────────────────── #}
+            {% elif _splatform == 'Pinterest' %}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+            </svg>
+
+            {# ── TIKTOK ──────────────────────────────────────────────────── #}
+            {% elif _splatform == 'TikTok' %}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+            </svg>
+
+            {# ── FALLBACK: any unknown platform ─────────────────────────── #}
+            {% else %}
+            <span style="font-family:'Material Symbols Outlined';font-size:18px">link</span>
+            {% endif %}
+
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Programs quick links -->
+      <div class="lg:col-span-4">
+        <div class="grid grid-cols-2 gap-8">
+          <div>
+            <h4 class="mb-6 text-xs font-bold uppercase tracking-wider text-white">Programs</h4>
+            <ul class="space-y-3 text-sm text-slate-400">
+              {% for p in programs[:4] %}
+              <li><a href="/admission/{{ p.get('program_slug') if p.get else p.program_slug }}"
+                     class="transition-colors hover:text-white">
+                {{ p.get('program_name') if p.get else p.program_name }}
+              </a></li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div>
+            <h4 class="mb-6 text-xs font-bold uppercase tracking-wider text-white">Admissions</h4>
+            <ul class="space-y-3 text-sm text-slate-400">
+              <li><a href="/admission" class="hover:text-white transition-colors">Apply Now</a></li>
+              <li><a href="/merit-and-scholarship/admission_dashboard" class="hover:text-white transition-colors">Dashboard</a></li>
+              <li><a href="/my-applications" class="hover:text-white transition-colors">My Applications</a></li>
+              <li><a href="/offer_letter/offer-letter-list" class="hover:text-white transition-colors">Offer Letter</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="lg:col-span-4">
+        <h4 class="mb-6 text-xs font-bold uppercase tracking-wider text-white">Contact</h4>
+        <div class="space-y-4 text-sm text-slate-400">
+          {% if _f_addr %}
+          <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined" style="color:var(--secondary);font-size:18px">location_on</span>
+            <span>{{ _f_addr }}</span>
+          </div>
+          {% endif %}
+          {% if _f_phone %}
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined" style="color:var(--secondary);font-size:18px">call</span>
+            <span>{{ _f_phone }}</span>
+          </div>
+          {% endif %}
+          {% if _f_email %}
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined" style="color:var(--secondary);font-size:18px">mail</span>
+            <a href="mailto:{{ _f_email }}" class="hover:text-white transition-colors">{{ _f_email }}</a>
+          </div>
+          {% endif %}
+          {% if not _f_addr and not _f_phone and not _f_email %}
+          <p class="text-slate-500 italic text-xs">Contact details not configured.<br>Set them in Admission Portal Config.</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="mt-16 border-t border-white/5 pt-8 flex flex-col items-center justify-between gap-4 md:flex-row">
+      <p class="text-xs text-slate-500">
+        © {{ frappe.utils.nowdate()[:4] }}
+        {{ frappe.get_doc("Website Settings").title or _title }}.
+        All rights reserved.
+      </p>
+      <div class="flex gap-6 text-xs text-slate-500">
+        <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+        <a href="#" class="hover:text-white transition-colors">Terms of Use</a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END FOOTER -->
+
+<!-- Back to top -->
+<button id="back-to-top"
+        class="fixed bottom-8 right-8 z-50 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-all hover:scale-110"
+        style="background:var(--primary)">
+  <span class="material-symbols-outlined">arrow_upward</span>
+</button>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var LOGIN_REQUIRED = "{{ 'true' if _login_req else 'false' }}" === "true";
+
+{% if show_detail %}
+function pdTab(btn, panelId) {
+  document.querySelectorAll('#pd-tab-nav button').forEach(function(b) { b.classList.remove('pd-active'); });
+  document.querySelectorAll('#pd-curriculum,#pd-eligibility,#pd-career,#pd-faculty').forEach(function(p) { p.style.display = 'none'; });
+  btn.classList.add('pd-active');
+  var p = document.getElementById(panelId);
+  if (p) p.style.display = 'block';
+}
+function pdCurric(idx) {
+  var body = document.getElementById('pdc-b-' + idx);
+  var card = document.getElementById('pdc-' + idx);
+  var hdr  = document.getElementById('pdc-h-' + idx);
+  if (!body) return;
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    card.classList.add('pd-open');
+    if (hdr) hdr.style.color = 'var(--primary)';
+  } else {
+    body.style.display = 'none';
+    card.classList.remove('pd-open');
+    if (hdr) hdr.style.color = '#0f172a';
+  }
+}
+
+// ── New Gallery JS ───────────────────────────────────────────────────
+const _pdMedia = [
+  {% for item in (prog_media or []) %}
+  {
+    type:    "{{ item.type }}",
+    url:     "{{ item.url | replace('"', '\\"') }}",
+    caption: "{{ (item.caption or '') | replace('"', '\\"') }}"
+  }{% if not loop.last %},{% endif %}
+  {% endfor %}
+];
+
+let _pdCurrent = 0;
+
+function pdGalleryOpen(idx) {
+  _pdCurrent = idx;
+  const m = document.getElementById("pdGalleryModal");
+  if (m) m.classList.add("pd-gopen");
+  pdGalleryRender();
+  document.addEventListener("keydown", _pdKeyHandler);
+}
+
+function pdGalleryClose(evt) {
+  if (evt && evt.target !== document.getElementById("pdGalleryModal")) return;
+  const m = document.getElementById("pdGalleryModal");
+  if (m) m.classList.remove("pd-gopen");
+  // Clear iframe to stop video playback
+  const v = document.getElementById("pdGViewer");
+  if (v) v.innerHTML = "";
+  document.removeEventListener("keydown", _pdKeyHandler);
+}
+
+function _pdKeyHandler(e) {
+  if (e.key === "ArrowLeft")  pdGalleryStep(-1);
+  if (e.key === "ArrowRight") pdGalleryStep(1);
+  if (e.key === "Escape") {
+    pdGalleryClose();
+  }
+}
+
+function pdGalleryGo(idx) {
+  _pdCurrent = idx;
+  pdGalleryRender();
+}
+
+function pdGalleryStep(dir) {
+  if (!_pdMedia.length) return;
+  _pdCurrent = (_pdCurrent + dir + _pdMedia.length) % _pdMedia.length;
+  pdGalleryRender();
+}
+
+function pdGalleryRender() {
+  const item = _pdMedia[_pdCurrent];
+  if (!item) return;
+
+  // Main viewer
+  const viewer = document.getElementById("pdGViewer");
+  if (viewer) {
+    if (item.type === "Video") {
+      let src = item.url;
+      src += (src.includes("?") ? "&" : "?") + "autoplay=1";
+      viewer.innerHTML = `<iframe src="${src}" style="width:100%;height:100%;"
+        allow="autoplay;encrypted-media;fullscreen"
+        allowfullscreen frameborder="0"></iframe>`;
+    } else {
+      viewer.innerHTML = `<img src="${item.url}" alt="${item.caption || ''}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:4px;">`;
+    }
+  }
+
+  // Caption
+  const cap = document.getElementById("pdGCaption");
+  if (cap) cap.textContent = item.caption || "";
+
+  // Counter
+  const count = document.getElementById("pdGCounter");
+  if (count) count.textContent = (_pdCurrent + 1) + " / " + _pdMedia.length;
+
+  // Sidebar active state
+  document.querySelectorAll(".pd-gside-thumb").forEach((el, i) => {
+    el.classList.toggle("pd-gside-active", i === _pdCurrent);
+  });
 
   // Scroll sidebar so active thumb is visible
   const activeThumb = document.getElementById("pdST" + _pdCurrent);
@@ -1184,35 +1511,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
   document.querySelectorAll('.fade-card').forEach(function(el) { obs.observe(el); });
 
-    async function handleApply(program, programName, level, cycle) {
-        var formUrl = '/application_form/new?program=' + encodeURIComponent(program)
-            + '&level=' + encodeURIComponent(level);
-
-        if (LOGIN_REQUIRED && window.session_user === 'Guest') {
-            window.location.href = '/login?redirect=' + encodeURIComponent(formUrl);
-            return;
-        }
-
-        showConfirm('Apply for ' + programName + '?', async function () {
-            try {
-                var result = await apiFetch(
-                    'slcm.admission.utils.web.check_existing_application',
-                    { program: program }
-                );
-                if (result && result.exists) {
-                    showConfirm(
-                        'You already have an application for ' + programName +
-                        ' (Status: ' + result.status + ').\nStart a new one?',
-                        function () { window.location.href = formUrl; }
-                    );
-                } else {
-                    window.location.href = formUrl;
-                }
-            } catch (e) {
-                showToast('Could not check applications. Proceeding...', 'info');
-                window.location.href = formUrl;
-            }
-        });
-    }
+  // Back to top
+  var btn = document.getElementById('back-to-top');
+  if (btn) {
+    window.addEventListener('scroll', function() {
+      btn.classList.toggle('visible', window.pageYOffset > 300);
+    });
+    btn.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+});
+{% endif %}
 </script>
 {% endblock %}

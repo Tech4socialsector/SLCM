@@ -1,17 +1,11 @@
     <!DOCTYPE html>
     <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <title>{% block title %}Admissions{% endblock %} — {{ frappe.get_doc("Website Settings").title or "SLCM" }}</title>
-    <link rel="icon"
-        href="{{ frappe.get_doc('Website Settings').favicon or '/assets/frappe/images/frappe-favicon.svg' }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Admissions{% endblock %} — {{ frappe.get_doc("Website Settings").title or "SLCM" }}</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
 
         <style>
             header.navbar,
@@ -802,19 +796,16 @@
             style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;">
         </div>
 
-    <div id="toast-container"
-        style="position:fixed;top:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;">
-    </div>
-
-    <div id="confirm-overlay"
-        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;align-items:center;justify-content:center;">
-        <div
-            style="background:#fff;border-radius:12px;padding:28px 32px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
-            <div id="confirm-message"
-                style="font-size:15px;font-weight:600;margin-bottom:20px;color:var(--text);white-space:pre-line;"></div>
-            <div style="display:flex;gap:12px;justify-content:flex-end;">
-                <button id="confirm-cancel" class="btn-outline-adm" style="padding:8px 20px;">Cancel</button>
-                <button id="confirm-ok" class="btn-primary-adm" style="padding:8px 20px;">Confirm</button>
+        <div id="confirm-overlay"
+            style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;align-items:center;justify-content:center;">
+            <div
+                style="background:#fff;border-radius:12px;padding:28px 32px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+                <div id="confirm-message"
+                    style="font-size:15px;font-weight:600;margin-bottom:20px;color:var(--text);white-space:pre-line;"></div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <button id="confirm-cancel" class="btn-outline-adm" style="padding:8px 20px;">Cancel</button>
+                    <button id="confirm-ok" class="btn-primary-adm" style="padding:8px 20px;">Confirm</button>
+                </div>
             </div>
         </div>
 

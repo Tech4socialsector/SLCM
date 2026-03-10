@@ -154,55 +154,275 @@ def get_user_type():
         frappe.log_error(f"get_user_type failed: {e}", "Portal")
         return {"user_type": "Website User"}
 
-@frappe.whitelist()
-def submit_application(application_data):
-    """
-    Called from /application-form JS to submit/save application.
-    """
-    if isinstance(application_data, str):
-        import json as _json
-        application_data = _json.loads(application_data)
-        
-    user = frappe.session.user
-    if user == "Guest":
-        # Usually we'd want them to log in, but let's allow it if config says so
-        config = frappe.get_single("Applicant Portal Config")
-        if config.login_required_for_application:
-            frappe.throw("Login required to submit application")
-            
-    # Check if existing applicant for this email
-    email = application_data.get("email") or user
-    existing = frappe.get_all("Applicant", filters={"email": email}, limit=1)
-    
-    if existing:
-        doc = frappe.get_doc("Applicant", existing[0].name)
-    else:
-        doc = frappe.new_doc("Applicant")
-        doc.email = email
-        
-    # List of known phone fields for Applicant
-    phone_fields = ["mobile_number", "alternate_contact", "father_mobile", "mother_mobile", "guardian_mobile"]
+def _get_stage_seq(stages, stage_name):
+    """Returns sequence number of a stage by name."""
+    for s in stages:
+        if s.stage_name == stage_name:
+            return getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
+    return 0
 
-    # Update with fields
-    for fieldname, value in application_data.items():
-        if doc.get(fieldname) is not None:
-            if fieldname in phone_fields and value:
-                # Basic formatting for Indian numbers if digits only
-                raw_value = str(value).replace(" ", "").replace("-", "")
-                if raw_value.isdigit() and len(raw_value) == 10:
-                    value = "+91" + raw_value
-                elif raw_value.isdigit() and len(raw_value) > 10 and not raw_value.startswith("+"):
-                    value = "+" + raw_value
-            doc.set(fieldname, value)
-            
+@frappe.whitelist()
+def get_stage_tracker_data(applicant_name):
+    """
+    Returns stage pipeline for /my-applications stage tracker widget.
+    Reads stages from Admission Cycle child table filtered by intake_type.
+    """
+    # Permission: owner or admin
+    applicant = frappe.get_doc("Applicant", applicant_name)
+    allowed_roles = {"Admission Admin", "System Manager", "Applicant"}
+    is_owner = frappe.session.user == applicant.owner
+    has_role = bool(allowed_roles & set(frappe.get_roles()))
+    if not is_owner and not has_role:
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    if not applicant.admission_cycle:
+        return {"stages": [], "app_status": applicant.application_status or ""}
+
+    # Get intake_type from Program (not Admission Cycle)
+    intake_type = frappe.db.get_value(
+        "Program", applicant.program, "intake_type"
+    ) or "All"
+
+    # Load stages from cycle child table
     try:
-        doc.save(ignore_permissions=True)
-        frappe.db.commit()
-    except frappe.exceptions.InvalidPhoneNumberError as e:
-        frappe.log_error(f"Phone validation failed: {str(e)}", "Admission Form")
-        frappe.throw(f"Validation failed: {str(e)}")
+        from slcm.admission.utils.stage_control import get_cycle_stages
+        stages = get_cycle_stages(applicant.admission_cycle, intake_type)
     except Exception as e:
-        frappe.log_error(f"Submission error: {str(e)}", "Admission Form")
-        frappe.throw(str(e))
+        frappe.log_error(f"get_stage_tracker_data stage load error: {e}")
+        stages = []
+
+    if not stages:
+        return {"stages": [], "app_status": applicant.application_status or ""}
+
+    from frappe.utils import today as get_today
+    today = get_today()
+    current_stage_name = applicant.current_stage or ""
+
+    result_stages = []
+
+    for s in stages:
+        seq  = getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
+        sd   = str(getattr(s, "start_date", None) or "")
+        ed   = str(getattr(s, "end_date", None) or "")
+        name = s.stage_name
+
+        # PRIMARY: use applicant.current_stage to find active
+        if current_stage_name:
+            if name == current_stage_name:
+                status = "active"
+            elif seq < _get_stage_seq(stages, current_stage_name):
+                status = "completed"
+            else:
+                status = "upcoming"
+        # SECONDARY: use date window when current_stage not set
+        elif sd and ed:
+            if today > ed:
+                status = "completed"
+            elif sd <= today <= ed:
+                status = "active"
+            else:
+                status = "upcoming"
+        else:
+            status = "upcoming"
+
+        # Action button: only show on active stage
+        stage_type = getattr(s, "stage_type", "") or ""
+        action_url   = getattr(s, "action_url", "") or ""
+        action_label = getattr(s, "action_label", "") or ""
+
+        if status == "active" and not action_url:
+            if stage_type == "Interview":
+                action_url   = "/eligibility/interview_management"
+                action_label = "Book Interview Slot"
+            elif stage_type == "Exam":
+                action_url   = "/eligibility/entrance_test_seat_allocation"
+                action_label = "Choose Preference"
+            elif stage_type in ("Offer Letter", "Fee"):
+                action_url   = "/offer_letter/offer-letter-list"
+                action_label = "View Offer"
+
+        show_action = status == "active" and bool(action_url)
+
+        result_stages.append({
+            "stage_name":    name,
+            "stage_type":    stage_type,
+            "sequence":      seq,
+            "status":        status,
+            "show_action":   show_action,
+            "action_url":    action_url if show_action else "",
+            "action_label":  action_label if show_action else "",
+            "start_date":    sd or None,
+            "end_date":      ed or None,
+        })
+
+    return {
+        "stages":     result_stages,
+        "app_status": applicant.application_status or "",
+        "track_type": "normal",
+    }
+
+
+
+
+@frappe.whitelist()
+def get_edit_permission(applicant_name):
+    """
+    Returns whether the current applicant can edit their application.
+    Two-layer check:
+      Layer 1: Portal Config master switch (allow_edit_after_submit)
+      Layer 2: Current stage is_editable flag
+    """
+    import frappe
+
+    # Load applicant
+    applicant = frappe.get_doc("Applicant", applicant_name)
+
+    # Only owner can check own permissions
+    allowed_roles = {"Admission Admin", "System Manager", "Applicant"}
+    is_owner = frappe.session.user == applicant.owner
+    has_role = bool(allowed_roles & set(frappe.get_roles()))
+    if not is_owner and not has_role:
+        return {"editable": False, "reason": "Not permitted"}
+
+    # Draft is always editable
+    if applicant.docstatus == 0:
+        return {"editable": True, "reason": "draft", "editable_sections": []}
+
+    # Layer 1: Portal Config master switch
+    try:
+        portal_config = frappe.get_single("Admission Portal Config")
+        if not portal_config.allow_edit_after_submit:
+            return {
+                "editable": False,
+                "reason": "Editing is currently disabled by the administrator."
+            }
+    except Exception:
+        # If Portal Config not found, deny by default
+        return {"editable": False, "reason": "Portal config not found"}
+
+    # Layer 2: Current stage is_editable flag
+    if not applicant.admission_cycle or not applicant.current_stage:
+        return {"editable": False, "reason": "No active stage found"}
+
+    cycle_doc = frappe.get_doc("Admission Cycle", applicant.admission_cycle)
+    current_stage_row = next(
+        (s for s in cycle_doc.stages
+         if s.stage_name == applicant.current_stage),
+        None
+    )
+
+    if not current_stage_row:
+        return {"editable": False, "reason": "Current stage not configured"}
+
+    if not current_stage_row.is_editable:
+        return {
+            "editable": False,
+            "reason": f"Editing is not allowed during the {applicant.current_stage} stage."
+        }
+
+    return {
+        "editable":          True,
+        "reason":            "stage_allows",
+        "editable_sections": [],   # empty = all sections editable
+    }
+
+@frappe.whitelist()
+def download_admit_card(admit_card):
+    """
+    Custom download function for Admit Card that bypasses standard print permissions
+    after verifying that the current user owns the application.
+    """
+    user = frappe.session.user
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
     
-    return doc.name
+    try:
+        doc = frappe.get_doc("Entrance Test Seat Allocation", admit_card, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw("Admit Card not found")
+
+    if not applicant_name or doc.applicant != applicant_name:
+        if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
+            frappe.throw("Not authorized", frappe.PermissionError)
+
+    is_rescheduled = (doc.is_rescheduled == 1 or doc.entrance_test_status == "Rescheduled")
+    status = doc.re_allocation_status if is_rescheduled else doc.allocation_status
+    
+    if status not in ["Allocated", "Reallocated"]:
+        frappe.throw("Admit Card is only available after seat allocation is confirmed.")
+
+    field_to_check = "reschedule_admit_card" if is_rescheduled else "admit_card"
+    stored_file_url = getattr(doc, field_to_check)
+
+    if not stored_file_url:
+        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+        stored_file_url = generate_and_store_admit_card(doc.name, is_rescheduled=is_rescheduled)
+        if stored_file_url:
+            doc.reload()
+
+    if stored_file_url:
+        file_doc = frappe.get_doc("File", {"file_url": stored_file_url})
+        frappe.local.response.filename = f"Admit_Card_{doc.applicant}.pdf"
+        frappe.local.response.filecontent = file_doc.get_content()
+        frappe.local.response.type = "download"
+    else:
+        frappe.throw("Admit Card generation failed. Please contact the admission office.")
+
+@frappe.whitelist()
+def download_application(applicant_name):
+    """
+    Generates and downloads the Applicant PDF for the owner.
+    """
+    user = frappe.session.user
+    try:
+        applicant = frappe.get_doc("Applicant", applicant_name, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw("Application not found")
+
+    if applicant.owner != user and applicant.email != user:
+        if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
+            frappe.throw("Not permitted", frappe.PermissionError)
+    
+    frappe.flags.ignore_print_permissions = True
+    pdf_content = frappe.get_print("Applicant", applicant_name, "Applicant Form", as_pdf=True, doc=applicant)
+    
+    frappe.local.response.filename = f"Application_{applicant_name}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
+
+@frappe.whitelist()
+def download_offer_letter(offer_letter):
+    """
+    Generates and downloads the Offer Letter PDF for the owner.
+    """
+    user = frappe.session.user
+    try:
+        ol = frappe.get_doc("Offer Letter", offer_letter, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw("Offer Letter not found")
+
+    applicant_name = ol.applicant
+    applicant = frappe.get_doc("Applicant", applicant_name, ignore_permissions=True)
+    
+    if applicant.owner != user and applicant.email != user:
+        if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
+            frappe.throw("Not permitted", frappe.PermissionError)
+    
+    # Check if PDF already stored
+    if ol.pdf_file:
+        try:
+            file_doc = frappe.get_doc("File", {"file_url": ol.pdf_file})
+            frappe.local.response.filename = f"Offer_Letter_{applicant_name}.pdf"
+            frappe.local.response.filecontent = file_doc.get_content()
+            frappe.local.response.type = "download"
+            return
+        except Exception:
+            pass
+
+    # Generate PDF
+    frappe.flags.ignore_print_permissions = True
+    pdf_content = frappe.get_print("Offer Letter", offer_letter, as_pdf=True, doc=ol)
+    
+    frappe.local.response.filename = f"Offer_Letter_{applicant_name}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
+
