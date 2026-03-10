@@ -8,13 +8,13 @@ def get_context(context):
     context.portal_config = get_portal_config()
     _user = frappe.session.user
     
-    # Initialize all context variables to avoid UndefinedError in Jinja
+    # Initialize all context variables
     context.no_applicant = False
     context.applicant = None
     context.eligible_scholarships = []
     context.applied_scholarships = []
     context.approved_scholarships = []
-    context.closed_scholarships = []
+    context.rejected_scholarships = []
     context.kpis = {"eligible": 0, "applied": 0, "approved": 0, "amount_awarded": 0}
     context.error = None
 
@@ -60,7 +60,6 @@ def get_context(context):
                 if cat_row.category:
                     applicant_categories.add(cat_row.category)
         
-        # Fallback to direct applicant derivation if no eligibility result found
         if not applicant_categories:
             app_full = frappe.get_doc("Applicant", applicant.name, ignore_permissions=True)
             sc_st_obc = (getattr(app_full, "whether_scstobc_ncl", None) or "").strip()
@@ -72,7 +71,7 @@ def get_context(context):
                 applicant_categories.add("Karnataka category")
 
         # 3. Fetch All Scholarship Applications
-        scholarship_applications = frappe.get_all(
+        all_apps = frappe.get_all(
             "Scholarship Application",
             filters={"applicant_id": applicant.name},
             fields=["name", "scholarship_scheme", "status", "creation", "approval_date", "calculated_benefit", "final_fee_amount"],
@@ -80,47 +79,50 @@ def get_context(context):
             ignore_permissions=True
         )
         
-        applied_scheme_names = [app.scholarship_scheme for app in scholarship_applications]
+        applied_scheme_names = [app.scholarship_scheme for app in all_apps]
         
-        # Cache for scheme details to avoid redundant lookups
         scheme_cache = {}
-
         def get_scheme_data(scheme_id):
             if scheme_id in scheme_cache: return scheme_cache[scheme_id]
-            scheme_doc = frappe.get_doc("Scholarship Scheme", scheme_id, ignore_permissions=True)
-            rules = frappe.get_all(
-                "Scholarship Coverage Rule",
-                filters={"parent": scheme_id},
-                fields=["fee_component", "coverage_type", "coverage_value", "maximum_cap"],
-                ignore_permissions=True
-            )
-            data = {
-                "name": scheme_doc.name,
-                "scheme_name": scheme_doc.scheme_name,
-                "scheme_type": scheme_doc.scheme_type,
-                "description": scheme_doc.description,
-                "max_amount": scheme_doc.max_amount,
-                "coverage_type": scheme_doc.coverage_type,
-                "coverage_value": scheme_doc.coverage_value,
-                "application_end": scheme_doc.application_end,
-                "eligibility_criteria": scheme_doc.eligibility_criteria,
-                "coverage_rules": rules
-            }
-            scheme_cache[scheme_id] = data
-            return data
+            try:
+                scheme_doc = frappe.get_doc("Scholarship Scheme", scheme_id, ignore_permissions=True)
+                rules = frappe.get_all(
+                    "Scholarship Coverage Rule",
+                    filters={"parent": scheme_id},
+                    fields=["fee_component", "coverage_type", "coverage_value", "maximum_cap"],
+                    ignore_permissions=True
+                )
+                data = {
+                    "name": scheme_doc.name,
+                    "scheme_name": scheme_doc.scheme_name,
+                    "scheme_type": scheme_doc.scheme_type,
+                    "description": scheme_doc.description,
+                    "max_amount": scheme_doc.max_amount,
+                    "coverage_type": scheme_doc.coverage_type,
+                    "coverage_value": scheme_doc.coverage_value,
+                    "application_end": scheme_doc.application_end,
+                    "eligibility_criteria": scheme_doc.eligibility_criteria,
+                    "coverage_rules": rules
+                }
+                scheme_cache[scheme_id] = data
+                return data
+            except:
+                return None
 
-        # Add scheme details to applications
-        for app in scholarship_applications:
+        # Categorize Applications
+        for app in all_apps:
             s_data = get_scheme_data(app.scholarship_scheme)
-            app.update(s_data)
+            if s_data:
+                app.update(s_data)
+                if app.status == "Approved":
+                    context.approved_scholarships.append(app)
+                elif app.status == "Rejected":
+                    context.rejected_scholarships.append(app)
+                else:
+                    context.applied_scholarships.append(app)
 
-        context.applied_scholarships = scholarship_applications
-        context.approved_scholarships = [app for app in scholarship_applications if app.status == "Approved"]
-        
         # 4. Fetch Eligible Schemes
         eligible_schemes = []
-        closed_schemes = []
-        
         active_mappings = frappe.get_all(
             "Scholarship Scheme Mapping",
             filters={"is_active": 1},
@@ -129,50 +131,34 @@ def get_context(context):
         )
 
         is_selected = applicant.application_status in ["Selected", "Offered", "Fee Paid", "Admission Confirmed"]
-        processed_mappings = set()
-
+        
+        seen_eligible = set()
         for mapping in active_mappings:
             scheme_id = mapping.scholarship_scheme
-            if scheme_id in processed_mappings: continue
+            if scheme_id in applied_scheme_names or scheme_id in seen_eligible:
+                continue
             
-            # Match Mapping Criteria
             mapping_match = True
             if mapping.program and mapping.program != applicant.program: mapping_match = False
             if mapping.campus and mapping.campus != applicant.campus: mapping_match = False
             if mapping.admission_cycle and mapping.admission_cycle != applicant.admission_cycle: mapping_match = False
             if mapping.category and mapping.category not in applicant_categories: mapping_match = False
 
-            if scheme_id in applied_scheme_names:
-                continue
-
-            s_data = get_scheme_data(scheme_id)
-            s_data["mapping"] = mapping
-
             if mapping_match and is_selected:
-                eligible_schemes.append(s_data)
-                processed_mappings.add(scheme_id)
-            elif not is_selected or not mapping_match:
-                # Add to closed only if not already eligible via another mapping
-                # But typically one scheme has one mapping for a specific student profile
-                reason = "Available after Selection / Admission offer" if not is_selected else "Not applicable to your current Program / Campus / Category"
-                s_data["not_eligible_reason"] = reason
-                closed_schemes.append(s_data)
-                processed_mappings.add(scheme_id)
+                s_data = get_scheme_data(scheme_id)
+                if s_data:
+                    eligible_schemes.append(s_data)
+                    seen_eligible.add(scheme_id)
 
         context.eligible_scholarships = eligible_schemes
-        context.closed_scholarships = closed_schemes
 
         # 5. KPI Counts
         context.kpis = {
             "eligible": len(eligible_schemes),
-            "applied": len(scholarship_applications),
+            "applied": len(all_apps),
             "approved": len(context.approved_scholarships),
             "amount_awarded": sum([app.calculated_benefit for app in context.approved_scholarships if app.calculated_benefit])
         }
-
-        # Final Cleanup: Make sure closed doesn't overlap with eligible (if a scheme has multiple mappings)
-        eligible_names = {s["name"] for s in eligible_schemes}
-        context.closed_scholarships = [s for s in closed_schemes if s["name"] not in eligible_names]
 
     except Exception as e:
         frappe.log_error(f"Scholarship Dashboard Error: {e}", "Scholarship Dashboard")
