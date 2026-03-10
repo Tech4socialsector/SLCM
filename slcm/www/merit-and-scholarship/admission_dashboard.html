@@ -318,8 +318,8 @@
   }
   .doc-rows-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 24px;
+    grid-template-columns: 1fr;
+    gap: 12px;
     margin-top: 16px;
   }
   .doc-row {
@@ -579,7 +579,7 @@
               Change Password
             </div>
 
-            <div class="adm-menu-item danger" onclick="window.location.href='/logout'">
+            <div class="adm-menu-item danger" onclick="window.doLogout()">
               <span class="ms-icon" style="color:var(--danger)">logout</span>
               Logout
             </div>
