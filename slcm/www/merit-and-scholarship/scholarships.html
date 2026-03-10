@@ -12,6 +12,7 @@
     --primary: #1a3c6e;
     --secondary: #c8a14b;
     {% endif %}
+    --radius-xl: 24px;
   }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -199,34 +200,41 @@
           </div>
         </header>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 fade-in-up" style="animation-delay:0.15s">
-          <div class="kpi-card border-l-4 border-l-primary shadow-sm">
-            <div class="flex justify-between items-start">
-              <span class="p-1.5 bg-primary/10 text-primary rounded-lg material-symbols-outlined text-lg">auto_awesome</span>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 fade-in-up" style="animation-delay:0.15s">
+          <!-- KPI 1: Eligible -->
+          <div class="kpi-card border-t-2 border-t-emerald-500 shadow-sm px-4 py-3">
+            <p class="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Eligible Schemes</p>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-emerald-500/40 text-base">auto_awesome</span>
               <span class="text-xl font-black text-slate-900">{{ kpis.eligible or 0 }}</span>
             </div>
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Eligible Scholarships</p>
           </div>
-          <div class="kpi-card border-l-4 border-l-amber-500 shadow-sm">
-            <div class="flex justify-between items-start">
-              <span class="p-1.5 bg-amber-50 text-amber-600 rounded-lg material-symbols-outlined text-lg">history_edu</span>
+
+          <!-- KPI 2: Applied -->
+          <div class="kpi-card border-t-2 border-t-blue-500 shadow-sm px-4 py-3">
+            <p class="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Submitted</p>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-blue-500/40 text-base">history_edu</span>
               <span class="text-xl font-black text-slate-900">{{ kpis.applied or 0 }}</span>
             </div>
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Applications Submitted</p>
           </div>
-          <div class="kpi-card border-l-4 border-l-emerald-500 shadow-sm">
-            <div class="flex justify-between items-start">
-              <span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg material-symbols-outlined text-lg">verified</span>
+
+          <!-- KPI 3: Approved -->
+          <div class="kpi-card border-t-2 border-t-emerald-600 shadow-sm px-4 py-3">
+            <p class="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Approved</p>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-emerald-600/40 text-base">verified</span>
               <span class="text-xl font-black text-slate-900">{{ kpis.approved or 0 }}</span>
             </div>
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Scholarships Approved</p>
           </div>
-          <div class="kpi-card border-l-4 border-l-primary shadow-sm">
-            <div class="flex justify-between items-start">
-              <span class="p-1.5 bg-primary/10 text-primary rounded-lg material-symbols-outlined text-lg">payments</span>
+
+          <!-- KPI 4: Awarded -->
+          <div class="kpi-card border-t-2 border-t-primary shadow-sm px-4 py-3">
+            <p class="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Awarded</p>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary/40 text-base">payments</span>
               <span class="text-lg font-black text-slate-900">₹{{ "{:,.0f}".format(kpis.amount_awarded or 0) }}</span>
             </div>
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Amount Awarded</p>
           </div>
         </div>
 
@@ -235,7 +243,7 @@
             <button onclick="showTab('eligible')" class="tab-btn active flex-1 px-5 py-2 rounded-lg text-xs font-semibold transition-all relative">Eligible</button>
             <button onclick="showTab('applied')"  class="tab-btn flex-1 px-5 py-2 rounded-lg text-xs font-semibold transition-all relative">Applied</button>
             <button onclick="showTab('approved')" class="tab-btn flex-1 px-5 py-2 rounded-lg text-xs font-semibold transition-all relative">Approved</button>
-            <button onclick="showTab('closed')"   class="tab-btn flex-1 px-5 py-2 rounded-lg text-xs font-semibold transition-all relative">Closed</button>
+            <button onclick="showTab('rejected')" class="tab-btn flex-1 px-5 py-2 rounded-lg text-xs font-semibold transition-all relative">Rejected</button>
           </div>
 
           <!-- ELIGIBLE TAB -->
@@ -247,7 +255,7 @@
                 <div class="p-5 flex flex-col flex-1">
                   <div class="flex justify-between items-start mb-1">
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ sch.scheme_name }}</h4>
-                    <span class="status-pill bg-primary/10 text-primary">Eligible</span>
+                    <span class="status-pill bg-emerald-50 text-emerald-600">Eligible</span>
                   </div>
                   <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Type: {{ sch.scheme_type }} Based</p>
                   
@@ -309,11 +317,12 @@
                   <div class="flex justify-between items-start mb-1">
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ app.scheme_name }}</h4>
                     {% set _ast = app.status %}
-                    {% if _ast == 'Approved' %}{% set _pill='bg-emerald-50 text-emerald-600' %}
-                    {% elif _ast == 'Rejected' %}{% set _pill='bg-red-50 text-red-600' %}
-                    {% elif _ast == 'Under Review' %}{% set _pill='bg-amber-50 text-amber-600' %}
-                    {% else %}{% set _pill='bg-primary/10 text-primary' %}{% endif %}
-                    <span class="status-pill {{ _pill }}">{{ _ast }}</span>
+                    {% if _ast == 'Approved' %}{% set _pill='bg-emerald-50 text-emerald-600' %}{% set _lbl='Approved' %}{% set _st_color='#10b981' %}
+                    {% elif _ast == 'Rejected' %}{% set _pill='bg-red-50 text-red-600' %}{% set _lbl='Rejected' %}{% set _st_color='#ef4444' %}
+                    {% elif _ast in ['Submitted', 'Applied'] %}{% set _pill='bg-blue-50 text-blue-600' %}{% set _lbl='Applied' %}{% set _st_color='#3b82f6' %}
+                    {% elif _ast == 'Under Review' %}{% set _pill='bg-amber-50 text-amber-600' %}{% set _lbl='Under Review' %}{% set _st_color='#f59e0b' %}
+                    {% else %}{% set _pill='bg-slate-100 text-slate-500' %}{% set _lbl=_ast %}{% set _st_color='#64748b' %}{% endif %}
+                    <span class="status-pill {{ _pill }}">{{ _lbl }}</span>
                   </div>
                   <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Type: {{ app.scheme_type }} Based</p>
                   
@@ -346,14 +355,17 @@
                   <div class="bg-slate-50 rounded-lg p-2.5 flex justify-between items-center mb-4">
                     <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Status Tracker</span>
                     <div class="flex gap-1">
-                      <div class="w-5 h-1 rounded-full {{ 'bg-primary' if _ast in ['Submitted','Under Review','Approved','Rejected'] else 'bg-slate-200' }}"></div>
+                      <div class="w-5 h-1 rounded-full {{ 'bg-blue-500' if _ast in ['Submitted','Applied','Under Review','Approved','Rejected'] else 'bg-slate-200' }}"></div>
                       <div class="w-5 h-1 rounded-full {{ 'bg-amber-500' if _ast in ['Under Review','Approved','Rejected'] else 'bg-slate-200' }}"></div>
                       <div class="w-5 h-1 rounded-full {{ 'bg-emerald-500' if _ast == 'Approved' else 'bg-red-500' if _ast == 'Rejected' else 'bg-slate-200' }}"></div>
                     </div>
                   </div>
 
                   <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase">Applied: {{ frappe.utils.formatdate(app.creation, "dd MMM yyyy") }}</p>
+                    <div class="space-y-0.5">
+                      <p class="text-[9px] font-bold text-slate-400 uppercase">Applied: {{ frappe.utils.formatdate(app.creation, "dd MMM yyyy") }}</p>
+                      <p class="text-[10px] font-black uppercase" style="color: {{ _st_color }}">{{ _lbl }}</p>
+                    </div>
                     <button onclick="viewDetails('{{ app.scholarship_scheme }}')" class="text-[10px] font-bold text-slate-900 bg-white border border-slate-200 px-3 py-1 rounded-lg uppercase">View Info</button>
                   </div>
                 </div>
@@ -376,7 +388,7 @@
                 <div class="p-5 flex flex-col flex-1">
                   <div class="flex justify-between items-start mb-1">
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ app.scheme_name }}</h4>
-                    <span class="text-emerald-500 material-symbols-outlined font-bold text-base">verified</span>
+                    <span class="status-pill bg-emerald-50 text-emerald-600">Approved</span>
                   </div>
                   <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Type: {{ app.scheme_type }} Based</p>
                   
@@ -420,40 +432,42 @@
             {% endif %}
           </div>
 
-          <!-- CLOSED TAB -->
-          <div id="tab-closed" class="tab-content hidden">
-            {% if closed_scholarships %}
+          <!-- REJECTED TAB -->
+          <div id="tab-rejected" class="tab-content hidden">
+            {% if rejected_scholarships %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {% for sch in closed_scholarships %}
-              <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col shadow-sm grayscale opacity-75">
+              {% for app in rejected_scholarships %}
+              <div class="hover-card bg-white rounded-2xl border border-red-50 overflow-hidden flex flex-col shadow-sm opacity-90">
                 <div class="p-5 flex flex-col flex-1">
                   <div class="flex justify-between items-start mb-1">
-                    <h4 class="text-sm font-bold text-slate-500 leading-snug">{{ sch.scheme_name }}</h4>
-                    <span class="status-pill bg-slate-200 text-slate-600">Locked</span>
+                    <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ app.scheme_name }}</h4>
+                    <span class="status-pill bg-red-50 text-red-600">Rejected</span>
                   </div>
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Type: {{ sch.scheme_type }} Based</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Type: {{ app.scheme_type }} Based</p>
 
-                  <div class="p-2.5 bg-red-50/50 border border-red-100 rounded-lg mb-4">
-                    <p class="text-[8px] font-bold text-red-400 uppercase mb-0.5">Status</p>
-                    <p class="text-[11px] text-red-600 font-medium leading-tight">{{ sch.not_eligible_reason }}</p>
-                  </div>
+                  {% if app.description %}
+                  <p class="text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed">
+                    {{ app.description | striptags }}
+                  </p>
+                  {% endif %}
 
                   <div class="grid grid-cols-2 gap-3 mb-5">
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-slate-400 text-base">loyalty</span>
                       <p class="text-xs font-bold text-slate-400">
-                        {% if sch.coverage_type == 'Percentage' %}{{ sch.coverage_value }}%
-                        {% else %}₹{{ "{:,.0f}".format(sch.coverage_value) }}{% endif %}
+                        {% if app.coverage_type == 'Percentage' %}{{ app.coverage_value }}%
+                        {% else %}₹{{ "{:,.0f}".format(app.coverage_value) }}{% endif %}
                       </p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 border-l border-slate-100 pl-3">
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
-                      <p class="text-xs font-bold text-slate-400">₹{{ "{:,.0f}".format(sch.max_amount or 0) }}</p>
+                      <p class="text-xs font-bold text-slate-400">₹{{ "{:,.0f}".format(app.max_amount or 0) }}</p>
                     </div>
                   </div>
 
-                  <div class="mt-auto pt-3 border-t border-slate-100 flex justify-end">
-                    <button onclick="viewDetails('{{ sch.name }}')" class="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase">View Criteria</button>
+                  <div class="mt-auto pt-3 border-t border-red-50 flex items-center justify-between">
+                    <p class="text-[9px] font-bold text-red-600 uppercase">Rejected On: {{ frappe.utils.formatdate(app.modified, "dd MMM yyyy") }}</p>
+                    <button onclick="viewDetails('{{ app.scholarship_scheme }}')" class="text-[10px] font-bold text-slate-400 hover:text-red-600 uppercase">View Criteria</button>
                   </div>
                 </div>
               </div>
@@ -461,7 +475,7 @@
             </div>
             {% else %}
             <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
-              <p class="text-slate-500 font-medium text-xs">All schemes processed.</p>
+              <p class="text-slate-500 font-medium text-xs">No rejected applications found.</p>
             </div>
             {% endif %}
           </div>
@@ -499,7 +513,7 @@
   }
 
   const schemeData = {
-    {% for sch in eligible_scholarships + closed_scholarships + applied_scholarships %}
+    {% for sch in eligible_scholarships + rejected_scholarships + applied_scholarships + approved_scholarships %}
     "{{ sch.scholarship_scheme if sch.scholarship_scheme else sch.name }}": {
       name: "{{ sch.scheme_name }}",
       type: "{{ sch.scheme_type }} Based",
