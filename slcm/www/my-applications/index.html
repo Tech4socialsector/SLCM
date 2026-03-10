@@ -625,7 +625,6 @@
         <!-- END ENTRANCE TEST CARD -->
 
         <!-- ══ MERIT DETAILS CARD ════════════════════════════════ -->
-        {% if merit_rank or merit_percentile or merit_score_val %}
         <section class="fade-in-up"
                  style="background:white;border-radius:16px;
                         border:1.5px solid #e2e8f0;overflow:hidden;
@@ -638,49 +637,50 @@
               Merit Details
             </h3>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;padding:24px;gap:0;">
-            {% if merit_rank %}
-            <div style="padding:8px 16px;
-                        {% if merit_percentile or merit_score_val %}
-                        border-right:1px solid #f1f5f9;{% endif %}">
-              <p style="font-size:11px;color:#94a3b8;font-weight:700;
-                         text-transform:uppercase;letter-spacing:0.07em;
-                         margin:0 0 8px;">All India Rank</p>
-              <p style="font-size:40px;font-weight:800;color:var(--primary);
-                         line-height:1;margin:0;">#{{ merit_rank }}</p>
+          
+          {% if all_merit %}
+            {% for merit in all_merit %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;padding:24px;gap:0;
+                        {% if not loop.last %}border-bottom:1px solid #f1f5f9;{% endif %}">
+              <div style="padding:8px 16px; border-right:1px solid #f1f5f9;">
+                <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                           text-transform:uppercase;letter-spacing:0.07em;
+                           margin:0 0 8px;">Overall Rank</p>
+                <p style="font-size:40px;font-weight:800;color:var(--primary);
+                           line-height:1;margin:0;">#{{ merit.overall_rank or '—' }}</p>
+              </div>
+              <div style="padding:8px 16px;">
+                <p style="font-size:11px;color:#94a3b8;font-weight:700;
+                           text-transform:uppercase;letter-spacing:0.07em;
+                           margin:0 0 8px;">Merit Score</p>
+                <p style="font-size:40px;font-weight:800;color:#0f172a;
+                           line-height:1;margin:0;">{{ merit.total_score or '—' }}</p>
+              </div>
+              <div style="padding:16px 16px 0; grid-column:span 2;">
+                 <span style="font-size:11px;font-weight:700;color:#16a34a;
+                              background:#f0fdf4;padding:2px 8px;border-radius:4px;
+                              text-transform:uppercase;">
+                   {{ merit.status }}
+                 </span>
+                 {% if merit.category_rank %}
+                 <span style="font-size:12px;color:#64748b;margin-left:12px;">
+                   Category Rank: <strong style="color:#0f172a;">#{{ merit.category_rank }}</strong>
+                 </span>
+                 {% endif %}
+              </div>
             </div>
-            {% endif %}
-            {% if merit_percentile %}
-            <div style="padding:8px 16px;">
-              <p style="font-size:11px;color:#94a3b8;font-weight:700;
-                         text-transform:uppercase;letter-spacing:0.07em;
-                         margin:0 0 8px;">Percentile Score</p>
-              <p style="font-size:40px;font-weight:800;color:#0f172a;
-                         line-height:1;margin:0;">{{ merit_percentile }}</p>
+            {% endfor %}
+          {% else %}
+            <div style="padding:32px 24px; text-align:center; background:#f8fafc;">
+              <p style="font-size:13px; color:#94a3b8; font-weight:500;">
+                Merit list not yet published
+              </p>
             </div>
-            {% elif merit_score_val %}
-            <div style="padding:8px 16px;">
-              <p style="font-size:11px;color:#94a3b8;font-weight:700;
-                         text-transform:uppercase;letter-spacing:0.07em;
-                         margin:0 0 8px;">Merit Score</p>
-              <p style="font-size:40px;font-weight:800;color:#0f172a;
-                         line-height:1;margin:0;">{{ merit_score_val }}</p>
-            </div>
-            {% endif %}
-          </div>
-          {% if merit_cat_rank %}
-          <div style="padding:0 24px 16px;">
-            <span style="font-size:12px;color:#64748b;">
-              Category Rank: <strong style="color:#0f172a;">#{{ merit_cat_rank }}</strong>
-            </span>
-          </div>
           {% endif %}
         </section>
-        {% endif %}
         <!-- END MERIT CARD -->
 
         <!-- ══ SEAT ALLOCATION CARD ══════════════════════════════ -->
-        {% if seat_allocation %}
         <section class="fade-in-up"
                  style="background:white;border-radius:16px;
                         border:1.5px solid #e2e8f0;overflow:hidden;
@@ -693,42 +693,43 @@
               Seat Allocation Results
             </h3>
           </div>
-          <div style="padding:20px 24px;">
-            <div style="display:flex;align-items:flex-start;
-                        justify-content:space-between;gap:14px;
-                        padding:16px;border-radius:12px;
-                        border:1.5px solid #e2e8f0;background:#fafbfc;">
-              <div>
-                <p style="font-size:10px;color:#94a3b8;font-weight:700;
-                           text-transform:uppercase;letter-spacing:0.06em;
-                           margin:0 0 6px;">Allocated Seat</p>
-                {% set _salloc_prog = (seat_allocation.get('program') if seat_allocation.get else seat_allocation.program) or _prog %}
-                {% set _salloc_campus = (seat_allocation.get('campus') if seat_allocation.get else seat_allocation.campus) or '' %}
-                {% set _salloc_type = (seat_allocation.get('allocation_type') if seat_allocation.get else seat_allocation.allocation_type) or '' %}
-                <p style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 4px;">
-                  {{ _salloc_prog }}
-                </p>
-                <p style="font-size:12px;color:#64748b;margin:0;">
-                  {% if _salloc_campus %}{{ _salloc_campus }}{% endif %}
-                  {% if _salloc_type %} · {{ _salloc_type }}{% endif %}
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px;">
+            {% if all_results %}
+              {% for res in all_results %}
+              <div style="display:flex;align-items:flex-start;
+                          justify-content:space-between;gap:14px;
+                          padding:16px;border-radius:12px;
+                          border:1.5px solid #e2e8f0;background:#fafbfc;">
+                <div>
+                  <p style="font-size:10px;color:#94a3b8;font-weight:700;
+                             text-transform:uppercase;letter-spacing:0.06em;">{{ res.allocation_type or 'Regular' }} Allocation</p>
+                  <p style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 4px;">
+                    {{ _prog }}
+                  </p>
+                  <p style="font-size:12px;color:#64748b;margin:0;">
+                    Selection Status: <strong style="color:#0f172a;">{{ res.selection_status }}</strong>
+                  </p>
+                </div>
+                <div style="text-align:right;">
+                   {% if res.selection_status == 'Selected' %}
+                     <span style="background:#ecfdf5;color:#059669;font-size:24px;" class="material-symbols-outlined rounded-full p-2">check_circle</span>
+                   {% elif res.selection_status == 'Waitlisted' %}
+                     <span style="background:#fffbeb;color:#d97706;font-size:24px;" class="material-symbols-outlined rounded-full p-2">hourglass_top</span>
+                   {% else %}
+                     <span style="background:#f1f5f9;color:#64748b;font-size:24px;" class="material-symbols-outlined rounded-full p-2">info</span>
+                   {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div style="padding:12px; text-align:center; background:#f8fafc; border-radius:12px; border:1px dashed #e2e8f0;">
+                <p style="font-size:13px; color:#94a3b8; font-weight:500;">
+                  Allocation in progress
                 </p>
               </div>
-              {% if seat_status %}
-              <span style="padding:5px 14px;border-radius:20px;font-size:11px;
-                           font-weight:800;white-space:nowrap;flex-shrink:0;
-                           {% if seat_status in ['Confirmed','Allocated'] %}
-                           background:#d1fae5;color:#065f46;
-                           {% elif seat_status == 'Waitlisted' %}
-                           background:#ede9fe;color:#5b21b6;
-                           {% else %}
-                           background:#dbeafe;color:#1d4ed8;{% endif %}">
-                {{ seat_status|upper }}
-              </span>
-              {% endif %}
-            </div>
+            {% endif %}
           </div>
         </section>
-        {% endif %}
         <!-- END SEAT ALLOCATION CARD -->
 
         <!-- ══ DOWNLOAD ACTIONS ROW ══════════════════════════════ -->
