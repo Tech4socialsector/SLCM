@@ -324,7 +324,7 @@ def get_context(context):
             if not context.all_results:
                 srows = frappe.get_all("Seat Selection Applicant",
                     filters={"applicant_id": _app_name},
-                    fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score"]
+                    fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score", "allocated_category"]
                 )
                 for s in srows:
                     if frappe.db.get_value("Seat Allocation", s.parent, "status") == "Published":

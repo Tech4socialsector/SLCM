@@ -47,38 +47,64 @@
     display: none !important;
   }
 
+  /* ── Sidebar ────────────────────────────────────────── */
+  .sidebar-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin: 0 0 12px 4px;
+  }
+  .adm-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+  }
+  .adm-menu-item:hover:not(.active) {
+    background: #f8fafc;
+    color: #1e293b;
+  }
+  .adm-menu-item.active {
+    background: color-mix(in srgb, var(--primary), transparent 92%);
+    border-left-color: var(--primary);
+    color: var(--primary) !important;
+    font-weight: 600;
+  }
+  .adm-menu-item.active .ms-icon { color: var(--primary) !important; }
+  .adm-menu-item.danger { color: #ef4444; }
+  .adm-menu-item.danger:hover { background: #fff5f5; }
+  .ms-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 20px;
+    color: #94a3b8;
+    flex-shrink: 0;
+  }
+
   .sidebar-active {
     background: color-mix(in srgb, var(--primary), transparent 92%);
     border-right: 3px solid var(--primary);
     color: var(--primary) !important;
     font-weight: 700;
-  }
-
-  .sidebar-active .material-symbols-outlined {
-    color: var(--primary) !important;
-  }
-
-  .sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    text-decoration: none;
-    color: #475569;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background 0.15s, color 0.15s;
-    position: relative;
-  }
-
-  .sidebar-link:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-  }
-
-  .sidebar-link.sidebar-active {
-    color: var(--primary);
   }
 
   .coming-soon {
@@ -181,70 +207,47 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
       <!-- ══ SIDEBAR ═══════════════════════════════════════════════ -->
-      <aside class="lg:col-span-3 flex flex-col gap-5 fade-in-up" style="animation-delay:0.05s">
-        <div style="background:white;border-radius:16px;padding:24px;
-                    border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.05);
-                    display:flex;flex-direction:column;height:100%;">
-          <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;
-                    text-transform:uppercase;color:#94a3b8;margin-bottom:16px;">
+      <aside class="lg:col-span-3 fade-in-up" style="animation-delay:0.05s">
+        <div class="sidebar-card" style="position:sticky;top:80px;">
+          <p class="sidebar-section-label">
             Main Menu
           </p>
-          <nav class="adm-sidebar-menu" style="display:flex;flex-direction:column;gap:2px;flex:1;">
+          <nav style="display:flex;flex-direction:column;gap:2px;">
 
             <!-- Main Menu Items -->
             <div class="adm-menu-item" data-panel="profile"
-                 onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=profile'"
-                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#64748b;transition:all 0.15s;margin-bottom:4px;">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;">account_circle</span>
+                 onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=profile'">
+              <span class="ms-icon">account_circle</span>
               Profile
             </div>
 
             <div class="adm-menu-item" data-panel="applications"
-                 onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=applications'"
-                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#64748b;transition:all 0.15s;margin-bottom:4px;">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;">description</span>
+                 onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=applications'">
+              <span class="ms-icon">description</span>
               Applications
             </div>
 
-            <div class="adm-menu-item active" data-panel="scholarships"
-                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#64748b;transition:all 0.15s;margin-bottom:4px;">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;">school</span>
+            <div class="adm-menu-item active" data-panel="scholarships">
+              <span class="ms-icon">school</span>
               Scholarships
             </div>
 
             <div class="adm-menu-item" data-panel="offer_letters"
-                 onclick="window.location.href='/offer_letter/offer-letter-list'"
-                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#64748b;transition:all 0.15s;margin-bottom:4px;">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
+                 onclick="window.location.href='/offer_letter/offer-letter-list'">
+              <span class="ms-icon">mail</span>
               Offer Letter
             </div>
 
             <div class="adm-menu-item" data-panel="change_password"
-                 onclick="window.location.href='/update-password'"
-                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#64748b;transition:all 0.15s;margin-bottom:4px;">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;">lock_reset</span>
+                 onclick="window.location.href='/update-password'">
+              <span class="ms-icon">lock_reset</span>
               Change Password
             </div>
 
             <!-- Logout -->
-            <div class="adm-menu-item"
-                 onclick="window.location.href='/logout'"
-                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#ef4444;transition:all 0.15s;margin-bottom:4px;"
-                 onmouseover="this.style.background='#fff5f5'"
-                 onmouseout="this.style.background='transparent'">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;color:#ef4444;">logout</span>
+            <div class="adm-menu-item danger"
+                 onclick="window.location.href='/logout'">
+              <span class="ms-icon">logout</span>
               Logout
             </div>
 

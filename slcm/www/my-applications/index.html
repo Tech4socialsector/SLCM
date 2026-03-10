@@ -951,8 +951,12 @@
               <span class="seat-prog-name">{{ _prog }}</span>
               <span class="status-badge" style="background:#dcfce7;color:#16a34a;font-size:10px">{{ r.selection_status }}</span>
             </div>
-            <div class="seat-meta">
-              Round: <strong style="color:var(--text-1)">{{ r.allocation_type or '1' }}</strong>
+            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
+              <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">Allocated Category</div>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: white; padding: 5px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
+                <span class="material-symbols-outlined" style="font-size: 16px;">category</span>
+                {{ r.allocated_category or 'General' }}
+              </div>
             </div>
             {% if payment_details and payment_details.payment_date %}
             <div class="seat-deadline">
@@ -962,7 +966,7 @@
           </div>
 
           {% if r.selection_status in ['Selected','Offered'] %}
-          <div class="seat-action-row">
+          <!-- <div class="seat-action-row">
             <button class="btn-accept"
               onclick="handleSeatAction('accept','{{ _appid }}')">
               <span class="material-symbols-outlined">check</span>
@@ -973,7 +977,7 @@
               <span class="material-symbols-outlined">close</span>
               Decline
             </button>
-          </div>
+          </div> -->
           {% elif r.selection_status == 'Accepted' %}
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
             <span class="material-symbols-outlined" style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
