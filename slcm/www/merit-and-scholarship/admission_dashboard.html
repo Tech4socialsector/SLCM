@@ -145,6 +145,9 @@
 {% set _hero_img    = dashboard_hero_image or '' %}
 {% set _apps        = my_applications or [] %}
 {% set _scholarships= scholarships or [] %}
+{% set _applied_sch = applied_scholarships or [] %}
+{% set _entrance_tests = entrance_tests or [] %}
+{% set _applicant_data = applicant_data or [] %}
 {% set _vcards      = value_cards or [] %}
 {% set _mission_txt = portal_mission or _mission %}
 {% set _unread      = unread_messages or 0 %}
@@ -182,11 +185,11 @@
               My Applications
             </a> -->
 
-            <!-- Scholarships — COMING SOON -->
-            <!-- <a href="#" class="sidebar-link coming-soon">
-              <span class="material-symbols-outlined" style="font-size:20px;color:#cbd5e1">card_membership</span>
-              <span style="color:#cbd5e1">Scholarships</span>
-            </a> -->
+            <!-- Scholarships — REAL -->
+            <a href="/merit-and-scholarship/scholarships" class="sidebar-link">
+              <span class="material-symbols-outlined" style="font-size:20px;color:#94a3b8">card_membership</span>
+              <span>Scholarships</span>
+            </a>
 
             <!-- Messages — COMING SOON with badge -->
             <a href="#" class="sidebar-link coming-soon">
@@ -298,8 +301,10 @@
         </section>
         <!-- END HERO -->
 
-        <!-- ── TWO COLUMN: Applications + Scholarships ──────────── -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- ── APPLICATIONS & ENTRANCE TESTS ─────────────────── -->
+
+        <!-- ── APPLICATIONS & ENTRANCE TESTS ─────────────────── -->
+        <div class="grid grid-cols-1 gap-8">
 
           <!-- MY APPLICATIONS ─────────────────────────────────── -->
           <section class="flex flex-col gap-4 fade-in-up" style="animation-delay:0.2s">
@@ -319,7 +324,7 @@
               </a>
             </div>
 
-            <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               {% if _apps %}
                 {% for app in _apps %}
@@ -404,7 +409,7 @@
 
               {% else %}
               <!-- No applications -->
-              <div style="background:white;padding:24px;border-radius:14px;
+              <div class="col-span-1 md:col-span-2" style="background:white;padding:24px;border-radius:14px;
                           border:1.5px solid #e2e8f0;text-align:center;">
                 <span class="material-symbols-outlined"
                       style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px;">
@@ -418,6 +423,7 @@
 
               <!-- Start New Application -->
               <a href="/admission#programs"
+                 class="col-span-1 md:col-span-2"
                  style="display:flex;align-items:center;justify-content:center;gap:8px;
                         padding:16px;border-radius:14px;text-decoration:none;
                         border:2px dashed #e2e8f0;color:#94a3b8;
@@ -430,108 +436,10 @@
               </a>
 
             </div>
-          </section>
-          <!-- END MY APPLICATIONS -->
-
-          <!-- SCHOLARSHIP OPPORTUNITIES ──────────────────────── -->
-          {% if _scholarships %}
-          <section class="flex flex-col gap-4 fade-in-up" style="animation-delay:0.3s">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <h3 style="font-size:16px;font-weight:700;display:flex;
-                         align-items:center;gap:8px;color:#0f172a;">
-                <span class="material-symbols-outlined"
-                      style="font-size:20px;color:var(--primary)">payments</span>
-                Scholarship Opportunities
-              </h3>
-            </div>
-
-            {% set _sch = _scholarships[0] %}
-            {% set _sname = (_sch.get('scheme_name') if _sch.get else _sch.scheme_name) or 'Scholarship' %}
-            {% set _scov  = (_sch.get('coverage_type') if _sch.get else _sch.coverage_type) or '' %}
-            {% set _smax  = (_sch.get('max_amount') if _sch.get else _sch.max_amount) or 0 %}
-            {% set _selig = (_sch.get('eligibility_criteria') if _sch.get else _sch.eligibility_criteria) or '' %}
-            {% set _stype = (_sch.get('scheme_type') if _sch.get else _sch.scheme_type) or '' %}
-
-            <!-- Main scholarship card -->
-            <div class="hover-card"
-                 style="background:white;border-radius:16px;
-                        border:1.5px solid #e2e8f0;overflow:hidden;">
-              <div class="scholarship-bar"></div>
-              <div style="padding:20px;">
-                <div style="display:flex;justify-content:space-between;
-                            align-items:flex-start;margin-bottom:12px;">
-                  <div>
-                    <h4 style="font-size:14px;font-weight:700;color:#0f172a;">
-                      {{ _sname }}
-                    </h4>
-                    <p style="font-size:11px;color:#94a3b8;margin-top:2px;">
-                      {% if _scov == 'Percentage' and _smax %}
-                        Up to {{ _smax }}% Coverage
-                      {% elif _scov == 'Fixed' and _smax %}
-                        Up to ₹{{ "{:,.0f}".format(_smax) }} Coverage
-                      {% else %}
-                        {{ _stype }} Scholarship
-                      {% endif %}
-                    </p>
-                  </div>
-                  <span style="background:rgba(26,60,110,0.08);color:var(--primary);
-                               font-size:10px;font-weight:700;padding:3px 9px;
-                               border-radius:6px;">
-                    {{ _stype | upper or 'MERIT' }}
-                  </span>
-                </div>
-                {% if _selig %}
-                <p style="font-size:12px;color:#475569;line-height:1.55;margin-bottom:16px;">
-                  {{ _selig[:120] }}{% if _selig|length > 120 %}...{% endif %}
-                </p>
-                {% endif %}
-                <div style="display:flex;align-items:center;justify-content:space-between;
-                            border-top:1px solid #f1f5f9;padding-top:14px;">
-                  {% if _scholarships|length > 1 %}
-                  <p style="font-size:11px;color:#94a3b8;">
-                    +{{ _scholarships|length - 1 }} more scheme{{ 's' if _scholarships|length > 2 }}
-                  </p>
-                  {% else %}
-                  <span></span>
-                  {% endif %}
-                  <a href="#"
-                     style="font-size:13px;font-weight:700;color:var(--primary);
-                            text-decoration:none;"
-                     onmouseover="this.style.textDecoration='underline'"
-                     onmouseout="this.style.textDecoration='none'">
-                    View Details →
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <!-- Pro-tip card -->
-            <div style="background:#f8fafc;border-radius:14px;padding:14px 16px;
-                        border:1px solid #e2e8f0;
-                        display:flex;align-items:center;gap:12px;">
-              <div style="padding:8px;border-radius:10px;background:white;
-                          border:1px solid #e2e8f0;flex-shrink:0;">
-                <span class="material-symbols-outlined"
-                      style="font-size:20px;color:var(--secondary,#c8a14b)">
-                  lightbulb
-                </span>
-              </div>
-              <div>
-                <p style="font-size:12px;font-weight:700;color:#0f172a;">
-                  Pro-tip: Apply Early
-                </p>
-                <p style="font-size:11px;color:#64748b;margin-top:1px;">
-                  Early applications have higher selection rates. Don't wait.
-                </p>
-              </div>
-            </div>
 
           </section>
-          {% endif %}
-          <!-- END SCHOLARSHIPS -->
-
         </div>
-        <!-- END TWO COLUMN -->
+        <!-- END APPLICATIONS & ET -->
 
         <!-- ── VALUE CARDS ───────────────────────────────────────── -->
         {% if _vcards %}
