@@ -17,6 +17,7 @@
   "allow_application",
   "is_editable",
   "auto_transition",
+  "application_status",
   "section_schedule",
   "start_date",
   "end_date",
@@ -193,11 +194,17 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "application_status",
+   "fieldtype": "Link",
+   "label": "Application Status",
+   "options": "Applicant Status"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-10 12:14:05.167857",
+ "modified": "2026-03-11 00:40:14.939293",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle Stage",

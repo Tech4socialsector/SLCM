@@ -1123,11 +1123,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── Profile Edit Modal ──────────────────────────────────────
 function openProfileEditModal() {
-  var pd = {{ profile_data | tojson if profile_data else '{}' }};
-  var mobileInput = document.getElementById('edit-mobile');
-  var pincodeInput = document.getElementById('edit-pincode');
-
-  mobileInput.value      = pd.mobile_number          || '';
+  var pd = {{ profile_data_json | safe if profile_data_json else '{}' }};
+  document.getElementById('edit-mobile').value      = pd.mobile_number          || '';
   document.getElementById('edit-dob').value         = pd.date_of_birth          || '';
   document.getElementById('edit-gender').value      = pd.gender                 || '';
   document.getElementById('edit-nationality').value = pd.nationality            || '';
