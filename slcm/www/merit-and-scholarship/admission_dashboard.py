@@ -238,4 +238,53 @@ def get_context(context):
     except Exception:
         context.dashboard_hero_image = ""
 
+    # ── Profile data ─────────────────────────────────────────────────
+    try:
+        _user = frappe.session.user
+        if _user and _user != 'Guest':
+            _ap = frappe.get_all(
+                'Applicant',
+                filters={'email': _user},
+                fields=[
+                    'name', 'candidate_name', 'email', 'mobile_number',
+                    'date_of_birth', 'gender', 'nationality', 'religion',
+                    'father_name', 'mother_name',
+                    'correspondence_address', 'city', 'state', 'pincode',
+                    'application_status', 'candidate_photo',
+                    'reservation_category', 'pwd',
+                ],
+                limit=1,
+                order_by='creation desc'
+            )
+            if not _ap:
+                _ap = frappe.get_all(
+                    'Applicant',
+                    filters={'owner': _user},
+                    fields=[
+                        'name', 'candidate_name', 'email', 'mobile_number',
+                        'date_of_birth', 'gender', 'nationality', 'religion',
+                        'father_name', 'mother_name',
+                        'correspondence_address', 'city', 'state', 'pincode',
+                        'application_status', 'candidate_photo',
+                        'reservation_category', 'pwd',
+                    ],
+                    limit=1,
+                    order_by='creation desc'
+                )
+            context.profile_data = _ap[0] if _ap else {}
+        else:
+            context.profile_data = {}
+    except Exception:
+        context.profile_data = {}
+
+    # ── Derive first name for navbar ──────────────────────────────────
+    try:
+        _fullname = context.profile_data.get('candidate_name', '') if context.profile_data else ''
+        context.first_name = _fullname.split()[0] if _fullname else ''
+    except Exception:
+        context.first_name = ''
+
+    # ── Active panel from URL param ───────────────────────────────────
+    context.active_panel = frappe.form_dict.get('panel', 'applications')
+
     return context

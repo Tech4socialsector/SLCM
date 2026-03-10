@@ -76,6 +76,266 @@
   ::-webkit-scrollbar-track { background: #f1f5f9; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+  /* ── Tab bar ──────────────────────────────────────────────────── */
+  .ma-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 24px;
+  }
+  .ma-tab {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 24px;
+      font-size: 14px; font-weight: 600; color: #64748b;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+  }
+  .ma-tab:hover { color: var(--primary); }
+  .ma-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+  }
+  .ma-tab .material-symbols-outlined { font-size: 18px; }
+
+  /* ── Profile page ─────────────────────────────────────────────── */
+  .prof-wrap {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 24px;
+      align-items: start;
+  }
+  @media (max-width: 800px) {
+      .prof-wrap { grid-template-columns: 1fr; }
+  }
+
+  /* Profile sidebar card */
+  .prof-sidebar {
+      background: #fff;
+      border-radius: 16px;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 1px 6px rgba(0,0,0,.04);
+      overflow: hidden;
+      padding: 28px 20px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 0;
+  }
+  .prof-avatar-circle {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; font-weight: 800; color: #fff;
+      margin-bottom: 14px;
+      flex-shrink: 0;
+      overflow: hidden;
+  }
+  .prof-avatar-circle img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+  }
+  .prof-name {
+      font-size: 17px; font-weight: 800; color: #0f172a;
+      text-align: center; margin-bottom: 4px;
+  }
+  .prof-appid {
+      font-size: 12px; color: #94a3b8; margin-bottom: 10px; text-align: center;
+  }
+  .prof-status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      background: #d1fae5; color: #065f46; margin-bottom: 20px;
+  }
+  .prof-status-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #10b981;
+  }
+  .prof-action-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 10px 14px;
+      border-radius: 10px; font-size: 13px; font-weight: 600;
+      text-decoration: none; cursor: pointer; border: none; background: none;
+      transition: background 0.15s, color 0.15s;
+      color: #334155;
+  }
+  .prof-action-btn:hover { background: #f8fafc; color: #0f172a; }
+  .prof-action-btn .material-symbols-outlined { font-size: 18px; color: #64748b; }
+  .prof-action-btn.primary-btn {
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+      color: var(--primary);
+  }
+  .prof-action-btn.primary-btn:hover {
+      background: color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+  .prof-action-btn.primary-btn .material-symbols-outlined { color: var(--primary); }
+  .prof-action-btn.danger-btn { color: #dc2626; }
+  .prof-action-btn.danger-btn:hover { background: #fef2f2; }
+  .prof-action-btn.danger-btn .material-symbols-outlined { color: #dc2626; }
+  .prof-divider { width: 100%; height: 1px; background: #f1f5f9; margin: 8px 0; }
+
+  /* Profile main panel */
+  .prof-main { display: flex; flex-direction: column; gap: 20px; }
+
+  .prof-section-card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 1px 6px rgba(0,0,0,.04);
+      overflow: hidden;
+  }
+  .prof-section-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid #f1f5f9;
+  }
+  .prof-section-title {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 15px; font-weight: 700; color: #0f172a;
+  }
+  .prof-section-title .material-symbols-outlined { font-size: 19px; color: #64748b; }
+  .prof-edit-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 8px;
+      border: 1.5px solid #e2e8f0; background: #fff;
+      font-size: 13px; font-weight: 600; color: #475569;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .prof-edit-btn:hover { background: #f8fafc; border-color: var(--primary); color: var(--primary); }
+  .prof-edit-btn .material-symbols-outlined { font-size: 16px; }
+
+  /* Field grid */
+  .prof-field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      padding: 0;
+  }
+  @media (max-width: 600px) {
+      .prof-field-grid { grid-template-columns: 1fr; }
+  }
+  .prof-field {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f8fafc;
+  }
+  .prof-field:nth-child(odd) { border-right: 1px solid #f8fafc; }
+  .prof-field-full {
+      grid-column: 1 / -1;
+      padding: 16px 24px;
+      border-bottom: 1px solid #f8fafc;
+  }
+  .prof-field-label {
+      font-size: 10px; font-weight: 700; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px;
+  }
+  .prof-field-val {
+      font-size: 14px; font-weight: 600; color: #0f172a; line-height: 1.4;
+  }
+  .prof-field-val.empty { color: #cbd5e1; font-style: italic; font-weight: 400; }
+
+  /* Sub-section heading inside the card */
+  .prof-subsection {
+      grid-column: 1 / -1;
+      padding: 12px 24px 8px;
+      font-size: 12px; font-weight: 700; color: var(--primary);
+      text-transform: uppercase; letter-spacing: .06em;
+      border-top: 1px solid #f1f5f9;
+      border-bottom: 1px solid #f8fafc;
+      background: #fafbfc;
+  }
+
+  /* Edit form overlay */
+  .prof-edit-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: center; justify-content: center;
+  }
+  .prof-edit-overlay.open { display: flex; }
+  .prof-edit-modal {
+      background: #fff; border-radius: 20px;
+      width: 100%; max-width: 540px; max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: ddFadeIn .2s ease-out;
+      margin: 16px;
+  }
+  .prof-edit-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      position: sticky; top: 0; background: #fff; z-index: 1;
+      border-radius: 20px 20px 0 0;
+  }
+  .prof-edit-modal-head h3 {
+      font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;
+  }
+  .prof-edit-close {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: #f1f5f9; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #64748b; transition: background 0.15s;
+  }
+  .prof-edit-close:hover { background: #e2e8f0; }
+  .prof-edit-body { padding: 20px 24px 8px; }
+  .prof-edit-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      margin-bottom: 14px;
+  }
+  .prof-edit-row.full { grid-template-columns: 1fr; }
+  .prof-edit-field label {
+      display: block; font-size: 11px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px;
+  }
+  .prof-edit-field input,
+  .prof-edit-field select,
+  .prof-edit-field textarea {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 14px; color: #0f172a; background: #fff;
+      transition: border-color 0.15s;
+      font-family: inherit;
+  }
+  .prof-edit-field input:focus,
+  .prof-edit-field select:focus,
+  .prof-edit-field textarea:focus {
+      outline: none; border-color: var(--primary);
+  }
+  .prof-edit-field textarea { min-height: 72px; resize: vertical; }
+  .prof-edit-footer {
+      display: flex; gap: 10px; justify-content: flex-end;
+      padding: 16px 24px 20px;
+      border-top: 1px solid #f1f5f9;
+      position: sticky; bottom: 0; background: #fff;
+      border-radius: 0 0 20px 20px;
+  }
+  .prof-save-btn {
+      padding: 9px 22px; border-radius: 9px;
+      background: var(--primary); color: #fff;
+      border: none; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s;
+  }
+  .prof-save-btn:hover { opacity: 0.88; }
+  .prof-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .prof-cancel-btn {
+      padding: 9px 18px; border-radius: 9px;
+      background: #f1f5f9; color: #475569;
+      border: none; font-size: 14px; font-weight: 600;
+      cursor: pointer;
+  }
+  .prof-cancel-btn:hover { background: #e2e8f0; }
+  .prof-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #0f172a; color: #fff;
+      padding: 10px 22px; border-radius: 10px;
+      font-size: 13px; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      z-index: 9999; display: none;
+      animation: ddFadeIn .2s ease-out;
+  }
+  .prof-toast.show { display: block; }
+  .prof-toast.error { background: #dc2626; }
 </style>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1004,6 +1264,315 @@
         <span>My Application</span>
     </nav>
 
+  {# ── Tab bar (only shown when logged in on my-applications) ── #}
+  {% if frappe.session.user != "Guest" %}
+  <div class="ma-tabs">
+    <a href="/my-applications"
+       class="ma-tab {% if not show_profile %}active{% endif %}">
+      <span class="material-symbols-outlined">description</span>
+      My Application
+    </a>
+    <a href="/my-applications?tab=profile"
+       class="ma-tab {% if show_profile %}active{% endif %}">
+      <span class="material-symbols-outlined">person</span>
+      My Profile
+    </a>
+  </div>
+  {% endif %}
+
+  {# ════════════════════════════════════════════════════════════
+     PROFILE TAB — shown when ?tab=profile
+  ════════════════════════════════════════════════════════════ #}
+  {% if show_profile %}
+
+  {%- set _pname  = prof_candidate_name or candidate_name or '' -%}
+  {%- set _pinitial = _pname[0].upper() if _pname else 'U' -%}
+  {%- set _pphoto = prof_user_image or '' -%}
+
+  <div class="prof-wrap fade-in-up">
+
+    {# ── LEFT SIDEBAR ───────────────────────────────────────── #}
+    <div class="prof-sidebar">
+
+      {# Avatar #}
+      <div class="prof-avatar-circle">
+        {%- if _pphoto -%}
+          <img src="{{ _pphoto }}" alt="{{ _pinitial }}">
+        {%- else -%}
+          {{ _pinitial }}
+        {%- endif -%}
+      </div>
+
+      <div class="prof-name">{{ _pname }}</div>
+      <div class="prof-appid">{{ frappe.session.user }}</div>
+
+      {%- if prof_app_status -%}
+        {%- set _smap = {
+          'Submitted':'#dbeafe:#1d4ed8','Under Review':'#fef3c7:#d97706',
+          'Shortlisted':'#d1fae5:#059669','Offer Issued':'#e0f2fe:#0369a1',
+          'Selected':'#d1fae5:#065f46','Rejected':'#fee2e2:#dc2626',
+          'Draft':'#f1f5f9:#64748b'
+        } -%}
+        {%- set _sc = _smap.get(prof_app_status, '#f1f5f9:#64748b').split(':') -%}
+        <span class="prof-status-badge"
+              style="background:{{ _sc[0] }};color:{{ _sc[1] }};">
+          <span class="prof-status-dot"
+                style="background:{{ _sc[1] }};"></span>
+          {{ prof_app_status }}
+        </span>
+      {%- else -%}
+        <span class="prof-status-badge">
+          <span class="prof-status-dot"></span>
+          Active
+        </span>
+      {%- endif -%}
+
+      {# Action buttons #}
+      <a href="/my-applications" class="prof-action-btn primary-btn">
+        <span class="material-symbols-outlined">description</span>
+        My Application
+      </a>
+
+      {% if prof_app_name %}
+      <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant&name={{ prof_app_name }}&format=Applicant Application Form"
+         class="prof-action-btn"
+         target="_blank">
+        <span class="material-symbols-outlined">download</span>
+        Download Application
+      </a>
+      {% endif %}
+
+      <div class="prof-divider"></div>
+
+      <a href="/update-password" class="prof-action-btn">
+        <span class="material-symbols-outlined">lock_reset</span>
+        Change Password
+      </a>
+
+      <div class="prof-divider"></div>
+
+      <button class="prof-action-btn danger-btn" onclick="doLogout()">
+        <span class="material-symbols-outlined">logout</span>
+        Logout
+      </button>
+
+    </div>
+    {# END SIDEBAR #}
+
+    {# ── MAIN PANEL ─────────────────────────────────────────── #}
+    <div class="prof-main">
+
+      {# ── Personal Details card ──────────────────────────────── #}
+      <div class="prof-section-card">
+        <div class="prof-section-head">
+          <div class="prof-section-title">
+            <span class="material-symbols-outlined">badge</span>
+            Personal Details
+          </div>
+          <button class="prof-edit-btn" onclick="openEditModal()">
+            <span class="material-symbols-outlined">edit</span>
+            Edit Details
+          </button>
+        </div>
+
+        <div class="prof-field-grid">
+          <div class="prof-field">
+            <div class="prof-field-label">Full Name</div>
+            <div class="prof-field-val" id="disp-name">
+              {{ prof_candidate_name or '—' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Date of Birth</div>
+            <div class="prof-field-val" id="disp-dob">
+              {%- if prof_dob -%}
+                {{ frappe.utils.formatdate(prof_dob, 'dd MMM, yyyy') }}
+              {%- else -%}
+                <span class="empty">Not set</span>
+              {%- endif -%}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Gender</div>
+            <div class="prof-field-val" id="disp-gender">
+              {{ prof_gender or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Nationality</div>
+            <div class="prof-field-val" id="disp-nationality">
+              {{ prof_nationality or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Religion</div>
+            <div class="prof-field-val" id="disp-religion">
+              {{ prof_religion or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+
+          {# Contact sub-section #}
+          <div class="prof-subsection">Contact Information</div>
+
+          <div class="prof-field">
+            <div class="prof-field-label">Email Address</div>
+            <div class="prof-field-val">{{ frappe.session.user }}</div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Mobile Number</div>
+            <div class="prof-field-val" id="disp-mobile">
+              {{ prof_mobile or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Alternate Contact</div>
+            <div class="prof-field-val" id="disp-alternate">
+              {{ prof_alternate_contact or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">ID Proof</div>
+            <div class="prof-field-val" id="disp-idproof">
+              {{ prof_id_proof or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field-full">
+            <div class="prof-field-label">Correspondence Address</div>
+            <div class="prof-field-val" id="disp-address">
+              {%- if prof_address -%}
+                {{ prof_address }}
+                {%- if prof_city -%}, {{ prof_city }}{%- endif -%}
+                {%- if prof_state -%}, {{ prof_state }}{%- endif -%}
+                {%- if prof_pincode %} — {{ prof_pincode }}{%- endif -%}
+              {%- else -%}
+                <span class="empty">Not set</span>
+              {%- endif -%}
+            </div>
+          </div>
+        </div>
+      </div>
+      {# END personal details card #}
+
+    </div>
+    {# END main panel #}
+
+  </div>
+  {# END prof-wrap #}
+
+  {# ── EDIT MODAL ─────────────────────────────────────────── #}
+  <div class="prof-edit-overlay" id="editOverlay">
+    <div class="prof-edit-modal">
+      <div class="prof-edit-modal-head">
+        <h3>Edit Personal Details</h3>
+        <button class="prof-edit-close" onclick="closeEditModal()">
+          <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+        </button>
+      </div>
+      <div class="prof-edit-body">
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Full Name</label>
+            <input type="text" id="edit-name"
+                   value="{{ prof_candidate_name or '' }}"
+                   placeholder="Full name">
+          </div>
+          <div class="prof-edit-field">
+            <label>Date of Birth</label>
+            <input type="date" id="edit-dob"
+                   value="{{ prof_dob or '' }}">
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Gender</label>
+            <select id="edit-gender">
+              <option value="">— Select —</option>
+              <option value="Male" {% if prof_gender == 'Male' %}selected{% endif %}>Male</option>
+              <option value="Female" {% if prof_gender == 'Female' %}selected{% endif %}>Female</option>
+              <option value="Other" {% if prof_gender == 'Other' %}selected{% endif %}>Other</option>
+              <option value="Prefer not to say" {% if prof_gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+            </select>
+          </div>
+          <div class="prof-edit-field">
+            <label>Nationality</label>
+            <input type="text" id="edit-nationality"
+                   value="{{ prof_nationality or '' }}"
+                   placeholder="e.g. Indian">
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Religion</label>
+            <input type="text" id="edit-religion"
+                   value="{{ prof_religion or '' }}"
+                   placeholder="e.g. Hindu">
+          </div>
+          <div class="prof-edit-field">
+            <label>Mobile Number</label>
+            <input type="tel" id="edit-mobile"
+                   value="{{ prof_mobile or '' }}"
+                   placeholder="+91 9XXXXXXXXX">
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Alternate Contact</label>
+            <input type="tel" id="edit-alternate"
+                   value="{{ prof_alternate_contact or '' }}"
+                   placeholder="Alternate phone">
+          </div>
+          <div class="prof-edit-field">
+            <label>ID Proof Type</label>
+            <input type="text" id="edit-idproof"
+                   value="{{ prof_id_proof or '' }}"
+                   placeholder="e.g. Aadhaar, Passport">
+          </div>
+        </div>
+        <div class="prof-edit-row full">
+          <div class="prof-edit-field">
+            <label>Correspondence Address</label>
+            <textarea id="edit-address"
+                      placeholder="Street address">{{ prof_address or '' }}</textarea>
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>City</label>
+            <input type="text" id="edit-city"
+                   value="{{ prof_city or '' }}"
+                   placeholder="City">
+          </div>
+          <div class="prof-edit-field">
+            <label>State</label>
+            <input type="text" id="edit-state"
+                   value="{{ prof_state or '' }}"
+                   placeholder="State">
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Pincode</label>
+            <input type="text" id="edit-pincode"
+                   value="{{ prof_pincode or '' }}"
+                   placeholder="Pincode">
+          </div>
+          <div class="prof-edit-field">
+            {# spacer #}
+          </div>
+        </div>
+      </div>
+      <div class="prof-edit-footer">
+        <button class="prof-cancel-btn" onclick="closeEditModal()">Cancel</button>
+        <button class="prof-save-btn" id="saveBtn" onclick="saveProfile()">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="prof-toast" id="profToast"></div>
+
+  {% endif %}
+
     {% if applications %}
 ...
     <!-- HORIZONTAL SCROLL STRIP -->
@@ -1434,6 +2003,93 @@
       }
   });
   {% endif %}
+
+/* ── Profile edit modal ────────────────────────────────────────── */
+function openEditModal() {
+    document.getElementById('editOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeEditModal() {
+    document.getElementById('editOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+if (document.getElementById('editOverlay')) {
+    document.getElementById('editOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+}
+
+function showProfToast(msg, isError) {
+    var t = document.getElementById('profToast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = 'prof-toast show' + (isError ? ' error' : '');
+    setTimeout(function() { t.className = 'prof-toast'; }, 3000);
+}
+
+async function saveProfile() {
+    var btn = document.getElementById('saveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+    var payload = {
+        candidate_name:       document.getElementById('edit-name')?.value || '',
+        date_of_birth:        document.getElementById('edit-dob')?.value || '',
+        gender:               document.getElementById('edit-gender')?.value || '',
+        nationality:          document.getElementById('edit-nationality')?.value || '',
+        religion:             document.getElementById('edit-religion')?.value || '',
+        mobile_number:        document.getElementById('edit-mobile')?.value || '',
+        alternate_contact:    document.getElementById('edit-alternate')?.value || '',
+        id_proof:             document.getElementById('edit-idproof')?.value || '',
+        correspondence_address: document.getElementById('edit-address')?.value || '',
+        city:                 document.getElementById('edit-city')?.value || '',
+        state:                document.getElementById('edit-state')?.value || '',
+        pincode:              document.getElementById('edit-pincode')?.value || '',
+    };
+
+    try {
+        var res = await fetch('/api/method/slcm.admission.api.profile.update_profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.csrf_token },
+            body: JSON.stringify(payload)
+        });
+        var data = await res.json();
+        if (data.message && data.message.success) {
+            // Update display values inline
+            if (payload.candidate_name)
+                document.getElementById('disp-name').textContent = payload.candidate_name;
+            if (payload.date_of_birth) {
+                var d = new Date(payload.date_of_birth);
+                document.getElementById('disp-dob').textContent =
+                    d.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+            }
+            if (payload.gender)
+                document.getElementById('disp-gender').textContent = payload.gender;
+            if (payload.nationality)
+                document.getElementById('disp-nationality').textContent = payload.nationality;
+            if (payload.religion)
+                document.getElementById('disp-religion').textContent = payload.religion;
+            if (payload.mobile_number)
+                document.getElementById('disp-mobile').textContent = payload.mobile_number;
+            if (payload.alternate_contact)
+                document.getElementById('disp-alternate').textContent = payload.alternate_contact;
+            if (payload.id_proof)
+                document.getElementById('disp-idproof').textContent = payload.id_proof;
+            var addrParts = [payload.correspondence_address, payload.city,
+                             payload.state, payload.pincode].filter(Boolean);
+            if (addrParts.length)
+                document.getElementById('disp-address').textContent = addrParts.join(', ');
+
+            closeEditModal();
+            showProfToast('✓ Profile updated successfully');
+        } else {
+            showProfToast(data.message?.error || 'Save failed — please try again.', true);
+        }
+    } catch(e) {
+        showProfToast('Network error — please try again.', true);
+    }
+
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+}
 })();
 </script>
 {% endblock %}

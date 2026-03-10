@@ -925,7 +925,7 @@
    "fieldname": "current_stage",
    "fieldtype": "Link",
    "label": "Current Stage",
-   "options": "Stage Master",
+   "options": "Stages",
    "read_only": 1
   },
   {
@@ -1025,7 +1025,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-10 11:29:15.053301",
+ "modified": "2026-03-10 12:14:24.591287",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
