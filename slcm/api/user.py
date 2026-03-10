@@ -1,0 +1,23 @@
+import frappe
+from frappe.core.doctype.user.user import sign_up
+
+@frappe.whitelist(allow_guest=True)
+def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
+    res = sign_up(email, full_name, redirect_to)
+    if res and res[0] == 1 and mobile_no:
+        # Update mobile_no for the newly created user
+        frappe.db.set_value("User", email, "mobile_no", mobile_no)
+        frappe.db.commit()
+    return res
+
+@frappe.whitelist()
+def get_login_redirect():
+    user = frappe.session.user
+    if user == "Guest":
+        return "/login"
+    
+    user_type = frappe.db.get_value("User", user, "user_type")
+    if user_type == "System User":
+        return "/app"
+    else:
+        return "/admission"

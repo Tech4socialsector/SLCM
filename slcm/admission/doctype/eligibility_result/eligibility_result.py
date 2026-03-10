@@ -38,6 +38,12 @@ def get_applicant_data():
         filters={"email": user_email},
         pluck="name"
     )
+    
+    if not result_names:
+        result_names = frappe.get_all("Eligibility Result", 
+            filters={"owner": user_email},
+            pluck="name"
+        )
 
     results = []
     for name in result_names:

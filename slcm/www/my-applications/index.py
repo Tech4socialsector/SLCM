@@ -225,6 +225,40 @@ def get_context(context):
 
         context.app_name_param = _app_name
 
+        # ── Fetch full combined results using the API ────────────
+        context.all_results = []
+        context.all_merit   = []
+        try:
+            # Try API first
+            combined_data = get_applicant_data()
+            if isinstance(combined_data, list):
+                for entry in combined_data:
+                    if entry.get("profile", {}).get("applicant_id") == _app_name:
+                        context.all_results = entry.get("results") or []
+                        context.all_merit   = entry.get("merit") or []
+                        break
+            
+            # If still empty, direct fetch as fallback (only if user has access)
+            if not context.all_merit:
+                mrows = frappe.get_all("Merit List Applicant",
+                    filters={"applicant_id": _app_name},
+                    fields=["total_score", "overall_rank", "status", "parent"]
+                )
+                for m in mrows:
+                    if frappe.db.get_value("Merit List", m.parent, "status") == "Published":
+                        context.all_merit.append(m)
+            
+            if not context.all_results:
+                srows = frappe.get_all("Seat Selection Applicant",
+                    filters={"applicant_id": _app_name},
+                    fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score"]
+                )
+                for s in srows:
+                    if frappe.db.get_value("Seat Allocation", s.parent, "status") == "Published":
+                        context.all_results.append(s)
+        except Exception:
+            pass
+
         # ── fee_payment_status ────────────────────────────────────
         context.fee_payment_status = (
             applicant.get("application_fee_status") or ""
