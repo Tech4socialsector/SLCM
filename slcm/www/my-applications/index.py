@@ -9,6 +9,79 @@ def get_context(context):
         frappe.local.flags.redirect_location = "/login?redirect=/my-applications"
         raise frappe.Redirect
 
+    context.no_cache     = 1
+    context.title        = "My Application"
+    context.show_detail  = False
+    context.applicant    = None
+
+    # ── Tab routing ───────────────────────────────────────────────
+    _tab = frappe.request.args.get("tab") if frappe.request else None
+    context.show_profile = (_tab == "profile")
+
+    # ── Profile context (always loaded for the sidebar avatar) ───
+    _user = frappe.session.user
+    _user_doc = frappe.db.get_value("User", _user,
+                    ["full_name", "user_image"], as_dict=True) or {}
+    context.prof_candidate_name  = _user_doc.get("full_name") or ""
+    context.prof_user_image      = _user_doc.get("user_image") or ""
+
+    # Try to load personal details from first Applicant record
+    _prof_app = None
+    try:
+        _prof_apps = frappe.get_all("Applicant",
+            filters=[["owner","=",_user]],
+            fields=["name","candidate_name","date_of_birth","gender","nationality",
+                    "religion","mobile_number","alternate_contact","id_proof",
+                    "correspondence_address","city","state","pincode",
+                    "application_status"],
+            limit=1, order_by="creation desc")
+        if not _prof_apps:
+            _prof_apps = frappe.get_all("Applicant",
+                filters=[["email","=",_user]],
+                fields=["name","candidate_name","date_of_birth","gender","nationality",
+                        "religion","mobile_number","alternate_contact","id_proof",
+                        "correspondence_address","city","state","pincode",
+                        "application_status"],
+                limit=1, order_by="creation desc")
+        if _prof_apps:
+            _prof_app = _prof_apps[0]
+    except Exception:
+        pass
+
+    if _prof_app:
+        context.prof_candidate_name  = _prof_app.candidate_name or context.prof_candidate_name
+        context.prof_dob             = _prof_app.date_of_birth
+        context.prof_gender          = _prof_app.gender
+        context.prof_nationality     = _prof_app.nationality
+        context.prof_religion        = _prof_app.religion
+        context.prof_mobile          = _prof_app.mobile_number
+        context.prof_alternate_contact = _prof_app.alternate_contact
+        context.prof_id_proof        = _prof_app.id_proof
+        context.prof_address         = _prof_app.correspondence_address
+        context.prof_city            = _prof_app.city
+        context.prof_state           = _prof_app.state
+        context.prof_pincode         = _prof_app.pincode
+        context.prof_app_status      = _prof_app.application_status
+        context.prof_app_name        = _prof_app.name
+    else:
+        context.prof_dob             = None
+        context.prof_gender          = None
+        context.prof_nationality     = None
+        context.prof_religion        = None
+        context.prof_mobile          = None
+        context.prof_alternate_contact = None
+        context.prof_id_proof        = None
+        context.prof_address         = None
+        context.prof_city            = None
+        context.prof_state           = None
+        context.prof_pincode         = None
+        context.prof_app_status      = None
+        context.prof_app_name        = None
+
+    # ── If tab=profile, skip loading detail view ──────────────────
+    if context.show_profile:
+        return
+
     # ── Detail mode: if ?app= param provided, load that specific application ──
     _app_name = frappe.form_dict.get("app") or ""
 

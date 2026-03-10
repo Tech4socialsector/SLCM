@@ -468,7 +468,7 @@
                 {{ _pc_title or ws.title or "Admissions" }}
             </a>
             <div class="adm-nav-links">
-                <a href="/admission" class="nav-hide-mobile">Programs</a>
+                <a href="/admission" class="nav-hide-mobile">Admission</a>
                 <!-- <a href="/merit-and-scholarship/admission_dashboard" class="nav-hide-mobile">Dashboard</a> -->
                 <!-- <a href="/my-applications" class="nav-hide-mobile">My Applications</a> -->
                 <!-- <a href="/offer_letter/offer-letter-list" class="nav-hide-mobile">Offer Letter</a> -->
@@ -549,7 +549,7 @@
                       </div>
                     </div>
                     <!-- Dashboard -->
-                    <a href="/merit-and-scholarship/admission_dashboard"
+                    <!-- <a href="/merit-and-scholarship/admission_dashboard"
                        style="display:flex;align-items:center;gap:10px;
                               padding:12px 16px;text-decoration:none;color:#334155;
                               font-size:14px;font-weight:600;transition:background 0.15s;"
@@ -557,7 +557,7 @@
                        onmouseout="this.style.background='transparent'">
                       <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">dashboard</span>
                       Dashboard
-                    </a>
+                    </a> -->
                     <!-- My Applications -->
                     <!-- <a href="/my-applications"
                        style="display:flex;align-items:center;gap:10px;
@@ -568,6 +568,16 @@
                       <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">description</span>
                       My Applications
                     </a> -->
+                    <!-- Profile -->
+                    <a href="/merit-and-scholarship/admission_dashboard?panel=profile"
+                       style="display:flex;align-items:center;gap:10px;
+                              padding:12px 16px;text-decoration:none;color:#334155;
+                              font-size:14px;font-weight:600;transition:background 0.15s;"
+                       onmouseover="this.style.background='#f8fafc'"
+                       onmouseout="this.style.background='transparent'">
+                      <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">account_circle</span>
+                      Profile
+                    </a>
                     <!-- Divider -->
                     <div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>
                     <!-- Logout -->
@@ -1074,15 +1084,8 @@
                 var logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', function () {
-                        showConfirm('Are you sure you want to logout?', async function () {
-                            try {
-                                await fetch('/api/method/logout', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': window.csrf_token },
-                                    body: 'csrf_token=' + encodeURIComponent(window.csrf_token)
-                                });
-                            } catch (e) { }
-                            window.location.href = '/login';
+                        showConfirm('Are you sure you want to logout?', function () {
+                            window.location.href = '/logout';
                         });
                     });
                 }

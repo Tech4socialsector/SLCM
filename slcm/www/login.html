@@ -27,8 +27,8 @@
 
     /* ─── TOAST ─── */
     #lp-toast-wrap {
-      position: fixed; top: 20px; right: 20px; z-index: 99999;
-      display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+      position: fixed; bottom: 20px; left: 20px; z-index: 99999;
+      display: flex; flex-direction: column-reverse; gap: 10px; pointer-events: none;
     }
     .lp-toast {
       display: flex; align-items: center; gap: 10px;
@@ -42,7 +42,7 @@
     .lp-toast.info    { background: #2563eb; }
     .lp-toast .material-symbols-outlined { font-size: 20px; flex-shrink: 0; }
     @keyframes toastIn {
-      from { opacity: 0; transform: translateX(20px); }
+      from { opacity: 0; transform: translateX(-20px); }
       to   { opacity: 1; transform: none; }
     }
 
@@ -332,38 +332,43 @@
           </button>
         </div>
       </div>
-      <div class="lp-check">
+      <!-- <div class="lp-check">
         <input type="checkbox" id="lp-remember">
         <label for="lp-remember">Keep me logged in</label>
-      </div>
+      </div> -->
       <button class="lp-btn" id="lp-login-btn" onclick="doLogin()">
         <div class="lp-btn-spin" id="lp-login-spin"></div>
-        <span id="lp-login-label">Sign In to Portal</span>
+        <span id="lp-login-label">Login</span>
       </button>
     </div>
 
     <!-- ── REGISTER PANEL ── -->
     <div id="panel-register" style="display:none;">
       <div class="lp-field">
-        <label class="lp-label" for="reg-name">Full Name</label>
+        <label class="lp-label" for="reg-name">Name of the Applicant</label>
         <input class="lp-input" type="text" id="reg-name"
                placeholder="Your full name" autocomplete="name">
+      </div>
+      <div class="lp-field">
+        <label class="lp-label" for="reg-mobile">Mobile Number</label>
+        <input class="lp-input" type="tel" id="reg-mobile"
+               placeholder="e.g. 9876543210" autocomplete="tel">
+        <div class="lp-field-hint">A verification email will be sent to set your password.</div>
       </div>
       <div class="lp-field">
         <label class="lp-label" for="reg-email">Email Address</label>
         <input class="lp-input" type="email" id="reg-email"
                placeholder="your @email.com" autocomplete="email">
-        <div class="lp-field-hint">A verification email will be sent to set your password.</div>
       </div>
       <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
         <div class="lp-btn-spin" id="lp-reg-spin"></div>
         <span class="material-symbols-outlined">person_add</span>
-        <span id="lp-reg-label">Create Account</span>
+        <span id="lp-reg-label">Register</span>
       </button>
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Already registered?
         <a href="#" onclick="lpTab('login');return false;"
-           style="color:var(--primary);font-weight:600;text-decoration:none;">Sign in</a>
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
 
@@ -574,7 +579,7 @@ async function doLogin() {
 
   btn.disabled = true;
   spin.style.display = 'block';
-  label.textContent = 'Signing in…';
+  label.textContent = 'Login…';
 
   var fd = new FormData();
   fd.append('usr', document.getElementById('lp-email').value.trim());
@@ -591,18 +596,24 @@ async function doLogin() {
     // Frappe returns {"message":"Logged In"} on success
     if (resp.ok && (data.message === 'Logged In' || data.home_page)) {
       lpToast('Login successful! Redirecting…', 'success');
-      setTimeout(function() {
-        // Check user type for desk redirect
-        fetch('/api/method/frappe.client.get_value?doctype=User&filters=' +
-          encodeURIComponent(JSON.stringify([['User','name','=',
-            document.getElementById('lp-email').value.trim()]])) +
-          '&fieldname=user_type', { method: 'GET' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          var ut = (d.message || {}).user_type || 'Website User';
-          window.location.href = (ut === 'System User') ? '/desk' : redir;
-        })
-        .catch(function() { window.location.href = redir; });
+      setTimeout(async function() {
+        try {
+          // If we had a redirect in the URL, use it (especially for desk /app)
+          if (redir && (redir.startsWith('/app') || redir.startsWith('/desk'))) {
+            window.location.href = redir;
+            return;
+          }
+
+          // Otherwise ask the backend for the best landing page
+          var r2 = await fetch('/api/method/slcm.api.user.get_login_redirect', {
+            method: 'GET',
+            headers: { 'X-Frappe-CSRF-Token': LP_CSRF }
+          });
+          var d2 = await r2.json();
+          window.location.href = d2.message || redir;
+        } catch(e) {
+          window.location.href = redir;
+        }
       }, 800);
     } else {
       var errMsg = data.message || 'Invalid credentials. Please try again.';
@@ -610,21 +621,22 @@ async function doLogin() {
       lpToast(errMsg, 'error');
       btn.disabled = false;
       spin.style.display = 'none';
-      label.textContent = 'Sign In to Portal';
+      label.textContent = 'Login';
     }
   } catch(e) {
     lpToast('Connection error. Please try again.', 'error');
     btn.disabled = false;
     spin.style.display = 'none';
-    label.textContent = 'Sign In to Portal';
+    label.textContent = 'Login';
   }
 }
 
 /* ── REGISTER ── */
 async function doRegister() {
   if (!lpValidate([
-    { id: 'reg-name',  type: 'text',  msg: 'Please enter your full name.' },
-    { id: 'reg-email', type: 'email', msg: 'Please enter a valid email address.' }
+    { id: 'reg-name',   type: 'text',  msg: 'Please enter your full name.' },
+    { id: 'reg-email',  type: 'email', msg: 'Please enter a valid email address.' },
+    { id: 'reg-mobile', type: 'text',  msg: 'Please enter your mobile number.' }
   ])) return;
 
   var btn   = document.getElementById('lp-reg-btn');
@@ -635,11 +647,12 @@ async function doRegister() {
   spin.style.display = 'block';
   label.textContent = 'Creating account…';
 
-  var name  = document.getElementById('reg-name').value.trim();
-  var email = document.getElementById('reg-email').value.trim();
+  var name   = document.getElementById('reg-name').value.trim();
+  var email  = document.getElementById('reg-email').value.trim();
+  var mobile = document.getElementById('reg-mobile').value.trim();
 
   try {
-    var resp = await fetch('/api/method/frappe.core.doctype.user.user.sign_up', {
+    var resp = await fetch('/api/method/slcm.api.user.custom_sign_up', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -648,6 +661,7 @@ async function doRegister() {
       body: JSON.stringify({
         email: email,
         full_name: name,
+        mobile_no: mobile,
         redirect_to: '/admission'
       })
     });
@@ -658,8 +672,9 @@ async function doRegister() {
     if (result && result[0] === 1) {
       lpToast('Account created! Check your email to set your password.', 'success');
       // Clear fields and switch to login
-      document.getElementById('reg-name').value  = '';
-      document.getElementById('reg-email').value = '';
+      document.getElementById('reg-name').value   = '';
+      document.getElementById('reg-email').value  = '';
+      document.getElementById('reg-mobile').value = '';
       setTimeout(function() { lpTab('login'); }, 2000);
     } else {
       var msg = (result && result[1]) ? result[1] : 'Registration failed. Please try again.';

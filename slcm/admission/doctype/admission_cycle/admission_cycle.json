@@ -13,6 +13,10 @@
   "col_break_basic",
   "status",
   "max_schemes_per_applicant",
+  "section_break_vnls",
+  "cycle_start_date",
+  "column_break_rbxq",
+  "cycle_end_date",
   "section_break_programs",
   "programs",
   "section_break_stages",
@@ -125,10 +129,28 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "section_break_vnls",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "cycle_start_date",
+   "fieldtype": "Date",
+   "label": "Cycle Start Date"
+  },
+  {
+   "fieldname": "cycle_end_date",
+   "fieldtype": "Date",
+   "label": "Cycle End Date"
+  },
+  {
+   "fieldname": "column_break_rbxq",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2026-03-09 10:58:33.658909",
+ "modified": "2026-03-10 16:06:59.084125",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
