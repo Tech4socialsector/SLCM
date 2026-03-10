@@ -926,8 +926,9 @@
   },
   {
    "fieldname": "current_stage",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Current Stage",
+   "options": "Stages",
    "read_only": 1
   },
   {

@@ -76,6 +76,266 @@
   ::-webkit-scrollbar-track { background: #f1f5f9; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+  /* ── Tab bar ──────────────────────────────────────────────────── */
+  .ma-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 24px;
+  }
+  .ma-tab {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 24px;
+      font-size: 14px; font-weight: 600; color: #64748b;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+  }
+  .ma-tab:hover { color: var(--primary); }
+  .ma-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+  }
+  .ma-tab .material-symbols-outlined { font-size: 18px; }
+
+  /* ── Profile page ─────────────────────────────────────────────── */
+  .prof-wrap {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 24px;
+      align-items: start;
+  }
+  @media (max-width: 800px) {
+      .prof-wrap { grid-template-columns: 1fr; }
+  }
+
+  /* Profile sidebar card */
+  .prof-sidebar {
+      background: #fff;
+      border-radius: 16px;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 1px 6px rgba(0,0,0,.04);
+      overflow: hidden;
+      padding: 28px 20px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 0;
+  }
+  .prof-avatar-circle {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; font-weight: 800; color: #fff;
+      margin-bottom: 14px;
+      flex-shrink: 0;
+      overflow: hidden;
+  }
+  .prof-avatar-circle img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+  }
+  .prof-name {
+      font-size: 17px; font-weight: 800; color: #0f172a;
+      text-align: center; margin-bottom: 4px;
+  }
+  .prof-appid {
+      font-size: 12px; color: #94a3b8; margin-bottom: 10px; text-align: center;
+  }
+  .prof-status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      background: #d1fae5; color: #065f46; margin-bottom: 20px;
+  }
+  .prof-status-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #10b981;
+  }
+  .prof-action-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 10px 14px;
+      border-radius: 10px; font-size: 13px; font-weight: 600;
+      text-decoration: none; cursor: pointer; border: none; background: none;
+      transition: background 0.15s, color 0.15s;
+      color: #334155;
+  }
+  .prof-action-btn:hover { background: #f8fafc; color: #0f172a; }
+  .prof-action-btn .material-symbols-outlined { font-size: 18px; color: #64748b; }
+  .prof-action-btn.primary-btn {
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+      color: var(--primary);
+  }
+  .prof-action-btn.primary-btn:hover {
+      background: color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+  .prof-action-btn.primary-btn .material-symbols-outlined { color: var(--primary); }
+  .prof-action-btn.danger-btn { color: #dc2626; }
+  .prof-action-btn.danger-btn:hover { background: #fef2f2; }
+  .prof-action-btn.danger-btn .material-symbols-outlined { color: #dc2626; }
+  .prof-divider { width: 100%; height: 1px; background: #f1f5f9; margin: 8px 0; }
+
+  /* Profile main panel */
+  .prof-main { display: flex; flex-direction: column; gap: 20px; }
+
+  .prof-section-card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 1px 6px rgba(0,0,0,.04);
+      overflow: hidden;
+  }
+  .prof-section-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid #f1f5f9;
+  }
+  .prof-section-title {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 15px; font-weight: 700; color: #0f172a;
+  }
+  .prof-section-title .material-symbols-outlined { font-size: 19px; color: #64748b; }
+  .prof-edit-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 8px;
+      border: 1.5px solid #e2e8f0; background: #fff;
+      font-size: 13px; font-weight: 600; color: #475569;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .prof-edit-btn:hover { background: #f8fafc; border-color: var(--primary); color: var(--primary); }
+  .prof-edit-btn .material-symbols-outlined { font-size: 16px; }
+
+  /* Field grid */
+  .prof-field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      padding: 0;
+  }
+  @media (max-width: 600px) {
+      .prof-field-grid { grid-template-columns: 1fr; }
+  }
+  .prof-field {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f8fafc;
+  }
+  .prof-field:nth-child(odd) { border-right: 1px solid #f8fafc; }
+  .prof-field-full {
+      grid-column: 1 / -1;
+      padding: 16px 24px;
+      border-bottom: 1px solid #f8fafc;
+  }
+  .prof-field-label {
+      font-size: 10px; font-weight: 700; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px;
+  }
+  .prof-field-val {
+      font-size: 14px; font-weight: 600; color: #0f172a; line-height: 1.4;
+  }
+  .prof-field-val.empty { color: #cbd5e1; font-style: italic; font-weight: 400; }
+
+  /* Sub-section heading inside the card */
+  .prof-subsection {
+      grid-column: 1 / -1;
+      padding: 12px 24px 8px;
+      font-size: 12px; font-weight: 700; color: var(--primary);
+      text-transform: uppercase; letter-spacing: .06em;
+      border-top: 1px solid #f1f5f9;
+      border-bottom: 1px solid #f8fafc;
+      background: #fafbfc;
+  }
+
+  /* Edit form overlay */
+  .prof-edit-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: center; justify-content: center;
+  }
+  .prof-edit-overlay.open { display: flex; }
+  .prof-edit-modal {
+      background: #fff; border-radius: 20px;
+      width: 100%; max-width: 540px; max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: ddFadeIn .2s ease-out;
+      margin: 16px;
+  }
+  .prof-edit-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      position: sticky; top: 0; background: #fff; z-index: 1;
+      border-radius: 20px 20px 0 0;
+  }
+  .prof-edit-modal-head h3 {
+      font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;
+  }
+  .prof-edit-close {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: #f1f5f9; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #64748b; transition: background 0.15s;
+  }
+  .prof-edit-close:hover { background: #e2e8f0; }
+  .prof-edit-body { padding: 20px 24px 8px; }
+  .prof-edit-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      margin-bottom: 14px;
+  }
+  .prof-edit-row.full { grid-template-columns: 1fr; }
+  .prof-edit-field label {
+      display: block; font-size: 11px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px;
+  }
+  .prof-edit-field input,
+  .prof-edit-field select,
+  .prof-edit-field textarea {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 14px; color: #0f172a; background: #fff;
+      transition: border-color 0.15s;
+      font-family: inherit;
+  }
+  .prof-edit-field input:focus,
+  .prof-edit-field select:focus,
+  .prof-edit-field textarea:focus {
+      outline: none; border-color: var(--primary);
+  }
+  .prof-edit-field textarea { min-height: 72px; resize: vertical; }
+  .prof-edit-footer {
+      display: flex; gap: 10px; justify-content: flex-end;
+      padding: 16px 24px 20px;
+      border-top: 1px solid #f1f5f9;
+      position: sticky; bottom: 0; background: #fff;
+      border-radius: 0 0 20px 20px;
+  }
+  .prof-save-btn {
+      padding: 9px 22px; border-radius: 9px;
+      background: var(--primary); color: #fff;
+      border: none; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s;
+  }
+  .prof-save-btn:hover { opacity: 0.88; }
+  .prof-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .prof-cancel-btn {
+      padding: 9px 18px; border-radius: 9px;
+      background: #f1f5f9; color: #475569;
+      border: none; font-size: 14px; font-weight: 600;
+      cursor: pointer;
+  }
+  .prof-cancel-btn:hover { background: #e2e8f0; }
+  .prof-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #0f172a; color: #fff;
+      padding: 10px 22px; border-radius: 10px;
+      font-size: 13px; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      z-index: 9999; display: none;
+      animation: ddFadeIn .2s ease-out;
+  }
+  .prof-toast.show { display: block; }
+  .prof-toast.error { background: #dc2626; }
 </style>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -522,7 +782,7 @@
         <!-- END NARRATIVE -->
 
         <!-- ══ ENTRANCE TEST CARD ════════════════════════════════ -->
-        {% if entrance_test %}
+        {% if et_doc %}
         <section class="fade-in-up"
                  style="background:white;border-radius:16px;
                         border:1.5px solid #e2e8f0;overflow:hidden;
@@ -536,93 +796,253 @@
                 Entrance Test
               </h3>
             </div>
-            {% if entrance_test.admit_status %}
             <span style="padding:3px 10px;border-radius:20px;font-size:11px;
                          font-weight:700;background:#eff6ff;color:#2563eb;">
-              {{ entrance_test.admit_status|upper }}
+              {{ et_doc.entrance_test_status|upper }}
             </span>
-            {% endif %}
           </div>
+
           <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px;">
-
-            <div style="display:flex;align-items:flex-start;
-                        justify-content:space-between;gap:12px;flex-wrap:wrap;">
-              <div>
-                <p style="font-size:11px;color:#94a3b8;font-weight:700;
-                           text-transform:uppercase;letter-spacing:0.05em;
-                           margin:0 0 4px;">Test Center</p>
-                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
-                  {{ entrance_test.center_name or '—' }}
+            
+            {% if et_show_result %}
+              <!-- RESULT VIEW -->
+              <div style="background:#f0fdf4; border:1px solid #bbfcce; border-radius:12px; padding:20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px;">
+                  <h4 style="font-size:16px; font-weight:700; color:#166534; margin:0;">Examination Result</h4>
+                  <span style="background:#16a34a; color:white; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700;">PUBLISHED</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                  <div style="background:white; padding:12px; border-radius:10px; text-align:center; border:1px solid #bbfcce;">
+                    <p style="font-size:11px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Score</p>
+                    <p style="font-size:20px; font-weight:800; color:#0f172a; margin:0;">{{ et_doc.score_obtained or 0 }} <small style="color:#64748b; font-size:12px;">/ {{ et_doc.total_score or 0 }}</small></p>
+                  </div>
+                  <div style="background:white; padding:12px; border-radius:10px; text-align:center; border:1px solid #bbfcce;">
+                    <p style="font-size:11px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Rank</p>
+                    <p style="font-size:20px; font-weight:800; color:#16a34a; margin:0;">#{{ et_doc.entrance_test_rank or '—' }}</p>
+                  </div>
+                </div>
+                <p style="margin-top:12px; font-size:12px; color:#166534; text-align:center;">
+                  Your result has been verified. Further instructions will be sent to your email.
                 </p>
               </div>
-              {% if admit_card_url %}
-              <a href="{{ admit_card_url }}" target="_blank"
-                 style="display:inline-flex;align-items:center;gap:6px;
-                        padding:9px 18px;border-radius:8px;font-size:13px;
-                        font-weight:700;text-decoration:none;color:white;
-                        background:var(--primary);white-space:nowrap;
-                        transition:opacity 0.15s;"
-                 onmouseover="this.style.opacity='0.85'"
-                 onmouseout="this.style.opacity='1'">
-                <span class="material-symbols-outlined" style="font-size:16px;">download</span>
-                Download Admit Card
-              </a>
-              {% endif %}
-            </div>
+            {% else %}
+              {% set current_alloc_status = et_doc.re_allocation_status if et_is_rescheduled else et_doc.allocation_status %}
+              
+              {% if current_alloc_status == "Allocated" %}
+                <!-- SCHEDULE VIEW -->
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+                  <div>
+                    <p style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Exam Center</p>
+                    <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
+                      {{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}
+                    </p>
+                  </div>
+                  <button onclick="downloadAdmitCard()" 
+                     style="display:inline-flex;align-items:center;gap:6px;
+                            padding:9px 18px;border-radius:8px;font-size:13px;
+                            font-weight:700;border:none;color:white;
+                            background:var(--primary);cursor:pointer;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+                    Download Admit Card
+                  </button>
+                </div>
 
-            {% if entrance_test.test_date or entrance_test.test_time %}
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              {% if entrance_test.test_date %}
-              <div style="background:#f8fafc;border-radius:10px;padding:12px 16px;">
-                <p style="font-size:11px;color:#94a3b8;font-weight:600;
-                           text-transform:uppercase;letter-spacing:0.05em;margin:0 0 4px;">
-                  Exam Date
-                </p>
-                <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
-                  {{ entrance_test.test_date }}
-                </p>
-              </div>
-              {% endif %}
-              {% if entrance_test.test_time %}
-              <div style="background:#f8fafc;border-radius:10px;padding:12px 16px;">
-                <p style="font-size:11px;color:#94a3b8;font-weight:600;
-                           text-transform:uppercase;letter-spacing:0.05em;margin:0 0 4px;">
-                  Reporting Time
-                </p>
-                <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
-                  {{ entrance_test.test_time }}
-                </p>
-              </div>
-              {% endif %}
-            </div>
-            {% endif %}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div style="background:#f8fafc;border-radius:10px;padding:12px;">
+                    <p style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Test Date</p>
+                    <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
+                      {{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date) }}
+                    </p>
+                  </div>
+                  <div style="background:#f8fafc;border-radius:10px;padding:12px;">
+                    <p style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Reporting Time</p>
+                    <p style="font-size:14px;font-weight:700;color:#dc2626;margin:0;">{{ et_reporting_time }}</p>
+                  </div>
+                </div>
 
-            {% if entrance_test.center_address %}
-            <div style="display:flex;align-items:flex-start;gap:10px;
-                        padding:12px 16px;background:#f8fafc;border-radius:10px;">
-              <span class="material-symbols-outlined"
-                    style="font-size:18px;color:#94a3b8;margin-top:1px;flex-shrink:0;">
-                location_on
-              </span>
-              <p style="font-size:13px;color:#475569;line-height:1.55;margin:0;">
-                {{ entrance_test.center_address }}
-              </p>
-            </div>
-            {% endif %}
+                <div style="background:#f8fafc;border-radius:10px;padding:12px;">
+                  <div style="display:flex; gap:15px;">
+                    <div>
+                      <p style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Room / Hall</p>
+                      <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name }}</p>
+                    </div>
+                    <div>
+                      <p style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Seat Number</p>
+                      <p style="font-size:14px;font-weight:700;color:var(--primary);margin:0;">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}</p>
+                    </div>
+                  </div>
+                </div>
 
-            {% if entrance_test.seat_number %}
-            <p style="font-size:13px;color:#475569;margin:0;display:flex;
-                      align-items:center;gap:8px;">
-              <span class="material-symbols-outlined"
-                    style="font-size:16px;color:#94a3b8;">chair</span>
-              Seat No: <strong style="color:#0f172a;">{{ entrance_test.seat_number }}</strong>
-            </p>
+                <div style="background:#f8fafc;border-radius:10px;padding:12px; display:flex; gap:10px;">
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#94a3b8;">location_on</span>
+                  <p style="font-size:12px;color:#475569;margin:0;line-height:1.4;">
+                    {{ et_doc.re_center_address if et_is_rescheduled else et_doc.center_address }}
+                  </p>
+                </div>
+
+              {% else %}
+                <!-- SELECTION VIEW -->
+                <div id="allocation-view-section" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:24px;">
+                  <h4 style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:8px;">Test Center Selection</h4>
+                  <p style="font-size:13px; color:#64748b; margin-bottom:20px;">
+                    Please select your preferred examination center from the available options below. 
+                    <strong>Once confirmed, this choice cannot be modified.</strong>
+                  </p>
+
+                  <div style="display:flex; flex-direction:column; gap:15px;">
+                    <div>
+                      <label style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; display:block; margin-bottom:6px;">Available Centers</label>
+                      <select id="providerDropdown" class="form-select" style="height:44px; border-radius:8px;">
+                        <option value="" disabled selected>Choose a location...</option>
+                        {% for p in et_preferences %}
+                        <option value="{{ p.provider }}">{{ p.center_name or p.provider }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <div id="centerDetails" style="display:none; background:white; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                      <div style="display:flex; gap:12px; align-items:center;">
+                        <div style="background:var(--primary); color:white; padding:8px; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                          <span class="material-symbols-outlined" style="font-size:20px;">location_on</span>
+                        </div>
+                        <div>
+                          <h6 id="selectedCenterName" style="font-size:14px; font-weight:700; color:#0f172a; margin:0;"></h6>
+                          <p id="selectedCenterAddr" style="font-size:12px; color:#64748b; margin:0;"></p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button id="btnSaveProvider" class="btn-primary-adm" style="width:100%; height:44px; font-weight:700;" disabled>
+                      Confirm Allocation
+                    </button>
+                  </div>
+                </div>
+
+                <div id="successSection" style="display:none; text-align:center; padding:40px 20px;">
+                  <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                  <h4 style="font-size:18px; font-weight:700; color:#0f172a;">Securing Your Selection...</h4>
+                  <p style="color:#64748b;">Please wait while we finalize your examination center.</p>
+                </div>
+              {% endif %}
             {% endif %}
 
           </div>
         </section>
         {% endif %}
         <!-- END ENTRANCE TEST CARD -->
+
+        <!-- ══ INTERVIEW ASSESSMENT CARD ════════════════════════════ -->
+        {% if interview_doc %}
+        <section class="fade-in-up"
+                 style="background:white;border-radius:16px;
+                        border:1.5px solid #e2e8f0;overflow:hidden;
+                        animation-delay:0.35s; margin-top: 24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="material-symbols-outlined"
+                    style="font-size:20px;color:var(--primary);">groups</span>
+              <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin:0;">
+                Interview Assessment
+              </h3>
+            </div>
+            <span style="padding:3px 10px;border-radius:20px;font-size:11px;
+                         font-weight:700;background:#f0fdf4;color:#166534;">
+              {{ (interview_doc.re_interview_slot_status if interview_is_rescheduled else interview_doc.interview_slot_status)|upper }}
+            </span>
+          </div>
+
+          <div style="padding:24px; display:flex; flex-direction:column; gap:20px;">
+            
+            {% if interview_show_result %}
+              <!-- INTERVIEW RESULT -->
+              <div style="background:#f0fdf4; border:1px solid #bbfcce; border-radius:12px; padding:20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px;">
+                  <h4 style="font-size:15px; font-weight:700; color:#166534; margin:0;">Assessment Outcome</h4>
+                  <span style="background:#16a34a; color:white; padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700;">VERIFIED</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                  <div style="background:white; padding:12px; border-radius:10px; text-align:center; border:1px solid #bbfcce;">
+                    <p style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Score</p>
+                    <p style="font-size:20px; font-weight:800; color:#0f172a; margin:0;">{{ interview_doc.interview_score or '—' }}</p>
+                  </div>
+                  <div style="background:white; padding:12px; border-radius:10px; text-align:center; border:1px solid #bbfcce;">
+                    <p style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Status</p>
+                    <p style="font-size:14px; font-weight:700; color:#16a34a; margin:4px 0 0;">{{ interview_doc.interview_result_status or 'Declared' }}</p>
+                  </div>
+                </div>
+
+                {% if interview_show_feedback %}
+                  <div style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(22,101,52,0.1);">
+                    <h6 style="font-size:13px; font-weight:700; color:#166534; margin-bottom:10px;">Your Feedback</h6>
+                    {% if interview_feedback_submitted %}
+                      <div style="background:rgba(255,255,255,0.6); padding:12px; border-radius:8px; font-size:12px; color:#475569; font-style:italic;">
+                        {{ interview_doc.feedback }}
+                      </div>
+                    {% else %}
+                      <div id="interview-feedback-form">
+                        <textarea id="interviewFeedbackText" class="form-control" rows="3" 
+                          style="font-size:12px; border-radius:8px; border:1px solid #bbfcce;"
+                          placeholder="Share your interview experience..."></textarea>
+                        <button id="btnSubmitInterviewFeedback" class="btn-primary-adm" 
+                          style="width:100%; margin-top:10px; height:36px; font-size:12px;">Submit Feedback</button>
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </div>
+            {% else %}
+              <!-- INTERVIEW SCHEDULE -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="background:#f8fafc; border-radius:10px; padding:12px;">
+                  <p style="font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Panelist</p>
+                  <p style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">{{ interview_current_slot.staff_name or 'Panel TBA' }}</p>
+                </div>
+                <div style="background:#f8fafc; border-radius:10px; padding:12px;">
+                  <p style="font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Date</p>
+                  <p style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">{{ interview_current_slot.interview_date }}</p>
+                </div>
+                <div style="background:#f8fafc; border-radius:10px; padding:12px;">
+                  <p style="font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Reporting</p>
+                  <p style="font-size:14px; font-weight:700; color:#dc2626; margin:0;">{{ interview_current_slot.reporting_time }}</p>
+                </div>
+                <div style="background:#f8fafc; border-radius:10px; padding:12px;">
+                  <p style="font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Slot Time</p>
+                  <p style="font-size:14px; font-weight:700; color:var(--primary); margin:0;">{{ interview_current_slot.interview_time }}</p>
+                </div>
+              </div>
+
+              <div style="background:#f8fafc; border-radius:10px; padding:12px; display:flex; gap:10px;">
+                <span class="material-symbols-outlined" style="font-size:18px; color:#94a3b8;">location_on</span>
+                <div>
+                  <p style="font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:2px;">Venue / Address</p>
+                  <p style="font-size:12px; color:#475569; margin:0; line-height:1.4;">{{ interview_current_slot.interview_address }}</p>
+                </div>
+              </div>
+
+              {% if not interview_current_slot.attendance_confirmation %}
+                <div id="interview-attendance-section" style="border-top:1px solid #f1f5f9; padding-top:15px;">
+                  <p style="font-size:11px; color:#64748b; margin-bottom:12px;">Please confirm your attendance for the scheduled slot.</p>
+                  <div style="display:flex; gap:10px;">
+                    <select id="interviewAttendanceSelect" class="form-select" style="font-size:13px; height:40px;">
+                      <option value="" disabled selected>Response...</option>
+                      {% for opt in interview_attendance_options %}
+                      <option value="{{ opt }}">{{ opt }}</option>
+                      {% endfor %}
+                    </select>
+                    <button id="btnSaveInterviewAttendance" class="btn-primary-adm" style="height:40px; padding:0 15px; font-size:13px;" disabled>Submit</button>
+                  </div>
+                </div>
+              {% else %}
+                <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:12px; text-align:center;">
+                  <p style="font-size:12px; color:#0369a1; margin:0;">Confirmed Response: <strong>{{ interview_current_slot.attendance_confirmation }}</strong></p>
+                </div>
+              {% endif %}
+            {% endif %}
+
+          </div>
+        </section>
+        {% endif %}
 
         <!-- ══ MERIT DETAILS CARD ════════════════════════════════ -->
         <section class="fade-in-up"
@@ -1017,29 +1437,314 @@
         <span>My Application</span>
     </nav>
 
-    <!-- Offer Letters section: only applications that have an offer letter -->
-    {% if offer_letter_entries %}
-    <section class="ma-sec-card" style="margin-bottom:24px;">
-        <div class="ma-sec-head" style="display:flex;align-items:center;gap:10px;">
-            <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);">drafts</span>
-            Offer Letters
+  {# ── Tab bar (only shown when logged in on my-applications) ── #}
+  {% if frappe.session.user != "Guest" %}
+  <div class="ma-tabs">
+    <a href="/my-applications"
+       class="ma-tab {% if not show_profile %}active{% endif %}">
+      <span class="material-symbols-outlined">description</span>
+      My Application
+    </a>
+    <a href="/my-applications?tab=profile"
+       class="ma-tab {% if show_profile %}active{% endif %}">
+      <span class="material-symbols-outlined">person</span>
+      My Profile
+    </a>
+  </div>
+  {% endif %}
+
+  {# ════════════════════════════════════════════════════════════
+     PROFILE TAB — shown when ?tab=profile
+  ════════════════════════════════════════════════════════════ #}
+  {% if show_profile %}
+
+  {%- set _pname  = prof_candidate_name or candidate_name or '' -%}
+  {%- set _pinitial = _pname[0].upper() if _pname else 'U' -%}
+  {%- set _pphoto = prof_user_image or '' -%}
+
+  <div class="prof-wrap fade-in-up">
+
+    {# ── LEFT SIDEBAR ───────────────────────────────────────── #}
+    <div class="prof-sidebar">
+
+      {# Avatar #}
+      <div class="prof-avatar-circle">
+        {%- if _pphoto -%}
+          <img src="{{ _pphoto }}" alt="{{ _pinitial }}">
+        {%- else -%}
+          {{ _pinitial }}
+        {%- endif -%}
+      </div>
+
+      <div class="prof-name">{{ _pname }}</div>
+      <div class="prof-appid">{{ frappe.session.user }}</div>
+
+      {%- if prof_app_status -%}
+        {%- set _smap = {
+          'Submitted':'#dbeafe:#1d4ed8','Under Review':'#fef3c7:#d97706',
+          'Shortlisted':'#d1fae5:#059669','Offer Issued':'#e0f2fe:#0369a1',
+          'Selected':'#d1fae5:#065f46','Rejected':'#fee2e2:#dc2626',
+          'Draft':'#f1f5f9:#64748b'
+        } -%}
+        {%- set _sc = _smap.get(prof_app_status, '#f1f5f9:#64748b').split(':') -%}
+        <span class="prof-status-badge"
+              style="background:{{ _sc[0] }};color:{{ _sc[1] }};">
+          <span class="prof-status-dot"
+                style="background:{{ _sc[1] }};"></span>
+          {{ prof_app_status }}
+        </span>
+      {%- else -%}
+        <span class="prof-status-badge">
+          <span class="prof-status-dot"></span>
+          Active
+        </span>
+      {%- endif -%}
+
+      {# Action buttons #}
+      <a href="/my-applications" class="prof-action-btn primary-btn">
+        <span class="material-symbols-outlined">description</span>
+        My Application
+      </a>
+
+      {% if prof_app_name %}
+      <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant&name={{ prof_app_name }}&format=Applicant Application Form"
+         class="prof-action-btn"
+         target="_blank">
+        <span class="material-symbols-outlined">download</span>
+        Download Application
+      </a>
+      {% endif %}
+
+      <div class="prof-divider"></div>
+
+      <a href="/update-password" class="prof-action-btn">
+        <span class="material-symbols-outlined">lock_reset</span>
+        Change Password
+      </a>
+
+      <div class="prof-divider"></div>
+
+      <button class="prof-action-btn danger-btn" onclick="doLogout()">
+        <span class="material-symbols-outlined">logout</span>
+        Logout
+      </button>
+
+    </div>
+    {# END SIDEBAR #}
+
+    {# ── MAIN PANEL ─────────────────────────────────────────── #}
+    <div class="prof-main">
+
+      {# ── Personal Details card ──────────────────────────────── #}
+      <div class="prof-section-card">
+        <div class="prof-section-head">
+          <div class="prof-section-title">
+            <span class="material-symbols-outlined">badge</span>
+            Personal Details
+          </div>
+          <button class="prof-edit-btn" onclick="openEditModal()">
+            <span class="material-symbols-outlined">edit</span>
+            Edit Details
+          </button>
         </div>
-        <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Applications with an admission offer. View details, accept or reject, pay fee, and download documents.</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
-            {% for o in offer_letter_entries %}
-            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.06)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
-                <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">{{ o.offer_status or 'Issued' }}</div>
-                <div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:4px;">{{ o.program_name or o.program or 'Program' }}</div>
-                <div style="font-size:13px;color:#64748b;margin-bottom:14px;">{{ o.campus_name or o.campus or '' }}</div>
-                <a href="/offer_letter/offer-letter-detail?offer={{ o.offer_name }}" class="ma-btn ma-btn-primary" style="display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;">
-                    <span class="material-symbols-outlined" style="font-size:18px;">visibility</span>
-                    View Offer Letter
-                </a>
+
+        <div class="prof-field-grid">
+          <div class="prof-field">
+            <div class="prof-field-label">Full Name</div>
+            <div class="prof-field-val" id="disp-name">
+              {{ prof_candidate_name or '—' }}
             </div>
-            {% endfor %}
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Date of Birth</div>
+            <div class="prof-field-val" id="disp-dob">
+              {%- if prof_dob -%}
+                {{ frappe.utils.formatdate(prof_dob, 'dd MMM, yyyy') }}
+              {%- else -%}
+                <span class="empty">Not set</span>
+              {%- endif -%}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Gender</div>
+            <div class="prof-field-val" id="disp-gender">
+              {{ prof_gender or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Nationality</div>
+            <div class="prof-field-val" id="disp-nationality">
+              {{ prof_nationality or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Religion</div>
+            <div class="prof-field-val" id="disp-religion">
+              {{ prof_religion or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+
+          {# Contact sub-section #}
+          <div class="prof-subsection">Contact Information</div>
+
+          <div class="prof-field">
+            <div class="prof-field-label">Email Address</div>
+            <div class="prof-field-val">{{ frappe.session.user }}</div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Mobile Number</div>
+            <div class="prof-field-val" id="disp-mobile">
+              {{ prof_mobile or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">Alternate Contact</div>
+            <div class="prof-field-val" id="disp-alternate">
+              {{ prof_alternate_contact or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field">
+            <div class="prof-field-label">ID Proof</div>
+            <div class="prof-field-val" id="disp-idproof">
+              {{ prof_id_proof or '<span class="empty">Not set</span>' }}
+            </div>
+          </div>
+          <div class="prof-field-full">
+            <div class="prof-field-label">Correspondence Address</div>
+            <div class="prof-field-val" id="disp-address">
+              {%- if prof_address -%}
+                {{ prof_address }}
+                {%- if prof_city -%}, {{ prof_city }}{%- endif -%}
+                {%- if prof_state -%}, {{ prof_state }}{%- endif -%}
+                {%- if prof_pincode %} — {{ prof_pincode }}{%- endif -%}
+              {%- else -%}
+                <span class="empty">Not set</span>
+              {%- endif -%}
+            </div>
+          </div>
         </div>
-    </section>
-    {% endif %}
+      </div>
+      {# END personal details card #}
+
+    </div>
+    {# END main panel #}
+
+  </div>
+  {# END prof-wrap #}
+
+  {# ── EDIT MODAL ─────────────────────────────────────────── #}
+  <div class="prof-edit-overlay" id="editOverlay">
+    <div class="prof-edit-modal">
+      <div class="prof-edit-modal-head">
+        <h3>Edit Personal Details</h3>
+        <button class="prof-edit-close" onclick="closeEditModal()">
+          <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+        </button>
+      </div>
+      <div class="prof-edit-body">
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Full Name</label>
+            <input type="text" id="edit-name"
+                   value="{{ prof_candidate_name or '' }}"
+                   placeholder="Full name">
+          </div>
+          <div class="prof-edit-field">
+            <label>Date of Birth</label>
+            <input type="date" id="edit-dob"
+                   value="{{ prof_dob or '' }}">
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Gender</label>
+            <select id="edit-gender">
+              <option value="">— Select —</option>
+              <option value="Male" {% if prof_gender == 'Male' %}selected{% endif %}>Male</option>
+              <option value="Female" {% if prof_gender == 'Female' %}selected{% endif %}>Female</option>
+              <option value="Other" {% if prof_gender == 'Other' %}selected{% endif %}>Other</option>
+              <option value="Prefer not to say" {% if prof_gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+            </select>
+          </div>
+          <div class="prof-edit-field">
+            <label>Nationality</label>
+            <input type="text" id="edit-nationality"
+                   value="{{ prof_nationality or '' }}"
+                   placeholder="e.g. Indian">
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Religion</label>
+            <input type="text" id="edit-religion"
+                   value="{{ prof_religion or '' }}"
+                   placeholder="e.g. Hindu">
+          </div>
+          <div class="prof-edit-field">
+            <label>Mobile Number</label>
+            <input type="tel" id="edit-mobile"
+                   value="{{ prof_mobile or '' }}"
+                   placeholder="+91 9XXXXXXXXX">
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Alternate Contact</label>
+            <input type="tel" id="edit-alternate"
+                   value="{{ prof_alternate_contact or '' }}"
+                   placeholder="Alternate phone">
+          </div>
+          <div class="prof-edit-field">
+            <label>ID Proof Type</label>
+            <input type="text" id="edit-idproof"
+                   value="{{ prof_id_proof or '' }}"
+                   placeholder="e.g. Aadhaar, Passport">
+          </div>
+        </div>
+        <div class="prof-edit-row full">
+          <div class="prof-edit-field">
+            <label>Correspondence Address</label>
+            <textarea id="edit-address"
+                      placeholder="Street address">{{ prof_address or '' }}</textarea>
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>City</label>
+            <input type="text" id="edit-city"
+                   value="{{ prof_city or '' }}"
+                   placeholder="City">
+          </div>
+          <div class="prof-edit-field">
+            <label>State</label>
+            <input type="text" id="edit-state"
+                   value="{{ prof_state or '' }}"
+                   placeholder="State">
+          </div>
+        </div>
+        <div class="prof-edit-row">
+          <div class="prof-edit-field">
+            <label>Pincode</label>
+            <input type="text" id="edit-pincode"
+                   value="{{ prof_pincode or '' }}"
+                   placeholder="Pincode">
+          </div>
+          <div class="prof-edit-field">
+            {# spacer #}
+          </div>
+        </div>
+      </div>
+      <div class="prof-edit-footer">
+        <button class="prof-cancel-btn" onclick="closeEditModal()">Cancel</button>
+        <button class="prof-save-btn" id="saveBtn" onclick="saveProfile()">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="prof-toast" id="profToast"></div>
+
+  {% endif %}
 
     {% if applications %}
 ...
@@ -1339,6 +2044,361 @@
       el.style.animationFillMode = 'forwards';
     });
   });
+
+  window.downloadAdmitCard = function() {
+      const doc = {{ et_doc_json|safe if et_doc_json else '{}' }};
+      const branding = {{ et_campus_branding|tojson|safe if et_campus_branding else '{}' }};
+      const is_rescheduled = {{ 'true' if et_is_rescheduled else 'false' }};
+
+      if (!doc || !doc.name) {
+          frappe.show_alert({message: "No admit card data available", indicator: "orange"});
+          return;
+      }
+
+      const esc = (v) => { if (!v) return ""; return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); };
+      const val = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
+      const fmtDate = (v) => { if (!v) return "—"; try { return new Date(v).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return v; } };
+
+      const admit_no = doc.admit_card_number || ("AC-" + doc.name);
+
+      const f_date = is_rescheduled ? doc.re_allocation_date : doc.allocation_date;
+      const f_test = is_rescheduled ? (doc.re_entrance_test_name || doc.re_entrance_test_list) : (doc.entrance_test_name || doc.entrance_test_list);
+      const f_seat = is_rescheduled ? doc.re_seat_number : doc.seat_number;
+      const f_room = is_rescheduled ? doc.re_room_name : doc.room_name;
+      const f_code = is_rescheduled ? doc.re_room_code : doc.room_code;
+      const f_building = is_rescheduled ? doc.re_building : doc.building;
+      const f_floor = is_rescheduled ? doc.re_floor : doc.floor;
+      const f_center = is_rescheduled ? doc.re_center_name : doc.center_name;
+      const f_address = is_rescheduled ? doc.re_center_address : doc.center_address;
+      const f_status = is_rescheduled ? doc.re_allocation_status : doc.allocation_status;
+
+      const alloc_date = fmtDate(f_date);
+      const dob = fmtDate(doc.date_of_birth);
+      const issue_date = new Date().toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      const exam_date_time = alloc_date !== "—" ? alloc_date + " &nbsp;|&nbsp; As per schedule" : "As per schedule";
+
+      let profile_image_url = doc.profile;
+      if (profile_image_url && !profile_image_url.startsWith('http')) {
+          profile_image_url = '/files/' + encodeURIComponent(profile_image_url.replace(/^.*[\\\/]/, ""));
+      }
+
+      const campus_display_name = branding.campus_name || doc.campus || "Institution of Legal Education";
+      const campus_logo_url = branding.logo ? (branding.logo.startsWith("http") ? branding.logo : '/files/' + encodeURIComponent(branding.logo.replace(/^.*[\\\/]/, ""))) : null;
+
+      const centre_parts = [f_center, f_address].filter(v => v && v.trim());
+      const centre_full = centre_parts.length ? centre_parts.map(esc).join(", ") : "—";
+
+      function headerHTML() {
+          return `
+              <div class="header" style="background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e;">
+                <div class="logo-box" style="width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+                  ${campus_logo_url
+                  ? `<img src="${campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`
+                  : `<div class="logo-inner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+                        <span class="logo-icon" style="font-size: 28px; line-height: 1; color: #7b1c1c;">⚖</span>
+                        <span class="logo-text" style="font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-align: center; letter-spacing: 0.5px; line-height: 1.2;">LAW<br>SCHOOL</span>
+                      </div>`
+              }
+                </div>
+                <div class="hdr-center" style="flex: 1; text-align: center;">
+                  <div class="univ-name" style="font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;">${esc(campus_display_name)}</div>
+                  <div class="univ-sub" style="font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
+                </div>
+              </div>`;
+      }
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Admit Card - ${esc(admit_no)}</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Times New Roman", Times, serif; font-size: 13px; background: #c8c8c8; color: #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.card-page { width: 710px; margin: 20px auto; background: #fff; border: 1.5px solid #555; }
+.header { background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e; }
+.logo-box { width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+.univ-name { font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2; }
+.univ-sub { font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px; }
+.title-row { text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }
+.title-row .t1 { font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }
+.title-row .t2 { font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }
+.info-wrap { border: 1.5px solid #888; margin: 12px 14px; display: flex; }
+.info-tbl { flex: 1; border-collapse: collapse; }
+.info-tbl tr { border-bottom: 1px solid #ccc; }
+.info-tbl tr:last-child { border-bottom: none; }
+.info-tbl td { padding: 5.5px 8px; font-size: 12.5px; vertical-align: middle; line-height: 1.5; }
+.info-tbl td.lb { font-weight: bold; font-family: Arial, sans-serif; width: 36%; white-space: nowrap; color: #000; }
+.info-tbl td.sp { width: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; text-align: center; padding: 0; }
+.info-tbl td.vl { font-family: "Times New Roman", Times, serif; font-size: 13px; color: #000; }
+.seat-pill { display: inline-block; background: #1a237e; color: #fff; font-weight: bold; font-family: Arial, sans-serif; font-size: 13px; padding: 2px 14px; border-radius: 2px; letter-spacing: 1px; }
+.status-pill { display: inline-block; border: 1px solid #4caf50; color: #1b5e20; background: #f0fdf0; font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px; }
+.photo-col { width: 135px; flex-shrink: 0; border-left: 1.5px solid #888; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 8px; min-height: 250px; gap: 8px; }
+.photo-box-inner { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.photo-frame { width: 120px; height: 150px; border: 1.5px solid #555; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center; }
+.photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+.photo-cap { font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3; }
+.sig-note { text-align: center; font-style: italic; font-size: 11.5px; font-family: "Times New Roman", Times, serif; padding: 6px 14px 3px; color: #000; }
+.sig-tbl { border-collapse: collapse; width: calc(100% - 28px); margin: 0 14px 16px; border: 1.5px solid #888; }
+.sig-tbl td { border: 1.5px solid #888; padding: 0; width: 50%; }
+.sig-hdr { font-weight: bold; font-family: Arial, sans-serif; font-size: 12px; color: #000; text-align: center; padding: 5px 8px 4px; border-bottom: 1.5px solid #888; display: block; }
+.sig-body { height: 54px; display: block; }
+.inst-outer { border: 1.5px solid #888; margin: 12px 14px 16px; padding: 14px 18px 18px; }
+.inst-main-title { font-size: 13.5px; font-weight: bold; font-family: Arial, sans-serif; text-align: center; color: #000; margin-bottom: 10px; }
+.sec-title { font-size: 12.5px; font-weight: bold; font-family: Arial, sans-serif; color: #000; margin: 10px 0 3px; }
+.il { list-style: none; margin: 0; padding: 0; }
+.il > li { display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; padding-left: 18px; }
+.il > li .mk { flex-shrink: 0; min-width: 16px; }
+.sl { list-style: none; margin: 2px 0 2px 52px; padding: 0; }
+.sl li { display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; }
+.sl li .mk { flex-shrink: 0; min-width: 22px; font-style: italic; }
+.pg-footer { padding: 6px 14px 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; }
+.pg-footer span { font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }
+@media print { body { background: #fff; margin: 0; } .card-page { width: 100%; margin: 0; border: 1.5px solid #555; } .p1 { page-break-after: always; } .p2 { page-break-before: always; } }
+</style>
+</head>
+<body>
+<div class="card-page p1">
+  ${headerHTML()}
+  <div class="title-row">
+    <div class="t1">Admit Card (${val(f_test)})</div>
+    <div class="t2">Admission to ${doc.program_level ? esc(doc.program_level) : "the Programme"} &nbsp;|&nbsp; ${val(doc.academic_year)} &nbsp;|&nbsp; ${val(doc.admission_cycle)}</div>
+  </div>
+  <div class="info-wrap">
+    <table class="info-tbl">
+      <tbody>
+        <tr><td class="lb">Admit Card Number</td><td class="sp">:</td><td class="vl"><strong>${val(admit_no)}</strong></td></tr>
+        <tr><td class="lb">Candidate's Name</td><td class="sp">:</td><td class="vl">${val(doc.candidate_name)}</td></tr>
+        <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">${val(dob)}</td></tr>
+        <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">${val(doc.father_name)}</td></tr>
+        <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">${val(doc.mother_name)}</td></tr>
+        <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">${val(doc.gender)}</td></tr>
+        <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">${val(doc.program)}</td></tr>
+        <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">${val(doc.applicant)}</td></tr>
+        <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">${exam_date_time}</td></tr>
+        <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
+        <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">${val(f_seat)}</span></td></tr>
+        <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">${val(f_room)}${f_code && f_code.trim() ? "&nbsp; (Code:&nbsp;" + esc(f_code) + ")" : ""}</td></tr>
+        <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">${val(f_building)}${f_floor && f_floor.trim() ? "&nbsp; &middot;&nbsp; Floor:&nbsp;" + esc(f_floor) : ""}</td></tr>
+        <tr><td class="lb">Allocation Status</td><td class="sp">:</td><td class="vl"><span class="status-pill">${val(f_status)}</span></td></tr>
+        <tr><td class="lb">Test Centre Name &amp;&nbsp;Address</td><td class="sp">:</td><td class="vl" style="font-size:11.5px;">${centre_full}</td></tr>
+      </tbody>
+    </table>
+    <div class="photo-col">
+      <div class="photo-box-inner">
+        <div class="photo-frame">
+          ${profile_image_url ? `<img src="${profile_image_url}" alt="Candidate Photo">` : `<div class="photo-ph">👤</div>`}
+        </div>
+        <div class="photo-cap">Candidate's Photograph</div>
+      </div>
+      <div class="photo-sig-box" style="width: 100%; text-align: center; margin-top: auto; padding-bottom: 5px;">
+        <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
+        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333;">Candidate's Signature</div>
+      </div>
+    </div>
+  </div>
+  <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>
+  <table class="sig-tbl">
+    <tr>
+      <td><span class="sig-hdr">Candidate's Signature</span><span class="sig-body"></span></td>
+      <td><span class="sig-hdr">Invigilator's Signature</span><span class="sig-body"></span></td>
+    </tr>
+  </table>
+</div>
+<div class="card-page p2">
+  <div class="inst-outer">
+    <div class="inst-main-title">Instructions to Candidates</div>
+    <div class="sec-title">1.&nbsp;&nbsp; General Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates should check and review their admit cards carefully and make sure that their Name, Date of Birth, and other personal details mentioned in the admit card are as per the details filled by them in the application form. In case of any discrepancy, please contact the Examination Cell immediately.</span></li>
+      <li><span class="mk">b.</span><span>Please carry a printed copy of this admit card to the test centre.</span></li>
+    </ul>
+    <div class="sec-title">2.&nbsp;&nbsp; Reporting to the Test Centre &amp; Test Timings</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates will be allowed to enter the premises of the test centre 30 minutes before the examination start time and should be seated in the examination hall at least 15 minutes before commencement.</span></li>
+      <li><span class="mk">b.</span><span>Candidates should carry a Government-issued photo ID card, preferably the one uploaded with the application form. The ID card will be checked at the time of entry into the centre.</span></li>
+      <li><span class="mk">c.</span><span>Candidates who arrive at the test centre beyond the scheduled entry cut-off time will not be permitted entry.</span></li>
+      <li><span class="mk">d.</span><span>Once the test commences, Candidates will not be permitted to leave the examination hall until the test is completed, and all the Question Booklets and OMR response sheets have been collected by the invigilator/s.</span></li>
+    </ul>
+    <div class="sec-title">3.&nbsp;&nbsp; Pre-Test Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates shall be required to follow all directions issued by the Centre Coordinators and the Institution representatives at their respective test centres.</span></li>
+      <li><span class="mk">b.</span><span>Candidates must maintain all protocols in place at their respective test centres.</span></li>
+    </ul>
+    <div class="sec-title">4.&nbsp;&nbsp; Permitted Items</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates will only be permitted to carry the following inside the Test Centre:</span></li>
+    </ul>
+    <ul class="sl">
+      <li><span class="mk">i.</span><span>Admit Card (In case the photograph on the Admit Card is not clear, candidates should carry a self-attested passport size photograph).</span></li>
+      <li><span class="mk">ii.</span><span>Government Issued Photo ID (preferably the one uploaded with the application form).</span></li>
+      <li><span class="mk">iii.</span><span>Black or Blue Ballpoint pen.</span></li>
+      <li><span class="mk">iv.</span><span>A transparent water bottle.</span></li>
+      <li><span class="mk">v.</span><span>A face mask (the Candidate may be asked to remove the face mask for ascertainment of identity).</span></li>
+      <li><span class="mk">vi.</span><span>An analogue watch. <strong>Note:</strong> Smart Watches are not permitted.</span></li>
+    </ul>
+    <div class="sec-title">5.&nbsp;&nbsp; Admissions Test Related Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>An attendance sheet will be circulated during the admissions test. The requisite details should be filled in the attendance sheet.</span></li>
+      <li><span class="mk">b.</span><span>Candidates will be provided with a Question Booklet and/or answer sheets. Candidates should use black/blue ball point pen <strong>only</strong> to enter the admit card number and other required details.</span></li>
+    </ul>
+    <div class="sec-title">6.&nbsp;&nbsp; Documents to be retained by the Candidate after the test</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>The admit card, with the invigilator's signature, should be retained by the candidate and produced at the Institution at the time of admission.</span></li>
+    </ul>
+    <div class="sec-title">7.&nbsp;&nbsp; Malpractice</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>The use of any unfair means by a Candidate shall result in their disqualification and cancellation of their test.</span></li>
+      <li><span class="mk">b.</span><span>Possession of electronic devices, including mobile phones, smart watches, etc., is strictly prohibited.</span></li>
+    </ul>
+  </div>
+  <div class="pg-footer">
+    <span>Doc: <strong>${val(doc.name)}</strong> &nbsp;·&nbsp; Generated: ${val(issue_date)}</span>
+    <span>${val(admit_no)}</span>
+  </div>
+</div>
+<script>window.print();<\/script>
+</body>
+</html>`;
+
+      const win = window.open("", "_blank", "width=800,height=900");
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+  };
+
+  // ── Provider Selection Logic ───────────────────────────────────────────
+  (function() {
+      const dropdown = document.getElementById('providerDropdown');
+      if (!dropdown) return;
+
+      const btnSave = document.getElementById('btnSaveProvider');
+      const centerDetails = document.getElementById('centerDetails');
+      const selectedCenterName = document.getElementById('selectedCenterName');
+      const selectedCenterAddr = document.getElementById('selectedCenterAddr');
+
+      const etData = {
+          preferences: {{ et_preferences|tojson|safe if et_preferences else '[]' }},
+          applicantId: '{{ et_doc.applicant }}',
+          entranceTestList: '{{ et_doc.entrance_test_list }}',
+          allocationName: '{{ et_doc.name }}',
+          isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
+      };
+
+      dropdown.addEventListener('change', function() {
+          const selected = etData.preferences.find(p => p.provider === this.value);
+          if (!selected) return;
+
+          btnSave.disabled = true;
+          btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
+
+          apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
+              applicant_id: etData.applicantId,
+              entrance_test_list: etData.entranceTestList
+          }).then(function(r) {
+              console.log("Preferences fetched:", r);
+              const pinfo = (r || []).find(p => p.entrance_test_provider === selected.provider);
+              if (pinfo && pinfo.is_full) {
+                  showToast('<b>' + (selected.center_name || selected.provider) + '</b> is currently full.', 'error');
+                  dropdown.value = '';
+                  centerDetails.style.display = 'none';
+                  btnSave.innerHTML = 'Confirm Allocation';
+              } else {
+                  centerDetails.style.display = 'block';
+                  selectedCenterName.textContent = selected.center_name || selected.provider;
+                  selectedCenterAddr.textContent = selected.center_address || '';
+                  btnSave.disabled = false;
+                  btnSave.innerHTML = 'Confirm Allocation';
+              }
+          }).catch((err) => {
+              console.error("Verification error:", err);
+              showToast(err.message || "Verification failed", 'error');
+              btnSave.disabled = false;
+              btnSave.innerHTML = 'Confirm Allocation';
+          });
+      });
+
+      btnSave.addEventListener('click', function() {
+          const selectedProvider = dropdown.value;
+          showConfirm('Are you sure you want to confirm allocation at <b>' + dropdown.options[dropdown.selectedIndex].text + '</b>? This action is permanent.', function() {
+              btnSave.disabled = true;
+              btnSave.innerHTML = 'Processing...';
+              apiFetch('slcm.www.eligibility.entrance_test_seat_allocation.save_provider', {
+                  allocation_name: etData.allocationName,
+                  selected_provider: selectedProvider,
+                  is_rescheduled: etData.isRescheduled
+              }).then(() => {
+                  document.getElementById('allocation-view-section').style.display = 'none';
+                  document.getElementById('successSection').style.display = 'block';
+                  setTimeout(() => window.location.reload(), 1500);
+              }).catch(err => {
+                  showToast(err.message || "Allocation failed", 'error');
+                  btnSave.disabled = false;
+                  btnSave.innerHTML = 'Confirm Allocation';
+              });
+          });
+      });
+  })();
+
+  // ── Interview Assessment Logic ─────────────────────────────────────────
+  (function() {
+      const interviewDocName = '{{ interview_doc.name if interview_doc else "" }}';
+      if (!interviewDocName) return;
+
+      const isRescheduled = {{ 'true' if interview_is_rescheduled else 'false' }};
+
+      // Attendance
+      const attSel = document.getElementById('interviewAttendanceSelect');
+      const btnAtt = document.getElementById('btnSaveInterviewAttendance');
+      if (attSel && btnAtt) {
+          attSel.addEventListener('change', function() { btnAtt.disabled = !this.value; });
+          btnAtt.addEventListener('click', function() {
+              const chosen = attSel.value;
+              showConfirm('Confirm your response as <b>' + chosen + '</b>?', function() {
+                  btnAtt.disabled = true;
+                  btnAtt.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                  apiFetch('slcm.www.eligibility.interview_management.save_attendance_confirmation', {
+                      allocation_name: interviewDocName,
+                      confirmation: chosen,
+                      is_rescheduled: isRescheduled
+                  }).then(() => {
+                      showToast('Confirmation recorded!', 'success');
+                      setTimeout(() => window.location.reload(), 1200);
+                  }).catch(err => {
+                      showToast(err.message || "Failed to save confirmation", 'error');
+                      btnAtt.disabled = false;
+                      btnAtt.innerHTML = 'Submit';
+                  });
+              });
+          });
+      }
+
+      // Feedback
+      const btnFeedback = document.getElementById('btnSubmitInterviewFeedback');
+      if (btnFeedback) {
+          btnFeedback.addEventListener('click', function() {
+              const text = (document.getElementById('interviewFeedbackText').value || '').trim();
+              if (!text) { showToast('Please enter your feedback.', 'error'); return; }
+
+              showConfirm('Submit your experience feedback?', function() {
+                  btnFeedback.disabled = true;
+                  btnFeedback.innerHTML = 'Submitting...';
+                  apiFetch('slcm.www.eligibility.interview_management.save_feedback', {
+                      allocation_name: interviewDocName,
+                      feedback_text: text
+                  }).then(() => {
+                      showToast('Thank you for your feedback!', 'success');
+                      setTimeout(() => window.location.reload(), 1200);
+                  }).catch(err => {
+                      showToast(err.message || "Failed to submit feedback", 'error');
+                      btnFeedback.disabled = false;
+                      btnFeedback.innerHTML = 'Submit Feedback';
+                  });
+              });
+          });
+      }
+  })();
   {% else %}
   // ── Legacy List View Script ──
   // Active application tracker
@@ -1471,6 +2531,93 @@
       }
   });
   {% endif %}
+
+/* ── Profile edit modal ────────────────────────────────────────── */
+function openEditModal() {
+    document.getElementById('editOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeEditModal() {
+    document.getElementById('editOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+if (document.getElementById('editOverlay')) {
+    document.getElementById('editOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+}
+
+function showProfToast(msg, isError) {
+    var t = document.getElementById('profToast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = 'prof-toast show' + (isError ? ' error' : '');
+    setTimeout(function() { t.className = 'prof-toast'; }, 3000);
+}
+
+async function saveProfile() {
+    var btn = document.getElementById('saveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+    var payload = {
+        candidate_name:       document.getElementById('edit-name')?.value || '',
+        date_of_birth:        document.getElementById('edit-dob')?.value || '',
+        gender:               document.getElementById('edit-gender')?.value || '',
+        nationality:          document.getElementById('edit-nationality')?.value || '',
+        religion:             document.getElementById('edit-religion')?.value || '',
+        mobile_number:        document.getElementById('edit-mobile')?.value || '',
+        alternate_contact:    document.getElementById('edit-alternate')?.value || '',
+        id_proof:             document.getElementById('edit-idproof')?.value || '',
+        correspondence_address: document.getElementById('edit-address')?.value || '',
+        city:                 document.getElementById('edit-city')?.value || '',
+        state:                document.getElementById('edit-state')?.value || '',
+        pincode:              document.getElementById('edit-pincode')?.value || '',
+    };
+
+    try {
+        var res = await fetch('/api/method/slcm.admission.api.profile.update_profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.csrf_token },
+            body: JSON.stringify(payload)
+        });
+        var data = await res.json();
+        if (data.message && data.message.success) {
+            // Update display values inline
+            if (payload.candidate_name)
+                document.getElementById('disp-name').textContent = payload.candidate_name;
+            if (payload.date_of_birth) {
+                var d = new Date(payload.date_of_birth);
+                document.getElementById('disp-dob').textContent =
+                    d.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+            }
+            if (payload.gender)
+                document.getElementById('disp-gender').textContent = payload.gender;
+            if (payload.nationality)
+                document.getElementById('disp-nationality').textContent = payload.nationality;
+            if (payload.religion)
+                document.getElementById('disp-religion').textContent = payload.religion;
+            if (payload.mobile_number)
+                document.getElementById('disp-mobile').textContent = payload.mobile_number;
+            if (payload.alternate_contact)
+                document.getElementById('disp-alternate').textContent = payload.alternate_contact;
+            if (payload.id_proof)
+                document.getElementById('disp-idproof').textContent = payload.id_proof;
+            var addrParts = [payload.correspondence_address, payload.city,
+                             payload.state, payload.pincode].filter(Boolean);
+            if (addrParts.length)
+                document.getElementById('disp-address').textContent = addrParts.join(', ');
+
+            closeEditModal();
+            showProfToast('✓ Profile updated successfully');
+        } else {
+            showProfToast(data.message?.error || 'Save failed — please try again.', true);
+        }
+    } catch(e) {
+        showProfToast('Network error — please try again.', true);
+    }
+
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+}
 })();
 </script>
 {% endblock %}

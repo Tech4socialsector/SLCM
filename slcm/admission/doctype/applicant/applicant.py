@@ -186,6 +186,9 @@ class Applicant(Document):
         """
         cats = set()
 
+        if (getattr(self, "ews", None) or "").strip() == "Yes":
+            cats.add("EWS")
+
         sc_st_obc = (getattr(self, "whether_scstobc_ncl", None) or "").strip()
         if sc_st_obc and sc_st_obc.lower() != "na":
             cats.add(sc_st_obc)  # Only include real categories like "OBC-NCL", "ST", or "SC"

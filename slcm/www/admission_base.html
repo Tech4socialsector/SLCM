@@ -6,6 +6,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% block title %}Admissions{% endblock %} — {{ frappe.get_doc("Website Settings").title or "SLCM" }}</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 
         <style>
             header.navbar,
@@ -468,7 +470,7 @@
                 {{ _pc_title or ws.title or "Admissions" }}
             </a>
             <div class="adm-nav-links">
-                <a href="/admission" class="nav-hide-mobile">Programs</a>
+                <a href="/admission" class="nav-hide-mobile">Admission</a>
                 <!-- <a href="/merit-and-scholarship/admission_dashboard" class="nav-hide-mobile">Dashboard</a> -->
                 <!-- <a href="/my-applications" class="nav-hide-mobile">My Applications</a> -->
                 <!-- <a href="/offer_letter/offer-letter-list" class="nav-hide-mobile">Offer Letter</a> -->
@@ -513,6 +515,8 @@
 
                 {% else %}
                 <!-- Logged in: avatar circle + full name + dropdown -->
+                {% set _applicant_photo = frappe.db.get_value("Applicant", {"email": _nav_user}, "candidate_photo") %}
+                {% set _user_image = _applicant_photo or frappe.db.get_value("User", _nav_user, "user_image") %}
                 {% set _full_name = frappe.db.get_value("User", _nav_user, "full_name") or _nav_user %}
                 <div class="adm-avatar-wrap" style="position:relative; display:flex; align-items:center; gap:10px;">
                   <button id="adm-avatar-btn"
@@ -522,10 +526,15 @@
                                  border:2px solid rgba(255,255,255,0.3);
                                  font-weight:800;font-size:15px;cursor:pointer;
                                  display:flex;align-items:center;justify-content:center;
-                                 transition:all 0.2s;"
+                                 transition:all 0.2s;
+                                 overflow:hidden; padding:0;"
                           title="{{ _nav_user }}"
                           aria-haspopup="true" aria-expanded="false">
-                    {{ _first_letter }}
+                    {% if _user_image %}
+                      <img src="{{ _user_image }}" style="width:100%; height:100%; object-fit:cover;">
+                    {% else %}
+                      {{ _first_letter }}
+                    {% endif %}
                   </button>
                   <span style="color:white; font-size:13px; font-weight:600; opacity:0.95; cursor:pointer;" 
                         class="nav-hide-mobile"
@@ -549,15 +558,15 @@
                       </div>
                     </div>
                     <!-- Dashboard -->
-                    <a href="/merit-and-scholarship/admission_dashboard"
+                    <!-- <a href="/merit-and-scholarship/admission_dashboard"
                        style="display:flex;align-items:center;gap:10px;
                               padding:12px 16px;text-decoration:none;color:#334155;
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                        onmouseover="this.style.background='#f8fafc'"
                        onmouseout="this.style.background='transparent'">
                       <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">dashboard</span>
-                      Applications
-                    </a>
+                      Dashboard
+                    </a> -->
                     <!-- My Applications -->
                     <!-- <a href="/my-applications"
                        style="display:flex;align-items:center;gap:10px;
@@ -568,6 +577,16 @@
                       <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">description</span>
                       My Applications
                     </a> -->
+                    <!-- Profile -->
+                    <a href="/merit-and-scholarship/admission_dashboard?panel=profile"
+                       style="display:flex;align-items:center;gap:10px;
+                              padding:12px 16px;text-decoration:none;color:#334155;
+                              font-size:14px;font-weight:600;transition:background 0.15s;"
+                       onmouseover="this.style.background='#f8fafc'"
+                       onmouseout="this.style.background='transparent'">
+                      <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">account_circle</span>
+                      Profile
+                    </a>
                     <!-- Divider -->
                     <div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>
                     <!-- Logout -->
@@ -1074,15 +1093,8 @@
                 var logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', function () {
-                        showConfirm('Are you sure you want to logout?', async function () {
-                            try {
-                                await fetch('/api/method/logout', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': window.csrf_token },
-                                    body: 'csrf_token=' + encodeURIComponent(window.csrf_token)
-                                });
-                            } catch (e) { }
-                            window.location.href = '/login';
+                        showConfirm('Are you sure you want to logout?', function () {
+                            window.location.href = '/logout';
                         });
                     });
                 }

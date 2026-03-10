@@ -307,7 +307,7 @@ def get_context(context):
     active_cycle = frappe.db.get_value(
         "Admission Cycle",
         {"status": "Active"},
-        ["name"],
+        ["name", "cycle_start_date", "cycle_end_date"],
         as_dict=True
     )
 

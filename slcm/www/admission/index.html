@@ -853,6 +853,14 @@
 
 <!-- ══ PROGRAMS ══════════════════════════════════════════════════════ -->
 <section id="programs" class="py-20">
+  {% if active_cycle and active_cycle.cycle_end_date %}
+  <div class="mb-8 p-4 rounded-xl border border-amber-200 bg-amber-50 flex items-center gap-3 fade-card">
+    <span class="material-symbols-outlined text-amber-600">info</span>
+    <p class="text-sm font-semibold text-amber-800">
+      Note: Applications for the current cycle will close on {{ frappe.utils.formatdate(active_cycle.cycle_end_date, "dd MMM yyyy") }}.
+    </p>
+  </div>
+  {% endif %}
   <div class="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
     <div>
       <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Academic Programs</h2>
@@ -941,8 +949,8 @@
                onmouseover="this.style.opacity='.85'"
                onmouseout="this.style.opacity='1'"
                onclick="event.stopPropagation()">
-              <span class="material-symbols-outlined" style="font-size:16px;">assignment</span>
-              View Application
+              <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span>
+              Apply Now
             </a>
           {% elif frappe.session.user != "Guest" %}
             <a href="/application_form?program={{ _pid }}&admission_cycle={{ p.admission_cycle or (active_cycle.name if active_cycle else '') or '' }}&campus={{ p.campus or '' }}&program_level={{ p.program_level or '' }}&intake_type={{ p.intake_type or '' }}"

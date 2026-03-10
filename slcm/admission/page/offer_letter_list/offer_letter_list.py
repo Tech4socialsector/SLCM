@@ -9,7 +9,7 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     """
     user = frappe.session.user
     if user == "Guest":
-        return {"error": "Authentication required"}
+        frappe.throw(_("Authentication required"), frappe.PermissionError)
 
     roles = frappe.get_roles(user)
     is_admin = "Administrator" in roles or "System Manager" in roles
@@ -24,7 +24,7 @@ def get_offer_list(limit_start=0, limit_page_length=10):
             if frappe.db.exists("Applicant", user):
                 applicant = user
             else:
-                return {"error": "Applicant record not found"}
+                frappe.throw(_("Applicant record not found for user {0}").format(user))
         
         filters["applicant"] = applicant
         applicant_name = frappe.db.get_value("Applicant", applicant, "candidate_name") or applicant
