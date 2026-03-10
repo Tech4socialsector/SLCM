@@ -20,14 +20,13 @@ class InterviewSeatAllocation(Document):
         # Fetch categories from Applicant if newly set or empty
         # Priority: Seat Allocation category (if already filled) vs Applicant's categories
         if self.applicant and (not self.category or self.is_new()):
-            app_categories = frappe.get_all("Applicant Category",
-                filters={"parent": self.applicant, "parenttype": "Applicant"},
-                fields=["category"]
-            )
+            from slcm.admission.doctype.applicant.applicant import Applicant
+            app_doc = frappe.get_doc("Applicant", self.applicant)
+            app_categories = app_doc._get_applicant_categories()
             # Re-initialize the child table ONLY if it's currently empty
             if not self.category:
-                for row in app_categories:
-                    self.append("category", {"category": row.category})
+                for cat in app_categories:
+                    self.append("category", {"category": cat})
 
 
 @frappe.whitelist()
