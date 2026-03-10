@@ -8,21 +8,18 @@
 (function () {
     'use strict';
 
-    // ── 1. Are we on the protected /new route? ────────────────────────────────
     var path = window.location.pathname;
     var isProtected = path.indexOf('/foundations-for-a-legal-education') !== -1 &&
         path.indexOf('/new') !== -1;
 
     if (!isProtected) return;
 
-    // ── 2. Freeze the page instantly — zero flash ─────────────────────────────
     var style = document.createElement('style');
     style.id = 'fle-guard-veil';
     style.textContent =
         'html, body { visibility: hidden !important; opacity: 0 !important; }';
     document.documentElement.appendChild(style);
 
-    // ── 3. Helpers ────────────────────────────────────────────────────────────
     function getCookie(name) {
         var match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
         return match ? decodeURIComponent(match[1]) : '';
@@ -44,9 +41,6 @@
         }
     }
 
-    // ── 4. Three-layer auth detection ─────────────────────────────────────────
-
-    // LAYER A: frappe.session.user (if Frappe already bootstrapped)
     function checkFrappeSession() {
         try {
             if (typeof frappe !== 'undefined' &&
@@ -58,49 +52,41 @@
         return null;
     }
 
-    // LAYER B: Frappe cookies (set server-side for logged-in users)
-    // Frappe sets `user_id` cookie to the logged-in user's email.
-    // For guests it is absent or set to 'Guest'.
     function checkFrappeCookie() {
         var uid = getCookie('user_id') || getCookie('frappe_userid');
         if (uid && uid !== 'Guest' && uid.length > 0) return uid;
-        // Also check `sid` — Frappe sets a non-Guest session ID when logged in
         var sid = getCookie('sid');
         if (sid && sid !== 'Guest' && sid.length > 10) return sid;
         return null;
     }
 
-    // LAYER C: Synchronous XHR — ground truth, always accurate
     function checkViaXHR() {
         try {
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/method/frappe.auth.get_logged_user', false); // sync
+            xhr.open('GET', '/api/method/frappe.auth.get_logged_user', false);
             xhr.withCredentials = true;
             var csrf = getCookie('X-Frappe-CSRF-Token') || getCookie('frappe_csrf_token');
             if (!csrf && typeof frappe !== 'undefined') csrf = frappe.csrf_token || '';
             if (csrf) xhr.setRequestHeader('X-Frappe-CSRF-Token', csrf);
             xhr.send(null);
-
             if (xhr.status === 200) {
                 var resp = JSON.parse(xhr.responseText);
                 var user = resp && resp.message ? resp.message : null;
                 return (user && user !== 'Guest') ? user : null;
             }
-            return null; // 403/401 = Guest
+            return null;
         } catch (e) {
-            return null; // Deny on error
+            return null;
         }
     }
 
-    // ── 5. Execute checks in order ────────────────────────────────────────────
     var user = checkFrappeSession() || checkFrappeCookie() || checkViaXHR();
 
     if (!user) {
         goToLogin();
-        return; // Page stays frozen — redirect in flight
+        return;
     }
 
-    // Authenticated — reveal the page
     revealPage();
     document.addEventListener('DOMContentLoaded', revealPage);
 
@@ -108,7 +94,7 @@
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 0B: POST-LOGIN REDIRECT — Bounce user back after login
+// SECTION 0B: POST-LOGIN REDIRECT
 // ─────────────────────────────────────────────────────────────────────────────
 (function () {
     'use strict';
@@ -127,7 +113,6 @@
     var nextUrl = getNextParam();
     if (!nextUrl) return;
 
-    // Poll for Frappe session becoming authenticated
     var poll = setInterval(function () {
         try {
             if (typeof frappe !== 'undefined' &&
@@ -144,7 +129,7 @@
         window.location.replace(nextUrl);
     });
 
-    setTimeout(function () { clearInterval(poll); }, 900000); // 15 min safety
+    setTimeout(function () { clearInterval(poll); }, 900000);
 })();
 
 
@@ -233,8 +218,385 @@
 // ─────────────────────────────────────────────────────────────────────────────
 window.inject_fle_header_footer = function () {
     if ($('.sticky-header').length > 0) return;
-    $('head').append('<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">');
+
+    // ── 1. Load Google Fonts ──────────────────────────────────────────────────
+    $('head').append('<link rel="preconnect" href="https://fonts.googleapis.com">');
+    $('head').append('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
+    $('head').append('<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet">');
     $('head').append('<link rel="stylesheet" href="/fle/css/login.css">');
+
+    // ── 2. MASTER FONT FIX — Override ALL Frappe web form typography ─────────
+    if ($('#fle-form-font-style').length === 0) {
+        $('head').append(`
+        <style id="fle-form-font-style">
+            /* ── Root font variable override ── */
+            :root {
+                --font-stack: 'Merriweather', Georgia, 'Times New Roman', serif;
+            }
+
+            /* ── Universal body & layout ── */
+            body,
+            .web-form-wrapper,
+            .web-form-page,
+            .form-layout,
+            .page-container,
+            .page-content,
+            .container,
+            .container-fluid,
+            .row,
+            .col,
+            p, span, div, label, a, li, td, th {
+                font-family: 'Merriweather', Georgia, 'Times New Roman', serif !important;
+            }
+
+            /* ── All headings ── */
+            h1, h2, h3, h4, h5, h6,
+            .page-title,
+            .web-form-page h1,
+            .web-form-page h2,
+            .web-form-page h3,
+            .web-form-page h4 {
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-weight: 700 !important;
+                color: #1a1a1a !important;
+            }
+
+            /* ── Section headings inside the form ── */
+            .web-form-page .section-head,
+            .web-form-wrapper .section-head,
+            .form-section .section-head,
+            .section-head,
+            h2.section-head {
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 18px !important;
+                font-weight: 700 !important;
+                color: #1a1a1a !important;
+                letter-spacing: 0.2px !important;
+                margin-bottom: 16px !important;
+            }
+
+            /* ── Field labels ── */
+            .control-label,
+            .frappe-control .control-label,
+            label.control-label,
+            .web-form-page label,
+            .web-form-wrapper label,
+            .form-group label {
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 12px !important;
+                font-weight: 400 !important;
+                color: #444444 !important;
+                letter-spacing: 0.3px !important;
+            }
+
+            /* ── All Frappe control wrappers ── */
+            .frappe-control,
+            .frappe-control *,
+            .form-group,
+            .form-group * {
+                font-family: 'Merriweather', Georgia, serif !important;
+            }
+
+            /* ── Input fields ── */
+            input[type="text"],
+            input[type="email"],
+            input[type="tel"],
+            input[type="number"],
+            input[type="date"],
+            input[type="password"],
+            input[type="search"],
+            select,
+            textarea,
+            .form-control,
+            .frappe-control input,
+            .frappe-control select,
+            .frappe-control textarea,
+            .frappe-control .input-with-feedback,
+            .frappe-control .like-disabled-input,
+            .input-with-feedback,
+            .like-disabled-input,
+            .web-form-page input,
+            .web-form-page select,
+            .web-form-page textarea {
+                font-family: 'Merriweather', Georgia, 'Times New Roman', serif !important;
+                font-size: 13.5px !important;
+                font-weight: 300 !important;
+                color: #1a1a1a !important;
+            }
+
+            /* ── Select / dropdown options ── */
+            select option,
+            .dropdown-menu,
+            .dropdown-item,
+            .select-items,
+            .select-item {
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 13px !important;
+            }
+
+            /* ── Help / description text ── */
+            .help-box,
+            .frappe-control .help-box,
+            .text-muted,
+            small,
+            .form-text {
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 11.5px !important;
+                font-weight: 300 !important;
+            }
+
+            /* ── Breadcrumb / meta text ── */
+            .breadcrumb-area,
+            .form-meta,
+            .indicator,
+            .page-breadcrumbs,
+            .breadcrumb,
+            .breadcrumb-item,
+            .breadcrumb-item a {
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 12px !important;
+            }
+
+            /* ══════════════════════════════════════════════════════════════
+               FORM ACTION BUTTONS — Branded, consistent, single-line
+               Targets: Save as Draft, Discard, Proceed to Pay, Delete
+            ══════════════════════════════════════════════════════════════ */
+
+            /* ── Base reset for ALL buttons in web form footer ── */
+            .web-form-footer .btn,
+            .web-form-footer button,
+            .page-actions .btn,
+            .page-actions button,
+            .form-footer .btn,
+            .form-footer button {
+                all: unset !important;
+                box-sizing: border-box !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                white-space: nowrap !important;
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 13px !important;
+                font-weight: 700 !important;
+                letter-spacing: 0.5px !important;
+                padding: 10px 22px !important;
+                border-radius: 5px !important;
+                cursor: pointer !important;
+                transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
+                text-decoration: none !important;
+                line-height: 1 !important;
+                min-height: 38px !important;
+            }
+
+            /* ── "Proceed to Pay" — primary CTA, dark red filled ── */
+            .web-form-footer .btn-primary,
+            .web-form-footer button.btn-primary,
+            .page-actions .btn-primary,
+            .form-footer .btn-primary {
+                background-color: #8B0000 !important;
+                color: #ffffff !important;
+                border: 2px solid #8B0000 !important;
+                box-shadow: 0 2px 6px rgba(139,0,0,0.35) !important;
+            }
+            .web-form-footer .btn-primary:hover,
+            .page-actions .btn-primary:hover,
+            .form-footer .btn-primary:hover {
+                background-color: #6a0000 !important;
+                border-color: #6a0000 !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 4px 12px rgba(139,0,0,0.4) !important;
+                color: #ffffff !important;
+            }
+            .web-form-footer .btn-primary:active,
+            .page-actions .btn-primary:active {
+                transform: translateY(0) !important;
+                background-color: #5a0000 !important;
+            }
+
+            /* ── "Save as Draft" — outlined red ── */
+            .web-form-footer .btn-default,
+            .web-form-footer button.btn-default,
+            .page-actions .btn-default,
+            .form-footer .btn-default {
+                background-color: #ffffff !important;
+                color: #8B0000 !important;
+                border: 2px solid #8B0000 !important;
+                box-shadow: none !important;
+            }
+            .web-form-footer .btn-default:hover,
+            .page-actions .btn-default:hover,
+            .form-footer .btn-default:hover {
+                background-color: #fff4f4 !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 2px 8px rgba(139,0,0,0.15) !important;
+                color: #8B0000 !important;
+            }
+
+            /* ── "Discard" — neutral grey outlined ── */
+            .web-form-footer .btn-secondary,
+            .web-form-footer button.btn-secondary,
+            .page-actions .btn-secondary,
+            .form-footer .btn-secondary {
+                background-color: #ffffff !important;
+                color: #555555 !important;
+                border: 2px solid #cccccc !important;
+                box-shadow: none !important;
+            }
+            .web-form-footer .btn-secondary:hover,
+            .page-actions .btn-secondary:hover,
+            .form-footer .btn-secondary:hover {
+                background-color: #f5f5f5 !important;
+                border-color: #aaaaaa !important;
+                transform: translateY(-1px) !important;
+                color: #333333 !important;
+            }
+
+            /* ── "Delete" — danger, red text outlined ── */
+            .web-form-footer .btn-danger,
+            .web-form-footer button.btn-danger,
+            .page-actions .btn-danger,
+            .form-footer .btn-danger {
+                background-color: #ffffff !important;
+                color: #cc0000 !important;
+                border: 2px solid #cc0000 !important;
+                box-shadow: none !important;
+            }
+            .web-form-footer .btn-danger:hover,
+            .page-actions .btn-danger:hover,
+            .form-footer .btn-danger:hover {
+                background-color: #fff0f0 !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 2px 8px rgba(204,0,0,0.15) !important;
+                color: #aa0000 !important;
+            }
+
+            /* ── Footer button row layout ── */
+            .web-form-footer,
+            .form-footer,
+            .page-actions {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                padding: 20px 0 12px 0 !important;
+            }
+
+            /* ── Generic font fallback for all other .btn ── */
+            .btn,
+            button,
+            .btn-sm,
+            .btn-lg,
+            input[type="submit"],
+            input[type="button"],
+            input[type="reset"] {
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-weight: 700 !important;
+                letter-spacing: 0.5px !important;
+                white-space: nowrap !important;
+            }
+
+            /* ── Upload / attach area ── */
+            .attach-btn,
+            .attach-label,
+            .input-area,
+            .attached-file,
+            .attached-file-link,
+            .file-uploader,
+            .file-uploader * {
+                font-family: 'Merriweather', Georgia, serif !important;
+            }
+
+            /* ── Required asterisk ── */
+            .reqd,
+            .required,
+            .asterisk {
+                color: #8B0000 !important;
+            }
+
+            /* ── Modal / alert boxes ── */
+            .modal,
+            .modal *,
+            .alert,
+            .alert * {
+                font-family: 'Merriweather', Georgia, serif !important;
+            }
+
+            /* ── Web form page title area ── */
+            .web-form-page .page-title,
+            .web-form-page .title-area,
+            .web-form-page .subtitle {
+                font-family: 'Merriweather', Georgia, serif !important;
+            }
+
+            /* ── Indicator badges (Not Saved, Saved, etc.) ── */
+            .indicator-pill,
+            .indicator,
+            .badge {
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 11px !important;
+            }
+
+            /* ── Table cells if any ── */
+            table, thead, tbody, tr, td, th {
+                font-family: 'Merriweather', Georgia, serif !important;
+            }
+
+            /* ── Link colors consistent with brand ── */
+            .web-form-page a,
+            .web-form-wrapper a {
+                color: #8B0000 !important;
+            }
+            .web-form-page a:hover,
+            .web-form-wrapper a:hover {
+                color: #6a0000 !important;
+            }
+
+            /* ── FIELD LABEL CASE FIX — override Frappe's uppercase labels ── */
+            .control-label,
+            .frappe-control .control-label,
+            label.control-label,
+            .web-form-page label,
+            .web-form-wrapper label,
+            .form-group label,
+            .field-area label,
+            .frappe-control label,
+            .web-form-page .control-label,
+            .web-form-wrapper .control-label,
+            .section-body .control-label,
+            .form-column .control-label {
+                text-transform: capitalize !important;
+                letter-spacing: 0.2px !important;
+                font-size: 13px !important;
+                font-weight: 400 !important;
+                color: #444444 !important;
+                font-family: 'Merriweather', Georgia, serif !important;
+            }
+
+            /* ── Section headings — keep bold, not uppercase ── */
+            .section-head,
+            .web-form-page .section-head,
+            .web-form-wrapper .section-head,
+            .form-section .section-head {
+                text-transform: none !important;
+                font-size: 18px !important;
+                font-weight: 700 !important;
+                color: #1a1a1a !important;
+            }
+
+            /* ── Navbar items keep uppercase intentionally ── */
+            .navbar-navy .nav-item {
+                text-transform: uppercase !important;
+            }
+
+            /* ── Logout button keeps uppercase intentionally ── */
+            button.fle-logout-btn {
+                text-transform: uppercase !important;
+            }
+        </style>`);
+    }
+
+    // ── 3. Header/footer/logout styles ───────────────────────────────────────
     if ($('#fle-logout-style').length === 0) {
         $('head').append(`
         <style id="fle-logout-style">
@@ -244,9 +606,34 @@ window.inject_fle_header_footer = function () {
                 justify-content:space-between!important; width:100%!important;
                 box-sizing:border-box!important; padding:10px 24px!important; background-color:#ffffff!important;
             }
-            .sticky-header .logo-container { display:none!important; }
-            .sticky-header .brand-text { flex:1 1 auto!important; text-align:center!important; padding:0 16px!important; }
-            .breadcrumb, .page-breadcrumbs, .breadcrumb-container, .page-head, .navbar-user-icon, .avatar { display:none!important; visibility:hidden!important; }
+            .sticky-header .logo-container {
+                display:flex!important; align-items:center!important;
+                flex:0 0 auto!important; margin-right:16px!important;
+            }
+            .sticky-header .logo-container a {
+                display:inline-block!important; line-height:0!important;
+            }
+            .sticky-header .logo-img {
+                display:block!important; height:70px!important; width:auto!important;
+                max-width:120px!important; object-fit:contain!important;
+                visibility:visible!important; opacity:1!important;
+            }
+            .sticky-header .brand-text {
+                flex:1 1 auto!important; text-align:center!important; padding:0 16px!important;
+                font-family:'Merriweather', Georgia, serif !important;
+            }
+            .sticky-header .brand-text .university-name {
+                font-family:'Merriweather', Georgia, serif !important;
+                font-size:13px !important; font-weight:400 !important; color:#8B0000 !important;
+                margin:0 0 4px !important; letter-spacing:0.5px !important; text-transform:uppercase !important;
+            }
+            .sticky-header .brand-text .department-name {
+                font-family:'Merriweather', Georgia, serif !important;
+                font-size:18px !important; font-weight:700 !important; color:#8B0000 !important;
+                margin:0 !important; letter-spacing:0.2px !important;
+            }
+            .breadcrumb, .page-breadcrumbs, .breadcrumb-container, .page-head,
+            .navbar-user-icon, .avatar { display:none!important; visibility:hidden!important; }
             .sticky-header .header-logout-area {
                 flex:0 0 auto!important; display:flex!important; align-items:center!important;
                 justify-content:flex-end!important; min-width:130px!important;
@@ -284,8 +671,8 @@ window.inject_fle_header_footer = function () {
                 width:52px; height:52px; margin:0 auto 18px; background:#fff4f4; border-radius:50%;
                 display:flex; align-items:center; justify-content:center;
             }
-            #fle-logout-modal h2 { font-size:18px; font-weight:700; color:#1a1a1a; margin:0 0 10px; }
-            #fle-logout-modal p { font-size:13.5px; color:#555; line-height:1.65; margin:0 0 28px; font-weight:300; }
+            #fle-logout-modal h2 { font-size:18px; font-weight:700; color:#1a1a1a; margin:0 0 10px; font-family:'Merriweather',Georgia,serif; }
+            #fle-logout-modal p { font-size:13.5px; color:#555; line-height:1.65; margin:0 0 28px; font-weight:300; font-family:'Merriweather',Georgia,serif; }
             #fle-logout-modal p strong { color:#1a1a1a; font-weight:700; }
             .fle-modal-actions { display:flex; gap:12px; justify-content:center; }
             .fle-modal-btn {
@@ -309,12 +696,48 @@ window.inject_fle_header_footer = function () {
             .fle-modal-btn-confirm.loading .fle-btn-label { display:none!important; }
             .fle-modal-btn-confirm.loading { pointer-events:none; opacity:0.85; }
             @keyframes fle-spin { to { transform:rotate(360deg); } }
+
+            /* ── Navbar navy ── */
+            .navbar-navy {
+                background-color:#8B0000!important; display:flex!important; flex-wrap:wrap!important;
+                justify-content:center!important; gap:0!important; padding:0!important;
+                font-family:'Merriweather',Georgia,serif!important;
+            }
+            .navbar-navy .nav-item {
+                color:#ffffff!important; text-decoration:none!important; padding:12px 20px!important;
+                font-size:12px!important; font-weight:700!important; letter-spacing:0.8px!important;
+                text-transform:uppercase!important; font-family:'Merriweather',Georgia,serif!important;
+                transition:background-color 0.2s ease!important;
+            }
+            .navbar-navy .nav-item:hover {
+                background-color:rgba(255,255,255,0.15)!important; color:#ffffff!important;
+            }
+
+            /* ── Footer ── */
+            .sticky-footer {
+                background-color:#1a1a1a!important; color:#cccccc!important;
+                text-align:center!important; padding:18px 24px!important;
+                font-size:12px!important; font-family:'Merriweather',Georgia,serif!important;
+                font-weight:300!important; letter-spacing:0.3px!important;
+                margin-top:auto!important; width:100%!important;
+            }
         </style>`);
     }
 
-    const header_html = `
+    // ── 4. Inject Header HTML ─────────────────────────────────────────────────
+    var header_html = `
     <header class="sticky-header">
         <div class="header-top">
+            <div class="logo-container">
+                <a href="https://pace.nls.ac.in/" target="_blank" rel="noopener noreferrer">
+                    <img
+                        src="/files/nlsiu-logo.jpeg.jpeg"
+                        alt="NLSIU Logo"
+                        class="logo-img"
+                        onerror="this.onerror=null; this.style.display='none';"
+                    >
+                </a>
+            </div>
             <div class="brand-text">
                 <h5 class="university-name">National Law School of India University, Bengaluru</h5>
                 <h1 class="department-name">Foundations for a Legal Education Certificate Course</h1>
@@ -341,15 +764,17 @@ window.inject_fle_header_footer = function () {
         </nav>
     </header>`;
 
-    const footer_html = `
+    // ── 5. Inject Footer HTML ─────────────────────────────────────────────────
+    var footer_html = `
     <footer class="sticky-footer">
-        © 2026 National Law School of India University. All Rights Reserved.
+        &copy; 2026 National Law School of India University. All Rights Reserved.
     </footer>`;
 
     if ($('body').length === 0) return;
     $('body').prepend(header_html);
     $('body').append(footer_html);
 
+    // ── 6. Inject Logout Modal ────────────────────────────────────────────────
     if ($('#fle-logout-modal-overlay').length === 0) {
         $('body').append(`
         <div id="fle-logout-modal-overlay">
@@ -382,17 +807,31 @@ window.inject_fle_header_footer = function () {
         </div>`);
     }
 
-    $(document).on('click', '#fle-logout-btn', function () { $('#fle-logout-modal-overlay').addClass('active'); });
-    $(document).on('click', '#fle-modal-cancel', function () { $('#fle-logout-modal-overlay').removeClass('active'); });
-    $(document).on('click', '#fle-logout-modal-overlay', function (e) {
-        if ($(e.target).is('#fle-logout-modal-overlay')) $('#fle-logout-modal-overlay').removeClass('active');
+    // ── 7. Event Listeners ────────────────────────────────────────────────────
+    $(document).on('click', '#fle-logout-btn', function () {
+        $('#fle-logout-modal-overlay').addClass('active');
     });
-    $(document).on('keydown', function (e) { if (e.key === 'Escape') $('#fle-logout-modal-overlay').removeClass('active'); });
+    $(document).on('click', '#fle-modal-cancel', function () {
+        $('#fle-logout-modal-overlay').removeClass('active');
+    });
+    $(document).on('click', '#fle-logout-modal-overlay', function (e) {
+        if ($(e.target).is('#fle-logout-modal-overlay')) {
+            $('#fle-logout-modal-overlay').removeClass('active');
+        }
+    });
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape') $('#fle-logout-modal-overlay').removeClass('active');
+    });
     $(document).on('click', '#fle-modal-confirm', function () {
         $(this).addClass('loading');
-        $.ajax({ url: '/api/method/logout', type: 'GET', complete: function () { window.location.replace('/fle/login.html'); } });
+        $.ajax({
+            url: '/api/method/logout',
+            type: 'GET',
+            complete: function () { window.location.replace('/fle/login.html'); }
+        });
     });
 
+    // ── 8. Layout fix — sticky header + flex body ─────────────────────────────
     $('html, body').css({ 'overflow-x': 'hidden', 'height': '100%', 'position': 'relative' });
     $('body').css({ 'display': 'flex', 'flex-direction': 'column', 'min-height': '100vh', 'margin': '0' });
     $('.web-form-page, .page-container').css('flex', '1 0 auto');
@@ -400,7 +839,9 @@ window.inject_fle_header_footer = function () {
     $('body').css('padding-top', '150px');
     $('.sticky-footer').css({ 'margin-top': 'auto', 'width': '100%' });
 
+    // ── 9. Force visibility via direct style after a short delay ──────────────
     setTimeout(function () {
+        // Logout button
         var btn = document.getElementById('fle-logout-btn');
         if (btn) {
             btn.style.setProperty('display', 'inline-flex', 'important');
@@ -414,13 +855,156 @@ window.inject_fle_header_footer = function () {
             btn.style.setProperty('cursor', 'pointer', 'important');
             btn.style.setProperty('z-index', '9999', 'important');
         }
+        // Logout area
         var area = document.querySelector('.header-logout-area');
         if (area) {
             area.style.setProperty('display', 'flex', 'important');
             area.style.setProperty('align-items', 'center', 'important');
             area.style.setProperty('visibility', 'visible', 'important');
         }
+        // Logo
+        var logoImg = document.querySelector('.sticky-header .logo-img');
+        if (logoImg) {
+            logoImg.style.setProperty('display', 'block', 'important');
+            logoImg.style.setProperty('visibility', 'visible', 'important');
+            logoImg.style.setProperty('opacity', '1', 'important');
+            logoImg.style.setProperty('height', '70px', 'important');
+            logoImg.style.setProperty('width', 'auto', 'important');
+        }
+        var logoCont = document.querySelector('.sticky-header .logo-container');
+        if (logoCont) {
+            logoCont.style.setProperty('display', 'flex', 'important');
+            logoCont.style.setProperty('visibility', 'visible', 'important');
+        }
+
+        // ── Force Merriweather + correct case on all form elements ───────────
+        var formEls = document.querySelectorAll(
+            'input, select, textarea, label, .control-label, .section-head, ' +
+            '.frappe-control, .form-control, .help-box, .btn, button, ' +
+            '.web-form-page *, .web-form-wrapper *'
+        );
+        formEls.forEach(function (el) {
+            el.style.setProperty('font-family', "'Merriweather', Georgia, serif", 'important');
+        });
+
+        // Fix label casing — capitalize, not uppercase
+        var labelEls = document.querySelectorAll(
+            '.control-label, label.control-label, .web-form-page label, ' +
+            '.web-form-wrapper label, .frappe-control label, .form-group label'
+        );
+        labelEls.forEach(function (el) {
+            el.style.setProperty('text-transform', 'capitalize', 'important');
+            el.style.setProperty('letter-spacing', '0.2px', 'important');
+        });
+
+        // Section heads — normal case, not uppercase
+        var sectionHeads = document.querySelectorAll('.section-head');
+        sectionHeads.forEach(function (el) {
+            el.style.setProperty('text-transform', 'none', 'important');
+        });
+
+        // Apply branded button styles
+        applyButtonStyles();
     }, 200);
+
+    // ── 10. Re-apply fonts + case + buttons after Frappe re-renders the DOM ──
+    setTimeout(function () {
+        var formEls = document.querySelectorAll(
+            'input, select, textarea, label, .control-label, .section-head, ' +
+            '.frappe-control, .form-control, .help-box, .btn, button, ' +
+            '.web-form-page *, .web-form-wrapper *'
+        );
+        formEls.forEach(function (el) {
+            el.style.setProperty('font-family', "'Merriweather', Georgia, serif", 'important');
+        });
+
+        var labelEls = document.querySelectorAll(
+            '.control-label, label.control-label, .web-form-page label, ' +
+            '.web-form-wrapper label, .frappe-control label, .form-group label'
+        );
+        labelEls.forEach(function (el) {
+            el.style.setProperty('text-transform', 'capitalize', 'important');
+            el.style.setProperty('letter-spacing', '0.2px', 'important');
+        });
+
+        var sectionHeads = document.querySelectorAll('.section-head');
+        sectionHeads.forEach(function (el) {
+            el.style.setProperty('text-transform', 'none', 'important');
+        });
+
+        applyButtonStyles();
+    }, 1000);
+
+    // ── Helper: branded styles for all form action buttons ───────────────────
+    function applyButtonStyles() {
+        var footerBtns = document.querySelectorAll(
+            '.web-form-footer .btn, .page-actions .btn, .form-footer .btn, ' +
+            '.web-form-footer button, .page-actions button, .form-footer button'
+        );
+
+        footerBtns.forEach(function (btn) {
+            // Skip logout button — it has its own styles
+            if (btn.id === 'fle-logout-btn' || btn.classList.contains('fle-logout-btn')) return;
+
+            // Base styles
+            btn.style.setProperty('display', 'inline-flex', 'important');
+            btn.style.setProperty('align-items', 'center', 'important');
+            btn.style.setProperty('justify-content', 'center', 'important');
+            btn.style.setProperty('white-space', 'nowrap', 'important');
+            btn.style.setProperty('font-family', "'Merriweather', Georgia, serif", 'important');
+            btn.style.setProperty('font-size', '13px', 'important');
+            btn.style.setProperty('font-weight', '700', 'important');
+            btn.style.setProperty('letter-spacing', '0.5px', 'important');
+            btn.style.setProperty('padding', '10px 22px', 'important');
+            btn.style.setProperty('border-radius', '5px', 'important');
+            btn.style.setProperty('cursor', 'pointer', 'important');
+            btn.style.setProperty('min-height', '38px', 'important');
+            btn.style.setProperty('line-height', '1', 'important');
+            btn.style.setProperty('text-decoration', 'none', 'important');
+            btn.style.setProperty('box-sizing', 'border-box', 'important');
+            btn.style.setProperty('transition', 'background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease', 'important');
+
+            var cls = (btn.className || '').toString();
+            var label = (btn.textContent || btn.innerText || '').trim().toLowerCase();
+
+            if (cls.indexOf('btn-primary') !== -1 || label.indexOf('proceed') !== -1 || label.indexOf('pay') !== -1 || label.indexOf('submit') !== -1) {
+                // Proceed to Pay — filled dark red
+                btn.style.setProperty('background-color', '#8B0000', 'important');
+                btn.style.setProperty('color', '#ffffff', 'important');
+                btn.style.setProperty('border', '2px solid #8B0000', 'important');
+                btn.style.setProperty('box-shadow', '0 2px 6px rgba(139,0,0,0.35)', 'important');
+            } else if (cls.indexOf('btn-danger') !== -1 || label === 'delete') {
+                // Delete — white bg, red border + text
+                btn.style.setProperty('background-color', '#ffffff', 'important');
+                btn.style.setProperty('color', '#cc0000', 'important');
+                btn.style.setProperty('border', '2px solid #cc0000', 'important');
+                btn.style.setProperty('box-shadow', 'none', 'important');
+            } else if (cls.indexOf('btn-secondary') !== -1 || label === 'discard') {
+                // Discard — white bg, grey border
+                btn.style.setProperty('background-color', '#ffffff', 'important');
+                btn.style.setProperty('color', '#555555', 'important');
+                btn.style.setProperty('border', '2px solid #cccccc', 'important');
+                btn.style.setProperty('box-shadow', 'none', 'important');
+            } else {
+                // Save as Draft / all other defaults — white bg, red border
+                btn.style.setProperty('background-color', '#ffffff', 'important');
+                btn.style.setProperty('color', '#8B0000', 'important');
+                btn.style.setProperty('border', '2px solid #8B0000', 'important');
+                btn.style.setProperty('box-shadow', 'none', 'important');
+            }
+        });
+
+        // Fix footer row layout
+        var footers = document.querySelectorAll('.web-form-footer, .page-actions, .form-footer');
+        footers.forEach(function (footer) {
+            footer.style.setProperty('display', 'flex', 'important');
+            footer.style.setProperty('flex-wrap', 'wrap', 'important');
+            footer.style.setProperty('gap', '10px', 'important');
+            footer.style.setProperty('align-items', 'center', 'important');
+            footer.style.setProperty('justify-content', 'flex-end', 'important');
+            footer.style.setProperty('padding', '20px 0 12px 0', 'important');
+        });
+    }
 };
 
 

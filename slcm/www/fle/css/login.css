@@ -1,271 +1,313 @@
-:root {
-    --brand-maroon: #97172c;
-    --nav-navy: #212529;
-}
-
-/* Hide Frappe default header elements */
-header.navbar,
-.navbar.navbar-expand-lg,
-.navbar.navbar-expand,
-#navbar-main,
-.web-header,
-.top-bar,
-body>nav,
-.breadcrumb-container,
-.page-head,
-.navbar-user-icon,
-.avatar-frame,
-.avatar,
-.navbar-light {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    opacity: 0 !important;
-    overflow: hidden !important;
-}
-
-/* Ensure the body takes up full height without hidden overflow */
-html,
+/* ═══════════════════════════════════════════════════════════════════
+   BASE RESET
+   ═══════════════════════════════════════════════════════════════════ */
 body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: 'Merriweather', serif;
-    background-color: #f8f9fa;
+    padding-top: 0 !important;
+    margin: 0 !important;
 }
 
-.page-wrapper {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-/* --- Header --- */
+/* ═══════════════════════════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════════════════════════ */
 .sticky-header {
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10) !important;
     position: sticky;
     top: 0;
-    z-index: 1000;
-    background: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1020;
     width: 100%;
 }
 
 .header-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 5%;
-    background: #fff;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 20px !important;
+    padding: 12px 32px !important;
+    background-color: #ffffff !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
 }
 
+/* ── Logo: always visible, left-anchored ── */
 .logo-container {
-    display: none !important;
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 80px;
+}
+
+.logo-container a {
+    display: inline-block !important;
+    line-height: 0 !important;
+    text-decoration: none !important;
 }
 
 .logo-img {
-    width: 100px;
-    height: auto;
-    border: 3px solid var(--brand-maroon);
-    padding: 4px;
-    background: white;
-}
-
-.brand-text {
-    flex: 1;
-    text-align: center;
-    padding: 0 15px;
-}
-
-/* --- Header Spacer / Logout Area --- */
-.header-spacer {
-    flex: 0 0 160px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-}
-
-/* --- Logout Button --- */
-.logout-btn,
-button.fle-logout-btn,
-#fle-logout-btn {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 7px !important;
-    background-color: var(--brand-maroon) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 5px !important;
-    padding: 8px 18px !important;
-    font-size: 12px !important;
-    font-family: 'Merriweather', Georgia, serif !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.6px !important;
-    cursor: pointer !important;
-    white-space: nowrap !important;
+    display: block !important;
+    height: 72px !important;
+    width: auto !important;
+    max-width: 110px !important;
+    object-fit: contain !important;
     visibility: visible !important;
     opacity: 1 !important;
-    box-shadow: 0 2px 5px rgba(151, 23, 44, 0.35) !important;
-    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
-    text-decoration: none !important;
-    line-height: 1 !important;
 }
 
-.logout-btn:hover,
-button.fle-logout-btn:hover,
-#fle-logout-btn:hover {
-    background-color: #7a1224 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 10px rgba(151, 23, 44, 0.45) !important;
-    color: #ffffff !important;
-    opacity: 1 !important;
+/* ── Brand Text: centred in remaining space ── */
+.brand-text {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0 !important;
 }
 
-.logout-btn:active,
-button.fle-logout-btn:active,
-#fle-logout-btn:active {
-    transform: translateY(0px) !important;
-    background-color: #5a0d1a !important;
-}
-
-.logout-btn svg,
-button.fle-logout-btn svg,
-#fle-logout-btn svg {
-    display: inline-block !important;
-    flex-shrink: 0 !important;
-    vertical-align: middle !important;
-    stroke: #ffffff !important;
-}
-
-/* --- University Name & Department --- */
 .university-name {
-    color: var(--brand-maroon);
-    font-size: 0.9rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin: 0;
-    font-weight: 400;
+    font-family: 'Merriweather', Georgia, serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    letter-spacing: 1.8px !important;
+    text-transform: uppercase !important;
+    color: #8B0000 !important;
+    margin: 0 0 4px 0 !important;
+    line-height: 1.4 !important;
 }
 
 .department-name {
-    color: var(--brand-maroon);
-    font-size: 1.5rem;
-    margin: 4px 0 0 0;
-    font-weight: 700;
-    line-height: 1.2;
+    font-family: 'Merriweather', Georgia, serif !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #8B0000 !important;
+    margin: 0 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0.2px !important;
 }
 
-/* --- Navigation --- */
+/* ── Mirror spacer: mirrors logo width so brand text stays optically centred ── */
+.header-spacer {
+    flex: 0 0 auto !important;
+    width: 110px !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* ── Navbar ── */
 .navbar-navy {
-    background-color: var(--brand-maroon);
-    padding: 12px 5%;
-    display: flex;
-    justify-content: center;
+    background-color: #8B0000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    width: 100% !important;
     flex-wrap: wrap;
-    gap: 30px;
 }
 
-.nav-item {
+.navbar-navy .nav-item {
     color: #ffffff !important;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: opacity 0.2s;
+    text-decoration: none !important;
+    font-family: 'Merriweather', Georgia, serif !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.4px !important;
+    text-transform: uppercase !important;
+    padding: 13px 22px !important;
+    display: inline-block !important;
+    transition: background-color 0.2s ease !important;
 }
 
-.nav-item:hover {
-    opacity: 0.7;
+.navbar-navy .nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* --- Main Content --- */
+/* ═══════════════════════════════════════════════════════════════════
+   PAGE LAYOUT
+   ═══════════════════════════════════════════════════════════════════ */
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f4f4f4;
+}
+
 .main-content {
     flex: 1 0 auto;
     display: flex;
-    justify-content: center;
     align-items: center;
-    padding: 40px 20px;
+    justify-content: center;
+    padding: 48px 16px;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   AUTH CARD
+   ═══════════════════════════════════════════════════════════════════ */
 .auth-card {
-    background: white;
-    padding: 40px;
-    border-radius: 4px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+    padding: 44px 48px 40px;
     width: 100%;
-    max-width: 450px;
-    border-top: 5px solid var(--brand-maroon);
+    max-width: 440px;
+    border-top: 3px solid #8B0000;
+}
+
+.auth-card h3 {
+    font-family: 'Merriweather', Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #8B0000;
+    text-align: center;
+    margin: 0 0 28px 0;
+}
+
+.form-group label {
+    font-family: 'Merriweather', Georgia, serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #444;
+    display: block;
+    margin-bottom: 6px;
 }
 
 .form-control {
-    height: 45px;
-    background-color: #f8f9fa;
-    border: 1px solid #ddd;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    padding: 10px 13px;
+    font-family: 'Merriweather', Georgia, serif;
+    font-size: 13.5px;
+    color: #222;
+    background: #fafafa;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
 }
 
 .form-control:focus {
-    border-color: var(--brand-maroon);
-    box-shadow: none;
-    background-color: #fff;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.10);
+    background: #fff;
 }
 
-.btn-maroon {
-    background-color: var(--brand-maroon);
-    color: white;
-    border: none;
+.mb-3 {
+    margin-bottom: 16px !important;
+}
+
+.mb-4 {
+    margin-bottom: 22px !important;
+}
+
+.btn.btn-maroon {
+    display: block;
     width: 100%;
-    padding: 12px;
+    background-color: #8B0000;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 12px 0;
+    font-family: 'Merriweather', Georgia, serif;
+    font-size: 12px;
     font-weight: 700;
+    letter-spacing: 1.6px;
     text-transform: uppercase;
-    margin-top: 10px;
     cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 6px rgba(139, 0, 0, 0.30);
 }
 
-.btn-maroon:hover {
-    background-color: #7a1224;
-    color: white;
+.btn.btn-maroon:hover {
+    background-color: #6a0000;
+    transform: translateY(-1px);
 }
 
-/* --- Footer --- */
+.btn.btn-maroon:active {
+    transform: translateY(0);
+    background-color: #5a0000;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-3 {
+    margin-top: 16px;
+}
+
+.small {
+    font-size: 12.5px;
+    color: #666;
+    font-family: 'Merriweather', Georgia, serif;
+}
+
+.text-primary {
+    color: #8B0000 !important;
+    font-weight: 700;
+    font-family: 'Merriweather', Georgia, serif;
+    font-size: 12.5px;
+}
+
+.text-danger {
+    color: #cc0000;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════════ */
 .sticky-footer {
-    flex-shrink: 0;
-    background: var(--brand-maroon);
+    background-color: #8B0000;
     color: #ffffff;
     text-align: center;
-    padding: 20px;
+    padding: 16px 24px;
+    font-family: 'Merriweather', Georgia, serif;
     font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.4px;
     width: 100%;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
-/* --- Mobile --- */
-@media (max-width: 768px) {
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
     .header-top {
-        flex-direction: column;
-        gap: 10px;
+        padding: 10px 16px !important;
+        gap: 12px !important;
+    }
+
+    .logo-img {
+        height: 50px !important;
     }
 
     .header-spacer {
-        flex: 0 0 auto;
-        width: 100%;
-        justify-content: center;
-    }
-
-    .logo-container {
-        flex: 0 0 auto;
-        justify-content: center;
+        width: 50px !important;
     }
 
     .department-name {
-        font-size: 1.2rem;
+        font-size: 15px !important;
     }
 
-    .logout-btn,
-    button.fle-logout-btn,
-    #fle-logout-btn {
-        width: 100% !important;
-        justify-content: center !important;
+    .university-name {
+        font-size: 10px !important;
+        letter-spacing: 1px !important;
+    }
+
+    .auth-card {
+        padding: 32px 20px 28px;
+    }
+
+    .navbar-navy .nav-item {
+        padding: 10px 11px !important;
+        font-size: 9.5px !important;
+        letter-spacing: 1px !important;
     }
 }

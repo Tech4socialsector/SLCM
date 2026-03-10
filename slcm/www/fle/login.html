@@ -1,82 +1,104 @@
 {% extends "templates/web.html" %}
 
 {% block style %}
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/login.css">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap"
+    rel="stylesheet">
+<link rel="stylesheet" href="/fle/css/login.css">
 {% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
+
+    <!-- ═══ HEADER ═══ -->
     <header class="sticky-header">
         <div class="header-top">
+
+            <!-- LEFT — Logo (links to NLS PACE) -->
             <div class="logo-container">
-                <img src="/files/nlsiu-logo.jpg" alt="Logo" class="logo-img">
+                <a href="https://pace.nls.ac.in/" target="_blank" rel="noopener noreferrer" title="Visit NLS PACE">
+                    <img src="/files/nlsiu-logo.jpeg.jpeg" alt="NLSIU Logo" class="logo-img"
+                        onerror="this.onerror=null; this.closest('.logo-container').style.visibility='hidden';">
+                </a>
             </div>
+
+            <!-- CENTRE — Brand text -->
             <div class="brand-text">
                 <h5 class="university-name">National Law School of India University, Bengaluru</h5>
                 <h1 class="department-name">Foundations for a Legal Education Certificate Course</h1>
             </div>
 
-            <div class="header-spacer"></div>
+            <!-- RIGHT — Invisible spacer, mirrors logo width for optical centering -->
+            <div class="header-spacer" aria-hidden="true"></div>
+
         </div>
 
-        <nav class="navbar-navy">
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">OVERVIEW</a>
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">COURSES</a>
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FACULTY</a>
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FEE</a>
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FAQs</a>
-            <a href="https://pace.nls.ac.in/contact-us/" class="nav-item">Contact
-                Us</a>
+        <nav class="navbar-navy" aria-label="Main navigation">
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
+                target="_blank" rel="noopener">OVERVIEW</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
+                target="_blank" rel="noopener">COURSES</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
+                target="_blank" rel="noopener">FACULTY</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
+                target="_blank" rel="noopener">FEE</a>
+            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
+                target="_blank" rel="noopener">FAQs</a>
+            <a href="https://pace.nls.ac.in/contact-us/" class="nav-item" target="_blank" rel="noopener">Contact Us</a>
         </nav>
     </header>
 
+    <!-- ═══ MAIN ═══ -->
     <main class="main-content">
         <div class="auth-card">
+
+            <!-- LOGIN FORM -->
             <div id="login-form">
-                <h3 class="text-center" style="color: var(--brand-maroon); margin-bottom: 25px;">myNLS Login</h3>
+                <h3>myNLS Login</h3>
                 <div class="form-group mb-3">
-                    <label class="small font-weight-bold">EMAIL OR USERNAME</label>
-                    <input type="text" id="login_id" class="form-control">
+                    <label for="login_id">EMAIL OR USERNAME</label>
+                    <input type="text" id="login_id" class="form-control" autocomplete="username">
                 </div>
                 <div class="form-group mb-4">
-                    <label class="small font-weight-bold">PASSWORD</label>
-                    <input type="password" id="login_pwd" class="form-control">
+                    <label for="login_pwd">PASSWORD</label>
+                    <input type="password" id="login_pwd" class="form-control" autocomplete="current-password">
                 </div>
                 <button class="btn btn-maroon" onclick="login_user()">Sign In</button>
                 <div class="text-center mt-3">
                     <span class="small">New user?</span>
-                    <span class="text-primary" style="cursor:pointer; font-weight:700;" onclick="toggleForm()"> Register
-                        Here</span>
+                    <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Register Here</span>
                 </div>
             </div>
 
-            <div id="reg-form" style="display: none;">
-                <h3 class="text-center" style="color: var(--brand-maroon); margin-bottom: 25px;">Create Account</h3>
+            <!-- REGISTER FORM -->
+            <div id="reg-form" style="display:none;">
+                <h3>Create Account</h3>
                 <div class="form-group mb-4">
-                    <label class="small font-weight-bold">EMAIL ADDRESS <span class="text-danger">*</span></label>
-                    <input type="email" id="reg_email" class="form-control" placeholder="Please Enter" maxlength="80">
+                    <label for="reg_email">EMAIL ADDRESS <span class="text-danger">*</span></label>
+                    <input type="email" id="reg_email" class="form-control" placeholder="Please Enter" maxlength="80"
+                        autocomplete="email">
                 </div>
                 <div class="form-group mb-3">
-                    <label class="small font-weight-bold">MOBILE NUMBER <span class="text-danger">*</span></label>
-                    <input type="text" id="mobile_number" class="form-control" placeholder="Please Enter"
-                        maxlength="10">
+                    <label for="mobile_number">MOBILE NUMBER <span class="text-danger">*</span></label>
+                    <input type="text" id="mobile_number" class="form-control" placeholder="Please Enter" maxlength="10"
+                        autocomplete="tel">
                 </div>
                 <button class="btn btn-maroon" onclick="register_user()">Register</button>
                 <div class="text-center mt-3">
                     <span class="small">Already have an account?</span>
-                    <span class="text-primary" style="cursor:pointer; font-weight:700;" onclick="toggleForm()">
-                        Login</span>
+                    <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Login</span>
                 </div>
             </div>
+
         </div>
     </main>
 
+    <!-- ═══ FOOTER ═══ -->
     <footer class="sticky-footer">
-        © 2026 National Law School of India University. All Rights Reserved.
+        &copy; 2026 National Law School of India University. All Rights Reserved.
     </footer>
+
 </div>
-<!-- {% endblock %} -->
+{% endblock %}
 
 {% block script %}
 <script>
