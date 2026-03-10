@@ -532,7 +532,7 @@
         Brochure
       </a>
       {% endif %}
-      <a href="/applicant-form/new?program={{ _name }}"
+      <a href="/application_form?program={{ _name }}"
          style="display:inline-flex;align-items:center;gap:8px;
                 padding:10px 24px;border-radius:10px;font-size:13px;
                 font-weight:700;color:white;text-decoration:none;
@@ -679,7 +679,7 @@
           {% if _dur %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Duration</p><p style="font-size:14px;color:#475569;margin:0;">{{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)</p></div>{% endif %}
           {% if _elig %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Eligibility</p><div style="font-size:13px;color:#475569;line-height:1.6;">{{ _elig[:180] | striptags }}{% if _elig|length > 180 %}…{% endif %}</div></div>{% elif _erules %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Eligibility</p>{% set _fr = _erules[0] %}<p style="font-size:13px;color:#475569;margin:0;line-height:1.6;">{{ (_fr.get('description') if _fr.get else _fr.description) or (_fr.get('rule_name') if _fr.get else _fr.rule_name) or 'See Eligibility tab for details.' }}</p></div>{% endif %}
           {% if _fee %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Application Fee</p><p style="font-size:14px;color:#475569;margin:0;">{{ _fee }}</p></div>{% endif %}
-          <div style="padding-top:12px;border-top:1px solid #f1f5f9;"><a href="/applicant-form/new?program={{ _name }}" style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">Apply Now</a>{% if _deadline %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Application deadline: {{ _deadline }}</p>{% elif active_cycle %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Cycle: {{ active_cycle.name }}</p>{% endif %}</div>
+          <div style="padding-top:12px;border-top:1px solid #f1f5f9;"><a href="/application_form?program={{ _name }}" style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">Apply Now</a>{% if _deadline %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Application deadline: {{ _deadline }}</p>{% elif active_cycle %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Cycle: {{ active_cycle.name }}</p>{% endif %}</div>
         </div>
       </div>
       <div style="background:#0f172a;border-radius:16px;padding:28px;position:relative;overflow:hidden;"><div style="position:relative;z-index:2;"><h4 style="font-size:16px;font-weight:700;color:white;margin:0 0 8px;">Questions?</h4><p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0 0 20px;">Connect with our admissions team to learn more about this program.</p><a href="mailto:{{ support_email or 'admissions@nlsiu.ac.in' }}" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--secondary);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Contact Admissions<span class="material-symbols-outlined" style="font-size:18px;">arrow_forward</span></a></div><div style="position:absolute;right:-18px;bottom:-18px;opacity:0.1;"><span class="material-symbols-outlined" style="font-size:120px;color:white;">contact_support</span></div></div>
@@ -945,7 +945,7 @@
               View Application
             </a>
           {% elif frappe.session.user != "Guest" %}
-            <a href="/applicant-form/new?program={{ _name or _pid }}"
+            <a href="/application_form?program={{ _name or _pid }}"
                style="display:inline-flex;align-items:center;gap:6px;
                       padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;
@@ -957,7 +957,7 @@
               Apply Now
             </a>
           {% else %}
-            <a href="/login?redirect=/admission"
+            <a href="/login?redirect-to=/application_form"
                style="display:inline-flex;align-items:center;gap:6px;
                       padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;

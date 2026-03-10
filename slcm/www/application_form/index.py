@@ -27,6 +27,10 @@ def get_context(context):
         frappe.local.flags.redirect_location = "/login?redirect-to=/application_form"
         raise frappe.Redirect
 
+    # Program from URL (e.g. from /admission Apply Now) — pre-fill and make read-only
+    context.prefill_program = (frappe.form_dict.get("program") or "").strip()
+    context.program_readonly = bool(context.prefill_program)
+
     context.no_cache    = 1
     context.show_sidebar = False
 

@@ -1,6 +1,6 @@
 {% extends "slcm/www/admission_base.html" %}
 
-{% block title %}Application Form — NLSIU Admissions{% endblock %}
+{% block title %}Application Form — {{ (portal_config.get('portal_title') if portal_config and portal_config.get else (portal_config.portal_title if portal_config else 'Admissions')) }}{% endblock %}
 
 {% block page_css %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,14 +11,17 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
     /* ═══════════════════════════════════════════════
-   DESIGN TOKENS
+   DESIGN TOKENS — follow Applicant Portal Config theme
+   (--primary, --secondary from admission_base / portal_config)
 ═══════════════════════════════════════════════ */
     :root {
-        --navy: #0f1b4c;
-        --navy-mid: #1a2f7a;
-        --navy-light: #e8ecf8;
-        --gold: #b8892a;
-        --gold-light: #fdf6e8;
+        /* Map form tokens to portal theme */
+        --navy: var(--primary);
+        --navy-mid: var(--primary);
+        --navy-light: var(--primary-light);
+        --gold: var(--secondary);
+        --gold-light: #f8f6f2;
+        /* Semantic status colors (unchanged) */
         --emerald: #0b7a5e;
         --emerald-bg: #ecfaf5;
         --red: #c0392b;
@@ -32,9 +35,9 @@
         --slate-600: #475569;
         --slate-800: #1e293b;
         --white: #ffffff;
-        --shadow-sm: 0 1px 3px rgba(15, 27, 76, .08), 0 1px 2px rgba(15, 27, 76, .06);
-        --shadow-md: 0 4px 16px rgba(15, 27, 76, .08), 0 2px 6px rgba(15, 27, 76, .06);
-        --shadow-lg: 0 10px 32px rgba(15, 27, 76, .10), 0 4px 12px rgba(15, 27, 76, .07);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .04);
+        --shadow-lg: 0 10px 32px rgba(0, 0, 0, .08), 0 4px 12px rgba(0, 0, 0, .05);
         --radius: 14px;
         --radius-sm: 8px;
         --font-body: 'DM Sans', sans-serif;
@@ -114,7 +117,7 @@
         width: 160px;
         height: 160px;
         border-radius: 50%;
-        background: rgba(184, 137, 42, .12);
+        background: rgba(255, 255, 255, .08);
         pointer-events: none;
     }
 
@@ -514,6 +517,13 @@
         background-position: right 12px center;
         padding-right: 2.2rem;
         cursor: pointer;
+    }
+
+    select.fc.program-readonly {
+        background-color: var(--slate-100);
+        color: var(--slate-600);
+        cursor: not-allowed;
+        opacity: 0.95;
     }
 
     textarea.fc {
@@ -1405,13 +1415,13 @@
 <div class="portal-wrapper">
 
     <!-- ═══ TOP BANNER ═══ -->
-    <div class="portal-banner">
+    <!-- <div class="portal-banner">
         <div class="banner-left">
             <h1>NLSIU Admissions Portal</h1>
             <p id="bannerSubtitle">Step 1 of 8 — Student Information</p>
         </div>
         <div class="banner-step-badge" id="stepBadge">Step 1 / 8</div>
-    </div>
+    </div> -->
 
     <!-- ═══ PROGRESS STRIP ═══ -->
     <div class="progress-strip">
@@ -2691,6 +2701,10 @@
         national_tests: {{ national_tests | tojson }}
     };
 
+    // Program from URL (e.g. /admission Apply Now) — pre-fill and lock
+    const PREFILL_PROGRAM = {{ (prefill_program or '') | tojson }};
+    const PROGRAM_READONLY = {{ 'true' if program_readonly else 'false' }};
+
     // Pre-fill from existing applicant doc
     let formData = {{ applicant_data | tojson }};
 
@@ -2719,8 +2733,37 @@
         buildSidebar();
         initFlatpickr();
         populateExistingData();
+        applyProgramFromUrl();
         updateUI();
     });
+
+    function applyProgramFromUrl() {
+        if (!PREFILL_PROGRAM) return;
+        formData.program = PREFILL_PROGRAM;
+        const programEl = document.getElementById('program');
+        if (!programEl) return;
+        // Ensure option exists (e.g. if program name from URL is not in list)
+        const hasOption = Array.from(programEl.options).some(o => o.value === PREFILL_PROGRAM);
+        if (!hasOption) {
+            const opt = document.createElement('option');
+            opt.value = PREFILL_PROGRAM;
+            opt.textContent = PREFILL_PROGRAM;
+            programEl.appendChild(opt);
+        }
+        programEl.value = PREFILL_PROGRAM;
+        if (typeof onProgramChange === 'function') onProgramChange(PREFILL_PROGRAM);
+        if (PROGRAM_READONLY) {
+            programEl.disabled = true;
+            programEl.removeAttribute('name');
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'program';
+            hidden.value = PREFILL_PROGRAM;
+            hidden.id = 'program_hidden';
+            programEl.parentNode.insertBefore(hidden, programEl);
+            programEl.classList.add('program-readonly');
+        }
+    }
 
     function buildProgressStrip() {
         const container = document.getElementById('progressSteps');
