@@ -33,7 +33,6 @@ class ScholarshipApplication(Document):
 		self.set_original_fee()
 		self.calculate_benefit()
 		self.validate_rejection_reason()
-		self.validate_approval_authority()
 		self.validate_conflicts()
 
 	def set_applicant_metadata(self):
@@ -210,18 +209,6 @@ class ScholarshipApplication(Document):
 	def validate_rejection_reason(self):
 		if self.status == "Rejected" and not self.rejection_reason:
 			frappe.throw(frappe._("Rejection reason is mandatory"))
-
-	def validate_approval_authority(self):
-		if self.status == "Approved":
-			scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-
-			if scheme.approval_authority == "Finance Head":
-				if not frappe.has_role("Finance Head"):
-					frappe.throw(frappe._("Only Finance Head can approve this scheme"))
-
-			if scheme.approval_authority == "VC":
-				if not frappe.has_role("System Manager"):
-					frappe.throw(frappe._("Only VC-level authority can approve"))
 
 	def validate_conflicts(self):
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)

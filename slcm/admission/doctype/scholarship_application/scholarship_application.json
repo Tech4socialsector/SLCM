@@ -28,7 +28,6 @@
   "reviewed_by",
   "status",
   "column_workflow_2",
-  "approved_by",
   "approval_date",
   "rejection_reason",
   "workflow_state"
@@ -173,13 +172,6 @@
   {
    "fieldname": "column_workflow_2",
    "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "approved_by",
-   "fieldtype": "Link",
-   "label": "Approved By",
-   "options": "User"
   },
   {
    "allow_on_submit": 1,

@@ -42,8 +42,6 @@
     background: #f3f4f6 !important;
   }
 
-  .adm-footer { display: none !important; }
-
   /* ── Typography ─────────────────────────────────────── */
   .page-title {
     font-family: 'Poppins', sans-serif;
@@ -573,7 +571,14 @@
               <span class="ms-icon">school</span>
               Scholarships
             </div>
-
+            <div class="adm-menu-item" data-panel="offer_letters"
+                 onclick="window.location.href='/offer_letter/offer-letter-list'"
+                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
+                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
+                        color:#64748b;transition:all 0.15s;margin-bottom:4px;">
+              <span style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
+              Offer Letter
+            </div>
             <div class="adm-menu-item" onclick="showChangePassword()">
               <span class="ms-icon">lock_reset</span>
               Change Password
@@ -975,27 +980,10 @@
         <!-- ╚═ END PANEL: SCHOLARSHIPS ══════════════════════╝ -->
 
       </main>
-    </div>
-
-    <!-- Footer -->
-    <footer style="margin-top:48px;padding-top:20px;border-top:1px solid var(--border);">
-      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;">
-        <div style="display:flex;align-items:center;gap:7px;opacity:0.45;">
-          <span class="ms-icon" style="font-size:18px;">school</span>
-          <span style="font-size:13px;font-weight:600;">{{ _title }}</span>
-        </div>
-        <div style="display:flex;gap:20px;">
-          <a href="#" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">Help Center</a>
-          <a href="#" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">Terms of Service</a>
-          <a href="#" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">Privacy Policy</a>
-        </div>
-        <p style="font-size:11px;color:#94a3b8;margin:0;">© {{ frappe.utils.nowdate()[:4] }} {{ _title }} Portal. All rights reserved.</p>
       </div>
-    </footer>
 
-  </div>
-</div>
-
+      </div>
+      </div>
 <!-- ── Profile Edit Modal ──────────────────────────────────────── -->
 <div id="profile-edit-modal" class="modal-backdrop">
   <div class="modal-box">
@@ -1296,7 +1284,12 @@ function openProfileEditModal() {
   document.getElementById('edit-nationality').value = pd.nationality            || '';
   document.getElementById('edit-address').value     = pd.correspondence_address || '';
   document.getElementById('edit-state').value       = pd.state                  || '';
-  document.getElementById('edit-pincode').value     = pd.pincode                || '';
+  pincodeInput.value     = pd.pincode                || '';
+
+  // Prevent letters in mobile
+  mobileInput.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
+  // Prevent letters in pincode
+  pincodeInput.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
 
   // Load districts for the current state
   if (pd.state) {
@@ -1320,18 +1313,45 @@ document.getElementById('profile-edit-modal')?.addEventListener('click', functio
 async function saveProfileEdits() {
   var btn = document.getElementById('profile-save-btn');
   var msg = document.getElementById('profile-edit-msg');
+  
+  const args = {
+    mobile_number:          document.getElementById('edit-mobile').value.trim(),
+    date_of_birth:          document.getElementById('edit-dob').value,
+    gender:                 document.getElementById('edit-gender').value,
+    nationality:            document.getElementById('edit-nationality').value.trim(),
+    correspondence_address: document.getElementById('edit-address').value.trim(),
+    city:                   document.getElementById('edit-city').value.trim(),
+    state:                  document.getElementById('edit-state').value.trim(),
+    pincode:                document.getElementById('edit-pincode').value.trim(),
+  };
+
+  // ── Validation ──────────────────────────────────────────────
+  msg.style.color = '#dc2626';
+
+  if (args.mobile_number) {
+    // Basic mobile validation (digits only, length check)
+    let cleanMobile = args.mobile_number.replace(/[^0-9]/g, '');
+    if (cleanMobile.length < 10) {
+      msg.textContent = 'Please enter a valid 10-digit mobile number.'; return;
+    }
+  }
+
+  if (args.date_of_birth) {
+    let selectedDate = new Date(args.date_of_birth);
+    let today = new Date();
+    if (selectedDate >= today) {
+      msg.textContent = 'Date of birth must be in the past.'; return;
+    }
+  }
+
+  if (args.pincode) {
+    if (!/^[0-9]{6}$/.test(args.pincode)) {
+      msg.textContent = 'Pincode must be exactly 6 digits.'; return;
+    }
+  }
+
   btn.disabled = true; btn.textContent = 'Saving…'; msg.textContent = '';
   try {
-    const args = {
-      mobile_number:          document.getElementById('edit-mobile').value,
-      date_of_birth:          document.getElementById('edit-dob').value,
-      gender:                 document.getElementById('edit-gender').value,
-      nationality:            document.getElementById('edit-nationality').value,
-      correspondence_address: document.getElementById('edit-address').value,
-      city:                   document.getElementById('edit-city').value,
-      state:                  document.getElementById('edit-state').value,
-      pincode:                document.getElementById('edit-pincode').value,
-    };
     const message = await apiFetch('slcm.admission.api.profile.update_profile', args);
     btn.disabled = false; btn.textContent = 'Save Changes';
     if (message && message.status === 'ok') {

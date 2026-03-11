@@ -168,7 +168,7 @@ class InterviewList(Document):
 def _send_interview_slot_email(allocation, email, staff):
     """Send a premium interview slot assignment notification to the applicant."""
     from frappe.utils import get_url
-    url = get_url("/eligibility/interview-management")
+    url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
 
     msg = f"""
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">

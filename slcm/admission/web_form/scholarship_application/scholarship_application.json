@@ -142,13 +142,6 @@
             "read_only": 1
         },
         {
-            "fieldname": "approved_by",
-            "fieldtype": "Link",
-            "label": "Approved By",
-            "options": "User",
-            "read_only": 1
-        },
-        {
             "fieldname": "approval_date",
             "fieldtype": "Datetime",
             "label": "Approval Date",

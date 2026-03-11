@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:applicant",
- "creation": "2026-03-05 17:51:23.390912",
+ "creation": "2026-03-10 12:50:27.489396",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -497,18 +497,20 @@
   {
    "fieldname": "admit_card",
    "fieldtype": "Attach",
+   "hidden": 1,
    "label": "Admit Card"
   },
   {
    "fieldname": "reschedule_admit_card",
    "fieldtype": "Attach",
+   "hidden": 1,
    "label": "Admit Card"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-05 18:06:33.268564",
+ "modified": "2026-03-11 14:34:10.562798",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

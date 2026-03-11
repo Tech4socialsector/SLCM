@@ -13,7 +13,6 @@ frappe.ui.form.on("Scholarship Application", {
                 frm.add_custom_button(__("Approve"), () => {
                     frappe.confirm(__("Are you sure you want to approve this scholarship application?"), () => {
                         frm.set_value("status", "Approved");
-                        frm.set_value("approved_by", frappe.session.user);
                         frm.set_value("approval_date", frappe.datetime.now_datetime());
                         frm.save().then(() => {
                             frappe.msgprint(__("Scholarship Application Approved"));

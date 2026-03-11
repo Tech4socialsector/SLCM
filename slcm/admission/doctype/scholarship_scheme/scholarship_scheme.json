@@ -226,7 +226,7 @@
   },
   {
    "fieldname": "application_start",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "label": "Application Start"
   },
   {
@@ -235,7 +235,7 @@
   },
   {
    "fieldname": "application_end",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "label": "Application End"
   },
   {
