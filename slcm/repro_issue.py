@@ -1,32 +1,20 @@
-
 import frappe
-from frappe.desk.form.load import getdoc
+import json
 
-def test_getdoc():
-    frappe.connect()
+def reproduce_issue():
     doctype = "Program"
-    name = "Bachelor of Science"
-    
-    # Ensure Program exists
-    if not frappe.db.exists(doctype, name):
-        frappe.get_doc({
-            "doctype": doctype,
-            "program_name": name,
-            "program_shortcode": "BS",
-            "intake_type": "NLSAT"
-        }).insert(ignore_permissions=True)
-        frappe.db.commit()
-        
-    print(f"Testing getdoc for {doctype} {name}")
+    name = "Ph.D. in Interdisciplinary Legal Studies"
+    print(f"Loading {doctype} {name}...")
     try:
-        doc = getdoc(doctype, name)
-        print(f"  SUCCESS")
+        doc = frappe.get_doc(doctype, name)
+        print("Successfully loaded document")
+        # print(json.dumps(doc.as_dict(), indent=4, default=str))
     except Exception as e:
-        print(f"  FAILED: {e}")
+        print(f"Failed to load document: {e}")
         import traceback
         traceback.print_exc()
-            
-    frappe.destroy()
 
 if __name__ == "__main__":
-    test_getdoc()
+    frappe.connect()
+    reproduce_issue()
+    frappe.destroy()

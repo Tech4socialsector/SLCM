@@ -116,13 +116,13 @@
   },
   {
    "fieldname": "entrance_test_score",
-   "fieldtype": "Float",
+   "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Entrance Score"
   },
   {
    "fieldname": "interview_score",
-   "fieldtype": "Float",
+   "fieldtype": "Int",
    "label": "Interview Score"
   },
   {
@@ -189,7 +189,6 @@
   {
    "fieldname": "pg_cgpa",
    "fieldtype": "Float",
-   "hidden": 1,
    "label": "PG CGPA",
    "precision": "2"
   },
@@ -202,7 +201,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 20:38:48.903073",
+ "modified": "2026-03-11 11:47:07.554694",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",

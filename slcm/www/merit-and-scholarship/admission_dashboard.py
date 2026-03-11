@@ -273,13 +273,13 @@ def get_context(context):
                     order_by='creation desc'
                 )
             context.profile_data = _ap[0] if _ap else {}
-            # Ensure date objects are converted to strings for JSON serialization in template
-            if context.profile_data.get('date_of_birth'):
-                context.profile_data['date_of_birth'] = str(context.profile_data['date_of_birth'])
+            context.profile_data_json = frappe.as_json(context.profile_data)
         else:
             context.profile_data = {}
+            context.profile_data_json = "{}"
     except Exception:
         context.profile_data = {}
+        context.profile_data_json = "{}"
 
     # ── Derive first name for navbar ──────────────────────────────────
     try:

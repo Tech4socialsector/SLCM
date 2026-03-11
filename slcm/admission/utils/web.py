@@ -161,104 +161,124 @@ def _get_stage_seq(stages, stage_name):
             return getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
     return 0
 
-@frappe.whitelist(methods=["POST", "GET"])
-def get_stage_tracker_data(applicant_name):
+@frappe.whitelist(allow_guest=False)
+def get_stage_tracker_data(applicant_name: str) -> dict:
     """
-    Returns stage pipeline for /my-applications stage tracker widget.
-    Reads stages from Admission Cycle child table filtered by intake_type.
+    Returns stage tracker data for the portal progress bar.
+    Directly matches Applicant.application_status with Admission Cycle Stage.application_status.
+    Filters stages based on Applicant.intake_type.
     """
-    # Permission: owner or admin
-    applicant = frappe.get_doc("Applicant", applicant_name)
-    allowed_roles = {"Admission Admin", "System Manager", "Applicant"}
-    is_owner = frappe.session.user == applicant.owner
-    has_role = bool(allowed_roles & set(frappe.get_roles()))
-    if not is_owner and not has_role:
+    applicant = frappe.db.get_value(
+        "Applicant", applicant_name,
+        ["owner", "email", "admission_cycle", "intake_type", "application_status"],
+        as_dict=True
+    )
+    if not applicant:
+        frappe.throw("Not found", frappe.DoesNotExistError)
+
+    user     = frappe.session.user
+    is_admin = "Admission Admin" in frappe.get_roles(user)
+    if not is_admin and applicant.owner != user and applicant.email != user:
         frappe.throw("Not permitted", frappe.PermissionError)
 
     if not applicant.admission_cycle:
-        return {"stages": [], "app_status": applicant.application_status or ""}
+        return {"stages": [], "progress_pct": 0, "current_status": applicant.application_status}
 
-    # Get intake_type from Program (not Admission Cycle)
-    intake_type = frappe.db.get_value(
-        "Program", applicant.program, "intake_type"
-    ) or "All"
+    # Load all enabled stages for this cycle
+    all_stages = frappe.get_all(
+        "Admission Cycle Stage",
+        filters={
+            "parent": applicant.admission_cycle,
+            "is_enabled": 1
+        },
+        fields=[
+            "name", "stage_name", "stage_type", "stage_code",
+            "sequence_no", "start_date", "end_date", "applicable_workflow",
+            "action_label", "action_url", "requires_applicant_action",
+            "application_status"
+        ],
+        order_by="sequence_no asc"
+    )
 
-    # Load stages from cycle child table
-    try:
-        from slcm.admission.utils.stage_control import get_cycle_stages
-        stages = get_cycle_stages(applicant.admission_cycle, intake_type)
-    except Exception as e:
-        frappe.log_error(f"get_stage_tracker_data stage load error: {e}")
-        stages = []
+    # Filter stages by intake_type
+    # Admission Cycle Stage.applicable_workflow matches Applicant.intake_type
+    # If applicable_workflow is "All", it shows for everyone.
+    intake = applicant.intake_type or "CLAT"
+    filtered_stages = [
+        s for s in all_stages
+        if s.applicable_workflow == "All" or s.applicable_workflow == intake
+    ]
 
-    if not stages:
-        return {"stages": [], "app_status": applicant.application_status or ""}
+    if not filtered_stages:
+        return {"stages": [], "progress_pct": 0, "current_status": applicant.application_status}
 
-    from frappe.utils import today as get_today
-    today = get_today()
-    current_stage_name = applicant.current_stage or ""
+    # Find the active stage by matching application_status
+    # If multiple stages match, we usually take the latest one or the one currently relevant.
+    # We will look for an exact match first.
+    current_status = applicant.application_status
+    active_index = -1
+    
+    for i, s in enumerate(filtered_stages):
+        if s.application_status == current_status:
+            active_index = i
+            # Don't break yet, in case multiple match, we might want the last one? 
+            # Or usually first one in timeline. Let's take the first one found.
+            break
 
-    result_stages = []
+    # If no exact match, we might need a fallback. 
+    # For now, if no match, assume it's before the first stage or past the last.
+    
+    stages_out = []
+    found_active = False
 
-    for s in stages:
-        seq  = getattr(s, "sequence", None) or getattr(s, "sequence_no", None) or 0
-        sd   = str(getattr(s, "start_date", None) or "")
-        ed   = str(getattr(s, "end_date", None) or "")
-        name = s.stage_name
-
-        # PRIMARY: use applicant.current_stage to find active
-        if current_stage_name:
-            if name == current_stage_name:
-                status = "active"
-            elif seq < _get_stage_seq(stages, current_stage_name):
-                status = "completed"
+    for i, s in enumerate(filtered_stages):
+        state = "pending"
+        if active_index != -1:
+            if i < active_index:
+                state = "completed"
+            elif i == active_index:
+                state = "active"
+                found_active = True
             else:
-                status = "upcoming"
-        # SECONDARY: use date window when current_stage not set
-        elif sd and ed:
-            if today > ed:
-                status = "completed"
-            elif sd <= today <= ed:
-                status = "active"
-            else:
-                status = "upcoming"
+                state = "pending"
         else:
-            status = "upcoming"
+            # Fallback logic if no status match: 
+            # This part is tricky. If status doesn't match, maybe it's Draft or something else.
+            state = "pending"
 
-        # Action button: only show on active stage
-        stage_type = getattr(s, "stage_type", "") or ""
-        action_url   = getattr(s, "action_url", "") or ""
-        action_label = getattr(s, "action_label", "") or ""
-
-        if status == "active" and not action_url:
-            if stage_type == "Interview":
-                action_url   = "/eligibility/interview_management"
-                action_label = "Book Interview Slot"
-            elif stage_type == "Exam":
-                action_url   = "/eligibility/entrance_test_seat_allocation"
-                action_label = "Choose Preference"
-            elif stage_type in ("Offer Letter", "Fee"):
-                action_url   = "/offer_letter/offer-letter-list"
-                action_label = "View Offer"
-
-        show_action = status == "active" and bool(action_url)
-
-        result_stages.append({
-            "stage_name":    name,
-            "stage_type":    stage_type,
-            "sequence":      seq,
-            "status":        status,
-            "show_action":   show_action,
-            "action_url":    action_url if show_action else "",
-            "action_label":  action_label if show_action else "",
-            "start_date":    sd or None,
-            "end_date":      ed or None,
+        stages_out.append({
+            "name":                      s.get("name"),
+            "stage_name":                s.get("stage_name") or s.get("stage_type"),
+            "stage_type":                s.get("stage_type"),
+            "stage_code":                s.get("stage_code") or "",
+            "sequence":                  s.get("sequence_no") or 0,
+            "state":                     state,
+            "status":                    state, # Added for JS compatibility
+            "start_date":                str(s.start_date) if s.get("start_date") else None,
+            "end_date":                  str(s.end_date)   if s.get("end_date")   else None,
+            "action_label":              s.get("action_label") or "",
+            "action_url":                s.get("action_url") or "",
+            "requires_applicant_action": s.get("requires_applicant_action") or 0,
+            "show_action": bool(
+                state == "active" and
+                s.get("action_url") and
+                s.get("requires_applicant_action")
+            ),
         })
 
+    # Calculate progress percentage based on active index
+    total_stages = len(filtered_stages)
+    if active_index != -1:
+        # Progress is (index + 1) / total
+        progress_pct = round(((active_index + 1) / total_stages) * 100, 1)
+    else:
+        progress_pct = 0.0
+
     return {
-        "stages":     result_stages,
-        "app_status": applicant.application_status or "",
-        "track_type": "normal",
+        "stages":         stages_out,
+        "progress_pct":   progress_pct,
+        "current_status": applicant.application_status,
+        "intake_type":    applicant.intake_type
     }
 
 

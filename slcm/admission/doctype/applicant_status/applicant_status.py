@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class ProgramOfferingCriteria(Document):
+class ApplicantStatus(Document):
 	pass

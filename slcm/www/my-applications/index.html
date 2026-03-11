@@ -1243,9 +1243,20 @@
         <span class="ico"><span class="material-symbols-outlined">groups</span></span>
         Interview Assessment
       </div>
-      <span class="status-badge" style="background:#f0fdf4;color:#166534">
-        {{ (interview_doc.re_interview_slot_status if interview_is_rescheduled else interview_doc.interview_slot_status)|upper }}
-      </span>
+      {% set i_status = interview_doc.interview_status %}
+      {% if i_status and i_status != 'Scheduled' %}
+        {% if i_status == 'Absent' %}
+          <span class="status-badge" style="background:#fee2e2;color:#dc2626">ABSENT</span>
+        {% elif i_status == 'Attended' %}
+          <span class="status-badge" style="background:#dcfce7;color:#16a34a">ATTENDED</span>
+        {% else %}
+          <span class="status-badge" style="background:#f0fdf4;color:#166534">{{ i_status|upper }}</span>
+        {% endif %}
+      {% else %}
+        <span class="status-badge" style="background:#f0fdf4;color:#166534">
+          {{ (interview_doc.re_interview_slot_status if interview_is_rescheduled else interview_doc.interview_slot_status)|upper }}
+        </span>
+      {% endif %}
     </div>
     <div class="ma-card-body">
       {% if interview_show_result %}
@@ -1257,7 +1268,7 @@
           <div class="result-score-grid">
             <div class="result-score-box">
               <div class="lbl">Score</div>
-              <div class="val">{{ interview_doc.interview_score or '—' }}</div>
+              <div class="val">{{ interview_doc.interview_score or '0' }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Status</div>
@@ -1332,6 +1343,40 @@
         {% endif %}
         {% endif %}
       {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ╔══════════════════════════════════════════════╗
+       ║  ELIGIBILITY RESULT CARD                     ║
+       ╚══════════════════════════════════════════════╝ -->
+  {% if eligibility_result %}
+  <div class="ma-card fade-up" style="animation-delay:.28s">
+    <div class="ma-card-head">
+      <div class="ma-card-title">
+        <span class="ico"><span class="material-symbols-outlined">assignment_turned_in</span></span>
+        Eligibility Result
+      </div>
+    </div>
+    <div class="ma-card-body">
+      <div class="info-grid-2">
+        <div class="info-tile">
+          <div class="info-tile-label">Entrance Score</div>
+          <div class="info-tile-value">{{ eligibility_result.entrance_test_score or '0' }}</div>
+        </div>
+        <div class="info-tile">
+          <div class="info-tile-label">Interview Score</div>
+          <div class="info-tile-value">{{ eligibility_result.interview_score or '0' }} / 100</div>
+        </div>
+        <div class="info-tile">
+          <div class="info-tile-label">Source</div>
+          <div class="info-tile-value">{{ eligibility_result.source_type or '—' }}</div>
+        </div>
+        <div class="info-tile">
+          <div class="info-tile-label">Result Status</div>
+          <div class="info-tile-value blue">{{ eligibility_result.result_status or '—' }}</div>
+        </div>
+      </div>
     </div>
   </div>
   {% endif %}

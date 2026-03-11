@@ -1270,6 +1270,22 @@
                 } catch (e) { }
             }
 
+            window.doLogout = function() {
+                showConfirm('Are you sure you want to logout?', async function () {
+                    try {
+                        await fetch('/api/method/logout', {
+                            method: 'POST',
+                            headers: {
+                                'X-Frappe-CSRF-Token': window.csrf_token
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Logout request failed', e);
+                    }
+                    window.location.href = '/login';
+                });
+            };
+
             document.addEventListener('DOMContentLoaded', function () {
                 var bellBtn = document.getElementById('bellBtn');
                 if (bellBtn) {
@@ -1281,10 +1297,9 @@
 
                 var logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
-                    logoutBtn.addEventListener('click', function () {
-                        showConfirm('Are you sure you want to logout?', function () {
-                            window.location.href = '/logout';
-                        });
+                    logoutBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        window.doLogout();
                     });
                 }
 
@@ -1338,7 +1353,7 @@
                     drawerLogoutBtn.addEventListener('click', function (e) {
                         e.preventDefault();
                         closeDrawer();
-                        if (logoutBtn) logoutBtn.click();
+                        window.doLogout();
                     });
                 }
             });

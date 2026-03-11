@@ -101,7 +101,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
 def _send_result_notification_email(doc, email):
     """Send a result/rank notification email to the applicant."""
     from frappe.utils import get_url
-    url = get_url("/eligibility/entrance-test-seat-allocation")
+    url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
 
     status_color = "#2e7d32" if doc.entrance_test_status == "Attended" else "#c62828"
     
@@ -122,8 +122,8 @@ def _send_result_notification_email(doc, email):
         """
 
     msg = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-        <h2 style="color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px;">Entrance Test Result</h2>
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6;">
+        <h2 style="color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; margin-top: 0;">Entrance Test Result</h2>
         <p>Dear {doc.candidate_name or doc.applicant},</p>
         <p>The results for your entrance test have been processed. Below are your details:</p>
         
@@ -140,8 +140,8 @@ def _send_result_notification_email(doc, email):
             <a href="{url}" style="display:inline-block; padding:12px 24px; background:#1565c0; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold;">View My Result in Portal</a>
         </div>
         
-        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px;">
-            This corresponds to record: {doc.name}. If you cannot click the button, copy this link: {url}
+        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
+            Record Reference: {doc.name}. If the button doesn't work, copy this link: {url}
         </p>
     </div>
     """
@@ -245,58 +245,52 @@ def _send_reschedule_email(doc, email):
     """Send a reschedule notification email to the applicant."""
     try:
         from frappe.utils import get_url
-        url = get_url("/eligibility/entrance-test-seat-allocation")
+        url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
 
         prefs_html = "<ul>"
         for p in doc.re_assigned_preferences:
             prefs_html += f"<li>{p.preference_order}. {p.center_name or p.provider} ({p.provider})</li>"
         prefs_html += "</ul>"
 
-        applicant_info = f"""
-        <p><strong>Applicant Details</strong><br>
-        Name: {doc.candidate_name or ''}<br>
-        Application No: {doc.applicant or ''}<br>
-        Email: {email}
-        </p>
-        """
-
-        past_test_info = f"""
-        <p><strong>Past Test Details</strong><br>
-        Entrance Test: {doc.entrance_test_list or ''}<br>
-        Status: Absent
-        </p>
-        """
-
-        new_test_info = f"""
-        <p><strong>Rescheduled Test Details</strong><br>
-        New Entrance Test Name: {doc.re_entrance_test_name or doc.re_entrance_test_list or ''}<br>
-        New Allocation Date/Time: {doc.re_allocation_date or 'Not set'}<br>
-        Campus: {doc.campus or ''}
-        </p>
-        """
-
         reason_section = ""
         if doc.reschedule_reason:
             reason_section = f"""
-        <p style="background:#fff8e1; border-left:4px solid #ffc107; padding:10px 14px; border-radius:4px;">
-            <strong>Reason for Reschedule:</strong><br>
-            {doc.reschedule_reason}
-        </p>
-        """
+            <div style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0;"><strong>Reason for Reschedule:</strong><br>{doc.reschedule_reason}</p>
+            </div>
+            """
 
         msg = f"""
-        <p>Dear {doc.candidate_name or doc.applicant},</p>
-        <p>You were marked as <strong>Absent</strong> for your previous entrance test. We have rescheduled the entrance test for you.</p>
-        {reason_section}
-        {applicant_info}
-        {past_test_info}
-        {new_test_info}
-        <p>Please choose your preferred center from the options below for the rescheduled test:</p>
-        {prefs_html}
-        <p>
-            <a href="{url}" style="display:inline-block;padding:10px 14px;background:#1565c0;color:#fff;border-radius:4px;text-decoration:none;">Choose Your Center for Rescheduled Test</a>
-        </p>
-        <p>If the button above does not work, open: {url}</p>
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
+            <h2 style="color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; margin-top: 0;">Entrance Test Rescheduled</h2>
+            <p>Dear {doc.candidate_name or doc.applicant},</p>
+            <p>You were marked as <strong>Absent</strong> for your previous entrance test. We have rescheduled the entrance test for you.</p>
+            
+            {reason_section}
+
+            <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0 0 10px 0;"><strong>Rescheduled Test Details:</strong></p>
+                <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+                    <tr><td style="padding:5px 0; color:#666;">New Test Name:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_entrance_test_name or doc.re_entrance_test_list or ''}</td></tr>
+                    <tr><td style="padding:5px 0; color:#666;">New Allocation Date:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_allocation_date or 'To be communicated'}</td></tr>
+                    <tr><td style="padding:5px 0; color:#666;">Campus:</td><td style="padding:5px 0; font-weight:bold;">{doc.campus or ''}</td></tr>
+                </table>
+            </div>
+
+            <p>Please choose your preferred center from the options below for the rescheduled test:</p>
+            {prefs_html}
+
+            <p>Please click the button below to view your full details and choose your preferred center in the portal:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{url}" style="display:inline-block; padding:12px 28px; background:#1565c0; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">Choose Your Center</a>
+            </div>
+            
+            <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
+                Record Reference: {doc.name}<br>
+                If the button doesn't work, copy this link: {url}
+            </p>
+        </div>
         """
 
         frappe.sendmail(
