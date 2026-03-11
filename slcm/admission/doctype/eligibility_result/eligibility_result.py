@@ -134,7 +134,7 @@ def get_applicant_data():
         # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",
             filters={"applicant_id": res['applicant_id']},
-            fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score"]
+            fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score", "allocated_category"]
         )
         
         # Inject Seat Allocation details

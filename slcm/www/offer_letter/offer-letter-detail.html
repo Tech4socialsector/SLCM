@@ -38,6 +38,14 @@
         color: var(--primary);
     }
 
+    .status-badge-row.draft { color: #1a202c; }
+    .status-badge-row.issued { color: #ca8a04; }
+    .status-badge-row.accepted { color: #38a169; }
+    .status-badge-row.payment-completed { color: #3182ce; }
+    .status-badge-row.rejected { color: #e53e3e; }
+    .status-badge-row.expired { color: #ed8936; }
+    .status-badge-row.withdrawn { color: #d53f8c; }
+
     .status-dot {
         width: 12px;
         height: 12px;
@@ -45,24 +53,39 @@
         display: inline-block;
     }
 
+    .status-dot.draft {
+        background-color: #1a202c;
+        box-shadow: 0 0 0 4px rgba(26, 32, 44, 0.2);
+    }
+
     .status-dot.issued {
-        background-color: var(--warning, #ed8936);
-        box-shadow: 0 0 0 4px rgba(237, 137, 54, 0.2);
+        background-color: #ecc94b;
+        box-shadow: 0 0 0 4px rgba(236, 201, 75, 0.2);
     }
 
     .status-dot.accepted {
-        background-color: var(--info, #3182ce);
-        box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.2);
-    }
-
-    .status-dot.payment-completed {
-        background-color: var(--success, #38a169);
+        background-color: #38a169;
         box-shadow: 0 0 0 4px rgba(56, 161, 105, 0.2);
     }
 
+    .status-dot.payment-completed {
+        background-color: #3182ce;
+        box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.2);
+    }
+
     .status-dot.rejected {
-        background-color: var(--danger, #e53e3e);
+        background-color: #e53e3e;
         box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.2);
+    }
+
+    .status-dot.expired {
+        background-color: #ed8936;
+        box-shadow: 0 0 0 4px rgba(237, 137, 54, 0.2);
+    }
+
+    .status-dot.withdrawn {
+        background-color: #d53f8c;
+        box-shadow: 0 0 0 4px rgba(213, 63, 140, 0.2);
     }
 
     .summary-item {
@@ -249,6 +272,22 @@
         font-size: 1.25rem;
     }
 
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+    }
+
+    .btn-back:hover {
+        color: var(--primary);
+    }
+
     .close-modal {
         color: #a0aec0;
         font-size: 24px;
@@ -275,6 +314,10 @@
 {% endblock %}
 
 {% block content %}
+<a href="/offer_letter/offer-letter-list" class="btn-back">
+    <i class="fa fa-arrow-left"></i>
+    Back to Offer Letters
+</a>
 <div id="offer-detail-wrapper">
     <div class="text-center p-5 mt-5" id="loader">
         <div class="spinner-border" style="color: var(--primary);" role="status">
@@ -292,7 +335,6 @@
         <p class="text-white-50 small">{{ _("Please do not refresh the page.") }}</p>
     </div>
 </div>
-
 <!-- Fee Breakdown Modal -->
 <div id="payment-modal" class="custom-modal">
     <div class="custom-modal-content">
@@ -386,6 +428,7 @@
         if (!deadline_str) return;
 
         const timer_el = $('#expiry-timer-display');
+        const label_el = timer_el.siblings('.ui-card-label');
         if (!timer_el.length) return;
 
         let deadline_val = deadline_str;
@@ -406,16 +449,27 @@
                 return;
             }
 
-            const hours = Math.floor(distance / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            if (distance > 24 * 60 * 60 * 1000) {
+                // More than 24 hours - show date only
+                label_el.text("{{ _("Offer Expiry Date") }}");
+                timer_el.text(deadline_str.split(' ')[0]);
+                timer_el.next().hide(); // Hide the redundant deadline line
+            } else {
+                // 24 hours or less - show timer
+                label_el.text("{{ _("Offer Expiry Timer") }}");
+                timer_el.next().show();
 
-            const display =
-                (hours < 10 ? "0" + hours : hours) + " : " +
-                (minutes < 10 ? "0" + minutes : minutes) + " : " +
-                (seconds < 10 ? "0" + seconds : seconds) + " more";
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            timer_el.html(display);
+                const display =
+                    (hours < 10 ? "0" + hours : hours) + " : " +
+                    (minutes < 10 ? "0" + minutes : minutes) + " : " +
+                    (seconds < 10 ? "0" + seconds : seconds) + " more";
+
+                timer_el.html(display);
+            }
         }, 1000);
     }
 
@@ -430,7 +484,7 @@
             <div class="col-lg-4">
                 <div class="ui-card">
                     <span class="ui-card-label">{{ _("Offer Status") }}</span>
-                    <div class="status-badge-row">
+                    <div class="status-badge-row ${status_class}">
                         <span class="status-dot ${status_class}"></span>
                         ${offer.offer_status}
                     </div>
@@ -503,10 +557,6 @@
                 <div class="ui-card" style="padding: 0;">
                     <div class="preview-header px-4 pt-4">
                         <h5>{{ _("Offer Letter Preview") }}</h5>
-                        <div class="preview-actions">
-                            <i class="fa fa-print" title="Print" onclick="window.print()"></i>
-                            <i class="fa fa-search-plus" title="Zoom"></i>
-                        </div>
                     </div>
                     
                     <div class="px-4 pb-4">
@@ -718,11 +768,8 @@
 
     function handle_download() {
         const offer = cur_offer_data.offer;
-        let file_url = offer.offer_letter_pdf;
-        if (!file_url) {
-            file_url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Offer Letter&name=${encodeURIComponent(offer.name)}&format=Offer Letter&no_letterhead=0`;
-        }
-        window.open(file_url, '_blank');
+        const url = `/api/method/slcm.admission.utils.web.download_offer_letter?offer_letter=${encodeURIComponent(offer.name)}`;
+        window.open(url, '_blank');
     }
 
     async function handle_download_receipt() {
@@ -734,8 +781,7 @@
                 fieldname: 'name'
             });
             if (r && r.name) {
-                const format = offer.receipt_print_format || 'Applicant Payment Receipt Format';
-                const url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant Payment Receipt&name=${encodeURIComponent(r.name)}&format=${encodeURIComponent(format)}&no_letterhead=1`;
+                const url = `/api/method/slcm.admission.utils.web.download_receipt?receipt_name=${encodeURIComponent(r.name)}`;
                 window.open(url, '_blank');
             } else {
                 showToast("{{ _('Payment Receipt not found. It might still be generating, please refresh in a moment.') }}", "info");
