@@ -148,6 +148,7 @@
   "consent_third_party",
   "section_break_portal",
   "application_fee_status",
+  "application_fee_amount",
   "fee_waived_by",
   "fee_waived_on",
   "column_break_fcum",
@@ -900,7 +901,13 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Application Fee Status",
-   "options": "Pending\nPaid\nWaived"
+   "options": "Pending\nRequested\nPaid\nWaived"
+  },
+  {
+   "fieldname": "application_fee_amount",
+   "fieldtype": "Currency",
+   "label": "Application Fee Amount",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.application_fee_status=='Waived'",

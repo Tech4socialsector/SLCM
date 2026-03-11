@@ -562,6 +562,275 @@ class FeeService:
                 # We don't want to block the offer status change, but we log the failure
                 frappe.log_error(f"Failed to auto-cancel AFA {entry.name}: {str(e)}", "Fee Service")
 
+    @staticmethod
+    def _update_payment_request_for_applicant(applicant_doc, gateway, transaction_id, status,
+            payment_id=None, failure_reason=None, response_data=None):
+        """Creates or updates Payment Request for Applicant (application fee)."""
+        pr_name = frappe.db.get_value("Payment Request", {
+            "reference_doctype": "Applicant",
+            "reference_name": applicant_doc.name,
+            "status": ["!=", "Cancelled"]
+        }, "name", order_by="creation desc")
+
+        if not pr_name and transaction_id:
+            pr_name = frappe.db.get_value("Payment Request", {"transaction_id": transaction_id}, "name")
+
+        amount = flt(applicant_doc.application_fee_amount)
+        email_to = applicant_doc.email
+
+        if pr_name:
+            pr = frappe.get_doc("Payment Request", pr_name)
+            if gateway and frappe.db.exists("Payment Gateway", gateway):
+                pr.db_set("payment_gateway", gateway)
+        else:
+            pr = frappe.new_doc("Payment Request")
+            pr.reference_doctype = "Applicant"
+            pr.reference_name = applicant_doc.name
+            pr.amount = amount
+            pr.currency = frappe.defaults.get_global_default("currency") or "INR"
+            pr.email_to = email_to
+            if gateway and frappe.db.exists("Payment Gateway", gateway):
+                pr.payment_gateway = gateway
+            pr.transaction_id = transaction_id
+            pr.insert(ignore_permissions=True)
+
+        if pr.docstatus > 0:
+            update_data = {"status": status}
+            if status == "Paid":
+                update_data["failure_message"] = None
+            elif failure_reason:
+                update_data["status"] = "Failed"
+                update_data["failure_message"] = failure_reason
+            if payment_id:
+                update_data["transaction_id"] = payment_id
+            if response_data:
+                update_data["gateway_response"] = json.dumps(response_data, indent=4)
+            frappe.db.set_value("Payment Request", pr.name, update_data, update_modified=True)
+            frappe.db.commit()
+        else:
+            pr.status = status
+            if payment_id:
+                pr.transaction_id = payment_id
+            if response_data:
+                pr.gateway_response = json.dumps(response_data, indent=4)
+            if status == "Paid":
+                pr.failure_message = None
+            if failure_reason:
+                pr.status = "Failed"
+                pr.failure_message = failure_reason
+            pr.save(ignore_permissions=True)
+            if status in ["Paid", "Requested"]:
+                pr.submit()
+
+    @staticmethod
+    @frappe.whitelist()
+    def create_application_fee_razorpay_order(applicant_name):
+        """Creates Razorpay order for application fee payment."""
+        try:
+            from slcm.api.service.application_fee_service import create_application_fee_assignment
+            applicant = frappe.get_doc("Applicant", applicant_name)
+            if applicant.application_fee_status == "Paid":
+                frappe.throw(_("Application fee has already been paid."))
+            if applicant.application_fee_status == "Waived":
+                frappe.throw(_("Application fee has been waived."))
+
+            fee_amount = flt(applicant.application_fee_amount)
+            if fee_amount <= 0:
+                create_application_fee_assignment(applicant_name)
+                applicant.reload()
+                fee_amount = flt(applicant.application_fee_amount)
+            if fee_amount <= 0:
+                frappe.throw(_("Application fee amount is zero. No payment required."))
+
+            afa_name = create_application_fee_assignment(applicant_name)
+            afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
+            actual_payable = flt(afa.final_payable_amount)
+
+            gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+            from payments.utils import get_payment_gateway_controller
+            controller = get_payment_gateway_controller(gateway)
+
+            payment_details = {
+                "amount": actual_payable,
+                "title": _("Application Fee"),
+                "description": _("Application Fee for {0}").format(applicant.program or ""),
+                "reference_doctype": "Applicant",
+                "reference_docname": applicant_name,
+                "payer_email": applicant.email,
+                "payer_name": applicant.candidate_name,
+                "currency": frappe.defaults.get_global_default("currency") or "INR",
+                "receipt": (applicant_name[:40]) if applicant_name else None
+            }
+            order = controller.create_order(**payment_details)
+            if not order or not order.get("id"):
+                frappe.throw(_("Order creation failed. Please check gateway logs."))
+
+            FeeService._update_payment_request_for_applicant(
+                applicant, gateway, order.get("id"), "Requested", response_data=order
+            )
+            frappe.db.set_value("Applicant", applicant_name, "application_fee_status", "Requested")
+            frappe.db.commit()
+
+            return {
+                "order_id": order.get("id"),
+                "key_id": controller.api_key,
+                "amount": order.get("amount"),
+                "currency": order.get("currency"),
+                "gateway": gateway
+            }
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Application Fee Order Creation Failed")
+            raise
+
+    @staticmethod
+    @frappe.whitelist()
+    def verify_application_fee_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, applicant_name):
+        """Verifies Razorpay payment for application fee and marks as paid."""
+        try:
+            applicant = frappe.get_doc("Applicant", applicant_name)
+            gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+            from payments.utils import get_payment_gateway_controller
+            controller = get_payment_gateway_controller(gateway)
+
+            body = razorpay_order_id + "|" + razorpay_payment_id
+            api_secret = controller.get_password("api_secret")
+            controller.verify_signature(body, razorpay_signature, api_secret)
+
+            FeeService._update_payment_request_for_applicant(
+                applicant, gateway, razorpay_order_id, "Paid",
+                payment_id=razorpay_payment_id,
+                response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature}
+            )
+
+            afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+                "applicant": applicant_name,
+                "fee_type": "Application Fee",
+                "status": ["!=", "Cancelled"]
+            }, "name")
+            if afa_name:
+                frappe.db.set_value("Applicant Fee Assignment", afa_name, "status", "Paid")
+
+            frappe.db.set_value("Applicant", applicant_name, "application_fee_status", "Paid")
+            frappe.db.commit()
+
+            FeeService._generate_application_fee_receipt(applicant, razorpay_payment_id, "Online")
+            return {"status": "success"}
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Application Fee Verification Failed")
+            return {"status": "failed", "message": str(e)}
+
+    @staticmethod
+    def _generate_application_fee_receipt(applicant_doc, transaction_id, payment_mode,
+            bank_name=None, cheque_number=None, cheque_date=None, upi_id=None, remarks=None):
+        """Generates Applicant Payment Receipt for application fee."""
+        try:
+            afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+                "applicant": applicant_doc.name,
+                "fee_type": "Application Fee",
+                "status": ["!=", "Cancelled"]
+            }, "name")
+            if not afa_name:
+                return None
+            afa_doc = frappe.get_doc("Applicant Fee Assignment", afa_name)
+            receipt = frappe.new_doc("Applicant Payment Receipt")
+            receipt.applicant = applicant_doc.name
+            receipt.program = applicant_doc.program
+            receipt.academic_year = afa_doc.academic_year
+            receipt.payment_date = frappe.utils.today()
+            receipt.transaction_id = transaction_id
+            receipt.payment_mode = payment_mode
+            receipt.total_amount = flt(applicant_doc.application_fee_amount)
+            receipt.currency = frappe.defaults.get_global_default("currency") or "INR"
+            receipt.bank_name = bank_name
+            receipt.cheque_number = cheque_number
+            receipt.cheque_date = cheque_date
+            receipt.upi_id = upi_id
+            receipt.remarks = remarks
+            pr = frappe.db.get_value("Payment Request", {"transaction_id": transaction_id}, "name")
+            if pr:
+                receipt.payment_reference = pr
+            for row in afa_doc.fee_components:
+                receipt.append("fee_components", {
+                    "fee_component": row.fee_component,
+                    "component_name": row.component_name,
+                    "amount": row.amount,
+                    "is_taxable": row.is_taxable,
+                    "tax_rate": row.tax_rate,
+                    "tax_amount": row.tax_amount,
+                    "total_amount": row.total_amount
+                })
+            receipt.insert(ignore_permissions=True)
+            receipt.submit()
+            return receipt.name
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Application Fee Receipt Generation Failed")
+            return None
+
+    @staticmethod
+    @frappe.whitelist()
+    def process_application_fee_payment(applicant_name, payment_mode="Cash", reference_number=None,
+            bank_name=None, cheque_number=None, cheque_date=None, upi_id=None, remarks=None):
+        """Records offline/manual application fee payment."""
+        applicant = frappe.get_doc("Applicant", applicant_name)
+        if applicant.application_fee_status == "Paid":
+            frappe.throw(_("Application fee has already been paid."))
+
+        afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+            "applicant": applicant_name,
+            "fee_type": "Application Fee",
+            "status": ["!=", "Cancelled"]
+        }, "name")
+        if not afa_name:
+            from slcm.api.service.application_fee_service import create_application_fee_assignment
+            create_application_fee_assignment(applicant_name)
+            afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+                "applicant": applicant_name,
+                "fee_type": "Application Fee",
+                "status": ["!=", "Cancelled"]
+            }, "name")
+
+        afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
+        afa.db_set("status", "Paid")
+
+        gateway = "Manual Payment"
+        FeeService._update_payment_request_for_applicant(
+            applicant, gateway, reference_number or "N/A", "Paid", payment_id=reference_number
+        )
+        frappe.db.set_value("Applicant", applicant_name, "application_fee_status", "Paid")
+        frappe.db.commit()
+
+        return FeeService._generate_application_fee_receipt(
+            applicant, reference_number or "N/A", payment_mode,
+            bank_name=bank_name, cheque_number=cheque_number, cheque_date=cheque_date,
+            upi_id=upi_id, remarks=remarks
+        )
+
+    @staticmethod
+    @frappe.whitelist()
+    def log_application_fee_payment_failure(applicant_name, order_id, error_data):
+        """Logs application fee payment failure."""
+        try:
+            applicant = frappe.get_doc("Applicant", applicant_name)
+            gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+            if isinstance(error_data, str):
+                try:
+                    error_data = json.loads(error_data)
+                except Exception:
+                    pass
+            err_msg = ""
+            if isinstance(error_data, dict):
+                err_msg = error_data.get("description") or error_data.get("message") or str(error_data)
+            else:
+                err_msg = str(error_data)
+            FeeService._update_payment_request_for_applicant(
+                applicant, gateway, order_id, "Failed", failure_reason=err_msg, response_data=error_data
+            )
+            return {"status": "success"}
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Log Application Fee Failure Failed")
+            return {"status": "error", "message": str(e)}
+
+
 @frappe.whitelist()
 def create_offer_razorpay_order(offer_name):
     return FeeService.create_offer_razorpay_order(offer_name)
@@ -581,3 +850,23 @@ def process_fee_payment(offer_name, payment_mode="Cash", reference_number=None,
 @frappe.whitelist()
 def log_payment_failure(offer_name, order_id, error_data):
     return FeeService.log_payment_failure(offer_name, order_id, error_data)
+
+@frappe.whitelist()
+def create_application_fee_razorpay_order(applicant_name):
+    return FeeService.create_application_fee_razorpay_order(applicant_name)
+
+@frappe.whitelist()
+def verify_application_fee_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, applicant_name):
+    return FeeService.verify_application_fee_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, applicant_name)
+
+@frappe.whitelist()
+def process_application_fee_payment(applicant_name, payment_mode="Cash", reference_number=None,
+        bank_name=None, cheque_number=None, cheque_date=None, upi_id=None, remarks=None):
+    return FeeService.process_application_fee_payment(
+        applicant_name, payment_mode, reference_number,
+        bank_name, cheque_number, cheque_date, upi_id, remarks
+    )
+
+@frappe.whitelist()
+def log_application_fee_payment_failure(applicant_name, order_id, error_data):
+    return FeeService.log_application_fee_payment_failure(applicant_name, order_id, error_data)

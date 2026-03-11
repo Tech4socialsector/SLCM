@@ -1,7 +1,7 @@
 
 frappe.ui.form.on('Applicant Fee Assignment', {
     refresh: function (frm) {
-        if (frm.doc.docstatus === 1 && frm.doc.status !== "Converted") {
+        if (frm.doc.docstatus === 1 && frm.doc.status !== "Converted" && frm.doc.fee_type === "Admission Fee") {
             frm.add_custom_button(__('Create Invoice & Convert Student'), function () {
                 frappe.confirm(__('This action will create a Student Master, Enrollment, and Fee Invoice. Continue?'),
                     function () {
@@ -33,7 +33,7 @@ frappe.ui.form.on('Applicant Fee Assignment', {
             }, __('View'));
         }
 
-        if (frm.doc.docstatus === 1 && ["Assigned", "Partially Paid"].includes(frm.doc.status)) {
+        if (frm.doc.docstatus === 1 && ["Assigned", "Partially Paid"].includes(frm.doc.status) && frm.doc.fee_type === "Admission Fee" && frm.doc.offer_letter) {
             frm.add_custom_button(__('Record Manual Payment'), function () {
                 if (frm.doc.status === "Paid") {
                     frappe.msgprint(__('Fee has already been paid for this assignment.'));

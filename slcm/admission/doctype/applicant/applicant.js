@@ -50,7 +50,53 @@ frappe.ui.form.on("Applicant", {
             });
         }
 
-        if (frm.doc.application_fee_status === "Pending") {
+        // Record Application Fee Payment (offline)
+        const feeStatus = (frm.doc.application_fee_status || "").trim();
+        if (!frm.doc.__islocal && frm.doc.application_status === "Draft" &&
+            (feeStatus === "Pending" || feeStatus === "Requested") &&
+            frm.doc.program && frm.doc.admission_cycle) {
+            frm.add_custom_button(__("Record Application Fee Payment"), function () {
+                const d = new frappe.ui.Dialog({
+                    title: __("Record Application Fee Payment"),
+                    fields: [
+                        { label: __("Payment Mode"), fieldname: "payment_mode", fieldtype: "Select",
+                            options: "Cash\nCheque\nUPI\nQR Code\nBank Transfer\nDemand Draft", default: "Cash", reqd: 1 },
+                        { label: __("Reference No / UTR / Cheque No"), fieldname: "reference_number", fieldtype: "Data", reqd: 1 },
+                        { label: __("Bank Name"), fieldname: "bank_name", fieldtype: "Data" },
+                        { label: __("Cheque Number"), fieldname: "cheque_number", fieldtype: "Data" },
+                        { label: __("Cheque Date"), fieldname: "cheque_date", fieldtype: "Date" },
+                        { label: __("UPI ID"), fieldname: "upi_id", fieldtype: "Data" },
+                        { label: __("Remarks"), fieldname: "remarks", fieldtype: "Small Text" }
+                    ],
+                    primary_action_label: __("Record Payment"),
+                    primary_action(values) {
+                        frappe.call({
+                            method: "slcm.api.service.fee_service.process_application_fee_payment",
+                            args: {
+                                applicant_name: frm.doc.name,
+                                payment_mode: values.payment_mode,
+                                reference_number: values.reference_number,
+                                bank_name: values.bank_name,
+                                cheque_number: values.cheque_number,
+                                cheque_date: values.cheque_date,
+                                upi_id: values.upi_id,
+                                remarks: values.remarks
+                            },
+                            callback(r) {
+                                if (!r.exc) {
+                                    d.hide();
+                                    frm.reload_doc();
+                                    frappe.show_alert({ message: __("Payment recorded. Receipt: {0}", [r.message || ""]), indicator: "green" });
+                                }
+                            }
+                        });
+                    }
+                });
+                d.show();
+            }, __("Actions"));
+        }
+
+        if (frm.doc.application_fee_status === "Pending" || frm.doc.application_fee_status === "Requested") {
             frm.add_custom_button(__("Waive Application Fee"), function () {
                 frappe.confirm(
                     __("Mark application fee as Waived for this applicant?"),
