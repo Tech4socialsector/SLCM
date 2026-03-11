@@ -1,5 +1,5 @@
 import frappe
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, getdate
 
 def check_scholarship_availability(scheme_name, applicant_status):
     """
@@ -26,12 +26,12 @@ def check_scholarship_availability(scheme_name, applicant_status):
         frappe.throw(frappe._("Scholarship available only after offer issuance"))
 
     # 3. Date window check
-    now = now_datetime()
+    today = getdate()
 
-    if scheme.application_start and now < scheme.application_start:
+    if scheme.application_start and today < getdate(scheme.application_start):
         frappe.throw(frappe._("Scholarship application not started"))
 
-    if scheme.application_end and now > scheme.application_end:
+    if scheme.application_end and today > getdate(scheme.application_end):
         frappe.throw(frappe._("Scholarship application closed"))
 
     # 4. Beneficiary limit
@@ -139,7 +139,7 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
         return []
 
     # 2. Filter schemes that are Active and within application dates
-    now = now_datetime()
+    today = getdate()
 
     schemes = frappe.get_all(
         "Scholarship Scheme",
@@ -195,9 +195,9 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
                 continue
 
         # Check dates
-        if scheme.application_start and now < scheme.application_start:
+        if scheme.application_start and today < getdate(scheme.application_start):
             continue
-        if scheme.application_end and now > scheme.application_end:
+        if scheme.application_end and today > getdate(scheme.application_end):
             continue
             
         # Check stage availability

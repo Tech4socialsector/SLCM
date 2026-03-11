@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "personal_information_tab",
+  "categories",
   "personal_information_section",
   "candidate_photo",
   "section_break_otug",
@@ -157,6 +158,14 @@
   "intake_type"
  ],
  "fields": [
+  {
+   "fieldname": "categories",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Categories",
+   "options": "Applicant Category",
+   "read_only": 1
+  },
   {
    "fieldname": "application_type",
    "fieldtype": "Select",

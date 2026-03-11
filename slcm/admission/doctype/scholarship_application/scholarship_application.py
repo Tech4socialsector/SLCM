@@ -409,22 +409,27 @@ class ScholarshipApplication(Document):
 		afa_name = afa_data.name
 		total_amount = flt(afa_data.total_amount)
 		
-		# Calculate cumulative scholarship amount from ALL approved applications for this applicant + cycle
-		# We use direct SQL to avoid permission issues and ensure we get the latest committed data
-		total_scholarship = frappe.db.sql("""
+		# Calculate cumulative scholarship amount from ALL OTHER approved applications
+		other_scholarships = frappe.db.sql("""
 			SELECT SUM(calculated_benefit)
 			FROM `tabScholarship Application`
-			WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
-		""", (self.applicant_id, self.admission_cycle))[0][0] or 0
+			WHERE applicant_id = %s 
+			AND admission_cycle = %s 
+			AND status = 'Approved'
+			AND name != %s
+		""", (self.applicant_id, self.admission_cycle, self.name))[0][0] or 0
+
+		# Add current application benefit if it is currently Approved
+		current_benefit = 0
+		if not reverse and self.status == "Approved":
+			current_benefit = flt(self.calculated_benefit)
+		
+		total_scholarship = flt(other_scholarships) + current_benefit
 
 		scholarship_applied = 1 if total_scholarship > 0 else 0
 		final_payable_amount = total_amount - flt(total_scholarship)
 		
-		msg = frappe._("Fee Assignment {0} synced. Total Scholarship: {1}, Final Payable: {2}")\
-			.format(afa_name, total_scholarship, final_payable_amount)
-		indicator = "green"
-
-		# Apply changes directly to DB
+		# Apply changes directly to DB to ensure persistence
 		frappe.db.set_value("Applicant Fee Assignment", afa_name, {
 			"scholarship_amount": total_scholarship,
 			"scholarship_applied": scholarship_applied,
@@ -432,7 +437,10 @@ class ScholarshipApplication(Document):
 		}, update_modified=True)
 		
 		frappe.db.commit()
-		frappe.msgprint(msg, indicator=indicator)
+		
+		msg = frappe._("Fee Assignment {0} synced. Total Scholarship: {1}, Final Payable: {2}")\
+			.format(afa_name, total_scholarship, final_payable_amount)
+		frappe.msgprint(msg, indicator="green")
 
 	def apply_financial_effects(self):
 		from slcm.admission.utils.scholarship_availability import update_scheme_usage
@@ -442,8 +450,13 @@ class ScholarshipApplication(Document):
 	def reverse_financial_effects(self):
 		from slcm.admission.utils.scholarship_availability import update_scheme_usage
 		mapping_name = self.find_mapping()
-		old_doc = self.get_doc_before_save()
-		benefit = old_doc.calculated_benefit if old_doc else self.calculated_benefit
+		benefit = self.calculated_benefit
+		try:
+			old_doc = self.get_doc_before_save()
+			if old_doc:
+				benefit = old_doc.calculated_benefit
+		except Exception:
+			pass
 		update_scheme_usage(self.scholarship_scheme, benefit, mapping_name=mapping_name, reverse=True)
 
 	def find_mapping(self):

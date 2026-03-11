@@ -32,26 +32,6 @@ class ApplicantFeeAssignment(Document):
 				if user_name:
 					self.notification_receiver = user_name
 
-	def calculate_totals(self):
-		total_amount = 0
-		gross_amount = 0
-		for row in self.fee_components:
-			# Calculate tax amount if taxable
-			if row.is_taxable:
-				row.tax_amount = flt(row.amount) * flt(row.tax_rate) / 100
-			else:
-				row.tax_amount = 0
-			
-			row.total_amount = flt(row.amount) + flt(row.tax_amount)
-			total_amount += row.total_amount
-			
-			if row.fee_component != "Scholarship":
-				gross_amount += row.total_amount
-		
-		# total_amount already includes scholarship (since scholarship amount is negative)
-		self.total_amount = gross_amount
-		self.final_payable_amount = total_amount
-
 	def apply_scholarship(self):
 		"""
 		Fetches the total approved scholarship amount for this applicant + cycle
@@ -62,10 +42,13 @@ class ApplicantFeeAssignment(Document):
 			return
 
 		# Sum all approved scholarship benefits for this applicant in this cycle
+		# We use direct SQL to avoid cache issues
 		total_benefit = frappe.db.sql("""
 			SELECT SUM(calculated_benefit)
 			FROM `tabScholarship Application`
-			WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
+			WHERE applicant_id = %s 
+			AND admission_cycle = %s 
+			AND status = 'Approved'
 		""", (self.applicant, self.admission_cycle))[0][0] or 0
 
 		benefit = flt(total_benefit)
