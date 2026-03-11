@@ -134,6 +134,81 @@
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SECTION 0C: UPDATE-PASSWORD REDIRECT
+// Frappe's update-password.html passes statusCode:{200:…} to frappe.call,
+// but frappe.call never forwards statusCode to jQuery — so the redirect
+// handler is dead code.  This section patches frappe.call ON THE
+// UPDATE-PASSWORD PAGE ONLY to add a proper callback that reads the
+// redirect URL returned by update_password() and navigates to it.
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+    'use strict';
+
+    // Only activate on the update-password page
+    var path = window.location.pathname;
+    if (path.indexOf('update-password') === -1) return;
+
+    function patchFrappeCall() {
+        if (typeof frappe === 'undefined' || !frappe.call) return;
+        if (frappe.call.__fle_pwd_patched) return;
+
+        var _originalCall = frappe.call;
+        frappe.call.__fle_pwd_patched = true;
+
+        frappe.call = function (opts) {
+            // Only intercept the update_password API call
+            if (opts && opts.method &&
+                opts.method.indexOf('update_password') !== -1 &&
+                !opts.callback) {
+
+                // Clone opts and add a proper callback
+                var patchedOpts = Object.assign({}, opts);
+                patchedOpts.callback = function (r) {
+                    if (r && r.message) {
+                        // r.message is the redirect URL returned by update_password()
+                        var redirectUrl = r.message;
+
+                        // Show success message
+                        if (typeof frappe.msgprint === 'function') {
+                            frappe.msgprint({
+                                title: __('Password Updated'),
+                                message: __('Your password has been set successfully. Redirecting…'),
+                                indicator: 'green'
+                            });
+                        }
+
+                        // Redirect after a short delay
+                        setTimeout(function () {
+                            window.location.href = redirectUrl;
+                        }, 1500);
+                    }
+                };
+
+                return _originalCall.call(this, patchedOpts);
+            }
+
+            // All other calls pass through unchanged
+            return _originalCall.apply(this, arguments);
+        };
+
+        // Preserve any properties on the original frappe.call
+        Object.keys(_originalCall).forEach(function (key) {
+            if (!(key in frappe.call)) {
+                frappe.call[key] = _originalCall[key];
+            }
+        });
+    }
+
+    // Patch at multiple lifecycle points to catch frappe.call being ready
+    document.addEventListener('DOMContentLoaded', patchFrappeCall);
+    window.addEventListener('load', patchFrappeCall);
+    [0, 100, 300, 500, 1000].forEach(function (ms) {
+        setTimeout(patchFrappeCall, ms);
+    });
+})();
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SECTION 1: LOGIN PAGE — Hide Frappe's navbar
 // ─────────────────────────────────────────────────────────────────────────────
 (function () {
