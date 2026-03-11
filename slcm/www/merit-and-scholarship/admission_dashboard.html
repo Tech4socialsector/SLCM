@@ -1124,14 +1124,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── Profile Edit Modal ──────────────────────────────────────
 function openProfileEditModal() {
   var pd = {{ profile_data | tojson if profile_data else '{}' }};
-  document.getElementById('edit-mobile').value      = pd.mobile_number          || '';
+  var mobileInput = document.getElementById('edit-mobile');
+  var pincodeInput = document.getElementById('edit-pincode');
+
+  mobileInput.value      = pd.mobile_number          || '';
   document.getElementById('edit-dob').value         = pd.date_of_birth          || '';
   document.getElementById('edit-gender').value      = pd.gender                 || '';
   document.getElementById('edit-nationality').value = pd.nationality            || '';
   document.getElementById('edit-address').value     = pd.correspondence_address || '';
   document.getElementById('edit-city').value        = pd.city                   || '';
   document.getElementById('edit-state').value       = pd.state                  || '';
-  document.getElementById('edit-pincode').value     = pd.pincode                || '';
+  pincodeInput.value     = pd.pincode                || '';
+
+  // Prevent letters in mobile
+  mobileInput.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
+  // Prevent letters in pincode
+  pincodeInput.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
 
   document.getElementById('profile-edit-msg').textContent = '';
   document.getElementById('profile-edit-modal').style.display = 'flex';
@@ -1148,18 +1156,45 @@ document.getElementById('profile-edit-modal')?.addEventListener('click', functio
 async function saveProfileEdits() {
   var btn = document.getElementById('profile-save-btn');
   var msg = document.getElementById('profile-edit-msg');
+  
+  const args = {
+    mobile_number:          document.getElementById('edit-mobile').value.trim(),
+    date_of_birth:          document.getElementById('edit-dob').value,
+    gender:                 document.getElementById('edit-gender').value,
+    nationality:            document.getElementById('edit-nationality').value.trim(),
+    correspondence_address: document.getElementById('edit-address').value.trim(),
+    city:                   document.getElementById('edit-city').value.trim(),
+    state:                  document.getElementById('edit-state').value.trim(),
+    pincode:                document.getElementById('edit-pincode').value.trim(),
+  };
+
+  // ── Validation ──────────────────────────────────────────────
+  msg.style.color = '#dc2626';
+
+  if (args.mobile_number) {
+    // Basic mobile validation (digits only, length check)
+    let cleanMobile = args.mobile_number.replace(/[^0-9]/g, '');
+    if (cleanMobile.length < 10) {
+      msg.textContent = 'Please enter a valid 10-digit mobile number.'; return;
+    }
+  }
+
+  if (args.date_of_birth) {
+    let selectedDate = new Date(args.date_of_birth);
+    let today = new Date();
+    if (selectedDate >= today) {
+      msg.textContent = 'Date of birth must be in the past.'; return;
+    }
+  }
+
+  if (args.pincode) {
+    if (!/^[0-9]{6}$/.test(args.pincode)) {
+      msg.textContent = 'Pincode must be exactly 6 digits.'; return;
+    }
+  }
+
   btn.disabled = true; btn.textContent = 'Saving…'; msg.textContent = '';
   try {
-    const args = {
-      mobile_number:          document.getElementById('edit-mobile').value,
-      date_of_birth:          document.getElementById('edit-dob').value,
-      gender:                 document.getElementById('edit-gender').value,
-      nationality:            document.getElementById('edit-nationality').value,
-      correspondence_address: document.getElementById('edit-address').value,
-      city:                   document.getElementById('edit-city').value,
-      state:                  document.getElementById('edit-state').value,
-      pincode:                document.getElementById('edit-pincode').value,
-    };
     const message = await apiFetch('slcm.admission.api.profile.update_profile', args);
     btn.disabled = false; btn.textContent = 'Save Changes';
     if (message && message.status === 'ok') {
