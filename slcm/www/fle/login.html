@@ -59,8 +59,16 @@
                     <input type="text" id="login_id" class="form-control" autocomplete="username">
                 </div>
                 <div class="form-group mb-4">
-                    <label for="login_pwd">PASSWORD</label>
-                    <input type="password" id="login_pwd" class="form-control" autocomplete="current-password">
+                    <div class="d-flex justify-content-between">
+                        <label for="login_pwd">PASSWORD</label>
+                        <a href="/fle/forgot_password.html" class="small text-primary" style="text-decoration:none;">Forgot Password?</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="login_pwd" class="form-control" autocomplete="current-password">
+                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#login_pwd" title="Toggle Password Visibility">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <button class="btn btn-maroon" onclick="login_user()">Sign In</button>
                 <div class="text-center mt-3">
@@ -176,6 +184,21 @@
         if (e.key === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
             register_user();
+        }
+    });
+
+    // Toggle password visibility
+    $(document).on('click', '.toggle-password', function() {
+        var $btn = $(this);
+        var $target = $($btn.data('target'));
+        var $icon = $btn.find('i');
+        
+        if ($target.attr('type') === 'password') {
+            $target.attr('type', 'text');
+            $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            $target.attr('type', 'password');
+            $icon.removeClass('fa-eye-slash').addClass('fa-eye');
         }
     });
 </script>
