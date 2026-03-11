@@ -209,7 +209,7 @@ class EntranceTestList(Document):
 def _send_allocation_email(allocation, email):
     """Send a premium result/allocation email to the applicant."""
     from frappe.utils import get_url
-    url = get_url("/eligibility/entrance-test-seat-allocation")
+    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
 
     prefs_html = ""
     if getattr(allocation, 'assigned_preferences', None):
@@ -449,10 +449,11 @@ def _get_remaining_capacity(provider_name):
         return 0
 
 @frappe.whitelist()
-def generate_and_store_admit_card(allocation, is_rescheduled=False):
+def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content=None):
     """
     Generates the admit card using the manual template (bypassing Print Formats)
     and attaches it to the Entrance Test Seat Allocation record.
+    If html_content is provided (from the portal), it uses that to generate the PDF.
     If is_rescheduled is True, stores in reschedule_admit_card field.
     """
     if isinstance(allocation, str):
@@ -461,10 +462,17 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False):
     # Generate PDF using the manual template in the eligibility portal
     pdf_content = None
     try:
-        from slcm.www.eligibility.entrance_test_seat_allocation import get_admit_card_html
         from frappe.utils.pdf import get_pdf
         
-        html = get_admit_card_html(allocation, is_rescheduled)
+        if html_content:
+            # Clean up the HTML from any JS script tags if present
+            import re
+            html_content = re.sub(r'<script\b[^>]*>([\s\S]*?)<\/script>', '', html_content)
+            html = html_content
+        else:
+            from slcm.www.eligibility.entrance_test_seat_allocation import get_admit_card_html
+            html = get_admit_card_html(allocation, is_rescheduled)
+            
         pdf_content = get_pdf(html)
     except Exception as e:
         import traceback
@@ -483,9 +491,12 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False):
     # Remove old file from the SPECIFIC field if exists
     old_file_url = getattr(allocation, field_to_update)
     if old_file_url:
-        old_file = frappe.db.get_value("File", {"file_url": old_file_url}, "name")
-        if old_file:
-            frappe.delete_doc("File", old_file, ignore_permissions=True)
+        try:
+            old_file_name = frappe.db.get_value("File", {"file_url": old_file_url}, "name")
+            if old_file_name:
+                frappe.delete_doc("File", old_file_name, ignore_permissions=True)
+        except Exception:
+            pass
 
     _file = frappe.get_doc({
         "doctype": "File",
@@ -508,9 +519,6 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False):
     frappe.db.set_value(allocation.doctype, allocation.name, values)
     allocation.update(values)
     frappe.db.commit()
-    
-    # Debug log to verify storage
-    # frappe.msgprint(f"Stored {field_to_update} for {allocation.name}")
     
     return _file.file_url
     
