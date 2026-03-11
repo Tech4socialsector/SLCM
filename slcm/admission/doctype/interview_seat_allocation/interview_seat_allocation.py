@@ -108,7 +108,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
 def _send_result_notification_email(doc, email):
     """Send a result/rank notification email to the applicant for Interview."""
     from frappe.utils import get_url
-    url = get_url("/eligibility/interview-management")
+    url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
 
     status_color = "#2e7d32" if doc.interview_status == "Attended" else "#c62828"
     
@@ -129,8 +129,8 @@ def _send_result_notification_email(doc, email):
         """
 
     msg = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-        <h2 style="color: #0277bd; border-bottom: 2px solid #0277bd; padding-bottom: 10px;">Interview Result</h2>
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6;">
+        <h2 style="color: #0277bd; border-bottom: 2px solid #0277bd; padding-bottom: 10px; margin-top: 0;">Interview Result</h2>
         <p>Dear {doc.candidate_name or doc.applicant},</p>
         <p>The results for your interview have been processed. Below are your details:</p>
         
@@ -147,8 +147,8 @@ def _send_result_notification_email(doc, email):
             <a href="{url}" style="display:inline-block; padding:12px 24px; background:#0277bd; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold;">View My Result in Portal</a>
         </div>
         
-        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px;">
-            This corresponds to record: {doc.name}. If you cannot click the button, copy this link: {url}
+        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
+            Record Reference: {doc.name}. If the button doesn't work, copy this link: {url}
         </p>
     </div>
     """
@@ -272,54 +272,45 @@ def _send_reschedule_email(doc, email):
     """Email notification for interview reschedule."""
     try:
         from frappe.utils import get_url
-        url = get_url("/eligibility/interview-management")
-
-        applicant_info = f"""
-        <p><strong>Applicant Details</strong><br>
-        Name: {doc.candidate_name or ''}<br>
-        Application No: {doc.applicant or ''}<br>
-        Email: {email}
-        </p>
-        """
-
-        old_info = f"""
-        <p><strong>Previous Interview Details</strong><br>
-        Date: {doc.interview_date or '—'}<br>
-        Time: {doc.interview_time or '—'}<br>
-        Venue / Address: {doc.interview_address or '—'}<br>
-        Staff: {doc.interview_staff_member or '—'}
-        </p>
-        """
-
-        new_info = f"""
-        <p><strong>New Interview Details</strong><br>
-        Date: {doc.re_interview_date or '—'}<br>
-        Time: {doc.re_interview_time or '—'}<br>
-        Venue / Address: {doc.re_interview_address or '—'}<br>
-        Staff: {doc.re_interview_staff_member or ''}
-        </p>
-        """
+        url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
 
         reason_section = ""
         if doc.reschedule_reason:
             reason_section = f"""
-        <p style=\"background:#fff8e1; border-left:4px solid #ffc107; padding:10px 14px; border-radius:4px;\">
-            <strong>Reason for Reschedule:</strong><br>
-            {doc.reschedule_reason}
-        </p>
-        """
+            <div style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0;"><strong>Reason for Reschedule:</strong><br>{doc.reschedule_reason}</p>
+            </div>
+            """
 
         msg = f"""
-        <p>Dear {doc.candidate_name or doc.applicant},</p>
-        <p>Your interview has been rescheduled.</p>
-        {reason_section}
-        {applicant_info}
-        {old_info}
-        {new_info}
-        <p>
-            <a href=\"{url}\" style=\"display:inline-block;padding:10px 14px;background:#1565c0;color:#fff;border-radius:4px;text-decoration:none;\">View Your Interview Details</a>
-        </p>
-        <p>If the button above does not work, open: {url}</p>
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
+            <h2 style="color: #0277bd; border-bottom: 2px solid #0277bd; padding-bottom: 10px; margin-top: 0;">Admission Interview Rescheduled</h2>
+            <p>Dear {doc.candidate_name or doc.applicant},</p>
+            <p>Your admission interview has been rescheduled. Please find the new session details below:</p>
+            
+            {reason_section}
+
+            <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0 0 10px 0;"><strong>New Interview Details:</strong></p>
+                <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+                    <tr><td style="padding:5px 0; color:#666;">Date:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_date or 'To be communicated'}</td></tr>
+                    <tr><td style="padding:5px 0; color:#666;">Time:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_time or 'To be communicated'}</td></tr>
+                    <tr><td style="padding:5px 0; color:#666;">Venue / Address:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_address or 'To be communicated'}</td></tr>
+                    <tr><td style="padding:5px 0; color:#666;">Interviewer:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_staff_name or doc.re_interview_staff_member or ''}</td></tr>
+                </table>
+            </div>
+
+            <p>Please click the button below to view your updated interview details in the portal:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{url}" style="display:inline-block; padding:12px 28px; background:#0277bd; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">View Interview Details</a>
+            </div>
+            
+            <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
+                Record Reference: {doc.name}<br>
+                If the button doesn't work, copy this link: {url}
+            </p>
+        </div>
         """
 
         frappe.sendmail(
