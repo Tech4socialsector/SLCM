@@ -61,7 +61,6 @@
                 --radius: 14px;
             }
         </style>
-        {% block theme_vars %}{% endblock %}
 
         <style>
             * {
@@ -75,7 +74,10 @@
                 margin: 0;
                 overflow-x: hidden;
             }
+        </style>
+        {% block theme_vars %}{% endblock %}
 
+        <style>
             .adm-nav {
                 background: var(--primary);
                 padding: 0 24px;

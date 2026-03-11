@@ -6,39 +6,10 @@
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
   :root {
-      {
-      % if portal_config %
-    }
-
-    --primary: {
-        {
-        portal_config.get('primary_color', '#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e'
-      }
-    }
-
-    ;
-
-    --secondary: {
-        {
-        portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b'
-      }
-    }
-
-    ;
-
-      {
-      % else %
-    }
-
-    --primary: #1a3c6e;
-    --secondary: #c8a14b;
-
-      {
-      % endif %
-    }
-
-    --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
-    --primary-mid: color-mix(in srgb, var(--primary) 20%, transparent);
+    --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+    --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+    --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
+    --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
     --success: #16a34a;
     --warning: #f59e0b;
     --danger: #dc2626;
@@ -2768,125 +2739,128 @@ LIST / DASHBOARD VIEW
       var selectedCenterName = document.getElementById('selectedCenterName');
       var selectedCenterAddr = document.getElementById('selectedCenterAddr');
       var etData = {
-        preferences: {{ et_preferences| tojson | safe if et_preferences else '[]'
-    }},
-    applicantId: '{{ et_doc.applicant if et_doc else "" }}',
-      entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
+        preferences: {{ et_preferences | tojson | safe if et_preferences else '[]' }},
+        applicantId: '{{ et_doc.applicant if et_doc else "" }}',
+        entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
         allocationName: '{{ et_doc.name if et_doc else "" }}',
-          isRescheduled: { { 'true' if et_is_rescheduled else 'false' } }
-    };
-  dropdown.addEventListener('change', async function () {
-    var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
-    if (!selected) return;
-    btnSave.disabled = true;
-    btnSave.style.opacity = '.5';
-    btnSave.textContent = 'Verifying...';
-    try {
-      const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
-        applicant_id: etData.applicantId,
-        entrance_test_list: etData.entranceTestList
+        isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
+      };
+
+      dropdown.addEventListener('change', async function () {
+        var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
+        if (!selected) return;
+        btnSave.disabled = true;
+        btnSave.style.opacity = '.5';
+        btnSave.textContent = 'Verifying...';
+        try {
+          const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
+            applicant_id: etData.applicantId,
+            entrance_test_list: etData.entranceTestList
+          });
+          var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
+          if (pinfo && pinfo.is_full) {
+            alert((selected.center_name || selected.provider) + ' is currently full.');
+            dropdown.value = '';
+            centerDetails.style.display = 'none';
+            btnSave.textContent = 'Confirm Allocation';
+          } else {
+            centerDetails.style.display = 'block';
+            selectedCenterName.textContent = selected.center_name || selected.provider;
+            selectedCenterAddr.textContent = selected.center_address || '';
+            btnSave.disabled = false;
+            btnSave.style.opacity = '1';
+            btnSave.textContent = 'Confirm Allocation';
+          }
+        } catch (e) {
+          alert('Verification failed: ' + e.message);
+          btnSave.disabled = false;
+          btnSave.style.opacity = '1';
+          btnSave.textContent = 'Confirm Allocation';
+        }
       });
-      var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
-      if (pinfo && pinfo.is_full) {
-        alert(selected.center_name + ' is currently full.');
-        dropdown.value = '';
-        centerDetails.style.display = 'none';
-        btnSave.textContent = 'Confirm Allocation';
-      } else {
-        centerDetails.style.display = 'block';
-        selectedCenterName.textContent = selected.center_name || selected.provider;
-        selectedCenterAddr.textContent = selected.center_address || '';
-        btnSave.disabled = false;
-        btnSave.style.opacity = '1';
-        btnSave.textContent = 'Confirm Allocation';
-      }
-    } catch (e) {
-      alert('Verification failed: ' + e.message);
-      btnSave.textContent = 'Confirm Allocation';
-    }
-  });
-  if (btnSave) {
-    btnSave.addEventListener('click', async function () {
-      if (!confirm('Confirm allocation at ' + (dropdown.options[dropdown.selectedIndex] && dropdown.options[dropdown.selectedIndex].text) + '? This is permanent.')) return;
-      btnSave.disabled = true;
-      btnSave.textContent = 'Processing...';
-      try {
-        await apiFetch('slcm.www.eligibility.entrance_test_seat_allocation.save_provider', {
-          allocation_name: etData.allocationName,
-          selected_provider: dropdown.value,
-          is_rescheduled: etData.isRescheduled
+
+      if (btnSave) {
+        btnSave.addEventListener('click', async function () {
+          var selectedText = (dropdown.options[dropdown.selectedIndex] && dropdown.options[dropdown.selectedIndex].text) || dropdown.value;
+          if (!confirm('Confirm allocation at ' + selectedText + '? This is permanent.')) return;
+          btnSave.disabled = true;
+          btnSave.textContent = 'Processing...';
+          try {
+            await apiFetch('slcm.www.eligibility.entrance_test_seat_allocation.save_provider', {
+              allocation_name: etData.allocationName,
+              selected_provider: dropdown.value,
+              is_rescheduled: etData.isRescheduled
+            });
+            document.getElementById('allocation-view-section').style.display = 'none';
+            document.getElementById('successSection').style.display = 'block';
+            setTimeout(function () { window.location.reload(); }, 1500);
+          } catch (e) {
+            alert('Allocation failed: ' + e.message);
+            btnSave.disabled = false;
+            btnSave.textContent = 'Confirm Allocation';
+          }
         });
-        document.getElementById('allocation-view-section').style.display = 'none';
-        document.getElementById('successSection').style.display = 'block';
-        setTimeout(function () { window.location.reload(); }, 1500);
-      } catch (e) {
-        alert('Allocation failed: ' + e.message);
-        btnSave.disabled = false;
-        btnSave.textContent = 'Confirm Allocation';
       }
-    });
-  }
-  }) ();
+    })();
 
   /* ── Interview attendance ── */
   (function () {
     var iName = '{{ interview_doc.name if interview_doc else "" }}';
-    if (!iName) return;
     var isRescheduled = {{ 'true' if interview_is_rescheduled else 'false' }};
+    if (!iName) return;
+
+    var attSel = document.getElementById('interviewAttendanceSelect');
+    var btnAtt = document.getElementById('btnSaveInterviewAttendance');
+    if (attSel && btnAtt) {
+      attSel.addEventListener('change', function () {
+        btnAtt.disabled = !this.value;
+        btnAtt.style.opacity = this.value ? '1' : '.5';
+      });
+      btnAtt.addEventListener('click', async function () {
+        var chosen = attSel.value;
+        if (!confirm('Confirm your response as ' + chosen + '?')) return;
+        btnAtt.disabled = true;
+        try {
+          await apiFetch('slcm.www.eligibility.interview_management.save_attendance_confirmation', {
+            allocation_name: iName,
+            confirmation: chosen,
+            is_rescheduled: isRescheduled
+          });
+          setTimeout(function () { window.location.reload(); }, 800);
+        } catch (e) {
+          alert('Error saving attendance: ' + e.message);
+          btnAtt.disabled = false;
+        }
+      });
+    }
+    var btnFeedback = document.getElementById('btnSubmitInterviewFeedback');
+    if (btnFeedback) {
+      btnFeedback.addEventListener('click', async function () {
+        var text = (document.getElementById('interviewFeedbackText').value || '').trim();
+        if (!text) { alert('Please enter your feedback.'); return; }
+        if (!confirm('Submit your feedback?')) return;
+        btnFeedback.disabled = true;
+        btnFeedback.textContent = 'Submitting...';
+        try {
+          await apiFetch('slcm.www.eligibility.interview_management.save_feedback', {
+            allocation_name: iName,
+            feedback_text: text
+          });
+          setTimeout(function () { window.location.reload(); }, 800);
+        } catch (e) {
+          alert('Error submitting feedback: ' + e.message);
+          btnFeedback.disabled = false;
+          btnFeedback.textContent = 'Submit Feedback';
+        }
+      });
+    }
   })();
-  var attSel = document.getElementById('interviewAttendanceSelect');
-  var btnAtt = document.getElementById('btnSaveInterviewAttendance');
-  if (attSel && btnAtt) {
-    attSel.addEventListener('change', function () {
-      btnAtt.disabled = !this.value;
-      btnAtt.style.opacity = this.value ? '1' : '.5';
-    });
-    btnAtt.addEventListener('click', async function () {
-      var chosen = attSel.value;
-      if (!confirm('Confirm your response as ' + chosen + '?')) return;
-      btnAtt.disabled = true;
-      try {
-        await apiFetch('slcm.www.eligibility.interview_management.save_attendance_confirmation', {
-          allocation_name: iName,
-          confirmation: chosen,
-          is_rescheduled: isRescheduled
-        });
-        setTimeout(function () { window.location.reload(); }, 800);
-      } catch (e) {
-        alert('Error saving attendance: ' + e.message);
-        btnAtt.disabled = false;
-      }
-    });
-  }
-  var btnFeedback = document.getElementById('btnSubmitInterviewFeedback');
-  if (btnFeedback) {
-    btnFeedback.addEventListener('click', async function () {
-      var text = (document.getElementById('interviewFeedbackText').value || '').trim();
-      if (!text) { alert('Please enter your feedback.'); return; }
-      if (!confirm('Submit your feedback?')) return;
-      btnFeedback.disabled = true;
-      btnFeedback.textContent = 'Submitting...';
-      try {
-        await apiFetch('slcm.www.eligibility.interview_management.save_feedback', {
-          allocation_name: iName,
-          feedback_text: text
-        });
-        setTimeout(function () { window.location.reload(); }, 800);
-      } catch (e) {
-        alert('Error submitting feedback: ' + e.message);
-        btnFeedback.disabled = false;
-        btnFeedback.textContent = 'Submit Feedback';
-      }
-    });
-  }
-  }) ();
 
   /* ── Admit Card download ── */
   window.downloadAdmitCard = function () {
-    const doc = {{ et_doc_json| safe if et_doc_json else '{}'
-  }};
-  const branding = {{ et_campus_branding| tojson | safe if et_campus_branding else '{}' }};
-  const is_rescheduled = {{ 'true' if et_is_rescheduled else 'false' }};
+    const doc = {{ et_doc_json | safe if et_doc_json else '{}' }};
+    const branding = {{ et_campus_branding | tojson | safe if et_campus_branding else '{}' }};
+    const is_rescheduled = {{ 'true' if et_is_rescheduled else 'false' }};
 
   if (!doc || !doc.name) {
     frappe.show_alert({ message: "No admit card data available", indicator: "orange" });
