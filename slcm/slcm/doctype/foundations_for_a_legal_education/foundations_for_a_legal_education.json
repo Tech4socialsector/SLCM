@@ -319,9 +319,9 @@
   },
   {
    "fieldname": "year_of_passing",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Year of passing",
-   "options": "Year",
+   "options": "\n2019\n2020\n2021\n2022\n2023\n2024\n2025\n2026",
    "reqd": 1
   },
   {
@@ -353,7 +353,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 22:59:51.452536",
+ "modified": "2026-03-11 00:39:51.384966",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
