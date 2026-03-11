@@ -5,6 +5,22 @@ frappe.ui.form.on("Scholarship Scheme", {
     refresh(frm) {
         frm.trigger("scheme_type");
         frm.trigger("apply_on");
+        
+        // Strictly prevent non-numeric input in real-time
+        const numeric_fields = ["min_income", "max_income", "coverage_value", "max_amount", "total_budget", "min_merit_score"];
+        numeric_fields.forEach(field => {
+            frm.fields_dict[field].$input.on('input', function() {
+                // Allow only digits and a single decimal point
+                let value = this.value.replace(/[^0-9.]/g, '');
+                // Prevent multiple decimal points
+                if ((value.match(/\./g) || []).length > 1) {
+                    value = value.replace(/\.+$/, "");
+                }
+                if (this.value !== value) {
+                    this.value = value;
+                }
+            });
+        });
 
         if (!frm.is_new()) {
             frm.add_custom_button(__("Sync Budget"), () => {
@@ -97,13 +113,31 @@ frappe.ui.form.on("Scholarship Scheme", {
         frm.trigger("calculate_max_beneficiaries");
     },
     total_budget(frm) {
+        validate_numeric(frm, "total_budget");
         frm.trigger("calculate_max_beneficiaries");
     },
     coverage_value(frm) {
+        validate_numeric(frm, "coverage_value");
         frm.trigger("calculate_max_beneficiaries");
     },
     max_amount(frm) {
+        validate_numeric(frm, "max_amount");
         frm.trigger("calculate_max_beneficiaries");
+    },
+    min_income(frm) { validate_numeric(frm, "min_income"); },
+    max_income(frm) { validate_numeric(frm, "max_income"); },
+    min_merit_score(frm) { validate_numeric(frm, "min_merit_score"); },
+    application_start(frm) {
+        if (frm.doc.application_start && frm.doc.application_start < frappe.datetime.get_today()) {
+            frappe.msgprint(__("Application Start date cannot be in the past"));
+            frm.set_value("application_start", "");
+        }
+    },
+    application_end(frm) {
+        if (frm.doc.application_start && frm.doc.application_end && frm.doc.application_end <= frm.doc.application_start) {
+            frappe.msgprint(__("Application End must be after Application Start"));
+            frm.set_value("application_end", "");
+        }
     },
     calculate_max_beneficiaries(frm) {
         if (frm.doc.total_budget && frm.doc.total_budget > 0) {
@@ -125,3 +159,15 @@ frappe.ui.form.on("Scholarship Scheme", {
         }
     }
 });
+
+function validate_numeric(frm, fieldname) {
+    let val = frm.doc[fieldname];
+    if (val && isNaN(val)) {
+        frappe.msgprint({
+            title: __("Invalid Input"),
+            message: __("Field <b>{0}</b> only accepts numbers.", [frm.get_df(fieldname).label]),
+            indicator: "orange"
+        });
+        frm.set_value(fieldname, 0);
+    }
+}

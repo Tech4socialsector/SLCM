@@ -37,7 +37,7 @@ frappe.ready(function () {
 
             // Hide the workflow section and fields
             frappe.web_form.set_df_property("section_workflow", "hidden", 1);
-            ["status", "reviewed_by", "approved_by", "approval_date", "rejection_reason"].forEach(f => {
+            ["status", "reviewed_by", "approval_date", "rejection_reason"].forEach(f => {
                 frappe.web_form.set_df_property(f, "hidden", 1);
             });
         } else if (!frappe.web_form.get_value("status")) {

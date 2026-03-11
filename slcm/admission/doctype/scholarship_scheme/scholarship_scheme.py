@@ -3,21 +3,36 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import flt, get_datetime
+from frappe.utils import flt, get_datetime, getdate, today
 
 
 class ScholarshipScheme(Document):
 	def validate(self):
 		self.validate_dates()
+		self.validate_numeric_fields()
 		self.validate_income_range()
 		self.validate_merit_score()
 		self.validate_coverage()
 		self.validate_limits()
 		self.validate_max_amount()
 
+	def validate_numeric_fields(self):
+		numeric_fields = ["min_income", "max_income", "coverage_value", "max_amount", "total_budget", "min_merit_score"]
+		for field in numeric_fields:
+			val = self.get(field)
+			if val is not None and val != "":
+				try:
+					self.set(field, flt(val))
+				except (ValueError, TypeError):
+					frappe.throw(frappe._("Field {0} must be a number").format(self.meta.get_label(field)))
+
 	def validate_dates(self):
+		if self.application_start:
+			if getdate(self.application_start) < getdate(today()):
+				frappe.throw(frappe._("Application Start date cannot be in the past"))
+
 		if self.application_start and self.application_end:
-			if get_datetime(self.application_end) <= get_datetime(self.application_start):
+			if getdate(self.application_end) <= getdate(self.application_start):
 				frappe.throw(frappe._("Application End must be after Application Start"))
 
 	def validate_income_range(self):
