@@ -118,6 +118,7 @@ function open_reservation_policy(frm, row) {
             table_rows[idx] = {
                 category: $(this).find(".category").val(),
                 category_name: table_rows[idx] ? table_rows[idx].category_name : "",
+                priority: parseInt($(this).find(".priority").val()) || (idx + 1),
                 percentage: parseFloat($(this).find(".percentage").val()) || 0,
                 allocated_seats: parseInt($(this).find(".allocated_seats").val()) || 0,
                 application_fee: parseFloat($(this).find(".application_fee").val()) || 0
@@ -166,6 +167,7 @@ function open_reservation_policy(frm, row) {
         <td>
             <select class="form-control category" data-idx="${idx}">
                 <option value="">Select</option>
+                <option value="General" ${r.category === "General" ? "selected" : ""}>General</option>
                 <option value="Government" ${r.category === "Government" ? "selected" : ""}>Government</option>
                 <option value="Management" ${r.category === "Management" ? "selected" : ""}>Management</option>
             </select>
@@ -174,6 +176,10 @@ function open_reservation_policy(frm, row) {
             <button class="btn btn-default btn-sm category-name-btn" data-idx="${idx}" style="width:100%;">
                 ${r.category_name ? frappe.utils.escape_html(r.category_name) : __("Pick Category")}
             </button>
+        </td>
+        <td>
+            <input type="number" class="form-control priority" data-idx="${idx}"
+                value="${r.priority || (idx + 1)}">
         </td>
         <td>
             <input type="number" class="form-control percentage" data-idx="${idx}"
@@ -198,11 +204,12 @@ function open_reservation_policy(frm, row) {
             <table class="table table-bordered" style="table-layout:fixed; width:100%;">
                 <thead>
                     <tr>
-                        <th style="width:20%;">Category</th>
-                        <th style="width:20%;">Category Name</th>
-                        <th style="width:10%;">Percentage</th>
+                        <th style="width:18%;">Quota</th>
+                        <th style="width:18%;">Category Name</th>
+                        <th style="width:10%;">Priority</th>
+                        <th style="width:10%;">%</th>
                         <th style="width:10%;">Seats</th>
-                        <th style="width:10%;">Fee</th>
+                        <th style="width:14%;">Fee</th>
                         <th style="width:10%; text-align:center;">Action</th>
                     </tr>
                 </thead>
@@ -229,8 +236,8 @@ function open_reservation_policy(frm, row) {
         for (let i = 0; i < table_rows.length; i++) {
             const r = table_rows[i];
             const rowNum = i + 1;
-            if (!r.category_name || r.category_name.trim() === "") {
-                frappe.msgprint(__(`Row ${rowNum}: Category Name is mandatory.`));
+            if (!r.priority || r.priority <= 0) {
+                frappe.msgprint(__(`Row ${rowNum}: Priority must be greater than 0.`));
                 return;
             }
             if (!r.percentage || r.percentage <= 0) {
@@ -273,17 +280,24 @@ function open_reservation_policy(frm, row) {
             freeze_message: __("Saving Categories..."),
             callback(r) {
                 if (!r.exc && r.message) {
+                    const res = r.message;
                     frappe.model.set_value(
                         row.doctype,
                         row.name,
                         "reservation_policy",
-                        r.message
+                        res.policy_name
                     );
+                    
+                    // Update current form timestamp to prevent "modified after opened" error
+                    if (res.new_modified) {
+                        frm.doc.modified = res.new_modified;
+                    }
+
                     frm.refresh_field("programs");
                     frappe.show_alert({
                         message: existing_policy_name
-                            ? __("Reservation Policy Updated: ") + r.message
-                            : __("Reservation Policy Created: ") + r.message,
+                            ? __("Reservation Policy Updated: ") + res.policy_name
+                            : __("Reservation Policy Created: ") + res.policy_name,
                         indicator: "green"
                     });
                     dialog.hide();
@@ -425,6 +439,7 @@ function open_reservation_policy(frm, row) {
                             table_rows = (doc.categories || []).map(item => ({
                                 category: item.reservation_quota || "",
                                 category_name: item.category_name || "",
+                                priority: item.priority || 0,
                                 percentage: item.percentage || "",
                                 allocated_seats: item.seats || 0,
                                 application_fee: item.application_fee || ""
