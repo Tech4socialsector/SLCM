@@ -10,27 +10,26 @@ class Applicant(Document):
     # VALIDATE
     # ──────────────────────────────────────────────
 
+    def before_validate(self):
+        # Ignore mandatory fields when application is essentially a Draft
+        if self.application_status == "Draft":
+            self.flags.ignore_mandatory = True
+
     def validate(self):
         """
-        FIX — Duplicate Record Issue:
-        ─────────────────────────────
-        Previously, create_or_update_evaluation() was called:
-          1. Inside validate_eligibility() (before throw, for ineligible path)
-          2. Again here in validate() as a "safety net" for the eligible path
-
-        This caused duplicate/double-save calls for both paths when no throw occurred.
-
-        CORRECTED FLOW:
-          - validate_eligibility() handles ALL saves internally:
-              • Ineligible: saves BEFORE throw (required — throw exits the stack)
-              • Eligible:   saves at the END of validate_eligibility()
-          - validate() no longer calls create_or_update_evaluation() at all.
+        Runs on every save. Eligibility is only run when the application
+        status is Submitted, so that Save Draft does not trigger eligibility errors.
+        create_or_update_evaluation() is called inside validate_eligibility().
         """
         set_intake_type(self)
-        self.validate_eligibility()
-        # NOTE: create_or_update_evaluation() is now called exclusively inside
-        # validate_eligibility() for BOTH eligible and ineligible outcomes.
-        # Do NOT add another call here — it would cause duplicate records.
+        
+        if self.application_status == "Submitted":
+            self.validate_eligibility()
+            if self.evaluation_status == "Ineligible":
+                frappe.throw(
+                    _("Submission Not Allowed: Applicant is not eligible."),
+                    title=_("Submission Not Allowed")
+                )
 
     def validate_email(self):
         if not validate_email_address(self.email):
@@ -105,7 +104,7 @@ class Applicant(Document):
             )
 
     def validate_declaration(self):
-        if self.docstatus == 1 and not self.declaration_undertaking:
+        if self.application_status == "Submitted" and not self.declaration_undertaking:
             frappe.throw(
                 "Declaration Undertaking must be accepted before submission.",
                 title="Declaration Required"
@@ -115,47 +114,39 @@ class Applicant(Document):
         if not self.applicant_id:
             self.applicant_id = frappe.generate_hash(length=8).upper()
 
-    def on_submit(self):
-        self.db_set("application_status", "Submitted")
-        self.db_set("submitted_on", now())
-        log_audit_trail(
-            self.doctype, self.name,
-            "Submitted", "application_status",
-            "Draft", "Submitted", "General"
-        )
-        frappe.sendmail(
-            recipients=[self.email],
-            subject=f"NLSIU Application Submitted - {self.applicant_id}",
-            message=f"""
-            Dear {self.candidate_name},<br><br>
-            Your application <b>{self.applicant_id}</b> has been
-            successfully submitted.<br>
-            Application Type: {self.application_type}<br>
-            Program: {self.program}<br><br>
-            You will be notified of further updates.<br><br>
-            NLSIU Admissions Team
-            """
-        )
-
-        from slcm.admission.utils.notifications import log_communication
-        log_communication(
-            applicant=self.name,
-            communication_type="Email",
-            category="Admission",
-            subject=f"NLSIU Application Submitted - {self.applicant_id}",
-            content=f"Confirmation email sent for application {self.applicant_id}. Program: {self.program}",
-            reference_doctype="Applicant",
-            reference_name=self.name
-        )
-
-    def before_submit(self):
-        if self.evaluation_status == "Ineligible":
-            frappe.throw(
-                _("Submission Not Allowed: Applicant is not eligible."),
-                title=_("Submission Not Allowed")
+    def on_update(self):
+        # Triggers when status changes to 'Submitted'
+        if self.application_status == "Submitted" and self.has_value_changed("application_status"):
+            log_audit_trail(
+                self.doctype, self.name,
+                "Submitted", "application_status",
+                "Draft", "Submitted", "General"
+            )
+            frappe.sendmail(
+                recipients=[self.email],
+                subject=f"NLSIU Application Submitted - {self.applicant_id}",
+                message=f"""
+                Dear {self.candidate_name},<br><br>
+                Your application <b>{self.applicant_id}</b> has been
+                successfully submitted.<br>
+                Application Type: {self.application_type}<br>
+                Program: {self.program}<br><br>
+                You will be notified of further updates.<br><br>
+                NLSIU Admissions Team
+                """
             )
 
-    def on_update(self):
+            from slcm.admission.utils.notifications import log_communication
+            log_communication(
+                applicant=self.name,
+                communication_type="Email",
+                category="Admission",
+                subject=f"NLSIU Application Submitted - {self.applicant_id}",
+                content=f"Confirmation email sent for application {self.applicant_id}. Program: {self.program}",
+                reference_doctype="Applicant",
+                reference_name=self.name
+            )
+
         # If current_stage changed, notify applicant
         if self.is_new() or self.has_value_changed("current_stage"):
             if self.current_stage and self.admission_cycle:

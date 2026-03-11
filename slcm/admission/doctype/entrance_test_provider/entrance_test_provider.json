@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:provider_name",
+ "autoname": "field:center_name",
  "creation": "2026-02-22 22:04:12.131157",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -77,7 +77,8 @@
   {
    "fieldname": "contact_person",
    "fieldtype": "Data",
-   "label": "Contact Person"
+   "label": "Contact Person",
+   "reqd": 1
   },
   {
    "fieldname": "contact_number",
@@ -87,7 +88,8 @@
   {
    "fieldname": "email",
    "fieldtype": "Data",
-   "label": "Email"
+   "label": "Email",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_infra",
@@ -97,7 +99,9 @@
   {
    "fieldname": "center_name",
    "fieldtype": "Data",
-   "label": "Center Name"
+   "label": "Center Name",
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "center_address",
@@ -124,19 +128,21 @@
    "fieldname": "provider_room",
    "fieldtype": "Table",
    "label": "Provider Room",
-   "options": "Provider Room"
+   "options": "Provider Room",
+   "reqd": 1
   },
   {
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 11:25:37.471800",
+ "modified": "2026-03-10 14:41:58.150322",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",

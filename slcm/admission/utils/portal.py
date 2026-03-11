@@ -200,7 +200,7 @@ def get_active_programs():
                 "program", "program_name", "seats", "eligibility_hint",
                 "brochure_url", "program_image", "desciption",
                 "program_media", "reservation_policy", "max_applications",
-                "application_count", "program_level", "intake_type",
+                "application_count", "program_level", "intake_type", "campus",
             ],
             order_by="program_name asc"
         )
@@ -465,16 +465,57 @@ def get_active_announcements(limit=10):
 # ── UTILS ─────────────────────────────────────────────────────────
 
 @frappe.whitelist(allow_guest=True)
-def api_get_program_media(program_media):
-    """Returns media items for a gallery."""
-    return frappe.get_all(
-        "Media",
-        filters={"parent": program_media},
-        fields=["media_type", "file", "caption", "sequence"],
-        order_by="sequence asc"
-    )
+def api_get_program_media(program_media=None):
+    """Returns media items for a gallery, or all media if not specified."""
+    if program_media:
+        return frappe.get_all(
+            "Media",
+            filters={"parent": program_media},
+            fields=["media_type", "file", "caption", "sequence"],
+            order_by="sequence asc"
+        )
+    
+    # Return all media across all programs for applicant_portal compat
+    media_list = frappe.db.sql("""
+        SELECT 
+            m.parent as program_media,
+            acp.program,
+            m.media_type,
+            m.file as image,
+            m.file as video_url,
+            m.caption,
+            m.sequence,
+            0 as is_featured
+        FROM `tabMedia` m
+        JOIN `tabAdmission Cycle Program` acp ON m.parent = acp.program_media
+        WHERE acp.is_active = 1
+        ORDER BY m.sequence ASC
+    """, as_dict=True)
+    
+    # Also add brochure_pdfs from acp.brochure_url
+    brochures = frappe.db.sql("""
+        SELECT 
+            acp.program,
+            'Brochure' as media_type,
+            acp.brochure_url as brochure_pdf,
+            0 as sequence
+        FROM `tabAdmission Cycle Program` acp
+        WHERE acp.is_active = 1 AND acp.brochure_url IS NOT NULL AND acp.brochure_url != ''
+    """, as_dict=True)
+    
+    return media_list + brochures
 
 def lock_expired_drafts():
     """Scheduler task to lock drafts after cycle deadline."""
     # This logic needs to be updated to use Stages or Deadlines instead of cycle.application_end
     pass
+
+@frappe.whitelist(allow_guest=True)
+def api_get_stage_progress(applicant=None):
+    """Stub for applicant_portal.js"""
+    return []
+
+@frappe.whitelist(allow_guest=True)
+def api_get_campus_status(applicant=None):
+    """Stub for applicant_portal.js"""
+    return []

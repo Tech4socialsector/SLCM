@@ -83,7 +83,6 @@
   "hsc_percentage",
   "column_break_mlet",
   "class_xii_year_of_completion",
-  "class_xii_cgpa",
   "column_break_ycmo",
   "class_xii_board",
   "class_xii_marksheet",
@@ -186,11 +185,11 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "Submitted",
+   "default": "Draft",
    "fieldname": "application_status",
    "fieldtype": "Link",
    "label": "Application Status",
-   "options": "Submitted\nMerit Published\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nFee Paid"
+   "options": "Applicant Status"
   },
   {
    "fieldname": "personal_information_tab",
@@ -225,8 +224,10 @@
   },
   {
    "fieldname": "religion",
-   "fieldtype": "Data",
-   "label": "Religion"
+   "fieldtype": "Select",
+   "label": "Religion",
+   "options": "\nHindu\nMuslim\nChristian\nSikh\nBuddhist\nJain\nOther",
+   "placeholder": "Select Religion"
   },
   {
    "fieldname": "nationality",
@@ -395,12 +396,6 @@
    "label": "Board (Class XII/Equivalent)"
   },
   {
-   "fieldname": "class_xii_cgpa",
-   "fieldtype": "Float",
-   "label": "If CGPA, maximum CPGA (Class XII/Equivalent)",
-   "precision": "2"
-  },
-  {
    "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
@@ -562,18 +557,24 @@
   },
   {
    "fieldname": "first_preference",
-   "fieldtype": "Data",
-   "label": "First Preference"
+   "fieldtype": "Link",
+   "label": "First Preference",
+   "options": "Entrance Test Provider",
+   "reqd": 1
   },
   {
    "fieldname": "second_preference",
-   "fieldtype": "Data",
-   "label": "Second Preference"
+   "fieldtype": "Link",
+   "label": "Second Preference",
+   "options": "Entrance Test Provider",
+   "reqd": 1
   },
   {
    "fieldname": "third_preference",
-   "fieldtype": "Data",
-   "label": "Third Preference"
+   "fieldtype": "Link",
+   "label": "Third Preference",
+   "options": "Entrance Test Provider",
+   "reqd": 1
   },
   {
    "fieldname": "other_information_tab",
@@ -795,8 +796,9 @@
   },
   {
    "fieldname": "annual_house_hold_income",
-   "fieldtype": "Currency",
+   "fieldtype": "Select",
    "label": "Annual House Hold Income",
+   "options": "0 - 3,00,000\n3,00,001 - 8,00,000\n15,00,001 - 25,00,000\n8,00,001 - 15,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
    "precision": "2"
   },
   {

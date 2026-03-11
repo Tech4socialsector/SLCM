@@ -40,7 +40,8 @@
     box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2);
 }
 
-.status-indicator.expired, .status-indicator.withdrawn {
+.status-indicator.expired,
+.status-indicator.withdrawn {
     background-color: #6c757d;
     box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.2);
 }
@@ -147,16 +148,21 @@
 .premium-loader-spinner {
     width: 80px;
     height: 80px;
-    border: 5px solid rgba(0, 0, 0, 0.05); /* Lighter border */
-    border-top: 5px solid #1a73e8; /* Google Blue */
+    border: 5px solid rgba(0, 0, 0, 0.05);
+    /* Lighter border */
+    border-top: 5px solid #1a73e8;
+    /* Google Blue */
     border-radius: 50%;
     animation: premium-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
     margin-bottom: 24px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Soft glow */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    /* Soft glow */
 }
 
 @keyframes premium-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .premium-loader-text {
