@@ -52,7 +52,7 @@ def get_context(context):
 
     if _prof_app:
         context.prof_candidate_name  = _prof_app.candidate_name or context.prof_candidate_name
-        context.prof_dob             = str(_prof_app.date_of_birth) if _prof_app.date_of_birth else None
+        context.prof_dob             = _prof_app.date_of_birth
         context.prof_gender          = _prof_app.gender
         context.prof_nationality     = _prof_app.nationality
         context.prof_religion        = _prof_app.religion
@@ -91,9 +91,9 @@ def get_context(context):
         _found = frappe.db.sql("""
             SELECT a.name FROM `tabApplicant` a
             JOIN `tabProgram` p ON a.program = p.name
-            WHERE a.owner = %s AND (p.program_slug = %s OR p.name = %s)
+            WHERE (a.owner = %s OR a.email = %s) AND (p.program_slug = %s OR p.name = %s)
             LIMIT 1
-        """, (frappe.session.user, program_filter, program_filter))
+        """, (frappe.session.user, frappe.session.user, program_filter, program_filter))
         if _found:
             _app_name = _found[0][0]
 
@@ -101,6 +101,7 @@ def get_context(context):
     doc_lookup_name = _app_name or context.prof_app_name
 
     # ── Documents Logic (Strictly using Applicant fields) ──────────
+    context.app_documents = []
     if doc_lookup_name:
         try:
             # Fetch the actual applicant doc for fields
@@ -129,7 +130,6 @@ def get_context(context):
             if target_applicant.ka_study_7yrs:
                 standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True})
 
-            context.app_documents = []
             for item in standard_checklist:
                 field = item["field"]
                 val = target_applicant.get(field)
@@ -145,11 +145,9 @@ def get_context(context):
                 })
         except Exception as e:
             frappe.log_error(f"Document checklist error: {e}")
-            context.app_documents = []
 
     # ── Portal config (required for theme vars) ──────────────────
     try:
-        from slcm.admission.utils.portal import get_portal_config
         portal_config = get_portal_config()
         context.portal_config = portal_config
     except Exception:
@@ -298,7 +296,6 @@ def get_context(context):
         # Combined results
         context.all_results = []
         context.all_merit   = []
-        context.eligibility_result = None
         try:
             combined_data = get_applicant_data()
             if isinstance(combined_data, list):
@@ -307,36 +304,7 @@ def get_context(context):
                         context.all_results = entry.get("results") or []
                         context.all_merit   = entry.get("merit") or []
                         break
-            
-            # Direct fetch for Eligibility Result fields
-            er_rows = frappe.get_all("Eligibility Result",
-                filters={"applicant_id": _app_name},
-                fields=["entrance_test_score", "interview_score", "source_type", "result_status"],
-                limit=1, ignore_permissions=True
-            )
-            if er_rows:
-                context.eligibility_result = er_rows[0]
-            
-            # If still empty, direct fetch as fallback (only if user has access)
-            if not context.all_merit:
-                mrows = frappe.get_all("Merit List Applicant",
-                    filters={"applicant_id": _app_name},
-                    fields=["total_score", "overall_rank", "status", "parent"]
-                )
-                for m in mrows:
-                    if frappe.db.get_value("Merit List", m.parent, "status") == "Published":
-                        context.all_merit.append(m)
-            
-            if not context.all_results:
-                srows = frappe.get_all("Seat Selection Applicant",
-                    filters={"applicant_id": _app_name},
-                    fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score", "allocated_category"]
-                )
-                for s in srows:
-                    if frappe.db.get_value("Seat Allocation", s.parent, "status") == "Published":
-                        context.all_results.append(s)
-        except Exception:
-            pass
+        except Exception: pass
 
         context.fee_payment_status = applicant.get("application_fee_status") or ""
 
@@ -396,9 +364,7 @@ def get_context(context):
         context.title = f"Application Details: {_app_name}"
         return
 
-    # If no ?app= param, fall through to existing list view logic
-    context.show_detail = False
-
+    # Default List View
     # Status styling
     STATUS_STYLE = {
         "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
@@ -415,7 +381,6 @@ def get_context(context):
         "Fee Paid":       {"color": "#065f46", "bg": "#d1fae5"},
     }
 
-    # 1. Fetch all applicant data using the API
     data_list = get_applicant_data()
     if isinstance(data_list, dict) and "error" in data_list:
         context.error = data_list["error"]
@@ -428,66 +393,29 @@ def get_context(context):
         app_id = prof.get("applicant_id")
         if not app_id: continue
         app_doc = frappe.get_doc("Applicant", app_id)
+        
+        status = app_doc.application_status or "Draft"
+        style = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
+        
         program_name = frappe.db.get_value("Program", app_doc.program, "program_name") or app_doc.program
-        applications.append({
+        program_slug = frappe.db.get_value("Program", app_doc.program, "program_slug") or ""
+
+        summary = {
             "name": app_doc.name,
             "header": {
                 "program_name": program_name,
                 "applicant_id": app_doc.name,
-                "status": app_doc.application_status or "Draft",
+                "status": status,
+                "status_color": style["color"],
+                "status_bg": style["bg"],
                 "submitted_on": frappe.utils.formatdate(app_doc.creation, "dd MMM yyyy"),
                 "cycle": app_doc.admission_cycle
             },
             "personal": [
-                {"label": "Full Name", "value": app_doc.candidate_name},
-                {"label": "Date of Birth", "value": str(app_doc.date_of_birth) if app_doc.date_of_birth else None},
-                {"label": "Gender", "value": app_doc.gender},
-                {"label": "Nationality", "value": app_doc.nationality},
-                {"label": "Email", "value": app_doc.email},
-                {"label": "Mobile", "value": app_doc.mobile_number},
-                {"label": "Religion", "value": app_doc.religion},
-                {"label": "Annual Income", "value": app_doc.annual_house_hold_income},
-            ],
-            "academic": [
-                {"label": "10th Percentage", "value": app_doc.class_x_percentage},
-                {"label": "10th Board", "value": app_doc.class_x_board},
-                {"label": "10th Year", "value": app_doc.class_x_year_of_completion},
-                {"label": "12th Percentage", "value": app_doc.hsc_percentage or app_doc.percentage},
-                {"label": "12th Board", "value": app_doc.class_xii_board},
-                {"label": "12th Year", "value": app_doc.class_xii_year_of_completion},
-                {"label": "HSC Group", "value": app_doc.hsc_group},
-            ],
-            "application": [
-                {"label": "Application ID", "value": app_doc.applicant_id or app_doc.name},
-                {"label": "Program", "value": app_doc.program},
-                {"label": "Admission Cycle", "value": app_doc.admission_cycle},
-                {"label": "Fee Status", "value": app_doc.application_fee_status},
-                {"label": "Reservation Category", "value": app_doc.reservation_category},
-            ],
-            "admission_results": entry.get("results", []),
-            "merit_list": entry.get("merit", []),
-            "can_edit": (status == "Draft"),
-            "active_stage": app_doc.current_stage
+                {"label": "Full Name", "value": app_doc.candidate_name}
+            ]
         }
-        
-        # Build action buttons for this summary
-        actions = []
-        if status == "Draft":
-            actions.append({"label": "Continue Application", "url": "/application-form/" + app_doc.name, "type": "primary"})
-        elif status == "Offer Issued":
-            actions.append({"label": "Accept Offer", "url": "/application-form/" + app_doc.name, "type": "success"})
-            if program_slug:
-                actions.append({"label": "View Program", "url": "/admission/" + program_slug, "type": "outline"})
-        else:
-            if program_slug:
-                actions.append({"label": "View Program", "url": "/admission/" + program_slug, "type": "outline"})
-        summary["action_buttons"] = actions
-
         applications.append(summary)
-        
-        # Set active app if it matches target or if it's the first one
-        if target_app_id == app_doc.name or not active_app_summary:
-            active_app_summary = summary
 
     context.applications = applications
     return context
