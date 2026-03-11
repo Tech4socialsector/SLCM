@@ -643,6 +643,7 @@ def get_context(context):
     STATUS_STYLE = {
         "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
         "Submitted":      {"color": "#1d4ed8", "bg": "#dbeafe"},
+        "Merit Published": {"color": "#0369a1", "bg": "#e0f2fe"},
         "Under Review":   {"color": "#d97706", "bg": "#fef3c7"},
         "Shortlisted":    {"color": "#059669", "bg": "#d1fae5"},
         "Waitlisted":     {"color": "#7c3aed", "bg": "#ede9fe"},
