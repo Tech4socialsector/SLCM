@@ -1,0 +1,50 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-10 17:25:49.300815",
+  "name": "Entrance Test",
+  "stage_code": "ET",
+  "stage_name": "Entrance Test"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-10 17:27:24.396554",
+  "name": "Scholarship",
+  "stage_code": "Scholarship",
+  "stage_name": "Scholarship"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-10 12:18:15.622402",
+  "name": "Application Open",
+  "stage_code": "Open",
+  "stage_name": "Application Open"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-10 17:27:03.705231",
+  "name": "Seat Allocation",
+  "stage_code": "Seat Allocation",
+  "stage_name": "Seat Allocation"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-10 17:26:14.155853",
+  "name": "Intereview",
+  "stage_code": "Interview",
+  "stage_name": "Intereview"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-10 17:26:42.226308",
+  "name": "Merit List",
+  "stage_code": "Merit List",
+  "stage_name": "Merit List"
+ }
+]
