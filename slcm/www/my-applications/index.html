@@ -868,7 +868,7 @@
       <div class="qs-item">
         <span class="qs-label">
           <span class="material-symbols-outlined">person</span>
-          Applicant
+          Name
         </span>
         <span class="qs-value">{{ _aname or '—' }}</span>
       </div>
@@ -1013,28 +1013,26 @@
       </div>
 
       <div class="doc-list">
-        {% if _docs %}
-          {% for doc in _docs %}
-          {% set _dfurl = (doc.get('file_url') if doc.get else doc.file_url) or '' %}
-          {% set _dvs   = (doc.get('verification_status') if doc.get else doc.verification_status) or '' %}
-          {% set _dname = (doc.get('document_name') or doc.get('document_type') if doc.get else (doc.document_name or doc.document_type)) or 'Document' %}
-          {% set _is_done = _dfurl or _dvs in ['Verified','Approved','Uploaded'] %}
-          <div class="doc-row">
+        {% if app_documents %}
+          {% for doc in app_documents %}
+          {% set _is_done = doc.is_uploaded %}
+          <div class="doc-row" onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
             <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
-            <span class="doc-name">{{ _dname }}</span>
-            {% if _dfurl %}
-            <a href="{{ _dfurl }}" target="_blank" class="doc-view-link">View</a>
-            {% endif %}
+            <span class="doc-name">{{ doc.document_name }}</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              {% if doc.file_url %}
+              <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link" onclick="event.stopPropagation()">View</a>
+              {% endif %}
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
+                {% if _is_done %}edit_square{% else %}upload{% endif %}
+              </span>
+            </div>
           </div>
           {% endfor %}
         {% else %}
-          {# Placeholder items matching image style #}
-          {% for doc_placeholder in ['10th Marksheet', '12th Marksheet', 'CLAT Scorecard', 'Income Certificate'] %}
-          <div class="doc-row">
-            <div class="doc-checkbox"></div>
-            <span class="doc-name">{{ doc_placeholder }}</span>
+          <div style="padding: 20px; text-align: center; color: var(--text-4); font-size: 13px;">
+            No documents required.
           </div>
-          {% endfor %}
         {% endif %}
       </div>
 
@@ -1382,8 +1380,17 @@
   <div class="prof-wrap fade-up">
 
     <div class="prof-sidebar">
-      <div class="prof-avatar">
-        {%- if _pphoto -%}<img src="{{ _pphoto }}" alt="{{ _pinitial }}">{%- else -%}{{ _pinitial }}{%- endif -%}
+      <div class="prof-avatar" id="prof-avatar-circle" 
+           onclick="openUploadModal('Photo', 'Photo', 'candidate_photo', '', 'field')" 
+           style="cursor:pointer; position:relative;" title="Click to change photo">
+        {%- if _pphoto -%}
+          <img src="{{ _pphoto }}" id="prof-avatar-img" alt="{{ _pinitial }}">
+        {%- else -%}
+          <span id="prof-avatar-init">{{ _pinitial }}</span>
+        {%- endif -%}
+        <div style="position:absolute; bottom:0; right:0; background:var(--primary); color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;">
+          <span class="material-symbols-outlined" style="font-size:12px;">photo_camera</span>
+        </div>
       </div>
       <div class="prof-name-display">{{ _pname }}</div>
       <div class="prof-email-display">{{ frappe.session.user }}</div>
@@ -1420,57 +1427,68 @@
             <span class="material-symbols-outlined">badge</span>Personal Details
           </div>
           <button class="prof-edit-btn" onclick="openEditModal()">
-            <span class="material-symbols-outlined">edit</span>Edit
+            <span class="material-symbols-outlined">edit</span>Edit All
           </button>
         </div>
-        <div class="prof-field-grid">
-          <div class="prof-field">
-            <div class="prof-fl">Full Name</div>
-            <div class="prof-fv" id="disp-name">{{ prof_candidate_name or '—' }}</div>
-          </div>
-          <div class="prof-field">
-            <div class="prof-fl">Date of Birth</div>
-            <div class="prof-fv" id="disp-dob">
-              {%- if prof_dob -%}{{ frappe.utils.formatdate(prof_dob,'dd MMM, yyyy') }}{%- else -%}<span class="empty">Not set</span>{%- endif -%}
+        <div class="doc-list" style="border-top: 1px solid var(--border);">
+          {% set profile_fields = [
+            {'label': 'Full Name', 'value': prof_candidate_name, 'id': 'disp-name'},
+            {'label': 'Date of Birth', 'value': prof_dob, 'id': 'disp-dob'},
+            {'label': 'Gender', 'value': prof_gender, 'id': 'disp-gender'},
+            {'label': 'Nationality', 'value': prof_nationality, 'id': 'disp-nationality'},
+            {'label': 'Religion', 'value': prof_religion, 'id': 'disp-religion'},
+            {'label': 'Mobile Number', 'value': prof_mobile, 'id': 'disp-mobile'},
+            {'label': 'Alternate Contact', 'value': prof_alternate_contact, 'id': 'disp-alternate'},
+            {'label': 'Correspondence Address', 'value': prof_address, 'id': 'disp-address'}
+          ] %}
+          {% for pf in profile_fields %}
+          <div class="doc-row" onclick="openEditModal()">
+            <div class="doc-checkbox {% if pf.value %}checked{% endif %}"></div>
+            <div style="flex:1;">
+              <div class="prof-fl" style="margin-bottom:0;">{{ pf.label }}</div>
+              <div class="prof-fv" id="{{ pf.id }}">
+                {% if pf.id == 'disp-dob' and pf.value %}
+                  {{ frappe.utils.formatdate(pf.value,'dd MMM, yyyy') }}
+                {% else %}
+                  {{ pf.value or '<span class="empty">Not set</span>'|safe }}
+                {% endif %}
+              </div>
             </div>
+            <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">edit</span>
           </div>
-          <div class="prof-field">
-            <div class="prof-fl">Gender</div>
-            <div class="prof-fv" id="disp-gender">{{ prof_gender or '<span class="empty">Not set</span>' }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Document Checklist in Profile -->
+      <div class="prof-section-card" style="margin-top:18px;">
+        <div class="prof-section-head">
+          <div class="prof-section-title">
+            <span class="material-symbols-outlined">folder_open</span>Document Status
           </div>
-          <div class="prof-field">
-            <div class="prof-fl">Nationality</div>
-            <div class="prof-fv" id="disp-nationality">{{ prof_nationality or '<span class="empty">Not set</span>' }}</div>
-          </div>
-          <div class="prof-field">
-            <div class="prof-fl">Religion</div>
-            <div class="prof-fv" id="disp-religion">{{ prof_religion or '<span class="empty">Not set</span>' }}</div>
-          </div>
-          <div class="prof-subsection">Contact Information</div>
-          <div class="prof-field">
-            <div class="prof-fl">Email Address</div>
-            <div class="prof-fv">{{ frappe.session.user }}</div>
-          </div>
-          <div class="prof-field">
-            <div class="prof-fl">Mobile Number</div>
-            <div class="prof-fv" id="disp-mobile">{{ prof_mobile or '<span class="empty">Not set</span>' }}</div>
-          </div>
-          <div class="prof-field">
-            <div class="prof-fl">Alternate Contact</div>
-            <div class="prof-fv" id="disp-alternate">{{ prof_alternate_contact or '<span class="empty">Not set</span>' }}</div>
-          </div>
-          <div class="prof-field">
-            <div class="prof-fl">ID Proof</div>
-            <div class="prof-fv" id="disp-idproof">{{ prof_id_proof or '<span class="empty">Not set</span>' }}</div>
-          </div>
-          <div class="prof-field-full">
-            <div class="prof-fl">Correspondence Address</div>
-            <div class="prof-fv" id="disp-address">
-              {%- if prof_address -%}
-                {{ prof_address }}{%- if prof_city -%}, {{ prof_city }}{%- endif -%}{%- if prof_state -%}, {{ prof_state }}{%- endif -%}{%- if prof_pincode %} — {{ prof_pincode }}{%- endif -%}
-              {%- else -%}<span class="empty">Not set</span>{%- endif -%}
+        </div>
+        <div class="doc-list">
+          {% if app_documents %}
+            {% for doc in app_documents %}
+            {% set _is_done = doc.is_uploaded %}
+            <div class="doc-row" onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
+              <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
+              <span class="doc-name">{{ doc.document_name }}</span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                {% if doc.file_url %}
+                <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link" onclick="event.stopPropagation()">View</a>
+                {% endif %}
+                <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
+                  {% if _is_done %}edit_square{% else %}upload{% endif %}
+                </span>
+              </div>
             </div>
-          </div>
+            {% endfor %}
+          {% else %}
+            <div style="padding: 20px; text-align: center; color: var(--text-4); font-size: 13px;">
+              No documents required.
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -1514,8 +1532,22 @@
           <div class="pef"><label>Correspondence Address</label><textarea id="edit-address" placeholder="Street address">{{ prof_address or '' }}</textarea></div>
         </div>
         <div class="pef-row">
-          <div class="pef"><label>City</label><input type="text" id="edit-city" value="{{ prof_city or '' }}"></div>
-          <div class="pef"><label>State</label><input type="text" id="edit-state" value="{{ prof_state or '' }}"></div>
+          <div class="pef"><label>State</label>
+            <select id="edit-state" onchange="loadDistricts(this.value)">
+              <option value="">— Select State —</option>
+              {% for s in states %}
+              <option value="{{ s.name }}" {% if prof_state == s.name %}selected{% endif %}>{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="pef"><label>City (District)</label>
+            <select id="edit-city">
+              <option value="">— Select City —</option>
+              {% for d in districts %}
+              <option value="{{ d.name }}" {% if prof_city == d.name %}selected{% endif %}>{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
         <div class="pef-row">
           <div class="pef"><label>Pincode</label><input type="text" id="edit-pincode" value="{{ prof_pincode or '' }}"></div>
@@ -1618,8 +1650,174 @@
 <style>
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
+
+<!-- ── Document Upload Modal ──────────────────────────────────────── -->
+<div id="doc-upload-modal" class="prof-overlay">
+  <div class="prof-modal" style="max-width: 440px;">
+    <div class="prof-modal-head">
+      <h3 id="modal-doc-label">Upload Document</h3>
+      <button class="prof-modal-close" onclick="closeUploadModal()">
+        <span class="material-symbols-outlined" style="font-size:17px">close</span>
+      </button>
+    </div>
+    <div class="prof-modal-body">
+      <p id="modal-doc-type-hint" style="font-size:12px; color:var(--text-3); margin-bottom:16px;">Requirement details will appear here.</p>
+      
+      <div class="pef">
+        <label>Select File</label>
+        <input type="file" id="modal-file-input" 
+               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
+               onchange="handleModalFileSelect(this)"/>
+        <p style="font-size:10px; color:var(--text-4); margin-top:6px;">Accepted: PDF, JPG, PNG, DOC (Max 5MB)</p>
+      </div>
+      
+      <div id="upload-progress-wrap" style="display:none; margin-top:16px;">
+        <div class="progress-bar-track" style="height:6px;">
+          <div id="upload-progress-fill" class="progress-bar-fill" style="width:0%"></div>
+        </div>
+        <p id="upload-status-text" style="font-size:11px; color:var(--primary); margin-top:6px; font-weight:600;">Uploading...</p>
+      </div>
+
+      <div id="doc-upload-msg" style="margin-top:14px;font-size:13px;min-height:18px;"></div>
+    </div>
+    <div class="prof-modal-foot">
+      <button class="btn-cancel" onclick="closeUploadModal()">Cancel</button>
+      <button id="doc-upload-btn" class="btn-save" onclick="executeDocumentUpload()" disabled>Start Upload</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
+  let currentUploadTarget = {
+    label: '', type: '', field: '', docName: '', source: '', file: null
+  };
+
+  window.openUploadModal = function(label, type, field, docName, source) {
+    currentUploadTarget = { label, type, field, docName, source, file: null };
+    document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
+    document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
+    document.getElementById('modal-file-input').value = '';
+    document.getElementById('doc-upload-btn').disabled = true;
+    document.getElementById('doc-upload-msg').textContent = '';
+    document.getElementById('upload-progress-wrap').style.display = 'none';
+    document.getElementById('doc-upload-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeUploadModal = function() {
+    document.getElementById('doc-upload-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  window.handleModalFileSelect = function(input) {
+    if (input.files && input.files[0]) {
+      currentUploadTarget.file = input.files[0];
+      document.getElementById('doc-upload-btn').disabled = false;
+    } else {
+      currentUploadTarget.file = null;
+      document.getElementById('doc-upload-btn').disabled = true;
+    }
+  };
+
+  window.executeDocumentUpload = async function() {
+    const btn = document.getElementById('doc-upload-btn');
+    const msg = document.getElementById('doc-upload-msg');
+    const progWrap = document.getElementById('upload-progress-wrap');
+    const progFill = document.getElementById('upload-progress-fill');
+    
+    if (!currentUploadTarget.file) return;
+    
+    btn.disabled = true;
+    btn.textContent = 'Uploading...';
+    progWrap.style.display = 'block';
+    progFill.style.width = '15%';
+    
+    try {
+      const fd = new FormData();
+      fd.append('file', currentUploadTarget.file);
+      fd.append('is_private', '1');
+      fd.append('folder', 'Home/Attachments');
+      
+      const uploadResp = await fetch('/api/method/upload_file', {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
+      });
+      const uploadData = await uploadResp.json();
+      
+      if (!uploadData.message || !uploadData.message.file_url) {
+        throw new Error('File upload failed');
+      }
+      
+      const fileUrl = uploadData.message.file_url;
+      progFill.style.width = '60%';
+      
+      if (currentUploadTarget.source === 'field' && currentUploadTarget.field) {
+        await apiFetch('slcm.admission.api.profile.update_profile', {
+          [currentUploadTarget.field]: fileUrl
+        });
+      } else {
+        const applicantId = '{{ selected_app.name if selected_app else "" }}' || '{{ prof_app_name or "" }}';
+        if (currentUploadTarget.docName) {
+          await apiFetch('frappe.client.set_value', {
+            doctype: 'Applicant Document', name: currentUploadTarget.docName,
+            fieldname: 'file', value: fileUrl
+          });
+        } else {
+          await apiFetch('frappe.client.insert', {
+            doc: {
+              doctype: 'Applicant Document', applicant: applicantId,
+              document_type: currentUploadTarget.type, file: fileUrl, docstatus: 1
+            }
+          });
+        }
+      }
+      
+      progFill.style.width = '100%';
+      msg.style.color = 'var(--success)';
+      msg.textContent = '✓ Upload successful. Refreshing...';
+
+      // Immediate UI update for photo
+      if (currentUploadTarget.field === 'candidate_photo') {
+        const avatars = document.querySelectorAll('#prof-avatar-img, #adm-avatar-img');
+        avatars.forEach(img => { img.src = fileUrl; });
+        
+        // Handle Sidebar Avatar swap (Initials -> Image)
+        const profCircle = document.getElementById('prof-avatar-circle');
+        if (profCircle && !document.getElementById('prof-avatar-img')) {
+          const init = document.getElementById('prof-avatar-init');
+          if (init) init.remove();
+          const newImg = document.createElement('img');
+          newImg.id = 'prof-avatar-img';
+          newImg.src = fileUrl;
+          newImg.alt = 'Avatar';
+          profCircle.prepend(newImg);
+        }
+
+        // Handle Navbar Avatar swap (Initials -> Image)
+        const navBtn = document.getElementById('adm-avatar-btn');
+        if (navBtn && !document.getElementById('adm-avatar-img')) {
+          const init = document.getElementById('adm-avatar-init');
+          if (init) init.remove();
+          const newImg = document.createElement('img');
+          newImg.id = 'adm-avatar-img';
+          newImg.src = fileUrl;
+          newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+          navBtn.prepend(newImg);
+        }
+      }
+      
+      setTimeout(() => window.location.reload(), 1000);
+      
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Retry Upload';
+      msg.style.color = 'var(--danger)';
+      msg.textContent = 'Error: ' + (e.message || 'Unknown error');
+    }
+  };
+
   {% if show_detail %}
   /* ── Detail view: stagger animations ── */
   document.addEventListener('DOMContentLoaded', function() {
@@ -2127,6 +2325,26 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
 
   window.doLogout = function() {
     window.location.href = '/logout';
+  };
+
+  window.loadDistricts = async function(state, selectedDistrict = null) {
+    const citySelect = document.getElementById('edit-city');
+    if (!citySelect) return;
+    if (!state) {
+      citySelect.innerHTML = '<option value="">— Select City —</option>';
+      return;
+    }
+    citySelect.innerHTML = '<option value="">Loading...</option>';
+    try {
+      const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
+      let html = '<option value="">— Select City —</option>';
+      districts.forEach(d => {
+        html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
+      });
+      citySelect.innerHTML = html;
+    } catch (e) {
+      citySelect.innerHTML = '<option value="">Error loading cities</option>';
+    }
   };
 })();
 </script>

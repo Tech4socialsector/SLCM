@@ -287,7 +287,102 @@ def get_context(context):
     except Exception:
         context.first_name = ''
 
+    # ── Documents Logic (Mirror index.py logic) ──────────────────
+    context.app_documents = []
+    if context.profile_data and context.profile_data.get("name"):
+        try:
+            doc_lookup_name = context.profile_data.get("name")
+            uploaded_docs = frappe.get_all(
+                "Applicant Document",
+                filters={"applicant": doc_lookup_name},
+                fields=["name", "document_type", "file", "is_verified"],
+                ignore_permissions=True
+            )
+            doc_record_map = {d.document_type: d for d in uploaded_docs}
+            target_applicant = frappe.get_doc("Applicant", doc_lookup_name, ignore_permissions=True)
+
+            checklist_items = [
+                {"label": "10th Certificate", "field": "class_x_marksheet", "required": True},
+                {"label": "12th Certificate", "field": "class_xii_marksheet", "required": True},
+                {"label": "ID Proof", "field": "id_proof", "required": True},
+                {"label": "Photo", "field": "candidate_photo", "required": True},
+            ]
+
+            if target_applicant.intake_type == "CLAT":
+                checklist_items.append({"label": "CLAT Scorecard", "field": None, "required": True, "type": "CLAT Scorecard"})
+            
+            if target_applicant.reservation_category and target_applicant.reservation_category != "NA":
+                checklist_items.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
+                
+            if target_applicant.pwd == "Yes":
+                checklist_items.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True})
+                
+            if target_applicant.program_level == "Research Course":
+                checklist_items.append({"label": "Research Proposal", "field": "phd_proposal", "required": True})
+                checklist_items.append({"label": "CV", "field": "cv", "required": True})
+            elif target_applicant.program_level == "PG":
+                checklist_items.append({"label": "Degree Certificate", "field": None, "required": True, "type": "Degree Certificate"})
+
+            seen_types = set()
+            for item in checklist_items:
+                dtype = item.get("type") or item["label"]
+                field = item.get("field")
+                is_uploaded = False
+                file_url = None
+                source = "field"
+                doc_name = None
+
+                if field and target_applicant.get(field):
+                    is_uploaded = True
+                    file_url = target_applicant.get(field)
+                elif doc_record_map.get(dtype):
+                    is_uploaded = True
+                    file_url = doc_record_map[dtype].file
+                    source = "record"
+                    doc_name = doc_record_map[dtype].name
+                
+                context.app_documents.append({
+                    "document_name": item["label"],
+                    "document_type": dtype,
+                    "is_uploaded": is_uploaded,
+                    "file_url": file_url,
+                    "field": field,
+                    "doc_name": doc_name,
+                    "source": source,
+                    "required": item.get("required", False)
+                })
+                seen_types.add(dtype)
+
+            for dtype, doc in doc_record_map.items():
+                if dtype not in seen_types:
+                    context.app_documents.append({
+                        "document_name": dtype,
+                        "document_type": dtype,
+                        "is_uploaded": True,
+                        "file_url": doc.file,
+                        "field": None,
+                        "doc_name": doc.name,
+                        "source": "record",
+                        "required": False
+                    })
+        except Exception as e:
+            frappe.log_error(f"Admission Dashboard doc error: {e}")
+
     # ── Active panel from URL param ───────────────────────────────────
     context.active_panel = frappe.form_dict.get('panel', 'applications')
+
+    # ── States and Districts ─────────────────────────────────────────
+    try:
+        context.states = frappe.get_all("State", fields=["name"], order_by="name asc")
+        # Pre-load districts if state is already set
+        if context.profile_data and context.profile_data.get("state"):
+            context.districts = frappe.get_all("District", 
+                filters={"state": context.profile_data.get("state")},
+                fields=["name"], order_by="name asc")
+        else:
+            context.districts = []
+    except Exception:
+        context.states = []
+        context.districts = []
 
     return context
