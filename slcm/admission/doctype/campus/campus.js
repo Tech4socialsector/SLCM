@@ -40,14 +40,7 @@
 //                 `Admission is open for Academic Year ${admission_year.academic_year} from ${formatted}`,
 //                 "green"
 //             );
-//             frm.add_custom_button(
-//                 "Add Program Offering",
-//                 function () {
-//                     frappe.new_doc("Program Offering", {
-//                         campus: frm.doc.name
-//                     });
-//                 }
-//             );
+
 
 //         }
 //     },
