@@ -302,6 +302,7 @@ def get_context(context):
         # ── Fetch full combined results using the API ────────────
         context.all_results = []
         context.all_merit   = []
+        context.eligibility_result = None
         try:
             # Try API first
             combined_data = get_applicant_data()
@@ -311,6 +312,15 @@ def get_context(context):
                         context.all_results = entry.get("results") or []
                         context.all_merit   = entry.get("merit") or []
                         break
+            
+            # Direct fetch for Eligibility Result fields
+            er_rows = frappe.get_all("Eligibility Result",
+                filters={"applicant_id": _app_name},
+                fields=["entrance_test_score", "interview_score", "source_type", "result_status"],
+                limit=1, ignore_permissions=True
+            )
+            if er_rows:
+                context.eligibility_result = er_rows[0]
             
             # If still empty, direct fetch as fallback (only if user has access)
             if not context.all_merit:

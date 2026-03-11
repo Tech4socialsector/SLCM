@@ -549,6 +549,19 @@
         const branding = pageData.branding;
         const is_rescheduled = pageData.isRescheduled;
 
+        // ── Trigger server-side storage ─────────────────────────────────────
+        fetch("/api/method/slcm.admission.doctype.entrance_test_list.entrance_test_list.generate_and_store_admit_card", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Frappe-CSRF-Token": (typeof frappe !== 'undefined' ? frappe.csrf_token : "")
+            },
+            body: JSON.stringify({
+                allocation: doc.name,
+                is_rescheduled: is_rescheduled
+            })
+        }).catch(err => console.error("Admit Card storage failed:", err));
+
         const esc = (v) => { if (!v) return ""; return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); };
         const val = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
         const fmtDate = (v) => { if (!v) return "—"; try { return new Date(v).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return v; } };
