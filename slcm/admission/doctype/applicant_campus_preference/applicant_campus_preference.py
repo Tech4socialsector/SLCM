@@ -51,10 +51,10 @@ class ApplicantCampusPreference(Document):
             )
 
     def validate_active_offering(self):
-        offering = frappe.db.exists("Campus Program Offering", {
+        offering = frappe.db.exists("Admission Cycle Program", {
+            "parent": self.admission_cycle,
             "campus": self.campus,
             "program": self.program,
-            "admission_cycle": self.admission_cycle,
             "is_active": 1
         })
         if not offering:
