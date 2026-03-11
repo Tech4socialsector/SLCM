@@ -151,6 +151,47 @@
             text-align: center;
         }
     }
+
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 40px;
+        margin-bottom: 20px;
+    }
+
+    .btn-pagination {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text-2);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-pagination:hover:not(:disabled) {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-light);
+    }
+
+    .btn-pagination.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+    }
+
+    .btn-pagination:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 </style>
 {% endblock %}
 
@@ -179,6 +220,9 @@
     // Fallback for translation helper
     window._ = window._ || function (s) { return s; };
 
+    let current_page = 0;
+    const page_size = 20;
+
     document.addEventListener('DOMContentLoaded', function () {
         fetch_offers();
     });
@@ -187,8 +231,8 @@
         console.log("Fetching offers...");
         try {
             const data = await apiFetch('slcm.admission.utils.web.get_offer_list', {
-                limit_start: 0,
-                limit_page_length: 100
+                limit_start: current_page * page_size,
+                limit_page_length: page_size
             });
             console.log("Offers data received:", data);
             if (!data) {
@@ -207,7 +251,7 @@
             render_error("{{ _('Invalid data received from server') }}");
             return;
         }
-        const { offers, applicant_name, is_admin, currency } = data;
+        const { offers, total_count, applicant_name, is_admin, currency } = data;
         const wrapper = $('#offer-list-wrapper');
 
         if (!offers || offers.length === 0) {
@@ -257,7 +301,7 @@
                     </div>
                     <div class="card-footer">
                         <div class="payable-amount">
-                            ${portal_format_currency(offer.payable_amount, currency)}
+                            ${format_currency(offer.payable_amount, currency)}
                             ${offer.scholarship_amount > 0 ? `
                                 <div style="font-size: 0.65rem; color: #059669; font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
                                     <i class="fa fa-gift"></i> Scholarship Adjusted

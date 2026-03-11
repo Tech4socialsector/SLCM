@@ -1464,9 +1464,9 @@ or _app.current_stage)) or _status %}
         <span class="material-symbols-outlined">arrow_back</span>
         Back to Dashboard
       </a>
-      <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application" title="Open and edit this application">
-        <span class="material-symbols-outlined">edit</span>
-        Edit Application
+      <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application" title="{{ 'View' if _status != 'Draft' else 'Open and edit' }} this application">
+        <span class="material-symbols-outlined">{{ 'visibility' if _status != 'Draft' else 'edit' }}</span>
+        {{ 'View' if _status != 'Draft' else 'Edit' }} Application
       </a>
     </div>
 
