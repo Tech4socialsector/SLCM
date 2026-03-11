@@ -35,9 +35,10 @@ def register_fle_user(email, mobile_number):
     import urllib.parse
     parsed = urllib.parse.urlparse(frappe_link)
     
-    # Rebuild the link using frappe.utils.get_url which picks up the request host/port correctly
+    # Rebuild the link using frappe.utils.get_url which picks up the request host/port correctly,
+    # but point it to our custom page.
     from frappe.utils import get_url
-    correct_link = get_url(parsed.path + "?" + parsed.query)
+    correct_link = get_url(f"/fle/update_password.html?{parsed.query}")
     
     # Prepare and send the welcome email
     site_name = frappe.db.get_default("site_name") or frappe.get_conf().get("site_name")
