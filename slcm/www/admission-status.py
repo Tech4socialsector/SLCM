@@ -52,9 +52,9 @@ def get_context(context):
         doc_map = {d.document_type: d for d in uploaded_docs}
         required_types = ["10th Certificate", "12th Certificate", "ID Proof", "Photo"]
         
-        if doc.intake_type == "CLAT":
+        if doc.intake_type == "External Test":
             required_types.append("CLAT Scorecard")
-        elif doc.intake_type == "NLSAT":
+        elif doc.intake_type == "Internal Test":
             required_types.append("NLSAT Scorecard")
             
         if doc.reservation_category and doc.reservation_category != "NA":

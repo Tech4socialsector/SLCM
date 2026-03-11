@@ -247,7 +247,7 @@ def get_context(context):
             )
 
             if all_cycle_stages:
-                intake = applicant.intake_type or "CLAT"
+                intake = applicant.intake_type or "External Test"
                 filtered_stages = [
                     s for s in all_cycle_stages
                     if s.applicable_workflow == "All" or s.applicable_workflow == intake
@@ -351,14 +351,18 @@ def get_context(context):
 
         # Interview
         context.interview_status = ""
+        context.interview_date = ""
         try:
             irows = frappe.get_all("Interview Seat Allocation",
                 filters={"applicant": _app_name},
-                fields=["interview_date", "interview_time", "interview_slot_status"],
+                fields=["interview_date", "interview_time", "interview_slot_status", "re_interview_date", "is_rescheduled"],
                 order_by="creation desc", limit=1, ignore_permissions=True)
             if irows:
                 ir = irows[0]
                 context.interview_status = ir.get("interview_slot_status") or "Scheduled"
+                _idate = ir.get("re_interview_date") if (ir.get("is_rescheduled") or ir.get("interview_slot_status") == "Rescheduled") else ir.get("interview_date")
+                if _idate:
+                    context.interview_date = frappe.utils.format_date(_idate, "d MMM yyyy")
         except Exception: pass
 
         # Merit
