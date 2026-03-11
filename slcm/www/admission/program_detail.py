@@ -202,11 +202,47 @@ def get_context(context):
         context.eligibility_rules = []
 
     # ── Active cycle ──────────────────────────────────────────────
-    try:
-        context.active_cycle = frappe.get_last_doc(
-            "Admission Cycle", filters={"status": "Active"})
-    except Exception:
-        context.active_cycle = None
+    from frappe.utils import nowdate
+    from slcm.admission.utils.stage_control import can_apply, get_current_stage
+    
+    active_cycle = frappe.db.get_value(
+        "Admission Cycle",
+        {"status": "Active"},
+        ["name", "cycle_start_date", "cycle_end_date"],
+        as_dict=True
+    )
+
+    today = nowdate()
+    cycle_is_open = False
+    if active_cycle:
+        cycle_is_open = True
+        sd = active_cycle.get("cycle_start_date")
+        ed = active_cycle.get("cycle_end_date")
+        if sd and str(today) < str(sd):
+            cycle_is_open = False
+        if ed and str(today) > str(ed):
+            cycle_is_open = False
+
+    context.active_cycle = active_cycle
+    context.cycle_is_open = cycle_is_open
+
+    # ── can_apply / current stage for this program ──
+    if active_cycle and prog:
+        intake = prog.get("intake_type") or "CLAT"
+        context.can_apply = can_apply(active_cycle.name, intake) if cycle_is_open else False
+        stage = get_current_stage(active_cycle.name, intake)
+        context.current_stage_name = stage.stage_name if stage else ""
+
+        if not cycle_is_open:
+            sd = active_cycle.get("cycle_start_date")
+            ed = active_cycle.get("cycle_end_date")
+            if sd and str(today) < str(sd):
+                context.current_stage_name = "Upcoming"
+            elif ed and str(today) > str(ed):
+                context.current_stage_name = "Closed"
+    else:
+        context.can_apply = False
+        context.current_stage_name = "Closed"
 
     # ── Support email ─────────────────────────────────────────────
     try:

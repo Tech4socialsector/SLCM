@@ -173,11 +173,39 @@ def _load_program_detail(context, slug):
         context.eligibility_rules = []
 
     # Active cycle
-    try:
-        context.active_cycle = frappe.get_last_doc(
-            "Admission Cycle", filters={"status": "Active"})
-    except Exception:
-        context.active_cycle = None
+    from frappe.utils import nowdate
+    from slcm.admission.utils.stage_control import can_apply, get_current_stage
+    
+    active_cycle = frappe.db.get_value(
+        "Admission Cycle",
+        {"status": "Active"},
+        ["name", "cycle_start_date", "cycle_end_date"],
+        as_dict=True
+    )
+
+    today = nowdate()
+    cycle_is_open = False
+    if active_cycle:
+        cycle_is_open = True
+        sd = active_cycle.get("cycle_start_date")
+        ed = active_cycle.get("cycle_end_date")
+        if sd and str(today) < str(sd):
+            cycle_is_open = False
+        if ed and str(today) > str(ed):
+            cycle_is_open = False
+
+    context.active_cycle = active_cycle
+    context.cycle_is_open = cycle_is_open
+
+    # ── can_apply / current stage for this program ──
+    if active_cycle and prog:
+        intake = prog.get("intake_type") or "CLAT"
+        context.can_apply = can_apply(active_cycle.name, intake) if cycle_is_open else False
+        stage = get_current_stage(active_cycle.name, intake)
+        context.current_stage_name = stage.stage_name if stage else ""
+    else:
+        context.can_apply = False
+        context.current_stage_name = ""
 
     # ── user's existing application for this specific program ──
     context.user_app_name   = ""
@@ -312,7 +340,19 @@ def get_context(context):
     )
 
     # ── 4. Is application window open? ───────────────────────────────
-    app_open = True if active_cycle else False
+    from frappe.utils import nowdate
+    today = nowdate()
+    cycle_is_open = False
+    if active_cycle:
+        cycle_is_open = True
+        sd = active_cycle.get("cycle_start_date")
+        ed = active_cycle.get("cycle_end_date")
+        if sd and str(today) < str(sd):
+            cycle_is_open = False
+        if ed and str(today) > str(ed):
+            cycle_is_open = False
+
+    app_open = cycle_is_open
 
     # ── 5. Programs & Announcements ──────────────────────────────────
     try:
@@ -332,6 +372,21 @@ def get_context(context):
         # Stage-driven portal control
         active_cycle_name = active_cycle.name if active_cycle else ""
         
+        for p in programs:
+            intake = p.get("intake_type") or "CLAT"
+            p["can_apply"] = can_apply(active_cycle_name, intake) if cycle_is_open else False
+            
+            stage = get_current_stage(active_cycle_name, intake)
+            p["current_stage_name"] = stage.stage_name if stage else ""
+
+            if not cycle_is_open:
+                sd = active_cycle.get("cycle_start_date")
+                ed = active_cycle.get("cycle_end_date")
+                if sd and str(today) < str(sd):
+                    p["current_stage_name"] = "Upcoming"
+                elif ed and str(today) > str(ed):
+                    p["current_stage_name"] = "Closed"
+
         context.programs = programs
 
         # ── user_app_map: program_name → {app_name, status} ──

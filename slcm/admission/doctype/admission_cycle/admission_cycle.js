@@ -3,9 +3,27 @@ frappe.ui.form.on("Admission Cycle", {
     refresh: function (frm) {
         // Status indicator
         const colors = { "Draft": "gray", "Active": "green", "Closed": "red" };
+        
+        let status_label = frm.doc.status;
+        let indicator_color = colors[frm.doc.status] || "gray";
+
+        if (frm.doc.status === "Active") {
+            const today = frappe.datetime.get_today();
+            if (frm.doc.cycle_start_date && today < frm.doc.cycle_start_date) {
+                status_label = __("Upcoming");
+                indicator_color = "orange";
+            } else if (frm.doc.cycle_end_date && today > frm.doc.cycle_end_date) {
+                status_label = __("Closed (Expired)");
+                indicator_color = "red";
+            } else {
+                status_label = __("Open");
+                indicator_color = "green";
+            }
+        }
+
         frm.dashboard.set_headline_alert(
-            __(frm.doc.status),
-            colors[frm.doc.status] || "gray"
+            __(status_label),
+            indicator_color
         );
 
         // Program count warning
