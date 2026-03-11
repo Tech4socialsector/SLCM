@@ -5,38 +5,10 @@
 {% block theme_vars %}
 <style>
   :root {
-      {
-      % if portal_config %
-    }
-
-    --primary: {
-        {
-        portal_config.get('primary_color', '#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e'
-      }
-    }
-
-    ;
-
-    --secondary: {
-        {
-        portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b'
-      }
-    }
-
-    ;
-
-      {
-      % else %
-    }
-
-    --primary: #1a3c6e;
-    --secondary: #c8a14b;
-
-      {
-      % endif %
-    }
-
-    --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
+    --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+    --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+    --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
+    --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
     --text-1: #1f2937;
     --text-2: #374151;
     --text-3: #6b7280;
@@ -72,7 +44,7 @@
   .adm-main,
   .adm-container {
     font-family: 'Poppins', system-ui, sans-serif !important;
-    background: #f3f4f6 !important;
+    background: var(--bg) !important;
   }
 
   /* ── Typography ─────────────────────────────────────── */
@@ -736,7 +708,7 @@ else 'Admissions Open') %}
 {% set _docs = app_documents or [] %}
 
 <!-- ══ OUTER WRAPPER ══════════════════════════════════════════ -->
-<div style="min-height:calc(100vh - 60px);background:#f3f4f6;
+<div style="min-height:calc(100vh - 60px);background:var(--bg);
             margin:-20px -20px 0;padding:28px 20px 40px;">
   <div style="max-width:1200px;margin:0 auto;">
 
@@ -1015,10 +987,10 @@ else 'Admissions Open') %}
         <div id="panel-applications" class="adm-panel-section fade-in-up" style="display:none;animation-delay:0.1s">
 
           <!-- Hero -->
-          <section class="relative overflow-hidden" style="border-radius:18px;min-height:200px;background:#0f172a;">
+          <section class="relative overflow-hidden" style="border-radius:18px;min-height:200px;background:var(--primary);">
             <div class="ken-burns absolute inset-0" {% if _hero_img %}
               style="background:url('{{ _hero_img }}') center/cover no-repeat;" {% else %}
-              style="background:linear-gradient(135deg,var(--primary) 0%,#0d2040 60%,#1e1b4b 100%);" {% endif %}></div>
+              style="background:linear-gradient(135deg,var(--primary) 0%,var(--primary) 60%,var(--secondary) 100%);" {% endif %}></div>
             <div class="absolute inset-0"
               style="background:linear-gradient(to top,rgba(15,23,42,0.9) 0%,rgba(15,23,42,0.3) 100%);">
             </div>
@@ -1054,7 +1026,7 @@ else 'Admissions Open') %}
           <section style="margin-top:28px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
               <h3
-                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:#0f172a;margin:0;">
+                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-1);margin:0;">
                 <span class="ms-icon" style="color:var(--primary);font-size:20px;">article</span>
                 My Applications
               </h3>
@@ -1102,7 +1074,7 @@ else 'Admissions Open') %}
                       {% endif %}
                     </div>
                     <div>
-                      <p style="font-size:13px;font-weight:600;color:#0f172a;line-height:1.3;margin:0 0 3px;">{{ _pname2
+                      <p style="font-size:13px;font-weight:600;color:var(--text-1);line-height:1.3;margin:0 0 3px;">{{ _pname2
                         }}</p>
                       <p style="font-size:11px;color:#94a3b8;margin:0;">{{ _cycle }}{% if _stage %} · {{ _stage }}{%
                         endif %}</p>
@@ -1147,7 +1119,7 @@ else 'Admissions Open') %}
                             display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
                   <span class="ms-icon" style="font-size:20px;color:var(--primary);">{{ vc.icon or 'star' }}</span>
                 </div>
-                <h4 style="font-size:14px;font-weight:600;color:#0f172a;margin:0 0 6px;">{{ vc.title }}</h4>
+                <h4 style="font-size:14px;font-weight:600;color:var(--text-1);margin:0 0 6px;">{{ vc.title }}</h4>
                 <p style="font-size:12px;color:#64748b;line-height:1.55;margin:0;">{{ vc.description }}</p>
               </div>
               {% endfor %}
@@ -1169,7 +1141,7 @@ else 'Admissions Open') %}
             <!-- Applied -->
             <section>
               <h3
-                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:#0f172a;margin:0 0 14px;">
+                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-1);margin:0 0 14px;">
                 <span class="ms-icon" style="font-size:20px;color:var(--primary)">history_edu</span>
                 Applied Scholarships
               </h3>
@@ -1177,7 +1149,7 @@ else 'Admissions Open') %}
                 {% if applied_scholarships %}
                 {% for s in applied_scholarships %}
                 <div style="background:white;padding:16px;border-radius:12px;border:1.5px solid var(--border);">
-                  <p style="font-size:13px;font-weight:600;color:#0f172a;margin:0 0 4px;">{{ s.scheme_name }}</p>
+                  <p style="font-size:13px;font-weight:600;color:var(--text-1);margin:0 0 4px;">{{ s.scheme_name }}</p>
                   <p style="font-size:11px;color:#94a3b8;margin:0 0 10px;">Applied: {{
                     frappe.utils.formatdate(s.creation,"dd MMM yyyy") }}</p>
                   <span
@@ -1198,7 +1170,7 @@ else 'Admissions Open') %}
             <!-- Available -->
             <section>
               <h3
-                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:#0f172a;margin:0 0 14px;">
+                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-1);margin:0 0 14px;">
                 <span class="ms-icon" style="font-size:20px;color:var(--primary)">redeem</span>
                 Available Schemes
               </h3>
@@ -1207,7 +1179,7 @@ else 'Admissions Open') %}
                 {% for s in _scholarships %}
                 <div class="hover-card"
                   style="background:white;padding:16px;border-radius:12px;border:1.5px solid var(--border);">
-                  <p style="font-size:13px;font-weight:600;color:#0f172a;margin:0 0 6px;">{{ s.scheme_name }}</p>
+                  <p style="font-size:13px;font-weight:600;color:var(--text-1);margin:0 0 6px;">{{ s.scheme_name }}</p>
                   <p style="font-size:12px;color:#64748b;line-height:1.5;margin:0 0 12px;">{{ s.description or 'No
                     description available.' }}</p>
                   <a href="/merit-and-scholarship/scholarships"
