@@ -71,6 +71,7 @@ def publish_merit_list(merit_list_name):
     Publishes the Merit List so students can view their scores
     on the applicant results portal page.
     Sets status to 'Published' and records an audit log.
+    Also updates the Application Status of all applicants in the list to 'Merit Published'.
     """
     doc = frappe.get_doc("Merit List", merit_list_name)
 
@@ -81,6 +82,11 @@ def publish_merit_list(merit_list_name):
         frappe.throw("Merit List must be submitted before publishing.")
 
     doc.db_set("status", "Published")
+
+    # Update Applicant status
+    for row in doc.merit_applicants:
+        if row.applicant_id:
+            frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Merit Published")
 
     # Audit log
     frappe.get_doc({
@@ -100,6 +106,7 @@ def publish_merit_list(merit_list_name):
 def unpublish_merit_list(merit_list_name):
     """
     Reverts the Merit List status to 'Generated', hiding scores from students.
+    Also reverts the Application Status of all applicants in the list to 'Submitted'.
     """
     doc = frappe.get_doc("Merit List", merit_list_name)
 
@@ -107,6 +114,14 @@ def unpublish_merit_list(merit_list_name):
         frappe.throw("Merit List is not currently published.")
 
     doc.db_set("status", "Generated")
+
+    # Revert Applicant status
+    for row in doc.merit_applicants:
+        if row.applicant_id:
+            # Revert to Submitted if it was Merit Published
+            current_status = frappe.db.get_value("Applicant", row.applicant_id, "application_status")
+            if current_status == "Merit Published":
+                frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Submitted")
 
     # Audit log
     frappe.get_doc({

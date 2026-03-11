@@ -70,10 +70,6 @@
     color: var(--text-1);
   }
 
-  .adm-footer {
-    display: none !important;
-  }
-
   /* ── Animations ──────────────────────────────────────────── */
   @keyframes fadeUp {
     from {
@@ -138,24 +134,21 @@
   }
 
   .ma-card-title {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--text-1);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
   .ma-card-title .ico {
-    width: 32px;
-    height: 32px;
+    width: 36px; height: 36px;
     background: var(--primary-light);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
     color: var(--primary);
-    font-size: 17px;
+    font-size: 20px;
   }
 
   .ma-card-body {
@@ -472,36 +465,36 @@
   .merit-panel,
   .seat-panel {
     padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
 
   .merit-panel {
     border-right: 1px solid var(--border);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-top: 48px;
   }
 
   .merit-stat-row {
-    display: flex;
-    gap: 28px;
-    margin-bottom: 14px;
+    display: flex; gap: 32px; margin-bottom: 16px;
+    justify-content: center;
   }
 
   .merit-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    display: flex; flex-direction: column; gap: 2px;
+    align-items: center;
   }
 
   .merit-stat-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-4);
-    text-transform: uppercase;
-    letter-spacing: .07em;
+    font-size: 15px; font-weight: 600; color: var(--text-4);
+    text-transform: uppercase; letter-spacing: .07em;
   }
 
   .merit-stat-value {
-    font-size: 36px;
-    font-weight: 700;
-    line-height: 1;
+    font-size: 50px; font-weight: 800; line-height: 1;
     color: var(--primary);
   }
 
@@ -511,14 +504,16 @@
 
   .merit-chip {
     display: inline-block;
-    padding: 3px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    background: #dcfce7;
-    color: var(--success);
-    text-transform: uppercase;
-    letter-spacing: .05em;
+    padding: 4px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 700;
+    background: #dcfce7; color: var(--success);
+    text-transform: uppercase; letter-spacing: .05em;
+    box-shadow: 0 2px 8px rgba(22,163,74,0.15);
+  }
+  .merit-panel .merit-chip, .seat-panel .merit-chip {
+    position: absolute;
+    top: 20px;
+    right: 22px;
   }
 
   /* Seat panel */
@@ -531,9 +526,7 @@
   }
 
   .seat-prog-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-1);
+    font-size: 20px; font-weight: 700; color: var(--text-1);
     margin-bottom: 4px;
   }
 
@@ -1655,27 +1648,29 @@ or _app.current_stage)) or _status %}
             </div>
           </div>
           <span class="merit-chip">{{ m.status or 'Selected' }}</span>
-          {% else %}
-          <div style="padding:12px 0">
+        {% else %}
+          <div style="padding:12px 0; text-align: center; display: flex; flex-direction: column; align-items: center;">
             <span class="merit-stat-label" style="display:block;margin-bottom:8px">Overall Rank</span>
             <span style="font-size:32px;font-weight:700;color:var(--text-4)">—</span>
             <p style="font-size:12px;color:var(--text-4);margin-top:8px">Merit list not yet published</p>
           </div>
-          {% endif %}
-        </div>
+        {% endif %}      </div>
 
-        <!-- Right: Seat -->
-        <div class="seat-panel">
-          {% if all_results and all_results|length > 0 %}
-          {% set r = all_results[0] %}
+      <!-- Right: Seat -->
+      <div class="seat-panel">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 12px;">Seat Allocation Result</div>
+        {% if all_results and all_results|length > 0 %}          {% set r = all_results[0] %}
+          <span class="merit-chip">{{ r.selection_status }}</span>
           <div class="seat-info-box">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
               <span class="seat-prog-name">{{ _prog }}</span>
-              <span class="status-badge" style="background:#dcfce7;color:#16a34a;font-size:10px">{{ r.selection_status
-                }}</span>
             </div>
-            <div class="seat-meta">
-              Round: <strong style="color:var(--text-1)">{{ r.allocation_type or '1' }}</strong>
+            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
+              <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">Allocated Category</div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
+                <span class="material-symbols-outlined" style="font-size: 20px;">category</span>
+                {{ r.allocated_category or 'General' }}
+              </div>
             </div>
             {% if payment_details and payment_details.payment_date %}
             <div class="seat-deadline">
@@ -1685,8 +1680,9 @@ or _app.current_stage)) or _status %}
           </div>
 
           {% if r.selection_status in ['Selected','Offered'] %}
-          <div class="seat-action-row">
-            <button class="btn-accept" onclick="handleSeatAction('accept','{{ _appid }}')">
+          <!-- <div class="seat-action-row">
+            <button class="btn-accept"
+              onclick="handleSeatAction('accept','{{ _appid }}')">
               <span class="material-symbols-outlined">check</span>
               Accept Seat
             </button>
@@ -1694,7 +1690,7 @@ or _app.current_stage)) or _status %}
               <span class="material-symbols-outlined">close</span>
               Decline
             </button>
-          </div>
+          </div> -->
           {% elif r.selection_status == 'Accepted' %}
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
             <span class="material-symbols-outlined"
@@ -2068,35 +2064,24 @@ or _app.current_stage)) or _status %}
     <!-- ╔══════════════════════════════════════════════╗
        ║  DOWNLOAD APPLICATION ROW                    ║
        ╚══════════════════════════════════════════════╝ -->
-    <div class="fade-up" style="animation-delay:.3s;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
-      {% if app_name_param %}
-      <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
-        target="_blank" class="btn-download">
-        <span class="material-symbols-outlined">download</span>
-        Download Application
-      </a>
-      {% endif %}
-      {% if offer_letter_url %}
-      <a href="{{ offer_letter_url }}" target="_blank" class="btn-download"
-        style="background:var(--text-1);color:white;border-color:var(--text-1)">
-        <span class="material-symbols-outlined">drafts</span>
-        Download Offer Letter
-      </a>
-      {% endif %}
-    </div>
+  <div class="fade-up" style="animation-delay:.3s;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+    {% if app_name_param %}
+    <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
+       target="_blank" class="btn-download">
+      <span class="material-symbols-outlined">download</span>
+      Download Application
+    </a>
+    {% endif %}
+    {% if offer_letter_url %}
+    <a href="{{ offer_letter_url }}" target="_blank"
+       class="btn-download" style="background:var(--text-1);color:white;border-color:var(--text-1)">
+      <span class="material-symbols-outlined">drafts</span>
+      Download Offer Letter
+    </a>
+    {% endif %}
+  </div>
 
-    <!-- Footer -->
-    <footer
-      style="padding-top:18px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px">
-      <span style="font-size:11px;color:var(--text-4)">Admission Portal — National Law School of India University</span>
-      <div style="display:flex;gap:18px">
-        <a href="/admission" style="font-size:11px;color:var(--text-3);text-decoration:none;font-weight:500">Admissions
-          Home</a>
-        <a href="#" style="font-size:11px;color:var(--text-3);text-decoration:none;font-weight:500">Help Center</a>
-      </div>
-    </footer>
-
-  </div><!-- end ma-inner -->
+</div><!-- end ma-inner -->
 </div><!-- end ma-page -->
 
 

@@ -366,7 +366,7 @@ def get_context(context):
             if not context.all_results:
                 srows = frappe.get_all("Seat Selection Applicant",
                     filters={"applicant_id": _app_name},
-                    fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score"]
+                    fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score", "allocated_category"]
                 )
                 for s in srows:
                     if frappe.db.get_value("Seat Allocation", s.parent, "status") == "Published":
@@ -687,6 +687,7 @@ def get_context(context):
     STATUS_STYLE = {
         "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
         "Submitted":      {"color": "#1d4ed8", "bg": "#dbeafe"},
+        "Merit Published": {"color": "#0369a1", "bg": "#e0f2fe"},
         "Under Review":   {"color": "#d97706", "bg": "#fef3c7"},
         "Shortlisted":    {"color": "#059669", "bg": "#d1fae5"},
         "Waitlisted":     {"color": "#7c3aed", "bg": "#ede9fe"},
