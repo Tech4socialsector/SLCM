@@ -100,86 +100,49 @@ def get_context(context):
     # ── Determine active application name for document checklist ──
     doc_lookup_name = _app_name or context.prof_app_name
 
-    # ── Documents Logic (Reusable for Detail and Profile) ──────────
+    # ── Documents Logic (Strictly using Applicant fields) ──────────
     if doc_lookup_name:
         try:
-            uploaded_docs = frappe.get_all(
-                "Applicant Document",
-                filters={"applicant": doc_lookup_name},
-                fields=["name", "document_type", "file", "is_verified"],
-                ignore_permissions=True
-            )
-            doc_record_map = {d.document_type: d for d in uploaded_docs}
-
             # Fetch the actual applicant doc for fields
             target_applicant = frappe.get_doc("Applicant", doc_lookup_name, ignore_permissions=True)
 
-            checklist_items = [
+            # Standard fields in Applicant DocType
+            standard_checklist = [
                 {"label": "10th Certificate", "field": "class_x_marksheet", "required": True},
                 {"label": "12th Certificate", "field": "class_xii_marksheet", "required": True},
                 {"label": "ID Proof", "field": "id_proof", "required": True},
                 {"label": "Photo", "field": "candidate_photo", "required": True},
             ]
 
-            if target_applicant.intake_type == "CLAT":
-                checklist_items.append({"label": "CLAT Scorecard", "field": None, "required": True, "type": "CLAT Scorecard"})
-            
+            # Optional / Conditional fields
             if target_applicant.reservation_category and target_applicant.reservation_category != "NA":
-                checklist_items.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
+                standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
                 
             if target_applicant.pwd == "Yes":
-                checklist_items.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True})
+                standard_checklist.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True})
                 
             if target_applicant.program_level == "Research Course":
-                checklist_items.append({"label": "Research Proposal", "field": "phd_proposal", "required": True})
-                checklist_items.append({"label": "CV", "field": "cv", "required": True})
-            elif target_applicant.program_level == "PG":
-                checklist_items.append({"label": "Degree Certificate", "field": None, "required": True, "type": "Degree Certificate"})
+                standard_checklist.append({"label": "Research Proposal", "field": "phd_proposal", "required": True})
+                standard_checklist.append({"label": "CV", "field": "cv", "required": True})
+            
+            # Special case for Karnataka category
+            if target_applicant.ka_study_7yrs:
+                standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True})
 
             context.app_documents = []
-            seen_types = set()
-
-            for item in checklist_items:
-                dtype = item.get("type") or item["label"]
-                field = item.get("field")
-                is_uploaded = False
-                file_url = None
-                source = "field"
-                doc_name = None
-
-                if field and target_applicant.get(field):
-                    is_uploaded = True
-                    file_url = target_applicant.get(field)
-                elif doc_record_map.get(dtype):
-                    is_uploaded = True
-                    file_url = doc_record_map[dtype].file
-                    source = "record"
-                    doc_name = doc_record_map[dtype].name
+            for item in standard_checklist:
+                field = item["field"]
+                val = target_applicant.get(field)
                 
                 context.app_documents.append({
                     "document_name": item["label"],
-                    "document_type": dtype,
-                    "is_uploaded": is_uploaded,
-                    "file_url": file_url,
+                    "document_type": item["label"],
+                    "is_uploaded": bool(val),
+                    "file_url": val,
                     "field": field,
-                    "doc_name": doc_name,
-                    "source": source,
-                    "required": item.get("required", False)
+                    "source": "field",
+                    "required": item["required"]
                 })
-                seen_types.add(dtype)
-
-            for dtype, doc in doc_record_map.items():
-                if dtype not in seen_types:
-                    context.app_documents.append({
-                        "document_name": dtype,
-                        "document_type": dtype,
-                        "is_uploaded": True,
-                        "file_url": doc.file,
-                        "field": None,
-                        "doc_name": doc.name,
-                        "source": "record",
-                        "required": False
-                    })
         except Exception as e:
             frappe.log_error(f"Document checklist error: {e}")
             context.app_documents = []
@@ -238,7 +201,7 @@ def get_context(context):
                 },
                 fields=[
                     "stage_name", "stage_type", "applicable_workflow",
-                    "sequence_no", "application_status"
+                    "sequence_no", "activate_status", "closed_status"
                 ],
                 order_by="sequence_no asc",
                 ignore_permissions=True
@@ -252,15 +215,25 @@ def get_context(context):
                 ]
                 current_status = applicant.application_status
                 active_index = -1
+                is_terminal_stop = False
+                
                 for i, s in enumerate(filtered_stages):
-                    if s.application_status == current_status:
+                    if s.activate_status == current_status:
                         active_index = i
                         break
+                    if s.closed_status == current_status:
+                        active_index = i
+                        is_terminal_stop = True
+                        break
+                
                 for i, s in enumerate(filtered_stages):
                     state = "pending"
                     if active_index != -1:
-                        if i < active_index: state = "completed"
-                        elif i == active_index: state = "active"
+                        if i < active_index:
+                            state = "completed"
+                        elif i == active_index:
+                            state = "closed" if is_terminal_stop else "active"
+                    
                     stages_with_state.append({
                         "name": s.stage_name or s.stage_type,
                         "state": state
@@ -269,15 +242,27 @@ def get_context(context):
             frappe.log_error(f"Stage tracker context error: {e}")
 
         if not stages_with_state:
-            statuses = ["Submitted", "Under Review", "Interview", "Decision"]
+            # Fallback based on common statuses
+            statuses = [
+                {"name": "Submitted", "activate": "Submitted", "closed": "Rejected"},
+                {"name": "Under Review", "activate": "Under Review", "closed": "Rejected"},
+                {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
+                {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
+            ]
             current = applicant.get("application_status") or "Draft"
-            found = False
+            stop_found = False
             for st in statuses:
-                if st.lower() == current.lower() and not found:
-                    state = "active"; found = True
-                elif not found: state = "completed"
-                else: state = "pending"
-                stages_with_state.append({"name": st, "state": state})
+                state = "pending"
+                if not stop_found:
+                    if st["activate"] == current:
+                        state = "active"
+                        stop_found = True
+                    elif st["closed"] == current:
+                        state = "closed"
+                        stop_found = True
+                    else:
+                        state = "completed"
+                stages_with_state.append({"name": st["name"], "state": state})
 
         context.stage_tracker = stages_with_state
 

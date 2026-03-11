@@ -742,11 +742,6 @@
                   <p style="color: var(--text-4); font-size: 13px; font-style: italic;">No documents required.</p>
                 {% endif %}
               </div>
-
-              <a href="javascript:void(0)" onclick="openUploadModal('Other Document', 'Other', '', '', 'record')" class="btn-upload-docs">
-                <span class="ms-icon" style="font-size:18px;color:white;">upload</span>
-                Upload Other Document
-              </a>
             </div>
 
             <!-- Account Settings Card -->
@@ -1185,25 +1180,12 @@
       const fileUrl = uploadData.message.file_url;
       progFill.style.width = '60%';
       
-      if (currentUploadTarget.source === 'field' && currentUploadTarget.field) {
+      if (currentUploadTarget.field) {
         await apiFetch('slcm.admission.api.profile.update_profile', {
           [currentUploadTarget.field]: fileUrl
         });
       } else {
-        const applicantId = '{{ profile_data.name if profile_data else "" }}';
-        if (currentUploadTarget.docName) {
-          await apiFetch('frappe.client.set_value', {
-            doctype: 'Applicant Document', name: currentUploadTarget.docName,
-            fieldname: 'file', value: fileUrl
-          });
-        } else {
-          await apiFetch('frappe.client.insert', {
-            doc: {
-              doctype: 'Applicant Document', applicant: applicantId,
-              document_type: currentUploadTarget.type, file: fileUrl, docstatus: 1
-            }
-          });
-        }
+        throw new Error('This document type does not map to a profile field.');
       }
       
       progFill.style.width = '100%';

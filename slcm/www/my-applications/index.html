@@ -217,11 +217,17 @@
     color: white;
     animation: pulse-ring 2s ease-in-out infinite;
   }
+  .stage-circle.closed {
+    background: var(--danger);
+    box-shadow: 0 0 0 2px var(--danger);
+    color: white;
+  }
   .stage-circle.pending {
     background: #f9fafb;
     box-shadow: 0 0 0 2px var(--border);
     color: var(--text-4);
   }
+  .stage-label.closed { color: var(--danger); font-weight: 700; }
   .stage-arrow {
     position: absolute;
     right: -18px; top: 50%; transform: translateY(-50%);
@@ -830,9 +836,16 @@
     <!-- Stage Tracker -->
     {% if _stages %}
     <div class="stage-track-wrap">
-      {% set ns = namespace(done=0) %}
+      {% set ns = namespace(done=0, stopped=false) %}
       {% for s in _stages %}
-        {% if s.state in ['completed','active'] %}{% set ns.done = ns.done + 1 %}{% endif %}
+        {% if not ns.stopped %}
+          {% if s.state in ['completed', 'active', 'closed'] %}
+            {% set ns.done = ns.done + 1 %}
+          {% endif %}
+          {% if s.state in ['active', 'closed'] %}
+            {% set ns.stopped = true %}
+          {% endif %}
+        {% endif %}
       {% endfor %}
       {% set _pct = ((ns.done / _stages|length) * 100)|int %}
 
@@ -849,6 +862,8 @@
               <span class="material-symbols-outlined" style="font-size:18px">check</span>
             {% elif _sstate == 'active' %}
               <span class="material-symbols-outlined" style="font-size:18px">sync</span>
+            {% elif _sstate == 'closed' %}
+              <span class="material-symbols-outlined" style="font-size:18px">close</span>
             {% else %}
               <span class="material-symbols-outlined" style="font-size:18px">radio_button_unchecked</span>
             {% endif %}
@@ -1034,13 +1049,6 @@
             No documents required.
           </div>
         {% endif %}
-      </div>
-
-      <div class="doc-card-foot">
-        <a href="/my-applications?app={{ _appid }}&section=documents" class="btn-upload">
-          <span class="material-symbols-outlined">upload</span>
-          Upload Documents
-        </a>
       </div>
     </div>
 
@@ -1753,25 +1761,12 @@
       const fileUrl = uploadData.message.file_url;
       progFill.style.width = '60%';
       
-      if (currentUploadTarget.source === 'field' && currentUploadTarget.field) {
+      if (currentUploadTarget.field) {
         await apiFetch('slcm.admission.api.profile.update_profile', {
           [currentUploadTarget.field]: fileUrl
         });
       } else {
-        const applicantId = '{{ selected_app.name if selected_app else "" }}' || '{{ prof_app_name or "" }}';
-        if (currentUploadTarget.docName) {
-          await apiFetch('frappe.client.set_value', {
-            doctype: 'Applicant Document', name: currentUploadTarget.docName,
-            fieldname: 'file', value: fileUrl
-          });
-        } else {
-          await apiFetch('frappe.client.insert', {
-            doc: {
-              doctype: 'Applicant Document', applicant: applicantId,
-              document_type: currentUploadTarget.type, file: fileUrl, docstatus: 1
-            }
-          });
-        }
+        throw new Error('This document type does not map to a profile field.');
       }
       
       progFill.style.width = '100%';
