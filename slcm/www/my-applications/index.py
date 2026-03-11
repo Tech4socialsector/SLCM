@@ -169,57 +169,58 @@ def get_context(context):
         context.selected_app = applicant
 
         # ── Stage tracker ──────────────────────────────────────────────
-        try:
-            cycle_stages = frappe.get_all(
-                "Admission Cycle Stage",
-                filters={"parent": applicant.admission_cycle},
-                fields=["stage_name", "idx"],
-                order_by="idx asc",
-                ignore_permissions=True
-            ) or []
-            # Note: The prompt says Admission Stage Config, but I'll check what exists.
-            # I'll use a safer check for cycle stages.
-        except Exception:
-            cycle_stages = []
-
-        # Determine current stage index
-        current = (applicant.get("current_stage_name") or 
-                   applicant.get("current_stage") or 
-                   applicant.get("application_status") or "")
-        
-        # Check if current stage is a link/ID, fetch name
-        if current and frappe.db.exists("Stage Master", current):
-            current = frappe.db.get_value("Stage Master", current, "stage_name") or current
-
         stages_with_state = []
-        found_active = False
-        
-        # Try to get stages from Admission Stage Config if Admission Cycle Stage failed
-        if not cycle_stages:
-            try:
-                cycle_stages = frappe.get_all(
-                    "Admission Stage Config",
-                    filters={"admission_cycle": applicant.admission_cycle},
-                    fields=["stage_name", "sequence as idx"],
-                    order_by="sequence asc",
-                    ignore_permissions=True
-                )
-            except Exception: pass
+        try:
+            # Load all enabled stages for this cycle
+            all_cycle_stages = frappe.get_all(
+                "Admission Cycle Stage",
+                filters={
+                    "parent": applicant.admission_cycle,
+                    "is_enabled": 1
+                },
+                fields=[
+                    "stage_name", "stage_type", "applicable_workflow",
+                    "sequence_no", "application_status"
+                ],
+                order_by="sequence_no asc",
+                ignore_permissions=True
+            )
 
-        for s in cycle_stages:
-            sname = (s.get("stage_name") if hasattr(s,"get") else s.stage_name) or ""
-            if sname == current and not found_active:
-                state = "active"
-                found_active = True
-            elif not found_active:
-                state = "completed"
-            else:
-                state = "pending"
-            stages_with_state.append({"name": sname, "state": state})
+            if all_cycle_stages:
+                # Filter stages by intake_type
+                intake = applicant.intake_type or "CLAT"
+                filtered_stages = [
+                    s for s in all_cycle_stages
+                    if s.applicable_workflow == "All" or s.applicable_workflow == intake
+                ]
+
+                # Find the active stage by matching application_status
+                current_status = applicant.application_status
+                active_index = -1
+                for i, s in enumerate(filtered_stages):
+                    if s.application_status == current_status:
+                        active_index = i
+                        break
+
+                for i, s in enumerate(filtered_stages):
+                    state = "pending"
+                    if active_index != -1:
+                        if i < active_index:
+                            state = "completed"
+                        elif i == active_index:
+                            state = "active"
+                    
+                    stages_with_state.append({
+                        "name": s.stage_name or s.stage_type,
+                        "state": state
+                    })
+        except Exception as e:
+            frappe.log_error(f"Stage tracker context error: {e}")
 
         # Fallback: if no cycle stages, build from application_status
         if not stages_with_state:
             statuses = ["Submitted", "Under Review", "Interview", "Decision"]
+            current = applicant.get("application_status") or "Draft"
             current_lower = str(current).lower()
             found = False
             for st in statuses:

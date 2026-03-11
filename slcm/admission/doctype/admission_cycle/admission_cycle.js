@@ -66,10 +66,6 @@ frappe.ui.form.on("Admission Cycle", {
                     );
                 }, __("Actions"));
             }
-
-            frm.add_custom_button(__("Preview Portal"), function () {
-                window.open("/desk/applicant-portal", "_blank");
-            }, __("Actions"));
         }
     },
 

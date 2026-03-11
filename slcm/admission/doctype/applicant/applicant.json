@@ -187,9 +187,9 @@
    "allow_on_submit": 1,
    "default": "Draft",
    "fieldname": "application_status",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Application Status",
-   "options": "Draft\nSubmitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nFee Paid"
+   "options": "Applicant Status"
   },
   {
    "fieldname": "personal_information_tab",
@@ -1026,8 +1026,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "make_attachments_public": 1,
- "modified": "2026-03-11 12:37:54.072576",
+ "modified": "2026-03-11 00:36:51.930141",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

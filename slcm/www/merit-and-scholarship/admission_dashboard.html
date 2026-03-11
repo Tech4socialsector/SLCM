@@ -318,8 +318,8 @@
   }
   .doc-rows-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 24px;
+    grid-template-columns: 1fr;
+    gap: 12px;
     margin-top: 16px;
   }
   .doc-row {
@@ -589,15 +589,9 @@
               <span style="font-family:'Material Symbols Outlined';font-size:20px;">lock_reset</span>
               Change Password
             </div>
-            <!-- Logout -->
-            <div class="adm-menu-item"
-                 onclick="window.location.href='/logout'"
-                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#ef4444;transition:all 0.15s;margin-bottom:4px;"
-                 onmouseover="this.style.background='#fff5f5'"
-                 onmouseout="this.style.background='transparent'">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;color:#ef4444;">logout</span>
+
+            <div class="adm-menu-item danger" onclick="window.doLogout()">
+              <span class="ms-icon" style="color:var(--danger)">logout</span>
               Logout
             </div>
 
@@ -1152,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── Profile Edit Modal ──────────────────────────────────────
 function openProfileEditModal() {
-  var pd = {{ profile_data | tojson if profile_data else '{}' }};
+  var pd = {{ profile_data_json | safe if profile_data_json else '{}' }};
   document.getElementById('edit-mobile').value      = pd.mobile_number          || '';
   document.getElementById('edit-dob').value         = pd.date_of_birth          || '';
   document.getElementById('edit-gender').value      = pd.gender                 || '';

@@ -25,25 +25,22 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; font-family: 'Lexend', sans-serif; background: #f1f3f5; overflow-x: hidden; }
 
-    /* ─── TOAST ─── */
-    #lp-toast-wrap {
-      position: fixed; bottom: 20px; left: 20px; z-index: 99999;
-      display: flex; flex-direction: column-reverse; gap: 10px; pointer-events: none;
+    /* ─── NOTIFICATIONS ─── */
+    .lp-notify {
+      display: none; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 8px; margin-bottom: 20px;
+      font-size: 13px; font-weight: 600; animation: fadeIn .2s ease;
     }
-    .lp-toast {
-      display: flex; align-items: center; gap: 10px;
-      padding: 12px 18px; border-radius: 10px; min-width: 260px; max-width: 360px;
-      font-size: 13px; font-weight: 600; color: #fff;
-      box-shadow: 0 8px 24px rgba(0,0,0,.18);
-      animation: toastIn .25s ease; pointer-events: auto;
-    }
-    .lp-toast.success { background: #16a34a; }
-    .lp-toast.error   { background: #dc2626; }
-    .lp-toast.info    { background: #2563eb; }
-    .lp-toast .material-symbols-outlined { font-size: 20px; flex-shrink: 0; }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateX(-20px); }
-      to   { opacity: 1; transform: none; }
+    .lp-notify.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .lp-notify.error   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .lp-notify.info    { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .lp-notify .material-symbols-outlined { font-size: 18px; flex-shrink: 0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+
+    /* ─── FIELD ERRORS ─── */
+    .lp-field-error {
+      color: #dc2626; font-size: 11px; font-weight: 600;
+      margin-top: 5px; display: none; animation: fadeIn .2s ease;
     }
 
     /* ─── LAYOUT ─── */
@@ -55,10 +52,6 @@
       background: #fff; display: flex; flex-direction: column;
       justify-content: center; padding: 52px 48px;
       box-shadow: 4px 0 24px rgba(0,0,0,.07); position: relative; z-index: 2;
-    }
-    @media (max-width: 860px) {
-      .lp-left  { flex: 1; width: 100%; padding: 36px 24px; }
-      .lp-right { display: none; }
     }
 
     /* brand */
@@ -113,11 +106,6 @@
     }
     .pw-btn .material-symbols-outlined { font-size: 18px; }
     .lp-field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
-
-    /* checkbox */
-    .lp-check { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
-    .lp-check input { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; }
-    .lp-check label { font-size: 12px; color: #4b5563; cursor: pointer; }
 
     /* buttons */
     .lp-btn {
@@ -276,12 +264,25 @@
     .ann-mcontent { font-size: 13px; color: #4b5563; line-height: 1.7; }
     .ann-mcontent p  { margin-bottom: 10px; }
     .ann-mcontent ul { padding-left: 18px; margin-bottom: 10px; }
+
+    /* ─── RESPONSIVE REFINEMENTS ─── */
+    @media (max-width: 860px) {
+      .lp-left  { flex: 1; width: 100%; padding: 48px 32px; }
+      .lp-right { display: none; }
+    }
+    @media (max-width: 480px) {
+      .lp-left { padding: 32px 20px; }
+      .lp-heading { font-size: 24px; }
+      .lp-sub { font-size: 12px; margin-bottom: 24px; }
+      .lp-tabs { margin-bottom: 20px; }
+      .lp-tab { padding: 8px 16px; font-size: 12px; }
+      .lp-support-grid { grid-template-columns: 1fr; }
+      .lp-btn { font-size: 12px; padding: 11px; }
+      .lp-support { margin-top: 30px; }
+    }
   </style>
 </head>
 <body>
-
-<!-- Toast container -->
-<div id="lp-toast-wrap"></div>
 
 <div class="lp-wrap">
 
@@ -313,11 +314,15 @@
       <button class="lp-tab"        id="tab-register" onclick="lpTab('register')">Register</button>
     </div>
 
+    <!-- ── LOGIN PANEL ── -->
     <div id="panel-login">
+      <div id="lp-notify-login" class="lp-notify"></div>
+      
       <div class="lp-field">
-        <label class="lp-label" for="lp-email">Username</label>
+        <label class="lp-label" for="lp-email">Username / Email</label>
         <input class="lp-input" type="text" id="lp-email"
                placeholder="username or email" autocomplete="username">
+        <div class="lp-field-error" id="err-lp-email"></div>
       </div>
       <div class="lp-field">
         <div class="lp-row">
@@ -331,11 +336,8 @@
             <span class="material-symbols-outlined" id="lp-eye">visibility</span>
           </button>
         </div>
+        <div class="lp-field-error" id="err-lp-pwd"></div>
       </div>
-      <!-- <div class="lp-check">
-        <input type="checkbox" id="lp-remember">
-        <label for="lp-remember">Keep me logged in</label>
-      </div> -->
       <button class="lp-btn" id="lp-login-btn" onclick="doLogin()">
         <div class="lp-btn-spin" id="lp-login-spin"></div>
         <span id="lp-login-label">Login</span>
@@ -344,21 +346,28 @@
 
     <!-- ── REGISTER PANEL ── -->
     <div id="panel-register" style="display:none;">
+      <div id="lp-notify-register" class="lp-notify"></div>
+
       <div class="lp-field">
         <label class="lp-label" for="reg-name">Name of the Applicant</label>
         <input class="lp-input" type="text" id="reg-name"
                placeholder="Your full name" autocomplete="name">
+        <div class="lp-field-error" id="err-reg-name"></div>
       </div>
       <div class="lp-field">
         <label class="lp-label" for="reg-mobile">Mobile Number</label>
         <input class="lp-input" type="tel" id="reg-mobile"
-               placeholder="e.g. 9876543210" autocomplete="tel">
-        <div class="lp-field-hint">A verification email will be sent to set your password.</div>
+               placeholder="e.g. 9876543210" autocomplete="tel"
+               oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+               maxlength="15">
+        <div class="lp-field-error" id="err-reg-mobile"></div>
       </div>
       <div class="lp-field">
         <label class="lp-label" for="reg-email">Email Address</label>
         <input class="lp-input" type="email" id="reg-email"
                placeholder="your @email.com" autocomplete="email">
+        <div class="lp-field-hint">A verification email will be sent to set your password.</div>
+        <div class="lp-field-error" id="err-reg-email"></div>
       </div>
       <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
         <div class="lp-btn-spin" id="lp-reg-spin"></div>
@@ -513,19 +522,24 @@ var LP_ANN = [
 
 var LP_CSRF = "{{ csrf_token or '' }}";
 
-/* ── TOAST ── */
-function lpToast(msg, type) {
+/* ── NOTIFICATIONS ── */
+function lpNotify(msg, type, panel) {
+  var target = panel === 'login' ? 'lp-notify-login' : 'lp-notify-register';
+  var el = document.getElementById(target);
+  if (!el) return;
+  
+  if (!msg) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  
   type = type || 'info';
   var icons = { success: 'check_circle', error: 'error', info: 'info' };
-  var el = document.createElement('div');
-  el.className = 'lp-toast ' + type;
+  
+  el.className = 'lp-notify ' + type;
   el.innerHTML = '<span class="material-symbols-outlined">' + icons[type] + '</span>' + msg;
-  document.getElementById('lp-toast-wrap').appendChild(el);
-  setTimeout(function() {
-    el.style.transition = 'opacity .3s';
-    el.style.opacity = '0';
-    setTimeout(function() { el.remove(); }, 300);
-  }, 3800);
+  el.style.display = 'flex';
 }
 
 /* ── TABS ── */
@@ -534,6 +548,15 @@ function lpTab(t) {
   document.getElementById('panel-register').style.display = t==='register' ? '' : 'none';
   document.getElementById('tab-login').classList.toggle('active',    t==='login');
   document.getElementById('tab-register').classList.toggle('active', t==='register');
+  
+  // Clear all errors when switching
+  lpNotify(null, null, 'login');
+  lpNotify(null, null, 'register');
+  document.querySelectorAll('.lp-field-error').forEach(el => {
+    el.textContent = '';
+    el.style.display = 'none';
+  });
+  document.querySelectorAll('.lp-input').forEach(el => el.classList.remove('invalid'));
 }
 
 function lpTogglePw() {
@@ -544,19 +567,39 @@ function lpTogglePw() {
 }
 
 /* ── VALIDATION ── */
-function lpValidate(fields) {
+function lpFieldError(fieldId, msg) {
+  var errEl = document.getElementById('err-' + fieldId);
+  var inpEl = document.getElementById(fieldId);
+  if (errEl) {
+    errEl.textContent = msg || '';
+    errEl.style.display = msg ? 'block' : 'none';
+  }
+  if (inpEl) {
+    inpEl.classList.toggle('invalid', !!msg);
+  }
+}
+
+function lpValidate(fields, panel) {
   var ok = true;
+  lpNotify(null, null, panel); // Clear top notify
+  
   fields.forEach(function(f) {
+    lpFieldError(f.id, null); // Clear field error
+    
     var el = document.getElementById(f.id);
-    el.classList.remove('invalid');
-    if (!el.value.trim()) {
-      el.classList.add('invalid');
-      lpToast(f.msg, 'error');
+    var val = el.value.trim();
+    
+    if (!val) {
+      lpFieldError(f.id, f.msg);
       ok = false;
     } else if (f.type === 'email') {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value.trim())) {
-        el.classList.add('invalid');
-        lpToast('Please enter a valid email address.', 'error');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+        lpFieldError(f.id, 'Please enter a valid email address.');
+        ok = false;
+      }
+    } else if (f.type === 'mobile') {
+      if (!/^\d{10,15}$/.test(val)) {
+        lpFieldError(f.id, 'Please enter a valid mobile number (10-15 digits).');
         ok = false;
       }
     }
@@ -566,11 +609,10 @@ function lpValidate(fields) {
 
 /* ── LOGIN ── */
 async function doLogin() {
-  // Validate
   if (!lpValidate([
     { id: 'lp-email', type: 'text', msg: 'Please enter your username.' },
     { id: 'lp-pwd',   type: 'text', msg: 'Please enter your password.' }
-  ])) return;
+  ], 'login')) return;
 
   var btn   = document.getElementById('lp-login-btn');
   var spin  = document.getElementById('lp-login-spin');
@@ -593,18 +635,14 @@ async function doLogin() {
     });
     var data = await resp.json();
 
-    // Frappe returns {"message":"Logged In"} on success
     if (resp.ok && (data.message === 'Logged In' || data.home_page)) {
-      lpToast('Login successful! Redirecting…', 'success');
+      lpNotify('Login successful! Redirecting…', 'success', 'login');
       setTimeout(async function() {
         try {
-          // If we had a redirect in the URL, use it (especially for desk /app)
           if (redir && (redir.startsWith('/app') || redir.startsWith('/desk'))) {
             window.location.href = redir;
             return;
           }
-
-          // Otherwise ask the backend for the best landing page
           var r2 = await fetch('/api/method/slcm.api.user.get_login_redirect', {
             method: 'GET',
             headers: { 'X-Frappe-CSRF-Token': LP_CSRF }
@@ -618,13 +656,13 @@ async function doLogin() {
     } else {
       var errMsg = data.message || 'Invalid credentials. Please try again.';
       if (errMsg === 'No App') errMsg = 'Incorrect email or password.';
-      lpToast(errMsg, 'error');
+      lpNotify(errMsg, 'error', 'login');
       btn.disabled = false;
       spin.style.display = 'none';
       label.textContent = 'Login';
     }
   } catch(e) {
-    lpToast('Connection error. Please try again.', 'error');
+    lpNotify('Connection error. Please try again.', 'error', 'login');
     btn.disabled = false;
     spin.style.display = 'none';
     label.textContent = 'Login';
@@ -634,10 +672,10 @@ async function doLogin() {
 /* ── REGISTER ── */
 async function doRegister() {
   if (!lpValidate([
-    { id: 'reg-name',   type: 'text',  msg: 'Please enter your full name.' },
-    { id: 'reg-email',  type: 'email', msg: 'Please enter a valid email address.' },
-    { id: 'reg-mobile', type: 'text',  msg: 'Please enter your mobile number.' }
-  ])) return;
+    { id: 'reg-name',   type: 'text',   msg: 'Please enter your full name.' },
+    { id: 'reg-mobile', type: 'mobile', msg: 'Please enter your mobile number.' },
+    { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
+  ], 'register')) return;
 
   var btn   = document.getElementById('lp-reg-btn');
   var spin  = document.getElementById('lp-reg-spin');
@@ -667,25 +705,23 @@ async function doRegister() {
     });
     var data = await resp.json();
 
-    // Frappe sign_up returns [1, "msg"] on success, [0, "msg"] on failure
     var result = data.message;
     if (result && result[0] === 1) {
-      lpToast('Account created! Check your email to set your password.', 'success');
-      // Clear fields and switch to login
+      lpNotify('Account created! Check your email to set your password.', 'success', 'register');
       document.getElementById('reg-name').value   = '';
       document.getElementById('reg-email').value  = '';
       document.getElementById('reg-mobile').value = '';
-      setTimeout(function() { lpTab('login'); }, 2000);
+      setTimeout(function() { lpTab('login'); }, 3000);
     } else {
       var msg = (result && result[1]) ? result[1] : 'Registration failed. Please try again.';
-      lpToast(msg, 'error');
+      lpNotify(msg, 'error', 'register');
     }
   } catch(e) {
-    lpToast('Connection error. Please try again.', 'error');
+    lpNotify('Connection error. Please try again.', 'error', 'register');
   } finally {
     btn.disabled = false;
     spin.style.display = 'none';
-    label.textContent = 'Create Account';
+    label.textContent = 'Register';
   }
 }
 
@@ -727,7 +763,9 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   var panelLogin = document.getElementById('panel-login');
+  var panelReg = document.getElementById('panel-register');
   if (panelLogin && panelLogin.style.display !== 'none') doLogin();
+  else if (panelReg && panelReg.style.display !== 'none') doRegister();
 });
 </script>
 

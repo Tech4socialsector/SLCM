@@ -43,11 +43,6 @@ frappe.ui.form.on("Portal Announcement", {
                 });
             }, __("Actions"));
         }
-
-        // Preview on portal button
-        frm.add_custom_button(__("Preview on Portal"), function () {
-            window.open("/desk/applicant-portal", "_blank");
-        });
     },
 
     announcement_type: function (frm) {

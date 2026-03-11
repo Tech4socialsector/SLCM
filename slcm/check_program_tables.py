@@ -1,24 +1,25 @@
-
 import frappe
 
 def check_child_tables():
-    frappe.connect()
-    meta = frappe.get_meta("Program")
-    table_fields = meta.get_table_fields()
+    child_tables = [
+        "tabProgram Enrollment Course",
+        "tabProgram Media",
+        "tabProgram Curriculum Item",
+        "tabProgram Career Item",
+        "tabProgram Faculty Item"
+    ]
     
-    for df in table_fields:
-        child_doctype = df.options
-        table_name = "tab" + child_doctype
-        print(f"Checking table: {table_name} for DocType: {child_doctype}")
+    for table in child_tables:
+        print(f"Checking table: {table}")
         try:
-            columns = frappe.db.get_table_columns(child_doctype)
+            columns = frappe.db.get_table_columns(table)
+            print(f"Columns: {columns}")
             if "parent" not in columns:
-                print(f"FAILED: 'parent' column missing in {table_name}")
-            else:
-                print(f"SUCCESS: 'parent' column found in {table_name}")
+                print(f"!!! MISSING 'parent' in {table}")
         except Exception as e:
-            print(f"ERROR: {e}")
-    frappe.destroy()
+            print(f"Error checking {table}: {e}")
 
 if __name__ == "__main__":
+    frappe.connect()
     check_child_tables()
+    frappe.destroy()
