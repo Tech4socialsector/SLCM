@@ -1438,56 +1438,60 @@ else 'Admissions Open') %}
     if (fill) setTimeout(() => fill.style.width = '{{ _completion_pct }}%', 300);
   });
 
-async function loadDistricts(state, selectedDistrict = null) {
-  const citySelect = document.getElementById('edit-city');
-  if (!state) {
-    citySelect.innerHTML = '<option value="">Select City</option>';
-    return;
-  }
-  citySelect.innerHTML = '<option value="">Loading...</option>';
-  try {
-    const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
-    let html = '<option value="">Select City</option>';
-    districts.forEach(d => {
-      html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
-    });
-    citySelect.innerHTML = html;
-  } catch (e) {
-    citySelect.innerHTML = '<option value="">Error loading cities</option>';
-  }
-}
-
-// ── Profile Edit Modal ──────────────────────────────────────
-function openProfileEditModal() {
-  var pd = {{ profile_data_json | safe if profile_data_json else '{}' }};
-  document.getElementById('edit-mobile').value      = pd.mobile_number          || '';
-  document.getElementById('edit-dob').value         = pd.date_of_birth          || '';
-  document.getElementById('edit-gender').value      = pd.gender                 || '';
-  document.getElementById('edit-nationality').value = pd.nationality            || '';
-  document.getElementById('edit-address').value     = pd.correspondence_address || '';
-  document.getElementById('edit-state').value       = pd.state                  || '';
-  pincodeInput.value     = pd.pincode                || '';
-
-  // Prevent letters in mobile
-  mobileInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
-  // Prevent letters in pincode
-  pincodeInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
-
-  // Load districts for the current state
-  if (pd.state) {
-    loadDistricts(pd.state, pd.city);
-  } else {
-    document.getElementById('edit-city').innerHTML = '<option value="">Select City</option>';
+  async function loadDistricts(state, selectedDistrict = null) {
+    const citySelect = document.getElementById('edit-city');
+    if (!state) {
+      citySelect.innerHTML = '<option value="">Select City</option>';
+      return;
+    }
+    citySelect.innerHTML = '<option value="">Loading...</option>';
+    try {
+      const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
+      let html = '<option value="">Select City</option>';
+      districts.forEach(d => {
+        html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
+      });
+      citySelect.innerHTML = html;
+    } catch (e) {
+      citySelect.innerHTML = '<option value="">Error loading cities</option>';
+    }
   }
 
-  document.getElementById('profile-edit-msg').textContent = '';
-  document.getElementById('profile-edit-modal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
+  // ── Profile Edit Modal ──────────────────────────────────────
+  function openProfileEditModal() {
+    var pd = {{ profile_data_json | safe if profile_data_json else '{}' }};
+    var mobileInput = document.getElementById('edit-mobile');
+    var pincodeInput = document.getElementById('edit-pincode');
+
+    mobileInput.value = pd.mobile_number || '';
+    document.getElementById('edit-dob').value = pd.date_of_birth || '';
+    document.getElementById('edit-gender').value = pd.gender || '';
+    document.getElementById('edit-nationality').value = pd.nationality || '';
+    document.getElementById('edit-address').value = pd.correspondence_address || '';
+    document.getElementById('edit-state').value = pd.state || '';
+    pincodeInput.value = pd.pincode || '';
+
+    // Prevent letters
+    mobileInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
+    pincodeInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
+
+    // Load districts for the current state
+    if (pd.state) {
+      loadDistricts(pd.state, pd.city);
+    } else {
+      document.getElementById('edit-city').innerHTML = '<option value="">Select City</option>';
+    }
+
+    document.getElementById('profile-edit-msg').textContent = '';
+    document.getElementById('profile-edit-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
   function closeProfileEditModal() {
     document.getElementById('profile-edit-modal').style.display = 'none';
     document.body.style.overflow = '';
   }
+
   document.getElementById('profile-edit-modal')?.addEventListener('click', function (e) {
     if (e.target === this) closeProfileEditModal();
   });
@@ -1510,111 +1514,43 @@ function openProfileEditModal() {
     // ── Validation ──────────────────────────────────────────────
     msg.style.color = '#dc2626';
 
-// ── Profile Photo Upload ─────────────────────────────────────
-function handleProfilePhotoUpload(input) {
-  var statusEl = document.getElementById('profile-photo-status');
-  if (!input.files || !input.files[0]) return;
-  var file = input.files[0];
-  if (file.size > 2 * 1024 * 1024) {
-    statusEl.textContent = 'File too large (max 2 MB)'; statusEl.style.color = '#dc2626'; return;
-  }
-  statusEl.textContent = 'Uploading…'; statusEl.style.color = '#64748b';
-
-  // Preview immediately
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var initials = document.getElementById('profile-avatar-initials');
-    var img      = document.getElementById('profile-avatar-img');
-    if (initials) initials.style.display = 'none';
-    if (!img) {
-      img = document.createElement('img');
-      img.id = 'profile-avatar-img';
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-      document.getElementById('profile-avatar-display').appendChild(img);
-    }
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-
-  var fd = new FormData();
-  fd.append('file', file, file.name);
-  fd.append('is_private', '0');
-  fd.append('folder', 'Home/Attachments');
-
-  fetch('/api/method/upload_file', {
-    method: 'POST', body: fd,
-    headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
-  })
-  .then(r => r.json())
-  .then(async data => {
-    if (data?.message?.file_url) {
-      const fileUrl = data.message.file_url;
-      try {
-        const message = await apiFetch('slcm.admission.api.profile.update_profile',
-          { candidate_photo: fileUrl });
-        if (message?.status === 'ok') {
-          statusEl.textContent = '✓ Photo updated'; statusEl.style.color = '#16a34a';
-          
-          // Immediate UI update for photo across page
-          const avatars = document.querySelectorAll('#profile-avatar-img, #adm-avatar-img');
-          avatars.forEach(img => { img.src = fileUrl; });
-          
-          // Handle Profile Avatar swap (Initials -> Image)
-          const profDisplay = document.getElementById('profile-avatar-display');
-          if (profDisplay && !document.getElementById('profile-avatar-img')) {
-            const init = document.getElementById('profile-avatar-initials');
-            if (init) init.remove();
-            const newImg = document.createElement('img');
-            newImg.id = 'profile-avatar-img';
-            newImg.src = fileUrl;
-            newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-            profDisplay.appendChild(newImg);
-          }
-
-          // Handle Navbar Avatar swap (Initials -> Image)
-          const navBtn = document.getElementById('adm-avatar-btn');
-          if (navBtn && !document.getElementById('adm-avatar-img')) {
-            const init = document.getElementById('adm-avatar-init');
-            if (init) init.remove();
-            const newImg = document.createElement('img');
-            newImg.id = 'adm-avatar-img';
-            newImg.src = fileUrl;
-            newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
-            navBtn.prepend(newImg);
-          }
-        }
-      } catch(e) {
-        statusEl.textContent = 'Error updating photo'; statusEl.style.color = '#dc2626';
-      }
-    }
-
     if (args.date_of_birth) {
       let selectedDate = new Date(args.date_of_birth);
       let today = new Date();
       if (selectedDate >= today) {
-        msg.textContent = 'Date of birth must be in the past.'; return;
+        msg.textContent = 'Date of birth must be in the past.';
+        return;
       }
     }
 
     if (args.pincode) {
       if (!/^[0-9]{6}$/.test(args.pincode)) {
-        msg.textContent = 'Pincode must be exactly 6 digits.'; return;
+        msg.textContent = 'Pincode must be exactly 6 digits.';
+        return;
       }
     }
 
-    btn.disabled = true; btn.textContent = 'Saving…'; msg.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    msg.textContent = '';
+    
     try {
       const message = await apiFetch('slcm.admission.api.profile.update_profile', args);
-      btn.disabled = false; btn.textContent = 'Save Changes';
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
       if (message && message.status === 'ok') {
-        msg.style.color = '#16a34a'; msg.textContent = '✓ Profile updated successfully.';
+        msg.style.color = '#16a34a';
+        msg.textContent = '✓ Profile updated successfully.';
         setTimeout(() => window.location.reload(), 900);
       } else {
-        msg.style.color = '#dc2626'; msg.textContent = 'Something went wrong. Please try again.';
+        msg.style.color = '#dc2626';
+        msg.textContent = 'Something went wrong. Please try again.';
       }
     } catch (e) {
-      btn.disabled = false; btn.textContent = 'Save Changes';
-      msg.style.color = '#dc2626'; msg.textContent = e.message || 'Error saving. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+      msg.style.color = '#dc2626';
+      msg.textContent = e.message || 'Error saving. Please try again.';
     }
   }
 
@@ -1624,9 +1560,12 @@ function handleProfilePhotoUpload(input) {
     if (!input.files || !input.files[0]) return;
     var file = input.files[0];
     if (file.size > 2 * 1024 * 1024) {
-      statusEl.textContent = 'File too large (max 2 MB)'; statusEl.style.color = '#dc2626'; return;
+      statusEl.textContent = 'File too large (max 2 MB)';
+      statusEl.style.color = '#dc2626';
+      return;
     }
-    statusEl.textContent = 'Uploading…'; statusEl.style.color = '#64748b';
+    statusEl.textContent = 'Uploading…';
+    statusEl.style.color = '#64748b';
 
     // Preview immediately
     var reader = new FileReader();
@@ -1650,24 +1589,58 @@ function handleProfilePhotoUpload(input) {
     fd.append('folder', 'Home/Attachments');
 
     fetch('/api/method/upload_file', {
-      method: 'POST', body: fd,
+      method: 'POST',
+      body: fd,
       headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
     })
       .then(r => r.json())
       .then(async data => {
         if (data?.message?.file_url) {
+          const fileUrl = data.message.file_url;
           try {
-            const message = await apiFetch('slcm.admission.api.profile.update_profile',
-              { candidate_photo: data.message.file_url });
+            const message = await apiFetch('slcm.admission.api.profile.update_profile', { candidate_photo: fileUrl });
             if (message?.status === 'ok') {
-              statusEl.textContent = '✓ Photo updated'; statusEl.style.color = '#16a34a';
+              statusEl.textContent = '✓ Photo updated';
+              statusEl.style.color = '#16a34a';
+              
+              // Immediate UI update for photo across page
+              const avatars = document.querySelectorAll('#profile-avatar-img, #adm-avatar-img');
+              avatars.forEach(img => { img.src = fileUrl; });
+              
+              // Handle Profile Avatar swap (Initials -> Image)
+              const profDisplay = document.getElementById('profile-avatar-display');
+              if (profDisplay && !document.getElementById('profile-avatar-img')) {
+                const init = document.getElementById('profile-avatar-initials');
+                if (init) init.remove();
+                const newImg = document.createElement('img');
+                newImg.id = 'profile-avatar-img';
+                newImg.src = fileUrl;
+                newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+                profDisplay.appendChild(newImg);
+              }
+
+              // Handle Navbar Avatar swap (Initials -> Image)
+              const navBtn = document.getElementById('adm-avatar-btn');
+              if (navBtn && !document.getElementById('adm-avatar-img')) {
+                const init = document.getElementById('adm-avatar-init');
+                if (init) init.remove();
+                const newImg = document.createElement('img');
+                newImg.id = 'adm-avatar-img';
+                newImg.src = fileUrl;
+                newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+                navBtn.prepend(newImg);
+              }
             }
           } catch (e) {
-            statusEl.textContent = 'Error updating photo'; statusEl.style.color = '#dc2626';
+            statusEl.textContent = 'Error updating photo';
+            statusEl.style.color = '#dc2626';
           }
         }
       })
-      .catch(() => { statusEl.textContent = 'Upload failed'; statusEl.style.color = '#dc2626'; });
+      .catch(() => {
+        statusEl.textContent = 'Upload failed';
+        statusEl.style.color = '#dc2626';
+      });
   }
 </script>
 {% endblock %}
