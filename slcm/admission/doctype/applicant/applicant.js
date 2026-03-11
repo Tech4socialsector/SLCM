@@ -2,6 +2,20 @@ frappe.ui.form.on("Applicant", {
 
     // ── REFRESH ──────────────────────────────
     refresh: function (frm) {
+        // Auto-refresh when application_status is updated from Entrance Test Seat Allocation
+        if (!window._applicant_status_realtime_subscribed) {
+            window._applicant_status_realtime_subscribed = true;
+            frappe.realtime.on("applicant_application_status_updated", function (data) {
+                const frm = cur_frm;
+                if (frm && frm.doctype === "Applicant" && frm.doc && frm.doc.name === data.docname) {
+                    frm.reload_doc();
+                    frappe.show_alert({
+                        message: __("Application status was updated to {0}", [data.application_status || ""]),
+                        indicator: "blue",
+                    }, 4);
+                }
+            });
+        }
 
         // Status badge in dashboard headline
         const status_colors = {
@@ -10,6 +24,10 @@ frappe.ui.form.on("Applicant", {
             "Under Evaluation": "blue",
             "Shortlisted": "orange",
             "Interview Scheduled": "purple",
+            "Entrance Test Scheduled": "purple",
+            "Interview Excempted": "teal",
+            "Entrance Test Exempted": "teal",
+            "Excempted Entrance Test And Interview": "teal",
             "Offered": "green",
             "Accepted": "darkgreen",
             "Rejected": "red",
