@@ -83,7 +83,6 @@
   "hsc_percentage",
   "column_break_mlet",
   "class_xii_year_of_completion",
-  "class_xii_cgpa",
   "column_break_ycmo",
   "class_xii_board",
   "class_xii_marksheet",
@@ -186,7 +185,7 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "Submitted",
+   "default": "Draft",
    "fieldname": "application_status",
    "fieldtype": "Select",
    "label": "Application Status",
@@ -395,12 +394,6 @@
    "fieldname": "class_xii_board",
    "fieldtype": "Data",
    "label": "Board (Class XII/Equivalent)"
-  },
-  {
-   "fieldname": "class_xii_cgpa",
-   "fieldtype": "Float",
-   "label": "If CGPA, maximum CPGA (Class XII/Equivalent)",
-   "precision": "2"
   },
   {
    "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
@@ -1033,7 +1026,8 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-10 18:16:37.678498",
+ "make_attachments_public": 1,
+ "modified": "2026-03-11 12:37:54.072576",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

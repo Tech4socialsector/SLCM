@@ -37,7 +37,7 @@ frappe.ui.form.on("Applicant", {
         );
 
         // Custom buttons for submitted docs
-        if (frm.doc.docstatus === 1) {
+        if (frm.doc.application_status && frm.doc.application_status !== "Draft") {
             frm.add_custom_button(__("View Campus Status"), function () {
                 frappe.set_route("List", "Applicant Campus Preference", {
                     applicant: frm.doc.name
@@ -74,6 +74,12 @@ frappe.ui.form.on("Applicant", {
 
     // ── VALIDATE (runs before every save / submit) ──
     validate: function (frm) {
+        if (frm.doc.application_status === "Draft") {
+            frm.ignore_mandatory = true;
+        } else {
+            frm.ignore_mandatory = false;
+        }
+
         let errors = [];
 
         // HSC Percentage
@@ -109,9 +115,9 @@ frappe.ui.form.on("Applicant", {
             });
         }
 
-        // Declaration must be accepted
-        if (!frm.doc.declaration_undertaking) {
-            errors.push(__("You must accept the Declaration & Undertaking before saving."));
+        // Declaration must be accepted when submitting
+        if (frm.doc.application_status === "Submitted" && !frm.doc.declaration_undertaking) {
+            errors.push(__("You must accept the Declaration & Undertaking before submitting."));
         }
 
         // Campus preference duplicates

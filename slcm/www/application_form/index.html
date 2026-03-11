@@ -1,6 +1,7 @@
 {% extends "slcm/www/admission_base.html" %}
 
-{% block title %}Application Form — {{ (portal_config.get('portal_title') if portal_config and portal_config.get else (portal_config.portal_title if portal_config else 'Admissions')) }}{% endblock %}
+{% block title %}Application Form — {{ (portal_config.get('portal_title') if portal_config and portal_config.get else
+(portal_config.portal_title if portal_config else 'Admissions')) }}{% endblock %}
 
 {% block page_css %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -281,6 +282,24 @@
         margin-bottom: 1rem;
     }
 
+    .application-program-banner {
+        background: var(--slate-100, #f1f5f9);
+        border: 1px solid var(--slate-200, #e2e8f0);
+        color: var(--slate-700, #334155);
+        padding: 0.6rem 1rem;
+        border-radius: var(--radius-sm, 6px);
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .application-program-banner .application-program-label {
+        margin-right: 0.35rem;
+    }
+
+    .application-program-banner .application-program-name {
+        color: var(--slate-800, #1e293b);
+    }
+
     .btn-back-to-admission {
         display: inline-flex;
         align-items: center;
@@ -352,11 +371,13 @@
 
     /* Responsive: single column on small screens */
     @media (max-width: 640px) {
+
         .form-row.cols-2,
         .form-row.cols-3,
         .form-row.cols-4 {
             grid-template-columns: 1fr;
         }
+
         .portal-wrapper {
             padding: 1rem 1rem 3rem;
         }
@@ -439,6 +460,7 @@
         color: var(--navy);
         margin: 0;
     }
+
     .card-header-row h2.personal-info-title {
         border-bottom: 3px solid var(--navy);
         padding-bottom: 0.35rem;
@@ -458,26 +480,31 @@
         gap: 1.5rem;
         margin-bottom: 1.75rem;
     }
+
     .personal-info-photo-block .photo-cell {
         flex-shrink: 0;
     }
+
     .personal-info-photo-block .photo-label-buttons {
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
         min-height: 120px;
     }
+
     .personal-info-photo-block .photo-label-buttons .photo-caption {
         font-size: .8rem;
         font-weight: 700;
         color: var(--slate-700);
         margin: 0 0 .75rem 0;
     }
+
     .personal-info-photo-block .photo-label-buttons .photo-btn-row {
         display: flex;
         gap: .75rem;
         flex-wrap: wrap;
     }
+
     .personal-info-photo-block .btn-upload-image,
     .personal-info-photo-block .btn-download-image {
         padding: .5rem 1rem;
@@ -489,32 +516,39 @@
         background: var(--white);
         transition: var(--transition);
     }
+
     .personal-info-photo-block .btn-upload-image {
         border-color: var(--navy);
         color: var(--navy);
     }
+
     .personal-info-photo-block .btn-upload-image:hover {
         background: var(--navy-light);
     }
+
     .personal-info-photo-block .btn-download-image {
         border-color: var(--slate-400);
         color: var(--slate-600);
     }
+
     .personal-info-photo-block .btn-download-image:hover {
         background: var(--slate-100);
     }
+
     .personal-info-three-cols {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
         gap: 1.25rem 2rem;
         margin-bottom: 1.25rem;
     }
+
     .id-proof-upload-row {
         display: flex;
         align-items: center;
         gap: .75rem;
         flex-wrap: wrap;
     }
+
     .id-proof-upload-row .btn-upload-image {
         padding: .5rem 1rem;
         font-size: .8rem;
@@ -525,13 +559,20 @@
         background: var(--white);
         cursor: pointer;
     }
+
     .id-proof-upload-row .id-proof-filename {
         font-size: .85rem;
         color: var(--slate-600);
     }
+
     @media (max-width: 768px) {
-        .personal-info-three-cols { grid-template-columns: 1fr; }
-        .personal-info-photo-block { flex-direction: column; }
+        .personal-info-three-cols {
+            grid-template-columns: 1fr;
+        }
+
+        .personal-info-photo-block {
+            flex-direction: column;
+        }
     }
 
     /* ═══════════════════════════════════════════════
@@ -600,6 +641,12 @@
         border-color: var(--navy);
         background: var(--white);
         box-shadow: 0 0 0 4px rgba(15, 27, 76, .08);
+    }
+
+    input.fc[readonly] {
+        background: var(--slate-100, #f1f5f9);
+        color: var(--slate-700, #334155);
+        cursor: not-allowed;
     }
 
     .fc.is-error {
@@ -1485,6 +1532,7 @@
         max-height: 70vh;
         overflow-y: auto;
     }
+
     .toast-item.eligibility-error .toast-body {
         flex: 1;
         min-width: 0;
@@ -1492,25 +1540,35 @@
         line-height: 1.5;
         white-space: normal;
     }
+
     .toast-item.eligibility-error .toast-title {
         font-weight: 700;
         margin-bottom: 0.5rem;
     }
+
     .toast-item.eligibility-error .toast-programs {
         margin-top: 0.75rem;
         font-size: 0.8rem;
         border-top: 1px solid var(--slate-200);
         padding-top: 0.5rem;
     }
+
     .toast-item.eligibility-error .toast-programs div {
         padding: 0.25rem 0;
         border-bottom: 1px solid var(--slate-100);
     }
+
     .toast-item.eligibility-error .toast-programs div:last-child {
         border-bottom: none;
     }
-    .toast-item.eligibility-error .eligible-yes { color: var(--emerald); }
-    .toast-item.eligibility-error .eligible-no { color: var(--red); }
+
+    .toast-item.eligibility-error .eligible-yes {
+        color: var(--emerald);
+    }
+
+    .toast-item.eligibility-error .eligible-no {
+        color: var(--red);
+    }
 
     @keyframes toastIn {
         from {
@@ -1541,6 +1599,7 @@
         .progress-steps {
             flex-wrap: wrap;
         }
+
         .step-pill {
             flex: 1 1 calc(33.333% - 6px);
             min-width: 120px;
@@ -1601,10 +1660,21 @@
     <!-- ═══ Back to admission listing ─── -->
     <div class="application-form-back-row">
         <a href="/admission" class="btn-back-to-admission" title="Back to program listing">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            Back to Programs
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back
         </a>
     </div>
+
+    <!-- ═══ Program applied for (information only) ─── -->
+    {% if program_display_name %}
+    <div class="application-program-banner" role="status">
+        <span class="application-program-label">Applying for:</span>
+        <strong class="application-program-name">{{ program_display_name }}</strong>
+    </div>
+    {% endif %}
 
     <!-- ═══ PROGRESS STRIP ═══ -->
     <div class="progress-strip">
@@ -1617,7 +1687,9 @@
     <!-- ═══ Submitted application notice (read-only view) ─── -->
     {% if application_submitted %}
     <div id="submittedApplicationBanner" class="submitted-application-banner" role="alert">
-        <strong>Application already submitted.</strong> You have one application per admission cycle. You may edit your application below; only these fields cannot be changed after submission: Email Address, Candidate's Name, Mobile Number of Candidate.
+        <strong>Application already submitted.</strong> You have one application per admission cycle. You may edit your
+        application below; only these fields cannot be changed after submission: Email Address, Candidate's Name, Mobile
+        Number of Candidate.
     </div>
     {% endif %}
 
@@ -1660,21 +1732,26 @@
                                 <span class="field-error" id="err_candidate_photo">Student Photo is required</span>
                             </div>
                             <div class="photo-label-buttons">
-                                <div class="photo-caption">Student Photo (Max 1MB - Supported formats png, jpeg, jpg) <span class="req">*</span></div>
+                                <div class="photo-caption">Student Photo (Max 1MB - Supported formats png, jpeg, jpg)
+                                    <span class="req">*</span>
+                                </div>
                                 <div class="photo-btn-row">
-                                    <button type="button" class="btn-upload-image" onclick="document.getElementById('candidatePhoto').click()">UPLOAD IMAGE</button>
-                                    <button type="button" class="btn-download-image" onclick="downloadStudentPhoto()" title="Download current photo">DOWNLOAD IMAGE</button>
+                                    <button type="button" class="btn-upload-image"
+                                        onclick="document.getElementById('candidatePhoto').click()">UPLOAD
+                                        IMAGE</button>
+                                    <button type="button" class="btn-download-image" onclick="downloadStudentPhoto()"
+                                        title="Download current photo">DOWNLOAD IMAGE</button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Email full width -->
+                        <!-- Email full width (readonly in all statuses: draft, submitted, etc.) -->
                         <div class="form-row cols-1" style="margin-bottom:1.25rem;">
                             <div class="fg">
                                 <label>Email Address <span class="req">*</span></label>
-                                <input type="email" class="fc" name="email"
+                                <input type="email" class="fc" name="email" id="email"
                                     value="{{ frappe.session.user if frappe.session.user != 'Guest' else '' }}"
-                                    placeholder="email@example.com" required>
+                                    placeholder="email@example.com" required readonly>
                                 <span class="field-error" id="err_email">Valid email is required</span>
                             </div>
                         </div>
@@ -1691,7 +1768,8 @@
                                 <label>Date of Birth <span class="req">*</span></label>
                                 <input type="text" class="fc flatpickr" name="date_of_birth" id="date_of_birth"
                                     placeholder="DD/MM/YYYY" required>
-                                <span class="field-error" id="err_date_of_birth">Date of birth is required (must be 17+)</span>
+                                <span class="field-error" id="err_date_of_birth">Date of birth is required (must be
+                                    17+)</span>
                             </div>
                             <div class="fg">
                                 <label>Gender <span class="req">*</span></label>
@@ -1718,7 +1796,8 @@
                                         placeholder="10-digit number" maxlength="15" inputmode="numeric"
                                         oninput="onPhoneChange('mobile_number')">
                                 </div>
-                                <span class="field-error" id="err_mobile_number">Valid 10-digit mobile number required</span>
+                                <span class="field-error" id="err_mobile_number">Valid 10-digit mobile number
+                                    required</span>
                             </div>
                             <div class="fg">
                                 <label>Alternate Contact Number</label>
@@ -1773,11 +1852,15 @@
                                 </select>
                             </div>
                             <div class="fg">
-                                <label>ID Proof (Govt. issued photo ID, Max 5MB - Supported formats png, jpeg, jpg, pdf) <span class="req">*</span></label>
+                                <label>ID Proof (Govt. issued photo ID, Max 5MB - Supported formats png, jpeg, jpg, pdf)
+                                    <span class="req">*</span></label>
                                 <div class="id-proof-upload-row">
-                                    <input type="file" name="id_proof" id="id_proof" accept="image/png,image/jpeg,image/jpg,application/pdf"
-                                        onchange="handleFileUpload('id_proof', this)" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
-                                    <button type="button" class="btn-upload-image" onclick="document.getElementById('id_proof').click()">UPLOAD</button>
+                                    <input type="file" name="id_proof" id="id_proof"
+                                        accept="image/png,image/jpeg,image/jpg,application/pdf"
+                                        onchange="handleFileUpload('id_proof', this)"
+                                        style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+                                    <button type="button" class="btn-upload-image"
+                                        onclick="document.getElementById('id_proof').click()">UPLOAD</button>
                                     <span class="id-proof-filename" id="id_proof_name"></span>
                                 </div>
                                 <div class="file-zone" id="fz_id_proof" style="display:none;">
@@ -1864,7 +1947,8 @@
                         </div>
 
                         <!-- Parent & Guardian Details (under Student Information) -->
-                        <div class="card-header-row" style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--slate-200);">
+                        <div class="card-header-row"
+                            style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--slate-200);">
                             <div class="card-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor" stroke-width="2">
@@ -1903,8 +1987,17 @@
                                 </div>
                                 <span class="field-error" id="err_father_mobile"></span>
                             </div>
-                            <div class="fg"><label>Father Occupation</label><input type="text" class="fc"
-                                    name="father_occupation" placeholder="e.g. Engineer, Teacher"></div>
+                            <div class="fg"><label>Father Occupation</label>
+                                <select class="fc" name="father_occupation">
+                                    <option value="">Select</option>
+                                    <option value="Government">Government</option>
+                                    <option value="Private Sector">Private Sector</option>
+                                    <option value="Self Employed">Self Employed</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Agriculture">Agriculture</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="section-sub">Mother Details</div>
@@ -1932,8 +2025,17 @@
                                 </div>
                                 <span class="field-error" id="err_mother_mobile"></span>
                             </div>
-                            <div class="fg"><label>Mother Occupation</label><input type="text" class="fc"
-                                    name="mother_occupation" placeholder="e.g. Doctor, Homemaker"></div>
+                            <div class="fg"><label>Mother Occupation</label>
+                                <select class="fc" name="mother_occupation">
+                                    <option value="">Select</option>
+                                    <option value="Government">Government</option>
+                                    <option value="Private Sector">Private Sector</option>
+                                    <option value="Self Employed">Self Employed</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Agriculture">Agriculture</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="form-row cols-1" style="margin-top:1rem;">
@@ -1941,7 +2043,8 @@
                                 <input type="checkbox" name="guardian_required" id="guardian_required"
                                     onchange="toggleGuardian(this.checked)" value="1">
                                 <div>
-                                    <div class="toggle-row-label">If contact details of both parents are not available, would you like to enter the details of a legal guardian?</div>
+                                    <div class="toggle-row-label">If contact details of both parents are not available,
+                                        would you like to enter the details of a legal guardian?</div>
                                     <div class="toggle-row-sub"></div>
                                 </div>
                             </label>
@@ -2014,8 +2117,9 @@
                                     {% endif %}
                                 </select>
                             </div>
-                            <div class="fg"><label>Pincode</label><input type="text" class="fc numeric-integer" name="pincode" inputmode="numeric" maxlength="6"
-                                    placeholder="6-digit pincode"></div>
+                            <div class="fg"><label>Pincode</label><input type="text" class="fc numeric-integer"
+                                    name="pincode" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2051,24 +2155,27 @@
 
                         <div class="section-sub">Academic Qualification - Class X Details</div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>Year of Completion (Class X)</label><input type="text" class="fc numeric-integer"
-                                    name="class_x_year_of_completion" placeholder="e.g. 2018" maxlength="4"></div>
+                            <div class="fg"><label>Year of Completion (Class X)</label><input type="text"
+                                    class="fc numeric-integer" name="class_x_year_of_completion" placeholder="e.g. 2018"
+                                    maxlength="4"></div>
                             <div class="fg"><label>School/College/University (Class X) <span
                                         class="req">*</span></label><input type="text" class="fc" name="class_x_school"
                                     placeholder="School name" required><span class="field-error"
                                     id="err_class_x_school">School name is required</span></div>
-                            <div class="fg"><label>Board (Class X) <span class="req">*</span></label><input type="text" class="fc"
-                                    name="class_x_board" placeholder="e.g. CBSE, ICSE" required><span
+                            <div class="fg"><label>Board (Class X) <span class="req">*</span></label><input type="text"
+                                    class="fc" name="class_x_board" placeholder="e.g. CBSE, ICSE" required><span
                                     class="field-error" id="err_class_x_board">Board is required</span></div>
                             <div class="fg">
                                 <label>Percentage/CGPA obtained (Class X) <span class="req">*</span></label>
-                                <input type="text" class="fc numeric-decimal" name="class_x_percentage" placeholder="e.g. 85.50" inputmode="decimal" required
+                                <input type="text" class="fc numeric-decimal" name="class_x_percentage"
+                                    placeholder="e.g. 85.50" inputmode="decimal" required
                                     oninput="validatePercentage(this, 'class_x_percentage')">
                                 <span class="field-error" id="err_class_x_percentage">Valid percentage (0–100) is
                                     required</span>
                             </div>
-                            <div class="fg"><label>If CGPA, maximum CGPA (Class X)</label><input type="text" class="fc numeric-decimal"
-                                    name="class_x_cgpa" placeholder="Max CGPA" inputmode="decimal"></div>
+                            <div class="fg"><label>If CGPA, maximum CGPA (Class X)</label><input type="text"
+                                    class="fc numeric-decimal" name="class_x_cgpa" placeholder="Max CGPA"
+                                    inputmode="decimal"></div>
                             <div class="fg">
                                 <label>Class X Marksheet</label>
                                 <div class="file-zone">
@@ -2086,18 +2193,17 @@
 
                         <div class="section-sub">Class XII/Equivalent Details</div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>Name of Examination (Class XII/Equivalent)</label><input type="text" class="fc"
-                                    name="class_xii_name_of_examination" placeholder="e.g. AISSCE, ISC"></div>
-                            <div class="fg"><label>Year of Completion (Class XII/Equivalent)</label><input type="text" class="fc numeric-integer"
-                                    name="class_xii_year_of_completion" placeholder="e.g. 2020" maxlength="4"></div>
-                            <div class="fg"><label>School/College/University (Class XII/Equivalent)</label><input type="text" class="fc"
-                                    name="class_xii_school" placeholder="School name"></div>
-                            <div class="fg"><label>Board (Class XII/Equivalent)</label><input type="text" class="fc" name="class_xii_board"
-                                    placeholder="e.g. CBSE, State Board"></div>
-                            <div class="fg"><label>Percentage/CGPA obtained (Class XII/Equivalent)</label><input type="text" class="fc numeric-decimal"
-                                    name="class_xii_percentage" placeholder="e.g. 85" inputmode="decimal"></div>
-                            <div class="fg"><label>If CGPA, maximum CGPA (Class XII/Equivalent)</label><input type="text" class="fc numeric-decimal"
-                                    name="class_xii_cgpa" placeholder="Max CGPA" inputmode="decimal"></div>
+                            <div class="fg"><label>Name of Examination (Class XII/Equivalent)</label><input type="text"
+                                    class="fc" name="class_xii_name_of_examination" placeholder="e.g. AISSCE, ISC">
+                            </div>
+                            <div class="fg"><label>Year of Completion (Class XII/Equivalent)</label><input type="text"
+                                    class="fc numeric-integer" name="class_xii_year_of_completion"
+                                    placeholder="e.g. 2020" maxlength="4"></div>
+                            <div class="fg"><label>Board (Class XII/Equivalent)</label><input type="text" class="fc"
+                                    name="class_xii_board" placeholder="e.g. CBSE, State Board"></div>
+                            <div class="fg"><label>School/College/University (Class XII/Equivalent)</label><input
+                                    type="text" class="fc" name="class_xii_school" placeholder="School name"></div>
+
                             <div class="fg">
                                 <label>Class XII Marksheet</label>
                                 <div class="file-zone">
@@ -2126,8 +2232,8 @@
                             </div>
                             <div class="fg">
                                 <label>XII Percentage <span class="req">*</span></label>
-                                <input type="text" class="fc numeric-decimal" name="hsc_percentage" id="hsc_percentage" inputmode="decimal"
-                                    placeholder="e.g. 75.00" min="0" max="100" step="0.01"
+                                <input type="text" class="fc numeric-decimal" name="hsc_percentage" id="hsc_percentage"
+                                    inputmode="decimal" placeholder="e.g. 75.00" min="0" max="100" step="0.01"
                                     oninput="validateHSCPercentage(this)" onblur="collectFormData()">
                                 <span class="field-error" id="err_hsc_percentage">HSC percentage must be between 35 and
                                     100</span>
@@ -2192,8 +2298,8 @@
                             </div>
                             <div class="fg">
                                 <label>Percentage / Score</label>
-                                <input type="text" class="fc numeric-decimal" name="percentage" id="test_percentage" inputmode="decimal"
-                                    placeholder="e.g. 78.5" min="0" max="100" step="0.01"
+                                <input type="text" class="fc numeric-decimal" name="percentage" id="test_percentage"
+                                    inputmode="decimal" placeholder="e.g. 78.5" min="0" max="100" step="0.01"
                                     oninput="collectFormData()">
                             </div>
                         </div>
@@ -2356,7 +2462,8 @@
                         <div class="form-row cols-1" style="margin-bottom:1rem;">
                             <div class="fg">
                                 <label>Whether SC/ST/OBC-NCL</label>
-                                <select class="fc" name="reservation_category" id="reservation_category" onchange="toggleReservationCategory(this.value)">
+                                <select class="fc" name="reservation_category" id="reservation_category"
+                                    onchange="toggleReservationCategory(this.value)">
                                     <option value="">Select one</option>
                                     <option value="SC">SC</option>
                                     <option value="ST">ST</option>
@@ -2446,7 +2553,8 @@
                             </div>
                             <div id="scribeSection" style="display:none;margin-top:1rem;">
                                 <div class="fg">
-                                    <label>Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you? <span class="req">*</span></label>
+                                    <label>Will you arrange for a scribe yourself or would you require the NLSIU to
+                                        arrange a scribe for you? <span class="req">*</span></label>
                                     <select class="fc" name="scribe_allotment" id="scribe_allotment">
                                         <option value="">Select</option>
                                         <option value="I require NLSIU to arrange a scribe for me">I require NLSIU to
@@ -2487,13 +2595,15 @@
                             </div>
                         </div>
                         <div id="karnatakaSection" style="display:none;">
-                            <p style="font-size:.83rem;color:var(--slate-600);margin-bottom:1rem;">Which of the following applies to you (checkboxes):</p>
+                            <p style="font-size:.83rem;color:var(--slate-600);margin-bottom:1rem;">Which of the
+                                following applies to you (checkboxes):</p>
                             <div style="display:flex;flex-direction:column;gap:.85rem;">
                                 <label class="toggle-row">
                                     <input type="checkbox" name="ka_study_7yrs" id="ka_study_7yrs" value="1"
                                         onchange="toggleKACertField('ka_study_7yrs', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Studied for not less than 7 years in a recognized educational institution in Karnataka</div>
+                                        <div class="toggle-row-label">Studied for not less than 7 years in a recognized
+                                            educational institution in Karnataka</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_study_7yrs" style="display:none;padding-left:1.5rem;">
@@ -2516,7 +2626,8 @@
                                     <input type="checkbox" name="ka_defence_child" id="ka_defence_child" value="1"
                                         onchange="toggleKACertField('ka_defence_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of defence personnel/ex-serviceman (Karnataka domicile)</div>
+                                        <div class="toggle-row-label">Child of defence personnel/ex-serviceman
+                                            (Karnataka domicile)</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_defence_child" style="display:none;padding-left:1.5rem;">
@@ -2539,7 +2650,8 @@
                                     <input type="checkbox" name="ka_govt_child" id="ka_govt_child" value="1"
                                         onchange="toggleKACertField('ka_govt_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of an employee of the Karnataka State Government (serving or retired)</div>
+                                        <div class="toggle-row-label">Child of an employee of the Karnataka State
+                                            Government (serving or retired)</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_govt_child" style="display:none;padding-left:1.5rem;">
@@ -2562,7 +2674,8 @@
                                     <input type="checkbox" name="ka_ais_child" id="ka_ais_child" value="1"
                                         onchange="toggleKACertField('ka_ais_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of a serving or retired employee belonging to the Karnataka cadre of the All India Services (IAS/IFS/IPS)</div>
+                                        <div class="toggle-row-label">Child of a serving or retired employee belonging
+                                            to the Karnataka cadre of the All India Services (IAS/IFS/IPS)</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_ais_child" style="display:none;padding-left:1.5rem;">
@@ -2585,7 +2698,8 @@
                                     <input type="checkbox" name="ka_capf_child" id="ka_capf_child" value="1"
                                         onchange="toggleKACertField('ka_capf_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of a working or retired employee in the Central Armed Police Force service (Karnataka domicile)</div>
+                                        <div class="toggle-row-label">Child of a working or retired employee in the
+                                            Central Armed Police Force service (Karnataka domicile)</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_capf_child" style="display:none;padding-left:1.5rem;">
@@ -2639,7 +2753,8 @@
                         <div class="form-row cols-3">
                             <div class="fg">
                                 <label>First Preference <span class="req">*</span></label>
-                                <select class="fc" name="first_preference" id="first_preference" required onchange="validatePreferences()">
+                                <select class="fc" name="first_preference" id="first_preference" required
+                                    onchange="validatePreferences()">
                                     <option value="">Select provider</option>
                                     {% for p in entrance_test_providers %}
                                     <option value="{{ p.name }}">{{ p.provider_name or p.name }}</option>
@@ -2649,7 +2764,8 @@
                             </div>
                             <div class="fg">
                                 <label>Second Preference</label>
-                                <select class="fc" name="second_preference" id="second_preference" onchange="validatePreferences()">
+                                <select class="fc" name="second_preference" id="second_preference"
+                                    onchange="validatePreferences()">
                                     <option value="">Select provider</option>
                                     {% for p in entrance_test_providers %}
                                     <option value="{{ p.name }}">{{ p.provider_name or p.name }}</option>
@@ -2659,7 +2775,8 @@
                             </div>
                             <div class="fg">
                                 <label>Third Preference</label>
-                                <select class="fc" name="third_preference" id="third_preference" onchange="validatePreferences()">
+                                <select class="fc" name="third_preference" id="third_preference"
+                                    onchange="validatePreferences()">
                                     <option value="">Select provider</option>
                                     {% for p in entrance_test_providers %}
                                     <option value="{{ p.name }}">{{ p.provider_name or p.name }}</option>
@@ -2740,7 +2857,8 @@
                         </div>
 
                         <!-- Review & Submit (within Other Information) -->
-                        <div class="card-header-row" style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--slate-200);">
+                        <div class="card-header-row"
+                            style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--slate-200);">
                             <div class="card-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor" stroke-width="2">
@@ -2761,7 +2879,8 @@
                                     style="width:18px;height:18px;margin-top:.2rem;accent-color:var(--navy);flex-shrink:0;"
                                     onchange="onDeclarationChange(this)">
                                 <span style="font-size:.88rem;line-height:1.7;color:var(--slate-700);">
-                                    Undertaking of truthful information — I declare that the information provided is true and that false information may lead to disqualification.
+                                    Undertaking of truthful information — I declare that the information provided is
+                                    true and that false information may lead to disqualification.
                                 </span>
                             </label>
                         </div>
@@ -2771,7 +2890,8 @@
                                 <input type="checkbox" name="consent_third_party" id="consent_third_party"
                                     style="width:18px;height:18px;margin-top:.2rem;accent-color:var(--navy);flex-shrink:0;">
                                 <span style="font-size:.85rem;line-height:1.7;color:var(--slate-600);">
-                                    Consent to details being shared with third party affiliates. <strong>Please Note: The Application Fee is non-refundable.</strong>
+                                    Consent to details being shared with third party affiliates. <strong>Please Note:
+                                        The Application Fee is non-refundable.</strong>
                                 </span>
                             </label>
                         </div>
@@ -2784,16 +2904,27 @@
                 <div class="nav-buttons">
                     <button type="button" class="btn-prev" id="prevBtn" onclick="handlePrev()"
                         style="visibility:hidden;" title="Go to previous step">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
                         Back
                     </button>
-                    <button type="button" class="btn-save-draft" id="saveDraftBtn" onclick="saveDraft()" title="Save your progress and continue later">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                    <button type="button" class="btn-save-draft" id="saveDraftBtn" onclick="saveDraft()"
+                        title="Save your progress and continue later">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
                         Save Draft
                     </button>
                     <button type="button" class="btn-next" id="nextBtn" onclick="handleNext()">
                         Next Step
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
                     </button>
                 </div>
 
@@ -2816,7 +2947,7 @@
                     <div class="app-ref-field"><label>Program</label><span id="finalProgram"></span></div>
                     <div class="app-ref-field"><label>Campus</label><span id="finalCampus"></span></div>
                 </div>
-                
+
                 <div style="margin-top:2.5rem;">
                     <a href="/merit-and-scholarship/admission_dashboard" class="btn-dashboard">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
@@ -2845,12 +2976,12 @@
     // ═══════════════════════════════════════════════════════
     const SERVER_DATA = {
         programs: {{ programs | tojson }},
-        campuses: {{ campuses | tojson }},
-        academic_years: {{ academic_years | tojson }},
-        admission_cycles: {{ admission_cycles | tojson }},
-        nationalities: {{ nationalities | tojson }},
-        hsc_groups: {{ hsc_groups | tojson }},
-        national_tests: {{ national_tests | tojson }}
+    campuses: {{ campuses | tojson }},
+    academic_years: {{ academic_years | tojson }},
+    admission_cycles: {{ admission_cycles | tojson }},
+    nationalities: {{ nationalities | tojson }},
+    hsc_groups: {{ hsc_groups | tojson }},
+    national_tests: {{ national_tests | tojson }}
     };
 
     // Program from URL (e.g. /admission Apply Now) — pre-fill and lock
@@ -2859,10 +2990,10 @@
 
     // Application already submitted for this cycle — show read-only, block save/submit
     const APPLICATION_SUBMITTED = {{ 'true' if application_submitted else 'false' }};
-    const READONLY_AFTER_SUBMIT = {{ (readonly_after_submit or []) | tojson }};
+    const READONLY_AFTER_SUBMIT = {{ (readonly_after_submit or[]) | tojson }};
 
     // Form config by admission cycle (entrance test / program levels) — for conditional sections
-    const FORM_CONFIG = {{ (form_config or {}) | tojson }};
+    const FORM_CONFIG = {{ (form_config or { }) | tojson }};
 
     // Pre-fill from existing applicant doc
     let formData = {{ applicant_data | tojson }};
@@ -2987,6 +3118,7 @@
         initFlatpickr();
         applyProgramFromUrl();
         applySubmittedReadOnly();
+        if (APPLICATION_SUBMITTED) { STEPS.forEach(s => completedSteps.add(s.id)); }
         updateUI();
         initSearchableSelects();
         initStateCityFilter();
@@ -2997,7 +3129,7 @@
         if (!APPLICATION_SUBMITTED || !Array.isArray(READONLY_AFTER_SUBMIT) || READONLY_AFTER_SUBMIT.length === 0) return;
         const form = document.getElementById('appForm');
         if (!form) return;
-        const phoneWrapIds = { mobile_number: 'pw_mobile_number' };
+        const phoneWrapIds = { mobile_number: 'pw_mobile_number', father_mobile: 'pw_father_mobile', mother_mobile: 'pw_mother_mobile', guardian_mobile: 'pw_guardian_mobile' };
         READONLY_AFTER_SUBMIT.forEach(fieldName => {
             if (phoneWrapIds[fieldName]) {
                 const wrap = document.getElementById(phoneWrapIds[fieldName]);
@@ -3016,7 +3148,7 @@
     function initNumericInputs() {
         const form = document.getElementById('appForm');
         if (!form) return;
-        form.addEventListener('input', function(e) {
+        form.addEventListener('input', function (e) {
             const t = e.target;
             if (!t || !t.classList) return;
             if (t.classList.contains('phone-num-digits')) {
@@ -3057,7 +3189,9 @@
     function toggleSaveDraftVisibility() {
         const btn = document.getElementById('saveDraftBtn');
         if (!btn) return;
-        const isDraft = (formData && formData.docstatus === 0 && (!formData.application_status || formData.application_status === 'Draft'));
+        const docstatus = formData && formData.docstatus;
+        const status = formData && formData.application_status;
+        const isDraft = (!docstatus || docstatus === 0) && (!status || status === 'Draft');
         btn.style.display = isDraft ? '' : 'none';
     }
 
@@ -3142,12 +3276,12 @@
         const cityEl = document.getElementById('city');
         const nationalityEl = document.getElementById('nationality');
         if (!stateEl || !cityEl) return;
-        stateEl.addEventListener('change', function() {
+        stateEl.addEventListener('change', function () {
             const state = (this.value || '').trim();
             fetchCitiesForState(state, false);
         });
         if (nationalityEl) {
-            nationalityEl.addEventListener('change', function() {
+            nationalityEl.addEventListener('change', function () {
                 const nationality = (this.value || '').trim();
                 fetchStatesForNationality(nationality, false);
             });
@@ -3227,7 +3361,11 @@
     }
 
     function navigateToStep(targetStep) {
-        // Allow going back freely; going forward only if previous validated or already completed
+        // When submitted, allow navigating all stages (read-only view). Otherwise: back freely; forward if previous done.
+        if (APPLICATION_SUBMITTED) {
+            showStep(targetStep);
+            return;
+        }
         if (targetStep < currentStep || completedSteps.has(targetStep - 1) || targetStep === 1) {
             showStep(targetStep);
         }
@@ -3250,7 +3388,8 @@
         if (bannerSub) bannerSub.textContent = `Step ${currentStep} of ${TOTAL_STEPS} — ${stepNames[currentStep - 1]}`;
         if (stepBadge) stepBadge.textContent = `Step ${currentStep} / ${TOTAL_STEPS}`;
 
-        const pct = Math.round(((currentStep - 1) / (TOTAL_STEPS - 1)) * 100);
+        // Completion: when submitted show 100%; otherwise step-based (0% at step 1 to 100% at step 6)
+        const pct = APPLICATION_SUBMITTED ? 100 : Math.round(((currentStep - 1) / (TOTAL_STEPS - 1)) * 100);
         const progressPct = document.getElementById('progressPct');
         if (progressPct) progressPct.textContent = pct + '%';
 
@@ -3287,11 +3426,16 @@
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         if (prevBtn) prevBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-        if (nextBtn) nextBtn.textContent = currentStep === TOTAL_STEPS ? 'Submit Application' : 'Next Step';
-        if (nextBtn && currentStep !== TOTAL_STEPS) {
-            nextBtn.innerHTML = 'Next Step <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
-        } else if (nextBtn) {
-            nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+        if (nextBtn) {
+            if (APPLICATION_SUBMITTED && currentStep === TOTAL_STEPS) {
+                nextBtn.textContent = 'Save';
+                nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg> Save';
+            } else if (currentStep === TOTAL_STEPS) {
+                nextBtn.textContent = 'Submit Application';
+                nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+            } else {
+                nextBtn.innerHTML = 'Next Step <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
+            }
         }
     }
 
@@ -3299,13 +3443,13 @@
     //  NAVIGATION
     // ═══════════════════════════════════════════════════════
     function handleNext() {
-        if (!validateCurrentStep()) return;
+        if (!APPLICATION_SUBMITTED && !validateCurrentStep()) return;
         collectFormData();
         completedSteps.add(currentStep);
         if (currentStep < TOTAL_STEPS) {
             showStep(currentStep + 1);
         } else {
-            submitForm();
+            if (APPLICATION_SUBMITTED) saveDraft(); else submitForm();
         }
     }
 
@@ -3925,6 +4069,24 @@
     const MAX_FILE_SIZE_MB = 5;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
+    async function uploadFileToFrappe(file) {
+        var fd = new FormData();
+        fd.append('file', file, file.name);
+        fd.append('is_private', '0');
+        fd.append('folder', 'Home/Attachments');
+
+        const csrfToken = window.csrf_token || (typeof frappe !== 'undefined' ? frappe.csrf_token : '');
+        const r = await fetch('/api/method/upload_file', {
+            method: 'POST', body: fd,
+            headers: { 'X-Frappe-CSRF-Token': csrfToken }
+        });
+        const data = await r.json();
+        if (data && data.message && data.message.file_url) {
+            return data.message.file_url;
+        }
+        throw new Error((data._server_messages && JSON.parse(data._server_messages)) || 'Upload failed');
+    }
+
     function handlePhotoUpload(input) {
         if (!input.files[0]) return;
         const file = input.files[0];
@@ -3940,7 +4102,22 @@
             document.getElementById('photoPlaceholder').style.display = 'none';
         };
         reader.readAsDataURL(file);
-        formData.candidate_photo = file.name;
+
+        showToast('Uploading photo...', 'info');
+        input.disabled = true;
+        uploadFileToFrappe(file)
+            .then(url => {
+                formData.candidate_photo = url;
+                showToast('Photo uploaded successfully.', 'success');
+                input.disabled = false;
+            })
+            .catch(err => {
+                showToast('Failed to upload photo.', 'error');
+                console.error(err);
+                input.value = '';
+                formData.candidate_photo = '';
+                input.disabled = false;
+            });
     }
 
     function handleFileUpload(fieldName, input) {
@@ -3953,13 +4130,30 @@
         }
         const preview = document.getElementById('fp_' + fieldName);
         const nameEl = document.getElementById('fp_' + fieldName + '_name');
-        if (preview) preview.classList.add('show');
-        if (nameEl) nameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(0)}KB)`;
-        if (fieldName === 'id_proof') {
-            const idProofNameSpan = document.getElementById('id_proof_name');
-            if (idProofNameSpan) idProofNameSpan.textContent = file.name;
-        }
-        formData[fieldName] = file.name;
+
+        if (nameEl) nameEl.textContent = `Uploading ${file.name}...`;
+        input.disabled = true;
+
+        uploadFileToFrappe(file)
+            .then(url => {
+                if (preview) preview.classList.add('show');
+                if (nameEl) nameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(0)}KB) - Uploaded`;
+                if (fieldName === 'id_proof') {
+                    const idProofNameSpan = document.getElementById('id_proof_name');
+                    if (idProofNameSpan) idProofNameSpan.textContent = file.name;
+                }
+                formData[fieldName] = url;
+                input.disabled = false;
+                showToast(`File uploaded successfully.`, 'success');
+            })
+            .catch(err => {
+                showToast(`Failed to upload file.`, 'error');
+                console.error(err);
+                if (nameEl) nameEl.textContent = 'Upload failed';
+                input.value = '';
+                formData[fieldName] = '';
+                input.disabled = false;
+            });
     }
 
     function downloadStudentPhoto() {
@@ -3988,7 +4182,7 @@
             'mother_name', 'mother_email', 'mother_occupation', 'guardian_name', 'guardian_email',
             'correspondence_address', 'city', 'state', 'pincode', 'class_x_school', 'class_x_board',
             'class_x_year_of_completion', 'class_x_percentage', 'class_x_cgpa', 'class_xii_name_of_examination',
-            'class_xii_school', 'class_xii_board', 'class_xii_year_of_completion', 'class_xii_percentage', 'class_xii_cgpa',
+            'class_xii_school', 'class_xii_board', 'class_xii_year_of_completion',
             'hsc_group', 'hsc_percentage', 'national_test_name', 'percentage', 'other_degree',
             'other_degree_details', 'phd_program_type', 'proposed_phd_topic', 'ug_degree_completion',
             'post_degree_work_experience', 'years_of_work_experience', 'ews', 'pwd', 'pwd_required_test',
@@ -4102,7 +4296,57 @@
             const idProofNameSpan = document.getElementById('id_proof_name');
             if (idProofNameSpan) idProofNameSpan.textContent = formData.id_proof;
         }
+        // Student Photo preview: when backend returns a URL, show it in the preview
+        const photoUrl = formData.candidate_photo && String(formData.candidate_photo).trim();
+        if (photoUrl) {
+            const previewEl = document.getElementById('photoPreview');
+            const placeholderEl = document.getElementById('photoPlaceholder');
+            if (previewEl && placeholderEl) {
+                const fullUrl = photoUrl.startsWith('http') ? photoUrl : (window.location.origin + (photoUrl.startsWith('/') ? '' : '/') + photoUrl);
+                previewEl.src = fullUrl;
+                previewEl.style.display = 'block';
+                placeholderEl.style.display = 'none';
+                previewEl.onerror = function() {
+                    previewEl.style.display = 'none';
+                    placeholderEl.style.display = '';
+                };
+            }
+        }
+        // Populate UG/PG degree tables from existing data
+        if (Array.isArray(formData.ug_degree_details) && formData.ug_degree_details.length > 0) {
+            const tbody = document.getElementById('ugTableBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                formData.ug_degree_details.forEach((row, idx) => {
+                    const tr = tbody.insertRow();
+                    tr.innerHTML = `
+                        <td><input type="text" class="fc" name="ug_program" placeholder="Degree name" value="${escapeAttr(row.ug_program || '')}" onchange="updateDegreeRow('ug', ${idx}, 'ug_program', this.value)"></td>
+                        <td><input type="text" class="fc" name="ug_college" placeholder="College / University" value="${escapeAttr(row.college || '')}" onchange="updateDegreeRow('ug', ${idx}, 'college', this.value)"></td>
+                        <td><input type="text" class="fc numeric-integer" name="ug_year" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(row.year_of_completion || '')}" onchange="updateDegreeRow('ug', ${idx}, 'year_of_completion', this.value)"></td>
+                        <td><input type="text" class="fc numeric-decimal" name="ug_pct" placeholder="%" inputmode="decimal" value="${escapeAttr(row.percentage_cgpa_obtained || '')}" onchange="updateDegreeRow('ug', ${idx}, 'percentage_cgpa_obtained', this.value)"></td>
+                        <td><input type="text" class="fc numeric-decimal ug-cgpa-input" name="ug_cgpa" placeholder="10" inputmode="decimal" value="${escapeAttr(row.ug_cgpa != null && row.ug_cgpa !== '' ? row.ug_cgpa : '')}" oninput="validateUGCGPA(this, ${idx})" onchange="updateDegreeRow('ug', ${idx}, 'ug_cgpa', this.value)"></td>
+                        <td><button type="button" class="btn-del-row" onclick="removeRow('ug', this)"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td>`;
+                });
+            }
+        }
+        if (Array.isArray(formData.pg_degree_details) && formData.pg_degree_details.length > 0) {
+            const tbody = document.getElementById('pgTableBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                formData.pg_degree_details.forEach((row, idx) => {
+                    const tr = tbody.insertRow();
+                    tr.innerHTML = `
+                        <td><input type="text" class="fc" name="pg_program" placeholder="Degree name" value="${escapeAttr(row.pg_program || '')}" onchange="updateDegreeRow('pg', ${idx}, 'pg_program', this.value)"></td>
+                        <td><input type="text" class="fc" name="pg_college" placeholder="College / University" value="${escapeAttr(row.collegeuniversity || '')}" onchange="updateDegreeRow('pg', ${idx}, 'collegeuniversity', this.value)"></td>
+                        <td><input type="text" class="fc numeric-integer" name="pg_year" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(row.year_of_completion || '')}" onchange="updateDegreeRow('pg', ${idx}, 'year_of_completion', this.value)"></td>
+                        <td><input type="text" class="fc numeric-decimal" name="pg_pct" placeholder="%" inputmode="decimal" value="${escapeAttr(row.percentagecgpa_obtained != null && row.percentagecgpa_obtained !== '' ? row.percentagecgpa_obtained : '')}" onchange="updateDegreeRow('pg', ${idx}, 'percentagecgpa_obtained', this.value)"></td>
+                        <td><input type="text" class="fc numeric-decimal pg-cgpa-input" name="pg_cgpa" placeholder="10" inputmode="decimal" value="${escapeAttr(row.pg_cgpa != null && row.pg_cgpa !== '' ? row.pg_cgpa : '')}" oninput="validatePGCGPA(this, ${idx})" onchange="updateDegreeRow('pg', ${idx}, 'pg_cgpa', this.value)"></td>
+                        <td><button type="button" class="btn-del-row" onclick="removeRow('pg', this)"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td>`;
+                });
+            }
+        }
     }
+    function escapeAttr(s) { return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
     // ═══════════════════════════════════════════════════════
     //  REVIEW BUILDER
@@ -4190,7 +4434,7 @@
             const eligRes = await apiFetch('slcm.www.application_form.index.check_portal_eligibility', { applicant_data: JSON.stringify(formData) });
             if (eligRes && eligRes.eligible === false) {
                 const msg = eligRes.message || 'You are not eligible for the selected program.';
-                showEligibilityError(eligRes);
+                showEligibilityModal(eligRes);
                 showValidationBanner(msg, 'error');
                 btn.disabled = false;
                 btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
@@ -4286,11 +4530,12 @@
                 toggleSaveDraftVisibility();
                 const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 if (saveText) saveText.textContent = `Draft saved at ${t}`;
-                showToast('Draft saved. You can continue later.', 'success');
+                showToast('Saved successfully.', 'success');
             }
         } catch (e) {
             if (saveText) saveText.textContent = 'Save failed';
-            showToast('Could not save draft. Try again.', 'error');
+            const errMsg = (e && (e.message || e.exc_type)) ? (e.message || e.exc_type) : 'Could not save draft. Try again.';
+            showToast(errMsg, 'error');
         }
         if (btn) {
             btn.disabled = false;
@@ -4359,22 +4604,106 @@
         return html;
     }
 
-    function showEligibilityError(eligRes) {
-        const container = document.getElementById('toastContainer');
-        if (!container) return;
-        const toast = document.createElement('div');
-        toast.className = 'toast-item error eligibility-error';
-        const icon = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--red);flex-shrink:0"><path d="M6 18L18 6M6 6l12 12"/></svg>';
-        toast.innerHTML = icon + '<div class="toast-body">' + formatEligibilityForToast(eligRes) + '</div>';
-        container.appendChild(toast);
-        setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 8000);
+    function showEligibilityModal(eligRes) {
+        let existing = document.getElementById('eligibilityModalOverlay');
+        if (existing) existing.remove();
+
+        const selectedProgram = formData.program || document.getElementById('program')?.value || '';
+        const campus = formData.campus || document.getElementById('campus')?.value || '';
+        const cycle = formData.admission_cycle || document.getElementById('admission_cycle')?.value || '';
+        const level = formData.program_level || document.getElementById('program_level')?.value || '';
+
+        const programs = eligRes.programs || [];
+        const eligibleCount = programs.filter(p => p.eligible).length;
+        const total = programs.length;
+
+        let rowsHtml = '';
+        programs.forEach(p => {
+            if (!p.eligible) return;
+            const isSelected = p.program === selectedProgram;
+            let progDisplay = isSelected
+                ? `<strong style="color:#2c3e50;">${escapeHtml(p.program)}</strong> &nbsp;<span style="font-size: 10px; padding: 2px 8px; background-color: #3498db; color: #fff; border-radius: 10px; font-weight: 600; vertical-align: middle;">Selected</span>`
+                : `<span style="color:#2c3e50;">${escapeHtml(p.program)}</span>`;
+
+            rowsHtml += `
+                <tr style="background-color:#fff;">
+                    <td style="padding:10px 12px;vertical-align:middle;border-bottom:1px solid #eee;">
+                        ${progDisplay}
+                    </td>
+                    <td style="padding:10px 12px;vertical-align:middle;text-align:center;white-space:nowrap;border-bottom:1px solid #eee;">
+                        <span style="display: inline-block; width: 8px; height: 8px; background-color: #27ae60; border-radius: 50%; vertical-align: middle; margin-right: 4px;"></span>
+                        <span style="font-size:13px;font-weight:500;color:#27ae60;">Eligible</span>
+                    </td>
+                </tr>
+            `;
+        });
+
+        const mainHeading = `You are Not Eligible For ${escapeHtml(selectedProgram)}`;
+        const noteMsg = 'The applicant does not meet the eligibility criteria for the selected program.';
+        // We can show eligRes.message if they want, but the design specifically uses this note text.
+
+        const html = `
+        <div id="eligibilityModalOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            <div style="background:#fff;border-radius:8px;width:90%;max-width:600px;box-shadow:0 10px 25px rgba(0,0,0,0.2);display:flex;flex-direction:column;max-height:90vh;">
+                <!-- Header -->
+                <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="display:inline-block;width:10px;height:10px;background-color:#e74c3c;border-radius:50%;"></span>
+                        <h3 style="margin:0;font-size:16px;font-weight:600;color:#333;">Eligibility Evaluation Results</h3>
+                    </div>
+                    <button onclick="document.getElementById('eligibilityModalOverlay').remove()" style="background:none;border:none;font-size:22px;line-height:1;margin-top:-2px;cursor:pointer;color:#222;padding:0;font-weight:bold;">&times;</button>
+                </div>
+                <!-- Body -->
+                <div style="padding:20px;overflow-y:auto;text-align:left;">
+                    <!-- Alert -->
+                    <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 24px; padding: 12px 16px; background-color: #fff2f2; border: 1px solid #f5c6cb; border-left: 4px solid #e74c3c; border-radius: 6px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; background-color: #e74c3c; border-radius: 50%; margin-top: 4px; flex-shrink: 0;"></span>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; color: #c0392b;">${mainHeading}</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 3px;">${noteMsg}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Programs Table -->
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+                        <span style="font-weight:700;font-size:14px;color:#2c3e50;">Suggested Eligible Programs</span>
+                        <span style="font-size:12px;color:#888;">&mdash;&nbsp;${escapeHtml(campus)}&nbsp;&middot;&nbsp;${escapeHtml(cycle)}&nbsp;&middot;&nbsp;${escapeHtml(level)}</span>
+                    </div>
+                    <hr style="margin:6px 0 12px 0;border:none;border-top:1px solid #eee;">
+                    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#27ae60;border-radius:50%;"></span>
+                            <strong style="color:#2c3e50;">${eligibleCount}</strong>
+                            <span style="font-size:12px;color:#888;">eligible programs found</span>
+                        </span>
+                        <span style="font-size:12px;color:#aaa;">(${total}&nbsp;total same-level programs)</span>
+                    </div>
+                    
+                    <div style="overflow-x:auto;">
+                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; font-size: 13px;">
+                            <thead>
+                                <tr style="background-color:#f8f9fa;">
+                                    <th style="padding:10px 12px;text-align:left;font-weight:600;color:#555;width:70%;border-bottom:2px solid #e0e0e0;">Program</th>
+                                    <th style="padding:10px 12px;text-align:center;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
     }
 
     function showToast(msg, type = 'info') {
         const container = document.getElementById('toastContainer');
         if (!container) return;
         const toast = document.createElement('div');
-        toast.className = `toast-item ${type}`;
+        toast.className = `toast - item ${type} `;
 
         const icons = {
             success: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--emerald)"><path d="M5 13l4 4L19 7"/></svg>',
@@ -4383,14 +4712,14 @@
         };
 
         const displayMsg = type === 'error' ? humanizeError((msg || '').toString()) : (msg || '').toString();
-        toast.innerHTML = `${icons[type] || icons.info}<span>${displayMsg.replace(/</g, '&lt;')}</span>`;
+        toast.innerHTML = `${icons[type] || icons.info} <span>${displayMsg.replace(/</g, '&lt;')}</span>`;
         container.appendChild(toast);
         setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 4000);
     }
 
     // Spin animation for submit button
     const style = document.createElement('style');
-    style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); }}`;
+    style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
     document.head.appendChild(style);
 </script>
 {% endblock %}

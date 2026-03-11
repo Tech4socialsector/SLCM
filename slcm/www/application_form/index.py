@@ -127,7 +127,7 @@ def get_context(context):
         frappe.local.flags.redirect_location = "/admission"
         raise frappe.Redirect
 
-    # ── One application per applicant per admission_cycle: load existing for this cycle ──
+    # ── One application per applicant per admission_cycle ──
     user = frappe.session.user
     email = frappe.db.get_value("User", user, "email") or user
     context.applicant_data = {}
@@ -136,19 +136,25 @@ def get_context(context):
         existing = frappe.db.get_value(
             "Applicant",
             {"email": email, "admission_cycle": prefill_cycle},
-            ["name", "docstatus"],
+            ["name", "docstatus", "application_status"],
             as_dict=True,
         )
         if existing:
+            # If user came from Apply Now (no ?applicant=), redirect to existing application in My Applications
+            if not applicant_name:
+                frappe.local.flags.redirect_location = "/my-applications?app=" + existing.get("name", "")
+                raise frappe.Redirect
             doc = frappe.get_doc("Applicant", existing.name)
             context.applicant_data = frappe.parse_json(frappe.as_json(doc))
-            context.application_submitted = (doc.docstatus == 1)
+            context.application_submitted = (doc.application_status == "Submitted")
+    except frappe.Redirect:
+        raise
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Application Form — Get Applicant")
         context.applicant_data = {}
 
     app_data = context.applicant_data or {}
-    if app_data.get("name") and app_data.get("docstatus") == 0:
+    if app_data.get("name") and app_data.get("application_status") != "Submitted":
         context.prefill_program = app_data.get("program") or session_sel.get("program") or prefill_prog
         context.prefill_admission_cycle = app_data.get("admission_cycle") or session_sel.get("admission_cycle") or prefill_cycle
         context.prefill_campus = app_data.get("campus") or session_sel.get("campus") or ""
@@ -165,6 +171,15 @@ def get_context(context):
 
     context.program_readonly = True  # Always lock: user must select from listing
 
+    # Display name for the program (shown at top of form for information)
+    program_code = context.prefill_program or (app_data.get("program") if app_data else None)
+    if program_code:
+        context.program_display_name = (
+            frappe.db.get_value("Program", program_code, "program_name") or program_code
+        )
+    else:
+        context.program_display_name = ""
+
     # ── Academic year from Admission Cycle (before seeding) ──
     if context.prefill_admission_cycle and not context.prefill_academic_year:
         try:
@@ -174,7 +189,7 @@ def get_context(context):
         except Exception:
             context.prefill_academic_year = ""
 
-    # When no existing application for this cycle, seed applicant_data with locked values
+    # When no existing application for this cycle, seed applicant_data with locked values and default Draft
     if not context.applicant_data or not context.applicant_data.get("name"):
         context.applicant_data = dict(context.applicant_data or {})
         context.applicant_data.setdefault("program", context.prefill_program)
@@ -183,9 +198,32 @@ def get_context(context):
         context.applicant_data.setdefault("program_level", context.prefill_program_level or "")
         context.applicant_data.setdefault("academic_year", context.prefill_academic_year or "")
         context.applicant_data.setdefault("application_type", context.prefill_intake_type or "")
+        context.applicant_data.setdefault("docstatus", 0)
+        context.applicant_data.setdefault("application_status", "Draft")
+        # Prefill mobile from User if not set (default country code +91)
+        user_mobile = frappe.db.get_value("User", user, "mobile_no")
+        if user_mobile and not context.applicant_data.get("mobile_number"):
+            mobile_str = (user_mobile or "").strip()
+            if mobile_str and not mobile_str.startswith("+"):
+                context.applicant_data.setdefault("mobile_number", "+91" + mobile_str.lstrip("0"))
+            else:
+                context.applicant_data.setdefault("mobile_number", mobile_str or "+91")
 
-    # When application is submitted, only these fields stay read-only; applicant may edit all others
-    context.readonly_after_submit = ["email", "candidate_name", "mobile_number"]
+    # When application is submitted, these fields/sections stay read-only (no edit on submitted application)
+    context.readonly_after_submit = [
+        "email", "candidate_name", "mobile_number",
+        "father_name", "father_email", "father_mobile", "father_occupation",
+        "mother_name", "mother_email", "mother_mobile", "mother_occupation",
+        "guardian_name", "guardian_mobile", "guardian_email",
+        "correspondence_address", "city", "state", "pincode",
+        "class_x_school", "class_x_board", "class_x_year_of_completion", "class_x_percentage", "class_x_cgpa",
+        "class_xii_name_of_examination", "class_xii_school", "class_xii_board", "class_xii_year_of_completion", "hsc_group", "hsc_percentage",
+        "national_test_name", "percentage", "ug_degree_completion",
+        "first_preference", "second_preference", "third_preference",
+        "whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "reservation_category",
+        "caste_certificate", "ews_certificate", "pwd_certificate",
+        "ka_study_7yrs", "ka_defence_child", "ka_govt_child", "ka_ais_child", "ka_capf_child",
+    ]
 
     # ── Programs (for hidden/display only; selection is locked) ─────────
     try:
@@ -521,9 +559,22 @@ def save_form(data):
         return {"error": _("Could not load application record: {0}").format(str(e))}
 
     # ── Apply scalar fields (when submitted, do not update read-only fields) ──
-    READONLY_AFTER_SUBMIT = {"email", "candidate_name", "mobile_number"}
+    READONLY_AFTER_SUBMIT = {
+        "email", "candidate_name", "mobile_number",
+        "father_name", "father_email", "father_mobile", "father_occupation",
+        "mother_name", "mother_email", "mother_mobile", "mother_occupation",
+        "guardian_name", "guardian_mobile", "guardian_email",
+        "correspondence_address", "city", "state", "pincode",
+        "class_x_school", "class_x_board", "class_x_year_of_completion", "class_x_percentage", "class_x_cgpa",
+        "class_xii_name_of_examination", "class_xii_school", "class_xii_board", "class_xii_year_of_completion", "hsc_group", "hsc_percentage",
+        "national_test_name", "percentage", "ug_degree_completion",
+        "first_preference", "second_preference", "third_preference",
+        "whether_scstobc_ncl", "ews", "pwd", "karnataka_category",
+        "caste_certificate", "ews_certificate", "pwd_certificate",
+        "ka_study_7yrs", "ka_defence_child", "ka_govt_child", "ka_ais_child", "ka_capf_child",
+    }
     scalar_data = {k: v for k, v in sanitized.items() if k not in child_table_fields}
-    if doc.docstatus == 1:
+    if doc.application_status == "Submitted":
         for key in READONLY_AFTER_SUBMIT:
             scalar_data.pop(key, None)
     try:
@@ -561,16 +612,13 @@ def save_form(data):
         doc.flags.ignore_permissions = True
 
         if is_submit:
-            # Save first so we have a persistent record, then submit
+            doc.application_status = "Submitted"
+            # Save the record
             if not doc.name or doc.is_new():
                 doc.insert(ignore_permissions=True)
             else:
                 doc.save(ignore_permissions=True)
 
-            frappe.db.commit()   # commit the save before submitting
-
-            doc.flags.ignore_permissions = True
-            doc.submit()
             frappe.db.commit()
 
             # Resolve program and campus for success page display (name, not ID)
@@ -592,6 +640,8 @@ def save_form(data):
             }
         else:
             doc.application_status = "Draft"
+            doc.flags.ignore_mandatory = True
+            
             if doc.is_new():
                 doc.insert(ignore_permissions=True)
             else:
@@ -724,3 +774,117 @@ def check_portal_eligibility(applicant_data):
             "message":  "Eligibility check encountered an error. Please review the form.",
             "programs": []
         }
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  FILE UPLOAD API  (multipart/form-data; attach to Applicant)
+# ═══════════════════════════════════════════════════════════════════
+
+ALLOWED_FILE_EXTENSIONS = {"pdf", "jpg", "jpeg", "png"}
+ALLOWED_CONTENT_TYPES = {
+    "application/pdf",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+}
+
+
+@frappe.whitelist(allow_guest=False)
+def upload_applicant_file(doctype="Applicant", docname=None, is_private=0, fieldname=None):
+    """
+    Secure file upload for Applicant document.
+    Accepts multipart/form-data with: file, doctype, docname, is_private (optional: fieldname).
+    Validates: Applicant exists, user has access, file type (pdf, jpg, jpeg, png).
+    Uses frappe.utils.file_manager.save_file to store in public/files or private/files.
+    Returns: file_name, file_url, attached_doctype, attached_document_name.
+
+    Example CURL:
+        curl -X POST "http://yoursite/api/method/slcm.www.application_form.index.upload_applicant_file" \\
+          -H "Cookie: sid=YOUR_SESSION_ID" \\
+          -H "X-Frappe-CSRF-Token: YOUR_CSRF_TOKEN" \\
+          -F "file=@/path/to/photo.jpg" \\
+          -F "doctype=Applicant" \\
+          -F "docname=APP-2026-00001" \\
+          -F "is_private=0"
+
+    Example frontend (fetch + FormData):
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('doctype', 'Applicant');
+        formData.append('docname', 'APP-2026-00001');
+        formData.append('is_private', '0');
+        const r = await fetch('/api/method/slcm.www.application_form.index.upload_applicant_file', {
+            method: 'POST',
+            headers: { 'X-Frappe-CSRF-Token': window.csrf_token },
+            body: formData
+        });
+        const d = await r.json();
+        const result = d.message; // { file_name, file_url, attached_doctype, attached_document_name }
+    """
+    if frappe.session.user == "Guest":
+        return {"error": _("Login required to upload files.")}
+
+    # Get form/JSON params (Frappe may pass docname as keyword)
+    docname = docname or frappe.form_dict.get("docname") or frappe.form_dict.get("doc_name")
+    doctype = (doctype or frappe.form_dict.get("doctype") or "Applicant").strip()
+    is_private = int(frappe.form_dict.get("is_private", is_private) or 0)
+    fieldname = fieldname or frappe.form_dict.get("fieldname") or ""
+
+    if doctype != "Applicant" or not docname:
+        return {"error": _("Applicant document name is required.")}
+
+    if not frappe.db.exists("Applicant", docname):
+        return {"error": _("Applicant not found.")}
+
+    # Permission: user must own the applicant or be the applicant's email
+    doc = frappe.get_doc("Applicant", docname)
+    user = frappe.session.user
+    user_email = frappe.db.get_value("User", user, "email") or user
+    if doc.owner != user and doc.email != user_email:
+        return {"error": _("You do not have permission to upload files for this application.")}
+
+    # Get file from request (multipart/form-data)
+    file = None
+    if hasattr(frappe, "request") and frappe.request.files:
+        file = frappe.request.files.get("file") or frappe.request.files.get("file[]")
+    if not file or not getattr(file, "filename", None):
+        return {"error": _("No file in request. Use multipart/form-data with 'file' field.")}
+
+    filename = (file.filename or "").strip()
+    if not filename:
+        return {"error": _("Invalid filename.")}
+
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ALLOWED_FILE_EXTENSIONS:
+        return {"error": _("Allowed file types: PDF, JPG, JPEG, PNG only.")}
+
+    content = file.read()
+    if not content:
+        return {"error": _("File is empty.")}
+
+    content_type = getattr(file, "content_type", "") or ""
+    if content_type and content_type.lower() not in ALLOWED_CONTENT_TYPES and ext not in ("jpg", "jpeg", "png", "pdf"):
+        return {"error": _("Invalid file type.")}
+
+    try:
+        from frappe.utils.file_manager import save_file
+        f = save_file(
+            fname=filename,
+            content=content,
+            dt=doctype,
+            dn=docname,
+            folder=None,
+            is_private=is_private,
+            decode=False,
+        )
+        if not f:
+            return {"error": _("Failed to save file.")}
+        return {
+            "file_name": f.file_name,
+            "file_url": f.file_url,
+            "attached_doctype": f.attached_to_doctype,
+            "attached_document_name": f.attached_to_name,
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Applicant File Upload")
+        return {"error": _("Upload failed: {0}").format(str(e))}
