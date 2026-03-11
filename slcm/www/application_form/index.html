@@ -1752,7 +1752,7 @@
                             </div>
                             <div class="fg">
                                 <label>Nationality <span class="req">*</span></label>
-                                <select class="fc" name="nationality" required>
+                                <select class="fc" name="nationality" id="nationality" required>
                                     <option value="">Select Nationality</option>
                                     {% for n in nationalities %}
                                     <option value="{{ n.name }}">{{ n.name }}</option>
@@ -1991,19 +1991,27 @@
                             <div class="fg">
                                 <label>State</label>
                                 <select class="fc" name="state" id="state">
+                                    {% if initial_states %}
                                     <option value="">Select State</option>
-                                    {% for s in states %}
-                                    <option value="{{ s.name }}">{{ s.name }}</option>
+                                    {% for s in initial_states %}
+                                    <option value="{{ s }}">{{ s }}</option>
                                     {% endfor %}
+                                    {% else %}
+                                    <option value="">Select Nationality first</option>
+                                    {% endif %}
                                 </select>
                             </div>
                             <div class="fg">
                                 <label>City</label>
                                 <select class="fc" name="city" id="city">
+                                    {% if initial_cities %}
                                     <option value="">Select City</option>
-                                    {% for c in cities %}
+                                    {% for c in initial_cities %}
                                     <option value="{{ c }}">{{ c }}</option>
                                     {% endfor %}
+                                    {% else %}
+                                    <option value="">Select State first</option>
+                                    {% endif %}
                                 </select>
                             </div>
                             <div class="fg"><label>Pincode</label><input type="text" class="fc numeric-integer" name="pincode" inputmode="numeric" maxlength="6"
@@ -2981,6 +2989,7 @@
         applySubmittedReadOnly();
         updateUI();
         initSearchableSelects();
+        initStateCityFilter();
         toggleSaveDraftVisibility();
     });
 
@@ -3054,10 +3063,11 @@
 
     function initSearchableSelects() {
         if (typeof Choices === 'undefined') return;
-        // Only apply to .fc selects; keep phone-code as native so dropdown opens correctly
+        // Only apply to .fc selects; keep phone-code as native. Exclude state, city, nationality so we can update options and rely on change events.
         document.querySelectorAll('select.fc').forEach(sel => {
             if (sel.disabled || sel.closest('[style*="display: none"]')) return;
             if (sel.id === 'program' && sel.classList.contains('program-readonly')) return;
+            if (sel.id === 'state' || sel.id === 'city' || sel.id === 'nationality') return;
             try {
                 new Choices(sel, {
                     searchEnabled: true,
@@ -3067,6 +3077,81 @@
                 });
             } catch (e) { /* ignore duplicates or errors */ }
         });
+    }
+
+    // ── Nationality → State: filter state by country (State DocType); clear state/city when nationality changes ──
+    async function fetchStatesForNationality(nationality, keepCurrentStateIfInList) {
+        const stateEl = document.getElementById('state');
+        const cityEl = document.getElementById('city');
+        if (!stateEl) return;
+        const currentState = (stateEl.value || '').trim();
+        if (!(nationality && nationality.trim())) {
+            stateEl.innerHTML = '<option value="">Select Nationality first</option>';
+            stateEl.value = '';
+            if (cityEl) { cityEl.innerHTML = '<option value="">Select State first</option>'; cityEl.value = ''; }
+            return;
+        }
+        try {
+            const res = await apiFetch('slcm.www.application_form.index.get_states_for_country', { country: nationality.trim() });
+            const states = Array.isArray(res) ? res : [];
+            let opts = '<option value="">Select State</option>';
+            states.forEach(s => { opts += `<option value="${(s || '').toString().replace(/"/g, '&quot;')}">${(s || '').toString().replace(/</g, '&lt;')}</option>`; });
+            stateEl.innerHTML = opts;
+            if (keepCurrentStateIfInList && currentState && states.includes(currentState)) {
+                stateEl.value = currentState;
+            } else {
+                stateEl.value = '';
+                if (cityEl) { cityEl.innerHTML = '<option value="">Select State first</option>'; cityEl.value = ''; }
+            }
+        } catch (e) {
+            stateEl.innerHTML = '<option value="">Select Nationality first</option>';
+            stateEl.value = '';
+            if (cityEl) { cityEl.innerHTML = '<option value="">Select State first</option>'; cityEl.value = ''; }
+        }
+    }
+
+    // ── State / City: filter city by state (City DocType); clear city if state changes and city no longer matches ──
+    async function fetchCitiesForState(state, keepCurrentCityIfInList) {
+        const cityEl = document.getElementById('city');
+        if (!cityEl) return;
+        const currentCity = (cityEl.value || '').trim();
+        if (!(state && state.trim())) {
+            cityEl.innerHTML = '<option value="">Select State first</option>';
+            cityEl.value = '';
+            return;
+        }
+        try {
+            const res = await apiFetch('slcm.www.application_form.index.get_cities_for_state', { state: state.trim() });
+            const cities = Array.isArray(res) ? res : [];
+            let opts = '<option value="">Select City</option>';
+            cities.forEach(c => { opts += `<option value="${(c || '').toString().replace(/"/g, '&quot;')}">${(c || '').toString().replace(/</g, '&lt;')}</option>`; });
+            cityEl.innerHTML = opts;
+            if (keepCurrentCityIfInList && currentCity && cities.includes(currentCity)) {
+                cityEl.value = currentCity;
+            } else {
+                cityEl.value = '';
+            }
+        } catch (e) {
+            cityEl.innerHTML = '<option value="">Select City</option>';
+            cityEl.value = '';
+        }
+    }
+
+    function initStateCityFilter() {
+        const stateEl = document.getElementById('state');
+        const cityEl = document.getElementById('city');
+        const nationalityEl = document.getElementById('nationality');
+        if (!stateEl || !cityEl) return;
+        stateEl.addEventListener('change', function() {
+            const state = (this.value || '').trim();
+            fetchCitiesForState(state, false);
+        });
+        if (nationalityEl) {
+            nationalityEl.addEventListener('change', function() {
+                const nationality = (this.value || '').trim();
+                fetchStatesForNationality(nationality, false);
+            });
+        }
     }
 
     function initPhoneCountryCodes() {
@@ -3998,10 +4083,10 @@
                 return;
             }
             const el = form.elements[key];
-            if (el) {
-                if (el.type === 'checkbox') el.checked = val == 1 || val === true;
-                else el.value = val;
-            }
+            if (!el) return;
+            if (el.type === 'file') return; // File inputs cannot have value set programmatically (security)
+            if (el.type === 'checkbox') el.checked = val == 1 || val === true;
+            else el.value = val;
         });
 
         // Program level

@@ -73,6 +73,34 @@ def get_context(context):
     context.no_cache = 1
     context.show_sidebar = False
 
+    # ── Open by applicant name (e.g. from My Applications): load that application and set session ──
+    applicant_name = (frappe.form_dict.get("applicant") or "").strip()
+    if applicant_name:
+        try:
+            if not frappe.db.exists("Applicant", applicant_name):
+                frappe.local.flags.redirect_location = "/my-applications"
+                raise frappe.Redirect
+            doc = frappe.get_doc("Applicant", applicant_name)
+            user = frappe.session.user
+            email = frappe.db.get_value("User", user, "email") or user
+            if doc.owner != user and doc.email != email:
+                frappe.local.flags.redirect_location = "/my-applications"
+                raise frappe.Redirect
+            # Set session so rest of context uses this program/cycle
+            sel = {
+                "program": doc.program or "",
+                "admission_cycle": doc.admission_cycle or "",
+                "campus": doc.campus or None,
+                "program_level": doc.program_level or None,
+                "intake_type": doc.application_type or None,
+            }
+            frappe.session["application_form_selection"] = sel
+        except frappe.Redirect:
+            raise
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Application Form — Load by applicant")
+            applicant_name = ""
+
     # ── Program / Cycle / Campus: from URL (Apply Now link) or session ──
     # Resolve admission_cycle first so we can look up Applicant by email + cycle (one application per cycle).
     session_sel = (frappe.session.get("application_form_selection") or {}) if hasattr(frappe.session, "get") else {}
@@ -273,18 +301,19 @@ def get_context(context):
     except Exception:
         context.national_tests = []
 
-    # ── States (from State doctype) ─────────────────────────────────────
-    try:
-        context.states = frappe.get_all(
-            "State",
-            fields=["name"],
-            order_by="name asc"
-        )
-    except Exception:
-        context.states = []
+    # ── States: from State DocType filtered by country (Nationality) ─────
+    # State doctype has state_name, country. Initial states when applicant has nationality.
+    app_data = context.get("applicant_data") or {}
+    if app_data.get("nationality"):
+        context.initial_states = _get_states_for_country(app_data.get("nationality"))
+    else:
+        context.initial_states = []
 
-    # ── Cities (static list; no City doctype — extend as needed) ────────
-    context.cities = get_common_cities()
+    # ── Cities: from City DocType filtered by state ─────────────────────
+    if app_data.get("state"):
+        context.initial_cities = _get_cities_for_state(app_data.get("state"))
+    else:
+        context.initial_cities = []
 
     # ── Form config: admission cycle → entrance test / program levels ───
     # Used to show/hide sections by program (e.g. PhD section only for Research Course)
@@ -293,19 +322,58 @@ def get_context(context):
     return context
 
 
-def get_common_cities():
-    """Return a list of common city names for the City select. Override or extend via DocType if needed."""
-    return [
-        "Bengaluru", "Mumbai", "Delhi", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad",
-        "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam",
-        "Patna", "Vadodara", "Ghaziabad", "Ludhiana", "Agra", "Nashik", "Faridabad", "Meerut",
-        "Rajkot", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad", "Amritsar", "Allahabad",
-        "Ranchi", "Howrah", "Coimbatore", "Jabalpur", "Gwalior", "Vijayawada", "Jodhpur",
-        "Madurai", "Raipur", "Kota", "Chandigarh", "Guwahati", "Solapur", "Tiruchirappalli",
-        "Bareilly", "Mysore", "Tirunelveli", "Gurgaon", "Aligarh", "Bhubaneswar", "Salem",
-        "Warangal", "Mira-Bhayandar", "Thiruvananthapuram", "Bhiwandi", "Saharanpur",
-        "Other",
-    ]
+def _get_states_for_country(country_name):
+    """Return list of state names (State DocType: state_name, country) for the given country. Used for initial context."""
+    if not (country_name and isinstance(country_name, str) and country_name.strip()):
+        return []
+    try:
+        states = frappe.get_all(
+            "State",
+            filters={"country": country_name.strip()},
+            fields=["name", "state_name"],
+            order_by="state_name asc",
+        )
+        # State autoname is field:state_name, so name == state_name
+        return [s.get("state_name") or s.get("name") for s in (states or [])]
+    except Exception:
+        return []
+
+
+def _get_cities_for_state(state_name):
+    """Return list of city names (City DocType) for the given state. Used for initial context."""
+    if not (state_name and isinstance(state_name, str) and state_name.strip()):
+        return []
+    try:
+        cities = frappe.get_all(
+            "City",
+            filters={"state": state_name.strip()},
+            fields=["name", "city_name"],
+            order_by="city_name asc",
+        )
+        # City autoname is field:city_name, so name == city_name
+        return [c.get("city_name") or c.get("name") for c in (cities or [])]
+    except Exception:
+        return []
+
+
+@frappe.whitelist(allow_guest=False)
+def get_states_for_country(country=None):
+    """Return states for the given country (State DocType: state_name, country).
+    Used by application form to filter state dropdown when Nationality is selected."""
+    country = (country or "").strip()
+    if not country:
+        return []
+    return _get_states_for_country(country)
+
+
+@frappe.whitelist(allow_guest=False)
+def get_cities_for_state(state=None):
+    """Return cities for the given state (City DocType: city_name, state; country optional).
+    Used by application form to filter city dropdown when state is selected."""
+    state = (state or "").strip()
+    if not state:
+        return []
+    return _get_cities_for_state(state)
 
 
 def get_form_config_for_cycles():

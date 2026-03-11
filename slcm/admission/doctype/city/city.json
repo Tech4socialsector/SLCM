@@ -1,43 +1,47 @@
 {
  "actions": [],
- "allow_import": 1,
  "allow_rename": 1,
- "autoname": "field:state_name",
- "creation": "2026-01-28 22:45:00",
+ "autoname": "field:city_name",
+ "creation": "2026-03-10 19:14:32.376390",
  "doctype": "DocType",
+ "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "state_name",
-  "state_code",
+  "city_name",
+  "state",
   "country"
  ],
  "fields": [
   {
-   "fieldname": "state_name",
+   "fieldname": "city_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "State Name",
+   "label": "City Name",
    "reqd": 1,
    "unique": 1
   },
   {
-   "fieldname": "state_code",
-   "fieldtype": "Data",
-   "label": "State Code",
-   "length": 10
+   "fieldname": "state",
+   "fieldtype": "Link",
+   "label": "State",
+   "options": "State",
+   "reqd": 1
   },
   {
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country"
+   "options": "Country",
+   "reqd": 1
   }
  ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 20:40:40.663630",
+ "modified": "2026-03-10 20:37:42.129150",
  "modified_by": "Administrator",
- "module": "slcm",
- "name": "State",
+ "module": "Admission",
+ "name": "City",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
@@ -45,32 +49,18 @@
    "create": 1,
    "delete": 1,
    "email": 1,
+   "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "System Manager",
    "share": 1,
    "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Academics User",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "read": 1,
-   "role": "Student"
   }
  ],
  "row_format": "Dynamic",
- "sort_field": "modified",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+ "states": []
 }

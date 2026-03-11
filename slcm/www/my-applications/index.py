@@ -773,15 +773,20 @@ def get_context(context):
             "active_stage": app_doc.current_stage
         }
         
-        # Build action buttons for this summary
+        # Build action buttons for this summary (use ?applicant= so form loads with data)
+        app_form_url = "/application_form?applicant=" + app_doc.name
+        view_app_url = "/view_application?name=" + app_doc.name
         actions = []
         if status == "Draft":
-            actions.append({"label": "Continue Application", "url": "/application_form/" + app_doc.name, "type": "primary"})
+            actions.append({"label": "Continue Application", "url": app_form_url, "type": "primary"})
         elif status == "Offer Issued":
-            actions.append({"label": "Accept Offer", "url": "/application_form/" + app_doc.name, "type": "success"})
+            actions.append({"label": "Accept Offer", "url": app_form_url, "type": "success"})
+            actions.append({"label": "View Application", "url": view_app_url, "type": "outline"})
             if program_slug:
                 actions.append({"label": "View Program", "url": "/admission/" + program_slug, "type": "outline"})
         else:
+            # Submitted or other status: allow viewing application (read-only page)
+            actions.append({"label": "View Application", "url": view_app_url, "type": "primary"})
             if program_slug:
                 actions.append({"label": "View Program", "url": "/admission/" + program_slug, "type": "outline"})
         summary["action_buttons"] = actions

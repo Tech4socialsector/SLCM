@@ -140,7 +140,7 @@
             }
 
             .adm-container {
-                max-width: 1100px;
+                max-width: 1400px;
                 margin: 0 auto;
                 padding: 0 20px;
             }
@@ -516,7 +516,8 @@
                 {% else %}
                 <!-- Logged in: avatar circle + full name + dropdown -->
                 {% set _applicant_photo = frappe.db.get_value("Applicant", {"email": _nav_user}, "candidate_photo") %}
-                {% set _user_image = _applicant_photo or frappe.db.get_value("User", _nav_user, "user_image") %}
+                {% set _user_image_raw = _applicant_photo or frappe.db.get_value("User", _nav_user, "user_image") %}
+                {% set _user_image = (_user_image_raw if (_user_image_raw and (_user_image_raw.startswith('http') or _user_image_raw.startswith('/') or _user_image_raw.startswith('data:'))) else ('/files/' + _user_image_raw if _user_image_raw else '')) %}
                 {% set _full_name = frappe.db.get_value("User", _nav_user, "full_name") or _nav_user %}
                 <div class="adm-avatar-wrap" style="position:relative; display:flex; align-items:center; gap:10px;">
                   <button id="adm-avatar-btn"

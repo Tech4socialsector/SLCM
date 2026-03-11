@@ -1805,7 +1805,7 @@
 
             <div class="ma-actions">
                 {% if app.can_edit %}
-                <a href="applicant-form/{{ app.name }}" class="ma-btn ma-btn-primary">
+                <a href="/application_form?applicant={{ app.name }}" class="ma-btn ma-btn-primary">
                   ✏️ Continue Application
                 </a>
                 {% endif %}

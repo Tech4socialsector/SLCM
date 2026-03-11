@@ -304,10 +304,11 @@ def get_context(context):
         return
 
     # ── 3. Active Admission Cycle ────────────────────────────────────
+    # Request only "name" to avoid Unknown column errors if cycle_start_date/cycle_end_date not in DB
     active_cycle = frappe.db.get_value(
         "Admission Cycle",
         {"status": "Active"},
-        ["name", "cycle_start_date", "cycle_end_date"],
+        "name",
         as_dict=True
     )
 
