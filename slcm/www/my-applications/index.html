@@ -85,20 +85,20 @@
     justify-content: space-between;
   }
   .ma-card-title {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--text-1);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
   .ma-card-title .ico {
-    width: 32px; height: 32px;
+    width: 36px; height: 36px;
     background: var(--primary-light);
-    border-radius: 8px;
+    border-radius: 9px;
     display: flex; align-items: center; justify-content: center;
     color: var(--primary);
-    font-size: 17px;
+    font-size: 20px;
   }
   .ma-card-body { padding: 20px 22px; }
 
@@ -295,18 +295,18 @@
     display: flex; flex-direction: column; gap: 2px;
   }
   .merit-stat-label {
-    font-size: 10px; font-weight: 600; color: var(--text-4);
+    font-size: 15px; font-weight: 600; color: var(--text-4);
     text-transform: uppercase; letter-spacing: .07em;
   }
   .merit-stat-value {
-    font-size: 36px; font-weight: 700; line-height: 1;
+    font-size: 50px; font-weight: 800; line-height: 1;
     color: var(--primary);
   }
   .merit-stat-value.score { color: var(--text-1); }
   .merit-chip {
     display: inline-block;
-    padding: 3px 12px; border-radius: 20px;
-    font-size: 11px; font-weight: 700;
+    padding: 4px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 700;
     background: #dcfce7; color: var(--success);
     text-transform: uppercase; letter-spacing: .05em;
   }
@@ -320,7 +320,7 @@
     margin-bottom: 14px;
   }
   .seat-prog-name {
-    font-size: 14px; font-weight: 600; color: var(--text-1);
+    font-size: 20px; font-weight: 700; color: var(--text-1);
     margin-bottom: 4px;
   }
   .seat-meta {
@@ -952,9 +952,9 @@
               <span class="status-badge" style="background:#dcfce7;color:#16a34a;font-size:10px">{{ r.selection_status }}</span>
             </div>
             <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
-              <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">Allocated Category</div>
-              <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: white; padding: 5px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
-                <span class="material-symbols-outlined" style="font-size: 16px;">category</span>
+              <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">Allocated Category</div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
+                <span class="material-symbols-outlined" style="font-size: 20px;">category</span>
                 {{ r.allocated_category or 'General' }}
               </div>
             </div>
