@@ -61,6 +61,33 @@ def register_fle_user(email, mobile_number):
     
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
 
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def update_password_fle(new_password, key, confirm_password=None):
+    # Call the core update_password function
+    from frappe.core.doctype.user.user import update_password
+    
+    # This will log the user in and return a redirect URL (usually /me or /desk)
+    core_redirect = update_password(new_password=new_password, key=key)
+    
+    # We want to force redirect to the FLE form
+    user = frappe.session.user
+    if user == "Guest":
+        # If somehow not logged in, just go to login
+        return "/fle/login.html"
+        
+    user_doc = frappe.get_doc("User", user)
+    email = user_doc.email or ""
+    mobile = user_doc.mobile_no or ""
+    
+    import urllib.parse
+    
+    query_params = urllib.parse.urlencode({
+        "email_address": email,
+        "candidate_contact_number": mobile
+    })
+    
+    return f"/foundations-for-a-legal-education/new?{query_params}"
+
 @frappe.whitelist(allow_guest=True)
 def login_fle_user(usr, pwd):
     from frappe.auth import LoginManager
