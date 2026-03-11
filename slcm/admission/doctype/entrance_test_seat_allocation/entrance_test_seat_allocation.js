@@ -160,12 +160,19 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
         frm.set_value("exempts_entrance_test", app.exempts_entrance_test);
         frm.set_value("exempts_interview", app.exempts_interview);
 
-        // Show the category table and populate it
+        // Show the category table and populate it from reservation fields
         frm.clear_table("category");
-        if (app.categories && app.categories.length) {
-          app.categories.forEach(row => {
-            frm.add_child("category", { category: row.category });
-          });
+        if (app.whether_scstobc_ncl && app.whether_scstobc_ncl !== "NA") {
+          frm.add_child("category", { category: app.whether_scstobc_ncl });
+        }
+        if (app.pwd === "Yes") {
+          frm.add_child("category", { category: "PWD" });
+        }
+        if (app.karnataka_category === "Yes") {
+          frm.add_child("category", { category: "Karnataka category" });
+        }
+        if (app.ews === "Yes") {
+          frm.add_child("category", { category: "EWS" });
         }
         frm.refresh_field("category");
         frm.set_df_property("category", "hidden", 0);
