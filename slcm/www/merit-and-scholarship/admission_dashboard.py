@@ -31,7 +31,7 @@ def get_context(context):
         "Applicant",
         filters=[["owner", "=", frappe.session.user]],
         fields=["name", "candidate_name", "program", "admission_cycle",
-                "application_status", "intake_type", "creation", "current_stage"],
+                "application_status", "creation", "current_stage"],
         order_by="creation desc"
     )
 
@@ -41,14 +41,15 @@ def get_context(context):
             "Program", a.program, "program_name"
         ) or a.program or "—"
 
+        intake = frappe.db.get_value(
+            "Program", a.program, "intake_type"
+        ) or "All"
+
         # Get current active stage from cycle
         curr_stage = a.current_stage or ""
         if not curr_stage and a.admission_cycle:
             try:
                 from slcm.admission.utils.stage_control import get_current_stage
-                intake = a.intake_type or frappe.db.get_value(
-                    "Program", a.program, "intake_type"
-                ) or "All"
                 s = get_current_stage(a.admission_cycle, intake)
                 curr_stage = s.stage_name if s else "—"
             except Exception:
@@ -64,7 +65,7 @@ def get_context(context):
             "status":       status,
             "color":        sc["color"],
             "bg":           sc["bg"],
-            "intake_type":  a.intake_type or "—",
+            "intake_type":  intake,
             "stage":        curr_stage,
             "submitted_on": frappe.utils.formatdate(a.creation, "dd MMM yyyy"),
         })

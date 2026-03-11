@@ -3,7 +3,8 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import flt, getdate, add_days, nowdate
+from frappe.utils import flt, add_days, nowdate
+
 
 class ApplicantFeeAssignment(Document):
 	def validate(self):
@@ -53,46 +54,41 @@ class ApplicantFeeAssignment(Document):
 
 	def apply_scholarship(self):
 		"""
-		Checks for approved scholarship and applies it as a line item.
+		Fetches the total approved scholarship amount for this applicant + cycle
+		and stores it directly in the scholarship_amount field.
+		No Fee Component link row is added — scholarship is tracked as a separate field.
 		"""
 		if not self.applicant or not self.admission_cycle:
 			return
 
-		scholarship = frappe.db.get_value("Scholarship Application", {
-			"applicant_id": self.applicant,
-			"admission_cycle": self.admission_cycle,
-			"status": "Approved"
-		}, ["name", "calculated_benefit"], as_dict=True)
+		# Sum all approved scholarship benefits for this applicant in this cycle
+		total_benefit = frappe.db.sql("""
+			SELECT SUM(calculated_benefit)
+			FROM `tabScholarship Application`
+			WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
+		""", (self.applicant, self.admission_cycle))[0][0] or 0
 
-		if scholarship:
-			benefit = flt(scholarship.calculated_benefit)
-			if benefit > 0:
-				found = False
-				for row in self.fee_components:
-					if row.fee_component == "Scholarship":
-						row.amount = -benefit
-						found = True
-						break
-				
-				if not found:
-					self.append("fee_components", {
-						"fee_component": "Scholarship",
-						"component_name": "Scholarship benefit",
-						"amount": -benefit,
-						"is_taxable": 0
-					})
-				
-				self.scholarship_amount = benefit
-				self.scholarship_applied = 1
-		else:
-			# Remove scholarship if no longer approved
-			new_components = []
-			for row in self.fee_components:
-				if row.fee_component != "Scholarship":
-					new_components.append(row)
-			self.fee_components = new_components
-			self.scholarship_amount = 0
-			self.scholarship_applied = 0
+		benefit = flt(total_benefit)
+
+		self.scholarship_amount = benefit
+		self.scholarship_applied = 1 if benefit > 0 else 0
+
+	def calculate_totals(self):
+		"""
+		Sums all fee component rows to get the base total,
+		then deducts scholarship_amount to compute final_payable_amount.
+		"""
+		base_total = 0
+		for row in self.fee_components:
+			if row.is_taxable:
+				row.tax_amount = flt(row.amount) * flt(row.tax_rate) / 100
+			else:
+				row.tax_amount = 0
+			row.total_amount = flt(row.amount) + flt(row.tax_amount)
+			base_total += row.total_amount
+
+		self.total_amount = base_total
+		self.final_payable_amount = base_total - flt(self.scholarship_amount)
 
 	def validate_status_change(self):
 		if self.status == "Converted" and not self.fee_invoice:
@@ -102,34 +98,31 @@ class ApplicantFeeAssignment(Document):
 	def before_submit(self):
 		if not self.fee_components:
 			frappe.throw(frappe._("At least one Fee Component is required."))
-		
+
 		for row in self.fee_components:
-			if flt(row.amount) <= 0 and row.fee_component != "Scholarship":
-				frappe.throw(frappe._("Amount for {0} must be positive.").format(row.component_name))
-		
+			if flt(row.amount) <= 0:
+				frappe.throw(frappe._("Amount for {0} must be positive.").format(row.component_name or row.fee_component))
+
 		self.status = "Assigned"
 
 	def on_cancel(self):
 		if self.fee_invoice:
-			# Check if invoice has payments
 			invoice = frappe.get_doc("Fee Invoice", self.fee_invoice)
 			if flt(invoice.paid_amount) > 0:
 				frappe.throw(frappe._("Cannot cancel Fee Assignment as payments have already been received for the linked Invoice {0}.").format(self.fee_invoice))
-			
-			# If no payments, cancel the invoice too? 
-			# Requirement says change status to Cancelled.
-		
+
 		self.status = "Cancelled"
+
 
 @frappe.whitelist()
 def create_invoice(docname):
 	doc = frappe.get_doc("Applicant Fee Assignment", docname)
-	
+
 	if doc.status not in ["Assigned", "Partially Paid", "Paid"]:
 		frappe.throw(frappe._("Invoice can only be created for assignments with status 'Assigned', 'Partially Paid', or 'Paid'."))
-	
+
 	applicant = frappe.get_doc("Applicant", doc.applicant)
-	
+
 	# 1. Create Student Master if not exists
 	student_name = frappe.db.get_value("Student Master", {"application_number": applicant.name}, "name")
 	if not student_name:
@@ -139,35 +132,32 @@ def create_invoice(docname):
 		student.dob = applicant.date_of_birth or nowdate()
 		student.email = applicant.email
 		student.phone = applicant.mobile_number
-		student.programme = doc.program 
-		
-		# For testing: Bypass missing Genders/Links
+		student.programme = doc.program
+
 		if applicant.gender and frappe.db.exists("Gender", applicant.gender):
 			student.gender = applicant.gender
 
 		student.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
 		student_name = student.name
-	
+
 	# 2. Student Enrollment
-	# Try to find an existing enrollment for this program/year
-	enrollment_name = frappe.db.get_value("Student Enrollment", 
+	enrollment_name = frappe.db.get_value("Student Enrollment",
 		{"student": student_name, "program": doc.program, "academic_year": doc.academic_year}, "name")
-	
+
 	if not enrollment_name:
 		enrollment = frappe.new_doc("Student Enrollment")
 		enrollment.student = student_name
 		enrollment.program = doc.program
 		enrollment.academic_year = doc.academic_year
 		enrollment.enrollment_date = nowdate()
-		
-		# Find a cohort, but don't fail if not found
+
 		cohort = frappe.db.get_value("Cohort", {"program": doc.program, "academic_year": doc.academic_year}, "name")
 		if cohort:
 			enrollment.cohort = cohort
-		
+
 		enrollment.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
 		enrollment_name = enrollment.name
-	
+
 	# 3. Create Fee Invoice
 	invoice = frappe.new_doc("Fee Invoice")
 	invoice.student = student_name
@@ -175,9 +165,9 @@ def create_invoice(docname):
 	invoice.program = doc.program
 	invoice.academic_year = doc.academic_year
 	invoice.invoice_date = nowdate()
-	invoice.due_date = add_days(nowdate(), 15) 
+	invoice.due_date = add_days(nowdate(), 15)
 	invoice.applicant_fee_assignment = doc.name
-	
+
 	for row in doc.fee_components:
 		invoice.append("fee_components", {
 			"fee_component": row.fee_component,
@@ -188,18 +178,17 @@ def create_invoice(docname):
 			"tax_amount": row.tax_amount,
 			"total_amount": row.total_amount
 		})
-	
+
 	invoice.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
-	
+
 	# 4. Migrate Payments if already paid as Applicant
 	if doc.status == "Paid":
-		# Find the receipt associated with this offer/applicant
-		receipt_name = frappe.db.get_value("Applicant Payment Receipt", 
+		receipt_name = frappe.db.get_value("Applicant Payment Receipt",
 			{"offer_letter": doc.offer_letter, "docstatus": 1}, "name")
-		
+
 		if receipt_name:
 			receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name)
-			
+
 			payment = frappe.new_doc("Fee Payment")
 			payment.student = student_name
 			payment.fee_invoice = invoice.name
@@ -208,30 +197,29 @@ def create_invoice(docname):
 			payment.amount = receipt.total_amount
 			payment.reference_number = receipt.transaction_id
 			payment.status = "Submitted"
-			
+
 			payment.insert(ignore_permissions=True)
 			payment.submit()
-			
-			# Ensure invoice amounts are refreshed
+
 			invoice.reload()
 			invoice.save()
 
 	# 5. Update Fee Assignment
 	doc.db_set("fee_invoice", invoice.name)
 	doc.db_set("status", "Converted")
-	
+
 	return invoice.name
 
 
 @frappe.whitelist()
 def create_payment(docname, amount, payment_mode, reference_number=None):
 	assignment = frappe.get_doc("Applicant Fee Assignment", docname)
-	
+
 	if not assignment.fee_invoice:
 		frappe.throw(frappe._("Cannot create payment without a linked Fee Invoice. Please create the invoice first."))
-	
+
 	invoice = frappe.get_doc("Fee Invoice", assignment.fee_invoice)
-	
+
 	payment = frappe.new_doc("Fee Payment")
 	payment.student = invoice.student
 	payment.fee_invoice = invoice.name
@@ -240,20 +228,16 @@ def create_payment(docname, amount, payment_mode, reference_number=None):
 	payment.amount = flt(amount)
 	payment.reference_number = reference_number
 	payment.status = "Submitted"
-	
+
 	payment.insert(ignore_permissions=True)
 	payment.submit()
-	
-	# Status of Applicant Fee Assignment might need to be updated 
-	# if we want to track Part Paid/Paid on the assignment itself.
-	# But Converted usually implies it's handed off to the Finance module.
-	# Let's check the invoice status and update assignment if needed.
+
 	assignment.reload()
 	invoice.reload()
-	
+
 	if invoice.status == "Paid":
-		assignment.db_set("status", "Converted") 
+		assignment.db_set("status", "Converted")
 	elif invoice.status == "Partially Paid":
 		assignment.db_set("status", "Partially Paid")
-	
+
 	return payment.name

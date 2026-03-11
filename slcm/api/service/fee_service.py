@@ -91,31 +91,54 @@ class FeeService:
     def create_fee_assignment_from_offer(offer):
         """
         Creates an Applicant Fee Assignment record from an accepted offer letter.
+        - Copies only the actual fee component rows (no scholarship link row).
+        - Fetches total approved scholarship from Scholarship Application
+          and stores it in scholarship_amount field directly.
         """
         if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "status": ["!=", "Cancelled"]}):
             return
 
         snapshot = frappe.get_doc("Offer Fee Snapshot", {"offer_id": offer.name})
-        
+
+        admission_cycle = offer.admission_cycle or frappe.db.get_value("Applicant", offer.applicant, "admission_cycle")
+
+        # Fetch total approved scholarship for this applicant + cycle directly
+        total_scholarship = frappe.db.sql("""
+            SELECT SUM(calculated_benefit)
+            FROM `tabScholarship Application`
+            WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
+        """, (offer.applicant, admission_cycle))[0][0] or 0
+        total_scholarship = flt(total_scholarship)
+
         assignment = frappe.new_doc("Applicant Fee Assignment")
         assignment.applicant = offer.applicant
         assignment.offer_letter = offer.name
         assignment.program = offer.program
         assignment.academic_year = offer.academic_year or frappe.db.get_value("Applicant", offer.applicant, "academic_year")
-        assignment.admission_cycle = offer.admission_cycle or frappe.db.get_value("Applicant", offer.applicant, "admission_cycle")
+        assignment.admission_cycle = admission_cycle
         assignment.assignment_date = frappe.utils.today()
-        
+
+        # Copy fee rows — skip any legacy "Scholarship" link row from snapshot
         for row in snapshot.fee_component:
+            if (row.fee_component or "").lower() == "scholarship":
+                continue
             assignment.append("fee_components", {
                 "fee_component": row.fee_component,
+                "component_name": row.component_name,
                 "amount": row.amount,
                 "is_taxable": row.is_taxable,
-                "tax_rate": row.tax_rate
+                "tax_rate": row.tax_rate,
+                "tax_amount": row.tax_amount,
+                "total_amount": row.total_amount
             })
-        
+
+        # Store scholarship in the dedicated field (no Fee Component record needed)
+        assignment.scholarship_amount = total_scholarship
+        assignment.scholarship_applied = 1 if total_scholarship > 0 else 0
+
         assignment.insert(ignore_permissions=True)
         assignment.submit()
-        
+
         return assignment.name
 
     @staticmethod

@@ -15,16 +15,16 @@
     }
 
     .portal-header p {
-        color: #718096;
+        color: var(--muted);
     }
 
     .offer-card {
         background: #ffffff;
         border-radius: 16px;
-        border: 1px solid #eef2f7;
+        border: 1px solid var(--border);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         margin-bottom: 24px;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
         cursor: pointer;
         height: 100%;
         display: flex;
@@ -34,6 +34,7 @@
     .offer-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 12px 20px rgba(0, 0, 0, 0.06);
+        border-color: var(--primary);
     }
 
     .card-body {
@@ -110,7 +111,7 @@
     .card-footer {
         padding: 16px 24px;
         background-color: #fafcfe;
-        border-top: 1px solid #eef2f7;
+        border-top: 1px solid var(--border);
         border-radius: 0 0 16px 16px;
         display: flex;
         justify-content: space-between;
@@ -216,8 +217,13 @@
 
         let html = `
         <div class="portal-header">
-            <h2>${is_admin ? "{{ _('Admission Offers Registry') }}" : "{{ _('My Admission Offers') }}"}</h2>
-            <p>${is_admin ? "{{ _('Administrative overview of all issued offers.') }}" : "{{ _('Welcome back, ') }}" + applicant_name + ". {{ _('Review your offers below.') }}"}</p>
+            <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+                <div>
+                    <h2>${is_admin ? "{{ _('Admission Offers Registry') }}" : "{{ _('My Admission Offers') }}"}</h2>
+                    <p>${is_admin ? "{{ _('Administrative overview of all issued offers.') }}" : "{{ _('Welcome back, ') }}" + applicant_name + ". {{ _('Review your offers below.') }}"}</p>
+                </div>
+                ${total_count > 0 ? `<span class="badge badge-light p-2 text-muted" style="border: 1px solid var(--border); border-radius: 8px;">Total: ${total_count}</span>` : ''}
+            </div>
         </div>
         <div class="row">
     `;
@@ -250,7 +256,14 @@
                         ` : ''}
                     </div>
                     <div class="card-footer">
-                        <div class="payable-amount">${format_currency(offer.payable_amount, currency)}</div>
+                        <div class="payable-amount">
+                            ${portal_format_currency(offer.payable_amount, currency)}
+                            ${offer.scholarship_amount > 0 ? `
+                                <div style="font-size: 0.65rem; color: #059669; font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
+                                    <i class="fa fa-gift"></i> Scholarship Adjusted
+                                </div>
+                            ` : ''}
+                        </div>
                         <a href="/offer_letter/offer-letter-detail?offer=${offer.name}" class="view-link">
                             View Details <i class="fa fa-chevron-right ml-1" style="font-size: 0.7rem;"></i>
                         </a>
@@ -261,22 +274,62 @@
         });
 
         html += `</div>`;
+
+        // Pagination UI
+        if (total_count > page_size) {
+            const total_pages = Math.ceil(total_count / page_size);
+            html += `
+                <div class="pagination-wrapper">
+                    <button class="btn-pagination" ${current_page === 0 ? 'disabled' : ''} onclick="change_page(${current_page - 1})">
+                        <i class="fa fa-chevron-left"></i>
+                    </button>
+            `;
+
+            // Simple pagination strategy: show current, first, last and 1 around
+            let start = Math.max(0, current_page - 1);
+            let end = Math.min(total_pages - 1, current_page + 1);
+
+            if (start > 0) html += `<button class="btn-pagination" onclick="change_page(0)">1</button>`;
+            if (start > 1) html += `<span class="text-muted">...</span>`;
+
+            for (let i = start; i <= end; i++) {
+                html += `<button class="btn-pagination ${i === current_page ? 'active' : ''}" onclick="change_page(${i})">${i + 1}</button>`;
+            }
+
+            if (end < total_pages - 2) html += `<span class="text-muted">...</span>`;
+            if (end < total_pages - 1) html += `<button class="btn-pagination" onclick="change_page(${total_pages - 1})">${total_pages}</button>`;
+
+            html += `
+                    <button class="btn-pagination" ${current_page >= total_pages - 1 ? 'disabled' : ''} onclick="change_page(${current_page + 1})">
+                        <i class="fa fa-chevron-right"></i>
+                    </button>
+                </div>
+            `;
+        }
+
         wrapper.html(html);
         start_offer_timers();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function change_page(page) {
+        current_page = page;
+        fetch_offers();
     }
 
     function start_offer_timers() {
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
         const update_timers = () => {
             $('.offer-timer').each(function () {
                 const $this = $(this);
+                const $wrapper = $this.closest('.offer-timer-wrapper');
                 const deadline_str = $this.data('deadline');
                 const $label = $this.prev('small'); // To update Expiry label
                 if (!deadline_str) return;
 
                 let deadline_val = deadline_str;
-                if (deadline_str.length === 10) {
-                    deadline_val += " 23:59:59";
-                }
+                if (deadline_str.length === 10) deadline_val += " 23:59:59";
 
                 const deadline = new Date(deadline_val).getTime();
                 const now = new Date().getTime();

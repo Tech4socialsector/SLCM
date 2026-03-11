@@ -7,14 +7,21 @@ def get_context(context):
     from slcm.admission.utils.portal import get_portal_config
     context.portal_config = get_portal_config()
     
+    name = frappe.form_dict.get('name')
     email = frappe.form_dict.get('email')
     mobile = frappe.form_dict.get('mobile')
     
-    if not (email or mobile):
-        context.error = _("Please provide your Email or Mobile Number to track application status.")
+    # If no params, and user is logged in, try to find their application
+    if not (name or email or mobile) and frappe.session.user != "Guest":
+        email = frappe.session.user
+
+    if not (name or email or mobile):
+        context.error = _("Please provide your Application Number, Email, or Mobile Number to track status.")
         return
 
     filters = {}
+    if name:
+        filters['name'] = name
     if email:
         filters['email'] = email
     if mobile:
@@ -22,15 +29,16 @@ def get_context(context):
 
     applicants = frappe.get_all("Applicant", filters=filters, 
                                 fields=["name", "candidate_name", "program", "application_status", 
-                                        "campus", "academic_year"])
+                                        "campus", "academic_year", 
+                                        "first_preference", "second_preference", "third_preference"],
+                                order_by="creation desc")
     
     if not applicants:
         context.error = _("No application found for the provided details.")
         return
 
-    # For now, show the latest application if multiple exist
-    doc = frappe.get_doc("Applicant", applicants[0].name)
-    context.applicant = doc
+    # Use the first applicant object directly
+    context.applicant = applicants[0]
     
     # Document Status
     try:

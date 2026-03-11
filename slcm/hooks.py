@@ -319,7 +319,8 @@ website_route_rules = [
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},
     {"from_route": "/admission-dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
-    {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"}
+    {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"},
+    {"from_route": "/application-form", "to_route": "application_form"}
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"

@@ -6,32 +6,65 @@
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
   :root {
-    {% if portal_config %}
-    --primary:   {{ portal_config.get('primary_color','#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
-    --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
-    {% else %}
+      {
+      % if portal_config %
+    }
+
+    --primary: {
+        {
+        portal_config.get('primary_color', '#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e'
+      }
+    }
+
+    ;
+
+    --secondary: {
+        {
+        portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b'
+      }
+    }
+
+    ;
+
+      {
+      % else %
+    }
+
     --primary: #1a3c6e;
     --secondary: #c8a14b;
-    {% endif %}
+
+      {
+      % endif %
+    }
+
     --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
-    --primary-mid:   color-mix(in srgb, var(--primary) 20%, transparent);
-    --success:  #16a34a;
-    --warning:  #f59e0b;
-    --danger:   #dc2626;
-    --text-1:   #111827;
-    --text-2:   #374151;
-    --text-3:   #6b7280;
-    --text-4:   #9ca3af;
-    --border:   #e5e7eb;
-    --bg:       #f3f4f6;
-    --card-bg:  #ffffff;
-    --radius:   14px;
-    --shadow:   0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.04);
+    --primary-mid: color-mix(in srgb, var(--primary) 20%, transparent);
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --text-1: #111827;
+    --text-2: #374151;
+    --text-3: #6b7280;
+    --text-4: #9ca3af;
+    --border: #e5e7eb;
+    --bg: #f3f4f6;
+    --card-bg: #ffffff;
+    --radius: 14px;
+    --shadow: 0 1px 4px rgba(0, 0, 0, .07),
+    0 4px 16px rgba(0, 0, 0, .04);
   }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-  body, .adm-main, .adm-container {
+  body,
+  .adm-main,
+  .adm-container {
     font-family: 'Poppins', sans-serif !important;
     background: var(--bg) !important;
     color: var(--text-1);
@@ -39,16 +72,31 @@
 
   /* ── Animations ──────────────────────────────────────────── */
   @keyframes fadeUp {
-    from { opacity:0; transform:translateY(18px); }
-    to   { opacity:1; transform:translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
+
   @keyframes pulse-ring {
-    0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 40%, transparent); }
-    50%      { box-shadow: 0 0 0 8px transparent; }
+
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 40%, transparent);
+    }
+
+    50% {
+      box-shadow: 0 0 0 8px transparent;
+    }
   }
 
   .fade-up {
-    animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both;
+    animation: fadeUp .45s cubic-bezier(.16, 1, .3, 1) both;
     opacity: 0;
   }
 
@@ -59,6 +107,7 @@
     margin: -20px -20px 0;
     padding: 28px 20px 56px;
   }
+
   .ma-inner {
     max-width: 860px;
     margin: 0 auto;
@@ -75,6 +124,7 @@
     box-shadow: var(--shadow);
     overflow: hidden;
   }
+
   .ma-card-head {
     padding: 18px 22px 14px;
     border-bottom: 1px solid var(--border);
@@ -82,6 +132,7 @@
     align-items: center;
     justify-content: space-between;
   }
+
   .ma-card-title {
     font-size: 18px;
     font-weight: 700;
@@ -90,6 +141,7 @@
     align-items: center;
     gap: 10px;
   }
+
   .ma-card-title .ico {
     width: 36px; height: 36px;
     background: var(--primary-light);
@@ -98,28 +150,70 @@
     color: var(--primary);
     font-size: 20px;
   }
-  .ma-card-body { padding: 20px 22px; }
+
+  .ma-card-body {
+    padding: 20px 22px;
+  }
 
   /* ── Back link ───────────────────────────────────────────── */
   .back-link {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; font-weight: 500; color: var(--text-3);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-3);
     text-decoration: none;
     transition: color .15s;
   }
-  .back-link:hover { color: var(--primary); }
-  .back-link .material-symbols-outlined { font-size: 18px; }
+
+  .back-link:hover {
+    color: var(--primary);
+  }
+
+  .back-link .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  .btn-edit-application {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    background: var(--primary, #1d4ed8);
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: opacity .15s, transform .15s;
+  }
+  .btn-edit-application:hover {
+    opacity: .9;
+    color: white;
+    transform: translateY(-1px);
+  }
+  .btn-edit-application .material-symbols-outlined {
+    font-size: 18px;
+  }
 
   /* ── Status badge ────────────────────────────────────────── */
   .status-badge {
-    display: inline-flex; align-items: center; gap: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     padding: 3px 10px;
     border-radius: 20px;
-    font-size: 11px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .05em;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
   }
+
   .status-dot {
-    width: 6px; height: 6px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
   }
 
@@ -133,10 +227,12 @@
     box-shadow: var(--shadow);
     overflow: hidden;
   }
+
   .app-summary-head {
     padding: 22px 26px 18px;
     border-bottom: 1px solid var(--border);
   }
+
   .app-top-row {
     display: flex;
     justify-content: space-between;
@@ -144,24 +240,35 @@
     gap: 12px;
     margin-bottom: 6px;
   }
+
   .app-program-name {
     font-size: 22px;
     font-weight: 700;
     color: var(--text-1);
     line-height: 1.2;
   }
+
   .app-id-row {
-    display: flex; align-items: center; gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-top: 4px;
   }
+
   .app-id-chip {
-    font-size: 12px; font-weight: 600; color: var(--text-3);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-3);
     background: var(--bg);
-    padding: 2px 10px; border-radius: 6px;
+    padding: 2px 10px;
+    border-radius: 6px;
     border: 1px solid var(--border);
   }
+
   .app-submitted-date {
-    font-size: 12px; color: var(--text-4); font-weight: 400;
+    font-size: 12px;
+    color: var(--text-4);
+    font-weight: 400;
   }
 
   /* ── Stage Tracker ───────────────────────────────────────── */
@@ -169,46 +276,66 @@
     padding: 24px 26px 20px;
     position: relative;
   }
+
   .stage-track {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     position: relative;
   }
+
   .stage-track::before {
     content: '';
     position: absolute;
-    top: 20px; left: 0; right: 0;
+    top: 20px;
+    left: 0;
+    right: 0;
     height: 3px;
     background: var(--border);
     z-index: 0;
   }
+
   .stage-track-fill {
     position: absolute;
-    top: 20px; left: 0;
+    top: 20px;
+    left: 0;
     height: 3px;
     background: linear-gradient(90deg, var(--primary), var(--secondary));
     border-radius: 2px;
     z-index: 1;
     transition: width .6s ease;
   }
+
   .stage-item {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 10px; flex: 1; min-width: 0; position: relative; z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 2;
   }
+
   .stage-circle {
-    width: 40px; height: 40px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: 3px solid white;
     flex-shrink: 0;
     font-size: 17px;
     position: relative;
   }
+
   .stage-circle.completed {
     background: var(--primary);
     box-shadow: 0 0 0 2px var(--primary);
     color: white;
   }
+
   .stage-circle.active {
     background: var(--secondary);
     box-shadow: 0 0 0 2px var(--secondary);
@@ -228,21 +355,37 @@
   .stage-label.closed { color: var(--danger); font-weight: 700; }
   .stage-arrow {
     position: absolute;
-    right: -18px; top: 50%; transform: translateY(-50%);
-    font-size: 13px; color: var(--border);
+    right: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--border);
     z-index: 3;
     pointer-events: none;
   }
+
   .stage-label {
-    font-size: 10px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .06em;
-    text-align: center; line-height: 1.3;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    text-align: center;
+    line-height: 1.3;
     max-width: 80px;
     word-break: break-word;
   }
-  .stage-label.completed { color: var(--text-3); }
-  .stage-label.active    { color: var(--primary); }
-  .stage-label.pending   { color: var(--border); }
+
+  .stage-label.completed {
+    color: var(--text-3);
+  }
+
+  .stage-label.active {
+    color: var(--primary);
+  }
+
+  .stage-label.pending {
+    color: var(--border);
+  }
 
   /* ── Quick Status Grid ───────────────────────────────────── */
   .quick-status-grid {
@@ -251,30 +394,66 @@
     gap: 0;
     border-top: 1px solid var(--border);
   }
+
   .qs-item {
     padding: 16px 18px;
     border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
-  .qs-item:last-child { border-right: none; }
+
+  .qs-item:last-child {
+    border-right: none;
+  }
+
   .qs-label {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 600; color: var(--text-3);
-    text-transform: uppercase; letter-spacing: .05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: .05em;
   }
-  .qs-label .material-symbols-outlined { font-size: 16px; }
+
+  .qs-label .material-symbols-outlined {
+    font-size: 16px;
+  }
+
   .qs-value {
-    font-size: 14px; font-weight: 600; color: var(--text-1);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
     line-height: 1.3;
   }
-  .qs-value.pending  { color: var(--warning); }
-  .qs-value.success  { color: var(--success); }
-  .qs-value.danger   { color: var(--danger); }
-  .qs-value.muted    { color: var(--text-4); font-weight: 400; }
+
+  .qs-value.pending {
+    color: var(--warning);
+  }
+
+  .qs-value.success {
+    color: var(--success);
+  }
+
+  .qs-value.danger {
+    color: var(--danger);
+  }
+
+  .qs-value.muted {
+    color: var(--text-4);
+    font-weight: 400;
+  }
 
   @media (max-width: 620px) {
-    .quick-status-grid { grid-template-columns: 1fr 1fr; }
-    .qs-item:nth-child(2) { border-right: none; }
+    .quick-status-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .qs-item:nth-child(2) {
+      border-right: none;
+    }
   }
 
   /* ╔═══════════════════════════════════╗
@@ -286,12 +465,15 @@
     gap: 0;
     padding: 0;
   }
-  .merit-panel, .seat-panel {
+
+  .merit-panel,
+  .seat-panel {
     padding: 22px 24px;
     display: flex;
     flex-direction: column;
     position: relative;
   }
+
   .merit-panel {
     border-right: 1px solid var(--border);
     align-items: center;
@@ -299,23 +481,31 @@
     text-align: center;
     padding-top: 48px;
   }
+
   .merit-stat-row {
     display: flex; gap: 32px; margin-bottom: 16px;
     justify-content: center;
   }
+
   .merit-stat {
     display: flex; flex-direction: column; gap: 2px;
     align-items: center;
   }
+
   .merit-stat-label {
     font-size: 15px; font-weight: 600; color: var(--text-4);
     text-transform: uppercase; letter-spacing: .07em;
   }
+
   .merit-stat-value {
     font-size: 50px; font-weight: 800; line-height: 1;
     color: var(--primary);
   }
-  .merit-stat-value.score { color: var(--text-1); }
+
+  .merit-stat-value.score {
+    color: var(--text-1);
+  }
+
   .merit-chip {
     display: inline-block;
     padding: 4px 14px; border-radius: 20px;
@@ -338,53 +528,96 @@
     padding: 14px 16px;
     margin-bottom: 14px;
   }
+
   .seat-prog-name {
     font-size: 20px; font-weight: 700; color: var(--text-1);
     margin-bottom: 4px;
   }
+
   .seat-meta {
-    font-size: 12px; color: var(--text-3);
-    display: flex; align-items: center; gap: 8px;
+    font-size: 12px;
+    color: var(--text-3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 8px;
   }
+
   .seat-deadline {
-    font-size: 12px; color: var(--text-2);
+    font-size: 12px;
+    color: var(--text-2);
   }
-  .seat-deadline strong { color: var(--text-1); font-weight: 600; }
+
+  .seat-deadline strong {
+    color: var(--text-1);
+    font-weight: 600;
+  }
 
   .seat-action-row {
-    display: flex; gap: 10px;
+    display: flex;
+    gap: 10px;
   }
+
   .btn-accept {
     flex: 1;
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     padding: 10px 16px;
-    background: var(--success); color: white;
-    border: none; border-radius: 9px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 9px;
     font-family: 'Poppins', sans-serif;
-    font-size: 13px; font-weight: 600;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     transition: opacity .15s, transform .1s;
   }
-  .btn-accept:hover { opacity: .88; transform: translateY(-1px); }
+
+  .btn-accept:hover {
+    opacity: .88;
+    transform: translateY(-1px);
+  }
+
   .btn-decline {
     flex: 1;
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     padding: 10px 16px;
-    background: var(--danger); color: white;
-    border: none; border-radius: 9px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 9px;
     font-family: 'Poppins', sans-serif;
-    font-size: 13px; font-weight: 600;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     transition: opacity .15s, transform .1s;
   }
-  .btn-decline:hover { opacity: .88; transform: translateY(-1px); }
+
+  .btn-decline:hover {
+    opacity: .88;
+    transform: translateY(-1px);
+  }
+
   .btn-accept .material-symbols-outlined,
-  .btn-decline .material-symbols-outlined { font-size: 17px; }
+  .btn-decline .material-symbols-outlined {
+    font-size: 17px;
+  }
 
   @media (max-width: 620px) {
-    .merit-seat-card .ma-card-body { grid-template-columns: 1fr; }
-    .merit-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .merit-seat-card .ma-card-body {
+      grid-template-columns: 1fr;
+    }
+
+    .merit-panel {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
   }
 
   /* ╔═══════════════════════════════════╗
@@ -395,358 +628,816 @@
     grid-template-columns: 1fr 1fr;
     gap: 18px;
   }
+
   @media (max-width: 680px) {
-    .doc-nextsteps-grid { grid-template-columns: 1fr; }
+    .doc-nextsteps-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Document list */
-  .doc-list { display: flex; flex-direction: column; }
+  .doc-list {
+    display: flex;
+    flex-direction: column;
+  }
+
   .doc-row {
-    display: flex; align-items: center; gap: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     padding: 12px 22px;
     border-bottom: 1px solid #f9fafb;
     transition: background .12s;
   }
-  .doc-row:last-child { border-bottom: none; }
-  .doc-row:hover { background: #f9fafb; }
+
+  .doc-row:last-child {
+    border-bottom: none;
+  }
+
+  .doc-row:hover {
+    background: #f9fafb;
+  }
+
   .doc-checkbox {
-    width: 18px; height: 18px; border-radius: 5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
     border: 2px solid var(--border);
     flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: border-color .15s, background .15s;
   }
+
   .doc-checkbox.checked {
-    background: var(--success); border-color: var(--success);
+    background: var(--success);
+    border-color: var(--success);
   }
+
   .doc-checkbox.checked::after {
     content: '✓';
-    color: white; font-size: 11px; font-weight: 700;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
   }
+
   .doc-name {
-    font-size: 13px; font-weight: 500; color: var(--text-2);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
     flex: 1;
   }
+
   .doc-view-link {
-    font-size: 12px; font-weight: 500; color: var(--primary);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--primary);
     text-decoration: none;
   }
-  .doc-view-link:hover { text-decoration: underline; }
+
+  .doc-view-link:hover {
+    text-decoration: underline;
+  }
+
   .doc-card-foot {
     padding: 14px 22px;
     border-top: 1px solid var(--border);
   }
+
   .btn-upload {
     width: 100%;
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 11px;
-    background: var(--primary); color: white;
-    border: none; border-radius: 9px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 9px;
     font-family: 'Poppins', sans-serif;
-    font-size: 13px; font-weight: 600;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     text-decoration: none;
     transition: opacity .15s;
   }
-  .btn-upload:hover { opacity: .88; }
-  .btn-upload .material-symbols-outlined { font-size: 18px; }
+
+  .btn-upload:hover {
+    opacity: .88;
+  }
+
+  .btn-upload .material-symbols-outlined {
+    font-size: 18px;
+  }
 
   /* Next Steps list */
   .nextsteps-list {
-    display: flex; flex-direction: column;
+    display: flex;
+    flex-direction: column;
     padding: 16px 22px;
     gap: 14px;
   }
+
   .ns-item {
-    display: flex; align-items: flex-start; gap: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
   }
+
   .ns-check {
-    width: 24px; height: 24px; border-radius: 6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
     flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 14px;
   }
-  .ns-check.done    { background: #fef3c7; color: var(--warning); }
-  .ns-check.pending { background: #fef3c7; color: var(--warning); }
+
+  .ns-check.done {
+    background: #fef3c7;
+    color: var(--warning);
+  }
+
+  .ns-check.pending {
+    background: #fef3c7;
+    color: var(--warning);
+  }
+
   .ns-text {
-    font-size: 13px; font-weight: 500; color: var(--text-2);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
     line-height: 1.45;
     padding-top: 2px;
   }
+
   .ns-deadline-row {
-    display: flex; align-items: center; gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 12px 22px;
     border-top: 1px solid var(--border);
     margin-top: 4px;
   }
-  .ns-deadline-row .material-symbols-outlined { font-size: 18px; color: var(--warning); }
-  .ns-deadline-text {
-    font-size: 12px; font-weight: 500; color: var(--text-3);
+
+  .ns-deadline-row .material-symbols-outlined {
+    font-size: 18px;
+    color: var(--warning);
   }
-  .ns-deadline-text strong { color: var(--warning); font-weight: 600; }
+
+  .ns-deadline-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-3);
+  }
+
+  .ns-deadline-text strong {
+    color: var(--warning);
+    font-weight: 600;
+  }
 
   /* ── Download button ─────────────────────────────────────── */
   .btn-download {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 11px 28px;
-    background: var(--card-bg); color: var(--text-2);
-    border: 1.5px solid var(--border); border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--text-2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
     font-family: 'Poppins', sans-serif;
-    font-size: 13px; font-weight: 500;
+    font-size: 13px;
+    font-weight: 500;
     text-decoration: none;
     cursor: pointer;
     transition: background .15s, border-color .15s, color .15s;
   }
+
   .btn-download:hover {
     background: var(--bg);
     border-color: var(--primary);
     color: var(--primary);
   }
-  .btn-download .material-symbols-outlined { font-size: 18px; }
+
+  .btn-download .material-symbols-outlined {
+    font-size: 18px;
+  }
 
   /* ── Error / empty states ────────────────────────────────── */
   .empty-state {
     text-align: center;
     padding: 56px 24px;
   }
+
   .empty-state .ico-wrap {
-    width: 64px; height: 64px; border-radius: 50%;
-    background: var(--bg); border: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin: 0 auto 16px;
   }
-  .empty-state .ico-wrap .material-symbols-outlined { font-size: 32px; color: var(--text-4); }
-  .empty-state h3 { font-size: 18px; font-weight: 700; color: var(--text-1); margin-bottom: 8px; }
-  .empty-state p  { font-size: 13px; color: var(--text-3); max-width: 360px; margin: 0 auto 24px; }
+
+  .empty-state .ico-wrap .material-symbols-outlined {
+    font-size: 32px;
+    color: var(--text-4);
+  }
+
+  .empty-state h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 8px;
+  }
+
+  .empty-state p {
+    font-size: 13px;
+    color: var(--text-3);
+    max-width: 360px;
+    margin: 0 auto 24px;
+  }
 
   /* ── Entrance Test + Interview cards (reuse same style) ──── */
   .info-grid-2 {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
+
   .info-tile {
-    background: var(--bg); border-radius: 10px; padding: 13px 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 13px 16px;
     border: 1px solid var(--border);
   }
+
   .info-tile-label {
-    font-size: 10px; font-weight: 600; color: var(--text-4);
-    text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-4);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: 4px;
   }
+
   .info-tile-value {
-    font-size: 14px; font-weight: 600; color: var(--text-1);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
   }
-  .info-tile-value.red   { color: var(--danger); }
-  .info-tile-value.blue  { color: var(--primary); }
+
+  .info-tile-value.red {
+    color: var(--danger);
+  }
+
+  .info-tile-value.blue {
+    color: var(--primary);
+  }
 
   /* ── Result Published banner ─────────────────────────────── */
   .result-banner {
-    background: #f0fdf4; border: 1px solid #bbf7d0;
-    border-radius: 12px; padding: 20px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 20px;
     margin-bottom: 16px;
   }
+
   .result-banner-head {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 14px;
   }
-  .result-banner-title { font-size: 14px; font-weight: 700; color: #166534; }
+
+  .result-banner-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #166534;
+  }
+
   .result-banner-badge {
-    background: var(--success); color: white;
-    padding: 3px 10px; border-radius: 8px;
-    font-size: 11px; font-weight: 700;
+    background: var(--success);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
   }
+
   .result-score-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
+
   .result-score-box {
-    background: white; border: 1px solid #bbf7d0;
-    border-radius: 10px; padding: 12px; text-align: center;
+    background: white;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
   }
-  .result-score-box .lbl { font-size: 10px; color: var(--text-3); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-  .result-score-box .val { font-size: 22px; font-weight: 800; color: var(--text-1); }
-  .result-score-box .val.green { color: var(--success); }
+
+  .result-score-box .lbl {
+    font-size: 10px;
+    color: var(--text-3);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .result-score-box .val {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-1);
+  }
+
+  .result-score-box .val.green {
+    color: var(--success);
+  }
 
   /* ── Profile tab ─────────────────────────────────────────── */
   .prof-wrap {
-    display: grid; grid-template-columns: 240px 1fr; gap: 18px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 18px;
     align-items: start;
   }
-  @media (max-width: 720px) { .prof-wrap { grid-template-columns: 1fr; } }
+
+  @media (max-width: 720px) {
+    .prof-wrap {
+      grid-template-columns: 1fr;
+    }
+  }
 
   .prof-sidebar {
-    background: var(--card-bg); border-radius: var(--radius);
-    border: 1.5px solid var(--border); box-shadow: var(--shadow);
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
     padding: 26px 18px 18px;
-    display: flex; flex-direction: column; align-items: center; gap: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
   }
-  .prof-avatar {
-    width: 76px; height: 76px; border-radius: 50%;
-    background: var(--primary); color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px; font-weight: 700;
-    margin-bottom: 12px; overflow: hidden; flex-shrink: 0;
-  }
-  .prof-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-  .prof-name-display { font-size: 15px; font-weight: 700; color: var(--text-1); text-align: center; margin-bottom: 3px; }
-  .prof-email-display { font-size: 11px; color: var(--text-4); margin-bottom: 12px; text-align: center; }
-  .prof-divider { width: 100%; height: 1px; background: var(--border); margin: 8px 0; }
-  .prof-action {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%; padding: 9px 12px; border-radius: 9px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 13px; font-weight: 500; color: var(--text-2);
-    text-decoration: none; border: none; background: none;
-    cursor: pointer; transition: background .12s, color .12s;
-  }
-  .prof-action:hover { background: var(--bg); color: var(--text-1); }
-  .prof-action .material-symbols-outlined { font-size: 18px; color: var(--text-4); }
-  .prof-action.primary { background: var(--primary-light); color: var(--primary); }
-  .prof-action.primary .material-symbols-outlined { color: var(--primary); }
-  .prof-action.danger  { color: var(--danger); }
-  .prof-action.danger .material-symbols-outlined { color: var(--danger); }
 
-  .prof-main { display: flex; flex-direction: column; gap: 16px; }
-  .prof-section-card {
-    background: var(--card-bg); border-radius: var(--radius);
-    border: 1.5px solid var(--border); box-shadow: var(--shadow); overflow: hidden;
+  .prof-avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
   }
-  .prof-section-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 22px 13px; border-bottom: 1px solid var(--border);
+
+  .prof-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
   }
-  .prof-section-title {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 14px; font-weight: 600; color: var(--text-1);
+
+  .prof-name-display {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-1);
+    text-align: center;
+    margin-bottom: 3px;
   }
-  .prof-section-title .material-symbols-outlined { font-size: 18px; color: var(--text-3); }
-  .prof-edit-btn {
-    display: flex; align-items: center; gap: 5px;
-    padding: 6px 12px; border-radius: 8px;
-    border: 1.5px solid var(--border); background: white;
+
+  .prof-email-display {
+    font-size: 11px;
+    color: var(--text-4);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .prof-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+  }
+
+  .prof-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 9px;
     font-family: 'Poppins', sans-serif;
-    font-size: 12px; font-weight: 500; color: var(--text-3);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    text-decoration: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+
+  .prof-action:hover {
+    background: var(--bg);
+    color: var(--text-1);
+  }
+
+  .prof-action .material-symbols-outlined {
+    font-size: 18px;
+    color: var(--text-4);
+  }
+
+  .prof-action.primary {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .prof-action.primary .material-symbols-outlined {
+    color: var(--primary);
+  }
+
+  .prof-action.danger {
+    color: var(--danger);
+  }
+
+  .prof-action.danger .material-symbols-outlined {
+    color: var(--danger);
+  }
+
+  .prof-main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .prof-section-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .prof-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px 13px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .prof-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .prof-section-title .material-symbols-outlined {
+    font-size: 18px;
+    color: var(--text-3);
+  }
+
+  .prof-edit-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-3);
     cursor: pointer;
     transition: border-color .15s, color .15s;
   }
-  .prof-edit-btn:hover { border-color: var(--primary); color: var(--primary); }
-  .prof-edit-btn .material-symbols-outlined { font-size: 15px; }
+
+  .prof-edit-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .prof-edit-btn .material-symbols-outlined {
+    font-size: 15px;
+  }
 
   .prof-field-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
-  @media (max-width: 540px) { .prof-field-grid { grid-template-columns: 1fr; } }
+
+  @media (max-width: 540px) {
+    .prof-field-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .prof-field {
     padding: 14px 22px;
     border-bottom: 1px solid #f9fafb;
     border-right: 1px solid #f9fafb;
   }
-  .prof-field:nth-child(even) { border-right: none; }
-  .prof-field-full { grid-column: 1/-1; padding: 14px 22px; border-bottom: 1px solid #f9fafb; }
-  .prof-subsection { grid-column: 1/-1; padding: 10px 22px 8px; font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg); }
-  .prof-fl { font-size: 10px; font-weight: 600; color: var(--text-4); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
-  .prof-fv { font-size: 13px; font-weight: 500; color: var(--text-1); }
-  .prof-fv.empty { color: var(--border); font-style: italic; font-weight: 400; }
+
+  .prof-field:nth-child(even) {
+    border-right: none;
+  }
+
+  .prof-field-full {
+    grid-column: 1/-1;
+    padding: 14px 22px;
+    border-bottom: 1px solid #f9fafb;
+  }
+
+  .prof-subsection {
+    grid-column: 1/-1;
+    padding: 10px 22px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .prof-fl {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-4);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 3px;
+  }
+
+  .prof-fv {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-1);
+  }
+
+  .prof-fv.empty {
+    color: var(--border);
+    font-style: italic;
+    font-weight: 400;
+  }
 
   /* ── Profile edit modal ──────────────────────────────────── */
   .prof-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.45); z-index: 1000;
-    align-items: center; justify-content: center;
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
   }
-  .prof-overlay.open { display: flex; }
+
+  .prof-overlay.open {
+    display: flex;
+  }
+
   .prof-modal {
-    background: white; border-radius: 18px;
-    width: 100%; max-width: 520px; max-height: 86vh;
-    overflow-y: auto; margin: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    background: white;
+    border-radius: 18px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 86vh;
+    overflow-y: auto;
+    margin: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .2);
     animation: fadeUp .2s ease-out both;
   }
+
   .prof-modal-head {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 18px 22px 14px;
     border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; background: white; z-index: 1;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
     border-radius: 18px 18px 0 0;
   }
-  .prof-modal-head h3 { font-size: 15px; font-weight: 700; color: var(--text-1); }
+
+  .prof-modal-head h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-1);
+  }
+
   .prof-modal-close {
-    width: 30px; height: 30px; border-radius: 7px;
-    background: var(--bg); border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: var(--bg);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--text-3);
   }
-  .prof-modal-close:hover { background: var(--border); }
-  .prof-modal-body { padding: 18px 22px 8px; display: flex; flex-direction: column; gap: 14px; }
-  .pef-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
-  .pef-row.full { grid-template-columns: 1fr; }
-  .pef label { display: block; font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
-  .pef input, .pef select, .pef textarea {
-    width: 100%; padding: 8px 11px;
-    border: 1.5px solid var(--border); border-radius: 8px;
-    font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--text-1);
+
+  .prof-modal-close:hover {
+    background: var(--border);
+  }
+
+  .prof-modal-body {
+    padding: 18px 22px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .pef-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+  }
+
+  .pef-row.full {
+    grid-template-columns: 1fr;
+  }
+
+  .pef label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 5px;
+  }
+
+  .pef input,
+  .pef select,
+  .pef textarea {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: var(--text-1);
     background: white;
     transition: border-color .15s;
   }
-  .pef input:focus, .pef select:focus, .pef textarea:focus { outline: none; border-color: var(--primary); }
-  .pef textarea { min-height: 68px; resize: vertical; }
+
+  .pef input:focus,
+  .pef select:focus,
+  .pef textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  .pef textarea {
+    min-height: 68px;
+    resize: vertical;
+  }
+
   .prof-modal-foot {
-    display: flex; gap: 10px; justify-content: flex-end;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
     padding: 14px 22px 18px;
     border-top: 1px solid var(--border);
-    position: sticky; bottom: 0; background: white;
+    position: sticky;
+    bottom: 0;
+    background: white;
     border-radius: 0 0 18px 18px;
   }
+
   .btn-save {
-    padding: 8px 22px; border-radius: 8px;
-    background: var(--primary); color: white;
-    border: none; font-family: 'Poppins', sans-serif;
-    font-size: 13px; font-weight: 600;
+    padding: 8px 22px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     transition: opacity .15s;
   }
-  .btn-save:hover { opacity: .88; }
-  .btn-save:disabled { opacity: .5; cursor: not-allowed; }
-  .btn-cancel {
-    padding: 8px 16px; border-radius: 8px;
-    background: var(--bg); color: var(--text-3);
-    border: none; font-family: 'Poppins', sans-serif;
-    font-size: 13px; font-weight: 500; cursor: pointer;
+
+  .btn-save:hover {
+    opacity: .88;
   }
-  .btn-cancel:hover { background: var(--border); }
+
+  .btn-save:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .btn-cancel {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-3);
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .btn-cancel:hover {
+    background: var(--border);
+  }
+
   .prof-toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-    background: var(--text-1); color: white;
-    padding: 9px 20px; border-radius: 10px;
-    font-size: 13px; font-weight: 500;
-    box-shadow: 0 4px 16px rgba(0,0,0,.2);
-    z-index: 9999; display: none;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-1);
+    color: white;
+    padding: 9px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+    z-index: 9999;
+    display: none;
     animation: fadeUp .2s ease-out;
   }
-  .prof-toast.show { display: block; }
-  .prof-toast.error { background: var(--danger); }
+
+  .prof-toast.show {
+    display: block;
+  }
+
+  .prof-toast.error {
+    background: var(--danger);
+  }
 
   /* ── Tab bar ─────────────────────────────────────────────── */
   .ma-tabs {
-    display: flex; gap: 0;
+    display: flex;
+    gap: 0;
     border-bottom: 2px solid var(--border);
     margin-bottom: 18px;
   }
+
   .ma-tab {
-    display: flex; align-items: center; gap: 7px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
     padding: 10px 22px;
-    font-size: 13px; font-weight: 600; color: var(--text-3);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-3);
     text-decoration: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
     transition: color .15s, border-color .15s;
     white-space: nowrap;
   }
-  .ma-tab:hover { color: var(--primary); }
-  .ma-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-  .ma-tab .material-symbols-outlined { font-size: 17px; }
+
+  .ma-tab:hover {
+    color: var(--primary);
+  }
+
+  .ma-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  .ma-tab .material-symbols-outlined {
+    font-size: 17px;
+  }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+  rel="stylesheet">
+<link
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block"
+  rel="stylesheet">
 {% endblock %}
 
 {% block title %}{{ "Application Details" if show_detail else "My Applications" }}{% endblock %}
@@ -772,75 +1463,85 @@
 </div>
 
 {# ══════════════════════════════════════════════════════════════════
-   DETAIL VIEW
+DETAIL VIEW
 ══════════════════════════════════════════════════════════════════ #}
 {% elif show_detail %}
-{% set _app     = selected_app %}
-{% set _aname   = (_app.get('candidate_name') or _app.get('applicant_name') if _app.get else (_app.candidate_name or _app.applicant_name)) or '' %}
-{% set _prog    = (_app.get('program_name') or _app.get('program') if _app.get else (_app.program_name or _app.program)) or 'Program' %}
-{% set _cycle   = (_app.get('admission_cycle') if _app.get else _app.admission_cycle) or '' %}
-{% set _status  = (_app.get('application_status') if _app.get else _app.application_status) or 'Draft' %}
-{% set _stage   = (_app.get('current_stage_name') or _app.get('current_stage') if _app.get else (_app.current_stage_name or _app.current_stage)) or _status %}
-{% set _email   = (_app.get('email') if _app.get else _app.email) or '' %}
-{% set _intake  = (_app.get('intake_type') if _app.get else _app.intake_type) or '' %}
-{% set _appid   = app_name_param or '' %}
+{% set _app = selected_app %}
+{% set _aname = (_app.get('candidate_name') or _app.get('applicant_name') if _app.get else (_app.candidate_name or
+_app.applicant_name)) or '' %}
+{% set _prog = (_app.get('program_name') or _app.get('program') if _app.get else (_app.program_name or _app.program)) or
+'Program' %}
+{% set _cycle = (_app.get('admission_cycle') if _app.get else _app.admission_cycle) or '' %}
+{% set _status = (_app.get('application_status') if _app.get else _app.application_status) or 'Draft' %}
+{% set _stage = (_app.get('current_stage_name') or _app.get('current_stage') if _app.get else (_app.current_stage_name
+or _app.current_stage)) or _status %}
+{% set _email = (_app.get('email') if _app.get else _app.email) or '' %}
+{% set _intake = (_app.get('intake_type') if _app.get else _app.intake_type) or '' %}
+{% set _appid = app_name_param or '' %}
 {% set _subdate = submission_date or '' %}
-{% set _narr    = app_narrative or '' %}
-{% set _docs    = app_documents or [] %}
-{% set _stages  = stage_tracker or [] %}
-{% set _steps   = next_steps or [] %}
-{% set _sname   = support_name or '' %}
-{% set _srole   = support_role or '' %}
-{% set _semail  = support_email or '' %}
+{% set _narr = app_narrative or '' %}
+{% set _docs = app_documents or [] %}
+{% set _stages = stage_tracker or [] %}
+{% set _steps = next_steps or [] %}
+{% set _sname = support_name or '' %}
+{% set _srole = support_role or '' %}
+{% set _semail = support_email or '' %}
 {% set _campimg = campus_image or '' %}
 
 <div class="ma-page">
-<div class="ma-inner">
+  <div class="ma-inner">
 
-  <!-- Back breadcrumb -->
-  <a href="/merit-and-scholarship/admission_dashboard" class="back-link fade-up" style="animation-delay:.0s">
-    <span class="material-symbols-outlined">arrow_back</span>
-    Back to Dashboard
-  </a>
+    <!-- Back breadcrumb + Edit Application -->
+    <div class="ma-detail-actions fade-up" style="animation-delay:.0s;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <a href="/merit-and-scholarship/admission_dashboard" class="back-link">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Back to Dashboard
+      </a>
+      <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application" title="Open and edit this application">
+        <span class="material-symbols-outlined">edit</span>
+        Edit Application
+      </a>
+    </div>
 
-  <!-- ╔══════════════════════════════════════════════╗
+    <!-- ╔══════════════════════════════════════════════╗
        ║  APPLICATION SUMMARY CARD                    ║
        ╚══════════════════════════════════════════════╝ -->
-  <div class="app-summary-card fade-up" style="animation-delay:.06s">
+    <div class="app-summary-card fade-up" style="animation-delay:.06s">
 
-    <!-- Header -->
-    <div class="app-summary-head">
-      <div class="app-top-row">
-        <div>
-          <div class="app-id-row" style="margin-bottom:6px">
-            {# Status badge #}
-            {% if _status in ['Selected','Accepted','Offer Accepted'] %}
+      <!-- Header -->
+      <div class="app-summary-head">
+        <div class="app-top-row">
+          <div>
+            <div class="app-id-row" style="margin-bottom:6px">
+              {# Status badge #}
+              {% if _status in ['Selected','Accepted','Offer Accepted'] %}
               <span class="status-badge" style="background:#dcfce7;color:#16a34a;">
                 <span class="status-dot" style="background:#16a34a;"></span>{{ _status }}
               </span>
-            {% elif _status in ['Submitted','Under Review','Shortlisted'] %}
+              {% elif _status in ['Submitted','Under Review','Shortlisted'] %}
               <span class="status-badge" style="background:#dbeafe;color:#1d4ed8;">
                 <span class="status-dot" style="background:#1d4ed8;"></span>{{ _status }}
               </span>
-            {% elif _status in ['Interview','Interview Scheduled'] %}
+              {% elif _status in ['Interview','Interview Scheduled'] %}
               <span class="status-badge" style="background:#fef9c3;color:#ca8a04;">
                 <span class="status-dot" style="background:#ca8a04;"></span>{{ _status }}
               </span>
-            {% elif _status in ['Rejected','Offer Declined'] %}
+              {% elif _status in ['Rejected','Offer Declined'] %}
               <span class="status-badge" style="background:#fee2e2;color:#dc2626;">
                 <span class="status-dot" style="background:#dc2626;"></span>{{ _status }}
               </span>
-            {% else %}
+              {% else %}
               <span class="status-badge" style="background:#f3f4f6;color:#6b7280;">
                 <span class="status-dot" style="background:#6b7280;"></span>{{ _status }}
               </span>
-            {% endif %}
-          </div>
-          <div class="app-program-name">{{ _prog }}</div>
-          <div class="app-id-row" style="margin-top:6px">
-            <span class="app-id-chip">{{ _appid }}</span>
-            <span class="app-submitted-date">Submitted {{ _subdate }}</span>
-            {% if _cycle %}<span class="app-submitted-date">· {{ _cycle }}</span>{% endif %}
+              {% endif %}
+            </div>
+            <div class="app-program-name">{{ _prog }}</div>
+            <div class="app-id-row" style="margin-top:6px">
+              <span class="app-id-chip">{{ _appid }}</span>
+              <span class="app-submitted-date">Submitted {{ _subdate }}</span>
+              {% if _cycle %}<span class="app-submitted-date">· {{ _cycle }}</span>{% endif %}
+            </div>
           </div>
         </div>
       </div>
@@ -865,6 +1566,10 @@
       <div class="stage-track">
         <div class="stage-track-fill" style="width:{{ _pct }}%"></div>
 
+      <!-- Stage Tracker -->
+      {% if _stages %}
+      <div class="stage-track-wrap">
+        {% set ns = namespace(done=0) %}
         {% for s in _stages %}
         {% set _sstate = s.state if s is mapping else s['state'] %}
         {% set _slabel = s.name if s is mapping else s['name'] %}
@@ -887,9 +1592,7 @@
           <span class="stage-label {{ _sstate }}">{{ _slabel }}</span>
         </div>
         {% endfor %}
-      </div>
-    </div>
-    {% endif %}
+        {% set _pct = ((ns.done / _stages|length) * 100)|int %}
 
     <!-- Quick Status Row -->
     <div class="quick-status-grid">
@@ -900,55 +1603,66 @@
         </span>
         <span class="qs-value">{{ _aname or '—' }}</span>
       </div>
-      <div class="qs-item">
-        <span class="qs-label">
-          <span class="material-symbols-outlined">flag</span>
-          Current Stage
-        </span>
-        <span class="qs-value">{{ _stage or '—' }}</span>
-      </div>
-      <div class="qs-item">
-        <span class="qs-label">
-          <span class="material-symbols-outlined">record_voice_over</span>
-          Interview
-        </span>
-        {% if interview_status %}
+      {% endif %}
+
+      <!-- Quick Status Row -->
+      <div class="quick-status-grid">
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined">person</span>
+            Applicant
+          </span>
+          <span class="qs-value">{{ _aname or '—' }}</span>
+        </div>
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined">flag</span>
+            Current Stage
+          </span>
+          <span class="qs-value">{{ _stage or '—' }}</span>
+        </div>
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined">record_voice_over</span>
+            Interview
+          </span>
+          {% if interview_status %}
           <span class="qs-value pending">{{ interview_status }}</span>
-        {% else %}
+          {% else %}
           <span class="qs-value muted">Not Scheduled</span>
-        {% endif %}
-      </div>
-      <div class="qs-item">
-        <span class="qs-label">
-          <span class="material-symbols-outlined">payments</span>
-          Payment
-        </span>
-        {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
+          {% endif %}
+        </div>
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined">payments</span>
+            Payment
+          </span>
+          {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
           <span class="qs-value success">{{ fee_payment_status }}</span>
-        {% elif fee_payment_status %}
+          {% elif fee_payment_status %}
           <span class="qs-value pending">{{ fee_payment_status }}</span>
-        {% else %}
+          {% else %}
           <span class="qs-value muted">Pending</span>
-        {% endif %}
+          {% endif %}
+        </div>
       </div>
-    </div>
 
-  </div><!-- end app-summary-card -->
+    </div><!-- end app-summary-card -->
 
-  <!-- ╔══════════════════════════════════════════════╗
+    <!-- ╔══════════════════════════════════════════════╗
        ║  MERIT RESULT & SEAT ALLOCATION              ║
        ╚══════════════════════════════════════════════╝ -->
-  <div class="ma-card merit-seat-card fade-up" style="animation-delay:.12s">
-    <div class="ma-card-head">
-      <div class="ma-card-title">
-        <span class="ico"><span class="material-symbols-outlined">military_tech</span></span>
-        Merit Result &amp; Seat Allocation
+    <div class="ma-card merit-seat-card fade-up" style="animation-delay:.12s">
+      <div class="ma-card-head">
+        <div class="ma-card-title">
+          <span class="ico"><span class="material-symbols-outlined">military_tech</span></span>
+          Merit Result &amp; Seat Allocation
+        </div>
       </div>
-    </div>
-    <div class="ma-card-body">
-      <!-- Left: Merit -->
-      <div class="merit-panel">
-        {% if all_merit and all_merit|length > 0 %}
+      <div class="ma-card-body">
+        <!-- Left: Merit -->
+        <div class="merit-panel">
+          {% if all_merit and all_merit|length > 0 %}
           {% set m = all_merit[0] %}
           <div class="merit-stat-row">
             <div class="merit-stat">
@@ -999,15 +1713,15 @@
               <span class="material-symbols-outlined">check</span>
               Accept Seat
             </button>
-            <button class="btn-decline"
-              onclick="handleSeatAction('decline','{{ _appid }}')">
+            <button class="btn-decline" onclick="handleSeatAction('decline','{{ _appid }}')">
               <span class="material-symbols-outlined">close</span>
               Decline
             </button>
           </div> -->
           {% elif r.selection_status == 'Accepted' %}
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
-            <span class="material-symbols-outlined" style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
+            <span class="material-symbols-outlined"
+              style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
             <span style="font-size:13px;font-weight:600;color:#166534">Seat Accepted</span>
           </div>
           {% else %}
@@ -1015,33 +1729,33 @@
             <span style="font-size:13px;font-weight:500;color:var(--text-3)">Status: {{ r.selection_status }}</span>
           </div>
           {% endif %}
-        {% else %}
+          {% else %}
           <div style="padding:12px 0">
             <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
           </div>
-        {% endif %}
+          {% endif %}
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ╔══════════════════════════════════════════════╗
+    <!-- ╔══════════════════════════════════════════════╗
        ║  DOCUMENTS + NEXT STEPS                      ║
        ╚══════════════════════════════════════════════╝ -->
-  <div class="doc-nextsteps-grid fade-up" style="animation-delay:.18s">
+    <div class="doc-nextsteps-grid fade-up" style="animation-delay:.18s">
 
-    <!-- Documents Checklist -->
-    <div class="ma-card">
-      <div class="ma-card-head">
-        <div class="ma-card-title">
-          <span class="ico"><span class="material-symbols-outlined">folder_open</span></span>
-          Documents Checklist
+      <!-- Documents Checklist -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <div class="ma-card-title">
+            <span class="ico"><span class="material-symbols-outlined">folder_open</span></span>
+            Documents Checklist
+          </div>
+          {% if _docs %}
+          <span style="font-size:12px;font-weight:500;color:var(--text-3)">
+            {{ _docs|length }} document{{ 's' if _docs|length != 1 }}
+          </span>
+          {% endif %}
         </div>
-        {% if _docs %}
-        <span style="font-size:12px;font-weight:500;color:var(--text-3)">
-          {{ _docs|length }} document{{ 's' if _docs|length != 1 }}
-        </span>
-        {% endif %}
-      </div>
 
       <div class="doc-list">
         {% if app_documents %}
@@ -1077,12 +1791,21 @@
         </div>
       </div>
 
-      <div class="nextsteps-list">
-        {% if _steps %}
+      <!-- Next Steps -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <div class="ma-card-title">
+            <span class="ico"><span class="material-symbols-outlined">task_alt</span></span>
+            Next Steps
+          </div>
+        </div>
+
+        <div class="nextsteps-list">
+          {% if _steps %}
           {% for step in _steps %}
-          {% set _stext  = step.text if step is mapping else step['text'] %}
+          {% set _stext = step.text if step is mapping else step['text'] %}
           {% set _sislink = step.is_link if step is mapping else step['is_link'] %}
-          {% set _slurl  = step.link_url if step is mapping else step['link_url'] %}
+          {% set _slurl = step.link_url if step is mapping else step['link_url'] %}
           {% set _slabel = step.link_label if step is mapping else step['link_label'] %}
           <div class="ns-item">
             <div class="ns-check done">
@@ -1090,14 +1813,14 @@
             </div>
             <span class="ns-text">
               {% if _sislink and _slurl %}
-                <a href="{{ _slurl }}" style="color:var(--primary);font-weight:600">{{ _slabel or _stext }}</a>
+              <a href="{{ _slurl }}" style="color:var(--primary);font-weight:600">{{ _slabel or _stext }}</a>
               {% else %}
-                {{ _stext }}
+              {{ _stext }}
               {% endif %}
             </span>
           </div>
           {% endfor %}
-        {% else %}
+          {% else %}
           {# Fallback next steps from image #}
           <div class="ns-item">
             <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
@@ -1111,38 +1834,38 @@
             <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
             <span class="ns-text">Attend Orientation</span>
           </div>
+          {% endif %}
+        </div>
+
+        <!-- Deadline row -->
+        {% if _steps %}
+        <div class="ns-deadline-row">
+          <span class="material-symbols-outlined">calendar_today</span>
+          <span class="ns-deadline-text">
+            Complete all steps before <strong>your cycle deadline</strong>
+          </span>
+        </div>
         {% endif %}
       </div>
 
-      <!-- Deadline row -->
-      {% if _steps %}
-      <div class="ns-deadline-row">
-        <span class="material-symbols-outlined">calendar_today</span>
-        <span class="ns-deadline-text">
-          Complete all steps before <strong>your cycle deadline</strong>
-        </span>
-      </div>
-      {% endif %}
-    </div>
+    </div><!-- end doc-nextsteps-grid -->
 
-  </div><!-- end doc-nextsteps-grid -->
-
-  <!-- ╔══════════════════════════════════════════════╗
+    <!-- ╔══════════════════════════════════════════════╗
        ║  ENTRANCE TEST CARD                          ║
        ╚══════════════════════════════════════════════╝ -->
-  {% if et_doc %}
-  <div class="ma-card fade-up" style="animation-delay:.22s">
-    <div class="ma-card-head">
-      <div class="ma-card-title">
-        <span class="ico"><span class="material-symbols-outlined">edit_document</span></span>
-        Entrance Test
+    {% if et_doc %}
+    <div class="ma-card fade-up" style="animation-delay:.22s">
+      <div class="ma-card-head">
+        <div class="ma-card-title">
+          <span class="ico"><span class="material-symbols-outlined">edit_document</span></span>
+          Entrance Test
+        </div>
+        <span class="status-badge" style="background:#dbeafe;color:#1d4ed8">
+          {{ et_doc.entrance_test_status|upper }}
+        </span>
       </div>
-      <span class="status-badge" style="background:#dbeafe;color:#1d4ed8">
-        {{ et_doc.entrance_test_status|upper }}
-      </span>
-    </div>
-    <div class="ma-card-body">
-      {% if et_show_result %}
+      <div class="ma-card-body">
+        {% if et_show_result %}
         <div class="result-banner">
           <div class="result-banner-head">
             <span class="result-banner-title">Examination Result</span>
@@ -1151,7 +1874,8 @@
           <div class="result-score-grid">
             <div class="result-score-box">
               <div class="lbl">Score</div>
-              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ {{ et_doc.total_score or 0 }}</small></div>
+              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ {{
+                  et_doc.total_score or 0 }}</small></div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Rank</div>
@@ -1159,95 +1883,114 @@
             </div>
           </div>
         </div>
-      {% else %}
+        {% else %}
         {% set current_alloc_status = et_doc.re_allocation_status if et_is_rescheduled else et_doc.allocation_status %}
         {% if current_alloc_status == "Allocated" %}
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
-            <div>
-              <div style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:uppercase;margin-bottom:3px">Exam Center</div>
-              <div style="font-size:15px;font-weight:600;color:var(--text-1)">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</div>
-            </div>
-            <button onclick="downloadAdmitCard()"
-              style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;color:white;background:var(--primary);cursor:pointer;font-family:'Poppins',sans-serif">
-              <span class="material-symbols-outlined" style="font-size:17px">download</span>
-              Download Admit Card
-            </button>
+        <div
+          style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:uppercase;margin-bottom:3px">
+              Exam Center</div>
+            <div style="font-size:15px;font-weight:600;color:var(--text-1)">{{ et_doc.re_center_name if
+              et_is_rescheduled else et_doc.center_name }}</div>
           </div>
-          <div class="info-grid-2">
-            <div class="info-tile">
-              <div class="info-tile-label">Test Date</div>
-              <div class="info-tile-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date) }}</div>
-            </div>
-            <div class="info-tile">
-              <div class="info-tile-label">Reporting Time</div>
-              <div class="info-tile-value red">{{ et_reporting_time }}</div>
-            </div>
-            <div class="info-tile">
-              <div class="info-tile-label">Room / Hall</div>
-              <div class="info-tile-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name }}</div>
-            </div>
-            <div class="info-tile">
-              <div class="info-tile-label">Seat Number</div>
-              <div class="info-tile-value blue">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}</div>
+          <button onclick="downloadAdmitCard()"
+            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;color:white;background:var(--primary);cursor:pointer;font-family:'Poppins',sans-serif">
+            <span class="material-symbols-outlined" style="font-size:17px">download</span>
+            Download Admit Card
+          </button>
+        </div>
+        <div class="info-grid-2">
+          <div class="info-tile">
+            <div class="info-tile-label">Test Date</div>
+            <div class="info-tile-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else
+              et_doc.allocation_date) }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Reporting Time</div>
+            <div class="info-tile-value red">{{ et_reporting_time }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Room / Hall</div>
+            <div class="info-tile-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Seat Number</div>
+            <div class="info-tile-value blue">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}
             </div>
           </div>
-          <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:10px;padding:12px;margin-top:12px;border:1px solid var(--border)">
-            <span class="material-symbols-outlined" style="font-size:17px;color:var(--text-4);flex-shrink:0;margin-top:1px">location_on</span>
-            <span style="font-size:12px;color:var(--text-2)">{{ et_doc.re_center_address if et_is_rescheduled else et_doc.center_address }}</span>
-          </div>
+        </div>
+        <div
+          style="display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:10px;padding:12px;margin-top:12px;border:1px solid var(--border)">
+          <span class="material-symbols-outlined"
+            style="font-size:17px;color:var(--text-4);flex-shrink:0;margin-top:1px">location_on</span>
+          <span style="font-size:12px;color:var(--text-2)">{{ et_doc.re_center_address if et_is_rescheduled else
+            et_doc.center_address }}</span>
+        </div>
         {% else %}
-          <!-- Provider selection -->
-          <div id="allocation-view-section">
-            <h4 style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px">Test Center Selection</h4>
-            <p style="font-size:12px;color:var(--text-3);margin-bottom:18px">Select your preferred examination center. <strong>This choice cannot be changed.</strong></p>
-            <div style="display:flex;flex-direction:column;gap:13px">
-              <div>
-                <label style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:uppercase;display:block;margin-bottom:5px">Available Centers</label>
-                <select id="providerDropdown" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px">
-                  <option value="" disabled selected>Choose a location...</option>
-                  {% for p in et_preferences %}
-                  <option value="{{ p.provider }}">{{ p.center_name or p.provider }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div id="centerDetails" style="display:none;background:var(--bg);padding:13px;border-radius:9px;border:1px solid var(--border)">
-                <div style="display:flex;gap:10px;align-items:center">
-                  <div style="background:var(--primary);color:white;padding:7px;border-radius:7px;display:flex;align-items:center;justify-content:center">
-                    <span class="material-symbols-outlined" style="font-size:18px">location_on</span>
-                  </div>
-                  <div>
-                    <div id="selectedCenterName" style="font-size:13px;font-weight:600;color:var(--text-1)"></div>
-                    <div id="selectedCenterAddr" style="font-size:11px;color:var(--text-3)"></div>
-                  </div>
+        <!-- Provider selection -->
+        <div id="allocation-view-section">
+          <h4 style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px">Test Center Selection</h4>
+          <p style="font-size:12px;color:var(--text-3);margin-bottom:18px">Select your preferred examination center.
+            <strong>This choice cannot be changed.</strong></p>
+          <div style="display:flex;flex-direction:column;gap:13px">
+            <div>
+              <label
+                style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:uppercase;display:block;margin-bottom:5px">Available
+                Centers</label>
+              <select id="providerDropdown"
+                style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px">
+                <option value="" disabled selected>Choose a location...</option>
+                {% for p in et_preferences %}
+                <option value="{{ p.provider }}">{{ p.center_name or p.provider }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div id="centerDetails"
+              style="display:none;background:var(--bg);padding:13px;border-radius:9px;border:1px solid var(--border)">
+              <div style="display:flex;gap:10px;align-items:center">
+                <div
+                  style="background:var(--primary);color:white;padding:7px;border-radius:7px;display:flex;align-items:center;justify-content:center">
+                  <span class="material-symbols-outlined" style="font-size:18px">location_on</span>
+                </div>
+                <div>
+                  <div id="selectedCenterName" style="font-size:13px;font-weight:600;color:var(--text-1)"></div>
+                  <div id="selectedCenterAddr" style="font-size:11px;color:var(--text-3)"></div>
                 </div>
               </div>
-              <button id="btnSaveProvider"
-                style="width:100%;height:42px;border-radius:9px;background:var(--primary);color:white;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
-                disabled>
-                Confirm Allocation
-              </button>
             </div>
+            <button id="btnSaveProvider"
+              style="width:100%;height:42px;border-radius:9px;background:var(--primary);color:white;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
+              disabled>
+              Confirm Allocation
+            </button>
           </div>
-          <div id="successSection" style="display:none;text-align:center;padding:32px">
-            <div style="font-size:32px;margin-bottom:8px">⏳</div>
-            <h4 style="font-size:16px;font-weight:700;color:var(--text-1)">Securing your selection...</h4>
-            <p style="font-size:12px;color:var(--text-3)">Please wait while we finalise your centre.</p>
-          </div>
+        </div>
+        <div id="successSection" style="display:none;text-align:center;padding:32px">
+          <div style="font-size:32px;margin-bottom:8px">⏳</div>
+          <h4 style="font-size:16px;font-weight:700;color:var(--text-1)">Securing your selection...</h4>
+          <p style="font-size:12px;color:var(--text-3)">Please wait while we finalise your centre.</p>
+        </div>
         {% endif %}
-      {% endif %}
+        {% endif %}
+      </div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  <!-- ╔══════════════════════════════════════════════╗
+    <!-- ╔══════════════════════════════════════════════╗
        ║  INTERVIEW CARD                              ║
        ╚══════════════════════════════════════════════╝ -->
-  {% if interview_doc %}
-  <div class="ma-card fade-up" style="animation-delay:.26s">
-    <div class="ma-card-head">
-      <div class="ma-card-title">
-        <span class="ico"><span class="material-symbols-outlined">groups</span></span>
-        Interview Assessment
+    {% if interview_doc %}
+    <div class="ma-card fade-up" style="animation-delay:.26s">
+      <div class="ma-card-head">
+        <div class="ma-card-title">
+          <span class="ico"><span class="material-symbols-outlined">groups</span></span>
+          Interview Assessment
+        </div>
+        <span class="status-badge" style="background:#f0fdf4;color:#166534">
+          {{ (interview_doc.re_interview_slot_status if interview_is_rescheduled else
+          interview_doc.interview_slot_status)|upper }}
+        </span>
       </div>
       {% set i_status = interview_doc.interview_status %}
       {% if i_status and i_status != 'Scheduled' %}
@@ -1278,7 +2021,8 @@
             </div>
             <div class="result-score-box">
               <div class="lbl">Status</div>
-              <div class="val green" style="font-size:14px">{{ interview_doc.interview_result_status or 'Declared' }}</div>
+              <div class="val green" style="font-size:14px">{{ interview_doc.interview_result_status or 'Declared' }}
+              </div>
             </div>
           </div>
         </div>
@@ -1286,7 +2030,9 @@
         <div style="margin-top:14px">
           <div style="font-size:12px;font-weight:600;color:#166534;margin-bottom:8px">Your Feedback</div>
           {% if interview_feedback_submitted %}
-          <div style="background:#f9fafb;border-radius:9px;padding:12px;font-size:12px;color:var(--text-3);font-style:italic">{{ interview_doc.feedback }}</div>
+          <div
+            style="background:#f9fafb;border-radius:9px;padding:12px;font-size:12px;color:var(--text-3);font-style:italic">
+            {{ interview_doc.feedback }}</div>
           {% else %}
           <div id="interview-feedback-form">
             <textarea id="interviewFeedbackText" rows="3"
@@ -1300,7 +2046,7 @@
           {% endif %}
         </div>
         {% endif %}
-      {% else %}
+        {% else %}
         {% if interview_current_slot %}
         <div class="info-grid-2" style="margin-bottom:14px">
           <div class="info-tile">
@@ -1320,8 +2066,10 @@
             <div class="info-tile-value blue">{{ interview_current_slot.interview_time }}</div>
           </div>
         </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:14px">
-          <span class="material-symbols-outlined" style="font-size:17px;color:var(--text-4);flex-shrink:0">location_on</span>
+        <div
+          style="display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:14px">
+          <span class="material-symbols-outlined"
+            style="font-size:17px;color:var(--text-4);flex-shrink:0">location_on</span>
           <span style="font-size:12px;color:var(--text-2)">{{ interview_current_slot.interview_address }}</span>
         </div>
         {% if not interview_current_slot.attendance_confirmation %}
@@ -1344,14 +2092,15 @@
         </div>
         {% else %}
         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:11px;text-align:center">
-          <span style="font-size:12px;color:#1e40af;font-weight:500">Confirmed: <strong>{{ interview_current_slot.attendance_confirmation }}</strong></span>
+          <span style="font-size:12px;color:#1e40af;font-weight:500">Confirmed: <strong>{{
+              interview_current_slot.attendance_confirmation }}</strong></span>
         </div>
         {% endif %}
         {% endif %}
-      {% endif %}
+        {% endif %}
+      </div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
   <!-- ╔══════════════════════════════════════════════╗
        ║  ELIGIBILITY RESULT CARD                     ║
@@ -1412,32 +2161,32 @@
 
 
 {# ══════════════════════════════════════════════════════════════════
-   LIST / DASHBOARD VIEW
+LIST / DASHBOARD VIEW
 ══════════════════════════════════════════════════════════════════ #}
 {% else %}
 <div class="ma-page">
-<div class="ma-inner">
+  <div class="ma-inner">
 
-  {% if frappe.session.user != "Guest" %}
-  <div class="ma-tabs">
-    <a href="/my-applications" class="ma-tab {% if not show_profile %}active{% endif %}">
-      <span class="material-symbols-outlined">description</span>
-      My Application
-    </a>
-    <a href="/my-applications?tab=profile" class="ma-tab {% if show_profile %}active{% endif %}">
-      <span class="material-symbols-outlined">person</span>
-      My Profile
-    </a>
-  </div>
-  {% endif %}
+    {% if frappe.session.user != "Guest" %}
+    <div class="ma-tabs">
+      <a href="/my-applications" class="ma-tab {% if not show_profile %}active{% endif %}">
+        <span class="material-symbols-outlined">description</span>
+        My Application
+      </a>
+      <a href="/my-applications?tab=profile" class="ma-tab {% if show_profile %}active{% endif %}">
+        <span class="material-symbols-outlined">person</span>
+        My Profile
+      </a>
+    </div>
+    {% endif %}
 
-  {# ── PROFILE TAB ─────────────────────────────────────────── #}
-  {% if show_profile %}
-  {%- set _pname    = prof_candidate_name or '' -%}
-  {%- set _pinitial = _pname[0].upper() if _pname else 'U' -%}
-  {%- set _pphoto   = prof_user_image or '' -%}
+    {# ── PROFILE TAB ─────────────────────────────────────────── #}
+    {% if show_profile %}
+    {%- set _pname = prof_candidate_name or '' -%}
+    {%- set _pinitial = _pname[0].upper() if _pname else 'U' -%}
+    {%- set _pphoto = prof_user_image or '' -%}
 
-  <div class="prof-wrap fade-up">
+    <div class="prof-wrap fade-up">
 
     <div class="prof-sidebar">
       <div class="prof-avatar" id="prof-avatar-circle" 
@@ -1455,11 +2204,11 @@
       <div class="prof-name-display">{{ _pname }}</div>
       <div class="prof-email-display">{{ frappe.session.user }}</div>
 
-      {%- if prof_app_status -%}
+        {%- if prof_app_status -%}
         <span class="status-badge" style="background:#dcfce7;color:#16a34a;margin-bottom:16px">
           <span class="status-dot" style="background:#16a34a"></span>{{ prof_app_status }}
         </span>
-      {%- endif -%}
+        {%- endif -%}
 
       <a href="/my-applications" class="prof-action primary">
         <span class="material-symbols-outlined">description</span>My Application
@@ -1563,22 +2312,70 @@
           <span class="material-symbols-outlined" style="font-size:17px">close</span>
         </button>
       </div>
-      <div class="prof-modal-body">
-        <div class="pef-row">
-          <div class="pef"><label>Full Name</label><input type="text" id="edit-name" value="{{ prof_candidate_name or '' }}" placeholder="Full name"></div>
-          <div class="pef"><label>Date of Birth</label><input type="date" id="edit-dob" value="{{ prof_dob or '' }}"></div>
-        </div>
-        <div class="pef-row">
-          <div class="pef"><label>Gender</label>
-            <select id="edit-gender">
-              <option value="">— Select —</option>
-              <option value="Male" {% if prof_gender=='Male' %}selected{% endif %}>Male</option>
-              <option value="Female" {% if prof_gender=='Female' %}selected{% endif %}>Female</option>
-              <option value="Other" {% if prof_gender=='Other' %}selected{% endif %}>Other</option>
-              <option value="Prefer not to say" {% if prof_gender=='Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
-            </select>
+
+      <div class="prof-main">
+        <div class="prof-section-card">
+          <div class="prof-section-head">
+            <div class="prof-section-title">
+              <span class="material-symbols-outlined">badge</span>Personal Details
+            </div>
+            <button class="prof-edit-btn" onclick="openEditModal()">
+              <span class="material-symbols-outlined">edit</span>Edit
+            </button>
           </div>
-          <div class="pef"><label>Nationality</label><input type="text" id="edit-nationality" value="{{ prof_nationality or '' }}" placeholder="e.g. Indian"></div>
+          <div class="prof-field-grid">
+            <div class="prof-field">
+              <div class="prof-fl">Full Name</div>
+              <div class="prof-fv" id="disp-name">{{ prof_candidate_name or '—' }}</div>
+            </div>
+            <div class="prof-field">
+              <div class="prof-fl">Date of Birth</div>
+              <div class="prof-fv" id="disp-dob">
+                {%- if prof_dob -%}{{ frappe.utils.formatdate(prof_dob,'dd MMM, yyyy') }}{%- else -%}<span
+                  class="empty">Not set</span>{%- endif -%}
+              </div>
+            </div>
+            <div class="prof-field">
+              <div class="prof-fl">Gender</div>
+              <div class="prof-fv" id="disp-gender">{{ prof_gender or '<span class="empty">Not set</span>' }}</div>
+            </div>
+            <div class="prof-field">
+              <div class="prof-fl">Nationality</div>
+              <div class="prof-fv" id="disp-nationality">{{ prof_nationality or '<span class="empty">Not set</span>' }}
+              </div>
+            </div>
+            <div class="prof-field">
+              <div class="prof-fl">Religion</div>
+              <div class="prof-fv" id="disp-religion">{{ prof_religion or '<span class="empty">Not set</span>' }}</div>
+            </div>
+            <div class="prof-subsection">Contact Information</div>
+            <div class="prof-field">
+              <div class="prof-fl">Email Address</div>
+              <div class="prof-fv">{{ frappe.session.user }}</div>
+            </div>
+            <div class="prof-field">
+              <div class="prof-fl">Mobile Number</div>
+              <div class="prof-fv" id="disp-mobile">{{ prof_mobile or '<span class="empty">Not set</span>' }}</div>
+            </div>
+            <div class="prof-field">
+              <div class="prof-fl">Alternate Contact</div>
+              <div class="prof-fv" id="disp-alternate">{{ prof_alternate_contact or '<span class="empty">Not set</span>'
+                }}</div>
+            </div>
+            <div class="prof-field">
+              <div class="prof-fl">ID Proof</div>
+              <div class="prof-fv" id="disp-idproof">{{ prof_id_proof or '<span class="empty">Not set</span>' }}</div>
+            </div>
+            <div class="prof-field-full">
+              <div class="prof-fl">Correspondence Address</div>
+              <div class="prof-fv" id="disp-address">
+                {%- if prof_address -%}
+                {{ prof_address }}{%- if prof_city -%}, {{ prof_city }}{%- endif -%}{%- if prof_state -%}, {{ prof_state
+                }}{%- endif -%}{%- if prof_pincode %} — {{ prof_pincode }}{%- endif -%}
+                {%- else -%}<span class="empty">Not set</span>{%- endif -%}
+              </div>
+            </div>
+          </div>
         </div>
         <div class="pef-row">
           <div class="pef"><label>Religion</label><input type="text" id="edit-religion" value="{{ prof_religion or '' }}"></div>
@@ -1619,13 +2416,76 @@
         <button class="btn-save" id="saveBtn" onclick="saveProfile()">Save Changes</button>
       </div>
     </div>
-  </div>
-  <div class="prof-toast" id="profToast"></div>
 
-  {% else %}
+    {# ── EDIT MODAL #}
+    <div class="prof-overlay" id="editOverlay">
+      <div class="prof-modal">
+        <div class="prof-modal-head">
+          <h3>Edit Personal Details</h3>
+          <button class="prof-modal-close" onclick="closeEditModal()">
+            <span class="material-symbols-outlined" style="font-size:17px">close</span>
+          </button>
+        </div>
+        <div class="prof-modal-body">
+          <div class="pef-row">
+            <div class="pef"><label>Full Name</label><input type="text" id="edit-name"
+                value="{{ prof_candidate_name or '' }}" placeholder="Full name"></div>
+            <div class="pef"><label>Date of Birth</label><input type="date" id="edit-dob" value="{{ prof_dob or '' }}">
+            </div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>Gender</label>
+              <select id="edit-gender">
+                <option value="">— Select —</option>
+                <option value="Male" {% if prof_gender=='Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if prof_gender=='Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if prof_gender=='Other' %}selected{% endif %}>Other</option>
+                <option value="Prefer not to say" {% if prof_gender=='Prefer not to say' %}selected{% endif %}>Prefer
+                  not to say</option>
+              </select>
+            </div>
+            <div class="pef"><label>Nationality</label><input type="text" id="edit-nationality"
+                value="{{ prof_nationality or '' }}" placeholder="e.g. Indian"></div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>Religion</label><input type="text" id="edit-religion"
+                value="{{ prof_religion or '' }}"></div>
+            <div class="pef"><label>Mobile Number</label><input type="tel" id="edit-mobile"
+                value="{{ prof_mobile or '' }}" placeholder="+91 9XXXXXXXXX"></div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>Alternate Contact</label><input type="tel" id="edit-alternate"
+                value="{{ prof_alternate_contact or '' }}"></div>
+            <div class="pef"><label>ID Proof Type</label><input type="text" id="edit-idproof"
+                value="{{ prof_id_proof or '' }}" placeholder="e.g. Aadhaar, Passport"></div>
+          </div>
+          <div class="pef-row full">
+            <div class="pef"><label>Correspondence Address</label><textarea id="edit-address"
+                placeholder="Street address">{{ prof_address or '' }}</textarea></div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>City</label><input type="text" id="edit-city" value="{{ prof_city or '' }}"></div>
+            <div class="pef"><label>State</label><input type="text" id="edit-state" value="{{ prof_state or '' }}">
+            </div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>Pincode</label><input type="text" id="edit-pincode"
+                value="{{ prof_pincode or '' }}"></div>
+            <div class="pef"></div>
+          </div>
+        </div>
+        <div class="prof-modal-foot">
+          <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+          <button class="btn-save" id="saveBtn" onclick="saveProfile()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+    <div class="prof-toast" id="profToast"></div>
 
-  {# ── LIST VIEW ────────────────────────────────────────────── #}
-  {% if applications %}
+    {% else %}
+
+    {# ── LIST VIEW ────────────────────────────────────────────── #}
+    {% if applications %}
     {% for app in applications %}
     {% set h = app.header %}
 
@@ -1634,8 +2494,7 @@
         <div class="app-top-row">
           <div>
             <div class="app-id-row" style="margin-bottom:6px">
-              <span class="status-badge"
-                style="background:{{ h.status_bg }};color:{{ h.status_color }}">
+              <span class="status-badge" style="background:{{ h.status_bg }};color:{{ h.status_color }}">
                 <span class="status-dot" style="background:{{ h.status_color }}"></span>
                 {{ h.status }}
               </span>
@@ -1657,8 +2516,11 @@
 
       <!-- Stage tracker (loaded via JS) -->
       <div style="padding:20px 24px 16px">
-        <div id="stageLoading-{{ app.name }}" style="display:flex;align-items:center;gap:8px;color:var(--text-4);font-size:12px">
-          <div style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite"></div>
+        <div id="stageLoading-{{ app.name }}"
+          style="display:flex;align-items:center;gap:8px;color:var(--text-4);font-size:12px">
+          <div
+            style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite">
+          </div>
           Loading pipeline...
         </div>
         <div id="stagePipeline-{{ app.name }}" style="display:none"></div>
@@ -1676,30 +2538,33 @@
         </div>
         <div class="qs-item">
           <span class="qs-label"><span class="material-symbols-outlined">military_tech</span>Merit Score</span>
-          <span class="qs-value {% if h.merit_score %}{% else %}muted{% endif %}">{{ h.merit_score or 'Pending' }}</span>
+          <span class="qs-value {% if h.merit_score %}{% else %}muted{% endif %}">{{ h.merit_score or 'Pending'
+            }}</span>
         </div>
         <div class="qs-item">
           <span class="qs-label"><span class="material-symbols-outlined">category</span>Category</span>
-          <span class="qs-value">{{ app.application[4].value if app.application and app.application|length > 4 else 'General' }}</span>
+          <span class="qs-value">{{ app.application[4].value if app.application and app.application|length > 4 else
+            'General' }}</span>
         </div>
       </div>
     </div>
     {% endfor %}
 
-  {% else %}
-  <div class="ma-card fade-up">
-    <div class="empty-state">
-      <div class="ico-wrap"><span class="material-symbols-outlined">description</span></div>
-      <h3>No application found</h3>
-      <p>You haven't started an application for the current admission cycle yet.</p>
-      <a href="/admission" class="btn-upload" style="display:inline-flex;width:auto;padding:11px 28px">Browse Programs</a>
+    {% else %}
+    <div class="ma-card fade-up">
+      <div class="empty-state">
+        <div class="ico-wrap"><span class="material-symbols-outlined">description</span></div>
+        <h3>No application found</h3>
+        <p>You haven't started an application for the current admission cycle yet.</p>
+        <a href="/admission" class="btn-upload" style="display:inline-flex;width:auto;padding:11px 28px">Browse
+          Programs</a>
+      </div>
     </div>
+    {% endif %}
+
+    {% endif %}{# end show_profile / list #}
+
   </div>
-  {% endif %}
-
-  {% endif %}{# end show_profile / list #}
-
-</div>
 </div>
 {% endif %}{# end detail/list #}
 
@@ -1708,7 +2573,11 @@
 
 {% block extra_js %}
 <style>
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 </style>
 
 <!-- ── Document Upload Modal ──────────────────────────────────────── -->
@@ -1871,211 +2740,213 @@
     document.querySelectorAll('.fade-up').forEach(function(el) {
       el.style.animationFillMode = 'forwards';
     });
-  });
 
-  /* ── Accept / Decline seat ── */
-  window.handleSeatAction = async function(action, appId) {
-    var msg = action === 'accept'
-      ? 'Accept your seat allocation? This action is binding.'
-      : 'Decline your seat? This cannot be undone.';
-    if (!confirm(msg)) return;
-    try {
-      const message = await apiFetch('slcm.admission.api.seat.handle_seat_action', { applicant: appId, action: action });
-      if (message && message.success) {
-        window.location.reload();
-      } else {
-        alert((message && message.error) || 'Action failed. Please try again.');
-      }
-    } catch (e) {
-      alert(e.message || 'Error performing action.');
-    }
-  };
-
-  /* ── Entrance test provider selection ── */
-  (function() {
-    var dropdown = document.getElementById('providerDropdown');
-    if (!dropdown) return;
-    var btnSave = document.getElementById('btnSaveProvider');
-    var centerDetails = document.getElementById('centerDetails');
-    var selectedCenterName = document.getElementById('selectedCenterName');
-    var selectedCenterAddr = document.getElementById('selectedCenterAddr');
-    var etData = {
-      preferences: {{ et_preferences|tojson|safe if et_preferences else '[]' }},
-      applicantId: '{{ et_doc.applicant if et_doc else "" }}',
-      entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
-      allocationName: '{{ et_doc.name if et_doc else "" }}',
-      isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
-    };
-    dropdown.addEventListener('change', async function() {
-      var selected = etData.preferences.find(function(p){ return p.provider === dropdown.value; });
-      if (!selected) return;
-      btnSave.disabled = true;
-      btnSave.style.opacity = '.5';
-      btnSave.textContent = 'Verifying...';
+    /* ── Accept / Decline seat ── */
+    window.handleSeatAction = async function (action, appId) {
+      var msg = action === 'accept'
+        ? 'Accept your seat allocation? This action is binding.'
+        : 'Decline your seat? This cannot be undone.';
+      if (!confirm(msg)) return;
       try {
-        const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', { 
-          applicant_id: etData.applicantId, 
-          entrance_test_list: etData.entranceTestList 
-        });
-        var pinfo = (message || []).find(function(p){ return p.entrance_test_provider === selected.provider; });
-        if (pinfo && pinfo.is_full) {
-          alert(selected.center_name + ' is currently full.');
-          dropdown.value = '';
-          centerDetails.style.display = 'none';
-          btnSave.textContent = 'Confirm Allocation';
+        const message = await apiFetch('slcm.admission.api.seat.handle_seat_action', { applicant: appId, action: action });
+        if (message && message.success) {
+          window.location.reload();
         } else {
-          centerDetails.style.display = 'block';
-          selectedCenterName.textContent = selected.center_name || selected.provider;
-          selectedCenterAddr.textContent = selected.center_address || '';
-          btnSave.disabled = false;
-          btnSave.style.opacity = '1';
-          btnSave.textContent = 'Confirm Allocation';
+          alert((message && message.error) || 'Action failed. Please try again.');
         }
       } catch (e) {
-        alert('Verification failed: ' + e.message);
+        alert(e.message || 'Error performing action.');
+      }
+    };
+
+    /* ── Entrance test provider selection ── */
+    (function () {
+      var dropdown = document.getElementById('providerDropdown');
+      if (!dropdown) return;
+      var btnSave = document.getElementById('btnSaveProvider');
+      var centerDetails = document.getElementById('centerDetails');
+      var selectedCenterName = document.getElementById('selectedCenterName');
+      var selectedCenterAddr = document.getElementById('selectedCenterAddr');
+      var etData = {
+        preferences: {{ et_preferences| tojson | safe if et_preferences else '[]'
+    }},
+    applicantId: '{{ et_doc.applicant if et_doc else "" }}',
+      entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
+        allocationName: '{{ et_doc.name if et_doc else "" }}',
+          isRescheduled: { { 'true' if et_is_rescheduled else 'false' } }
+    };
+  dropdown.addEventListener('change', async function () {
+    var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
+    if (!selected) return;
+    btnSave.disabled = true;
+    btnSave.style.opacity = '.5';
+    btnSave.textContent = 'Verifying...';
+    try {
+      const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
+        applicant_id: etData.applicantId,
+        entrance_test_list: etData.entranceTestList
+      });
+      var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
+      if (pinfo && pinfo.is_full) {
+        alert(selected.center_name + ' is currently full.');
+        dropdown.value = '';
+        centerDetails.style.display = 'none';
+        btnSave.textContent = 'Confirm Allocation';
+      } else {
+        centerDetails.style.display = 'block';
+        selectedCenterName.textContent = selected.center_name || selected.provider;
+        selectedCenterAddr.textContent = selected.center_address || '';
+        btnSave.disabled = false;
+        btnSave.style.opacity = '1';
+        btnSave.textContent = 'Confirm Allocation';
+      }
+    } catch (e) {
+      alert('Verification failed: ' + e.message);
+      btnSave.textContent = 'Confirm Allocation';
+    }
+  });
+  if (btnSave) {
+    btnSave.addEventListener('click', async function () {
+      if (!confirm('Confirm allocation at ' + (dropdown.options[dropdown.selectedIndex] && dropdown.options[dropdown.selectedIndex].text) + '? This is permanent.')) return;
+      btnSave.disabled = true;
+      btnSave.textContent = 'Processing...';
+      try {
+        await apiFetch('slcm.www.eligibility.entrance_test_seat_allocation.save_provider', {
+          allocation_name: etData.allocationName,
+          selected_provider: dropdown.value,
+          is_rescheduled: etData.isRescheduled
+        });
+        document.getElementById('allocation-view-section').style.display = 'none';
+        document.getElementById('successSection').style.display = 'block';
+        setTimeout(function () { window.location.reload(); }, 1500);
+      } catch (e) {
+        alert('Allocation failed: ' + e.message);
+        btnSave.disabled = false;
         btnSave.textContent = 'Confirm Allocation';
       }
     });
-    if (btnSave) {
-      btnSave.addEventListener('click', async function() {
-        if (!confirm('Confirm allocation at ' + (dropdown.options[dropdown.selectedIndex] && dropdown.options[dropdown.selectedIndex].text) + '? This is permanent.')) return;
-        btnSave.disabled = true;
-        btnSave.textContent = 'Processing...';
-        try {
-          await apiFetch('slcm.www.eligibility.entrance_test_seat_allocation.save_provider', {
-            allocation_name: etData.allocationName,
-            selected_provider: dropdown.value,
-            is_rescheduled: etData.isRescheduled
-          });
-          document.getElementById('allocation-view-section').style.display = 'none';
-          document.getElementById('successSection').style.display = 'block';
-          setTimeout(function(){ window.location.reload(); }, 1500);
-        } catch (e) {
-          alert('Allocation failed: ' + e.message);
-          btnSave.disabled = false;
-          btnSave.textContent = 'Confirm Allocation';
-        }
-      });
-    }
-  })();
+  }
+  }) ();
 
   /* ── Interview attendance ── */
-  (function() {
+  (function () {
     var iName = '{{ interview_doc.name if interview_doc else "" }}';
     if (!iName) return;
     var isRescheduled = {{ 'true' if interview_is_rescheduled else 'false' }};
-    var attSel = document.getElementById('interviewAttendanceSelect');
-    var btnAtt = document.getElementById('btnSaveInterviewAttendance');
-    if (attSel && btnAtt) {
-      attSel.addEventListener('change', function() {
-        btnAtt.disabled = !this.value;
-        btnAtt.style.opacity = this.value ? '1' : '.5';
-      });
-      btnAtt.addEventListener('click', async function() {
-        var chosen = attSel.value;
-        if (!confirm('Confirm your response as ' + chosen + '?')) return;
-        btnAtt.disabled = true;
-        try {
-          await apiFetch('slcm.www.eligibility.interview_management.save_attendance_confirmation', { 
-            allocation_name: iName, 
-            confirmation: chosen, 
-            is_rescheduled: isRescheduled 
-          });
-          setTimeout(function(){ window.location.reload(); }, 800);
-        } catch (e) {
-          alert('Error saving attendance: ' + e.message);
-          btnAtt.disabled = false;
-        }
-      });
-    }
-    var btnFeedback = document.getElementById('btnSubmitInterviewFeedback');
-    if (btnFeedback) {
-      btnFeedback.addEventListener('click', async function() {
-        var text = (document.getElementById('interviewFeedbackText').value || '').trim();
-        if (!text) { alert('Please enter your feedback.'); return; }
-        if (!confirm('Submit your feedback?')) return;
-        btnFeedback.disabled = true;
-        btnFeedback.textContent = 'Submitting...';
-        try {
-          await apiFetch('slcm.www.eligibility.interview_management.save_feedback', { 
-            allocation_name: iName, 
-            feedback_text: text 
-          });
-          setTimeout(function(){ window.location.reload(); }, 800);
-        } catch (e) {
-          alert('Error submitting feedback: ' + e.message);
-          btnFeedback.disabled = false;
-          btnFeedback.textContent = 'Submit Feedback';
-        }
-      });
-    }
   })();
+  var attSel = document.getElementById('interviewAttendanceSelect');
+  var btnAtt = document.getElementById('btnSaveInterviewAttendance');
+  if (attSel && btnAtt) {
+    attSel.addEventListener('change', function () {
+      btnAtt.disabled = !this.value;
+      btnAtt.style.opacity = this.value ? '1' : '.5';
+    });
+    btnAtt.addEventListener('click', async function () {
+      var chosen = attSel.value;
+      if (!confirm('Confirm your response as ' + chosen + '?')) return;
+      btnAtt.disabled = true;
+      try {
+        await apiFetch('slcm.www.eligibility.interview_management.save_attendance_confirmation', {
+          allocation_name: iName,
+          confirmation: chosen,
+          is_rescheduled: isRescheduled
+        });
+        setTimeout(function () { window.location.reload(); }, 800);
+      } catch (e) {
+        alert('Error saving attendance: ' + e.message);
+        btnAtt.disabled = false;
+      }
+    });
+  }
+  var btnFeedback = document.getElementById('btnSubmitInterviewFeedback');
+  if (btnFeedback) {
+    btnFeedback.addEventListener('click', async function () {
+      var text = (document.getElementById('interviewFeedbackText').value || '').trim();
+      if (!text) { alert('Please enter your feedback.'); return; }
+      if (!confirm('Submit your feedback?')) return;
+      btnFeedback.disabled = true;
+      btnFeedback.textContent = 'Submitting...';
+      try {
+        await apiFetch('slcm.www.eligibility.interview_management.save_feedback', {
+          allocation_name: iName,
+          feedback_text: text
+        });
+        setTimeout(function () { window.location.reload(); }, 800);
+      } catch (e) {
+        alert('Error submitting feedback: ' + e.message);
+        btnFeedback.disabled = false;
+        btnFeedback.textContent = 'Submit Feedback';
+      }
+    });
+  }
+  }) ();
 
   /* ── Admit Card download ── */
- window.downloadAdmitCard = function() {
-      const doc = {{ et_doc_json|safe if et_doc_json else '{}' }};
-      const branding = {{ et_campus_branding|tojson|safe if et_campus_branding else '{}' }};
-      const is_rescheduled = {{ 'true' if et_is_rescheduled else 'false' }};
+  window.downloadAdmitCard = function () {
+    const doc = {{ et_doc_json| safe if et_doc_json else '{}'
+  }};
+  const branding = {{ et_campus_branding| tojson | safe if et_campus_branding else '{}' }};
+  const is_rescheduled = {{ 'true' if et_is_rescheduled else 'false' }};
 
-      if (!doc || !doc.name) {
-          frappe.show_alert({message: "No admit card data available", indicator: "orange"});
-          return;
-      }
+  if (!doc || !doc.name) {
+    frappe.show_alert({ message: "No admit card data available", indicator: "orange" });
+    return;
+  }
 
-      const esc = (v) => { if (!v) return ""; return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); };
-      const val = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
-      const fmtDate = (v) => { if (!v) return "—"; try { return new Date(v).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return v; } };
+  const esc = (v) => { if (!v) return ""; return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); };
+  const val = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
+  const fmtDate = (v) => { if (!v) return "—"; try { return new Date(v).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return v; } };
 
-      const admit_no = doc.admit_card_number || ("AC-" + doc.name);
+  const admit_no = doc.admit_card_number || ("AC-" + doc.name);
 
-      const f_date = is_rescheduled ? doc.re_allocation_date : doc.allocation_date;
-      const f_test = is_rescheduled ? (doc.re_entrance_test_name || doc.re_entrance_test_list) : (doc.entrance_test_name || doc.entrance_test_list);
-      const f_seat = is_rescheduled ? doc.re_seat_number : doc.seat_number;
-      const f_room = is_rescheduled ? doc.re_room_name : doc.room_name;
-      const f_code = is_rescheduled ? doc.re_room_code : doc.room_code;
-      const f_building = is_rescheduled ? doc.re_building : doc.building;
-      const f_floor = is_rescheduled ? doc.re_floor : doc.floor;
-      const f_center = is_rescheduled ? doc.re_center_name : doc.center_name;
-      const f_address = is_rescheduled ? doc.re_center_address : doc.center_address;
-      const f_status = is_rescheduled ? doc.re_allocation_status : doc.allocation_status;
+  const f_date = is_rescheduled ? doc.re_allocation_date : doc.allocation_date;
+  const f_test = is_rescheduled ? (doc.re_entrance_test_name || doc.re_entrance_test_list) : (doc.entrance_test_name || doc.entrance_test_list);
+  const f_seat = is_rescheduled ? doc.re_seat_number : doc.seat_number;
+  const f_room = is_rescheduled ? doc.re_room_name : doc.room_name;
+  const f_code = is_rescheduled ? doc.re_room_code : doc.room_code;
+  const f_building = is_rescheduled ? doc.re_building : doc.building;
+  const f_floor = is_rescheduled ? doc.re_floor : doc.floor;
+  const f_center = is_rescheduled ? doc.re_center_name : doc.center_name;
+  const f_address = is_rescheduled ? doc.re_center_address : doc.center_address;
+  const f_status = is_rescheduled ? doc.re_allocation_status : doc.allocation_status;
 
-      const alloc_date = fmtDate(f_date);
-      const dob = fmtDate(doc.date_of_birth);
-      const issue_date = new Date().toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const alloc_date = fmtDate(f_date);
+  const dob = fmtDate(doc.date_of_birth);
+  const issue_date = new Date().toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-      const exam_date_time = alloc_date !== "—" ? alloc_date + " &nbsp;|&nbsp; As per schedule" : "As per schedule";
+  const exam_date_time = alloc_date !== "—" ? alloc_date + " &nbsp;|&nbsp; As per schedule" : "As per schedule";
 
-      let profile_image_url = doc.profile;
-      if (profile_image_url && !profile_image_url.startsWith('http')) {
-          profile_image_url = '/files/' + encodeURIComponent(profile_image_url.replace(/^.*[\\\/]/, ""));
-      }
+  let profile_image_url = doc.profile;
+  if (profile_image_url && !profile_image_url.startsWith('http')) {
+    profile_image_url = '/files/' + encodeURIComponent(profile_image_url.replace(/^.*[\\\/]/, ""));
+  }
 
-      const campus_display_name = branding.campus_name || doc.campus || "Institution of Legal Education";
-      const campus_logo_url = branding.logo ? (branding.logo.startsWith("http") ? branding.logo : '/files/' + encodeURIComponent(branding.logo.replace(/^.*[\\\/]/, ""))) : null;
+  const campus_display_name = branding.campus_name || doc.campus || "Institution of Legal Education";
+  const campus_logo_url = branding.logo ? (branding.logo.startsWith("http") ? branding.logo : '/files/' + encodeURIComponent(branding.logo.replace(/^.*[\\\/]/, ""))) : null;
 
-      const centre_parts = [f_center, f_address].filter(v => v && v.trim());
-      const centre_full = centre_parts.length ? centre_parts.map(esc).join(", ") : "—";
+  const centre_parts = [f_center, f_address].filter(v => v && v.trim());
+  const centre_full = centre_parts.length ? centre_parts.map(esc).join(", ") : "—";
 
-      function headerHTML() {
-          return `
+  function headerHTML() {
+    return `
               <div class="header" style="background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e;">
                 <div class="logo-box" style="width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
                   ${campus_logo_url
-                  ? `<img src="${campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`
-                  : `<div class="logo-inner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+        ? `<img src="${campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`
+        : `<div class="logo-inner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
                         <span class="logo-icon" style="font-size: 28px; line-height: 1; color: #7b1c1c;">⚖</span>
                         <span class="logo-text" style="font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-align: center; letter-spacing: 0.5px; line-height: 1.2;">LAW<br>SCHOOL</span>
                       </div>`
-              }
+      }
                 </div>
                 <div class="hdr-center" style="flex: 1; text-align: center;">
                   <div class="univ-name" style="font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;">${esc(campus_display_name)}</div>
                   <div class="univ-sub" style="font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
                 </div>
               </div>`;
-      }
+  }
 
-      const html = `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -2229,10 +3100,10 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
 </body>
 </html>`;
 
-      const win = window.open("", "_blank", "width=800,height=900");
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
+  const win = window.open("", "_blank", "width=800,height=900");
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
   };
 
   {% else %}
@@ -2247,10 +3118,10 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
     wrap.style.gap = '0';
     wrap.style.overflowX = 'auto';
     wrap.innerHTML = '';
-    stages.forEach(function(s, idx) {
+    stages.forEach(function (s, idx) {
       if (idx > 0) {
         var conn = document.createElement('div');
-        conn.style.cssText = 'flex:1;height:2px;background:' + (stages[idx-1].status==='completed' ? 'var(--primary)' : 'var(--border)') + ';min-width:12px;';
+        conn.style.cssText = 'flex:1;height:2px;background:' + (stages[idx - 1].status === 'completed' ? 'var(--primary)' : 'var(--border)') + ';min-width:12px;';
         wrap.appendChild(conn);
       }
       var node = document.createElement('div');
@@ -2261,7 +3132,7 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       else if (s.status === 'active') { circle.style.background = 'var(--secondary)'; circle.style.boxShadow = '0 0 0 2px var(--secondary)'; circle.textContent = '↻'; circle.style.color = 'white'; }
       else { circle.style.background = '#f9fafb'; circle.style.boxShadow = '0 0 0 2px var(--border)'; circle.textContent = '○'; circle.style.color = 'var(--text-4)'; }
       var label = document.createElement('div');
-      label.style.cssText = 'font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;text-align:center;max-width:70px;word-break:break-word;color:' + (s.status==='active' ? 'var(--primary)' : s.status==='completed' ? 'var(--text-3)' : 'var(--text-4)') + ';';
+      label.style.cssText = 'font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;text-align:center;max-width:70px;word-break:break-word;color:' + (s.status === 'active' ? 'var(--primary)' : s.status === 'completed' ? 'var(--text-3)' : 'var(--text-4)') + ';';
       label.textContent = s.stage_name;
       node.appendChild(circle);
       node.appendChild(label);
@@ -2296,37 +3167,37 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
   }
 
   if (typeof frappe !== 'undefined' && frappe.ready) {
-    frappe.ready(function() {
+    frappe.ready(function () {
       if (activeApp) initTracker(activeApp);
     });
   } else {
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       if (activeApp) initTracker(activeApp);
     });
   }
   {% endif %}
 
   /* ── Profile edit modal (shared) ── */
-  window.openEditModal = function() {
+  window.openEditModal = function () {
     document.getElementById('editOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
   };
-  window.closeEditModal = function() {
+  window.closeEditModal = function () {
     document.getElementById('editOverlay').classList.remove('open');
     document.body.style.overflow = '';
   };
   var overlay = document.getElementById('editOverlay');
   if (overlay) {
-    overlay.addEventListener('click', function(e) { if (e.target === this) closeEditModal(); });
+    overlay.addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
   }
   function showProfToast(msg, isErr) {
     var t = document.getElementById('profToast');
     if (!t) return;
     t.textContent = msg;
     t.className = 'prof-toast show' + (isErr ? ' error' : '');
-    setTimeout(function(){ t.className = 'prof-toast'; }, 3000);
+    setTimeout(function () { t.className = 'prof-toast'; }, 3000);
   }
-  window.saveProfile = async function() {
+  window.saveProfile = async function () {
     var btn = document.getElementById('saveBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
     var payload = {
@@ -2352,10 +3223,10 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
           'disp-mobile': payload.mobile_number, 'disp-alternate': payload.alternate_contact,
           'disp-idproof': payload.id_proof
         };
-        Object.keys(dmap).forEach(function(id) { var el = document.getElementById(id); if (el && dmap[id]) el.textContent = dmap[id]; });
+        Object.keys(dmap).forEach(function (id) { var el = document.getElementById(id); if (el && dmap[id]) el.textContent = dmap[id]; });
         if (payload.date_of_birth) {
           var el = document.getElementById('disp-dob');
-          if (el) el.textContent = new Date(payload.date_of_birth).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+          if (el) el.textContent = new Date(payload.date_of_birth).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
         }
         var addrParts = [payload.correspondence_address, payload.city, payload.state, payload.pincode].filter(Boolean);
         if (addrParts.length) { var el = document.getElementById('disp-address'); if (el) el.textContent = addrParts.join(', '); }
@@ -2364,13 +3235,13 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       } else {
         showProfToast((message && message.error) || 'Save failed', true);
       }
-    } catch(e) {
+    } catch (e) {
       showProfToast(e.message || 'Network error — please try again.', true);
     }
     if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
   };
 
-  window.doLogout = function() {
+  window.doLogout = function () {
     window.location.href = '/logout';
   };
 

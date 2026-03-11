@@ -96,12 +96,12 @@
    "label": "Generate Offer Letter By system"
   },
   {
+   "depends_on": "eval:doc.generate_offer_letter_by_system == 0",
    "fieldname": "offer_letter_pdf",
    "fieldtype": "Table",
    "label": "Offer Letter PDF",
    "mandatory_depends_on": "eval:doc.generate_offer_letter_by_system == 0",
-   "options": "Offer Letter PDF",
-   "read_only_depends_on": "eval:doc.generate_offer_letter_by_system == 1"
+   "options": "Offer Letter PDF"
   },
   {
    "default": "0",
@@ -128,7 +128,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-03-05 18:19:44.753034",
+ "modified": "2026-03-06 09:13:45.417359",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",

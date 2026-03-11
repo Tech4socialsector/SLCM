@@ -4,6 +4,47 @@ from slcm.admission.doctype.eligibility_result.eligibility_result import get_app
 
 login_required = True
 
+
+def _set_offer_letter_entries(context):
+    """Populate context.offer_letter_entries for list view from Offer Letter doctype."""
+    context.offer_letter_entries = []
+    try:
+        applicant_names = [a.get("name") for a in (context.applications or []) if a.get("name")]
+        if not applicant_names:
+            applicant_names = [
+                r["name"] for r in frappe.get_all(
+                    "Applicant",
+                    filters={"email": frappe.session.user},
+                    fields=["name"],
+                    ignore_permissions=True
+                )
+            ]
+        if not applicant_names and frappe.db.exists("Applicant", frappe.session.user):
+            applicant_names = [frappe.session.user]
+        if applicant_names:
+            offers = frappe.get_all(
+                "Offer Letter",
+                filters={"applicant": ["in", applicant_names]},
+                fields=["name", "applicant", "program", "campus", "offer_status", "payable_amount"],
+                order_by="creation desc",
+                ignore_permissions=True
+            )
+            for o in offers:
+                program_name = frappe.db.get_value("Program", o.get("program"), "program_name") or o.get("program") or ""
+                campus_name = frappe.db.get_value("Campus", o.get("campus"), "campus_name") or o.get("campus") or ""
+                context.offer_letter_entries.append({
+                    "offer_name": o.get("name"),
+                    "applicant_name": o.get("applicant"),
+                    "program": o.get("program"),
+                    "program_name": program_name,
+                    "campus": o.get("campus"),
+                    "campus_name": campus_name,
+                    "offer_status": o.get("offer_status") or "Issued",
+                    "payable_amount": o.get("payable_amount"),
+                })
+    except Exception:
+        context.offer_letter_entries = []
+
 def get_context(context):
     if frappe.session.user == "Guest":
         frappe.local.flags.redirect_location = "/login?redirect=/my-applications"
@@ -385,6 +426,8 @@ def get_context(context):
     if isinstance(data_list, dict) and "error" in data_list:
         context.error = data_list["error"]
         context.applications = []
+        # Still fetch offer letters so they show even when API returns error
+        _set_offer_letter_entries(context)
         return context
 
     applications = []

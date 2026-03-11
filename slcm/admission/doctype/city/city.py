@@ -5,6 +5,5 @@
 from frappe.model.document import Document
 
 
-class EmailTemplates(Document):
-	def autoname(self):
-		self.name = f"{self.title} - {self.version}"
+class City(Document):
+	pass

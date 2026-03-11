@@ -9,6 +9,7 @@
   "cycle_name",
   "cycle_code",
   "admission_year",
+  "academic_year",
   "approval_reference",
   "col_break_basic",
   "status",
@@ -131,22 +132,11 @@
    "label": "Remarks"
   },
   {
-   "fieldname": "section_break_vnls",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "cycle_start_date",
-   "fieldtype": "Date",
-   "label": "Cycle Start Date"
-  },
-  {
-   "fieldname": "cycle_end_date",
-   "fieldtype": "Date",
-   "label": "Cycle End Date"
-  },
-  {
-   "fieldname": "column_break_rbxq",
-   "fieldtype": "Column Break"
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
   }
  ],
  "links": [],

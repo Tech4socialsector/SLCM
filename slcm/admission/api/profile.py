@@ -36,11 +36,15 @@ def update_profile(**kwargs):
         "correspondence_address", "city", "state", "pincode", "candidate_photo"
     }
 
+    from slcm.utils.phone_utils import sanitize_phone_for_frappe
+
     update_dict = {}
     for k, v in kwargs.items():
         if k in allowed:
-            # Convert empty strings to None for database consistency
-            update_dict[k] = v if (v is not None and str(v).strip() != "") else None
+            val = v if (v is not None and str(v).strip() != "") else None
+            if k in ["mobile_number", "alternate_contact"] and val:
+                val = sanitize_phone_for_frappe(val)
+            update_dict[k] = val
 
     if not update_dict:
         return {"success": False, "error": "No valid fields provided for update."}

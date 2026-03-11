@@ -1,0 +1,7 @@
+{% extends "templates/web.html" %}
+{% block title %}Redirecting…{% endblock %}
+{% block page_content %}
+<p>Redirecting…</p>
+<meta http-equiv="refresh" content="0;url={{ redirect_url or '/application_form' }}">
+<script>window.location.replace("{{ redirect_url or '/application_form' }}");</script>
+{% endblock %}
