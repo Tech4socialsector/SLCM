@@ -6,39 +6,10 @@
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
   :root {
-      {
-      % if portal_config %
-    }
-
-    --primary: {
-        {
-        portal_config.get('primary_color', '#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e'
-      }
-    }
-
-    ;
-
-    --secondary: {
-        {
-        portal_config.get('secondary_color', '#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b'
-      }
-    }
-
-    ;
-
-      {
-      % else %
-    }
-
-    --primary: #1a3c6e;
-    --secondary: #c8a14b;
-
-      {
-      % endif %
-    }
-
-    --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
-    --primary-mid: color-mix(in srgb, var(--primary) 20%, transparent);
+    --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+    --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+    --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
+    --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
     --success: #16a34a;
     --warning: #f59e0b;
     --danger: #dc2626;
