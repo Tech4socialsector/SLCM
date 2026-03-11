@@ -204,7 +204,7 @@ def get_context(context):
                     available_scholarships.append(s)
                     seen_schemes.add(s.name)
         
-        context.scholarships = available_scholarships[:5]
+        context.scholarships = available_scholarships[:20]
         context.applied_scholarships = sorted(applied_scholarships, key=lambda x: x.creation, reverse=True)
         context.entrance_tests = entrance_tests
     except Exception as e:
