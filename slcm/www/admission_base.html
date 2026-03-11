@@ -8,8 +8,15 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
 
         <style>
+            /* Hide standard Frappe/Website headers & footers */
             header.navbar,
             .navbar.navbar-expand,
             nav.navbar,
@@ -17,7 +24,10 @@
             .web-navbar,
             #navbar-main,
             header[class*="navbar"],
-            .website-header {
+            .website-header,
+            .website-footer,
+            footer.footer,
+            #footer-main {
                 display: none !important;
             }
 
@@ -29,20 +39,26 @@
             .main-section {
                 padding-top: 0 !important;
             }
-        </style>
 
-        <style>
             :root {
-                /* Defaults that child pages can override */
+                /* Defaults from Dashboard */
                 --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
                 --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
                 --accent: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
-                --primary-light: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }}15;
+                --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
+                --text-1: #1f2937;
+                --text-2: #374151;
+                --text-3: #6b7280;
+                --text-4: #9ca3af;
                 --text: #1a1a2e;
                 --muted: #6c757d;
-                --border: #dee2e6;
+                --border: #e5e7eb;
                 --card-bg: #ffffff;
-                --bg: #f4f6fb;
+                --bg: #f3f4f6;
+                --success: #16a34a;
+                --warning: #f59e0b;
+                --danger: #dc2626;
+                --radius: 14px;
             }
         </style>
         {% block theme_vars %}{% endblock %}
@@ -53,7 +69,7 @@
             }
 
             body {
-                font-family: 'Segoe UI', system-ui, sans-serif;
+                font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
                 background: var(--bg);
                 color: var(--text);
                 margin: 0;
