@@ -108,36 +108,75 @@
     }
 
     function login_user() {
-        const usr = $('#login_id').val();
-        const pwd = $('#login_pwd').val();
-        if (!usr || !pwd) return frappe.msgprint('Please fill all fields');
+        var usr = $('#login_id').val();
+        var pwd = $('#login_pwd').val();
+        if (!usr || !pwd) { frappe.msgprint('Please fill all fields'); return; }
+
+        var $btn = $('#login-form .btn-maroon');
+        $btn.prop('disabled', true);
 
         frappe.call({
             method: "slcm.api.user.login_fle_user",
-            args: { usr, pwd },
-            callback: r => {
+            args: { usr: usr, pwd: pwd },
+            freeze: true,
+            freeze_message: "Signing in…",
+            callback: function (r) {
                 if (r.message == "Logged In") {
                     window.location.replace(r.home_page || "/foundations-for-a-legal-education");
-                    return false;
                 } else if (r.message) {
                     frappe.msgprint(r.message);
                 }
+            },
+            error: function () {
+                frappe.msgprint('Login failed. Please try again.');
+            },
+            always: function () {
+                $btn.prop('disabled', false);
             }
         });
     }
 
     function register_user() {
-        const email = $('#reg_email').val();
-        const mobile_number = $('#mobile_number').val();
-        if (!email || !mobile_number) return frappe.msgprint('Please fill all fields');
+        var email = $('#reg_email').val();
+        var mobile_number = $('#mobile_number').val();
+        if (!email || !mobile_number) { frappe.msgprint('Please fill all fields'); return; }
+
+        var $btn = $('#reg-form .btn-maroon');
+        $btn.prop('disabled', true);
 
         frappe.call({
             method: "slcm.api.user.register_fle_user",
             args: { email: email, mobile_number: mobile_number },
-            callback: r => {
-                if (r.message && r.message.status == "success") frappe.msgprint(r.message.message);
+            freeze: true,
+            freeze_message: "Registering…",
+            callback: function (r) {
+                if (r.message && r.message.status == "success") {
+                    frappe.msgprint(r.message.message);
+                }
+            },
+            error: function () {
+                frappe.msgprint('Registration failed. Please try again.');
+            },
+            always: function () {
+                $btn.prop('disabled', false);
             }
         });
     }
+
+    // Enter key support for login form
+    $(document).on('keydown', '#login_id, #login_pwd', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
+            login_user();
+        }
+    });
+
+    // Enter key support for register form
+    $(document).on('keydown', '#reg_email, #mobile_number', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
+            register_user();
+        }
+    });
 </script>
 {% endblock %}
