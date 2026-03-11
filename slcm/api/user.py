@@ -19,7 +19,8 @@ def register_fle_user(email, mobile_number):
             "enabled": 1,
             "new_password": random_string(10),
             "user_type": "Website User",
-            "send_welcome_email": 1,
+            "send_welcome_email": 0,
+            "redirect_url": "/fle/login.html",
         }
     )
     
@@ -27,12 +28,36 @@ def register_fle_user(email, mobile_number):
     user.flags.ignore_password_policy = True
     user.insert()
 
+    # Generate the password reset link silently (without emailing)
+    frappe_link = user.reset_password(send_email=False)
+    
+    # Extract the path + query (e.g., /update-password?key=XYZ)
+    import urllib.parse
+    parsed = urllib.parse.urlparse(frappe_link)
+    
+    # Rebuild the link using frappe.utils.get_url which picks up the request host/port correctly
+    from frappe.utils import get_url
+    correct_link = get_url(parsed.path + "?" + parsed.query)
+    
+    # Prepare and send the welcome email
+    site_name = frappe.db.get_default("site_name") or frappe.get_conf().get("site_name")
+    subject = _("Welcome to {0}").format(site_name) if site_name else _("Complete Registration")
+    welcome_email_template = frappe.db.get_system_setting("welcome_email_template")
+
+    user.send_login_mail(
+        subject,
+        "new_user",
+        dict(link=correct_link, site_url=get_url()),
+        custom_template=welcome_email_template,
+    )
+
     default_role = frappe.get_single_value("Portal Settings", "default_role")
     if default_role:
         user.add_roles(default_role)
 
-    frappe.cache.hset("redirect_after_login", user.name, "/foundations-for-a-legal-education")
-
+    # Reliable fallback cache assignment
+    frappe.cache().hset("redirect_after_login", user.name, "/fle/login.html")
+    
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
 
 @frappe.whitelist(allow_guest=True)
@@ -63,3 +88,23 @@ def login_fle_user(usr, pwd):
     })
     
     frappe.local.response["home_page"] = f"/foundations-for-a-legal-education/new?{query_params}"
+
+@frappe.whitelist(allow_guest=True)
+def get_payment_status(docname):
+    if not docname:
+        return {}
+        
+    if not frappe.db.exists("Foundations for a Legal Education", docname):
+        return {}
+        
+    doc = frappe.get_doc("Foundations for a Legal Education", docname)
+    
+    # Allow if session user is the owner, or if they have System Manager role
+    if frappe.session.user != "Guest" and frappe.session.user != doc.owner:
+        if "System Manager" not in frappe.get_roles(frappe.session.user):
+            return {}
+            
+    return {
+        "payment_status": doc.payment_status,
+        "docstatus": doc.docstatus
+    }

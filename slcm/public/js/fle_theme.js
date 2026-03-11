@@ -915,7 +915,7 @@ window.inject_fle_header_footer = function () {
     // ── 5. Inject Footer HTML ─────────────────────────────────────────────────
     var footer_html = `
     <footer class="sticky-footer">
-        &copy; 2026 National Law School of India University. All Rights Reserved.
+        &copy; 2026 National Law School of India University, Bengaluru
     </footer>`;
 
     if ($('body').length === 0) return;
@@ -1154,6 +1154,78 @@ window.check_auto_edit_mode = function () {
     }
 };
 
+window.check_payment_status_buttons = function () {
+    var path = window.location.pathname;
+    if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
+
+    var checks = 0;
+    var maxChecks = 40; // Max 20 seconds
+
+    var interval = setInterval(function () {
+        checks++;
+        if (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.doc && frappe.web_form.doc.name) {
+            clearInterval(interval);
+
+            // Override Web Form Title with the actual web form name
+            // if ($('.web-form-title h1').length > 0 && frappe.web_form.title) {
+            //     $('.web-form-title h1').text(frappe.web_form.title);
+            //     $('.web-form-title p').hide(); // Hide the sub-title (ID) if it exists
+            // }
+
+            // Only hide if it's an existing submission
+            if (!frappe.web_form.is_new) {
+                frappe.call({
+                    method: 'slcm.api.user.get_payment_status',
+                    args: {
+                        docname: frappe.web_form.doc.name
+                    },
+                    callback: function (r) {
+                        if (r && r.message) {
+                            const status = r.message.payment_status;
+                            if (status === 'Authorized' || status === 'Captured') {
+                                // Inject CSS to forcefully hide standard frappe action buttons
+                                if ($('#fle-hide-btn-style').length === 0) {
+                                    const styleBlock = `
+                                        <style id="fle-hide-btn-style">
+                                            .web-form-actions .btn:not(.download-pdf-btn),
+                                            .web-form-footer .btn:not(.download-pdf-btn) {
+                                                display: none !important;
+                                            }
+                                        </style>
+                                    `;
+                                    $('head').append(styleBlock);
+                                }
+
+                                // Add Download PDF button if not already present
+                                if ($('.download-pdf-btn').length === 0) {
+                                    const pdf_url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Foundations%20for%20a%20Legal%20Education&name=${frappe.web_form.doc.name}&format=Standard&no_letterhead=0`;
+                                    const pdf_btn = `<a href="${pdf_url}" target="_blank" class="btn btn-primary btn-sm ml-2 download-pdf-btn" style="background-color: #8B0000; color: #ffffff; border: none !important; display: inline-block !important;">Download PDF</a>`;
+
+                                    // Append to header actions
+                                    if ($('.web-form-actions .right-area').length > 0) {
+                                        $('.web-form-actions .right-area').append(pdf_btn);
+                                    } else {
+                                        $('.web-form-actions').append(pdf_btn);
+                                    }
+
+                                    // Append to footer
+                                    $('.web-form-footer').append(
+                                        `<div class="text-right download-pdf-wrapper" style="width: 100%; margin-top: 15px;">
+                                            <a href="${pdf_url}" target="_blank" class="btn btn-primary btn-md download-pdf-btn" style="background-color: #8B0000; color: #ffffff; border: none !important; display: inline-block !important;">Download PDF</a>
+                                        </div>`
+                                    );
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        } else if (checks >= maxChecks) {
+            clearInterval(interval);
+        }
+    }, 500);
+};
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 3: ROUTE-BASED INJECTION
@@ -1177,6 +1249,7 @@ function try_inject_fle_theme() {
             if (typeof inject_fle_header_footer === 'function') inject_fle_header_footer();
             if (isFoundationsPage) {
                 if (typeof check_auto_edit_mode === 'function') check_auto_edit_mode();
+                if (typeof check_payment_status_buttons === 'function') check_payment_status_buttons();
             }
             break;
         }
