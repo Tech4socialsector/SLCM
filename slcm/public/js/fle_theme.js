@@ -214,268 +214,333 @@
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 1B: MASTER FIX — Force linked DocType fields to load their options
-// ─────────────────────────────────────────────────────────────────────────────
-// Root cause: Frappe web forms fetch linked-field options via
-//   /api/method/frappe.client.get_list   (or frappe.desk.search.search_link)
-// These calls use frappe.call() which requires frappe.csrf_token to be set.
-// On a fresh page load the token is sometimes not ready when the web form
-// field renderers run → empty <select> / blank Link fields.
-//
-// Fix strategy:
-//   1. Ensure frappe.csrf_token is populated from the cookie before any
-//      frappe.call() goes out.
-//   2. After the form is rendered, iterate every Link/Select field that still
-//      has no options and forcibly (re-)fetch them via the REST API.
-//   3. Re-run on a staggered schedule to catch fields that render late.
+// SECTION 1B: LINKED DOCTYPE FIX — Master solution for all Link fields
+// Fetches data from Frappe REST API and populates <select> dropdowns for
+// Gender, Country, State (Candidate's State), and any other Link fields
+// that render as empty selects in the web form.
 // ─────────────────────────────────────────────────────────────────────────────
 (function () {
     'use strict';
 
-    var path = window.location.pathname;
-    // Only run on the web form pages — not on login or unrelated routes
-    if (path.indexOf('/foundations-for-a-legal-education') === -1 &&
-        path.indexOf('/payment-') === -1 &&
-        path.indexOf('/fle-success-page') === -1 &&
-        path.indexOf('/integration-request') === -1) {
-        return;
+    /**
+     * Fetch all documents from a given doctype via the Frappe REST API.
+     * Uses /api/resource/<doctype>?fields=["name"]&limit_page_length=500
+     * Returns a Promise resolving to an array of name strings.
+     */
+    function fetchDoctypeOptions(doctype) {
+        return new Promise(function (resolve) {
+            try {
+                var url = '/api/resource/' + encodeURIComponent(doctype) +
+                    '?fields=["name"]&limit_page_length=500&order_by=name+asc';
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    xhrFields: { withCredentials: true },
+                    success: function (data) {
+                        if (data && data.data && Array.isArray(data.data)) {
+                            resolve(data.data.map(function (d) { return d.name; }));
+                        } else {
+                            resolve([]);
+                        }
+                    },
+                    error: function () { resolve([]); }
+                });
+            } catch (e) { resolve([]); }
+        });
     }
 
-    // ── Helper: read a cookie by name ─────────────────────────────────────────
-    function getCookie(name) {
-        var match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
-        return match ? decodeURIComponent(match[1]) : '';
+    /**
+     * Populate a <select> element with an array of option strings.
+     * Preserves any currently selected value.
+     * Skips if the select already has more than 1 option (already populated).
+     */
+    function populateSelect($select, options) {
+        if (!$select || $select.length === 0) return;
+        // If already has real options, don't overwrite
+        if ($select.find('option').length > 1) return;
+
+        var currentVal = $select.val() || '';
+        $select.find('option:not([value=""])').remove();
+
+        // Ensure blank placeholder exists
+        if ($select.find('option[value=""]').length === 0) {
+            $select.prepend('<option value=""></option>');
+        }
+
+        options.forEach(function (opt) {
+            $select.append($('<option></option>').val(opt).text(opt));
+        });
+
+        // Restore previously selected value if it exists in the new list
+        if (currentVal && options.indexOf(currentVal) !== -1) {
+            $select.val(currentVal);
+        }
+
+        // Trigger Frappe's change detection so it registers the value
+        $select.trigger('change');
     }
 
-    // ── 1. Ensure CSRF token is wired into frappe before any call goes out ────
-    function ensureCsrfToken() {
+    /**
+     * Map of fieldname keywords → Frappe doctype names.
+     * Keys are lowercase substrings matched against the field's name/id/data-fieldname.
+     */
+    var LINK_FIELD_MAP = {
+        'gender': 'Gender',
+        'nationality': 'Country',
+        'country': 'Country',
+        'state': 'State'         // Frappe's built-in "State" doctype
+    };
+
+    /**
+     * Find all select elements in the web form that correspond to linked
+     * doctypes and populate them.
+     */
+    function populateAllLinkFields() {
+        var path = window.location.pathname;
+        // Only run on FLE web form pages
+        if (path.indexOf('/foundations-for-a-legal-education') === -1 &&
+            path.indexOf('/fle') === -1) return;
+
+        // Collect unique doctypes we need to fetch
+        var doctypesToFetch = {};
+
+        $('select, .frappe-control[data-fieldtype="Link"] select').each(function () {
+            var $sel = $(this);
+            // Skip if already populated
+            if ($sel.find('option').length > 1) return;
+
+            // Try to identify the doctype from various attributes
+            var fieldname = (
+                $sel.attr('data-fieldname') ||
+                $sel.closest('.frappe-control').attr('data-fieldname') ||
+                $sel.attr('name') ||
+                $sel.attr('id') ||
+                ''
+            ).toLowerCase();
+
+            Object.keys(LINK_FIELD_MAP).forEach(function (keyword) {
+                if (fieldname.indexOf(keyword) !== -1) {
+                    doctypesToFetch[keyword] = LINK_FIELD_MAP[keyword];
+                }
+            });
+        });
+
+        // Also target by label text — more robust for Frappe web forms
+        $('.frappe-control, .form-group').each(function () {
+            var $ctrl = $(this);
+            var labelText = ($ctrl.find('.control-label, label').first().text() || '').toLowerCase();
+            var $sel = $ctrl.find('select');
+            if ($sel.length === 0) return;
+            if ($sel.find('option').length > 1) return;
+
+            Object.keys(LINK_FIELD_MAP).forEach(function (keyword) {
+                if (labelText.indexOf(keyword) !== -1) {
+                    doctypesToFetch[keyword] = LINK_FIELD_MAP[keyword];
+                }
+            });
+        });
+
+        if (Object.keys(doctypesToFetch).length === 0) return;
+
+        // Fetch all needed doctypes (deduplicated by doctype name)
+        var fetchedDoctypes = {};
+        var promises = [];
+
+        Object.keys(doctypesToFetch).forEach(function (keyword) {
+            var doctype = doctypesToFetch[keyword];
+            if (!fetchedDoctypes[doctype]) {
+                fetchedDoctypes[doctype] = true;
+                promises.push(
+                    fetchDoctypeOptions(doctype).then(function (options) {
+                        return { doctype: doctype, keyword: keyword, options: options };
+                    })
+                );
+            }
+        });
+
+        // Build a reverse map: doctype → options
+        Promise.all(promises).then(function (results) {
+            var doctypeOptions = {};
+            results.forEach(function (r) {
+                doctypeOptions[r.doctype] = r.options;
+            });
+
+            // Now populate each matching select
+            $('select, .frappe-control[data-fieldtype="Link"] select').each(function () {
+                var $sel = $(this);
+                if ($sel.find('option').length > 1) return;
+
+                var fieldname = (
+                    $sel.attr('data-fieldname') ||
+                    $sel.closest('.frappe-control').attr('data-fieldname') ||
+                    $sel.attr('name') ||
+                    $sel.attr('id') ||
+                    ''
+                ).toLowerCase();
+
+                var $ctrl = $sel.closest('.frappe-control, .form-group');
+                var labelText = ($ctrl.find('.control-label, label').first().text() || '').toLowerCase();
+                var combinedText = fieldname + ' ' + labelText;
+
+                Object.keys(LINK_FIELD_MAP).forEach(function (keyword) {
+                    if (combinedText.indexOf(keyword) !== -1) {
+                        var doctype = LINK_FIELD_MAP[keyword];
+                        if (doctypeOptions[doctype] && doctypeOptions[doctype].length > 0) {
+                            populateSelect($sel, doctypeOptions[doctype]);
+                        }
+                    }
+                });
+            });
+
+            // Also handle Frappe's autocomplete/awesomplete link inputs (non-select)
+            // These are <input> fields with data-fieldtype="Link"
+            applyLinkInputAutocomplete(doctypeOptions);
+        });
+    }
+
+    /**
+     * For Frappe Link fields rendered as <input> (autocomplete style),
+     * attach a datalist or override the search to use our fetched data.
+     */
+    function applyLinkInputAutocomplete(doctypeOptions) {
+        $('.frappe-control[data-fieldtype="Link"]').each(function () {
+            var $ctrl = $(this);
+            var $input = $ctrl.find('input.input-with-feedback, input.form-control').first();
+            if ($input.length === 0) return;
+
+            var fieldname = ($ctrl.attr('data-fieldname') || '').toLowerCase();
+            var labelText = ($ctrl.find('.control-label, label').first().text() || '').toLowerCase();
+            var combinedText = fieldname + ' ' + labelText;
+
+            Object.keys(LINK_FIELD_MAP).forEach(function (keyword) {
+                if (combinedText.indexOf(keyword) !== -1) {
+                    var doctype = LINK_FIELD_MAP[keyword];
+                    var options = doctypeOptions[doctype];
+                    if (!options || options.length === 0) return;
+
+                    // Attach datalist for native browser autocomplete
+                    var listId = 'fle-datalist-' + doctype.replace(/\s+/g, '-').toLowerCase();
+                    if ($('#' + listId).length === 0) {
+                        var $dl = $('<datalist></datalist>').attr('id', listId);
+                        options.forEach(function (opt) {
+                            $dl.append($('<option></option>').val(opt));
+                        });
+                        $('body').append($dl);
+                    }
+                    $input.attr('list', listId);
+
+                    // Also override Frappe's get_query if available
+                    try {
+                        if (typeof frappe !== 'undefined' && frappe.web_form) {
+                            // Patch the field's get_query to return local data
+                            var fieldObj = frappe.web_form.fields_dict &&
+                                frappe.web_form.fields_dict[fieldname];
+                            if (fieldObj) {
+                                fieldObj.get_query = function () {
+                                    return { filters: [] };
+                                };
+                            }
+                        }
+                    } catch (e) { /* silent */ }
+                }
+            });
+        });
+    }
+
+    /**
+     * Override Frappe's Link field search (awesomplete / frappe.utils.search_link)
+     * to always query via REST when the standard query fails or returns empty.
+     */
+    function patchFrappeLinkSearch() {
         if (typeof frappe === 'undefined') return;
-        if (!frappe.csrf_token || frappe.csrf_token === 'None') {
-            var token = getCookie('X-Frappe-CSRF-Token') ||
-                getCookie('frappe_csrf_token') ||
-                getCookie('csrf_token');
-            if (token) frappe.csrf_token = token;
+
+        // Patch frappe.utils.search_link if it exists
+        var _origSearchLink = frappe.utils && frappe.utils.search_link;
+        if (_origSearchLink && !frappe.utils._fle_patched) {
+            frappe.utils._fle_patched = true;
+            frappe.utils.search_link = function (opts) {
+                // Call original first
+                try { _origSearchLink.call(frappe.utils, opts); } catch (e) { }
+
+                // If the doctype is one of ours and the results are empty, supplement
+                var doctype = opts && opts.doctype;
+                if (!doctype) return;
+
+                var doctypeLower = doctype.toLowerCase();
+                var isOurs = ['gender', 'country', 'state'].some(function (k) {
+                    return doctypeLower.indexOf(k) !== -1;
+                });
+                if (!isOurs) return;
+
+                fetchDoctypeOptions(doctype).then(function (options) {
+                    if (!options || options.length === 0) return;
+                    var txt = (opts.txt || '').toLowerCase();
+                    var filtered = txt
+                        ? options.filter(function (o) { return o.toLowerCase().indexOf(txt) !== -1; })
+                        : options;
+
+                    if (filtered.length > 0 && opts.callback) {
+                        opts.callback({ results: filtered.map(function (o) { return { value: o, description: '' }; }) });
+                    }
+                });
+            };
         }
     }
 
-    // ── 2. Core: fetch options for a single linked doctype and fill the field ──
-    //
-    // Supports both:
-    //   • <select> elements (classic web-form rendered dropdowns)
-    //   • frappe.web_form field objects (Link fields that use an autocomplete/input)
-    //
-    function fetchAndFillLinkedField(doctype, $select, currentValue) {
-        ensureCsrfToken();
-
-        var csrfToken = (typeof frappe !== 'undefined' && frappe.csrf_token) ||
-            getCookie('X-Frappe-CSRF-Token') ||
-            getCookie('frappe_csrf_token') || '';
-
-        // Use the public list endpoint — no desk permission required for masters
-        var url = '/api/method/frappe.client.get_list' +
-            '?doctype=' + encodeURIComponent(doctype) +
-            '&fields=["name"]' +
-            '&limit_page_length=500' +
-            '&order_by=name+asc';
-
-        fetch(url, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'X-Frappe-CSRF-Token': csrfToken
-            }
-        })
-            .then(function (resp) {
-                if (!resp.ok) throw new Error('HTTP ' + resp.status + ' for doctype ' + doctype);
-                return resp.json();
-            })
-            .then(function (data) {
-                var items = (data && data.message) ? data.message : [];
-                if (!items.length) return;
-
-                // Only repopulate if the select is truly empty (no real options beyond placeholder)
-                var existingOptions = $select.find('option').not('[value=""]').not('[value="Select"]');
-                if (existingOptions.length > 0) return; // already populated — leave it alone
-
-                // Keep a blank/placeholder option if one exists
-                var placeholder = $select.find('option[value=""], option[value="Select"]').first();
-                $select.empty();
-                if (placeholder.length) {
-                    $select.append(placeholder.clone());
-                } else {
-                    $select.append('<option value=""></option>');
-                }
-
-                items.forEach(function (item) {
-                    var opt = document.createElement('option');
-                    opt.value = item.name;
-                    opt.textContent = item.name;
-                    if (currentValue && item.name === currentValue) {
-                        opt.selected = true;
-                    }
-                    $select[0].appendChild(opt);
-                });
-
-                // Re-apply current value in case it was pre-filled via URL param
-                if (currentValue) {
-                    $select.val(currentValue);
-                }
-
-                // Apply the Merriweather font to the freshly-populated select
-                $select.css('font-family', "'Merriweather', Georgia, serif");
-            })
-            .catch(function (err) {
-                console.warn('[FLE] fetchAndFillLinkedField failed for', doctype, err);
-            });
+    /**
+     * Master init — runs at multiple lifecycle points to ensure fields
+     * are populated regardless of when Frappe finishes rendering the form.
+     */
+    function fle_init_link_fields() {
+        patchFrappeLinkSearch();
+        populateAllLinkFields();
     }
 
-    // ── 3. Scan the rendered form and fix every empty linked Select/Link field ─
-    //
-    // Frappe renders Link fields as either:
-    //   (a) A <select> whose wrapping .frappe-control has data-fieldtype="Link"
-    //       or data-fieldtype="Select"
-    //   (b) An <input> with an autocomplete — these load options on keypress and
-    //       generally work fine; we skip them here.
-    //
-    // The doctype name is stored in data-doctype on the .frappe-control wrapper,
-    // OR we read it from the web form's field definition via frappe.web_form.
-    //
-    function repairLinkedFields() {
-        ensureCsrfToken();
+    // Run at all Frappe + DOM lifecycle events
+    $(document).ready(fle_init_link_fields);
+    $(window).on('load', fle_init_link_fields);
+    document.addEventListener('DOMContentLoaded', fle_init_link_fields);
 
-        // Build a map of fieldname → options doctype from the web_form definition
-        // This is the most reliable source of truth.
-        var fieldDoctypeMap = {};
-        try {
-            if (typeof frappe !== 'undefined' &&
-                frappe.web_form &&
-                frappe.web_form.web_form_fields) {
-                frappe.web_form.web_form_fields.forEach(function (f) {
-                    if (f.fieldtype === 'Link' && f.options) {
-                        fieldDoctypeMap[f.fieldname] = f.options;
-                    }
-                });
-            }
-        } catch (e) { /* silent */ }
+    // Frappe-specific events
+    ['frappe:ready', 'page-change', 'page-load', 'after-ajax', 'web-form-load'].forEach(function (evt) {
+        document.addEventListener(evt, fle_init_link_fields);
+    });
 
-        // Also handle the well-known master fields by name as a hard fallback
-        // so the fix works even if frappe.web_form isn't available yet.
-        var knownLinkFields = {
-            'gender': 'Gender',
-            "candidate's_gender": 'Gender',
-            'candidate_gender': 'Gender',
-            'nationality': 'Country',
-            "candidate's_nationality": 'Country',
-            'candidate_nationality': 'Country',
-            'country': 'Country',
-            'state': 'State',
-            "candidate's_state": 'State',
-            'candidate_state': 'State'
-        };
-
-        // Merge — form definition wins over hard fallback
-        Object.keys(knownLinkFields).forEach(function (k) {
-            if (!fieldDoctypeMap[k]) fieldDoctypeMap[k] = knownLinkFields[k];
-        });
-
-        // Now walk every <select> on the page that belongs to a frappe-control
-        document.querySelectorAll('.frappe-control select, .web-form-page select, .web-form-wrapper select').forEach(function (sel) {
-            var $sel = $(sel);
-
-            // Skip selects that already have real options
-            var realOpts = $sel.find('option').not('[value=""]').not('[value="Select"]');
-            if (realOpts.length > 0) return;
-
-            // Determine the fieldname — check data attribute, name attribute, id
-            var wrapper = sel.closest('[data-fieldname]') ||
-                sel.closest('.frappe-control[data-fieldname]');
-            var fieldname = (wrapper && wrapper.dataset.fieldname) ||
-                sel.name || sel.id || '';
-            fieldname = fieldname.toLowerCase().replace(/\s+/g, '_');
-
-            // Determine the linked doctype
-            var linkedDoctype = null;
-
-            // Priority 1: data-doctype on the wrapper
-            if (wrapper && wrapper.dataset.doctype) {
-                linkedDoctype = wrapper.dataset.doctype;
-            }
-
-            // Priority 2: data-fieldtype=Link on a parent
-            if (!linkedDoctype) {
-                var linkWrapper = sel.closest('[data-fieldtype="Link"]');
-                if (linkWrapper && linkWrapper.dataset.options) {
-                    linkedDoctype = linkWrapper.dataset.options;
-                }
-            }
-
-            // Priority 3: our map
-            if (!linkedDoctype && fieldname && fieldDoctypeMap[fieldname]) {
-                linkedDoctype = fieldDoctypeMap[fieldname];
-            }
-
-            // Priority 4: partial match on known link fields
-            if (!linkedDoctype && fieldname) {
-                Object.keys(fieldDoctypeMap).forEach(function (k) {
-                    if (!linkedDoctype && fieldname.indexOf(k) !== -1) {
-                        linkedDoctype = fieldDoctypeMap[k];
-                    }
-                });
-            }
-
-            if (!linkedDoctype) return; // can't determine doctype — skip
-
-            var currentValue = $sel.val() || '';
-            fetchAndFillLinkedField(linkedDoctype, $sel, currentValue);
-        });
-    }
-
-    // ── 4. Also handle Frappe Link input fields (autocomplete-style) ──────────
-    //
-    // For Link fields rendered as <input> (not <select>), Frappe fetches options
-    // via frappe.call on each keystroke. These fail silently when csrf_token is
-    // missing. The fix: patch frappe.call to always inject the token.
-    //
-    function patchFrappeCall() {
-        if (typeof frappe === 'undefined' || !frappe.call) return;
-        if (frappe.__fle_call_patched) return;
-        frappe.__fle_call_patched = true;
-
-        var _origCall = frappe.call.bind(frappe);
-        frappe.call = function (opts) {
-            ensureCsrfToken();
-            return _origCall(opts);
-        };
-    }
-
-    // ── 5. Schedule repair runs ───────────────────────────────────────────────
-    // We run on multiple timers because:
-    //   - The web form may not have rendered by DOMContentLoaded
-    //   - Frappe re-renders fields after its own ready callbacks
-    //   - Some fields are conditionally shown and appear late
-
-    function runRepairs() {
-        ensureCsrfToken();
-        patchFrappeCall();
-        if (typeof $ !== 'undefined') repairLinkedFields();
-    }
-
-    // Immediate attempt (jQuery may not be ready yet — guard it)
-    if (typeof $ !== 'undefined') {
-        $(document).ready(runRepairs);
-    }
-    document.addEventListener('DOMContentLoaded', runRepairs);
-
-    // Staggered retries to catch late-rendering fields
+    // Delayed retries — Frappe often renders fields asynchronously
     [300, 800, 1500, 2500, 4000].forEach(function (ms) {
-        setTimeout(runRepairs, ms);
+        setTimeout(fle_init_link_fields, ms);
     });
 
-    // Also re-run whenever Frappe signals a page-level event
-    ['frappe:ready', 'page-change', 'page-load', 'after-ajax'].forEach(function (evt) {
-        document.addEventListener(evt, runRepairs);
-    });
+    // MutationObserver: watch for new select elements being added by Frappe
+    var _linkObserver = null;
+    function startLinkObserver() {
+        if (_linkObserver) return;
+        _linkObserver = new MutationObserver(function (mutations) {
+            var hasNewSelects = mutations.some(function (m) {
+                return Array.prototype.some.call(m.addedNodes, function (node) {
+                    if (node.nodeType !== 1) return false;
+                    return node.tagName === 'SELECT' ||
+                        (node.querySelector && node.querySelector('select')) !== null;
+                });
+            });
+            if (hasNewSelects) {
+                setTimeout(populateAllLinkFields, 50);
+            }
+        });
+        _linkObserver.observe(document.body || document.documentElement, {
+            childList: true,
+            subtree: true
+        });
+        // Stop observing after 30 seconds to avoid memory leaks
+        setTimeout(function () {
+            if (_linkObserver) { _linkObserver.disconnect(); _linkObserver = null; }
+        }, 30000);
+    }
+
+    document.addEventListener('DOMContentLoaded', startLinkObserver);
+    if (document.body) startLinkObserver();
 
 })();
 
@@ -484,7 +549,6 @@
 // SECTION 2: HEADER + FOOTER INJECTION (non-login pages)
 // ─────────────────────────────────────────────────────────────────────────────
 window.inject_fle_header_footer = function () {
-    // ── GUARD: only inject once ───────────────────────────────────────────────
     if ($('.sticky-header').length > 0) return;
 
     // ── 0. Global CSS refinement for FLE ──────────────────────────────────────
@@ -619,8 +683,47 @@ window.inject_fle_header_footer = function () {
                 font-family: 'Merriweather', Georgia, serif !important;
             }
 
-            .web-form-page a, .web-form-wrapper a { color: #8B0000 !important; }
-            .web-form-page a:hover, .web-form-wrapper a:hover { color: #6a0000 !important; }
+            /* Scoped link color — excludes autocomplete/dropdown anchors */
+            .web-form-page a:not(.awesomplete-item):not([data-value]):not(.dropdown-item),
+            .web-form-wrapper a:not(.awesomplete-item):not([data-value]):not(.dropdown-item) {
+                color: #8B0000 !important;
+            }
+            .web-form-page a:not(.awesomplete-item):not([data-value]):not(.dropdown-item):hover,
+            .web-form-wrapper a:not(.awesomplete-item):not([data-value]):not(.dropdown-item):hover {
+                color: #6a0000 !important;
+            }
+
+            /* Autocomplete / Link field dropdown items — always black text */
+            .awesomplete ul li,
+            .awesomplete ul li a,
+            .awesomplete ul li mark,
+            .awesomplete [role="option"],
+            .awesomplete [role="listbox"] li,
+            ul.awesomplete-list li,
+            .link-field-result,
+            .frappe-control .dropdown-menu a,
+            .frappe-control .dropdown-menu li,
+            .frappe-control .dropdown-item,
+            .web-form-page .dropdown-menu a,
+            .web-form-page .dropdown-menu li,
+            .web-form-page .dropdown-item,
+            .web-form-wrapper .dropdown-menu a,
+            .web-form-wrapper .dropdown-menu li,
+            .web-form-wrapper .dropdown-item {
+                color: #1a1a1a !important;
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 13px !important;
+                font-weight: 300 !important;
+            }
+            .awesomplete ul li:hover,
+            .awesomplete ul li[aria-selected="true"],
+            .awesomplete [role="option"]:hover,
+            .frappe-control .dropdown-item:hover,
+            .web-form-page .dropdown-item:hover,
+            .web-form-wrapper .dropdown-item:hover {
+                background-color: #f5f0f0 !important;
+                color: #8B0000 !important;
+            }
 
             /* ── FIELD LABEL CASE FIX ── */
             .control-label, .frappe-control .control-label, label.control-label,
@@ -1055,15 +1158,6 @@ window.check_auto_edit_mode = function () {
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 3: ROUTE-BASED INJECTION
 // ─────────────────────────────────────────────────────────────────────────────
-// BUG FIX: Added a module-level guard flag so that even if try_inject_fle_theme
-// is called multiple times (by the various event listeners and timeouts below),
-// inject_fle_header_footer() — which already has its own $.sticky-header guard —
-// is only triggered once per page load. This prevents any race condition where
-// two near-simultaneous calls could slip past the DOM check before the first
-// injection has completed.
-// ─────────────────────────────────────────────────────────────────────────────
-var _fle_theme_injected = false;
-
 function try_inject_fle_theme() {
     var path = window.location.pathname;
     if (path.indexOf('login') !== -1) return;
@@ -1078,19 +1172,13 @@ function try_inject_fle_theme() {
         path.indexOf('/payment-success') !== -1;
     var isFoundationsPage = path.indexOf('/foundations-for-a-legal-education') !== -1;
 
-    var routeMatched = false;
     for (var i = 0; i < valid_routes.length; i++) {
         if (path.indexOf(valid_routes[i]) !== -1) {
-            routeMatched = true;
+            if (typeof inject_fle_header_footer === 'function') inject_fle_header_footer();
+            if (isFoundationsPage) {
+                if (typeof check_auto_edit_mode === 'function') check_auto_edit_mode();
+            }
             break;
-        }
-    }
-
-    if (routeMatched && !_fle_theme_injected) {
-        _fle_theme_injected = true;
-        if (typeof inject_fle_header_footer === 'function') inject_fle_header_footer();
-        if (isFoundationsPage) {
-            if (typeof check_auto_edit_mode === 'function') check_auto_edit_mode();
         }
     }
 
