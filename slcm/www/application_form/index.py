@@ -497,7 +497,12 @@ def save_form(data):
     email = frappe.db.get_value("User", user, "email") or user
     is_submit = bool(data.get("__submit"))
 
-    # ── Get valid fields from DocType meta ───────────────────────────
+    # ── Prevent edits if already submitted ───────────────────────────
+    existing_name = data.get("name")
+    if existing_name:
+        current_status = frappe.db.get_value("Applicant", existing_name, "application_status")
+        if current_status == "Submitted":
+            return {"error": _("Application is already submitted and cannot be edited.")}
     try:
         meta = frappe.get_meta("Applicant")
     except Exception:

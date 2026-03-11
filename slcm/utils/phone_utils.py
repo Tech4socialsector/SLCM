@@ -26,15 +26,8 @@ import frappe
 
 def sanitize_phone_for_frappe(value):
     """
-    Normalize and optionally validate a phone value for Frappe Phone field (E.164).
-
-    - Returns None for empty, None, or country-code-only (e.g. "+91").
-    - If phonenumbers is available: parses, validates, and returns E.164 formatted string.
-    - If phonenumbers is not available or parse fails: falls back to stripping and
-      ensuring + prefix and digits only; returns None if result is too short.
-
-    Returns:
-        str: E.164 string (e.g. "+919874563212"), or None if empty/invalid.
+    Normalize a phone value to "+country_code-number" format.
+    Example: +91-6382101474
     """
     if value is None:
         return None
@@ -44,25 +37,42 @@ def sanitize_phone_for_frappe(value):
         value = value.strip()
     if not value:
         return None
-    # Accept "country code - number" format (e.g. +91-7418656522); normalize to E.164 for Frappe
-    value = value.replace("-", "").replace(" ", "").strip()
-    digits = "".join(c for c in value if c.isdigit())
-    if len(digits) <= 4:
-        return None
-    try:
-        from phonenumbers import NumberParseException, format_number, is_valid_number, parse
-        from phonenumbers import PhoneNumberFormat
 
-        parsed = parse(value, None)
-        if not is_valid_number(parsed):
-            return None
-        return format_number(parsed, PhoneNumberFormat.E164)
-    except (ImportError, NumberParseException, Exception):
-        pass
+    # If already in +cc-num format, just clean up spaces and return
+    if "-" in value:
+        parts = value.split("-", 1)
+        cc = parts[0].strip()
+        num = parts[1].strip().replace(" ", "")
+        if not cc.startswith("+"):
+            cc = "+" + cc
+        num = "".join(c for c in num if c.isdigit())
+        if num:
+            return f"{cc}-{num}"
+
+    # No hyphen provided; try to parse and inject one
     if not value.startswith("+"):
         value = "+" + value
+
+    try:
+        from phonenumbers import NumberParseException, is_valid_number, parse
+        parsed = parse(value, None)
+        if is_valid_number(parsed):
+            cc = str(parsed.country_code)
+            num = str(parsed.national_number)
+            return f"+{cc}-{num}"
+    except (ImportError, NumberParseException, Exception):
+        pass
+
+    # Fallback: just digits and + prefix if parsing fails
     cleaned = "+" + "".join(c for c in value[1:] if c.isdigit())
-    return cleaned if len(cleaned) > 5 else None
+    if len(cleaned) <= 5:
+        return None
+    
+    # Try to guess a split if it starts with +91 (common case)
+    if cleaned.startswith("+91") and len(cleaned) > 10:
+        return f"+91-{cleaned[3:]}"
+        
+    return cleaned
 
 
 def validate_phone_with_frappe(phone_number, fieldname):
