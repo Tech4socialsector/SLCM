@@ -57,6 +57,7 @@
   {
    "fieldname": "portal_theme_color",
    "fieldtype": "Color",
+   "hidden": 1,
    "label": "Portal Theme Color"
   },
   {
@@ -117,6 +118,7 @@
   {
    "fieldname": "payment_gateway",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Payment Gateway",
    "options": "\nRazorpay\nPayU\nStripe\nOffline Only"
   },
@@ -181,7 +183,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-02-26 12:29:36.200659",
+ "modified": "2026-03-12 14:54:18.786383",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Institution Settings",

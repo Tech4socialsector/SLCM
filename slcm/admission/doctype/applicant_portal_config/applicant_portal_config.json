@@ -30,7 +30,6 @@
   "edit_allowed_days",
   "col_break_3",
   "allow_document_upload_after_submit",
-  "section_break_skip_fee",
   "section_break_stage",
   "show_stage_progress",
   "progress_style",
@@ -41,16 +40,6 @@
   "section_break_notifications",
   "enable_email_notifications",
   "enable_portal_notifications",
-  "section_break_messages",
-  "document_upload_note",
-  "col_break_5",
-  "submission_message",
-  "submission_email_template",
-  "section_break_contact",
-  "contact_email",
-  "contact_phone",
-  "col_break_6",
-  "footer_text",
   "section_break_login",
   "login_required_for_application",
   "portal_tagline",
@@ -66,7 +55,17 @@
   "support_name",
   "support_role",
   "support_email",
-  "stage_next_steps"
+  "stage_next_steps",
+  "section_break_messages",
+  "document_upload_note",
+  "col_break_5",
+  "submission_message",
+  "submission_email_template",
+  "section_break_contact",
+  "contact_email",
+  "contact_phone",
+  "col_break_6",
+  "footer_text"
  ],
  "fields": [
   {
@@ -108,6 +107,7 @@
    "label": "Secondary Color"
   },
   {
+   "collapsible": 1,
    "description": "Images for the hero carousel on the /admission page.",
    "fieldname": "slideshow_section",
    "fieldtype": "Section Break",
@@ -120,6 +120,7 @@
    "options": "Portal Slideshow Image"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_announcement",
    "fieldtype": "Section Break",
    "label": "Announcement Banner"
@@ -137,6 +138,7 @@
    "label": "Announcement Content"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_status",
    "fieldtype": "Section Break",
    "label": "Portal Status"
@@ -158,6 +160,7 @@
    "label": "Maintenance Message"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_programs",
    "fieldtype": "Section Break",
    "label": "Program Display"
@@ -182,6 +185,7 @@
    "label": "Show Eligibility Summary on Cards"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_edit_rules",
    "fieldtype": "Section Break",
    "label": "Edit Rules After Submission"
@@ -216,11 +220,7 @@
    "label": "Allow Document Upload After Submission"
   },
   {
-   "fieldname": "section_break_skip_fee",
-   "fieldtype": "Section Break",
-   "label": "Payment Settings"
-  },
-  {
+   "collapsible": 1,
    "fieldname": "section_break_stage",
    "fieldtype": "Section Break",
    "label": "Stage Progress Display"
@@ -240,6 +240,7 @@
    "options": "Steps\nTimeline"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_downloads",
    "fieldtype": "Section Break",
    "label": "Downloads"
@@ -262,6 +263,7 @@
    "options": "Offer Letter"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_notifications",
    "fieldtype": "Section Break",
    "label": "Notification Settings"
@@ -279,6 +281,7 @@
    "label": "Show Portal Bell Notifications"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_messages",
    "fieldtype": "Section Break",
    "label": "Applicant Messages"
@@ -304,6 +307,7 @@
    "options": "Email Template Config"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_contact",
    "fieldtype": "Section Break",
    "label": "Contact & Footer"
@@ -329,6 +333,7 @@
    "label": "Footer Text"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_login",
    "fieldtype": "Section Break",
    "label": "Application Form Access"
@@ -416,7 +421,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-03-08 17:24:48.583690",
+ "modified": "2026-03-12 15:03:36.990698",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",
