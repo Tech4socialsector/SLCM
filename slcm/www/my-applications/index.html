@@ -274,7 +274,7 @@
     top: 20px;
     left: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    background: var(--success);
     border-radius: 2px;
     z-index: 1;
     transition: width .6s ease;
@@ -305,14 +305,14 @@
   }
 
   .stage-circle.completed {
-    background: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary);
+    background: var(--success);
+    box-shadow: 0 0 0 2px var(--success);
     color: white;
   }
 
   .stage-circle.active {
-    background: var(--secondary);
-    box-shadow: 0 0 0 2px var(--secondary);
+    background: var(--warning);
+    box-shadow: 0 0 0 2px var(--warning);
     color: white;
     animation: pulse-ring 2s ease-in-out infinite;
   }
@@ -357,11 +357,11 @@
   }
 
   .stage-label.completed {
-    color: var(--text-3);
+    color: var(--success);
   }
 
   .stage-label.active {
-    color: var(--primary);
+    color: var(--warning);
   }
 
   .stage-label.pending {
