@@ -85,6 +85,8 @@
     gap: 18px;
   }
 
+
+
   /* ── Card base ───────────────────────────────────────────── */
   .ma-card {
     background: var(--card-bg);
@@ -1751,25 +1753,25 @@ or _app.current_stage)) or _status %}
       <div class="ma-card-body">
         <!-- Left: Merit -->
         <div class="merit-panel">
-          {% if all_merit and all_merit|length > 0 %}
-          {% set m = all_merit[0] %}
-          <div class="merit-stat-row">
-            <div class="merit-stat">
-              <span class="merit-stat-label">Overall Rank</span>
-              <span class="merit-stat-value">#{{ m.overall_rank or '—' }}</span>
+          {% if all_merit and all_merit|length > 0 and all_merit[0].overall_rank and all_merit[0].total_score %}
+            {% set m = all_merit[0] %}
+            <div class="merit-stat-row">
+              <div class="merit-stat">
+                <span class="merit-stat-label">Overall Rank</span>
+                <span class="merit-stat-value">#{{ m.overall_rank }}</span>
+              </div>
+              <div class="merit-stat">
+                <span class="merit-stat-label">Merit Score</span>
+                <span class="merit-stat-value score">{{ m.total_score }}</span>
+              </div>
             </div>
-            <div class="merit-stat">
-              <span class="merit-stat-label">Merit Score</span>
-              <span class="merit-stat-value score">{{ m.total_score or '—' }}</span>
-            </div>
-          </div>
-          <span class="merit-chip">{{ m.status or 'Selected' }}</span>
+            <span class="merit-chip">{{ m.status or 'Selected' }}</span>
           {% else %}
-          <div style="padding:12px 0; text-align: center; display: flex; flex-direction: column; align-items: center;">
-            <span class="merit-stat-label" style="display:block;margin-bottom:8px">Overall Rank</span>
-            <span style="font-size:32px;font-weight:700;color:var(--text-4)">—</span>
-            <p style="font-size:12px;color:var(--text-4);margin-top:8px">Merit list not yet published</p>
-          </div>
+            <div style="padding:12px 0; text-align: center; display: flex; flex-direction: column; align-items: center;">
+              <span class="merit-stat-label" style="display:block;margin-bottom:8px">Overall Rank</span>
+              <span style="font-size:32px;font-weight:700;color:var(--text-4)">—</span>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Merit list not yet published</p>
+            </div>
           {% endif %}
         </div>
 
@@ -1792,7 +1794,6 @@ or _app.current_stage)) or _status %}
                 Allocated Category</div>
               <div
                 style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
-                <!-- <span class="material-symbols-outlined" style="font-size: 20px;">category</span> -->
                 {{ r.allocated_category or 'General' }}
               </div>
             </div>
@@ -2189,7 +2190,7 @@ or _app.current_stage)) or _status %}
          ║  ELIGIBILITY RESULT CARD                     ║
          ╚══════════════════════════════════════════════╝ -->
     {% if eligibility_result %}
-    <div class="ma-card fade-up" style="animation-delay:.28s">
+    <div class="ma-card fade-up" style="animation-delay:.28s;margin-top:12px">
       <div class="ma-card-head">
         <div class="ma-card-title">
           <span class="ico"><span class="material-symbols-outlined">assignment_turned_in</span></span>
