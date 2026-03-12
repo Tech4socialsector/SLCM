@@ -22,7 +22,10 @@ class Applicant(Document):
         create_or_update_evaluation() is called inside validate_eligibility().
         """
         set_intake_type(self)
-        
+
+        if self.application_status == "Submitted" and self.has_value_changed("application_status"):
+            self._validate_application_fee_before_submit()
+
         if self.application_status == "Submitted":
             self.validate_eligibility()
             if self.evaluation_status == "Ineligible":
@@ -102,6 +105,29 @@ class Applicant(Document):
                 "Duplicate campus preferences are not allowed.",
                 title="Duplicate Preference"
             )
+
+    def _validate_application_fee_before_submit(self):
+        """Block submission if application fee is required and not paid/waived."""
+        from slcm.api.service.application_fee_service import get_application_fee_for_category
+        from slcm.api.service.application_fee_service import _get_applicant_category
+
+        category = _get_applicant_category(self.name)
+        fee_amount = get_application_fee_for_category(self.program, self.admission_cycle, category)
+
+        if flt(fee_amount, 2) > 0:
+            # Re-read status from DB to avoid using a stale in-memory value
+            db_status = frappe.db.get_value("Applicant", self.name, "application_fee_status")
+            status = (db_status or self.application_fee_status or "Pending").strip()
+
+            if status not in ("Paid", "Waived"):
+                frappe.throw(
+                    _("Application fee must be paid or waived before you can submit. "
+                      "Current status: {0}. Amount: {1}. "
+                      "Go to View Application and click \"Pay Application Fee\" to open the payment gateway and pay; then return here to submit.").format(
+                        status, fee_amount
+                    ),
+                    title=_("Pay Application Fee First")
+                )
 
     def validate_declaration(self):
         if self.application_status == "Submitted" and not self.declaration_undertaking:

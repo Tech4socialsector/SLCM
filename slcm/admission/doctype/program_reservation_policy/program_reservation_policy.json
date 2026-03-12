@@ -9,6 +9,7 @@
   "section_break_basic",
   "admission_cycle",
   "program",
+  "payment_gateway",
   "col_break_basic",
   "total_seats",
   "status",
@@ -124,10 +125,17 @@
    "fieldname": "policy_document",
    "fieldtype": "Attach",
    "label": "Policy Document"
+  },
+  {
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "label": "Payment Gateway",
+   "options": "Payment Gateway",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2026-02-28 12:04:55.598360",
+ "modified": "2026-03-12 09:29:43.037195",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",

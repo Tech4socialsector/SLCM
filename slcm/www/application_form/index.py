@@ -582,6 +582,12 @@ def save_form(data):
     if doc.application_status == "Submitted":
         for key in READONLY_AFTER_SUBMIT:
             scalar_data.pop(key, None)
+
+    # On submit, never overwrite fee status/amount from form (set by payment flow)
+    if is_submit:
+        for key in ("application_fee_status", "application_fee_amount"):
+            scalar_data.pop(key, None)
+
     try:
         doc.update(scalar_data)
     except Exception as e:
