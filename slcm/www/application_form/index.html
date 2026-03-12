@@ -1929,8 +1929,8 @@
                                 <select class="fc" name="application_type" id="application_type"
                                     onchange="onApplicationTypeChange(this.value)">
                                     <option value="">Select Type</option>
-                                    <option value="CLAT">CLAT</option>
-                                    <option value="NLSAT">NLSAT</option>
+                                    <option value="External Test">External Test</option>
+                                    <option value="Internal Test">Internal Test</option>
                                     <option value="PACE">PACE</option>
                                 </select>
                             </div>
@@ -3807,8 +3807,8 @@
 
     function onApplicationTypeChange(val) {
         const msgs = {
-            'CLAT': 'CLAT workflow: Your CLAT rank will be imported from the Consortium.',
-            'NLSAT': 'NLSAT workflow: You must appear for the NLSAT exam.',
+            'External Test': 'CLAT workflow: Your CLAT rank will be imported from the Consortium.',
+            'Internal Test': 'NLSAT workflow: You must appear for the NLSAT exam.',
             'PACE': 'PACE workflow: Admission is based on academic merit only.'
         };
         const note = document.getElementById('appTypeNote');

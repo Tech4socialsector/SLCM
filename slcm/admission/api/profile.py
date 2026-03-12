@@ -57,9 +57,17 @@ def update_profile(**kwargs):
         # (e.g. if 'current_stage' contains a stale/invalid link)
         frappe.db.set_value("Applicant", app_name, update_dict)
         
-        # If candidate_name was updated, also update the User's full_name for navbar consistency
-        if "candidate_name" in update_dict and update_dict["candidate_name"]:
-            frappe.db.set_value("User", user, "full_name", update_dict["candidate_name"])
+        # Sync updates to the User doctype
+        user_updates = {}
+        if "candidate_name" in update_dict:
+            user_updates["full_name"] = update_dict["candidate_name"]
+        if "mobile_number" in update_dict:
+            user_updates["mobile_no"] = update_dict["mobile_number"]
+        if "candidate_photo" in update_dict:
+            user_updates["user_image"] = update_dict["candidate_photo"]
+            
+        if user_updates:
+            frappe.db.set_value("User", user, user_updates)
             
         frappe.db.commit()
         

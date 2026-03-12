@@ -1,140 +1,90 @@
 {
  "actions": [],
- "allow_import": 1,
  "allow_rename": 1,
- "autoname": "field:program_name",
- "creation": "2025-12-18 10:59:03.532617",
- "default_view": "List",
+ "creation": "2026-03-11 13:55:37.916716",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "program_id",
-  "program_slug",
+  "program_code",
+  "url_slug",
   "program_name",
   "program_shortcode",
   "department",
-  "hero_image",
-  "column_break_3",
-  "program_level",
+  "image",
+  "column_break_aosh",
+  "level_of_study",
   "program_duration",
   "academic_year",
   "current_year",
   "academic_term",
   "graduation_credits",
   "program_status",
-  "section_break_xbux",
+  "section_break_fwyh",
   "table_fela",
-  "portal_details",
+  "portal_details_tab",
   "intake_type",
   "program_image",
-  "description",
+  "program_description",
   "eligibility_summary",
-  "application_fee",
-  "application_deadline",
-  "brochure_url",
+  "brochure_file",
   "media",
   "curriculum_items",
   "career_items",
   "faculty_items",
-  "connections_tab"
+  "connections_tab_tab"
  ],
  "fields": [
   {
+   "fieldname": "program_code",
+   "fieldtype": "Data",
+   "label": "Program Code"
+  },
+  {
+   "fieldname": "url_slug",
+   "fieldtype": "Data",
+   "label": "URL Slug"
+  },
+  {
    "fieldname": "program_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Program Name",
-   "reqd": 1,
-   "unique": 1
+   "label": "Program Name"
+  },
+  {
+   "fieldname": "program_shortcode",
+   "fieldtype": "Data",
+   "label": "Program Shortcode"
   },
   {
    "fieldname": "department",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Department",
    "options": "Department"
   },
   {
-   "fieldname": "hero_image",
+   "fieldname": "image",
    "fieldtype": "Attach Image",
-   "hidden": 1,
    "label": "Image"
   },
   {
-   "fieldname": "column_break_3",
+   "fieldname": "column_break_aosh",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "section_break_xbux",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "table_fela",
-   "fieldtype": "Table",
-   "options": "Program Enrollment Course"
-  },
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Year",
-   "options": "Academic Year"
-  },
-  {
-   "fieldname": "academic_term",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Term",
-   "options": "Academic Term"
-  },
-  {
-   "fieldname": "program_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Program Code"
-  },
-  {
-   "fieldname": "program_level",
+   "fieldname": "level_of_study",
    "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Level of Study",
    "options": "\nUG\nPG\nResearch Course"
   },
   {
    "fieldname": "program_duration",
    "fieldtype": "Int",
-   "hidden": 1,
    "label": "Program Duration"
   },
   {
-   "fieldname": "graduation_credits",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Graduation Credits"
-  },
-  {
-   "fieldname": "program_status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Program Status",
-   "options": "\nActive\nInactive"
-  },
-  {
-   "fieldname": "program_shortcode",
-   "fieldtype": "Data",
-   "label": "Program Shortcode",
-   "reqd": 1
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year"
   },
   {
    "description": "Enter the last two digit of the current year",
@@ -143,46 +93,59 @@
    "label": "Current Year"
   },
   {
-   "fieldname": "program_slug",
-   "fieldtype": "Data",
-   "label": "URL Slug",
-   "read_only": 1
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "label": "Academic Term",
+   "options": "Academic Term"
   },
   {
-   "bold": 1,
-   "description": "Determines which admission stages this program follows",
+   "fieldname": "graduation_credits",
+   "fieldtype": "Int",
+   "label": "Graduation Credits"
+  },
+  {
+   "fieldname": "program_status",
+   "fieldtype": "Select",
+   "label": "Program Status",
+   "options": "\nActive\nInactive"
+  },
+  {
+   "fieldname": "section_break_fwyh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "table_fela",
+   "fieldtype": "Table",
+   "options": "Program Enrollment Course"
+  },
+  {
+   "fieldname": "portal_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Portal Details"
+  },
+  {
    "fieldname": "intake_type",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Intake Type",
-   "options": "CLAT\nNLSAT\nDirect Merit",
-   "reqd": 1
+   "options": "\nInternal Test\nExternal Test\nDirect Merit"
   },
   {
-   "fieldname": "description",
+   "fieldname": "program_image",
+   "fieldtype": "Attach Image",
+   "label": "Program Image"
+  },
+  {
+   "fieldname": "program_description",
    "fieldtype": "Text Editor",
    "label": "Program Description"
   },
   {
-   "description": "Shown in Admission Details sidebar on program page",
    "fieldname": "eligibility_summary",
    "fieldtype": "Text Editor",
    "label": "Eligibility Summary"
   },
   {
-   "description": "e.g. \u20b91000 (Non-refundable)",
-   "fieldname": "application_fee",
-   "fieldtype": "Data",
-   "label": "Application Fee"
-  },
-  {
-   "description": "e.g. June 30, 2026",
-   "fieldname": "application_deadline",
-   "fieldtype": "Data",
-   "label": "Application Deadline"
-  },
-  {
-   "fieldname": "brochure_url",
+   "fieldname": "brochure_file",
    "fieldtype": "Attach",
    "label": "Brochure File"
   },
@@ -211,36 +174,19 @@
    "options": "Program Faculty Item"
   },
   {
-   "fieldname": "portal_details",
+   "fieldname": "connections_tab_tab",
    "fieldtype": "Tab Break",
-   "label": "Portal Details"
-  },
-  {
-   "fieldname": "connections_tab",
-   "fieldtype": "Tab Break",
-   "label": "Connections",
+   "label": "connections_tab",
    "show_dashboard": 1
-  },
-  {
-   "fieldname": "program_image",
-   "fieldtype": "Attach Image",
-   "label": "Program Image"
   }
  ],
- "image_field": "hero_image",
- "links": [
-  {
-   "group": "Admission and Enrollments",
-   "link_doctype": "Student Enrollment",
-   "link_fieldname": "program"
-  }
- ],
- "make_attachments_public": 1,
- "modified": "2026-03-09 11:03:36.598597",
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-11 22:30:59.742953",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",
- "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -254,59 +200,11 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
-  },
-  {
-   "read": 1,
-   "role": "Student"
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Eligibility Admin",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Applicant",
-   "share": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Entrance Test Admin",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Interview Staff Member",
-   "share": 1,
-   "write": 1
   }
  ],
  "row_format": "Dynamic",
- "search_fields": "program_name",
- "show_name_in_global_search": 1,
- "sort_field": "modified",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": []
 }

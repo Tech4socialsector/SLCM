@@ -20,7 +20,7 @@
    "fieldname": "intake_type",
    "fieldtype": "Select",
    "label": "Intake Type",
-   "options": "All\nCLAT\nNLSAT\nDirect Merit"
+   "options": "All\nExternal Test\nInternal Test\nDirect Merit"
   }
  ],
  "grid_page_length": 50,

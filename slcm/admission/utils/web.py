@@ -203,7 +203,7 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
     # Filter stages by intake_type
     # Admission Cycle Stage.applicable_workflow matches Applicant.intake_type
     # If applicable_workflow is "All", it shows for everyone.
-    intake = applicant.intake_type or "CLAT"
+    intake = applicant.intake_type or "External Test"
     filtered_stages = [
         s for s in all_stages
         if s.applicable_workflow == "All" or s.applicable_workflow == intake

@@ -54,31 +54,31 @@
    "fieldname": "clat_rank",
    "fieldtype": "Int",
    "label": "CLAT Rank",
-   "depends_on": "eval:doc.workflow_type=='CLAT'"
+   "depends_on": "eval:doc.workflow_type=='External Test'"
   },
   {
    "fieldname": "clat_category_rank",
    "fieldtype": "Int",
    "label": "CLAT Category Rank",
-   "depends_on": "eval:doc.workflow_type=='CLAT'"
+   "depends_on": "eval:doc.workflow_type=='External Test'"
   },
   {
    "fieldname": "nlsat_score",
    "fieldtype": "Float",
    "label": "NLSAT Score",
-   "depends_on": "eval:doc.workflow_type=='NLSAT'"
+   "depends_on": "eval:doc.workflow_type=='Internal Test'"
   },
   {
    "fieldname": "interview_score",
    "fieldtype": "Float",
    "label": "Interview Score",
-   "depends_on": "eval:doc.workflow_type=='NLSAT'"
+   "depends_on": "eval:doc.workflow_type=='Internal Test'"
   },
   {
    "fieldname": "workflow_type",
    "fieldtype": "Select",
    "label": "Workflow Type",
-   "options": "\nCLAT\nNLSAT\nPACE",
+   "options": "\nExternal Test\nInternal Test\nPACE",
    "read_only": 1
   },
   {

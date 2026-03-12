@@ -140,8 +140,8 @@ frappe.ui.form.on("Applicant", {
     // ── APPLICATION TYPE ──────────────────────
     application_type: function (frm) {
         const messages = {
-            "CLAT": __("CLAT workflow: Your CLAT rank will be imported from the Consortium."),
-            "NLSAT": __("NLSAT workflow: You must appear for the NLSAT exam."),
+            "External Test": __("CLAT workflow: Your CLAT rank will be imported from the Consortium."),
+            "Internal Test": __("NLSAT workflow: You must appear for the NLSAT exam."),
             "PACE": __("PACE workflow: Admission is based on academic merit only.")
         };
         if (frm.doc.application_type && messages[frm.doc.application_type]) {

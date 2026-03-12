@@ -747,7 +747,7 @@ else 'Admissions Open') %}
               Change Password
             </div>
 
-            <div class="adm-menu-item danger" onclick="window.doLogout()">
+            <div class="adm-menu-item danger" onclick="window.location.href='/logout'">
               <span class="ms-icon" style="color:var(--danger)">logout</span>
               Logout
             </div>
@@ -808,7 +808,7 @@ else 'Admissions Open') %}
                 {% if _app_id %}
                 <div class="app-id-chip">
                   <span class="ms-icon">badge</span>
-                  Application ID
+                  Application No
                   <span style="color:var(--primary);font-weight:700;">{{ _app_id }}</span>
                 </div>
                 {% endif %}
@@ -885,78 +885,39 @@ else 'Admissions Open') %}
             <div class="doc-status-card">
               <h3 class="card-title">Documents Status</h3>
 
-              {% if _docs %}
               <div class="doc-rows-grid">
-                {% for doc in _docs %}
-                {% set _dname = doc.get('document_name') or doc.get('document_type','Document') if doc.get else
-                (doc.document_name or doc.document_type or 'Document') %}
-                {% set _dstatus= (doc.get('verification_status') or '') if doc.get else (doc.verification_status or '')
-                %}
-                {% set _is_uploaded = doc.get('file_url') if doc.get else doc.file_url %}
-                <div class="doc-row">
-                  <div class="doc-check">
-                    <div class="doc-check-box {{ 'checked' if _is_uploaded else '' }}"></div>
-                    <span>{{ _dname }}</span>
+                {% if app_documents %}
+                  {% for doc in app_documents %}
+                  {% set _is_done = doc.is_uploaded %}
+                  <div class="doc-row" style="cursor:pointer;" onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
+                    <div class="doc-check">
+                      <div class="doc-check-box {% if _is_done %}checked{% endif %}"></div>
+                      <span>{{ doc.document_name }}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      {% if doc.file_url %}
+                      <span class="doc-status-badge uploaded status">
+                        <span class="ms-icon">check_circle</span>Uploaded
+                      </span>
+                      {% else %}
+                      <span class="doc-status-badge pending status">
+                        <span class="ms-icon">pending</span>Pending
+                      </span>
+                      {% endif %}
+                      <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary);">
+                        {% if _is_done %}edit_square{% else %}upload{% endif %}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    {% if _is_uploaded %}
-                    <span class="doc-status-badge uploaded status">
-                      <span class="ms-icon">check_circle</span>
-                      {% if _dstatus == 'Verified' %}Verified
-                      {% elif _dstatus == 'Rejected' %}<span style="color:var(--danger);">Rejected</span>
-                      {% else %}Uploaded{% endif %}
-                    </span>
-                    {% else %}
-                    <span class="doc-status-badge pending status">
-                      <span class="ms-icon">pending</span>Pending
-                    </span>
-                    {% endif %}
-                  </div>
-                </div>
-                {% endfor %}
+                  {% endfor %}
+                {% else %}
+                  <p style="color: var(--text-4); font-size: 13px; font-style: italic;">No documents required.</p>
+                {% endif %}
               </div>
-              {% else %}
-              <!-- Placeholder document list when no real docs -->
-              <div class="doc-rows-grid">
-                <div class="doc-row">
-                  <div class="doc-check">
-                    <div class="doc-check-box checked"></div>
-                    <span style="font-size:14px;font-weight:500;color:var(--text-2);">10th Marksheet</span>
-                  </div>
-                  <span class="doc-status-badge uploaded status">
-                    <span class="ms-icon">check_circle</span>Uploaded
-                  </span>
-                </div>
-                <div class="doc-row">
-                  <div class="doc-check">
-                    <div class="doc-check-box checked"></div>
-                    <span style="font-size:14px;font-weight:500;color:var(--text-2);">12th Marksheet</span>
-                  </div>
-                  <span class="doc-status-badge uploaded status">
-                    <span class="ms-icon">check_circle</span>Uploaded
-                  </span>
-                </div>
-                <div class="doc-row">
-                  <div class="doc-check">
-                    <div class="doc-check-box"></div>
-                    <span style="font-size:14px;font-weight:500;color:var(--text-2);">Income Certificate</span>
-                  </div>
-                  <span class="doc-status-badge pending status">
-                    <span class="ms-icon" style="color:var(--warning);">pending</span>
-                    <span style="color:var(--warning);">Pending</span>
-                  </span>
-                </div>
-              </div>
-              {% endif %}
-
-              <a href="#" class="btn-upload-docs">
-                <span class="ms-icon" style="font-size:18px;color:white;">upload</span>
-                Upload Documents
-              </a>
             </div>
 
             <!-- Account Settings Card -->
-            <div class="account-settings-card">
+            <!-- <div class="account-settings-card">
               <div class="account-settings-header" onclick="toggleAccountSettings()">
                 <h3 class="card-title">Account Settings</h3>
                 <span class="ms-icon chevron-icon" id="acc-chevron" style="color:#94a3b8;">chevron_right</span>
@@ -977,7 +938,7 @@ else 'Admissions Open') %}
                   <div class="account-row-chevron"><span class="ms-icon">chevron_right</span></div>
                 </div>
               </div>
-            </div>
+            </div> -->
 
           </div><!-- /max-width wrapper -->
         </div>
@@ -1244,12 +1205,22 @@ else 'Admissions Open') %}
           placeholder="Street address, landmark..."></textarea>
       </div>
       <div>
-        <label class="modal-label">City</label>
-        <input id="edit-city" type="text" class="modal-input" placeholder="City" />
+        <label class="modal-label">State</label>
+        <select id="edit-state" class="modal-input" onchange="loadDistricts(this.value)">
+          <option value="">Select State</option>
+          {% for s in states %}
+          <option value="{{ s.name }}">{{ s.name }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div>
-        <label class="modal-label">State</label>
-        <input id="edit-state" type="text" class="modal-input" placeholder="State" />
+        <label class="modal-label">City (District)</label>
+        <select id="edit-city" class="modal-input">
+          <option value="">Select City</option>
+          {% for d in districts %}
+          <option value="{{ d.name }}">{{ d.name }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div>
         <label class="modal-label">Pincode</label>
@@ -1271,6 +1242,168 @@ else 'Admissions Open') %}
 {% endblock %}
 
 {% block extra_js %}
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<!-- ── Document Upload Modal ──────────────────────────────────────── -->
+<div id="doc-upload-modal" class="modal-backdrop" style="display:none; z-index:10000; background:rgba(0,0,0,.5); backdrop-filter:blur(4px);">
+  <div class="modal-box" style="max-width: 440px;">
+    <button onclick="closeUploadModal()"
+            style="position:absolute;top:16px;right:16px;background:transparent;border:none;
+                   cursor:pointer;width:32px;height:32px;border-radius:8px;
+                   display:flex;align-items:center;justify-content:center;">
+      <span class="material-symbols-outlined" style="font-size:20px;color:#94a3b8;">close</span>
+    </button>
+    <div class="modal-header" style="margin-bottom:20px;">
+      <h3 id="modal-doc-label" style="font-size:18px; font-weight:700; color:var(--text-1); margin:0;">Upload Document</h3>
+      <p id="modal-doc-type-hint" style="font-size:12px; color:var(--text-3); margin:4px 0 0;">Requirement details will appear here.</p>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+      <div class="pef">
+        <label class="modal-label" style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-4); margin-bottom:6px; display:block;">Select File</label>
+        <input type="file" id="modal-file-input" class="modal-input" 
+               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
+               onchange="handleModalFileSelect(this)"/>
+        <p style="font-size:10px; color:var(--text-4); margin-top:6px;">Accepted: PDF, JPG, PNG, DOC (Max 5MB)</p>
+      </div>
+      
+      <div id="upload-progress-wrap" style="display:none; margin-top:16px;">
+        <div class="progress-bar-track" style="height:6px; background:#e5e7eb; border-radius:99px; overflow:hidden;">
+          <div id="upload-progress-fill" class="progress-bar-fill" style="width:0%; height:100%; background:var(--primary); transition:width .3s;"></div>
+        </div>
+        <p id="upload-status-text" style="font-size:11px; color:var(--primary); margin-top:6px; font-weight:600;">Uploading...</p>
+      </div>
+
+      <div id="doc-upload-msg" style="margin-top:14px;font-size:13px;min-height:18px; font-weight:500;"></div>
+    </div>
+    <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; margin-top:24px; padding-top:16px; border-top:1px solid #f1f5f9;">
+      <button class="btn" onclick="closeUploadModal()" style="padding:8px 16px; border-radius:8px; background:#f3f4f6; color:var(--text-3);">Cancel</button>
+      <button id="doc-upload-btn" class="btn btn-primary" onclick="executeDocumentUpload()" disabled style="padding:8px 24px; border-radius:8px;">Start Upload</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let currentUploadTarget = {
+    label: '', type: '', field: '', docName: '', source: '', file: null
+  };
+
+  window.openUploadModal = function(label, type, field, docName, source) {
+    currentUploadTarget = { label, type, field, docName, source, file: null };
+    document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
+    document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
+    document.getElementById('modal-file-input').value = '';
+    document.getElementById('doc-upload-btn').disabled = true;
+    document.getElementById('doc-upload-msg').textContent = '';
+    document.getElementById('upload-progress-wrap').style.display = 'none';
+    document.getElementById('doc-upload-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeUploadModal = function() {
+    document.getElementById('doc-upload-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  window.handleModalFileSelect = function(input) {
+    if (input.files && input.files[0]) {
+      currentUploadTarget.file = input.files[0];
+      document.getElementById('doc-upload-btn').disabled = false;
+    } else {
+      currentUploadTarget.file = null;
+      document.getElementById('doc-upload-btn').disabled = true;
+    }
+  };
+
+  window.executeDocumentUpload = async function() {
+    const btn = document.getElementById('doc-upload-btn');
+    const msg = document.getElementById('doc-upload-msg');
+    const progWrap = document.getElementById('upload-progress-wrap');
+    const progFill = document.getElementById('upload-progress-fill');
+    
+    if (!currentUploadTarget.file) return;
+    
+    btn.disabled = true;
+    btn.textContent = 'Uploading...';
+    progWrap.style.display = 'block';
+    progFill.style.width = '15%';
+    
+    try {
+      const fd = new FormData();
+      fd.append('file', currentUploadTarget.file);
+      fd.append('is_private', '1');
+      fd.append('folder', 'Home/Attachments');
+      
+      const uploadResp = await fetch('/api/method/upload_file', {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
+      });
+      const uploadData = await uploadResp.json();
+      
+      if (!uploadData.message || !uploadData.message.file_url) {
+        throw new Error('File upload failed');
+      }
+      
+      const fileUrl = uploadData.message.file_url;
+      progFill.style.width = '60%';
+      
+      if (currentUploadTarget.field) {
+        await apiFetch('slcm.admission.api.profile.update_profile', {
+          [currentUploadTarget.field]: fileUrl
+        });
+      } else {
+        throw new Error('This document type does not map to a profile field.');
+      }
+      
+      progFill.style.width = '100%';
+      msg.style.color = 'var(--success)';
+      msg.textContent = '✓ Upload successful. Refreshing...';
+
+      // Immediate UI update for photo
+      if (currentUploadTarget.field === 'candidate_photo') {
+        const avatars = document.querySelectorAll('#profile-avatar-img, #adm-avatar-img');
+        avatars.forEach(img => { img.src = fileUrl; });
+        
+        // Handle Profile Avatar swap (Initials -> Image)
+        const profDisplay = document.getElementById('profile-avatar-display');
+        if (profDisplay && !document.getElementById('profile-avatar-img')) {
+          const init = document.getElementById('profile-avatar-initials');
+          if (init) init.remove();
+          const newImg = document.createElement('img');
+          newImg.id = 'profile-avatar-img';
+          newImg.src = fileUrl;
+          newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+          profDisplay.appendChild(newImg);
+        }
+
+        // Handle Navbar Avatar swap (Initials -> Image)
+        const navBtn = document.getElementById('adm-avatar-btn');
+        if (navBtn && !document.getElementById('adm-avatar-img')) {
+          const init = document.getElementById('adm-avatar-init');
+          if (init) init.remove();
+          const newImg = document.createElement('img');
+          newImg.id = 'adm-avatar-img';
+          newImg.src = fileUrl;
+          newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+          navBtn.prepend(newImg);
+        }
+      }
+      
+      setTimeout(() => window.location.reload(), 1000);
+      
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Retry Upload';
+      msg.style.color = 'var(--danger)';
+      msg.textContent = 'Error: ' + (e.message || 'Unknown error');
+    }
+  };
+})();
+</script>
+
 <script>
   // ── Panel switching ──────────────────────────────────────────
   function showPanel(name) {
@@ -1305,34 +1438,60 @@ else 'Admissions Open') %}
     if (fill) setTimeout(() => fill.style.width = '{{ _completion_pct }}%', 300);
   });
 
+  async function loadDistricts(state, selectedDistrict = null) {
+    const citySelect = document.getElementById('edit-city');
+    if (!state) {
+      citySelect.innerHTML = '<option value="">Select City</option>';
+      return;
+    }
+    citySelect.innerHTML = '<option value="">Loading...</option>';
+    try {
+      const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
+      let html = '<option value="">Select City</option>';
+      districts.forEach(d => {
+        html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
+      });
+      citySelect.innerHTML = html;
+    } catch (e) {
+      citySelect.innerHTML = '<option value="">Error loading cities</option>';
+    }
+  }
+
   // ── Profile Edit Modal ──────────────────────────────────────
   function openProfileEditModal() {
-    var pd = {{ profile_data_json | safe }};
-  var mobileInput = document.getElementById('edit-mobile');
-  var pincodeInput = document.getElementById('edit-pincode');
+    var pd = {{ profile_data_json | safe if profile_data_json else '{}' }};
+    var mobileInput = document.getElementById('edit-mobile');
+    var pincodeInput = document.getElementById('edit-pincode');
 
-  mobileInput.value = pd.mobile_number || '';
-  document.getElementById('edit-dob').value = pd.date_of_birth || '';
-  document.getElementById('edit-gender').value = pd.gender || '';
-  document.getElementById('edit-nationality').value = pd.nationality || '';
-  document.getElementById('edit-address').value = pd.correspondence_address || '';
-  document.getElementById('edit-city').value = pd.city || '';
-  document.getElementById('edit-state').value = pd.state || '';
-  pincodeInput.value = pd.pincode || '';
+    mobileInput.value = pd.mobile_number || '';
+    document.getElementById('edit-dob').value = pd.date_of_birth || '';
+    document.getElementById('edit-gender').value = pd.gender || '';
+    document.getElementById('edit-nationality').value = pd.nationality || '';
+    document.getElementById('edit-address').value = pd.correspondence_address || '';
+    document.getElementById('edit-state').value = pd.state || '';
+    pincodeInput.value = pd.pincode || '';
 
-  // Prevent letters in mobile
-  mobileInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
-  // Prevent letters in pincode
-  pincodeInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
+    // Prevent letters
+    mobileInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
+    pincodeInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
 
-  document.getElementById('profile-edit-msg').textContent = '';
-  document.getElementById('profile-edit-modal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
+    // Load districts for the current state
+    if (pd.state) {
+      loadDistricts(pd.state, pd.city);
+    } else {
+      document.getElementById('edit-city').innerHTML = '<option value="">Select City</option>';
+    }
+
+    document.getElementById('profile-edit-msg').textContent = '';
+    document.getElementById('profile-edit-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
   function closeProfileEditModal() {
     document.getElementById('profile-edit-modal').style.display = 'none';
     document.body.style.overflow = '';
   }
+
   document.getElementById('profile-edit-modal')?.addEventListener('click', function (e) {
     if (e.target === this) closeProfileEditModal();
   });
@@ -1355,41 +1514,43 @@ else 'Admissions Open') %}
     // ── Validation ──────────────────────────────────────────────
     msg.style.color = '#dc2626';
 
-    if (args.mobile_number) {
-      // Basic mobile validation (digits only, length check)
-      let cleanMobile = args.mobile_number.replace(/[^0-9]/g, '');
-      if (cleanMobile.length < 10) {
-        msg.textContent = 'Please enter a valid 10-digit mobile number.'; return;
-      }
-    }
-
     if (args.date_of_birth) {
       let selectedDate = new Date(args.date_of_birth);
       let today = new Date();
       if (selectedDate >= today) {
-        msg.textContent = 'Date of birth must be in the past.'; return;
+        msg.textContent = 'Date of birth must be in the past.';
+        return;
       }
     }
 
     if (args.pincode) {
       if (!/^[0-9]{6}$/.test(args.pincode)) {
-        msg.textContent = 'Pincode must be exactly 6 digits.'; return;
+        msg.textContent = 'Pincode must be exactly 6 digits.';
+        return;
       }
     }
 
-    btn.disabled = true; btn.textContent = 'Saving…'; msg.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    msg.textContent = '';
+    
     try {
       const message = await apiFetch('slcm.admission.api.profile.update_profile', args);
-      btn.disabled = false; btn.textContent = 'Save Changes';
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
       if (message && message.status === 'ok') {
-        msg.style.color = '#16a34a'; msg.textContent = '✓ Profile updated successfully.';
+        msg.style.color = '#16a34a';
+        msg.textContent = '✓ Profile updated successfully.';
         setTimeout(() => window.location.reload(), 900);
       } else {
-        msg.style.color = '#dc2626'; msg.textContent = 'Something went wrong. Please try again.';
+        msg.style.color = '#dc2626';
+        msg.textContent = 'Something went wrong. Please try again.';
       }
     } catch (e) {
-      btn.disabled = false; btn.textContent = 'Save Changes';
-      msg.style.color = '#dc2626'; msg.textContent = e.message || 'Error saving. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+      msg.style.color = '#dc2626';
+      msg.textContent = e.message || 'Error saving. Please try again.';
     }
   }
 
@@ -1399,9 +1560,12 @@ else 'Admissions Open') %}
     if (!input.files || !input.files[0]) return;
     var file = input.files[0];
     if (file.size > 2 * 1024 * 1024) {
-      statusEl.textContent = 'File too large (max 2 MB)'; statusEl.style.color = '#dc2626'; return;
+      statusEl.textContent = 'File too large (max 2 MB)';
+      statusEl.style.color = '#dc2626';
+      return;
     }
-    statusEl.textContent = 'Uploading…'; statusEl.style.color = '#64748b';
+    statusEl.textContent = 'Uploading…';
+    statusEl.style.color = '#64748b';
 
     // Preview immediately
     var reader = new FileReader();
@@ -1425,24 +1589,58 @@ else 'Admissions Open') %}
     fd.append('folder', 'Home/Attachments');
 
     fetch('/api/method/upload_file', {
-      method: 'POST', body: fd,
+      method: 'POST',
+      body: fd,
       headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
     })
       .then(r => r.json())
       .then(async data => {
         if (data?.message?.file_url) {
+          const fileUrl = data.message.file_url;
           try {
-            const message = await apiFetch('slcm.admission.api.profile.update_profile',
-              { candidate_photo: data.message.file_url });
+            const message = await apiFetch('slcm.admission.api.profile.update_profile', { candidate_photo: fileUrl });
             if (message?.status === 'ok') {
-              statusEl.textContent = '✓ Photo updated'; statusEl.style.color = '#16a34a';
+              statusEl.textContent = '✓ Photo updated';
+              statusEl.style.color = '#16a34a';
+              
+              // Immediate UI update for photo across page
+              const avatars = document.querySelectorAll('#profile-avatar-img, #adm-avatar-img');
+              avatars.forEach(img => { img.src = fileUrl; });
+              
+              // Handle Profile Avatar swap (Initials -> Image)
+              const profDisplay = document.getElementById('profile-avatar-display');
+              if (profDisplay && !document.getElementById('profile-avatar-img')) {
+                const init = document.getElementById('profile-avatar-initials');
+                if (init) init.remove();
+                const newImg = document.createElement('img');
+                newImg.id = 'profile-avatar-img';
+                newImg.src = fileUrl;
+                newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+                profDisplay.appendChild(newImg);
+              }
+
+              // Handle Navbar Avatar swap (Initials -> Image)
+              const navBtn = document.getElementById('adm-avatar-btn');
+              if (navBtn && !document.getElementById('adm-avatar-img')) {
+                const init = document.getElementById('adm-avatar-init');
+                if (init) init.remove();
+                const newImg = document.createElement('img');
+                newImg.id = 'adm-avatar-img';
+                newImg.src = fileUrl;
+                newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+                navBtn.prepend(newImg);
+              }
             }
           } catch (e) {
-            statusEl.textContent = 'Error updating photo'; statusEl.style.color = '#dc2626';
+            statusEl.textContent = 'Error updating photo';
+            statusEl.style.color = '#dc2626';
           }
         }
       })
-      .catch(() => { statusEl.textContent = 'Upload failed'; statusEl.style.color = '#dc2626'; });
+      .catch(() => {
+        statusEl.textContent = 'Upload failed';
+        statusEl.style.color = '#dc2626';
+      });
   }
 </script>
 {% endblock %}
