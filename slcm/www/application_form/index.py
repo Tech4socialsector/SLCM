@@ -582,6 +582,12 @@ def save_form(data):
     if doc.application_status == "Submitted":
         for key in READONLY_AFTER_SUBMIT:
             scalar_data.pop(key, None)
+
+    # On submit, never overwrite fee status/amount from form (set by payment flow)
+    if is_submit:
+        for key in ("application_fee_status", "application_fee_amount"):
+            scalar_data.pop(key, None)
+
     try:
         doc.update(scalar_data)
     except Exception as e:
@@ -642,6 +648,11 @@ def save_form(data):
                 "application_status": getattr(doc, "application_status", None),
                 "program_name": program_name,
                 "campus_name": campus_name,
+                "exemptions": {
+                    "entrance_test": bool(doc.exempts_entrance_test),
+                    "interview": bool(doc.exempts_interview),
+                    "rule_name": doc.national_test_rule_used
+                }
             }
         else:
             doc.application_status = "Draft"
@@ -766,10 +777,18 @@ def check_portal_eligibility(applicant_data):
                 main_eligible = False
                 main_message  = reason or "You do not meet the eligibility criteria for this program."
 
+        # Check for exemptions on the main program
+        nt_result = doc._evaluate_national_test_exemption() if hasattr(doc, '_evaluate_national_test_exemption') else {}
+
         return {
             "eligible": main_eligible,
             "message":  main_message,
-            "programs": programs_result
+            "programs": programs_result,
+            "exemptions": {
+                "entrance_test": bool(nt_result.get("exempts_entrance_test")),
+                "interview": bool(nt_result.get("exempts_interview")),
+                "rule_name": nt_result.get("rule_name") if nt_result.get("passed") else None
+            }
         }
 
     except Exception:

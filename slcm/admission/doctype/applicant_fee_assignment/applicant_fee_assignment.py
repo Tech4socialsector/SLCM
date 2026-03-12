@@ -8,11 +8,28 @@ from frappe.utils import flt, add_days, nowdate
 
 class ApplicantFeeAssignment(Document):
 	def validate(self):
+		self.validate_reference()
 		self.set_metadata()
 		self.set_notification_receiver()
 		self.apply_scholarship()
 		self.calculate_totals()
 		self.validate_status_change()
+
+	def validate_reference(self):
+		"""Require either offer_letter (Admission Fee) or applicant for Application Fee."""
+		if self.offer_letter:
+			self.fee_type = "Admission Fee"
+		else:
+			self.fee_type = "Application Fee"
+			# For Application Fee: get program and admission_cycle from Applicant
+			if self.applicant:
+				meta = frappe.db.get_value("Applicant", self.applicant,
+					["program", "admission_cycle", "academic_year"], as_dict=True)
+				if meta:
+					self.program = meta.program
+					self.admission_cycle = meta.admission_cycle
+					if meta.academic_year:
+						self.academic_year = meta.academic_year
 
 	def set_metadata(self):
 		if self.applicant:
@@ -37,8 +54,9 @@ class ApplicantFeeAssignment(Document):
 		Fetches the total approved scholarship amount for this applicant + cycle
 		and stores it directly in the scholarship_amount field.
 		No Fee Component link row is added — scholarship is tracked as a separate field.
+		Application Fee assignments do not apply scholarship.
 		"""
-		if not self.applicant or not self.admission_cycle:
+		if self.fee_type == "Application Fee" or not self.applicant or not self.admission_cycle:
 			return
 
 		# Sum all approved scholarship benefits for this applicant in this cycle
@@ -100,6 +118,9 @@ class ApplicantFeeAssignment(Document):
 @frappe.whitelist()
 def create_invoice(docname):
 	doc = frappe.get_doc("Applicant Fee Assignment", docname)
+
+	if doc.fee_type == "Application Fee":
+		frappe.throw(frappe._("Create Invoice is only for Admission Fee assignments. Application Fee does not create Fee Invoice."))
 
 	if doc.status not in ["Assigned", "Partially Paid", "Paid"]:
 		frappe.throw(frappe._("Invoice can only be created for assignments with status 'Assigned', 'Partially Paid', or 'Paid'."))
@@ -164,8 +185,8 @@ def create_invoice(docname):
 
 	invoice.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
 
-	# 4. Migrate Payments if already paid as Applicant
-	if doc.status == "Paid":
+	# 4. Migrate Payments if already paid as Applicant (Admission Fee only)
+	if doc.status == "Paid" and doc.offer_letter:
 		receipt_name = frappe.db.get_value("Applicant Payment Receipt",
 			{"offer_letter": doc.offer_letter, "docstatus": 1}, "name")
 
