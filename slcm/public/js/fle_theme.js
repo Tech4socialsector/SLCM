@@ -853,12 +853,12 @@ window.inject_fle_header_footer = function () {
             }
             .sticky-header .brand-text .university-name {
                 font-family:'Merriweather', Georgia, serif !important;
-                font-size:13px !important; font-weight:400 !important; color:#8B0000 !important;
-                margin:0 0 4px !important; letter-spacing:0.5px !important; text-transform:uppercase !important;
+                font-size:23px !important; font-weight:700 !important; color:#8B0000 !important;
+                margin:0 0 4px !important; letter-spacing:0.5px !important;
             }
             .sticky-header .brand-text .department-name {
                 font-family:'Merriweather', Georgia, serif !important;
-                font-size:18px !important; font-weight:700 !important; color:#8B0000 !important;
+                font-size:21px !important; font-weight:700 !important; color:#8B0000 !important;
                 margin:0 !important; letter-spacing:0.2px !important;
             }
             .breadcrumb, .page-breadcrumbs, .breadcrumb-container, .page-head,
@@ -962,8 +962,8 @@ window.inject_fle_header_footer = function () {
                 </a>
             </div>
             <div class="brand-text">
-                <h5 class="university-name">National Law School of India University, Bengaluru</h5>
-                <h1 class="department-name">Foundations for a Legal Education Certificate Course</h1>
+                <h1 class="university-name">National Law School of India University, Bengaluru</h1>
+                <h2 class="department-name">Foundations for a Legal Education Certificate Course</h2>
             </div>
             <div class="header-logout-area">
                 <button class="fle-logout-btn" id="fle-logout-btn" type="button">
