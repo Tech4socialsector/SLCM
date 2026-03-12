@@ -669,6 +669,13 @@
                     </div>
                   </div>
 
+                  {% if app.rejection_reason %}
+                  <div class="mb-4 p-3 bg-red-100/50 rounded-lg border border-red-100">
+                    <p class="text-[10px] font-bold text-red-700 uppercase mb-1">Reason for Rejection</p>
+                    <p class="text-xs text-red-600 leading-relaxed">{{ app.rejection_reason }}</p>
+                  </div>
+                  {% endif %}
+
                   <div class="mt-auto pt-3 border-t border-red-50 flex items-center justify-between">
                     <p class="text-[10px] font-bold text-red-600 uppercase">Rejected On: {{
                       frappe.utils.formatdate(app.modified, "dd MMM yyyy") }}</p>
@@ -729,7 +736,9 @@
             coverage: "{{ sch.coverage_type }}",
               val: "{{ sch.coverage_value }}",
                 max: "{{ sch.max_amount }}",
-                  eligibility: "{{ (sch.eligibility_criteria or 'Not provided.') | replace('\n', '<br>') | replace('\r', '') | replace('\"', '\\\"') }}",
+                apply_on: "{{ sch.apply_on or 'Total Fee' }}",
+                rejection_reason: "{{ (sch.rejection_reason or '') | replace('\n', '<br>') | replace('\r', '') | replace('\"', '\\\"') }}",
+                    eligibility: "{{ (sch.eligibility_criteria or 'Not provided.') | replace('\n', '<br>') | replace('\r', '') | replace('\"', '\\\"') }}",
                     rules: [{% for r in sch.coverage_rules or [] %} { component: "{{ r.fee_component }}", type: "{{ r.coverage_type }}", val: "{{ r.coverage_value }}" }, {% endfor %}]
     },
   {% endfor %}
@@ -752,7 +761,7 @@
     } else {
       rulesHtml = `
         <div class="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-lg shadow-sm">
-          <span class="text-xs font-bold text-slate-700">General Coverage</span>
+          <span class="text-xs font-bold text-slate-700">${s.apply_on}</span>
           <span class="text-xs font-black text-primary">${s.coverage === 'Percentage' ? s.val + '%' : '₹' + Number(s.val).toLocaleString()}</span>
         </div>
       `;
@@ -760,6 +769,12 @@
 
     let html = `
       <div class="flex flex-col gap-6">
+        ${s.rejection_reason ? `
+        <div class="p-4 bg-red-50 rounded-xl border border-red-100">
+          <p class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Reason for Rejection</p>
+          <p class="text-xs font-bold text-red-700 leading-relaxed">${s.rejection_reason}</p>
+        </div>` : ''}
+
         <div class="grid grid-cols-2 gap-3">
           <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Category</p>
