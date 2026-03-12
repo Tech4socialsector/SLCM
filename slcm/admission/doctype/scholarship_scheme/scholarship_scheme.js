@@ -132,10 +132,14 @@ frappe.ui.form.on("Scholarship Scheme", {
             frappe.msgprint(__("Application Start date cannot be in the past"));
             frm.set_value("application_start", "");
         }
+        // Re-validate end date whenever start changes
+        if (frm.doc.application_end) {
+            frm.trigger("application_end");
+        }
     },
     application_end(frm) {
-        if (frm.doc.application_start && frm.doc.application_end && frm.doc.application_end <= frm.doc.application_start) {
-            frappe.msgprint(__("Application End must be after Application Start"));
+        if (frm.doc.application_start && frm.doc.application_end && frm.doc.application_end < frm.doc.application_start) {
+            frappe.msgprint(__("Application End must be on or after Application Start"));
             frm.set_value("application_end", "");
         }
     },
