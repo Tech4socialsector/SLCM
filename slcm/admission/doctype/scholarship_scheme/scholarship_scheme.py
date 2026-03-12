@@ -32,8 +32,8 @@ class ScholarshipScheme(Document):
 				frappe.throw(frappe._("Application Start date cannot be in the past"))
 
 		if self.application_start and self.application_end:
-			if getdate(self.application_end) <= getdate(self.application_start):
-				frappe.throw(frappe._("Application End must be after Application Start"))
+			if getdate(self.application_end) < getdate(self.application_start):
+				frappe.throw(frappe._("Application End must be on or after Application Start"))
 
 	def validate_income_range(self):
 		if self.scheme_type == "Need":
