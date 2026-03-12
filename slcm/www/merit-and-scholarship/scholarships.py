@@ -7,6 +7,19 @@ no_cache = 1
 def get_context(context):
     context.portal_config = get_portal_config()
     _user = frappe.session.user
+    context.today = frappe.utils.getdate(frappe.utils.today())
+
+    # ── Active Admission Cycle ───────────────────────────────────
+    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    if active_cycle_name:
+        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name)
+        context.active_cycle = frappe._dict({
+            "name": active_cycle_doc.name,
+            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None
+        })
+    else:
+        context.active_cycle = None
     
     # Initialize all context variables
     context.no_applicant = False

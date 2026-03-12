@@ -441,6 +441,44 @@ def get_context(context):
                 context.interview_doc = i_doc
                 context.interview_is_rescheduled = (i_doc.is_rescheduled == 1 or i_doc.interview_slot_status == "Rescheduled")
                 context.interview_show_result = (i_doc.interview_status in ["Attended", "Absent", "Selected", "Rejected"] and i_doc.result_published == 1)
+                
+                # Show feedback section if results are published
+                context.interview_show_feedback = bool(i_doc.result_published)
+                context.interview_feedback_submitted = bool(i_doc.feedback)
+                
+                # Current slot details for display
+                is_re = context.interview_is_rescheduled
+                f_date = i_doc.re_interview_date if is_re else i_doc.interview_date
+                f_time = i_doc.re_interview_time if is_re else i_doc.interview_time
+                
+                # Format time for display
+                formatted_time = "—"
+                if f_date and f_time:
+                    try:
+                        formatted_time = frappe.utils.format_datetime(f"{f_date} {f_time}", "hh:mm a")
+                    except:
+                        formatted_time = f_time
+
+                # Calculate reporting time (1 hour before)
+                reporting_time = "—"
+                if f_date and f_time:
+                    try:
+                        from frappe.utils import get_datetime
+                        from datetime import timedelta
+                        dt = get_datetime(f"{f_date} {f_time}")
+                        rep_dt = dt - timedelta(hours=1)
+                        reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
+                    except: pass
+
+                context.interview_current_slot = {
+                    "staff_name": i_doc.re_staff_name if is_re else i_doc.staff_name,
+                    "interview_date": frappe.utils.format_date(f_date, "d MMM yyyy") if f_date else "—",
+                    "interview_time": formatted_time,
+                    "reporting_time": reporting_time,
+                    "interview_address": i_doc.re_interview_address if is_re else i_doc.interview_address,
+                    "attendance_confirmation": i_doc.re_interview_attendance_confirmation if is_re else i_doc.interview_attendance_confirmation
+                }
+                context.interview_attendance_options = ["Will Attend", "Will Not Attend", "Need Reschedule"]
         except Exception: pass
 
         context.show_detail = True

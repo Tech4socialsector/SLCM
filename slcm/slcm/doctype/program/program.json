@@ -38,7 +38,9 @@
   {
    "fieldname": "program_code",
    "fieldtype": "Data",
-   "label": "Program Code"
+   "in_list_view": 1,
+   "label": "Program Code",
+   "reqd": 1
   },
   {
    "fieldname": "url_slug",
@@ -48,7 +50,9 @@
   {
    "fieldname": "program_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Program Name",
+   "reqd": 1,
    "unique": 1
   },
   {
@@ -65,6 +69,7 @@
   {
    "fieldname": "image",
    "fieldtype": "Attach Image",
+   "hidden": 1,
    "label": "Image"
   },
   {
@@ -74,8 +79,10 @@
   {
    "fieldname": "level_of_study",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Level of Study",
-   "options": "\nUG\nPG\nResearch Course"
+   "options": "\nUG\nPG\nResearch Course",
+   "reqd": 1
   },
   {
    "fieldname": "program_duration",
@@ -85,8 +92,10 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Academic Year",
-   "options": "Academic Year"
+   "options": "Academic Year",
+   "reqd": 1
   },
   {
    "description": "Enter the last two digit of the current year",
@@ -129,12 +138,14 @@
    "fieldname": "intake_type",
    "fieldtype": "Select",
    "label": "Intake Type",
-   "options": "\nInternal Test\nExternal Test\nDirect Merit"
+   "options": "\nInternal Test\nExternal Test\nDirect Merit",
+   "reqd": 1
   },
   {
    "fieldname": "program_image",
    "fieldtype": "Attach Image",
-   "label": "Program Image"
+   "label": "Program Image",
+   "reqd": 1
   },
   {
    "fieldname": "program_description",
@@ -178,14 +189,14 @@
   {
    "fieldname": "connections_tab_tab",
    "fieldtype": "Tab Break",
-   "label": "connections_tab",
+   "label": "Connections",
    "show_dashboard": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-12 11:10:50.523853",
+ "modified": "2026-03-12 11:28:49.598126",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",

@@ -197,6 +197,17 @@
 {% endblock %}
 
 {% block content %}
+
+{# Cycle Active Check #}
+{% set _is_cycle_active = False %}
+{% if active_cycle %}
+    {% set _start = active_cycle.cycle_start_date %}
+    {% set _end = active_cycle.cycle_end_date %}
+    {% if (not _start or today >= _start) and (not _end or today <= _end) %}
+        {% set _is_cycle_active = True %}
+    {% endif %}
+{% endif %}
+
 <div style="min-height:calc(100vh - 60px);background:#f5f7f8; margin:-20px -20px 0;padding:32px 20px 40px;">
   <div style="max-width:1200px;margin:0 auto;">
 
@@ -454,9 +465,11 @@
                   <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
                     <button onclick="viewDetails('{{ sch.name }}')"
                       class="text-[10px] font-bold text-slate-500 hover:text-slate-900 uppercase">Details</button>
-                    <a href="/merit-and-scholarship/apply?scheme={{ sch.name }}"
-                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm hover:opacity-90 transition-opacity">Apply
-                      Now</a>
+                    <a href="{{ '/merit-and-scholarship/apply?scheme=' ~ sch.name if _is_cycle_active else 'javascript:void(0)' }}"
+                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm transition-opacity {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
+                      style="{{ 'pointer-events: none;' if not _is_cycle_active else '' }}">
+                      {{ 'Apply Now' if _is_cycle_active else 'Closed' }}
+                    </a>
                   </div>
                 </div>
               </div>

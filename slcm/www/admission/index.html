@@ -388,6 +388,16 @@
 
 {% block content %}
 
+{# Cycle Active Check #}
+{% set _is_cycle_active = False %}
+{% if active_cycle %}
+    {% set _start = active_cycle.cycle_start_date %}
+    {% set _end = active_cycle.cycle_end_date %}
+    {% if (not _start or today >= _start) and (not _end or today <= _end) %}
+        {% set _is_cycle_active = True %}
+    {% endif %}
+{% endif %}
+
 {% if show_detail %}
 {# ── Program detail view ── #}
 {# ── safe vars ──────────────────────────────────────────────────── #}
@@ -530,15 +540,18 @@
         Brochure
       </a>
       {% endif %}
-      <a href="/application_form?program={{ program.name }}&admission_cycle={{ active_cycle.name if active_cycle else '' }}"
+      <a href="{{ '/application_form?program=' ~ program.name ~ '&admission_cycle=' ~ (active_cycle.name if active_cycle else '') if _is_cycle_active else 'javascript:void(0)' }}"
          style="display:inline-flex;align-items:center;gap:8px;
                 padding:10px 24px;border-radius:10px;font-size:13px;
                 font-weight:700;color:white;text-decoration:none;
                 background:var(--primary);
-                box-shadow:0 4px 12px -2px rgba(26,60,110,0.3);"
+                box-shadow:0 4px 12px -2px rgba(26,60,110,0.3);
+                {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
+         {% if _is_cycle_active %}
          onmouseover="this.style.opacity='0.88'"
-         onmouseout="this.style.opacity='1'">
-        Apply Now
+         onmouseout="this.style.opacity='1'"
+         {% endif %}>
+        {{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}
       </a>
     </div>
   </div>
@@ -677,7 +690,7 @@
           {% if _dur %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Duration</p><p style="font-size:14px;color:#475569;margin:0;">{{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)</p></div>{% endif %}
           {% if _elig %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Eligibility</p><div style="font-size:13px;color:#475569;line-height:1.6;">{{ _elig[:180] | striptags }}{% if _elig|length > 180 %}…{% endif %}</div></div>{% elif _erules %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Eligibility</p>{% set _fr = _erules[0] %}<p style="font-size:13px;color:#475569;margin:0;line-height:1.6;">{{ (_fr.get('description') if _fr.get else _fr.description) or (_fr.get('rule_name') if _fr.get else _fr.rule_name) or 'See Eligibility tab for details.' }}</p></div>{% endif %}
           {% if _fee %}<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">Application Fee</p><p style="font-size:14px;color:#475569;margin:0;">{{ _fee }}</p></div>{% endif %}
-          <div style="padding-top:12px;border-top:1px solid #f1f5f9;"><a href="/application_form?program={{ program.name }}&admission_cycle={{ active_cycle.name if active_cycle else '' }}" style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">Apply Now</a>{% if _deadline %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Application deadline: {{ _deadline }}</p>{% elif active_cycle %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Cycle: {{ active_cycle.name }}</p>{% endif %}</div>
+          <div style="padding-top:12px;border-top:1px solid #f1f5f9;"><a href="{{ '/application_form?program=' ~ (program.name if program else '') ~ '&admission_cycle=' ~ (active_cycle.name if active_cycle else '') if _is_cycle_active else 'javascript:void(0)' }}" style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);{{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}" {% if _is_cycle_active %}onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'"{% endif %}>{{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}</a>{% if _deadline %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Application deadline: {{ _deadline }}</p>{% elif active_cycle %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Cycle: {{ active_cycle.name }}</p>{% endif %}</div>
         </div>
       </div>
       <div style="background:#0f172a;border-radius:16px;padding:28px;position:relative;overflow:hidden;"><div style="position:relative;z-index:2;"><h4 style="font-size:16px;font-weight:700;color:white;margin:0 0 8px;">Questions?</h4><p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0 0 20px;">Connect with our admissions team to learn more about this program.</p><a href="mailto:{{ support_email or 'admissions@nlsiu.ac.in' }}" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--secondary);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Contact Admissions<span class="material-symbols-outlined" style="font-size:18px;">arrow_forward</span></a></div><div style="position:absolute;right:-18px;bottom:-18px;opacity:0.1;"><span class="material-symbols-outlined" style="font-size:120px;color:white;">contact_support</span></div></div>
@@ -814,10 +827,10 @@
           {% endif %}
         </div>
       </div>
-      <a href="#programs"
-         class="w-full whitespace-nowrap rounded-xl px-8 py-3 font-bold text-white hover:opacity-90 md:w-auto text-center"
-         style="background:var(--primary)">
-        Apply Today
+      <a href="{{ '#programs' if _is_cycle_active else 'javascript:void(0)' }}"
+         class="w-full whitespace-nowrap rounded-xl px-8 py-3 font-bold text-white md:w-auto text-center {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
+         style="background:var(--primary); {{ 'pointer-events: none;' if not _is_cycle_active else '' }}">
+        {{ 'Apply Today' if _is_cycle_active else 'Admissions Closed' }}
       </a>
     </div>
   </div>
@@ -917,15 +930,6 @@
 
       <!-- Body -->
       <div class="flex flex-1 flex-col p-6">
-        <!-- Status -->
-        {% if _can %}
-        <span class="mb-3 inline-block w-fit rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">Applications Open</span>
-        {% elif _cur %}
-        <span class="mb-3 inline-block w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{{ _cur }}</span>
-        {% else %}
-        <span class="mb-3 inline-block w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">Closed</span>
-        {% endif %}
-
         <h4 class="text-xl font-bold text-slate-900">{{ _name }}</h4>
         {% if _desc %}<p class="mt-2 flex-grow text-sm leading-relaxed text-slate-500">{{ _desc }}</p>{% endif %}
 
@@ -939,40 +943,49 @@
         <div class="mt-6 flex gap-3">
           {% set _ua = user_app_map.get(_pid) or user_app_map.get(_name) or {} %}
           {% if frappe.session.user != "Guest" and _ua.get('app_name') %}
-            <a href="/my-applications?app={{ _ua.app_name }}"
+            <a href="{{ '/my-applications?app=' ~ _ua.app_name if _is_cycle_active or _ua.status != 'Draft' else 'javascript:void(0)' }}"
                style="display:inline-flex;align-items:center;gap:6px;
                       padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;
-                      background:var(--primary,#CB2929);transition:opacity .2s;"
+                      background:var(--primary,#CB2929);transition:opacity .2s;
+                      {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active and _ua.status == 'Draft' else '' }}"
+               {% if _is_cycle_active or _ua.status != 'Draft' %}
                onmouseover="this.style.opacity='.85'"
                onmouseout="this.style.opacity='1'"
+               {% endif %}
                onclick="event.stopPropagation()">
               <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span>
-              Apply Now
+              {{ 'Apply Now' if _is_cycle_active or _ua.status != 'Draft' else 'Closed' }}
             </a>
           {% elif frappe.session.user != "Guest" %}
-            <a href="/application_form?program={{ _pid }}&admission_cycle={{ p.admission_cycle or (active_cycle.name if active_cycle else '') or '' }}&campus={{ p.campus or '' }}&program_level={{ p.program_level or '' }}&intake_type={{ p.intake_type or '' }}"
+            <a href="{{ '/application_form?program=' ~ _pid ~ '&admission_cycle=' ~ (p.admission_cycle or (active_cycle.name if active_cycle else '')) ~ '&campus=' ~ (p.campus or '') ~ '&program_level=' ~ (p.program_level or '') ~ '&intake_type=' ~ (p.intake_type or '') if _is_cycle_active else 'javascript:void(0)' }}"
                style="display:inline-flex;align-items:center;gap:6px;
                       padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;
-                      background:var(--primary,#CB2929);transition:opacity .2s;"
+                      background:var(--primary,#CB2929);transition:opacity .2s;
+                      {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
+               {% if _is_cycle_active %}
                onmouseover="this.style.opacity='.85'"
                onmouseout="this.style.opacity='1'"
+               {% endif %}
                onclick="event.stopPropagation()">
               <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span>
-              Apply Now
+              {{ 'Apply Now' if _is_cycle_active else 'Closed' }}
             </a>
           {% else %}
-            <a href="/login?redirect-to=/application_form"
+            <a href="{{ '/login?redirect-to=/application_form' if _is_cycle_active else 'javascript:void(0)' }}"
                style="display:inline-flex;align-items:center;gap:6px;
                       padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;
-                      background:var(--primary,#CB2929);transition:opacity .2s;"
+                      background:var(--primary,#CB2929);transition:opacity .2s;
+                      {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
+               {% if _is_cycle_active %}
                onmouseover="this.style.opacity='.85'"
                onmouseout="this.style.opacity='1'"
+               {% endif %}
                onclick="event.stopPropagation()">
               <span class="material-symbols-outlined" style="font-size:16px;">login</span>
-              Apply Now
+              {{ 'Apply Now' if _is_cycle_active else 'Closed' }}
             </a>
           {% endif %}
           <a href="/admission/{{ _slug }}"
