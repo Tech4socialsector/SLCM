@@ -187,3 +187,113 @@ def notify_published_allocation(allocation_name):
             admission_cycle=allocation.admission_cycle,
             row=row
         )
+
+def notify_scholarship_status(application_name):
+    """
+    Sends a professionally designed HTML email notification to scholarship applicant.
+    """
+    app = frappe.get_doc("Scholarship Application", application_name)
+    
+    email = frappe.db.get_value("Applicant", app.applicant_id, "email")
+    if not email:
+        return
+
+    from frappe.utils import get_url, fmt_money
+    scheme_name = frappe.db.get_value("Scholarship Scheme", app.scholarship_scheme, "scheme_name")
+    benefit_amount = fmt_money(app.calculated_benefit) if app.calculated_benefit else "0.00"
+    portal_url = "https://apfslcm.boscosofttech.com/merit-and-scholarship/scholarships"
+    
+    # Common CSS Styles for the Email
+    email_styles = """
+        <style>
+            .email-container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+            .header { background-color: #1a3c6e; color: #ffffff; padding: 30px; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+            .content { padding: 40px; background-color: #ffffff; }
+            .status-badge { display: inline-block; padding: 6px 12px; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: 12px; margin-bottom: 20px; }
+            .status-approved { background-color: #d1fae5; color: #065f46; }
+            .status-rejected { background-color: #fee2e2; color: #991b1b; }
+            .details-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin: 25px 0; }
+            .details-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
+            .details-row:last-child { border-bottom: none; }
+            .label { font-weight: bold; color: #64748b; font-size: 13px; }
+            .value { font-weight: bold; color: #1e293b; font-size: 14px; }
+            .button { display: inline-block; background-color: #1a3c6e; color: #ffffff !important; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+            .footer { background-color: #f1f5f9; color: #64748b; padding: 20px; text-align: center; font-size: 12px; }
+        </style>
+    """
+
+    if app.status == "Approved":
+        subject = f"Congratulations! Your Scholarship for {scheme_name} is Approved"
+        body_content = f"""
+            <div class="status-badge status-approved">Application Approved</div>
+            <p>Dear <strong>{app.applicant_name}</strong>,</p>
+            <p>On behalf of the Scholarship Committee, we are pleased to inform you that your application for the <strong>{scheme_name}</strong> has been officially approved.</p>
+            
+            <div class="details-box">
+                <div class="details-row"><span class="label">Application ID</span><span class="value">{app.name}</span></div>
+                <div class="details-row"><span class="label">Scholarship Scheme</span><span class="value">{scheme_name}</span></div>
+                <div class="details-row"><span class="label">Approved Benefit</span><span class="value">{benefit_amount}</span></div>
+            </div>
+            
+            <p>The approved benefit has been automatically applied to your Fee Assignment. You may log in to the student portal to view your updated fee details and complete any pending formalities.</p>
+            
+            <div style="text-align: center;">
+                <a href="{portal_url}" class="button">View on Admission Portal</a>
+            </div>
+        """
+    else:
+        subject = f"Notification regarding your Scholarship Application: {scheme_name}"
+        body_content = f"""
+            <div class="status-badge status-rejected">Application Not Selected</div>
+            <p>Dear <strong>{app.applicant_name}</strong>,</p>
+            <p>Thank you for your application for the <strong>{scheme_name}</strong>. After a comprehensive review of all submissions, we regret to inform you that we are unable to grant your scholarship request at this time.</p>
+            
+            <div class="details-box">
+                <p class="label" style="margin-bottom: 5px;">Reason for Decision:</p>
+                <p class="value" style="color: #991b1b;">{app.rejection_reason or 'Eligibility criteria not met / Limited budget availability'}</p>
+            </div>
+            
+            <p>Although you were not selected for this specific scheme, we encourage you to explore other financial aid opportunities available on the admission portal.</p>
+            
+            <div style="text-align: center;">
+                <a href="{portal_url}" class="button">Check Other Schemes</a>
+            </div>
+        """
+
+    full_html = f"""
+        <html>
+            <head>{email_styles}</head>
+            <body>
+                <div class="email-container">
+                    <div class="header">
+                        <h1>SCHOLARSHIP BOARD</h1>
+                    </div>
+                    <div class="content">
+                        {body_content}
+                    </div>
+                    <div class="footer">
+                        <p>&copy; {frappe.utils.nowdate()[:4]} University Admissions Office. All rights reserved.</p>
+                        <p>This is an automated notification. Please do not reply directly to this email.</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+    """
+
+    try:
+        frappe.enqueue(
+            method=frappe.sendmail,
+            queue="short",
+            recipients=[email],
+            subject=subject,
+            message=full_html,
+            reference_doctype="Scholarship Application",
+            reference_name=app.name,
+            now=frappe.flags.in_test
+        )
+    except Exception as e:
+        frappe.logger().error(f"Scholarship Notification send error for {app.name}: {e}")
+
+
+
