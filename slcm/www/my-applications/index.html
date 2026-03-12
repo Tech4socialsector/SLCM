@@ -2088,16 +2088,27 @@ or _app.current_stage)) or _status %}
           Eligibility Result
         </div>
       </div>
-      <div class="ma-card-body">
-        <div class="info-grid-2">
+      <div class="ma-card-body" style="padding: 0;">
+        <!-- Scores Section -->
+        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em;">
+          Scores
+        </div>
+        <div class="info-grid-2" style="padding: 20px 22px; border-bottom: 1px solid var(--border);">
           <div class="info-tile">
             <div class="info-tile-label">Entrance Score</div>
             <div class="info-tile-value">{{ eligibility_result.entrance_test_score or '0' }}</div>
           </div>
           <div class="info-tile">
             <div class="info-tile-label">Interview Score</div>
-            <div class="info-tile-value">{{ eligibility_result.interview_score or '0' }} / 100</div>
+            <div class="info-tile-value">{{ eligibility_result.interview_score or '0' }}</div>
           </div>
+        </div>
+
+        <!-- Status Section -->
+        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em;">
+          Status
+        </div>
+        <div class="info-grid-2" style="padding: 20px 22px;">
           <div class="info-tile">
             <div class="info-tile-label">Source</div>
             <div class="info-tile-value">{{ eligibility_result.source_type or '—' }}</div>
@@ -2654,19 +2665,19 @@ LIST / DASHBOARD VIEW
       isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
       };
 
-  dropdown.addEventListener('change', async function () {
-    var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
-    if (!selected) return;
-    btnSave.disabled = true;
-    btnSave.style.opacity = '.5';
-    btnSave.textContent = 'Verifying...';
-    try {
-      const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
-        applicant_id: etData.applicantId,
-        entrance_test_list: etData.entranceTestList
-      });
-      var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
-      if (pinfo && pinfo.is_full) {
+      dropdown.addEventListener('change', async function () {
+        var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
+        if (!selected) return;
+        btnSave.disabled = true;
+        btnSave.style.opacity = '.5';
+        btnSave.textContent = 'Verifying...';
+        try {
+          const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
+            applicant_id: etData.applicantId,
+            entrance_test_list: etData.entranceTestList
+          });
+          var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
+          if (pinfo && pinfo.is_full) {
         alert((selected.center_name || selected.provider) + ' is currently full.');
         dropdown.value = '';
         centerDetails.style.display = 'none';

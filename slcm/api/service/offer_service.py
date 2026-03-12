@@ -331,6 +331,16 @@ class OfferService:
     def update_applicant_status(applicant, application_status):
         if not applicant:
             throw(_("Applicant is required"))
+
+        # Map Seat Allocation selection statuses to specific Applicant Statuses
+        status_map = {
+            "Selected": "Seat Selected",
+            "Waitlisted": "Seat Waitlisted",
+            "Rejected": "Seat Rejected"
+        }
+        
+        if application_status in status_map:
+            application_status = status_map[application_status]
         
         # Map Seat Allocation selection statuses to specific Applicant Statuses
         status_map = {

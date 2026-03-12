@@ -681,6 +681,16 @@ else 'Admissions Open') %}
 {% set _vcards = value_cards or [] %}
 {% set _mission_txt = portal_mission or _mission %}
 
+{# Cycle Active Check #}
+{% set _is_cycle_active = False %}
+{% if active_cycle %}
+    {% set _start = active_cycle.cycle_start_date %}
+    {% set _end = active_cycle.cycle_end_date %}
+    {% if (not _start or today >= _start) and (not _end or today <= _end) %}
+        {% set _is_cycle_active = True %}
+    {% endif %}
+{% endif %}
+
 {# Profile data shortcuts #}
 {% set _pd = profile_data or {} %}
 {% set _pname = _pd.get('candidate_name','') if _pd.get else (_pd.candidate_name or '') %}
@@ -1023,8 +1033,7 @@ else 'Admissions Open') %}
                               display:flex;align-items:center;justify-content:space-between;gap:12px;">
                   <div style="display:flex;align-items:center;gap:14px;">
                     <div style="width:90px;height:55px;border-radius:8px;overflow:hidden;flex-shrink:0;">
-                      {% set _pimg = (app.get('program_image') or app.get('featured_image')) if app.get else
-                      (app.program_image or app.featured_image) %}
+                      {% set _pimg = app.get('program_image') or app.program_image %}
                       {% if _pimg %}
                       <img src="{{ _pimg }}" alt="{{ _pname2 }}" style="width:100%;height:100%;object-fit:cover;">
                       {% else %}
@@ -1042,9 +1051,6 @@ else 'Admissions Open') %}
                     </div>
                   </div>
                   <div style="text-align:right;flex-shrink:0;">
-                    <span class="{{ _badge }}"
-                      style="display:inline-block;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;">{{
-                      _st }}</span>
                     {% if _mod %}<p style="font-size:10px;color:#94a3b8;margin:4px 0 0;">{{
                       frappe.utils.pretty_date(_mod) }}</p>{% endif %}
                   </div>
@@ -1058,13 +1064,18 @@ else 'Admissions Open') %}
                 <p style="font-size:13px;color:#94a3b8;font-weight:500;margin:0;">No applications yet</p>
               </div>
               {% endif %}
-              <a href="/admission#programs" class="col-span-full" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;
+              <a href="{{ '/admission#programs' if _is_cycle_active else 'javascript:void(0)' }}" 
+                class="col-span-full {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else '' }}" 
+                style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;
                         border-radius:12px;text-decoration:none;border:2px dashed var(--border);
                         color:#94a3b8;font-size:13px;font-weight:500;font-family:'Poppins',sans-serif;
-                        transition:all 0.2s;"
+                        transition:all 0.2s; {{ 'pointer-events: none;' if not _is_cycle_active else '' }}"
+                {% if _is_cycle_active %}
                 onmouseover="this.style.color='var(--primary)';this.style.borderColor='var(--primary)';this.style.background='rgba(26,60,110,0.03)'"
-                onmouseout="this.style.color='#94a3b8';this.style.borderColor='var(--border)';this.style.background='transparent'">
-                <span class="ms-icon">add_circle</span> Start New Application
+                onmouseout="this.style.color='#94a3b8';this.style.borderColor='var(--border)';this.style.background='transparent'"
+                {% endif %}>
+                <span class="ms-icon">{{ 'add_circle' if _is_cycle_active else 'event_busy' }}</span> 
+                {{ 'Start New Application' if _is_cycle_active else 'Admissions Currently Closed' }}
               </a>
             </div>
           </section>

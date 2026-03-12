@@ -174,10 +174,21 @@ def _load_program_detail(context, slug):
 
     # Active cycle
     try:
-        context.active_cycle = frappe.get_last_doc(
+        active_cycle_doc = frappe.get_last_doc(
             "Admission Cycle", filters={"status": "Active"})
+        if active_cycle_doc:
+            context.active_cycle = frappe._dict({
+                "name": active_cycle_doc.name,
+                "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+                "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
+                "application_end": active_cycle_doc.application_end
+            })
+        else:
+            context.active_cycle = None
     except Exception:
         context.active_cycle = None
+
+    context.today = frappe.utils.getdate(frappe.utils.today())
 
     # ── user's existing application for this specific program ──
     context.user_app_name   = ""
@@ -304,16 +315,27 @@ def get_context(context):
         return
 
     # ── 3. Active Admission Cycle ────────────────────────────────────
-    # Request only "name" to avoid Unknown column errors if cycle_start_date/cycle_end_date not in DB
-    active_cycle = frappe.db.get_value(
-        "Admission Cycle",
-        {"status": "Active"},
-        "name",
-        as_dict=True
-    )
+    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    if active_cycle_name:
+        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name)
+        active_cycle = frappe._dict({
+            "name": active_cycle_doc.name,
+            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
+            "application_end": active_cycle_doc.application_end
+        })
+    else:
+        active_cycle = None
+
+    context.today = frappe.utils.getdate(frappe.utils.today())
 
     # ── 4. Is application window open? ───────────────────────────────
-    app_open = True if active_cycle else False
+    app_open = False
+    if active_cycle:
+        _start = active_cycle.get('cycle_start_date')
+        _end = active_cycle.get('cycle_end_date')
+        if (not _start or context.today >= _start) and (not _end or context.today <= _end):
+            app_open = True
 
     # ── 5. Programs & Announcements ──────────────────────────────────
     try:

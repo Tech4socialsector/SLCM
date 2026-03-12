@@ -10,12 +10,23 @@ from datetime import datetime
 
 class InterviewSeatAllocation(Document):
     def before_save(self):
-        # mirror entrance test behaviour: stamp attendance when status changed manually
+        doc_before = self.get_doc_before_save()
+        # Mirror entrance test behaviour: stamp attendance when status changed manually
         if not self.is_new():
-            old_status = frappe.db.get_value("Interview Seat Allocation", self.name, "interview_status")
-            if self.interview_status != old_status:
+            if doc_before and self.interview_status != doc_before.interview_status:
                 if self.interview_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
+
+        # Update Applicant's application_status in DB when admin chooses Scheduled or Absent (same as Entrance Test Seat Allocation).
+        if self.applicant and self.interview_status in ("Scheduled", "Absent"):
+            status_actually_changed = (
+                self.is_new()
+                or (doc_before and doc_before.interview_status != self.interview_status)
+            )
+            if status_actually_changed:
+                _update_applicant_status_for_interview_status(
+                    self.applicant, self.interview_status
+                )
 
         # Fetch categories from Applicant if newly set or empty
         # Priority: Seat Allocation category (if already filled) vs Applicant's categories
@@ -27,6 +38,34 @@ class InterviewSeatAllocation(Document):
             if not self.category:
                 for cat in app_categories:
                     self.append("category", {"category": cat})
+
+
+def _update_applicant_status_for_interview_status(applicant_name, interview_status):
+    """
+    Update Applicant's application_status (Applicant Status doctype) when
+    Interview Seat Allocation's interview_status is Scheduled or Absent.
+    - Scheduled → "Interview Scheduled"
+    - Absent → "Rejected"
+    """
+    status_map = {
+        "Scheduled": "Interview Scheduled",
+        "Absent": "Rejected",
+    }
+    new_status = status_map.get(interview_status)
+    if not new_status:
+        return
+    if not frappe.db.exists("Applicant Status", new_status):
+        frappe.log_error(
+            message=f"Applicant Status '{new_status}' does not exist. Create it in Applicant Status doctype.",
+            title="Applicant Status Sync Skipped (Interview)",
+        )
+        return
+    frappe.db.set_value("Applicant", applicant_name, "application_status", new_status)
+    frappe.clear_document_cache("Applicant", applicant_name)
+    frappe.publish_realtime(
+        "applicant_application_status_updated",
+        {"docname": applicant_name, "application_status": new_status},
+    )
 
 
 @frappe.whitelist()
