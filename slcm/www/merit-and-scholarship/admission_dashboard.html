@@ -1102,8 +1102,8 @@ else 'Admissions Open') %}
 
                     <div style="margin-bottom: 16px; border-left: 2px solid var(--primary-light); padding-left: 12px;">
                       <p style="font-size:13px; color:#64748b; margin:0; font-weight:500; line-height:1.4;">
-                        {{ _cycle }}
-                        {% if app.campus %}<br><span style="color:#94a3b8;">Campus:</span> {{ app.campusname }}{% endif %}
+                        Cycle: {{ _cycle }}
+                        {% if app.campus %}<br><span style="color:#94a3b8;">Campus Name:</span> {{ app.campus or " " }}{% endif %}
                       </p>
                     </div>
 

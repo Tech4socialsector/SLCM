@@ -11,6 +11,7 @@
   "program",
   "payment_gateway",
   "col_break_basic",
+  "payment_receipt_template",
   "total_seats",
   "status",
   "section_break_summary",
@@ -132,10 +133,17 @@
    "label": "Payment Gateway",
    "options": "Payment Gateway",
    "reqd": 1
+  },
+  {
+   "fieldname": "payment_receipt_template",
+   "fieldtype": "Link",
+   "label": "Payment Receipt Template",
+   "options": "Print Format",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2026-03-12 09:29:43.037195",
+ "modified": "2026-03-12 11:56:45.346026",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",

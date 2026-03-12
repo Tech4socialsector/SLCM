@@ -160,7 +160,9 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     
     # Get schemes already applied for
     applied_docs = frappe.get_all("Scholarship Application", 
-        filters={"applicant_id": applicant_id, "status": ["not in", ["Rejected", "Revoked"]]}, 
+        filters={
+            "applicant_id": applicant_id,
+        },
         fields=["scholarship_scheme", "status"]
     )
     applied_scheme_names = [d.scholarship_scheme for d in applied_docs]

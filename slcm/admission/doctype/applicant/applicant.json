@@ -779,7 +779,7 @@
    "fieldtype": "Select",
    "label": "Have you completed your UG degree",
    "mandatory_depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
-   "options": "\nFinal year\nCompleted"
+   "options": "\nFinal Year of UG Degree\nUG Degree completed"
   },
   {
    "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
@@ -1033,7 +1033,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-11 00:36:51.930141",
+ "modified": "2026-03-12 12:14:31.746231",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
