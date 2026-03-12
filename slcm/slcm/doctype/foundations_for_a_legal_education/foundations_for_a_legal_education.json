@@ -22,6 +22,8 @@
   "candidate_contact_number",
   "where_did_you_hear",
   "if_others_mention_here",
+  "address_line_1",
+  "pincode",
   "section_break_education",
   "last_examination_attended",
   "last_institution_attended",
@@ -81,7 +83,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Candidate's Name",
+   "label": "Name as it should appear on the Certificate",
    "reqd": 1
   },
   {
@@ -102,8 +104,9 @@
   },
   {
    "fieldname": "candidate_current_occupation",
-   "fieldtype": "Data",
-   "label": "Candidate's current occupation (for working professionals only)"
+   "fieldtype": "Select",
+   "label": "What are you doing currently",
+   "options": "\nStudying\nWorking"
   },
   {
    "fieldname": "candidate_gender",
@@ -348,12 +351,22 @@
    "fieldname": "if_other3",
    "fieldtype": "Data",
    "label": "If Others, Mention here"
+  },
+  {
+   "fieldname": "address_line_1",
+   "fieldtype": "Data",
+   "label": "Address line 1"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Int",
+   "label": "Pincode"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-11 00:39:51.384966",
+ "modified": "2026-03-11 20:22:47.216189",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
