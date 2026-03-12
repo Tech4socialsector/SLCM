@@ -834,8 +834,8 @@ window.inject_fle_header_footer = function () {
             }
             .fle-modal-btn-cancel { background:#f0f0f0; color:#444; border:1px solid #ddd; }
             .fle-modal-btn-cancel:hover { background:#e2e2e2; transform:translateY(-1px); }
-            .fle-modal-btn-confirm { background:#8B0000; color:#fff; box-shadow:0 2px 6px rgba(139,0,0,0.3); }
-            .fle-modal-btn-confirm:hover { background:#6a0000; transform:translateY(-1px); box-shadow:0 4px 12px rgba(139,0,0,0.4); }
+            .fle-modal-btn-confirm { background:#8B0000 !important; color:#ffffff !important; box-shadow:0 2px 6px rgba(139,0,0,0.3); }
+            .fle-modal-btn-confirm:hover { background:#6a0000 !important; color:#ffffff !important; transform:translateY(-1px); box-shadow:0 4px 12px rgba(139,0,0,0.4); }
             .fle-modal-btn-confirm:active, .fle-modal-btn-cancel:active { transform:translateY(0); }
             .fle-btn-spinner {
                 display:none; width:13px; height:13px; border:2px solid rgba(255,255,255,0.4);
