@@ -240,7 +240,7 @@ def get_context(context):
                 },
                 fields=[
                     "stage_name", "stage_type", "applicable_workflow",
-                    "sequence_no", "activate_status", "closed_status"
+                    "sequence_no", "activate_status", "completed_status", "closed_status"
                 ],
                 order_by="sequence_no asc",
                 ignore_permissions=True
@@ -255,15 +255,21 @@ def get_context(context):
                 current_status = applicant.application_status
                 active_index = -1
                 is_terminal_stop = False
+                is_completed_stop = False
                 
                 for i, s in enumerate(filtered_stages):
                     if s.activate_status == current_status:
                         active_index = i
-                        break
-                    if s.closed_status == current_status:
+                        is_terminal_stop = False
+                        is_completed_stop = False
+                    elif s.completed_status == current_status:
+                        active_index = i
+                        is_terminal_stop = False
+                        is_completed_stop = True
+                    elif s.closed_status == current_status:
                         active_index = i
                         is_terminal_stop = True
-                        break
+                        is_completed_stop = False
                 
                 for i, s in enumerate(filtered_stages):
                     state = "pending"
@@ -271,7 +277,12 @@ def get_context(context):
                         if i < active_index:
                             state = "completed"
                         elif i == active_index:
-                            state = "closed" if is_terminal_stop else "active"
+                            if is_terminal_stop:
+                                state = "closed"
+                            elif is_completed_stop:
+                                state = "completed"
+                            else:
+                                state = "active"
                     
                     stages_with_state.append({
                         "name": s.stage_name or s.stage_type,
@@ -344,6 +355,7 @@ def get_context(context):
                     if entry.get("profile", {}).get("applicant_id") == _app_name:
                         context.all_results = entry.get("results") or []
                         context.all_merit   = entry.get("merit") or []
+                        context.eligibility_result = entry.get("profile")
                         break
         except Exception: pass
 

@@ -18,6 +18,7 @@
   "is_editable",
   "auto_transition",
   "activate_status",
+  "completed_status",
   "closed_status",
   "section_schedule",
   "start_date",
@@ -207,11 +208,17 @@
    "fieldtype": "Link",
    "label": "Activate Status",
    "options": "Applicant Status"
+  },
+  {
+   "fieldname": "completed_status",
+   "fieldtype": "Link",
+   "label": "Completed Status",
+   "options": "Applicant Status"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-11 22:34:00.547244",
+ "modified": "2026-03-12 10:22:15.835009",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle Stage",
