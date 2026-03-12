@@ -351,7 +351,7 @@ class FeeService:
             else:
                 snapshot_doc = frappe.get_doc("Offer Fee Snapshot", snapshot[0].name)
                 total_payable = snapshot_doc.total_payable
-                components = snapshot_doc.fee_component
+                components = list(snapshot_doc.fee_component or [])
 
             # 2. Create Receipt
             receipt = frappe.new_doc("Applicant Payment Receipt")
@@ -380,6 +380,34 @@ class FeeService:
                 receipt.payment_reference = pr
 
             # 3. Copy Components
+            from frappe.utils import flt as _flt
+
+            # If scholarship is applied on the Applicant Fee Assignment, append a
+            # negative "Scholarship Benefit" line so the receipt clearly shows it.
+            try:
+                afa = frappe.db.get_value(
+                    "Applicant Fee Assignment",
+                    {"offer_letter": offer_doc.name, "docstatus": ["!=", 2]},
+                    ["scholarship_applied", "scholarship_amount"],
+                    as_dict=True,
+                )
+            except Exception:
+                afa = None
+
+            if afa and afa.scholarship_applied and _flt(afa.scholarship_amount) > 0:
+                components = list(components) if components else []
+                components.append(
+                    frappe._dict(
+                        fee_component="Scholarship",
+                        component_name="Scholarship Benefit",
+                        amount=-_flt(afa.scholarship_amount),
+                        is_taxable=0,
+                        tax_rate=0,
+                        tax_amount=0,
+                        total_amount=-_flt(afa.scholarship_amount),
+                    )
+                )
+
             for comp in components:
                 receipt.append("fee_components", {
                     "fee_component": comp.fee_component,
@@ -763,6 +791,8 @@ class FeeService:
             pr = frappe.db.get_value("Payment Request", {"transaction_id": transaction_id}, "name")
             if pr:
                 receipt.payment_reference = pr
+            from frappe.utils import flt as _flt
+
             for row in afa_doc.fee_components:
                 receipt.append("fee_components", {
                     "fee_component": row.fee_component,
@@ -772,6 +802,18 @@ class FeeService:
                     "tax_rate": row.tax_rate,
                     "tax_amount": row.tax_amount,
                     "total_amount": row.total_amount
+                })
+
+            # Include scholarship benefit line when applicable so receipts show it
+            if getattr(afa_doc, "scholarship_applied", 0) and _flt(getattr(afa_doc, "scholarship_amount", 0)) > 0:
+                receipt.append("fee_components", {
+                    "fee_component": "Scholarship",
+                    "component_name": "Scholarship Benefit",
+                    "amount": -_flt(afa_doc.scholarship_amount),
+                    "is_taxable": 0,
+                    "tax_rate": 0,
+                    "tax_amount": 0,
+                    "total_amount": -_flt(afa_doc.scholarship_amount),
                 })
             receipt.insert(ignore_permissions=True)
             receipt.submit()

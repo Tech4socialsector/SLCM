@@ -1,6 +1,8 @@
+import html
+
 import frappe
 from frappe import _
-from frappe.utils import flt, now, nowdate
+from frappe.utils import flt, now, nowdate, strip_html
 
 from slcm.utils.phone_utils import sanitize_phone_for_frappe
 
@@ -161,6 +163,7 @@ def get_context(context):
         context.prefill_program_level = app_data.get("program_level") or session_sel.get("program_level") or ""
         context.prefill_intake_type = app_data.get("intake_type") or session_sel.get("intake_type") or ""
         context.prefill_academic_year = app_data.get("academic_year") or ""
+        context.prefill_admission_year = app_data.get("admission_year") or ""
     else:
         context.prefill_program = session_sel.get("program") or prefill_prog
         context.prefill_admission_cycle = session_sel.get("admission_cycle") or prefill_cycle
@@ -168,6 +171,7 @@ def get_context(context):
         context.prefill_program_level = session_sel.get("program_level") or ""
         context.prefill_intake_type = session_sel.get("intake_type") or ""
         context.prefill_academic_year = ""
+        context.prefill_admission_year = ""
 
     context.program_readonly = True  # Always lock: user must select from listing
 
@@ -180,14 +184,22 @@ def get_context(context):
     else:
         context.program_display_name = ""
 
-    # ── Academic year from Admission Cycle (before seeding) ──
-    if context.prefill_admission_cycle and not context.prefill_academic_year:
+    # ── Academic + Admission year from Admission Cycle (before seeding) ──
+    if context.prefill_admission_cycle:
         try:
-            context.prefill_academic_year = frappe.db.get_value(
-                "Admission Cycle", context.prefill_admission_cycle, "academic_year"
-            ) or ""
+            ad_year, ac_year = frappe.db.get_value(
+                "Admission Cycle",
+                context.prefill_admission_cycle,
+                ["admission_year", "academic_year"],
+            ) or (None, None)
         except Exception:
-            context.prefill_academic_year = ""
+            ad_year, ac_year = (None, None)
+
+        # Only fill from cycle when not already present on existing application
+        if not getattr(context, "prefill_admission_year", None) and ad_year:
+            context.prefill_admission_year = ad_year
+        if not context.prefill_academic_year and ac_year:
+            context.prefill_academic_year = ac_year or ""
 
     # When no existing application for this cycle, seed applicant_data with locked values and default Draft
     if not context.applicant_data or not context.applicant_data.get("name"):
@@ -197,6 +209,7 @@ def get_context(context):
         context.applicant_data.setdefault("campus", context.prefill_campus or "")
         context.applicant_data.setdefault("program_level", context.prefill_program_level or "")
         context.applicant_data.setdefault("academic_year", context.prefill_academic_year or "")
+        context.applicant_data.setdefault("admission_year", context.prefill_admission_year or "")
         context.applicant_data.setdefault("application_type", context.prefill_intake_type or "")
         context.applicant_data.setdefault("docstatus", 0)
         context.applicant_data.setdefault("application_status", "Draft")
@@ -618,6 +631,63 @@ def save_form(data):
     # Always stamp the authenticated email — do not trust form input
     doc.email = email
 
+    # ── Normalise academic metadata and program mapping ────────────────
+    # Admission / Academic Year from Admission Cycle
+    if getattr(doc, "admission_cycle", None):
+        try:
+            ad_year, ac_year = frappe.db.get_value(
+                "Admission Cycle",
+                doc.admission_cycle,
+                ["admission_year", "academic_year"],
+            ) or (None, None)
+        except Exception:
+            ad_year, ac_year = (None, None)
+
+        if ad_year:
+            doc.admission_year = ad_year
+        if ac_year:
+            doc.academic_year = ac_year
+
+    # Program Level + Intake Type from Program
+    if getattr(doc, "program", None):
+        try:
+            level_of_study, intake_type = frappe.db.get_value(
+                "Program",
+                doc.program,
+                ["level_of_study", "intake_type"],
+            ) or (None, None)
+        except Exception:
+            level_of_study, intake_type = (None, None)
+
+        if level_of_study:
+            doc.program_level = level_of_study
+        if intake_type:
+            # This will also be enforced again by Applicant.set_intake_type on validate
+            doc.intake_type = intake_type
+
+    # Campus validation against Admission Cycle Program
+    if getattr(doc, "admission_cycle", None) and getattr(doc, "program", None) and getattr(doc, "campus", None):
+        try:
+            acp_exists = frappe.db.exists(
+                "Admission Cycle Program",
+                {
+                    "parent": doc.admission_cycle,
+                    "program": doc.program,
+                    "campus": doc.campus,
+                    "is_active": 1,
+                },
+            )
+        except Exception:
+            acp_exists = True
+
+        if not acp_exists:
+            return {
+                "error": _(
+                    "Selected campus is not available for the chosen program and admission cycle. "
+                    "Please start the application again from the admission listing."
+                )
+            }
+
     # ── Save or Submit ───────────────────────────────────────────────
     try:
         doc.flags.ignore_permissions = True
@@ -675,8 +745,28 @@ def save_form(data):
 
     except frappe.ValidationError as e:
         frappe.db.rollback()
-        # Return the validation message directly — JS will display it to user
-        return {"error": str(e)}
+        raw_msg = str(e) or ""
+
+        # Special handling for rich ineligibility HTML coming from Applicant._build_ineligibility_message
+        lower_msg = raw_msg.lower()
+        if "ineligibility alert" in lower_msg or "program options" in lower_msg:
+            try:
+                # First unescape any HTML entities, then strip tags to get a clean sentence
+                unescaped = html.unescape(raw_msg)
+            except Exception:
+                unescaped = raw_msg
+
+            cleaned = strip_html(unescaped or "") if unescaped else ""
+            # Remove the label itself if present, to keep the message short
+            cleaned = cleaned.replace("Ineligibility Alert", "").strip()
+
+            if not cleaned:
+                cleaned = _("You are not eligible for the selected program. Please review the eligibility criteria.")
+
+            return {"error": cleaned}
+
+        # Fallback for all other validation errors
+        return {"error": raw_msg}
 
     except frappe.MandatoryError as e:
         frappe.db.rollback()
