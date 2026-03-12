@@ -325,6 +325,12 @@ class ScholarshipApplication(Document):
 		if old_status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
 			self.sync_fee_assignment()
+			from slcm.admission.notification_service import notify_scholarship_status
+			notify_scholarship_status(self.name)
+
+		elif old_status != "Rejected" and self.status == "Rejected":
+			from slcm.admission.notification_service import notify_scholarship_status
+			notify_scholarship_status(self.name)
 
 		elif old_status == "Approved" and self.status != "Approved":
 			self.reverse_financial_effects()
@@ -343,6 +349,11 @@ class ScholarshipApplication(Document):
 		if self.status == "Approved":
 			self.apply_financial_effects()
 			self.sync_fee_assignment()
+			from slcm.admission.notification_service import notify_scholarship_status
+			notify_scholarship_status(self.name)
+		elif self.status == "Rejected":
+			from slcm.admission.notification_service import notify_scholarship_status
+			notify_scholarship_status(self.name)
 
 	def on_cancel(self):
 		"""Called when submitted doc is cancelled (docstatus 1 → 2)."""
@@ -365,6 +376,13 @@ class ScholarshipApplication(Document):
 		if old_status != "Approved" and self.status == "Approved":
 			self.apply_financial_effects()
 			self.sync_fee_assignment()
+			from slcm.admission.notification_service import notify_scholarship_status
+			notify_scholarship_status(self.name)
+
+		# Case 1b: Status changed TO Rejected
+		elif old_status != "Rejected" and self.status == "Rejected":
+			from slcm.admission.notification_service import notify_scholarship_status
+			notify_scholarship_status(self.name)
 
 		# Case 2: Status changed FROM Approved
 		elif old_status == "Approved" and self.status != "Approved":

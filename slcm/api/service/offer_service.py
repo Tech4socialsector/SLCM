@@ -342,12 +342,22 @@ class OfferService:
         if application_status in status_map:
             application_status = status_map[application_status]
         
+        # Map Seat Allocation selection statuses to specific Applicant Statuses
+        status_map = {
+            "Selected": "Seat Selected",
+            "Waitlisted": "Seat Waitlisted",
+            "Rejected": "Seat Rejected"
+        }
+        
+        if application_status in status_map:
+            application_status = status_map[application_status]
+
         # Use db_set to bypass full validation (validate_eligibility) which may throw 
         # for ineligible applicants during status synchronization.
         frappe.db.set_value("Applicant", applicant, "application_status", application_status, update_modified=True)
         
         # Ensure 'current_stage' is updated if needed (safety fallback)
-        if application_status == "Offer Accepted":
+        if application_status in ["Offer Accepted", "Seat Selected"]:
             frappe.db.set_value("Applicant", applicant, "current_stage", "Admission Confirmed")
             
         return True
