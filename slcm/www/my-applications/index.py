@@ -404,6 +404,32 @@ def get_context(context):
                 context.et_show_result = (et_doc.entrance_test_status in ["Attended", "Absent"] and et_doc.result_published == 1)
                 context.et_preferences = [{"provider": p.provider, "center_name": p.center_name, "center_address": p.center_address} for p in (et_doc.re_assigned_preferences if context.et_is_rescheduled else et_doc.assigned_preferences)]
                 context.et_doc_json = frappe.as_json(et_doc.as_dict())
+                
+                # Add branding and reporting time
+                campus_branding = {"campus_name": et_doc.campus or "Institution of Legal Education", "logo": None}
+                try:
+                    if et_doc.campus:
+                        campus = frappe.get_doc("Campus", et_doc.campus)
+                        campus_branding["campus_name"] = campus.campus_name or et_doc.campus
+                        campus_branding["logo"] = campus.logo
+                except: pass
+                context.et_campus_branding = campus_branding
+
+                # Reporting time calculation (1 hour before exam)
+                from datetime import timedelta
+                f_date = et_doc.re_allocation_date if context.et_is_rescheduled else et_doc.allocation_date
+                if f_date:
+                    try:
+                        # Assuming f_date is a datetime object or can be parsed
+                        if isinstance(f_date, str):
+                            from frappe.utils import get_datetime
+                            f_date = get_datetime(f_date)
+                        rep_dt = f_date - timedelta(hours=1)
+                        context.et_reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
+                    except:
+                        context.et_reporting_time = "09:30 AM" # Fallback
+                else:
+                    context.et_reporting_time = "—"
         except Exception: pass
 
         # Interview details

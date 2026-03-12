@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "field:program_name",
  "creation": "2026-03-11 13:55:37.916716",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -47,7 +48,8 @@
   {
    "fieldname": "program_name",
    "fieldtype": "Data",
-   "label": "Program Name"
+   "label": "Program Name",
+   "unique": 1
   },
   {
    "fieldname": "program_shortcode",
@@ -183,10 +185,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-11 22:30:59.742953",
+ "modified": "2026-03-12 11:10:50.523853",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

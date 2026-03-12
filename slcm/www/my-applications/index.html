@@ -2665,19 +2665,19 @@ LIST / DASHBOARD VIEW
       isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
       };
 
-  dropdown.addEventListener('change', async function () {
-    var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
-    if (!selected) return;
-    btnSave.disabled = true;
-    btnSave.style.opacity = '.5';
-    btnSave.textContent = 'Verifying...';
-    try {
-      const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
-        applicant_id: etData.applicantId,
-        entrance_test_list: etData.entranceTestList
-      });
-      var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
-      if (pinfo && pinfo.is_full) {
+      dropdown.addEventListener('change', async function () {
+        var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
+        if (!selected) return;
+        btnSave.disabled = true;
+        btnSave.style.opacity = '.5';
+        btnSave.textContent = 'Verifying...';
+        try {
+          const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
+            applicant_id: etData.applicantId,
+            entrance_test_list: etData.entranceTestList
+          });
+          var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
+          if (pinfo && pinfo.is_full) {
         alert((selected.center_name || selected.provider) + ' is currently full.');
         dropdown.value = '';
         centerDetails.style.display = 'none';
