@@ -88,6 +88,51 @@ def update_password_fle(new_password, key, confirm_password=None):
     
     return f"/foundations-for-a-legal-education/new?{query_params}"
 
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def reset_password_fle(user: str):
+    try:
+        user_doc = frappe.get_doc("User", user)
+        if user_doc.name == "Administrator":
+            return "not allowed"
+        if not user_doc.enabled:
+            return "disabled"
+
+        user_doc.validate_reset_password()
+        
+        # Generate just the key without sending email yet
+        frappe_link = user_doc.reset_password(send_email=False)
+        
+        import urllib.parse
+        parsed = urllib.parse.urlparse(frappe_link)
+        
+        from frappe.utils import get_url
+        # Build the custom link with the correct hostname/path
+        # We use frappe.request.host_url if available to ensure we use the actual domain
+        # the user accessed, rather than the internal site name
+        base_url = frappe.request.host_url if hasattr(frappe, "request") and frappe.request else get_url()
+        correct_link = f"{base_url}/fle/update_password.html?{parsed.query}"
+        
+        reset_password_template = frappe.db.get_system_setting("reset_password_template")
+
+        # The default reset_password_template in frappe uses `{{ link }}`
+        # user_doc.send_login_mail passes `dict(link=link)`
+        user_doc.send_login_mail(
+            _("Password Reset"),
+            "password_reset",
+            {"link": correct_link, "site_url": base_url},
+            now=True,
+            custom_template=reset_password_template,
+        )
+
+        return frappe.msgprint(
+            msg=_("Password reset instructions have been sent to {}'s email").format(user_doc.full_name),
+            title=_("Password Email Sent"),
+        )
+    except frappe.DoesNotExistError:
+        frappe.local.response["http_status_code"] = 404
+        frappe.clear_messages()
+        return "not found"
+
 @frappe.whitelist(allow_guest=True)
 def login_fle_user(usr, pwd):
     from frappe.auth import LoginManager
