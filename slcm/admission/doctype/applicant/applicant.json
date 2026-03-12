@@ -798,7 +798,7 @@
   },
   {
    "fieldname": "annual_house_hold_income",
-   "fieldtype": "Currency",
+   "fieldtype": "Select",
    "label": "Annual House Hold Income",
    "precision": "2"
   },
@@ -1039,7 +1039,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-11 23:03:02.161076",
+ "modified": "2026-03-12 12:44:12.858333",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
