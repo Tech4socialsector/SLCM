@@ -214,8 +214,6 @@ def notify_scholarship_status(application_name):
             .status-approved { background-color: #d1fae5; color: #065f46; }
             .status-rejected { background-color: #fee2e2; color: #991b1b; }
             .details-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin: 25px 0; }
-            .details-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
-            .details-row:last-child { border-bottom: none; }
             .label { font-weight: bold; color: #64748b; font-size: 13px; }
             .value { font-weight: bold; color: #1e293b; font-size: 14px; }
             .button { display: inline-block; background-color: #1a3c6e; color: #ffffff !important; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
@@ -231,9 +229,20 @@ def notify_scholarship_status(application_name):
             <p>On behalf of the Scholarship Committee, we are pleased to inform you that your application for the <strong>{scheme_name}</strong> has been officially approved.</p>
             
             <div class="details-box">
-                <div class="details-row"><span class="label">Application ID</span><span class="value">{app.name}</span></div>
-                <div class="details-row"><span class="label">Scholarship Scheme</span><span class="value">{scheme_name}</span></div>
-                <div class="details-row"><span class="label">Approved Benefit</span><span class="value">{benefit_amount}</span></div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;">Application ID:</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;">{app.name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;">Scholarship Scheme:</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;">{scheme_name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px 0; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;">Approved Benefit:</td>
+                        <td style="padding: 10px 0; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;">{benefit_amount}</td>
+                    </tr>
+                </table>
             </div>
             
             <p>The approved benefit has been automatically applied to your Fee Assignment. You may log in to the student portal to view your updated fee details and complete any pending formalities.</p>
