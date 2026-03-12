@@ -59,7 +59,7 @@
             <div id="login-form">
                 <h3>myNLS Login</h3>
                 <div class="form-group mb-3">
-                    <label for="login_id">Email or Username <span class="text-danger">*</span></label>
+                    <label for="login_id">Email<span class="text-danger">*</span></label>
                     <input type="text" id="login_id" class="form-control" autocomplete="username"
                         placeholder="Please Enter" maxlength="80">
                 </div>
@@ -78,7 +78,14 @@
                         </button>
                     </div>
                 </div>
-                <button class="btn btn-maroon" onclick="login_user()">Sign In</button>
+                <p>Know more about the FLE programme
+                    <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education" target="_blank"
+                        rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">
+                        here
+                    </a>
+                </p>
+                <p>
+                    <button class="btn btn-maroon" onclick="login_user()">Sign In</button>
                 <div class="text-center mt-3">
                     <span class="small">New user?</span>
                     <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Register Here</span>
@@ -98,6 +105,12 @@
                     <input type="text" id="mobile_number" class="form-control" placeholder="Please Enter" maxlength="10"
                         autocomplete="tel">
                 </div>
+                <p>Know more about the FLE programme
+                    <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education" target="_blank"
+                        rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">
+                        here
+                    </a>
+                </p>
                 <button class="btn btn-maroon" onclick="register_user()">Register</button>
                 <div class="text-center mt-3">
                     <span class="small">Already have an account?</span>
