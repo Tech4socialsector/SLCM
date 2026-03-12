@@ -74,7 +74,8 @@ def get_context(context):
             fields=["name","candidate_name","date_of_birth","gender","nationality",
                     "religion","mobile_number","alternate_contact","id_proof",
                     "correspondence_address","city","state","pincode",
-                    "application_status"],
+                    "application_status", "intake_type", "reservation_category",
+                    "pwd", "program_level"],
             limit=1, order_by="creation desc")
         if not _prof_apps:
             _prof_apps = frappe.get_all("Applicant",
@@ -82,7 +83,8 @@ def get_context(context):
                 fields=["name","candidate_name","date_of_birth","gender","nationality",
                         "religion","mobile_number","alternate_contact","id_proof",
                         "correspondence_address","city","state","pincode",
-                        "application_status"],
+                        "application_status", "intake_type", "reservation_category",
+                        "pwd", "program_level"],
                 limit=1, order_by="creation desc")
         if _prof_apps:
             _prof_app = _prof_apps[0]
@@ -91,7 +93,7 @@ def get_context(context):
 
     if _prof_app:
         context.prof_candidate_name  = _prof_app.candidate_name or context.prof_candidate_name
-        context.prof_dob             = str(_prof_app.date_of_birth) if _prof_app.date_of_birth else None
+        context.prof_dob             = _prof_app.date_of_birth
         context.prof_gender          = _prof_app.gender
         context.prof_nationality     = _prof_app.nationality
         context.prof_religion        = _prof_app.religion
@@ -119,10 +121,6 @@ def get_context(context):
         context.prof_app_status      = None
         context.prof_app_name        = None
 
-    # ── If tab=profile, skip loading detail view ──────────────────
-    if context.show_profile:
-        return
-
     # ── Detail mode: if ?app= param provided, load that specific application ──
     _app_name = frappe.form_dict.get("app") or ""
 
@@ -134,20 +132,83 @@ def get_context(context):
         _found = frappe.db.sql("""
             SELECT a.name FROM `tabApplicant` a
             JOIN `tabProgram` p ON a.program = p.name
-            WHERE a.owner = %s AND (p.program_slug = %s OR p.name = %s)
+            WHERE (a.owner = %s OR a.email = %s) AND (p.program_slug = %s OR p.name = %s)
             LIMIT 1
-        """, (frappe.session.user, program_filter, program_filter))
+        """, (frappe.session.user, frappe.session.user, program_filter, program_filter))
         if _found:
             _app_name = _found[0][0]
 
+    # ── Determine active application name for document checklist ──
+    doc_lookup_name = _app_name or context.prof_app_name
+
+    # ── Documents Logic (Strictly using Applicant fields) ──────────
+    context.app_documents = []
+    if doc_lookup_name:
+        try:
+            # Fetch the actual applicant doc for fields
+            target_applicant = frappe.get_doc("Applicant", doc_lookup_name, ignore_permissions=True)
+
+            # Standard fields in Applicant DocType
+            standard_checklist = [
+                {"label": "10th Certificate", "field": "class_x_marksheet", "required": True},
+                {"label": "12th Certificate", "field": "class_xii_marksheet", "required": True},
+                {"label": "ID Proof", "field": "id_proof", "required": True},
+                {"label": "Photo", "field": "candidate_photo", "required": True},
+            ]
+
+            # Optional / Conditional fields
+            if target_applicant.reservation_category and target_applicant.reservation_category != "NA":
+                standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
+                
+            if target_applicant.pwd == "Yes":
+                standard_checklist.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True})
+                
+            if target_applicant.program_level == "Research Course":
+                standard_checklist.append({"label": "Research Proposal", "field": "phd_proposal", "required": True})
+                standard_checklist.append({"label": "CV", "field": "cv", "required": True})
+            
+            # Special case for Karnataka category
+            if target_applicant.ka_study_7yrs:
+                standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True})
+
+            for item in standard_checklist:
+                field = item["field"]
+                val = target_applicant.get(field)
+                
+                context.app_documents.append({
+                    "document_name": item["label"],
+                    "document_type": item["label"],
+                    "is_uploaded": bool(val),
+                    "file_url": val,
+                    "field": field,
+                    "source": "field",
+                    "required": item["required"]
+                })
+        except Exception as e:
+            frappe.log_error(f"Document checklist error: {e}")
+
     # ── Portal config (required for theme vars) ──────────────────
     try:
-        from slcm.admission.utils.portal import get_portal_config
         portal_config = get_portal_config()
         context.portal_config = portal_config
     except Exception:
         portal_config = None
         context.portal_config = None
+
+    if context.show_profile:
+        # ── States and Districts ─────────────────────────────────────────
+        try:
+            context.states = frappe.get_all("State", fields=["name"], order_by="name asc")
+            if context.prof_state:
+                context.districts = frappe.get_all("District", 
+                    filters={"state": context.prof_state},
+                    fields=["name"], order_by="name asc")
+            else:
+                context.districts = []
+        except Exception:
+            context.states = []
+            context.districts = []
+        return
 
     if _app_name:
         # Security: verify ownership
@@ -158,7 +219,7 @@ def get_context(context):
             context.selected_app = None
             return
 
-        # Check access (robust check: owner or email)
+        # Check access
         _session_user = frappe.session.user
         if applicant.owner != _session_user and applicant.email != _session_user and \
            "Admission Admin" not in frappe.get_roles():
@@ -171,7 +232,6 @@ def get_context(context):
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
         try:
-            # Load all enabled stages for this cycle
             all_cycle_stages = frappe.get_all(
                 "Admission Cycle Stage",
                 filters={
@@ -180,35 +240,49 @@ def get_context(context):
                 },
                 fields=[
                     "stage_name", "stage_type", "applicable_workflow",
-                    "sequence_no", "application_status"
+                    "sequence_no", "activate_status", "completed_status", "closed_status"
                 ],
                 order_by="sequence_no asc",
                 ignore_permissions=True
             )
 
             if all_cycle_stages:
-                # Filter stages by intake_type
-                intake = applicant.intake_type or "CLAT"
+                intake = applicant.intake_type or "External Test"
                 filtered_stages = [
                     s for s in all_cycle_stages
                     if s.applicable_workflow == "All" or s.applicable_workflow == intake
                 ]
-
-                # Find the active stage by matching application_status
                 current_status = applicant.application_status
                 active_index = -1
+                is_terminal_stop = False
+                is_completed_stop = False
+                
                 for i, s in enumerate(filtered_stages):
-                    if s.application_status == current_status:
+                    if s.activate_status == current_status:
                         active_index = i
-                        break
-
+                        is_terminal_stop = False
+                        is_completed_stop = False
+                    elif s.completed_status == current_status:
+                        active_index = i
+                        is_terminal_stop = False
+                        is_completed_stop = True
+                    elif s.closed_status == current_status:
+                        active_index = i
+                        is_terminal_stop = True
+                        is_completed_stop = False
+                
                 for i, s in enumerate(filtered_stages):
                     state = "pending"
                     if active_index != -1:
                         if i < active_index:
                             state = "completed"
                         elif i == active_index:
-                            state = "active"
+                            if is_terminal_stop:
+                                state = "closed"
+                            elif is_completed_stop:
+                                state = "completed"
+                            else:
+                                state = "active"
                     
                     stages_with_state.append({
                         "name": s.stage_name or s.stage_type,
@@ -217,343 +291,121 @@ def get_context(context):
         except Exception as e:
             frappe.log_error(f"Stage tracker context error: {e}")
 
-        # Fallback: if no cycle stages, build from application_status
         if not stages_with_state:
-            statuses = ["Submitted", "Under Review", "Interview", "Decision"]
+            # Fallback based on common statuses
+            statuses = [
+                {"name": "Submitted", "activate": "Submitted", "closed": "Rejected"},
+                {"name": "Under Review", "activate": "Under Review", "closed": "Rejected"},
+                {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
+                {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
+            ]
             current = applicant.get("application_status") or "Draft"
-            current_lower = str(current).lower()
-            found = False
+            stop_found = False
             for st in statuses:
-                if st.lower() == current_lower and not found:
-                    state = "active"; found = True
-                elif not found:
-                    state = "completed"
-                else:
-                    state = "pending"
-                stages_with_state.append({"name": st, "state": state})
+                state = "pending"
+                if not stop_found:
+                    if st["activate"] == current:
+                        state = "active"
+                        stop_found = True
+                    elif st["closed"] == current:
+                        state = "closed"
+                        stop_found = True
+                    else:
+                        state = "completed"
+                stages_with_state.append({"name": st["name"], "state": state})
 
         context.stage_tracker = stages_with_state
 
-        # ── Documents ────────────────────────────────────────────────
-        try:
-            context.app_documents = frappe.get_all(
-                "Applicant Document",
-                filters={"applicant": _app_name},
-                fields=[
-                    "name", "document_type", "document_name",
-                    "file_url", "verification_status",
-                    "upload_date", "creation", "remarks"
-                ],
-                order_by="creation asc",
-                ignore_permissions=True
-            ) or []
-        except Exception:
-            context.app_documents = []
-
-        # ── Next steps for current stage ─────────────────────────────
+        # ── Next steps ─────────────────────────────────────────────
         try:
             _pc = frappe.get_doc("Applicant Portal Config")
             _next_steps = []
             if _pc:
-                all_steps = (_pc.get("stage_next_steps") or 
-                             getattr(_pc, "stage_next_steps", []) or [])
+                all_steps = (_pc.get("stage_next_steps") or [])
                 for step in all_steps:
-                    sn = (step.get("stage_name") if hasattr(step,"get") 
-                          else step.stage_name) or ""
+                    sn = (step.get("stage_name") if hasattr(step,"get") else step.stage_name) or ""
                     if sn.lower() == str(current).lower():
                         _next_steps.append({
-                            "text":       (step.get("step_text") if hasattr(step,"get") 
-                                           else step.step_text) or "",
-                            "is_link":    (step.get("is_link") if hasattr(step,"get") 
-                                           else step.is_link) or 0,
-                            "link_url":   (step.get("link_url") if hasattr(step,"get") 
-                                           else step.link_url) or "",
-                            "link_label": (step.get("link_label") if hasattr(step,"get") 
-                                           else step.link_label) or "",
+                            "text":       (step.get("step_text") if hasattr(step,"get") else step.step_text) or "",
+                            "is_link":    (step.get("is_link") if hasattr(step,"get") else step.is_link) or 0,
+                            "link_url":   (step.get("link_url") if hasattr(step,"get") else step.link_url) or "",
+                            "link_label": (step.get("link_label") if hasattr(step,"get") else step.link_label) or "",
                         })
-
-            # Hardcoded fallback if no config
             if not _next_steps:
-                fallback = {
-                    "submitted":    ["Ensure all documents are uploaded to the checklist.",
-                                     "Check your email for confirmation of receipt."],
-                    "under review": ["Await evaluation results — you will be notified.",
-                                     "Ensure your contact details are up to date."],
-                    "entrance test":["Download your admit card from the Documents section.",
-                                     "Check the test center location and reporting time."],
-                    "interview":    ["Confirm your interview slot as soon as possible.",
-                                     "Prepare your original documents for verification."],
-                    "merit list":   ["Monitor the portal for merit list publication.",
-                                     "Check your rank and category seat availability."],
-                    "offer":        ["Review your offer letter carefully.",
-                                     "Pay the acceptance fee before the deadline.",
-                                     "Complete document verification to confirm your seat."],
-                }
-                key = str(current).lower()
-                for k, v in fallback.items():
-                    if k in key or key in k:
-                        _next_steps = [{"text": t, "is_link": 0, 
-                                        "link_url": "", "link_label": ""} for t in v]
-                        break
-
+                _next_steps = [{"text": "Complete all steps before your cycle deadline", "is_link": 0}]
             context.next_steps = _next_steps
-
-            # ── Support contact ───────────────────────────────────────
-            context.support_name  = (
-                _pc.get("support_name") if _pc and hasattr(_pc,"get") 
-                else getattr(_pc,"support_name","")) or ""
-            context.support_role  = (
-                _pc.get("support_role") if _pc and hasattr(_pc,"get") 
-                else getattr(_pc,"support_role","")) or ""
-            context.support_email = (
-                _pc.get("support_email") if _pc and hasattr(_pc,"get") 
-                else getattr(_pc,"support_email","")) or ""
-            context.campus_image  = (
-                _pc.get("hero_image") if _pc and hasattr(_pc,"get") 
-                else getattr(_pc,"hero_image","")) or ""
-
+            context.support_name  = _pc.get("support_name") or ""
+            context.support_role  = _pc.get("support_role") or ""
+            context.support_email = _pc.get("support_email") or ""
+            context.campus_image  = _pc.get("hero_image") or ""
         except Exception as ex:
-            frappe.log_error(str(ex), "my_applications detail context")
-            context.next_steps    = []
-            context.support_name  = ""
-            context.support_role  = ""
-            context.support_email = ""
-            context.campus_image  = ""
+            frappe.log_error(str(ex), "my_applications detail context next steps")
 
-        # ── Narrative / remarks ───────────────────────────────────────
-        try:
-            context.app_narrative = (
-                applicant.get("remarks") or 
-                applicant.get("notes") or 
-                applicant.get("application_notes") or ""
-            )
-        except Exception:
-            context.app_narrative = ""
-
-        # ── Submission date ────────────────────────────────────────────
-        try:
-            context.submission_date = frappe.utils.format_date(
-                applicant.get("creation") or applicant.creation, "MMMM d, yyyy"
-            )
-        except Exception:
-            context.submission_date = ""
-
+        context.app_narrative = applicant.get("remarks") or ""
+        context.submission_date = frappe.utils.format_date(applicant.creation, "MMMM d, yyyy")
         context.app_name_param = _app_name
 
-        # ── Fetch full combined results using the API ────────────
+        # Combined results
         context.all_results = []
         context.all_merit   = []
-        context.eligibility_result = None
         try:
-            # Try API first
             combined_data = get_applicant_data()
             if isinstance(combined_data, list):
                 for entry in combined_data:
                     if entry.get("profile", {}).get("applicant_id") == _app_name:
                         context.all_results = entry.get("results") or []
                         context.all_merit   = entry.get("merit") or []
+                        context.eligibility_result = entry.get("profile")
                         break
-            
-            # Direct fetch for Eligibility Result fields
-            er_rows = frappe.get_all("Eligibility Result",
-                filters={"applicant_id": _app_name},
-                fields=["entrance_test_score", "interview_score", "source_type", "result_status"],
-                limit=1, ignore_permissions=True
-            )
-            if er_rows:
-                context.eligibility_result = er_rows[0]
-            
-            # If still empty, direct fetch as fallback (only if user has access)
-            if not context.all_merit:
-                mrows = frappe.get_all("Merit List Applicant",
-                    filters={"applicant_id": _app_name},
-                    fields=["total_score", "overall_rank", "status", "parent"]
-                )
-                for m in mrows:
-                    if frappe.db.get_value("Merit List", m.parent, "status") == "Published":
-                        context.all_merit.append(m)
-            
-            if not context.all_results:
-                srows = frappe.get_all("Seat Selection Applicant",
-                    filters={"applicant_id": _app_name},
-                    fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score", "allocated_category"]
-                )
-                for s in srows:
-                    if frappe.db.get_value("Seat Allocation", s.parent, "status") == "Published":
-                        context.all_results.append(s)
-        except Exception:
-            pass
+        except Exception: pass
 
-        # ── fee_payment_status ────────────────────────────────────
-        context.fee_payment_status = (
-            applicant.get("application_fee_status") or ""
-        )
+        context.fee_payment_status = applicant.get("application_fee_status") or ""
 
-        # ── interview_status (from Interview Seat Allocation) ─────
+        # Interview
         context.interview_status = ""
+        context.interview_date = ""
         try:
-            irows = frappe.get_all(
-                "Interview Seat Allocation",
+            irows = frappe.get_all("Interview Seat Allocation",
                 filters={"applicant": _app_name},
-                fields=["interview_date", "interview_time",
-                        "interview_slot_status"],
-                order_by="creation desc", limit=1,
-                ignore_permissions=True
-            )
+                fields=["interview_date", "interview_time", "interview_slot_status", "re_interview_date", "is_rescheduled"],
+                order_by="creation desc", limit=1, ignore_permissions=True)
             if irows:
-                ir      = irows[0]
-                slot_st = ir.get("interview_slot_status") or ""
-                idate   = str(ir.get("interview_date") or "")[:10]
-                itime   = str(ir.get("interview_time") or "")[:5]
-                if idate:
-                    fmt = frappe.utils.format_date(idate, "MMM d, yyyy")
-                    context.interview_status = (
-                        f"{slot_st} · {fmt}" if slot_st else fmt
-                    )
-                    if itime:
-                        context.interview_status += f", {itime}"
-                elif slot_st:
-                    context.interview_status = slot_st
-            elif "interview" in str(
-                applicant.get("application_status") or ""
-            ).lower():
-                context.interview_status = "To be Scheduled"
-        except Exception:
-            pass
+                ir = irows[0]
+                context.interview_status = ir.get("interview_slot_status") or "Scheduled"
+                _idate = ir.get("re_interview_date") if (ir.get("is_rescheduled") or ir.get("interview_slot_status") == "Rescheduled") else ir.get("interview_date")
+                if _idate:
+                    context.interview_date = frappe.utils.format_date(_idate, "d MMM yyyy")
+        except Exception: pass
 
-        # ── merit (from Applicant Merit DocType) ──────────────────
-        context.merit_rank       = ""
-        context.merit_percentile = ""
-        context.merit_score_val  = ""
-        context.merit_cat_rank   = ""
+        # Merit
+        context.merit_rank = ""
         try:
-            mrows = frappe.get_all(
-                "Applicant Merit",
-                filters={"applicant": _app_name},
-                fields=["overall_rank", "merit_score",
-                        "percentile", "category_rank"],
-                order_by="creation desc", limit=1,
-                ignore_permissions=True
-            )
-            if mrows:
-                m = mrows[0]
-                context.merit_rank       = str(m.get("overall_rank") or "").strip()
-                context.merit_percentile = str(m.get("percentile") or "").strip()
-                context.merit_score_val  = str(m.get("merit_score") or "").strip()
-                context.merit_cat_rank   = str(m.get("category_rank") or "").strip()
-            else:
-                ms = applicant.get("merit_score") or ""
-                if ms:
-                    context.merit_score_val = str(ms)
-        except Exception:
-            ms = applicant.get("merit_score") or ""
-            if ms:
-                context.merit_score_val = str(ms)
+            mrows = frappe.get_all("Applicant Merit", filters={"applicant": _app_name},
+                fields=["overall_rank"], limit=1, ignore_permissions=True)
+            if mrows: context.merit_rank = str(mrows[0].get("overall_rank") or "")
+        except Exception: pass
 
-        # ── seat allocation (from Seat Allocation DocType) ────────
-        context.seat_allocation = None
-        context.seat_status     = ""
+        # Seat
+        context.seat_status = ""
         try:
-            srows = frappe.get_all(
-                "Seat Allocation",
-                filters={"applicant": _app_name},
-                fields=["program", "campus", "category",
-                        "status", "allocation_type"],
-                order_by="creation desc", limit=1,
-                ignore_permissions=True
-            )
-            if srows:
-                context.seat_allocation = srows[0]
-                context.seat_status = (srows[0].get("status") or "").strip()
-        except Exception:
-            pass
+            srows = frappe.get_all("Seat Allocation", filters={"applicant": _app_name},
+                fields=["status"], limit=1, ignore_permissions=True)
+            if srows: context.seat_status = (srows[0].get("status") or "").strip()
+        except Exception: pass
 
-        # ── payment details (from Fee Payment DocType) ────────────
-        context.payment_details = None
+        # Entrance test
         try:
-            prows = frappe.get_all(
-                "Fee Payment",
-                filters={"applicant": _app_name},
-                fields=["fee_type", "amount", "transaction_id",
-                        "payment_date", "status"],
-                order_by="creation desc", limit=1,
-                ignore_permissions=True
-            )
-            if prows:
-                p = prows[0]
-                context.payment_details = {
-                    "fee_label":      p.get("fee_type") or "Application Fee",
-                    "amount":         p.get("amount") or "",
-                    "transaction_id": p.get("transaction_id") or "",
-                    "payment_date":   frappe.utils.format_date(
-                        str(p.get("payment_date") or "")[:10],
-                        "MMM d, yyyy"
-                    ) if p.get("payment_date") else "",
-                    "status": p.get("status") or context.fee_payment_status or "",
-                }
-            elif context.fee_payment_status:
-                context.payment_details = {
-                    "fee_label": "Application Fee",
-                    "amount": "", "transaction_id": "",
-                    "payment_date": "",
-                    "status": context.fee_payment_status,
-                }
-        except Exception:
-            pass
-
-        # ── entrance test (Entrance Test Seat Allocation) ─────────
-        context.entrance_test  = None
-        context.admit_card_url = ""
-        context.et_doc = None
-        context.et_is_rescheduled = False
-        context.et_preferences = []
-        context.et_show_result = False
-        context.et_reporting_time = ""
-        context.et_campus_branding = {}
-        context.et_doc_json = "{}"
-        
-        try:
-            et_rows = frappe.get_all(
-                "Entrance Test Seat Allocation",
-                filters={"applicant": _app_name},
-                fields=["*"],
-                order_by="creation desc", limit=1,
-                ignore_permissions=True
-            )
+            et_rows = frappe.get_all("Entrance Test Seat Allocation",
+                filters={"applicant": _app_name}, fields=["*"], limit=1, ignore_permissions=True)
             if et_rows:
                 et_doc = frappe.get_doc("Entrance Test Seat Allocation", et_rows[0].name, ignore_permissions=True)
                 context.et_doc = et_doc
-                
-                # Rescheduled logic
-                is_rescheduled = (et_doc.is_rescheduled == 1 or et_doc.entrance_test_status == "Rescheduled")
-                context.et_is_rescheduled = is_rescheduled
-                
-                # Preferences
-                raw_prefs = et_doc.re_assigned_preferences if is_rescheduled else et_doc.assigned_preferences
-                context.et_preferences = []
-                for p in raw_prefs:
-                    context.et_preferences.append({
-                        "provider": p.provider,
-                        "center_name": p.center_name,
-                        "center_address": p.center_address
-                    })
-                
-                # Result published logic
+                context.et_is_rescheduled = (et_doc.is_rescheduled == 1 or et_doc.entrance_test_status == "Rescheduled")
                 context.et_show_result = (et_doc.entrance_test_status in ["Attended", "Absent"] and et_doc.result_published == 1)
+                context.et_preferences = [{"provider": p.provider, "center_name": p.center_name, "center_address": p.center_address} for p in (et_doc.re_assigned_preferences if context.et_is_rescheduled else et_doc.assigned_preferences)]
+                context.et_doc_json = frappe.as_json(et_doc.as_dict())
                 
-                # Reporting time (1 hour before)
-                from datetime import timedelta
-                f_date = et_doc.re_allocation_date if is_rescheduled else et_doc.allocation_date
-                if f_date:
-                    try:
-                        rep_dt = f_date - timedelta(hours=1)
-                        context.et_reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
-                    except:
-                        context.et_reporting_time = "09:30 AM"
-                else:
-                    context.et_reporting_time = "—"
-                
-                # Branding
+                # Add branding and reporting time
                 campus_branding = {"campus_name": et_doc.campus or "Institution of Legal Education", "logo": None}
                 try:
                     if et_doc.campus:
@@ -562,137 +414,78 @@ def get_context(context):
                         campus_branding["logo"] = campus.logo
                 except: pass
                 context.et_campus_branding = campus_branding
-                context.et_doc_json = frappe.as_json(et_doc.as_dict())
 
-                # Legacy fields for backward compatibility in templates
-                test_name = et_doc.entrance_test_name or ""
-                test_date = ""
-                test_time = ""
-                if test_name:
+                # Reporting time calculation (1 hour before exam)
+                from datetime import timedelta
+                f_date = et_doc.re_allocation_date if context.et_is_rescheduled else et_doc.allocation_date
+                if f_date:
                     try:
-                        td = frappe.get_doc("Entrance Test List", test_name, ignore_permissions=True)
-                        test_date = frappe.utils.format_date(str(td.get("test_date") or "")[:10], "MMMM d, yyyy") if td.get("test_date") else ""
-                        test_time = str(td.get("test_time") or "")
-                    except: pass
+                        # Assuming f_date is a datetime object or can be parsed
+                        if isinstance(f_date, str):
+                            from frappe.utils import get_datetime
+                            f_date = get_datetime(f_date)
+                        rep_dt = f_date - timedelta(hours=1)
+                        context.et_reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
+                    except:
+                        context.et_reporting_time = "09:30 AM" # Fallback
+                else:
+                    context.et_reporting_time = "—"
+        except Exception: pass
 
-                f_center = et_doc.re_center_name if is_rescheduled else et_doc.center_name
-                f_address = et_doc.re_center_address if is_rescheduled else et_doc.center_address
-                f_seat = et_doc.re_seat_number if is_rescheduled else et_doc.seat_number
-
-                context.entrance_test = {
-                    "test_name": test_name,
-                    "test_date": test_date or frappe.utils.format_date(f_date, "MMMM d, yyyy") if f_date else "",
-                    "test_time": test_time or frappe.utils.format_datetime(f_date, "hh:mm a") if f_date else "",
-                    "center_name": f_center or "",
-                    "center_address": f_address or "",
-                    "seat_number": f_seat or "",
-                    "admit_status": (et_doc.re_allocation_status if is_rescheduled else et_doc.allocation_status) or "",
-                    "admit_name": et_doc.name,
-                }
-                context.admit_card_url = f"/api/method/slcm.admission.utils.web.download_admit_card?admit_card={et_doc.name}"
-        except Exception as ex:
-            frappe.log_error(title="my_app_et_details", message=frappe.get_traceback())
-
-        # ── offer letter URL and name (from Offer Letter DocType) ──────────
-        context.offer_letter_url = ""
-        context.offer_letter_name = ""
+        # Interview details
         try:
-            orows = frappe.get_all(
-                "Offer Letter",
-                filters={"applicant": _app_name},
-                fields=["name", "pdf_file"],
-                order_by="creation desc", limit=1,
-                ignore_permissions=True
-            )
-            if orows:
-                context.offer_letter_name = orows[0].get("name") or ""
-                context.offer_letter_url = (
-                    orows[0].get("pdf_file") or
-                    f"/api/method/slcm.admission.utils.web.download_offer_letter"
-                    f"?offer_letter={orows[0].get('name')}"
-                )
-        except Exception:
-            pass
-
-        # ── interview management (Interview Seat Allocation) ──────
-        context.interview_doc = None
-        context.interview_is_rescheduled = False
-        context.interview_current_slot = None
-        context.interview_show_result = False
-        context.interview_show_feedback = False
-        context.interview_feedback_submitted = False
-        context.interview_attendance_options = ["Will Attend", "Will Not Attend", "Need Reschedule"]
-
-        try:
-            i_rows = frappe.get_all(
-                "Interview Seat Allocation",
-                filters={"applicant": _app_name},
-                fields=["*"],
-                order_by="creation desc", limit=1,
-                ignore_permissions=True
-            )
+            i_rows = frappe.get_all("Interview Seat Allocation",
+                filters={"applicant": _app_name}, fields=["*"], limit=1, ignore_permissions=True)
             if i_rows:
                 i_doc = frappe.get_doc("Interview Seat Allocation", i_rows[0].name, ignore_permissions=True)
                 context.interview_doc = i_doc
+                context.interview_is_rescheduled = (i_doc.is_rescheduled == 1 or i_doc.interview_slot_status == "Rescheduled")
+                context.interview_show_result = (i_doc.interview_status in ["Attended", "Absent", "Selected", "Rejected"] and i_doc.result_published == 1)
                 
-                is_rescheduled = (i_doc.is_rescheduled == 1 or i_doc.interview_slot_status == "Rescheduled")
-                context.interview_is_rescheduled = is_rescheduled
-                
-                from datetime import timedelta
-                from frappe.utils import get_datetime
-
-                # Pick slot data
-                if is_rescheduled:
-                    f_date = i_doc.re_interview_date
-                    f_time = i_doc.re_interview_time
-                    rep_time = "—"
-                    if f_date and f_time:
-                        try:
-                            dt = get_datetime(f"{f_date} {f_time}")
-                            rep_time = frappe.utils.format_datetime(dt - timedelta(hours=1), "hh:mm a")
-                        except: pass
-                    context.interview_current_slot = {
-                        "staff_name": i_doc.re_staff_name,
-                        "interview_date": frappe.utils.format_date(f_date) if f_date else "—",
-                        "interview_time": frappe.utils.format_datetime(f"{f_date} {f_time}", "hh:mm a") if (f_date and f_time) else (f_time or "—"),
-                        "reporting_time": rep_time,
-                        "interview_address": i_doc.re_interview_address,
-                        "attendance_confirmation": i_doc.re_interview_attendance_confirmation,
-                    }
-                else:
-                    f_date = i_doc.interview_date
-                    f_time = i_doc.interview_time
-                    rep_time = "—"
-                    if f_date and f_time:
-                        try:
-                            dt = get_datetime(f"{f_date} {f_time}")
-                            rep_time = frappe.utils.format_datetime(dt - timedelta(hours=1), "hh:mm a")
-                        except: pass
-                    context.interview_current_slot = {
-                        "staff_name": i_doc.staff_name,
-                        "interview_date": frappe.utils.format_date(f_date) if f_date else "—",
-                        "interview_time": frappe.utils.format_datetime(f"{f_date} {f_time}", "hh:mm a") if (f_date and f_time) else (f_time or "—"),
-                        "reporting_time": rep_time,
-                        "interview_address": i_doc.interview_address,
-                        "attendance_confirmation": i_doc.interview_attendance_confirmation,
-                    }
-
-                context.interview_show_result = (
-                    i_doc.interview_status in ["Attended", "Absent", "Selected", "Rejected", "Withheld"]
-                    and i_doc.result_published == 1
-                )
-                context.interview_show_feedback = (i_doc.result_published == 1)
+                # Show feedback section if results are published
+                context.interview_show_feedback = bool(i_doc.result_published)
                 context.interview_feedback_submitted = bool(i_doc.feedback)
-        except Exception as ex:
-            frappe.log_error(title="my_app_interview_details", message=frappe.get_traceback())
+                
+                # Current slot details for display
+                is_re = context.interview_is_rescheduled
+                f_date = i_doc.re_interview_date if is_re else i_doc.interview_date
+                f_time = i_doc.re_interview_time if is_re else i_doc.interview_time
+                
+                # Format time for display
+                formatted_time = "—"
+                if f_date and f_time:
+                    try:
+                        formatted_time = frappe.utils.format_datetime(f"{f_date} {f_time}", "hh:mm a")
+                    except:
+                        formatted_time = f_time
 
-        context.show_detail    = True
+                # Calculate reporting time (1 hour before)
+                reporting_time = "—"
+                if f_date and f_time:
+                    try:
+                        from frappe.utils import get_datetime
+                        from datetime import timedelta
+                        dt = get_datetime(f"{f_date} {f_time}")
+                        rep_dt = dt - timedelta(hours=1)
+                        reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
+                    except: pass
+
+                context.interview_current_slot = {
+                    "staff_name": i_doc.re_staff_name if is_re else i_doc.staff_name,
+                    "interview_date": frappe.utils.format_date(f_date, "d MMM yyyy") if f_date else "—",
+                    "interview_time": formatted_time,
+                    "reporting_time": reporting_time,
+                    "interview_address": i_doc.re_interview_address if is_re else i_doc.interview_address,
+                    "attendance_confirmation": i_doc.re_interview_attendance_confirmation if is_re else i_doc.interview_attendance_confirmation
+                }
+                context.interview_attendance_options = ["Will Attend", "Will Not Attend", "Need Reschedule"]
+        except Exception: pass
+
+        context.show_detail = True
         context.title = f"Application Details: {_app_name}"
-        return  # ← exit early; template will render detail view
+        return
 
-    # If no ?app= param, fall through to existing list view logic
-    context.show_detail = False
-
+    # Default List View
     # Status styling
     STATUS_STYLE = {
         "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
@@ -709,7 +502,6 @@ def get_context(context):
         "Fee Paid":       {"color": "#065f46", "bg": "#d1fae5"},
     }
 
-    # 1. Fetch all applicant data using the API
     data_list = get_applicant_data()
     if isinstance(data_list, dict) and "error" in data_list:
         context.error = data_list["error"]
@@ -718,101 +510,35 @@ def get_context(context):
         _set_offer_letter_entries(context)
         return context
 
-    # 2. Determine which application to show
-    target_app_id = frappe.form_dict.get('app')
-    
     applications = []
-    active_app_summary = None
-    
     for entry in data_list:
         prof = entry.get("profile", {})
         app_id = prof.get("applicant_id")
         if not app_id: continue
-        
-        # Load the full doc for detail sections
         app_doc = frappe.get_doc("Applicant", app_id)
         
         status = app_doc.application_status or "Draft"
         style = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
         
-        program_name = frappe.db.get_value("Program", app_doc.program, "program_name") or app_doc.program or "Application"
+        program_name = frappe.db.get_value("Program", app_doc.program, "program_name") or app_doc.program
         program_slug = frappe.db.get_value("Program", app_doc.program, "program_slug") or ""
 
         summary = {
             "name": app_doc.name,
             "header": {
-                "name": app_doc.name,
                 "program_name": program_name,
-                "program_slug": program_slug,
-                "cycle": app_doc.admission_cycle or "—",
+                "applicant_id": app_doc.name,
                 "status": status,
                 "status_color": style["color"],
                 "status_bg": style["bg"],
                 "submitted_on": frappe.utils.formatdate(app_doc.creation, "dd MMM yyyy"),
-                "current_stage": app_doc.current_stage or "Pending",
-                "applicant_id": app_doc.applicant_id or app_doc.name,
-                "merit_score": prof.get("merit_score") or (entry.get("merit")[0].get("total_score") if entry.get("merit") else None)
+                "cycle": app_doc.admission_cycle
             },
             "personal": [
-                {"label": "Full Name", "value": app_doc.candidate_name},
-                {"label": "Date of Birth", "value": str(app_doc.date_of_birth) if app_doc.date_of_birth else None},
-                {"label": "Gender", "value": app_doc.gender},
-                {"label": "Nationality", "value": app_doc.nationality},
-                {"label": "Email", "value": app_doc.email},
-                {"label": "Mobile", "value": app_doc.mobile_number},
-                {"label": "Religion", "value": app_doc.religion},
-                {"label": "Annual Income", "value": app_doc.annual_house_hold_income},
-            ],
-            "academic": [
-                {"label": "10th Percentage", "value": app_doc.class_x_percentage},
-                {"label": "10th Board", "value": app_doc.class_x_board},
-                {"label": "10th Year", "value": app_doc.class_x_year_of_completion},
-                {"label": "12th Percentage", "value": app_doc.hsc_percentage or app_doc.percentage},
-                {"label": "12th Board", "value": app_doc.class_xii_board},
-                {"label": "12th Year", "value": app_doc.class_xii_year_of_completion},
-                {"label": "HSC Group", "value": app_doc.hsc_group},
-            ],
-            "application": [
-                {"label": "Application ID", "value": app_doc.applicant_id or app_doc.name},
-                {"label": "Program", "value": app_doc.program},
-                {"label": "Admission Cycle", "value": app_doc.admission_cycle},
-                {"label": "Fee Status", "value": app_doc.application_fee_status},
-                {"label": "Reservation Category", "value": app_doc.reservation_category},
-            ],
-            "admission_results": entry.get("results", []),
-            "merit_list": entry.get("merit", []),
-            "can_edit": (status == "Draft"),
-            "active_stage": app_doc.current_stage
+                {"label": "Full Name", "value": app_doc.candidate_name}
+            ]
         }
-        
-        # Build action buttons for this summary (use ?applicant= so form loads with data)
-        app_form_url = "/application_form?applicant=" + app_doc.name
-        view_app_url = "/view_application?name=" + app_doc.name
-        actions = []
-        if status == "Draft":
-            actions.append({"label": "Continue Application", "url": app_form_url, "type": "primary"})
-        elif status == "Offer Issued":
-            actions.append({"label": "Accept Offer", "url": app_form_url, "type": "success"})
-            actions.append({"label": "View Application", "url": view_app_url, "type": "outline"})
-            if program_slug:
-                actions.append({"label": "View Program", "url": "/admission/" + program_slug, "type": "outline"})
-        else:
-            # Submitted or other status: allow viewing application (read-only page)
-            actions.append({"label": "View Application", "url": view_app_url, "type": "primary"})
-            if program_slug:
-                actions.append({"label": "View Program", "url": "/admission/" + program_slug, "type": "outline"})
-        summary["action_buttons"] = actions
-
         applications.append(summary)
-        
-        # Set active app if it matches target or if it's the first one
-        if target_app_id == app_doc.name or not active_app_summary:
-            active_app_summary = summary
 
     context.applications = applications
-    context.active_app = active_app_summary
-    context.no_cache = 1
-    context.title = "My Applications"
-
-    # ── Offer letters: only applications that have an Offer Letter ─────────
-    _set_offer_letter_entries(context)
+    return context

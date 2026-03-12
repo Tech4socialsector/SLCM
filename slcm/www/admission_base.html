@@ -574,27 +574,26 @@
                 Login / Apply
             </a>
 
-            {% else %}
-            <!-- Logged in: avatar circle + full name + dropdown -->
-            {% set _applicant_photo = frappe.db.get_value("Applicant", {"email": _nav_user}, "candidate_photo") %}
-            {% set _user_image_raw = _applicant_photo or frappe.db.get_value("User", _nav_user, "user_image") %}
-            {% set _user_image = (_user_image_raw if (_user_image_raw and (_user_image_raw.startswith('http') or
-            _user_image_raw.startswith('/') or _user_image_raw.startswith('data:'))) else ('/files/' + _user_image_raw
-            if _user_image_raw else '')) %}
-            {% set _full_name = frappe.db.get_value("User", _nav_user, "full_name") or _nav_user %}
-            <div class="adm-avatar-wrap" style="position:relative; display:flex; align-items:center; gap:10px;">
-                <button id="adm-avatar-btn" onclick="toggleAvatarMenu(event)" style="width:38px;height:38px;border-radius:50%;
+                {% else %}
+                <!-- Logged in: avatar circle + full name + dropdown -->
+                {% set _user_info = frappe.db.get_value("User", _nav_user, ["full_name", "user_image"], as_dict=True) or {} %}
+                {% set _full_name = _user_info.full_name or _nav_user %}
+                {% set _user_img = _user_info.user_image %}
+                <div class="adm-avatar-wrap" style="position:relative; display:flex; align-items:center; gap:10px;">
+                  <button id="adm-avatar-btn"
+                          onclick="toggleAvatarMenu(event)"
+                          style="width:38px;height:38px;border-radius:50%;
                                  background:rgba(255,255,255,0.15);color:white;
                                  border:2px solid rgba(255,255,255,0.3);
                                  font-weight:800;font-size:15px;cursor:pointer;
                                  display:flex;align-items:center;justify-content:center;
-                                 transition:all 0.2s;
-                                 overflow:hidden; padding:0;" title="{{ _nav_user }}" aria-haspopup="true"
-                    aria-expanded="false">
-                    {% if _user_image %}
-                    <img src="{{ _user_image }}" style="width:100%; height:100%; object-fit:cover;">
+                                 transition:all 0.2s; overflow:hidden; padding:0;"
+                          title="{{ _nav_user }}"
+                          aria-haspopup="true" aria-expanded="false">
+                    {% if _user_img %}
+                      <img src="{{ _user_img }}" id="adm-avatar-img" style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
-                    {{ _first_letter }}
+                      <span id="adm-avatar-init">{{ _first_letter }}</span>
                     {% endif %}
                 </button>
                 <span style="color:white; font-size:13px; font-weight:600; opacity:0.95; cursor:pointer;"

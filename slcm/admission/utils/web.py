@@ -195,7 +195,7 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
             "name", "stage_name", "stage_type", "stage_code",
             "sequence_no", "start_date", "end_date", "applicable_workflow",
             "action_label", "action_url", "requires_applicant_action",
-            "application_status"
+            "activate_status", "completed_status", "closed_status"
         ],
         order_by="sequence_no asc"
     )
@@ -203,7 +203,7 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
     # Filter stages by intake_type
     # Admission Cycle Stage.applicable_workflow matches Applicant.intake_type
     # If applicable_workflow is "All", it shows for everyone.
-    intake = applicant.intake_type or "CLAT"
+    intake = applicant.intake_type or "External Test"
     filtered_stages = [
         s for s in all_stages
         if s.applicable_workflow == "All" or s.applicable_workflow == intake
@@ -213,17 +213,25 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
         return {"stages": [], "progress_pct": 0, "current_status": applicant.application_status}
 
     # Find the active stage by matching application_status
-    # If multiple stages match, we usually take the latest one or the one currently relevant.
-    # We will look for an exact match first.
+    # We look for the furthest stage that matches the current status.
     current_status = applicant.application_status
     active_index = -1
+    is_terminal_stop = False
+    is_completed_stop = False
     
     for i, s in enumerate(filtered_stages):
-        if s.application_status == current_status:
+        if s.activate_status == current_status:
             active_index = i
-            # Don't break yet, in case multiple match, we might want the last one? 
-            # Or usually first one in timeline. Let's take the first one found.
-            break
+            is_terminal_stop = False
+            is_completed_stop = False
+        elif s.completed_status == current_status:
+            active_index = i
+            is_terminal_stop = False
+            is_completed_stop = True
+        elif s.closed_status == current_status:
+            active_index = i
+            is_terminal_stop = True
+            is_completed_stop = False
 
     # If no exact match, we might need a fallback. 
     # For now, if no match, assume it's before the first stage or past the last.
@@ -237,7 +245,12 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
             if i < active_index:
                 state = "completed"
             elif i == active_index:
-                state = "active"
+                if is_terminal_stop:
+                    state = "closed"
+                elif is_completed_stop:
+                    state = "completed"
+                else:
+                    state = "active"
                 found_active = True
             else:
                 state = "pending"

@@ -97,7 +97,7 @@
             <h1 style="margin: 0; font-weight: 700; color: var(--primary);">{{ _("Hello") }}, {{
                 applicant.candidate_name }}
             </h1>
-            <p style="color: #718096; margin-top: 5px;">{{ _("Application ID") }}: <strong>{{ applicant.name }}</strong>
+            <p style="color: #718096; margin-top: 5px;">{{ _("Application No") }}: <strong>{{ applicant.name }}</strong>
             </p>
         </div>
         <div style="text-align: right;">
@@ -178,13 +178,22 @@
                     {% for doc in documents %}
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
                         <div
-                            style="width: 32px; height: 32px; background: #f0fff4; color: #38a169; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="3">
-                                <polyline points="20 6 9 17 4 12" />
+                            style="width: 32px; height: 32px; background: {{ '#f0fff4' if doc.is_uploaded else '#fff5f5' }}; color: {{ '#38a169' if doc.is_uploaded else '#e53e3e' }}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            {% if doc.is_uploaded %}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"/>
                             </svg>
+                            {% else %}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            {% endif %}
                         </div>
-                        <span style="font-size: 14px; color: #4a5568;">{{ doc.document_name }}</span>
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-size: 14px; color: #4a5568;">{{ doc.document_name }}</span>
+                            <span style="font-size: 11px; color: {{ '#38a169' if doc.is_uploaded else '#e53e3e' }}; font-weight: 600;">{{ doc.verification_status }}</span>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>

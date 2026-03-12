@@ -92,7 +92,7 @@
    "fieldname": "applicable_workflow",
    "fieldtype": "Select",
    "label": "Applicable Workflow",
-   "options": "All\nCLAT\nNLSAT\nDirect Merit",
+   "options": "All\nExternal Test\nInternal Test\nDirect Merit",
    "default": "All",
    "in_list_view": 1,
    "reqd": 0

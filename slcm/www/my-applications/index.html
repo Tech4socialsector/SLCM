@@ -379,10 +379,21 @@
     animation: pulse-ring 2s ease-in-out infinite;
   }
 
+  .stage-circle.closed {
+    background: var(--danger);
+    box-shadow: 0 0 0 2px var(--danger);
+    color: white;
+  }
+
   .stage-circle.pending {
     background: #f9fafb;
     box-shadow: 0 0 0 2px var(--border);
     color: var(--text-4);
+  }
+
+  .stage-label.closed {
+    color: var(--danger);
+    font-weight: 700;
   }
 
   .stage-arrow {
@@ -1580,8 +1591,8 @@ or _app.current_stage)) or _status %}
     </div>
 
     <!-- ╔══════════════════════════════════════════════╗
-       ║  APPLICATION SUMMARY CARD                    ║
-       ╚══════════════════════════════════════════════╝ -->
+         ║  APPLICATION SUMMARY CARD                    ║
+         ╚══════════════════════════════════════════════╝ -->
     <div class="app-summary-card fade-up" style="animation-delay:.06s">
 
       <!-- Header -->
@@ -1589,7 +1600,7 @@ or _app.current_stage)) or _status %}
         <div class="app-top-row">
           <div>
             <div class="app-id-row" style="margin-bottom:6px">
-              {# Status badge #}
+              <!-- {# Status badge #}
               {% if _status in ['Selected','Accepted','Offer Accepted'] %}
               <span class="status-badge" style="background:#dcfce7;color:#16a34a;">
                 <span class="status-dot" style="background:#16a34a;"></span>{{ _status }}
@@ -1610,13 +1621,13 @@ or _app.current_stage)) or _status %}
               <span class="status-badge" style="background:#f3f4f6;color:#6b7280;">
                 <span class="status-dot" style="background:#6b7280;"></span>{{ _status }}
               </span>
-              {% endif %}
+              {% endif %} -->
             </div>
             <div class="app-program-name">{{ _prog }}</div>
             <div class="app-id-row" style="margin-top:6px">
-              <span class="app-id-chip">{{ _appid }}</span>
-              <span class="app-submitted-date">Submitted {{ _subdate }}</span>
-              {% if _cycle %}<span class="app-submitted-date">· {{ _cycle }}</span>{% endif %}
+              <span class="app-id-chip">Application No: {{ _appid }}</span>
+              <span class="app-submitted-date">Submitted On: {{ _subdate }}</span>
+              {% if _cycle %}<span class="app-submitted-date">Admission Cycle: {{ _cycle }}</span>{% endif %}
             </div>
           </div>
           <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
@@ -1646,9 +1657,16 @@ or _app.current_stage)) or _status %}
       <!-- Stage Tracker -->
       {% if _stages %}
       <div class="stage-track-wrap">
-        {% set ns = namespace(done=0) %}
+        {% set ns = namespace(done=0, stopped=false) %}
         {% for s in _stages %}
-        {% if s.state in ['completed','active'] %}{% set ns.done = ns.done + 1 %}{% endif %}
+        {% if not ns.stopped %}
+        {% if s.state in ['completed', 'active', 'closed'] %}
+        {% set ns.done = ns.done + 1 %}
+        {% endif %}
+        {% if s.state in ['active', 'closed'] %}
+        {% set ns.stopped = true %}
+        {% endif %}
+        {% endif %}
         {% endfor %}
         {% set _pct = ((ns.done / _stages|length) * 100)|int %}
 
@@ -1665,6 +1683,8 @@ or _app.current_stage)) or _status %}
               <span class="material-symbols-outlined" style="font-size:18px">check</span>
               {% elif _sstate == 'active' %}
               <span class="material-symbols-outlined" style="font-size:18px">sync</span>
+              {% elif _sstate == 'closed' %}
+              <span class="material-symbols-outlined" style="font-size:18px">close</span>
               {% else %}
               <span class="material-symbols-outlined" style="font-size:18px">radio_button_unchecked</span>
               {% endif %}
@@ -1675,8 +1695,9 @@ or _app.current_stage)) or _status %}
             <span class="stage-label {{ _sstate }}">{{ _slabel }}</span>
           </div>
           {% endfor %}
-        </div>
-      </div>
+
+        </div><!-- end stage-track -->
+      </div><!-- end stage-track-wrap -->
       {% endif %}
 
       <!-- Quick Status Row -->
@@ -1691,18 +1712,18 @@ or _app.current_stage)) or _status %}
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined">record_voice_over</span>
-            Interview
+            Interview On
           </span>
           {% if interview_status %}
-          <span class="qs-value pending">{{ interview_status }}</span>
+          <span class="qs-value pending">{{ interview_date }}</span>
           {% else %}
           <span class="qs-value muted">Not Scheduled</span>
           {% endif %}
         </div>
         <div class="qs-item">
           <span class="qs-label">
-            <span class="material-symbols-outlined">payments</span>
-            Payment
+            <span class="material-symbols-outlined"></span>
+            Application Fee
           </span>
           {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
           <span class="qs-value success">{{ fee_payment_status }}</span>
@@ -1718,8 +1739,8 @@ or _app.current_stage)) or _status %}
     </div><!-- end app-summary-card -->
 
     <!-- ╔══════════════════════════════════════════════╗
-       ║  MERIT RESULT & SEAT ALLOCATION              ║
-       ╚══════════════════════════════════════════════╝ -->
+         ║  MERIT RESULT & SEAT ALLOCATION              ║
+         ╚══════════════════════════════════════════════╝ -->
     <div class="ma-card merit-seat-card fade-up" style="animation-delay:.12s">
       <div class="ma-card-head">
         <div class="ma-card-title">
@@ -1757,11 +1778,13 @@ or _app.current_stage)) or _status %}
           <div
             style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 12px;">
             Seat Allocation Result</div>
-          {% if all_results and all_results|length > 0 %} {% set r = all_results[0] %}
-          <span class="merit-chip">{{ r.selection_status }}</span>
+          {% if all_results and all_results|length > 0 %}
+          {% set r = all_results[0] %}
+
           <div class="seat-info-box">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
               <span class="seat-prog-name">{{ _prog }}</span>
+              <span class="merit-chip" style="position: static;">{{ r.selection_status }}</span>
             </div>
             <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
               <div
@@ -1769,7 +1792,7 @@ or _app.current_stage)) or _status %}
                 Allocated Category</div>
               <div
                 style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
-                <span class="material-symbols-outlined" style="font-size: 20px;">category</span>
+                <!-- <span class="material-symbols-outlined" style="font-size: 20px;">category</span> -->
                 {{ r.allocated_category or 'General' }}
               </div>
             </div>
@@ -1781,17 +1804,7 @@ or _app.current_stage)) or _status %}
           </div>
 
           {% if r.selection_status in ['Selected','Offered'] %}
-          <!-- <div class="seat-action-row">
-            <button class="btn-accept"
-              onclick="handleSeatAction('accept','{{ _appid }}')">
-              <span class="material-symbols-outlined">check</span>
-              Accept Seat
-            </button>
-            <button class="btn-decline" onclick="handleSeatAction('decline','{{ _appid }}')">
-              <span class="material-symbols-outlined">close</span>
-              Decline
-            </button>
-          </div> -->
+          <!-- Accept/Decline buttons commented out intentionally -->
           {% elif r.selection_status == 'Accepted' %}
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
             <span class="material-symbols-outlined"
@@ -1808,13 +1821,13 @@ or _app.current_stage)) or _status %}
             <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
           </div>
           {% endif %}
-        </div>
-      </div>
-    </div>
+        </div><!-- end seat-panel -->
+      </div><!-- end ma-card-body -->
+    </div><!-- end merit-seat-card -->
 
     <!-- ╔══════════════════════════════════════════════╗
-       ║  DOCUMENTS + NEXT STEPS                      ║
-       ╚══════════════════════════════════════════════╝ -->
+         ║  DOCUMENTS + NEXT STEPS                      ║
+         ╚══════════════════════════════════════════════╝ -->
     <div class="doc-nextsteps-grid fade-up" style="animation-delay:.18s">
 
       <!-- Documents Checklist -->
@@ -1832,39 +1845,31 @@ or _app.current_stage)) or _status %}
         </div>
 
         <div class="doc-list">
-          {% if _docs %}
-          {% for doc in _docs %}
-          {% set _dfurl = (doc.get('file_url') if doc.get else doc.file_url) or '' %}
-          {% set _dvs = (doc.get('verification_status') if doc.get else doc.verification_status) or '' %}
-          {% set _dname = (doc.get('document_name') or doc.get('document_type') if doc.get else (doc.document_name or
-          doc.document_type)) or 'Document' %}
-          {% set _is_done = _dfurl or _dvs in ['Verified','Approved','Uploaded'] %}
-          <div class="doc-row">
+          {% if app_documents %}
+          {% for doc in app_documents %}
+          {% set _is_done = doc.is_uploaded %}
+          <div class="doc-row"
+            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
             <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
-            <span class="doc-name">{{ _dname }}</span>
-            {% if _dfurl %}
-            <a href="{{ _dfurl }}" target="_blank" class="doc-view-link">View</a>
-            {% endif %}
+            <span class="doc-name">{{ doc.document_name }}</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              {% if doc.file_url %}
+              <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
+                onclick="event.stopPropagation()">View</a>
+              {% endif %}
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
+                {% if _is_done %}edit_square{% else %}upload{% endif %}
+              </span>
+            </div>
           </div>
           {% endfor %}
           {% else %}
-          {# Placeholder items matching image style #}
-          {% for doc_placeholder in ['10th Marksheet', '12th Marksheet', 'CLAT Scorecard', 'Income Certificate'] %}
-          <div class="doc-row">
-            <div class="doc-checkbox"></div>
-            <span class="doc-name">{{ doc_placeholder }}</span>
+          <div style="padding: 20px; text-align: center; color: var(--text-4); font-size: 13px;">
+            No documents required.
           </div>
-          {% endfor %}
           {% endif %}
         </div>
-
-        <div class="doc-card-foot">
-          <a href="/my-applications?app={{ _appid }}&section=documents" class="btn-upload">
-            <span class="material-symbols-outlined">upload</span>
-            Upload Documents
-          </a>
-        </div>
-      </div>
+      </div><!-- end documents card -->
 
       <!-- Next Steps -->
       <div class="ma-card">
@@ -1896,7 +1901,6 @@ or _app.current_stage)) or _status %}
           </div>
           {% endfor %}
           {% else %}
-          {# Fallback next steps from image #}
           <div class="ns-item">
             <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
             <span class="ns-text">Pay Admission Fee</span>
@@ -1912,7 +1916,6 @@ or _app.current_stage)) or _status %}
           {% endif %}
         </div>
 
-        <!-- Deadline row -->
         {% if _steps %}
         <div class="ns-deadline-row">
           <span class="material-symbols-outlined">calendar_today</span>
@@ -1921,13 +1924,13 @@ or _app.current_stage)) or _status %}
           </span>
         </div>
         {% endif %}
-      </div>
+      </div><!-- end next steps card -->
 
     </div><!-- end doc-nextsteps-grid -->
 
     <!-- ╔══════════════════════════════════════════════╗
-       ║  ENTRANCE TEST CARD                          ║
-       ╚══════════════════════════════════════════════╝ -->
+         ║  ENTRANCE TEST CARD                          ║
+         ╚══════════════════════════════════════════════╝ -->
     {% if et_doc %}
     <div class="ma-card fade-up" style="animation-delay:.22s">
       <div class="ma-card-head">
@@ -2054,9 +2057,8 @@ or _app.current_stage)) or _status %}
     {% endif %}
 
     <!-- ╔══════════════════════════════════════════════╗
-       ║  INTERVIEW + ELIGIBILITY RESULT (same width)  ║
-       ╚══════════════════════════════════════════════╝ -->
-    <div class="doc-nextsteps-grid fade-up" style="animation-delay:.26s">
+         ║  INTERVIEW CARD                              ║
+         ╚══════════════════════════════════════════════╝ -->
     {% if interview_doc %}
     <div class="interview-eligibility-cell">
     <div class="ma-card">
@@ -2065,51 +2067,84 @@ or _app.current_stage)) or _status %}
           <span class="ico"><span class="material-symbols-outlined">groups</span></span>
           Interview Assessment
         </div>
+        {% set i_status = interview_doc.interview_status %}
+        {% if i_status and i_status != 'Scheduled' %}
+        {% if i_status == 'Absent' %}
+        <span class="status-badge" style="background:#fee2e2;color:#dc2626">ABSENT</span>
+        {% elif i_status == 'Attended' %}
+        <span class="status-badge" style="background:#dcfce7;color:#16a34a">ATTENDED</span>
+        {% else %}
+        <span class="status-badge" style="background:#f0fdf4;color:#166534">{{ i_status|upper
+          }}</span>
+        {% endif %}
+        {% else %}
         <span class="status-badge" style="background:#f0fdf4;color:#166534">
           {{ (interview_doc.re_interview_slot_status if interview_is_rescheduled else
           interview_doc.interview_slot_status)|upper }}
         </span>
+        {% endif %}
       </div>
-      {% set i_status = interview_doc.interview_status %}
-      {% if i_status and i_status != 'Scheduled' %}
-      {% if i_status == 'Absent' %}
-      <span class="status-badge" style="background:#fee2e2;color:#dc2626">ABSENT</span>
-      {% elif i_status == 'Attended' %}
-      <span class="status-badge" style="background:#dcfce7;color:#16a34a">ATTENDED</span>
-      {% else %}
-      <span class="status-badge" style="background:#f0fdf4;color:#166534">{{ i_status|upper }}</span>
-      {% endif %}
-      {% else %}
-      <span class="status-badge" style="background:#f0fdf4;color:#166534">
-        {{ (interview_doc.re_interview_slot_status if interview_is_rescheduled else
-        interview_doc.interview_slot_status)|upper }}
-      </span>
-      {% endif %}
-    </div>
-    <div class="ma-card-body">
-      {% if interview_show_result %}
-      <div class="result-banner">
-        <div class="result-banner-head">
-          <span class="result-banner-title">Assessment Outcome</span>
-          <span class="result-banner-badge">VERIFIED</span>
-        </div>
-        <div class="result-score-grid">
-          <div class="result-score-box">
-            <div class="lbl">Score</div>
-            <div class="val">{{ interview_doc.interview_score or '0' }} <small
-                style="font-size:13px;color:var(--text-3)">/ 100</small></div>
+      <div class="ma-card-body">
+        {% if interview_show_result %}
+        <div class="result-banner">
+          <div class="result-banner-head">
+            <span class="result-banner-title">Assessment Outcome</span>
+            <span class="result-banner-badge">VERIFIED</span>
           </div>
-          <div class="result-score-box">
-            <div class="lbl">Status</div>
-            <div class="val green" style="font-size:14px">{{ interview_doc.interview_result_status or 'Declared' }}
+          <div class="result-score-grid">
+            <div class="result-score-box">
+              <div class="lbl">Score</div>
+              <div class="val">{{ interview_doc.interview_score or '0' }} <small
+                  style="font-size:13px;color:var(--text-3)">/ 100</small></div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Status</div>
+              <div class="val green" style="font-size:14px">{{ interview_doc.interview_result_status or 'Declared' }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      {% if interview_show_feedback %}
-      <div style="margin-top:14px">
-        <div style="font-size:12px;font-weight:600;color:#166534;margin-bottom:8px">Your Feedback</div>
-        {% if interview_feedback_submitted %}
+        {% if interview_show_feedback %}
+        <div style="margin-top:14px">
+          <div style="font-size:12px;font-weight:600;color:#166534;margin-bottom:8px">Your Feedback</div>
+          {% if interview_feedback_submitted %}
+          <div
+            style="background:#f9fafb;border-radius:9px;padding:12px;font-size:12px;color:var(--text-3);font-style:italic">
+            {{ interview_doc.feedback }}
+          </div>
+          {% else %}
+          <div id="interview-feedback-form">
+            <textarea id="interviewFeedbackText" rows="3"
+              style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px"
+              placeholder="Share your interview experience..."></textarea>
+            <button id="btnSubmitInterviewFeedback"
+              style="width:100%;margin-top:8px;height:38px;border-radius:8px;background:var(--primary);color:white;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer">
+              Submit Feedback
+            </button>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        {% if interview_current_slot %}
+        <div class="info-grid-2" style="margin-bottom:14px">
+          <div class="info-tile">
+            <div class="info-tile-label">Panelist</div>
+            <div class="info-tile-value">{{ interview_current_slot.staff_name or 'TBA' }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Date</div>
+            <div class="info-tile-value">{{ interview_current_slot.interview_date }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Reporting</div>
+            <div class="info-tile-value red">{{ interview_current_slot.reporting_time }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Slot Time</div>
+            <div class="info-tile-value blue">{{ interview_current_slot.interview_time }}</div>
+          </div>
+        </div>
         <div
           style="background:#f9fafb;border-radius:9px;padding:12px;font-size:12px;color:var(--text-3);font-style:italic">
           {{ interview_doc.feedback }}</div>
@@ -2179,62 +2214,75 @@ or _app.current_stage)) or _status %}
       {% endif %}
       {% endif %}
     </div>
-  </div>
-  </div><!-- end interview-eligibility-cell -->
-  {% endif %}
-  {% if eligibility_result %}
-  {% set _er_status = (eligibility_result.result_status or '—')|string %}
-  {% set _er_qualified = _er_status.lower() in ['qualified', 'pass', 'passed', 'selected', 'eligible'] %}
-  <div class="ma-card eligibility-result-card">
-    <div class="ma-card-head">
-      <div class="ma-card-title">
-        <span class="ico"><span class="material-symbols-outlined">assignment_turned_in</span></span>
-        Eligibility Result
-      </div>
-      <span class="status-badge" style="background:{{ '#dcfce7' if _er_qualified else '#dbeafe' }};color:{{ '#166534' if _er_qualified else '#1d4ed8' }}">
-        {{ _er_status|upper }}
-      </span>
-    </div>
-    <div class="ma-card-body">
-      <div class="result-banner">
-        <div class="result-banner-head">
-          <span class="result-banner-title">Combined Assessment</span>
-          <span class="result-banner-badge">VERIFIED</span>
-        </div>
-        <div class="result-score-grid">
-          <div class="result-score-box">
-            <div class="lbl">Entrance Score</div>
-            <div class="val">{{ eligibility_result.entrance_test_score or '0' }}</div>
-          </div>
-          <div class="result-score-box">
-            <div class="lbl">Interview Score</div>
-            <div class="val {{ 'green' if _er_qualified else '' }}">{{ eligibility_result.interview_score or '0' }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
-          </div>
-        </div>
-        <div class="eligibility-meta-row">
-          <span class="eligibility-meta-item">
-            <span class="material-symbols-outlined eligibility-meta-icon">source</span>
-            {{ eligibility_result.source_type or '—' }}
-          </span>
-          <span class="eligibility-meta-item {{ 'status-qualified' if _er_qualified else '' }}">
-            <span class="material-symbols-outlined eligibility-meta-icon">verified</span>
-            {{ _er_status }}
-          </span>
+    {% endif %}
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  ELIGIBILITY RESULT CARD                     ║
+         ╚══════════════════════════════════════════════╝ -->
+    {% if eligibility_result %}
+    <div class="ma-card fade-up" style="animation-delay:.28s">
+      <div class="ma-card-head">
+        <div class="ma-card-title">
+          <span class="ico"><span class="material-symbols-outlined">assignment_turned_in</span></span>
+          Eligibility Result
         </div>
       </div>
+      <div class="ma-card-body" style="padding: 0;">
+        <!-- Scores Section -->
+        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em;">
+          Scores
+        </div>
+        <div class="info-grid-2" style="padding: 20px 22px; border-bottom: 1px solid var(--border);">
+          <div class="info-tile">
+            <div class="info-tile-label">Entrance Score</div>
+            <div class="info-tile-value">{{ eligibility_result.entrance_test_score or '0' }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Interview Score</div>
+            <div class="info-tile-value">{{ eligibility_result.interview_score or '0' }}</div>
+          </div>
+        </div>
+
+        <!-- Status Section -->
+        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em;">
+          Status
+        </div>
+        <div class="info-grid-2" style="padding: 20px 22px;">
+          <div class="info-tile">
+            <div class="info-tile-label">Source</div>
+            <div class="info-tile-value">{{ eligibility_result.source_type or '—' }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Result Status</div>
+            <div class="info-tile-value blue">{{ eligibility_result.result_status or '—' }}</div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-  {% endif %}
-  </div><!-- end doc-nextsteps-grid (Interview + Eligibility Result) -->
+    {% endif %}
 
-  <!-- ╔══════════════════════════════════════════════╗
-       ║  DOWNLOAD APPLICATION ROW                    ║
-       ╚══════════════════════════════════════════════╝ -->
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  DOWNLOAD APPLICATION ROW                    ║
+         ╚══════════════════════════════════════════════╝ -->
+    <div class="fade-up" style="animation-delay:.3s;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+      {% if app_name_param %}
+      <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
+        target="_blank" class="btn-download">
+        <span class="material-symbols-outlined">download</span>
+        Download Application
+      </a>
+      {% endif %}
+      {% if offer_letter_url %}
+      <a href="{{ offer_letter_url }}" target="_blank" class="btn-download"
+        style="background:var(--text-1);color:white;border-color:var(--text-1)">
+        <span class="material-symbols-outlined">drafts</span>
+        Download Offer Letter
+      </a>
+      {% endif %}
+    </div>
 
-
-</div><!-- end ma-inner -->
+  </div><!-- end ma-inner -->
 </div><!-- end ma-page -->
-
 
 {# ══════════════════════════════════════════════════════════════════
 LIST / DASHBOARD VIEW
@@ -2265,8 +2313,18 @@ LIST / DASHBOARD VIEW
     <div class="prof-wrap fade-up">
 
       <div class="prof-sidebar">
-        <div class="prof-avatar">
-          {%- if _pphoto -%}<img src="{{ _pphoto }}" alt="{{ _pinitial }}">{%- else -%}{{ _pinitial }}{%- endif -%}
+        <div class="prof-avatar" id="prof-avatar-circle"
+          onclick="openUploadModal('Photo', 'Photo', 'candidate_photo', '', 'field')"
+          style="cursor:pointer; position:relative;" title="Click to change photo">
+          {%- if _pphoto -%}
+          <img src="{{ _pphoto }}" id="prof-avatar-img" alt="{{ _pinitial }}">
+          {%- else -%}
+          <span id="prof-avatar-init">{{ _pinitial }}</span>
+          {%- endif -%}
+          <div
+            style="position:absolute; bottom:0; right:0; background:var(--primary); color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;">
+            <span class="material-symbols-outlined" style="font-size:12px;">photo_camera</span>
+          </div>
         </div>
         <div class="prof-name-display">{{ _pname }}</div>
         <div class="prof-email-display">{{ frappe.session.user }}</div>
@@ -2294,7 +2352,7 @@ LIST / DASHBOARD VIEW
         <button class="prof-action danger" onclick="doLogout()">
           <span class="material-symbols-outlined">logout</span>Logout
         </button>
-      </div>
+      </div><!-- end prof-sidebar -->
 
       <div class="prof-main">
         <div class="prof-section-card">
@@ -2303,65 +2361,76 @@ LIST / DASHBOARD VIEW
               <span class="material-symbols-outlined">badge</span>Personal Details
             </div>
             <button class="prof-edit-btn" onclick="openEditModal()">
-              <span class="material-symbols-outlined">edit</span>Edit
+              <span class="material-symbols-outlined">edit</span>Edit All
             </button>
           </div>
-          <div class="prof-field-grid">
-            <div class="prof-field">
-              <div class="prof-fl">Full Name</div>
-              <div class="prof-fv" id="disp-name">{{ prof_candidate_name or '—' }}</div>
-            </div>
-            <div class="prof-field">
-              <div class="prof-fl">Date of Birth</div>
-              <div class="prof-fv" id="disp-dob">
-                {%- if prof_dob -%}{{ frappe.utils.formatdate(prof_dob,'dd MMM, yyyy') }}{%- else -%}<span
-                  class="empty">Not set</span>{%- endif -%}
+          <div class="doc-list" style="border-top: 1px solid var(--border);">
+            {% set profile_fields = [
+            {'label': 'Full Name', 'value': prof_candidate_name, 'id': 'disp-name'},
+            {'label': 'Date of Birth', 'value': prof_dob, 'id': 'disp-dob'},
+            {'label': 'Gender', 'value': prof_gender, 'id': 'disp-gender'},
+            {'label': 'Nationality', 'value': prof_nationality, 'id': 'disp-nationality'},
+            {'label': 'Religion', 'value': prof_religion, 'id': 'disp-religion'},
+            {'label': 'Mobile Number', 'value': prof_mobile, 'id': 'disp-mobile'},
+            {'label': 'Alternate Contact', 'value': prof_alternate_contact, 'id': 'disp-alternate'},
+            {'label': 'Correspondence Address', 'value': prof_address, 'id': 'disp-address'}
+            ] %}
+            {% for pf in profile_fields %}
+            <div class="doc-row" onclick="openEditModal()">
+              <div class="doc-checkbox {% if pf.value %}checked{% endif %}"></div>
+              <div style="flex:1;">
+                <div class="prof-fl" style="margin-bottom:0;">{{ pf.label }}</div>
+                <div class="prof-fv" id="{{ pf.id }}">
+                  {% if pf.id == 'disp-dob' and pf.value %}
+                  {{ frappe.utils.formatdate(pf.value,'dd MMM, yyyy') }}
+                  {% else %}
+                  {{ pf.value or '<span class="empty">Not set</span>'|safe }}
+                  {% endif %}
+                </div>
               </div>
+              <span class="material-symbols-outlined"
+                style="font-size:18px; color:var(--primary); cursor:pointer;">edit</span>
             </div>
-            <div class="prof-field">
-              <div class="prof-fl">Gender</div>
-              <div class="prof-fv" id="disp-gender">{{ prof_gender or '<span class="empty">Not set</span>' }}</div>
-            </div>
-            <div class="prof-field">
-              <div class="prof-fl">Nationality</div>
-              <div class="prof-fv" id="disp-nationality">{{ prof_nationality or '<span class="empty">Not set</span>' }}
-              </div>
-            </div>
-            <div class="prof-field">
-              <div class="prof-fl">Religion</div>
-              <div class="prof-fv" id="disp-religion">{{ prof_religion or '<span class="empty">Not set</span>' }}</div>
-            </div>
-            <div class="prof-subsection">Contact Information</div>
-            <div class="prof-field">
-              <div class="prof-fl">Email Address</div>
-              <div class="prof-fv">{{ frappe.session.user }}</div>
-            </div>
-            <div class="prof-field">
-              <div class="prof-fl">Mobile Number</div>
-              <div class="prof-fv" id="disp-mobile">{{ prof_mobile or '<span class="empty">Not set</span>' }}</div>
-            </div>
-            <div class="prof-field">
-              <div class="prof-fl">Alternate Contact</div>
-              <div class="prof-fv" id="disp-alternate">{{ prof_alternate_contact or '<span class="empty">Not set</span>'
-                }}</div>
-            </div>
-            <div class="prof-field">
-              <div class="prof-fl">ID Proof</div>
-              <div class="prof-fv" id="disp-idproof">{{ prof_id_proof or '<span class="empty">Not set</span>' }}</div>
-            </div>
-            <div class="prof-field-full">
-              <div class="prof-fl">Correspondence Address</div>
-              <div class="prof-fv" id="disp-address">
-                {%- if prof_address -%}
-                {{ prof_address }}{%- if prof_city -%}, {{ prof_city }}{%- endif -%}{%- if prof_state -%}, {{ prof_state
-                }}{%- endif -%}{%- if prof_pincode %} — {{ prof_pincode }}{%- endif -%}
-                {%- else -%}<span class="empty">Not set</span>{%- endif -%}
-              </div>
-            </div>
+            {% endfor %}
           </div>
         </div>
-      </div>
-    </div>
+
+        <!-- Document Checklist in Profile -->
+        <div class="prof-section-card" style="margin-top:18px;">
+          <div class="prof-section-head">
+            <div class="prof-section-title">
+              <span class="material-symbols-outlined">folder_open</span>Document Status
+            </div>
+          </div>
+          <div class="doc-list">
+            {% if app_documents %}
+            {% for doc in app_documents %}
+            {% set _is_done = doc.is_uploaded %}
+            <div class="doc-row"
+              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
+              <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
+              <span class="doc-name">{{ doc.document_name }}</span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                {% if doc.file_url %}
+                <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
+                  onclick="event.stopPropagation()">View</a>
+                {% endif %}
+                <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
+                  {% if _is_done %}edit_square{% else %}upload{% endif %}
+                </span>
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="padding: 20px; text-align: center; color: var(--text-4); font-size: 13px;">
+              No documents required.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div><!-- end prof-main -->
+
+    </div><!-- end prof-wrap -->
 
     {# ── EDIT MODAL #}
     <div class="prof-overlay" id="editOverlay">
@@ -2410,8 +2479,21 @@ LIST / DASHBOARD VIEW
                 placeholder="Street address">{{ prof_address or '' }}</textarea></div>
           </div>
           <div class="pef-row">
-            <div class="pef"><label>City</label><input type="text" id="edit-city" value="{{ prof_city or '' }}"></div>
-            <div class="pef"><label>State</label><input type="text" id="edit-state" value="{{ prof_state or '' }}">
+            <div class="pef"><label>State</label>
+              <select id="edit-state" onchange="loadDistricts(this.value)">
+                <option value="">— Select State —</option>
+                {% for s in states %}
+                <option value="{{ s.name }}" {% if prof_state==s.name %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="pef"><label>City (District)</label>
+              <select id="edit-city">
+                <option value="">— Select City —</option>
+                {% for d in districts %}
+                <option value="{{ d.name }}" {% if prof_city==d.name %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
             </div>
           </div>
           <div class="pef-row">
@@ -2510,9 +2592,10 @@ LIST / DASHBOARD VIEW
 
     {% endif %}{# end show_profile / list #}
 
-  </div>
-</div>
-{% endif %}{# end detail/list #}
+  </div><!-- end ma-inner -->
+</div><!-- end ma-page -->
+
+{% endif %}{# end app_not_found / access_denied / show_detail / list #}
 
 {% endblock %}
 
@@ -2525,64 +2608,215 @@ LIST / DASHBOARD VIEW
     }
   }
 </style>
+
+<!-- ── Document Upload Modal ──────────────────────────────────────── -->
+<div id="doc-upload-modal" class="prof-overlay">
+  <div class="prof-modal" style="max-width: 440px;">
+    <div class="prof-modal-head">
+      <h3 id="modal-doc-label">Upload Document</h3>
+      <button class="prof-modal-close" onclick="closeUploadModal()">
+        <span class="material-symbols-outlined" style="font-size:17px">close</span>
+      </button>
+    </div>
+    <div class="prof-modal-body">
+      <p id="modal-doc-type-hint" style="font-size:12px; color:var(--text-3); margin-bottom:16px;">Requirement details
+        will appear here.</p>
+
+      <div class="pef">
+        <label>Select File</label>
+        <input type="file" id="modal-file-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+          onchange="handleModalFileSelect(this)" />
+        <p style="font-size:10px; color:var(--text-4); margin-top:6px;">Accepted: PDF, JPG, PNG, DOC (Max 5MB)</p>
+      </div>
+
+      <div id="upload-progress-wrap" style="display:none; margin-top:16px;">
+        <div class="progress-bar-track" style="height:6px;">
+          <div id="upload-progress-fill" class="progress-bar-fill" style="width:0%"></div>
+        </div>
+        <p id="upload-status-text" style="font-size:11px; color:var(--primary); margin-top:6px; font-weight:600;">
+          Uploading...</p>
+      </div>
+
+      <div id="doc-upload-msg" style="margin-top:14px;font-size:13px;min-height:18px;"></div>
+    </div>
+    <div class="prof-modal-foot">
+      <button class="btn-cancel" onclick="closeUploadModal()">Cancel</button>
+      <button id="doc-upload-btn" class="btn-save" onclick="executeDocumentUpload()" disabled>Start Upload</button>
+    </div>
+  </div>
+</div>
+
 <script>
   (function () {
+    let currentUploadTarget = {
+      label: '', type: '', field: '', docName: '', source: '', file: null
+    };
+
+    window.openUploadModal = function (label, type, field, docName, source) {
+      currentUploadTarget = { label, type, field, docName, source, file: null };
+      document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
+      document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
+      document.getElementById('modal-file-input').value = '';
+      document.getElementById('doc-upload-btn').disabled = true;
+      document.getElementById('doc-upload-msg').textContent = '';
+      document.getElementById('upload-progress-wrap').style.display = 'none';
+      document.getElementById('doc-upload-modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeUploadModal = function () {
+      document.getElementById('doc-upload-modal').classList.remove('open');
+      document.body.style.overflow = '';
+    };
+
+    window.handleModalFileSelect = function (input) {
+      if (input.files && input.files[0]) {
+        currentUploadTarget.file = input.files[0];
+        document.getElementById('doc-upload-btn').disabled = false;
+      } else {
+        currentUploadTarget.file = null;
+        document.getElementById('doc-upload-btn').disabled = true;
+      }
+    };
+
+    window.executeDocumentUpload = async function () {
+      const btn = document.getElementById('doc-upload-btn');
+      const msg = document.getElementById('doc-upload-msg');
+      const progWrap = document.getElementById('upload-progress-wrap');
+      const progFill = document.getElementById('upload-progress-fill');
+
+      if (!currentUploadTarget.file) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
+      progWrap.style.display = 'block';
+      progFill.style.width = '15%';
+
+      try {
+        const fd = new FormData();
+        fd.append('file', currentUploadTarget.file);
+        fd.append('is_private', '1');
+        fd.append('folder', 'Home/Attachments');
+
+        const uploadResp = await fetch('/api/method/upload_file', {
+          method: 'POST',
+          body: fd,
+          headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
+        });
+        const uploadData = await uploadResp.json();
+
+        if (!uploadData.message || !uploadData.message.file_url) {
+          throw new Error('File upload failed');
+        }
+
+        const fileUrl = uploadData.message.file_url;
+        progFill.style.width = '60%';
+
+        if (currentUploadTarget.field) {
+          await apiFetch('slcm.admission.api.profile.update_profile', {
+            [currentUploadTarget.field]: fileUrl
+          });
+        } else {
+          throw new Error('This document type does not map to a profile field.');
+        }
+
+        progFill.style.width = '100%';
+        msg.style.color = 'var(--success)';
+        msg.textContent = '✓ Upload successful. Refreshing...';
+
+        // Immediate UI update for photo
+        if (currentUploadTarget.field === 'candidate_photo') {
+          const avatars = document.querySelectorAll('#prof-avatar-img, #adm-avatar-img');
+          avatars.forEach(img => { img.src = fileUrl; });
+
+          const profCircle = document.getElementById('prof-avatar-circle');
+          if (profCircle && !document.getElementById('prof-avatar-img')) {
+            const init = document.getElementById('prof-avatar-init');
+            if (init) init.remove();
+            const newImg = document.createElement('img');
+            newImg.id = 'prof-avatar-img';
+            newImg.src = fileUrl;
+            newImg.alt = 'Avatar';
+            profCircle.prepend(newImg);
+          }
+
+          const navBtn = document.getElementById('adm-avatar-btn');
+          if (navBtn && !document.getElementById('adm-avatar-img')) {
+            const init = document.getElementById('adm-avatar-init');
+            if (init) init.remove();
+            const newImg = document.createElement('img');
+            newImg.id = 'adm-avatar-img';
+            newImg.src = fileUrl;
+            newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+            navBtn.prepend(newImg);
+          }
+        }
+
+        setTimeout(() => window.location.reload(), 1000);
+
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Retry Upload';
+        msg.style.color = 'var(--danger)';
+        msg.textContent = 'Error: ' + (e.message || 'Unknown error');
+      }
+    };
+
     {% if show_detail %}
     /* ── Detail view: stagger animations ── */
     document.addEventListener('DOMContentLoaded', function () {
       document.querySelectorAll('.fade-up').forEach(function (el) {
         el.style.animationFillMode = 'forwards';
       });
-    });
 
-    /* ── Accept / Decline seat ── */
-    window.handleSeatAction = async function (action, appId) {
-      var msg = action === 'accept'
-        ? 'Accept your seat allocation? This action is binding.'
-        : 'Decline your seat? This cannot be undone.';
-      if (!confirm(msg)) return;
-      try {
-        const message = await apiFetch('slcm.admission.api.seat.handle_seat_action', { applicant: appId, action: action });
-        if (message && message.success) {
-          window.location.reload();
-        } else {
-          alert((message && message.error) || 'Action failed. Please try again.');
+      /* ── Accept / Decline seat ── */
+      window.handleSeatAction = async function (action, appId) {
+        var msg = action === 'accept'
+          ? 'Accept your seat allocation? This action is binding.'
+          : 'Decline your seat? This cannot be undone.';
+        if (!confirm(msg)) return;
+        try {
+          const message = await apiFetch('slcm.admission.api.seat.handle_seat_action', { applicant: appId, action: action });
+          if (message && message.success) {
+            window.location.reload();
+          } else {
+            alert((message && message.error) || 'Action failed. Please try again.');
+          }
+        } catch (e) {
+          alert(e.message || 'Error performing action.');
         }
-      } catch (e) {
-        alert(e.message || 'Error performing action.');
-      }
-    };
-
-    /* ── Entrance test provider selection ── */
-    (function () {
-      var dropdown = document.getElementById('providerDropdown');
-      if (!dropdown) return;
-      var btnSave = document.getElementById('btnSaveProvider');
-      var centerDetails = document.getElementById('centerDetails');
-      var selectedCenterName = document.getElementById('selectedCenterName');
-      var selectedCenterAddr = document.getElementById('selectedCenterAddr');
-      var etData = {
-        preferences: {{ et_preferences | tojson | safe if et_preferences else '[]'
-    }},
-    applicantId: '{{ et_doc.applicant if et_doc else "" }}',
-      entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
-        allocationName: '{{ et_doc.name if et_doc else "" }}',
-          isRescheduled: { { 'true' if et_is_rescheduled else 'false' } }
       };
 
-  dropdown.addEventListener('change', async function () {
-    var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
-    if (!selected) return;
-    btnSave.disabled = true;
-    btnSave.style.opacity = '.5';
-    btnSave.textContent = 'Verifying...';
-    try {
-      const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
-        applicant_id: etData.applicantId,
-        entrance_test_list: etData.entranceTestList
-      });
-      var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
-      if (pinfo && pinfo.is_full) {
+      /* ── Entrance test provider selection ── */
+      (function () {
+        var dropdown = document.getElementById('providerDropdown');
+        if (!dropdown) return;
+        var btnSave = document.getElementById('btnSaveProvider');
+        var centerDetails = document.getElementById('centerDetails');
+        var selectedCenterName = document.getElementById('selectedCenterName');
+        var selectedCenterAddr = document.getElementById('selectedCenterAddr');
+        var etData = {
+          preferences: {{ et_preferences | tojson | safe if et_preferences else '[]'
+      }},
+      applicantId: '{{ et_doc.applicant if et_doc else "" }}',
+      entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
+      allocationName: '{{ et_doc.name if et_doc else "" }}',
+      isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
+      };
+
+      dropdown.addEventListener('change', async function () {
+        var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
+        if (!selected) return;
+        btnSave.disabled = true;
+        btnSave.style.opacity = '.5';
+        btnSave.textContent = 'Verifying...';
+        try {
+          const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
+            applicant_id: etData.applicantId,
+            entrance_test_list: etData.entranceTestList
+          });
+          var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
+          if (pinfo && pinfo.is_full) {
         alert((selected.center_name || selected.provider) + ' is currently full.');
         dropdown.value = '';
         centerDetails.style.display = 'none';
@@ -2679,7 +2913,7 @@ LIST / DASHBOARD VIEW
       }
     });
   }
-  }) ();
+    }) ();
 
   /* ── Admit Card download ── */
   window.downloadAdmitCard = function () {
@@ -2729,21 +2963,21 @@ LIST / DASHBOARD VIEW
 
   function headerHTML() {
     return `
-              <div class="header" style="background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e;">
-                <div class="logo-box" style="width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
-                  ${campus_logo_url
+          <div class="header" style="background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e;">
+            <div class="logo-box" style="width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+              ${campus_logo_url
         ? `<img src="${campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`
         : `<div class="logo-inner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
-                        <span class="logo-icon" style="font-size: 28px; line-height: 1; color: #7b1c1c;">⚖</span>
-                        <span class="logo-text" style="font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-align: center; letter-spacing: 0.5px; line-height: 1.2;">LAW<br>SCHOOL</span>
-                      </div>`
+                    <span class="logo-icon" style="font-size: 28px; line-height: 1; color: #7b1c1c;">⚖</span>
+                    <span class="logo-text" style="font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-align: center; letter-spacing: 0.5px; line-height: 1.2;">LAW<br>SCHOOL</span>
+                  </div>`
       }
-                </div>
-                <div class="hdr-center" style="flex: 1; text-align: center;">
-                  <div class="univ-name" style="font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;">${esc(campus_display_name)}</div>
-                  <div class="univ-sub" style="font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
-                </div>
-              </div>`;
+            </div>
+            <div class="hdr-center" style="flex: 1; text-align: center;">
+              <div class="univ-name" style="font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;">${esc(campus_display_name)}</div>
+              <div class="univ-sub" style="font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
+            </div>
+          </div>`;
   }
 
   const html = `<!DOCTYPE html>
@@ -2904,7 +3138,9 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
   win.document.open();
   win.document.write(html);
   win.document.close();
-  };
+    };
+
+  });/* end DOMContentLoaded */
 
   {% else %}
   /* ── List view: stage trackers ── */
@@ -3043,6 +3279,26 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
 
   window.doLogout = function () {
     window.location.href = '/logout';
+  };
+
+  window.loadDistricts = async function (state, selectedDistrict = null) {
+    const citySelect = document.getElementById('edit-city');
+    if (!citySelect) return;
+    if (!state) {
+      citySelect.innerHTML = '<option value="">— Select City —</option>';
+      return;
+    }
+    citySelect.innerHTML = '<option value="">Loading...</option>';
+    try {
+      const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
+      let html = '<option value="">— Select City —</option>';
+      districts.forEach(d => {
+        html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
+      });
+      citySelect.innerHTML = html;
+    } catch (e) {
+      citySelect.innerHTML = '<option value="">Error loading cities</option>';
+    }
   };
 }) ();
 </script>

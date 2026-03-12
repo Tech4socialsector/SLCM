@@ -358,8 +358,8 @@
         <label class="lp-label" for="reg-mobile">Mobile Number</label>
         <input class="lp-input" type="tel" id="reg-mobile"
                placeholder="e.g. 9876543210" autocomplete="tel"
-               oninput="this.value = this.value.replace(/[^0-9]/g, '');"
-               maxlength="15">
+               oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);"
+               maxlength="10">
         <div class="lp-field-error" id="err-reg-mobile"></div>
       </div>
       <div class="lp-field">
@@ -598,8 +598,8 @@ function lpValidate(fields, panel) {
         ok = false;
       }
     } else if (f.type === 'mobile') {
-      if (!/^\d{10,15}$/.test(val)) {
-        lpFieldError(f.id, 'Please enter a valid mobile number (10-15 digits).');
+      if (!/^\d{10}$/.test(val)) {
+        lpFieldError(f.id, 'Please enter a valid 10-digit mobile number.');
         ok = false;
       }
     }

@@ -40,11 +40,10 @@ def save_categories(admission_cycle, program, total_seats, status, policy_docume
     doc.set("categories", [])
 
     for r in reservation_rows:
-        if not r.get("category_name"):
-            frappe.throw(_("Category Name is mandatory for all rows."))
         doc.append("categories", {
             "reservation_quota": r.get("category"),
             "category_name": r.get("category_name"),
+            "priority": r.get("priority"),
             "percentage": r.get("percentage"),
             "seats": r.get("allocated_seats"),
             "application_fee": r.get("application_fee")
@@ -56,7 +55,14 @@ def save_categories(admission_cycle, program, total_seats, status, policy_docume
         doc.save(ignore_permissions=True)
 
     frappe.db.commit()
-    return doc.name
+    
+    # Get updated modified timestamp of the parent Admission Cycle
+    new_modified = frappe.db.get_value("Admission Cycle", admission_cycle, "modified")
+    
+    return {
+        "policy_name": doc.name,
+        "new_modified": new_modified
+    }
 
 @frappe.whitelist()
 def save_program_media(program, active, brochure_pdf, media_rows, parent_doctype, parent_name):

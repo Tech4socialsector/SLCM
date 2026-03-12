@@ -17,7 +17,9 @@
   "allow_application",
   "is_editable",
   "auto_transition",
-  "application_status",
+  "activate_status",
+  "completed_status",
+  "closed_status",
   "section_schedule",
   "start_date",
   "end_date",
@@ -63,7 +65,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Applicable Workflow",
-   "options": "All\nCLAT\nNLSAT\nDirect Merit"
+   "options": "All\nInternal Test\nExternal Test\nDirect Merit"
   },
   {
    "fieldname": "sequence_no",
@@ -196,15 +198,27 @@
    "label": "Remarks"
   },
   {
-   "fieldname": "application_status",
+   "fieldname": "closed_status",
    "fieldtype": "Link",
-   "label": "Application Status",
+   "label": "Closed Status",
+   "options": "Applicant Status"
+  },
+  {
+   "fieldname": "activate_status",
+   "fieldtype": "Link",
+   "label": "Activate Status",
+   "options": "Applicant Status"
+  },
+  {
+   "fieldname": "completed_status",
+   "fieldtype": "Link",
+   "label": "Completed Status",
    "options": "Applicant Status"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-11 00:40:14.939293",
+ "modified": "2026-03-12 10:22:15.835009",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle Stage",

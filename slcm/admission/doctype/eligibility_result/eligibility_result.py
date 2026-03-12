@@ -71,6 +71,8 @@ def get_applicant_data():
             "hsc_percentage": doc.hsc_percentage,
             "entrance_test_score": doc.entrance_test_score,
             "interview_score": doc.interview_score,
+            "source_type": doc.source_type,
+            "result_status": doc.result_status,
             "ug_cgpa": round(ug_avg, 2),
             "pg_cgpa": round(pg_avg, 2)
         })
@@ -111,10 +113,12 @@ def get_applicant_data():
             "program": app.program,
             "admission_cycle": app.admission_cycle,
             "program_level": app.program_level,
-            "reservation_category": ", ".join([c.category for c in app.categories if c.category]) if app.categories else "General",
+            "reservation_category": app.whether_scstobc_ncl if app.whether_scstobc_ncl and app.whether_scstobc_ncl != "NA" else ("Karnataka" if app.karnataka_category == "Yes" else "General"),
             "hsc_percentage": getattr(app, "hsc_percentage", 0),
             "entrance_test_score": getattr(app, "entrance_test_score", None),
             "interview_score": getattr(app, "interview_score", None),
+            "source_type": getattr(app, "source_type", None),
+            "result_status": getattr(app, "result_status", None),
             "ug_cgpa": 0,
             "pg_cgpa": 0
         })

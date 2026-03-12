@@ -210,13 +210,14 @@ def get_active_programs():
             p["admission_cycle"] = active_cycle
             # Fetch slug and abbreviation from Program
             prog_info = frappe.db.get_value("Program", p.program, 
-                ["program_slug", "program_shortcode", "program_duration"], 
+                ["program_slug", "program_shortcode", "program_duration", "program_image"], 
                 as_dict=True
             )
             if prog_info:
                 p["program_slug"] = prog_info.program_slug or _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = prog_info.program_shortcode
                 p["duration"] = f"{prog_info.program_duration} Years" if prog_info.program_duration else ""
+                p["program_image"] = prog_info.program_image or p.get("program_image")
             else:
                 p["program_slug"] = _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = ""
@@ -393,11 +394,12 @@ def api_get_portal_stats():
         )
         if not active_cycle: return {}
 
-        total_programs = frappe.db.count("Admission Cycle Program", {"parent": active_cycle.name, "is_active": 1})
+        active_cycle_name = active_cycle.get("name")
+        total_programs = frappe.db.count("Admission Cycle Program", {"parent": active_cycle_name, "is_active": 1})
         
         # Sum seats from policy if available, else from program row
         total_seats = 0
-        cycle_progs = frappe.get_all("Admission Cycle Program", filters={"parent": active_cycle.name, "is_active": 1}, fields=["seats", "reservation_policy"])
+        cycle_progs = frappe.get_all("Admission Cycle Program", filters={"parent": active_cycle_name, "is_active": 1}, fields=["seats", "reservation_policy"])
         for p in cycle_progs:
             if p.reservation_policy:
                 total_seats += frappe.db.get_value("Program Reservation Policy", p.reservation_policy, "total_seats") or 0
