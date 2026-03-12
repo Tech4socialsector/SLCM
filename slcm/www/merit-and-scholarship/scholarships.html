@@ -197,6 +197,17 @@
 {% endblock %}
 
 {% block content %}
+
+{# Cycle Active Check #}
+{% set _is_cycle_active = False %}
+{% if active_cycle %}
+    {% set _start = active_cycle.cycle_start_date %}
+    {% set _end = active_cycle.cycle_end_date %}
+    {% if (not _start or today >= _start) and (not _end or today <= _end) %}
+        {% set _is_cycle_active = True %}
+    {% endif %}
+{% endif %}
+
 <div style="min-height:calc(100vh - 60px);background:#f5f7f8; margin:-20px -20px 0;padding:32px 20px 40px;">
   <div style="max-width:1200px;margin:0 auto;">
 
@@ -334,8 +345,20 @@
             <p class="text-base font-small text-slate-500 mt-1">Personalized scholarships recommended based on your
               academic profile.</p>
           </div>
+          {% if all_applicants and all_applicants|length > 1 %}
+          <div class="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="material-symbols-outlined text-slate-400 pl-2">person</span>
+            <select onchange="window.location.href='/merit-and-scholarship/scholarships?app=' + this.value"
+              class="bg-transparent border-none text-sm font-bold text-slate-700 focus:ring-0 cursor-pointer pr-8">
+              {% for a in all_applicants %}
+              <option value="{{ a.name }}" {% if a.name == applicant.name %}selected{% endif %}>
+                {{ a.candidate_name }} ({{ a.name }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
         </header>
-
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 fade-in-up" style="animation-delay:0.15s">
           <!-- KPI 1: Eligible -->
           <div class="kpi-card border-t-2 border-t-emerald-500 shadow-sm px-4 py-3">
@@ -421,8 +444,13 @@
                     <div class="flex items-center gap-2 border-l border-slate-100 pl-3">
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
                       <div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Max Amount</p>
-                        <p class="text-xs font-bold text-slate-600">₹{{ "{:,.0f}".format(sch.max_amount or 0) }}</p>
+                        {% if sch.max_amount and sch.max_amount > 0 %}
+                          <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Max Amount</p>
+                          <p class="text-xs font-bold text-slate-600">₹{{ "{:,.0f}".format(sch.max_amount) }}</p>
+                        {% else %}
+                          <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Applies On</p>
+                          <p class="text-xs font-bold text-slate-600">{{ sch.apply_on or "Total Fee" }}</p>
+                        {% endif %}
                       </div>
                     </div>
                   </div>
@@ -437,9 +465,11 @@
                   <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
                     <button onclick="viewDetails('{{ sch.name }}')"
                       class="text-[10px] font-bold text-slate-500 hover:text-slate-900 uppercase">Details</button>
-                    <a href="/merit-and-scholarship/apply?scheme={{ sch.name }}"
-                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm hover:opacity-90 transition-opacity">Apply
-                      Now</a>
+                    <a href="{{ '/merit-and-scholarship/apply?scheme=' ~ sch.name if _is_cycle_active else 'javascript:void(0)' }}"
+                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm transition-opacity {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
+                      style="{{ 'pointer-events: none;' if not _is_cycle_active else '' }}">
+                      {{ 'Apply Now' if _is_cycle_active else 'Closed' }}
+                    </a>
                   </div>
                 </div>
               </div>
@@ -499,8 +529,13 @@
                     <div class="flex items-center gap-2 border-l border-slate-100 pl-3">
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
                       <div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Max Amount</p>
-                        <p class="text-xs font-bold text-slate-600">₹{{ "{:,.0f}".format(app.max_amount or 0) }}</p>
+                        {% if app.max_amount and app.max_amount > 0 %}
+                          <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Max Amount</p>
+                          <p class="text-xs font-bold text-slate-600">₹{{ "{:,.0f}".format(app.max_amount) }}</p>
+                        {% else %}
+                          <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Applies On</p>
+                          <p class="text-xs font-bold text-slate-600">{{ app.apply_on or "Total Fee" }}</p>
+                        {% endif %}
                       </div>
                     </div>
                   </div>
@@ -579,7 +614,12 @@
                     </div>
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
-                      <p class="text-xs font-bold text-slate-600">Max Cap: ₹{{ "{:,.0f}".format(app.max_amount or 0) }}
+                      <p class="text-xs font-bold text-slate-600">
+                        {% if app.max_amount and app.max_amount > 0 %}
+                          Max Cap: ₹{{ "{:,.0f}".format(app.max_amount) }}
+                        {% else %}
+                          Applies On: {{ app.apply_on or "Total Fee" }}
+                        {% endif %}
                       </p>
                     </div>
                   </div>
@@ -632,9 +672,22 @@
                     </div>
                     <div class="flex items-center gap-2 border-l border-slate-100 pl-3">
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
-                      <p class="text-xs font-bold text-slate-400">₹{{ "{:,.0f}".format(app.max_amount or 0) }}</p>
+                      <p class="text-xs font-bold text-slate-400">
+                        {% if app.max_amount and app.max_amount > 0 %}
+                          ₹{{ "{:,.0f}".format(app.max_amount) }}
+                        {% else %}
+                          {{ app.apply_on or "Total Fee" }}
+                        {% endif %}
+                      </p>
                     </div>
                   </div>
+
+                  {% if app.rejection_reason %}
+                  <div class="mb-4 p-3 bg-red-100/50 rounded-lg border border-red-100">
+                    <p class="text-[10px] font-bold text-red-700 uppercase mb-1">Reason for Rejection</p>
+                    <p class="text-xs text-red-600 leading-relaxed">{{ app.rejection_reason }}</p>
+                  </div>
+                  {% endif %}
 
                   <div class="mt-auto pt-3 border-t border-red-50 flex items-center justify-between">
                     <p class="text-[10px] font-bold text-red-600 uppercase">Rejected On: {{
@@ -696,8 +749,10 @@
             coverage: "{{ sch.coverage_type }}",
               val: "{{ sch.coverage_value }}",
                 max: "{{ sch.max_amount }}",
-                  eligibility: "{{ (sch.eligibility_criteria or 'Not provided.') | replace('\n', '<br>') | replace('\r', '') | replace('\"', '\\\"') }}",
-                    rules: [{% for r in sch.coverage_rules %} { component: "{{ r.fee_component }}", type: "{{ r.coverage_type }}", val: "{{ r.coverage_value }}" }, {% endfor %}]
+                apply_on: "{{ sch.apply_on or 'Total Fee' }}",
+                rejection_reason: "{{ (sch.rejection_reason or '') | replace('\n', '<br>') | replace('\r', '') | replace('\"', '\\\"') }}",
+                    eligibility: "{{ (sch.eligibility_criteria or 'Not provided.') | replace('\n', '<br>') | replace('\r', '') | replace('\"', '\\\"') }}",
+                    rules: [{% for r in sch.coverage_rules or [] %} { component: "{{ r.fee_component }}", type: "{{ r.coverage_type }}", val: "{{ r.coverage_value }}" }, {% endfor %}]
     },
   {% endfor %}
   };
@@ -719,7 +774,7 @@
     } else {
       rulesHtml = `
         <div class="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-lg shadow-sm">
-          <span class="text-xs font-bold text-slate-700">General Coverage</span>
+          <span class="text-xs font-bold text-slate-700">${s.apply_on}</span>
           <span class="text-xs font-black text-primary">${s.coverage === 'Percentage' ? s.val + '%' : '₹' + Number(s.val).toLocaleString()}</span>
         </div>
       `;
@@ -727,6 +782,12 @@
 
     let html = `
       <div class="flex flex-col gap-6">
+        ${s.rejection_reason ? `
+        <div class="p-4 bg-red-50 rounded-xl border border-red-100">
+          <p class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Reason for Rejection</p>
+          <p class="text-xs font-bold text-red-700 leading-relaxed">${s.rejection_reason}</p>
+        </div>` : ''}
+
         <div class="grid grid-cols-2 gap-3">
           <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Category</p>

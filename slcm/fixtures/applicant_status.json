@@ -1,0 +1,122 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 09:37:16.017258",
+  "name": "Selected",
+  "status": "Selected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 09:37:56.172795",
+  "name": "Waitlisted",
+  "status": "Waitlisted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 09:38:04.868195",
+  "name": "Rejected",
+  "status": "Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 09:38:25.155229",
+  "name": "Offer Accepted",
+  "status": "Offer Accepted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 09:38:44.938969",
+  "name": "Offer Issued",
+  "status": "Offer Issued"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 09:39:13.432226",
+  "name": "Offer Declined",
+  "status": "Offer Declined"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 09:39:59.621256",
+  "name": "Offer Expired",
+  "status": "Offer Expired"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 09:40:11.543300",
+  "name": "Fee Paid",
+  "status": "Fee Paid"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 14:30:41.674112",
+  "name": "Submitted",
+  "status": "Submitted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 14:40:20.518024",
+  "name": "Entrance Test Rejected",
+  "status": "Entrance Test Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 14:41:22.044734",
+  "name": "Interview Sheduled",
+  "status": "Interview Sheduled"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 14:41:34.899398",
+  "name": "Interview Rejected",
+  "status": "Interview Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 14:42:57.567083",
+  "name": "Merit Published",
+  "status": "Merit Published"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 14:43:34.365668",
+  "name": "Accepted",
+  "status": "Accepted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "modified": "2026-03-11 14:39:33.006879",
+  "name": "Entrance Test Allocated",
+  "status": "Entrance Test Allocated"
+ }
+]

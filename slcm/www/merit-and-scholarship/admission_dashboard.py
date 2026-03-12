@@ -87,6 +87,19 @@ def get_context(context):
         "User", context.nav_user, "full_name"
     ) or context.nav_user.split("@")[0] if context.nav_user else ''
     context.user_first   = (context.user_display or 'U')[0].upper()
+    context.today = frappe.utils.getdate(frappe.utils.today())
+
+    # ── Active Admission Cycle ───────────────────────────────────
+    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    if active_cycle_name:
+        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name)
+        context.active_cycle = frappe._dict({
+            "name": active_cycle_doc.name,
+            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None
+        })
+    else:
+        context.active_cycle = None
 
     # ── All applicant records for this user (all cycles) ──────────
     try:
@@ -125,6 +138,7 @@ def get_context(context):
 
         for app in context.my_applications:
             app["program_name"] = frappe.db.get_value("Program", app.program, "program_name") or app.program
+            app["program_image"] = frappe.db.get_value("Program", app.program, "program_image")
             # Fetch current stage name if current_stage is a link/ID
             if app.current_stage:
                 app["current_stage_name"] = frappe.db.get_value("Stage Master", app.current_stage, "stage_name") or app.current_stage
@@ -204,7 +218,7 @@ def get_context(context):
                     available_scholarships.append(s)
                     seen_schemes.add(s.name)
         
-        context.scholarships = available_scholarships[:5]
+        context.scholarships = available_scholarships[:20]
         context.applied_scholarships = sorted(applied_scholarships, key=lambda x: x.creation, reverse=True)
         context.entrance_tests = entrance_tests
     except Exception as e:
@@ -289,7 +303,63 @@ def get_context(context):
     except Exception:
         context.first_name = ''
 
+    # ── Documents Logic (Mirror index.py logic - Strictly Applicant fields) ──
+    context.app_documents = []
+    if context.profile_data and context.profile_data.get("name"):
+        try:
+            doc_lookup_name = context.profile_data.get("name")
+            target_applicant = frappe.get_doc("Applicant", doc_lookup_name, ignore_permissions=True)
+
+            standard_checklist = [
+                {"label": "10th Certificate", "field": "class_x_marksheet", "required": True},
+                {"label": "12th Certificate", "field": "class_xii_marksheet", "required": True},
+                {"label": "ID Proof", "field": "id_proof", "required": True},
+                {"label": "Photo", "field": "candidate_photo", "required": True},
+            ]
+
+            if target_applicant.reservation_category and target_applicant.reservation_category != "NA":
+                standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
+                
+            if target_applicant.pwd == "Yes":
+                standard_checklist.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True})
+                
+            if target_applicant.program_level == "Research Course":
+                standard_checklist.append({"label": "Research Proposal", "field": "phd_proposal", "required": True})
+                standard_checklist.append({"label": "CV", "field": "cv", "required": True})
+            
+            if target_applicant.ka_study_7yrs:
+                standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True})
+
+            for item in standard_checklist:
+                field = item["field"]
+                val = target_applicant.get(field)
+                context.app_documents.append({
+                    "document_name": item["label"],
+                    "document_type": item["label"],
+                    "is_uploaded": bool(val),
+                    "file_url": val,
+                    "field": field,
+                    "source": "field",
+                    "required": item["required"]
+                })
+        except Exception as e:
+            frappe.log_error(f"Admission Dashboard doc error: {e}")
+
     # ── Active panel from URL param ───────────────────────────────────
     context.active_panel = frappe.form_dict.get('panel', 'applications')
+
+    # ── States and Districts ─────────────────────────────────────────
+    try:
+        context.states = frappe.get_all("State", fields=["name"], order_by="name asc")
+        # Pre-load districts if state is already set
+        if context.profile_data and context.profile_data.get("state"):
+            context.districts = frappe.get_all("District", 
+                filters={"state": context.profile_data.get("state")},
+                fields=["name"], order_by="name asc")
+        else:
+            context.districts = []
+    except Exception:
+        context.states = []
+        context.districts = []
 
     return context

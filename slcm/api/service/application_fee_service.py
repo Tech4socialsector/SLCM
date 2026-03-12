@@ -50,6 +50,27 @@ def get_application_fee_for_category(program, admission_cycle, category):
 	return 0
 
 
+def get_payment_gateway_for_application_fee(program, admission_cycle):
+	"""
+	Returns the Payment Gateway from Program Reservation Policy for the given program and admission_cycle.
+	Uses the same policy lookup as get_application_fee_for_category (Active first, then any).
+	"""
+	if not program or not admission_cycle:
+		return None
+	gateway = frappe.db.get_value(
+		"Program Reservation Policy",
+		{"program": program, "admission_cycle": admission_cycle, "status": "Active"},
+		"payment_gateway"
+	)
+	if not gateway:
+		gateway = frappe.db.get_value(
+			"Program Reservation Policy",
+			{"program": program, "admission_cycle": admission_cycle},
+			"payment_gateway"
+		)
+	return gateway
+
+
 def get_or_create_application_fee_component():
 	"""Ensures 'Application Fee' Fee Component exists for AFA child rows."""
 	if frappe.db.exists("Fee Component", "Application Fee"):
@@ -116,14 +137,39 @@ def create_application_fee_assignment(applicant_name):
 
 
 def _get_applicant_category(applicant_name):
-	"""Get reservation category from Applicant's Applicant Category child table."""
-	cat_row = frappe.db.get_value(
+	"""
+	Get reservation category for fee calculation.
+
+	Order of preference:
+	1. Applicant Category child rows – prefer specific reserved categories (SC/ST/OBC-NCL)
+	   over generic ones like "General" / "Unreserved".
+	2. If child rows are missing or only General, fall back to Applicant.whether_scstobc_ncl
+	   when it is set to a reserved value.
+	"""
+	rows = frappe.get_all(
 		"Applicant Category",
-		{"parent": applicant_name, "parenttype": "Applicant"},
-		"category",
-		order_by="idx asc"
+		filters={"parent": applicant_name, "parenttype": "Applicant"},
+		fields=["category"],
+		order_by="idx asc",
 	)
-	return cat_row
+
+	# 1) Prefer explicit categories from child table
+	if rows:
+		for row in rows:
+			name = (row.category or "").strip()
+			if name and name.lower() not in ("general", "gen", "unreserved"):
+				return name
+
+	# 2) Fallback to Applicant.whether_scstobc_ncl when it's a reserved code
+	raw = frappe.db.get_value("Applicant", applicant_name, "whether_scstobc_ncl") or ""
+	code = raw.strip()
+	if code and code.upper() in {"SC", "ST", "OBC-NCL"}:
+		return code
+
+	# 3) Last resort: use first child row (usually General), or None
+	if rows:
+		return (rows[0].category or "").strip() or None
+	return None
 
 
 @frappe.whitelist()
@@ -154,6 +200,10 @@ def get_application_fee_details(applicant_name):
 	if afa and afa.status == "Paid":
 		status = "Paid"
 
+	payment_gateway = get_payment_gateway_for_application_fee(
+		applicant.program, applicant.admission_cycle
+	)
+
 	return {
 		"applicant_name": applicant_name,
 		"fee_amount": fee_amount,
@@ -161,5 +211,6 @@ def get_application_fee_details(applicant_name):
 		"reservation_category": category,
 		"program": applicant.program,
 		"can_submit": status in ("Paid", "Waived"),
-		"online_payment_enabled": True
+		"online_payment_enabled": True,
+		"payment_gateway": payment_gateway
 	}

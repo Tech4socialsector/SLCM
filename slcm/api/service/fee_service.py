@@ -646,7 +646,12 @@ class FeeService:
             afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
             actual_payable = flt(afa.final_payable_amount)
 
-            gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+            from slcm.api.service.application_fee_service import get_payment_gateway_for_application_fee
+            gateway = (
+                get_payment_gateway_for_application_fee(applicant.program, applicant.admission_cycle)
+                or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name")
+                or "Razorpay"
+            )
             from payments.utils import get_payment_gateway_controller
             controller = get_payment_gateway_controller(gateway)
 
@@ -688,7 +693,16 @@ class FeeService:
         """Verifies Razorpay payment for application fee and marks as paid."""
         try:
             applicant = frappe.get_doc("Applicant", applicant_name)
-            gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+            # Use gateway from Payment Request (created with order), else from Program Reservation Policy, else default
+            pr_gateway = frappe.db.get_value(
+                "Payment Request",
+                {"reference_doctype": "Applicant", "reference_name": applicant_name, "transaction_id": razorpay_order_id},
+                "payment_gateway"
+            )
+            if not pr_gateway:
+                from slcm.api.service.application_fee_service import get_payment_gateway_for_application_fee
+                pr_gateway = get_payment_gateway_for_application_fee(applicant.program, applicant.admission_cycle)
+            gateway = pr_gateway or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
             from payments.utils import get_payment_gateway_controller
             controller = get_payment_gateway_controller(gateway)
 

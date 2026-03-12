@@ -11,6 +11,19 @@ def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
     return res
 
 @frappe.whitelist()
+def get_districts(state):
+    return frappe.get_all("District", filters={"state": state}, fields=["name"], order_by="name asc")
+
+@frappe.whitelist()
+def get_user_details():
+    user = frappe.session.user
+    if user == "Guest":
+        return {}
+    
+    return frappe.db.get_value("User", user, 
+        ["name", "full_name", "email", "mobile_no", "user_image"], as_dict=True)
+
+@frappe.whitelist()
 def get_login_redirect():
     user = frappe.session.user
     if user == "Guest":

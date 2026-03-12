@@ -60,10 +60,13 @@ class ApplicantFeeAssignment(Document):
 			return
 
 		# Sum all approved scholarship benefits for this applicant in this cycle
+		# We use direct SQL to avoid cache issues
 		total_benefit = frappe.db.sql("""
 			SELECT SUM(calculated_benefit)
 			FROM `tabScholarship Application`
-			WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
+			WHERE applicant_id = %s 
+			AND admission_cycle = %s 
+			AND status = 'Approved'
 		""", (self.applicant, self.admission_cycle))[0][0] or 0
 
 		benefit = flt(total_benefit)

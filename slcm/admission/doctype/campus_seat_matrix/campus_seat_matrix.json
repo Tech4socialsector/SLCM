@@ -33,7 +33,7 @@
    "fieldname": "workflow_type",
    "fieldtype": "Select",
    "label": "Workflow Type",
-   "options": "\nCLAT\nNLSAT\nPACE",
+   "options": "\nExternal Test\nInternal Test\nPACE",
    "reqd": 1
   },
   {

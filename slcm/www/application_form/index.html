@@ -1494,7 +1494,7 @@
         position: fixed;
         top: 1.25rem;
         right: 1.25rem;
-        z-index: 9999;
+        z-index: 101000;
         display: flex;
         flex-direction: column;
         gap: .75rem;
@@ -1503,23 +1503,25 @@
 
     .toast-item {
         background: var(--white);
-        border-radius: var(--radius-sm);
-        padding: 1rem 1.25rem;
-        box-shadow: var(--shadow-lg);
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         display: flex;
         align-items: center;
-        gap: .75rem;
-        font-size: .85rem;
-        font-weight: 600;
-        min-width: 280px;
-        max-width: 380px;
-        border-left: 4px solid var(--navy);
-        animation: toastIn .3s ease-out;
+        gap: 1rem;
+        font-size: .95rem;
+        font-weight: 500;
+        min-width: 320px;
+        max-width: 420px;
+        border-left: 5px solid var(--navy);
+        animation: toastIn .3s cubic-bezier(0.16, 1, 0.3, 1);
         pointer-events: all;
     }
 
     .toast-item.success {
-        border-color: var(--emerald);
+        border-left-color: var(--emerald);
+        background: #f0fdf4;
+        color: #065f46;
     }
 
     .toast-item.error {
@@ -1564,6 +1566,150 @@
 
     .toast-item.eligibility-error .eligible-yes {
         color: var(--emerald);
+    }
+
+    /* Application Fee Confirmation Modal */
+    .app-fee-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        backdrop-filter: blur(4px);
+        transition: all 0.3s ease;
+    }
+
+    .app-fee-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.65);
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .app-fee-modal-content {
+        position: relative;
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 2.5rem;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        text-align: center;
+    }
+
+    @keyframes modalSlideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .app-fee-modal-icon {
+        width: 64px;
+        height: 64px;
+        background: var(--primary-light);
+        color: var(--primary);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+
+    .app-fee-modal-title {
+        margin: 0 0 0.75rem 0;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--slate-900);
+        letter-spacing: -0.025em;
+    }
+
+    .app-fee-modal-message {
+        margin: 0 0 1.5rem 0;
+        font-size: 1.1rem;
+        color: var(--slate-600);
+        line-height: 1.6;
+    }
+
+    .app-fee-modal-amount-box {
+        background: var(--slate-50);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--slate-100);
+    }
+
+    .app-fee-modal-amount-label {
+        font-size: 0.875rem;
+        color: var(--slate-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .app-fee-modal-amount-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary);
+    }
+
+    .app-fee-modal-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    @media (min-width: 480px) {
+        .app-fee-modal-actions {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .app-fee-modal-actions button {
+        height: 52px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .app-fee-modal-actions .btn-pay-now {
+        background: var(--primary);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(26, 60, 110, 0.25);
+    }
+
+    .app-fee-modal-actions .btn-pay-now:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(26, 60, 110, 0.35);
+        opacity: 0.95;
+    }
+
+    .app-fee-modal-actions .btn-save-draft-alt {
+        background: white;
+        color: var(--slate-700);
+        border: 2px solid var(--slate-200);
+    }
+
+    .app-fee-modal-actions .btn-save-draft-alt:hover {
+        background: var(--slate-50);
+        border-color: var(--slate-300);
+        color: var(--slate-900);
     }
 
     .toast-item.eligibility-error .eligible-no {
@@ -1929,8 +2075,8 @@
                                 <select class="fc" name="application_type" id="application_type"
                                     onchange="onApplicationTypeChange(this.value)">
                                     <option value="">Select Type</option>
-                                    <option value="CLAT">CLAT</option>
-                                    <option value="NLSAT">NLSAT</option>
+                                    <option value="External Test">External Test</option>
+                                    <option value="Internal Test">Internal Test</option>
                                     <option value="PACE">PACE</option>
                                 </select>
                             </div>
@@ -1985,16 +2131,10 @@
                                 </div>
                                 <span class="field-error" id="err_father_mobile"></span>
                             </div>
-                            <div class="fg"><label>Father Occupation</label>
-                                <select class="fc" name="father_occupation">
-                                    <option value="">Select</option>
-                                    <option value="Government">Government</option>
-                                    <option value="Private Sector">Private Sector</option>
-                                    <option value="Self Employed">Self Employed</option>
-                                    <option value="Business">Business</option>
-                                    <option value="Agriculture">Agriculture</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                            <div class="fg">
+                                <label>Father Occupation</label>
+                                <input type="text" class="fc" name="father_occupation"
+                                    placeholder="Enter father's occupation">
                             </div>
                         </div>
 
@@ -2023,16 +2163,10 @@
                                 </div>
                                 <span class="field-error" id="err_mother_mobile"></span>
                             </div>
-                            <div class="fg"><label>Mother Occupation</label>
-                                <select class="fc" name="mother_occupation">
-                                    <option value="">Select</option>
-                                    <option value="Government">Government</option>
-                                    <option value="Private Sector">Private Sector</option>
-                                    <option value="Self Employed">Self Employed</option>
-                                    <option value="Business">Business</option>
-                                    <option value="Agriculture">Agriculture</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                            <div class="fg">
+                                <label>Mother Occupation</label>
+                                <input type="text" class="fc" name="mother_occupation"
+                                    placeholder="Enter mother's occupation">
                             </div>
                         </div>
 
@@ -2246,8 +2380,8 @@
                                     <label>Have you completed your UG degree <span class="req">*</span></label>
                                     <select class="fc" name="ug_degree_completion" id="ug_degree_completion">
                                         <option value="">Select</option>
-                                        <option value="Completed">Completed</option>
-                                        <option value="Final year">Final year</option>
+                                        <option value="UG Degree completed">UG Degree completed</option>
+                                        <option value="Final Year of UG Degree">Final Year of UG Degree</option>
                                     </select>
                                     <span class="field-error" id="err_ug_degree_completion">This field is
                                         required</span>
@@ -2460,14 +2594,13 @@
                         <div class="form-row cols-1" style="margin-bottom:1rem;">
                             <div class="fg">
                                 <label>Whether SC/ST/OBC-NCL</label>
-                                <select class="fc" name="reservation_category" id="reservation_category"
+                                <select class="fc" name="whether_scstobc_ncl" id="reservation_category"
                                     onchange="toggleReservationCategory(this.value)">
                                     <option value="">Select one</option>
                                     <option value="SC">SC</option>
                                     <option value="ST">ST</option>
-                                    <option value="OBC">OBC</option>
                                     <option value="OBC-NCL">OBC-NCL</option>
-                                    <option value="NA">General / NA</option>
+                                    <option value="NA">NA</option>
                                 </select>
                             </div>
                         </div>
@@ -2946,6 +3079,20 @@
                     <div class="app-ref-field"><label>Campus</label><span id="finalCampus"></span></div>
                 </div>
 
+                <div id="exemptionSuccessBox"
+                    style="display:none; margin-top:2rem; padding:1.25rem; background: var(--primary-light); border-radius:16px; border: 1px solid var(--primary); text-align:left;">
+                    <div
+                        style="display:flex; align-items:center; gap:10px; color:var(--primary); font-weight:700; margin-bottom:0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                        Exemption Applied
+                    </div>
+                    <p style="font-size:0.9rem; color:var(--slate-700); margin:0;" id="exemptionSuccessMessage"></p>
+                </div>
+
                 <div style="margin-top:2.5rem;">
                     <a href="/merit-and-scholarship/admission_dashboard" class="btn-dashboard">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
@@ -2961,6 +3108,39 @@
     </div>
 </div>
 
+<!-- Application Fee Confirmation Modal -->
+<div id="applicationFeeModal" class="app-fee-modal" role="dialog" aria-labelledby="appFeeModalTitle" aria-modal="true"
+    style="display:none;">
+    <div class="app-fee-modal-backdrop"></div>
+    <div class="app-fee-modal-content">
+        <div class="app-fee-modal-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+        </div>
+        <h2 id="appFeeModalTitle" class="app-fee-modal-title">Application Fee Required</h2>
+        <p class="app-fee-modal-message">To complete your submission, an application fee payment is required.</p>
+
+        <div class="app-fee-modal-amount-box">
+            <div class="app-fee-modal-amount-label">Payable Amount</div>
+            <div id="appFeeModalAmount" class="app-fee-modal-amount-value">₹ 0.00</div>
+        </div>
+
+        <div class="app-fee-modal-actions">
+            <button type="button" class="btn-pay-now" id="appFeePayNowBtn">
+                <span>Pay Securely Now</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </button>
+            <button type="button" class="btn-save-draft-alt" id="appFeeSaveDraftBtn">Save as Draft</button>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toastContainer"></div>
 {% endblock %}
@@ -2968,6 +3148,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
     // ═══════════════════════════════════════════════════════
     //  MASTER DATA FROM SERVER
@@ -3359,11 +3540,13 @@
     }
 
     function navigateToStep(targetStep) {
-        // When submitted, allow navigating all stages (read-only view). Otherwise: back freely; forward if previous done.
-        if (APPLICATION_SUBMITTED) {
+        // When submitted, or when an Applicant doc already exists (draft with saved data),
+        // allow free navigation across all stages from the progress strip/sidebar.
+        if (APPLICATION_SUBMITTED || (formData && formData.name)) {
             showStep(targetStep);
             return;
         }
+        // For brand new applications (no Applicant yet), restrict forward navigation to sequential steps.
         if (targetStep < currentStep || completedSteps.has(targetStep - 1) || targetStep === 1) {
             showStep(targetStep);
         }
@@ -3522,6 +3705,30 @@
         if (!valid) {
             showToast('Please fix the highlighted errors before proceeding.', 'error');
             scrollToFirstError();
+        }
+        return valid;
+    }
+
+    function validateAllSteps() {
+        clearErrors();
+        let valid = true;
+        let firstStepWithError = null;
+
+        // Run all step-level validations
+        // Note: we run them all so all errors across all steps are highlighted
+        if (!validateStep1()) { valid = false; firstStepWithError = firstStepWithError || 1; }
+        if (!validateStep2()) { valid = false; firstStepWithError = firstStepWithError || 2; }
+        if (!validateStep3()) { valid = false; firstStepWithError = firstStepWithError || 3; }
+        if (!validateStep4()) { valid = false; firstStepWithError = firstStepWithError || 4; }
+        if (!validateStep5()) { valid = false; firstStepWithError = firstStepWithError || 5; }
+        if (!validateStep6()) { valid = false; firstStepWithError = firstStepWithError || 6; }
+
+        if (!valid) {
+            showToast('Please fill all mandatory fields across all steps before submitting.', 'error');
+            if (firstStepWithError && firstStepWithError !== currentStep) {
+                showStep(firstStepWithError);
+            }
+            setTimeout(scrollToFirstError, 200);
         }
         return valid;
     }
@@ -3807,8 +4014,8 @@
 
     function onApplicationTypeChange(val) {
         const msgs = {
-            'CLAT': 'CLAT workflow: Your CLAT rank will be imported from the Consortium.',
-            'NLSAT': 'NLSAT workflow: You must appear for the NLSAT exam.',
+            'External Test': 'CLAT workflow: Your CLAT rank will be imported from the Consortium.',
+            'Internal Test': 'NLSAT workflow: You must appear for the NLSAT exam.',
             'PACE': 'PACE workflow: Admission is based on academic merit only.'
         };
         const note = document.getElementById('appTypeNote');
@@ -3837,7 +4044,7 @@
     }
 
     function toggleReservationCategory(val) {
-        const casteCats = ['SC', 'ST', 'OBC', 'OBC-NCL'];
+        const casteCats = ['SC', 'ST', 'OBC-NCL'];
         const hasCaste = val && casteCats.includes(val);
         const hasNA = !val || val === 'NA';
 
@@ -4231,9 +4438,12 @@
             formData[f] = document.getElementById(f)?.checked ? 1 : 0;
         });
 
-        // Categories
+        // Reservation / category fields
         const resCat = document.getElementById('reservation_category')?.value || '';
-        formData.categories = (resCat && resCat !== 'NA') ? [{ category: resCat }] : [];
+        const normalizedResCat = resCat || 'NA';
+        formData.whether_scstobc_ncl = normalizedResCat;
+        formData.reservation_category = normalizedResCat;
+        formData.categories = (normalizedResCat && normalizedResCat !== 'NA') ? [{ category: normalizedResCat }] : [];
     }
 
     // ═══════════════════════════════════════════════════════
@@ -4444,21 +4654,27 @@
     }
 
     // ═══════════════════════════════════════════════════════
-    //  FORM SUBMISSION (with eligibility check before submit)
+    //  FORM SUBMISSION (eligibility check, then application fee modal if needed)
     // ═══════════════════════════════════════════════════════
     async function submitForm() {
+        // 1. Declaration is validated (handled within Step 6 validation, but checked explicitly for immediate feedback)
         if (!document.getElementById('declaration_undertaking')?.checked) {
             showToast('Please accept the declaration before submitting.', 'error');
+            const declErr = document.getElementById('err_declaration');
+            if (declErr) declErr.classList.add('show');
             return;
         }
 
         collectFormData();
+
+        // 2. check all the manditatory fields are filed
+        if (!validateAllSteps()) return;
+
         const btn = document.getElementById('nextBtn');
         btn.disabled = true;
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Checking eligibility…';
 
         try {
-            // Run eligibility rules before submit — block if ineligible
             const eligRes = await apiFetch('slcm.www.application_form.index.check_portal_eligibility', { applicant_data: JSON.stringify(formData) });
             if (eligRes && eligRes.eligible === false) {
                 const msg = eligRes.message || 'You are not eligible for the selected program.';
@@ -4468,6 +4684,16 @@
                 btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
                 return;
             }
+
+            // Show exemption alerts if applicable
+            if (eligRes && eligRes.exemptions && eligRes.exemptions.rule_name) {
+                let exMsgs = [];
+                if (eligRes.exemptions.entrance_test) exMsgs.push('Entrance Test');
+                if (eligRes.exemptions.interview) exMsgs.push('Interview');
+                if (exMsgs.length > 0) {
+                    showToast('Congratulations! Based on your National Test scores, you are exempt from: ' + exMsgs.join(' and ') + '.', 'success');
+                }
+            }
         } catch (e) {
             showToast('Eligibility check failed. Please try again or save and submit.', 'error');
             btn.disabled = false;
@@ -4475,11 +4701,50 @@
             return;
         }
 
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Submitting…';
+        // 5. Always save as draft before checking fee to sync latest category/data with backend
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Syncing data…';
+        let applicantName = formData.name;
+        try {
+            const syncRes = await apiFetch('slcm.www.application_form.index.save_form', { data: JSON.stringify(formData) });
+            if (syncRes && syncRes.name) {
+                formData.name = syncRes.name;
+                applicantName = syncRes.name;
+            }
+        } catch (e) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+            showToast('Could not sync application data. Please try again.', 'error');
+            return;
+        }
 
+        // 6. Check application fee: if required and not paid, show confirmation modal instead of submitting
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Checking fees…';
+        try {
+            const feeDetails = await apiFetch('slcm.api.service.application_fee_service.get_application_fee_details', { applicant_name: applicantName });
+            const feeAmount = feeDetails && (feeDetails.fee_amount || 0);
+            const canSubmit = feeDetails && feeDetails.can_submit;
+            if (feeAmount > 0 && !canSubmit) {
+                btn.disabled = false;
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                showApplicationFeeModal(feeAmount, applicantName);
+                return;
+            }
+        } catch (e) {
+            console.error("Fee check error:", e);
+            // Continue if fee check fails (server save_form will catch it)
+        }
+
+        await doActualSubmit(btn);
+    }
+
+    async function doActualSubmit(btn) {
+        if (!btn) btn = document.getElementById('nextBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Submitting…';
+        }
         try {
             const res = await apiFetch('slcm.www.application_form.index.save_form', { data: JSON.stringify({ ...formData, __submit: true }) });
-
             const message = res || {};
             if (message.name && !message.error) {
                 if (message.docstatus !== undefined) formData.docstatus = message.docstatus;
@@ -4501,22 +4766,171 @@
                 if (banner) banner.style.display = 'none';
                 const progressStrip = document.querySelector('.progress-strip');
                 if (progressStrip) progressStrip.style.display = 'none';
+
+                // Hide validation banner and clear toasts on success
+                const validationBanner = document.getElementById('formValidationBanner');
+                if (validationBanner) validationBanner.style.display = 'none';
+                const toastContainer = document.getElementById('toastContainer');
+                if (toastContainer) toastContainer.innerHTML = '';
+
+                // Show success exemption alerts
+                if (message && message.exemptions && message.exemptions.rule_name) {
+                    let exMsgs = [];
+                    if (message.exemptions.entrance_test) exMsgs.push('Entrance Test');
+                    if (message.exemptions.interview) exMsgs.push('Interview');
+                    if (exMsgs.length > 0) {
+                        const exText = exMsgs.join(' and ');
+                        showToast('Exemptions granted for: ' + exText + '.', 'success');
+
+                        const exBox = document.getElementById('exemptionSuccessBox');
+                        const exMsgEl = document.getElementById('exemptionSuccessMessage');
+                        if (exBox && exMsgEl) {
+                            exMsgEl.textContent = 'Based on your National Test performance, you have been exempted from the ' + exText + '.';
+                            exBox.style.display = 'block';
+                        }
+                    }
+                }
             } else if (message.error) {
-                showToast(message.error, 'error');
-                showValidationBanner(message.error, 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                const applicantName = formData.name || (message && message.name);
+                const isFeeError = /application fee|pay.*fee first/i.test(message.error || '');
+
+                if (isFeeError && applicantName) {
+                    showApplicationFeePayLink(applicantName);
+                    // Automatically trigger the modal fetch instead of showing banner
+                    const payLinkBtn = document.querySelector('#applicationFeePayLink button');
+                    if (payLinkBtn) payLinkBtn.click();
+                } else {
+                    showToast(message.error, 'error');
+                    showValidationBanner(message.error, 'error');
+                }
+
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                }
             }
         } catch (e) {
             let msg = 'Submission failed. Please try again.';
             if (e && e.message && e.message !== 'Failed to fetch') {
-                msg = e.message.replace(/<[^>]+>/g, '').trim() || msg;
+                msg = e.message;
             }
-            showToast(msg, 'error');
-            showValidationBanner(msg, 'error');
-            btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+            const isFeeError = /application fee|pay.*fee first/i.test(msg || '');
+
+            if (isFeeError && formData.name) {
+                showApplicationFeePayLink(formData.name);
+                // Automatically trigger the modal fetch
+                const payLinkBtn = document.querySelector('#applicationFeePayLink button');
+                if (payLinkBtn) payLinkBtn.click();
+            } else {
+                showToast(msg, 'error');
+                showValidationBanner(msg, 'error');
+            }
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+            }
         }
+    }
+
+    function showApplicationFeeModal(amount, applicantName) {
+        const modal = document.getElementById('applicationFeeModal');
+        const amountEl = document.getElementById('appFeeModalAmount');
+        if (!modal || !amountEl) return;
+
+        // Hide any existing validation banner to clean up the UI
+        const banner = document.getElementById('formValidationBanner');
+        if (banner) banner.style.display = 'none';
+
+        amountEl.textContent = '₹ ' + (typeof amount === 'number' ? amount.toFixed(2) : amount);
+        modal.style.display = 'flex';
+        modal.dataset.applicantName = applicantName || '';
+
+        const payBtn = document.getElementById('appFeePayNowBtn');
+        const draftBtn = document.getElementById('appFeeSaveDraftBtn');
+        const backdrop = modal.querySelector('.app-fee-modal-backdrop');
+
+        function closeModal() {
+            modal.style.display = 'none';
+            modal.dataset.applicantName = '';
+        }
+
+        function onPayNow() {
+            if (!applicantName) return;
+            payBtn.disabled = true;
+            payBtn.textContent = 'Opening…';
+            apiFetch('slcm.api.service.fee_service.create_application_fee_razorpay_order', { applicant_name: applicantName })
+                .then(function (d) {
+                    if (!d || !d.order_id) {
+                        payBtn.disabled = false;
+                        payBtn.textContent = 'Pay Now';
+                        showToast(d && d.exc ? 'Order creation failed.' : 'Could not create payment order.', 'error');
+                        return;
+                    }
+                    if (typeof Razorpay === 'undefined') {
+                        payBtn.disabled = false;
+                        payBtn.textContent = 'Pay Now';
+                        showToast('Payment gateway script not loaded. Please refresh and try again.', 'error');
+                        return;
+                    }
+                    const options = {
+                        key: d.key_id,
+                        amount: d.amount,
+                        currency: d.currency || 'INR',
+                        order_id: d.order_id,
+                        name: 'Application Fee',
+                        handler: function (res) {
+                            apiFetch('slcm.api.service.fee_service.verify_application_fee_payment', {
+                                razorpay_payment_id: res.razorpay_payment_id,
+                                razorpay_order_id: res.razorpay_order_id,
+                                razorpay_signature: res.razorpay_signature,
+                                applicant_name: applicantName
+                            }).then(function (vr) {
+                                if (vr && vr.status === 'success') {
+                                    showToast('Payment successful!', 'success');
+                                    closeModal();
+                                    doActualSubmit(document.getElementById('nextBtn'));
+                                } else {
+                                    showToast(vr && vr.message ? vr.message : 'Verification failed.', 'error');
+                                }
+                                payBtn.disabled = false;
+                                payBtn.textContent = 'Pay Now';
+                            }).catch(function () {
+                                showToast('Verification failed. Please contact support.', 'error');
+                                payBtn.disabled = false;
+                                payBtn.textContent = 'Pay Now';
+                            });
+                        }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.on('payment.failed', function (err) {
+                        apiFetch('slcm.api.service.fee_service.log_application_fee_payment_failure', {
+                            applicant_name: applicantName,
+                            order_id: d.order_id,
+                            error_data: JSON.stringify(err && err.error ? err.error : err)
+                        }).catch(function () { });
+                        showToast(err && err.error && err.error.description ? err.error.description : 'Payment failed.', 'error');
+                        payBtn.disabled = false;
+                        payBtn.textContent = 'Pay Now';
+                    });
+                    rzp.open();
+                    payBtn.disabled = false;
+                    payBtn.textContent = 'Pay Now';
+                })
+                .catch(function () {
+                    payBtn.disabled = false;
+                    payBtn.textContent = 'Pay Now';
+                    showToast('Could not start payment. Please try again.', 'error');
+                });
+        }
+
+        function onSaveDraft() {
+            closeModal();
+            saveDraft();
+        }
+
+        payBtn.onclick = onPayNow;
+        draftBtn.onclick = onSaveDraft;
+        backdrop.onclick = closeModal;
     }
 
     function showValidationBanner(msg, type) {
@@ -4533,9 +4947,46 @@
         el.style.border = type === 'error' ? '1px solid var(--red)' : '1px solid var(--amber)';
         el.style.color = type === 'error' ? 'var(--red)' : 'var(--slate-700)';
         const displayMsg = type === 'error' ? humanizeError(msg || '') : (msg || '');
-        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>${(displayMsg + '').replace(/</g, '&lt;')}</span>`;
+        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><div style="flex:1">${displayMsg}</div>`;
         el.style.display = 'block';
+        const payLink = document.getElementById('applicationFeePayLink');
+        if (payLink) payLink.remove();
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function showApplicationFeePayLink(applicantName) {
+        let wrap = document.getElementById('applicationFeePayLink');
+        if (wrap) wrap.remove();
+        wrap = document.createElement('div');
+        wrap.id = 'applicationFeePayLink';
+        wrap.style.cssText = 'margin-top:0.75rem;';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-back-to-admission'; // Use a styled class
+        btn.style.cssText = 'background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:700; cursor:pointer;';
+        btn.textContent = 'Pay Application Fee (opens payment gateway)';
+        btn.onclick = async function () {
+            this.disabled = true;
+            this.textContent = 'Fetching fee details...';
+            try {
+                const res = await apiFetch('slcm.api.service.application_fee_service.get_application_fee_details', { applicant_name: applicantName });
+                if (res && res.fee_amount > 0) {
+                    showApplicationFeeModal(res.fee_amount, applicantName);
+                } else {
+                    showToast('No outstanding fee found. You may try submitting again.', 'info');
+                }
+            } catch (e) {
+                showToast('Failed to fetch fee details.', 'error');
+            } finally {
+                this.disabled = false;
+                this.textContent = 'Pay Application Fee (opens payment gateway)';
+            }
+        };
+
+        wrap.appendChild(btn);
+        const banner = document.getElementById('formValidationBanner');
+        if (banner) banner.appendChild(wrap);
     }
 
     // ═══════════════════════════════════════════════════════

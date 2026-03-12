@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "personal_information_tab",
+  "categories",
   "personal_information_section",
   "candidate_photo",
   "section_break_otug",
@@ -83,6 +84,7 @@
   "hsc_percentage",
   "column_break_mlet",
   "class_xii_year_of_completion",
+  "class_xii_cgpa",
   "column_break_ycmo",
   "class_xii_board",
   "class_xii_marksheet",
@@ -159,6 +161,14 @@
  ],
  "fields": [
   {
+   "fieldname": "categories",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Categories",
+   "options": "Applicant Category",
+   "read_only": 1
+  },
+  {
    "fieldname": "application_type",
    "fieldtype": "Select",
    "label": "Application Type"
@@ -175,8 +185,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Intake Type",
-   "options": "CLAT\nNLSAT\nDirect Merit",
-   "read_only": 1
+   "options": "\nInternal Test\nExternal Test\nDirect Merit"
   },
   {
    "fieldname": "academic_year",
@@ -186,7 +195,7 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "Draft",
+   "default": "Submitted",
    "fieldname": "application_status",
    "fieldtype": "Link",
    "label": "Application Status",
@@ -225,10 +234,8 @@
   },
   {
    "fieldname": "religion",
-   "fieldtype": "Select",
-   "label": "Religion",
-   "options": "\nHindu\nMuslim\nChristian\nSikh\nBuddhist\nJain\nOther",
-   "placeholder": "Select Religion"
+   "fieldtype": "Data",
+   "label": "Religion"
   },
   {
    "fieldname": "nationality",
@@ -427,11 +434,11 @@
    "label": "Eligibility for reservation"
   },
   {
-   "depends_on": "eval:doc.reservation_category === \"NA\"",
+   "depends_on": "eval:doc.whether_scstobc_ncl === \"NA\"",
    "fieldname": "ews",
    "fieldtype": "Select",
    "label": "Whether EWS",
-   "mandatory_depends_on": "eval:doc.reservation_category === \"NA\"",
+   "mandatory_depends_on": "eval:doc.whether_scstobc_ncl === \"NA\"",
    "options": "\nYes\nNo"
   },
   {
@@ -443,12 +450,12 @@
    "mandatory_depends_on": "eval:doc.ews === \"Yes\""
   },
   {
-   "depends_on": "eval:doc.reservation_category && doc.reservation_category !== \"NA\"",
+   "depends_on": "eval:doc.whether_scstobc_ncl && doc.whether_scstobc_ncl !== \"NA\"",
    "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "caste_certificate",
    "fieldtype": "Attach",
    "label": "Caste Certificate",
-   "mandatory_depends_on": "eval:doc.reservation_category && doc.reservation_category !== \"NA\""
+   "mandatory_depends_on": "eval:doc.whether_scstobc_ncl && doc.whether_scstobc_ncl !== \"NA\""
   },
   {
    "fieldname": "pwd",
@@ -558,24 +565,18 @@
   },
   {
    "fieldname": "first_preference",
-   "fieldtype": "Link",
-   "label": "First Preference",
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "fieldtype": "Data",
+   "label": "First Preference"
   },
   {
    "fieldname": "second_preference",
-   "fieldtype": "Link",
-   "label": "Second Preference",
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "fieldtype": "Data",
+   "label": "Second Preference"
   },
   {
    "fieldname": "third_preference",
-   "fieldtype": "Link",
-   "label": "Third Preference",
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "fieldtype": "Data",
+   "label": "Third Preference"
   },
   {
    "fieldname": "other_information_tab",
@@ -779,7 +780,7 @@
    "fieldtype": "Select",
    "label": "Have you completed your UG degree",
    "mandatory_depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
-   "options": "\nFinal year\nCompleted"
+   "options": "\nFinal Year of UG Degree\nUG Degree completed"
   },
   {
    "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
@@ -799,7 +800,6 @@
    "fieldname": "annual_house_hold_income",
    "fieldtype": "Select",
    "label": "Annual House Hold Income",
-   "options": "0 - 3,00,000\n3,00,001 - 8,00,000\n15,00,001 - 25,00,000\n8,00,001 - 15,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
    "precision": "2"
   },
   {
@@ -1011,6 +1011,12 @@
    "fieldtype": "Select",
    "label": "Whether SC/ST/OBC-NCL",
    "options": "NA\nOBC-NCL\nST\nSC"
+  },
+  {
+   "fieldname": "class_xii_cgpa",
+   "fieldtype": "Float",
+   "label": "If CGPA, maximum CPGA (Class XII/Equivalent)",
+   "precision": "2"
   }
  ],
  "grid_page_length": 50,
@@ -1033,7 +1039,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-11 00:36:51.930141",
+ "modified": "2026-03-12 12:44:12.858333",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

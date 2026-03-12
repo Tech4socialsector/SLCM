@@ -33,6 +33,8 @@ class Applicant(Document):
                     _("Submission Not Allowed: Applicant is not eligible."),
                     title=_("Submission Not Allowed")
                 )
+            # Set application_status from national test exemption (only when student submits)
+            self.application_status = _get_submission_application_status(self)
 
     def validate_email(self):
         if not validate_email_address(self.email):
@@ -110,15 +112,23 @@ class Applicant(Document):
         """Block submission if application fee is required and not paid/waived."""
         from slcm.api.service.application_fee_service import get_application_fee_for_category
         from slcm.api.service.application_fee_service import _get_applicant_category
+
         category = _get_applicant_category(self.name)
         fee_amount = get_application_fee_for_category(self.program, self.admission_cycle, category)
+
         if flt(fee_amount, 2) > 0:
-            status = (self.application_fee_status or "Pending").strip()
+            # Re-read status from DB to avoid using a stale in-memory value
+            db_status = frappe.db.get_value("Applicant", self.name, "application_fee_status")
+            status = (db_status or self.application_fee_status or "Pending").strip()
+
             if status not in ("Paid", "Waived"):
                 frappe.throw(
-                    _("Application fee must be paid or waived before submission. "
-                      "Current status: {0}. Amount: {1}").format(status, fee_amount),
-                    title=_("Fee Payment Required")
+                    _("Application fee must be paid or waived before you can submit. "
+                      "Current status: {0}. Amount: {1}. "
+                      "Go to View Application and click \"Pay Application Fee\" to open the payment gateway and pay; then return here to submit.").format(
+                        status, fee_amount
+                    ),
+                    title=_("Pay Application Fee First")
                 )
 
     def validate_declaration(self):
@@ -131,14 +141,28 @@ class Applicant(Document):
     def before_save(self):
         if not self.applicant_id:
             self.applicant_id = frappe.generate_hash(length=8).upper()
+        doc_before = self.get_doc_before_save()
+        self.flags.old_application_status = doc_before.application_status if doc_before else None
 
     def on_update(self):
-        # Triggers when status changes to 'Submitted'
-        if self.application_status == "Submitted" and self.has_value_changed("application_status"):
+        # Statuses that mean "student has submitted" (including exemption statuses)
+        _SUBMITTED_STATUSES = frozenset({
+            "Submitted",
+            "Interview Excempted",
+            "Entrance Test Exempted",
+            "Excempted Entrance Test And Interview",
+        })
+        old_status = self.flags.get("old_application_status")
+        just_submitted = (
+            old_status == "Draft"
+            and self.application_status in _SUBMITTED_STATUSES
+            and self.has_value_changed("application_status")
+        )
+        if just_submitted:
             log_audit_trail(
                 self.doctype, self.name,
-                "Submitted", "application_status",
-                "Draft", "Submitted", "General"
+                self.application_status, "application_status",
+                "Draft", self.application_status, "General"
             )
             frappe.sendmail(
                 recipients=[self.email],
@@ -1196,6 +1220,96 @@ class Applicant(Document):
             frappe.logger().warning(
                 f"Failed to save Eligibility Evaluation for {applicant_name}: {str(e)}"
             )
+
+
+# ──────────────────────────────────────────────
+# SUBMISSION APPLICATION STATUS (from national test exemption)
+# ──────────────────────────────────────────────
+
+
+def _truthy(val):
+    """Treat 1, True, '1' as True; 0, False, None as False."""
+    if val is None:
+        return False
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)):
+        return val != 0
+    return str(val).strip().lower() in ("1", "true", "yes")
+
+
+def _application_status_from_exemption_flags(exempts_entrance_test, exempts_interview):
+    """
+    Return Applicant Status name from exemption flags.
+    - Both exempt → "Excempted Entrance Test And Interview"
+    - Only interview exempt → "Interview Excempted"
+    - Only entrance test exempt → "Entrance Test Exempted"
+    - Neither → "Submitted"
+    """
+    if _truthy(exempts_entrance_test) and _truthy(exempts_interview):
+        return "Excempted Entrance Test And Interview"
+    if _truthy(exempts_interview):
+        return "Interview Excempted"
+    if _truthy(exempts_entrance_test):
+        return "Entrance Test Exempted"
+    return "Submitted"
+
+
+def _get_eligibility_evaluation_for_applicant(applicant_name, applicant_id=None):
+    """Get Eligibility Evaluation by applicant_name (doc name) or applicant_id. Returns dict or None."""
+    for key in [applicant_name, applicant_id]:
+        if not key:
+            continue
+        ev = frappe.db.get_value(
+            "Eligibility Evaluation",
+            {"applicant_name": key},
+            ["evaluation_status", "exempts_entrance_test", "exempts_interview"],
+            as_dict=True,
+        )
+        if ev:
+            return ev
+    return None
+
+
+def _sync_application_status_from_eligibility_evaluation(applicant_doc):
+    """
+    If the applicant is "Submitted" but has an Eligibility Evaluation that is Eligible
+    with exemption flags, set application_status from that Evaluation so it shows
+    "Entrance Test Exempted" / "Interview Excempted" / "Excempted Entrance Test And Interview".
+    """
+    if not getattr(applicant_doc, "name", None):
+        return
+    ev = _get_eligibility_evaluation_for_applicant(
+        applicant_doc.name,
+        getattr(applicant_doc, "applicant_id", None),
+    )
+    if not ev or ev.get("evaluation_status") != "Eligible":
+        return
+    if not _truthy(ev.get("exempts_entrance_test")) and not _truthy(ev.get("exempts_interview")):
+        return
+    new_status = _application_status_from_exemption_flags(
+        ev.get("exempts_entrance_test"), ev.get("exempts_interview")
+    )
+    if new_status and new_status != "Submitted" and frappe.db.exists("Applicant Status", new_status):
+        applicant_doc.application_status = new_status
+
+
+def _get_submission_application_status(applicant_doc):
+    """
+    When the student submits, return application_status from national test exemption flags.
+    """
+    exempt_et = getattr(applicant_doc, "exempts_entrance_test", 0)
+    exempt_int = getattr(applicant_doc, "exempts_interview", 0)
+    status = _application_status_from_exemption_flags(exempt_et, exempt_int)
+    if status == "Submitted":
+        return status
+    if frappe.db.exists("Applicant Status", status):
+        return status
+    frappe.log_error(
+        message=f"Applicant Status '{status}' does not exist. Using 'Submitted'.",
+        title="Applicant Status Fallback",
+    )
+    return "Submitted"
 
 
 # ──────────────────────────────────────────────
