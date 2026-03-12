@@ -5,6 +5,18 @@
     rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="/fle/css/login.css?v=2">
+<style>
+    /* Hide Frappe's default top navbar ONLY on this page */
+    .navbar,
+    .web-footer,
+    header.navbar,
+    .navbar-expand,
+    /* [class*="navbar"], */
+    #navbar,
+    .container>.navbar {
+        display: none !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -25,7 +37,7 @@
             <!-- CENTRE — Brand text -->
             <div class="brand-text">
                 <h1 class="university-name">National Law School of India University, Bengaluru</h1>
-                <h1 class="department-name">Foundations for a Legal Education Certificate Course</h1>
+                <h1 class="department-name">Foundations for a Legal Education Certificate Course (FLE)</h1>
             </div>
 
             <!-- RIGHT — Invisible spacer, mirrors logo width for optical centering -->
@@ -34,7 +46,10 @@
         </div>
 
         <nav class="navbar-navy" aria-label="Main navigation">
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
+            <p></p>
+            <br>
+            <p></p>
+            <!-- <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
                 target="_blank" rel="noopener">Overview</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
                 target="_blank" rel="noopener">Courses</a>
@@ -44,7 +59,7 @@
                 target="_blank" rel="noopener">Fee</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
                 target="_blank" rel="noopener">FAQs</a>
-            <a href="https://pace.nls.ac.in/contact-us/" class="nav-item" target="_blank" rel="noopener">Contact Us</a>
+            <a href="https://pace.nls.ac.in/contact-us/" class="nav-item" target="_blank" rel="noopener">Contact Us</a> -->
         </nav>
     </header>
 
@@ -56,7 +71,7 @@
             <div id="login-form">
                 <h3>myNLS Login</h3>
                 <div class="form-group mb-3">
-                    <label for="login_id">Email or Username <span class="text-danger">*</span></label>
+                    <label for="login_id">Email<span class="text-danger">*</span></label>
                     <input type="text" id="login_id" class="form-control" autocomplete="username"
                         placeholder="Please Enter" maxlength="80">
                 </div>
@@ -75,7 +90,14 @@
                         </button>
                     </div>
                 </div>
-                <button class="btn btn-maroon" onclick="login_user()">Sign In</button>
+                <p>Know more about the FLE programme
+                    <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education" target="_blank"
+                        rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">
+                        here
+                    </a>
+                </p>
+                <p>
+                    <button class="btn btn-maroon" onclick="login_user()">Sign In</button>
                 <div class="text-center mt-3">
                     <span class="small">New user?</span>
                     <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Register Here</span>
@@ -92,9 +114,15 @@
                 </div>
                 <div class="form-group mb-3">
                     <label for="mobile_number">Mobile Number <span class="text-danger">*</span></label>
-                    <input type="text" id="mobile_number" class="form-control" placeholder="Please Enter" maxlength="10"
+                    <input type="text" id="mobile_number" class="form-control" placeholder="Please Enter" maxlength="15"
                         autocomplete="tel">
                 </div>
+                <p>Know more about the FLE programme
+                    <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education" target="_blank"
+                        rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">
+                        here
+                    </a>
+                </p>
                 <button class="btn btn-maroon" onclick="register_user()">Register</button>
                 <div class="text-center mt-3">
                     <span class="small">Already have an account?</span>

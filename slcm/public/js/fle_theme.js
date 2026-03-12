@@ -727,86 +727,7 @@ window.inject_fle_header_footer = function () {
             /* ── Generic font fallback for buttons (appearance only, no layout) ── */
             .btn, button, .btn-sm, .btn-lg,
             input[type="submit"], input[type="button"], input[type="reset"] {
-                font-family: 'Merriweather', Georgia, serif !important;
-                font-weight: 700 !important;
-                letter-spacing: 0.5px !important;
-                white-space: nowrap !important;
-            }
 
-            .attach-btn, .attach-label, .input-area, .attached-file,
-            .attached-file-link, .file-uploader, .file-uploader * {
-                font-family: 'Merriweather', Georgia, serif !important;
-            }
-
-            .reqd, .required, .asterisk { color: #8B0000 !important; }
-
-            .modal, .modal *, .alert, .alert * {
-                font-family: 'Merriweather', Georgia, serif !important;
-            }
-
-            .web-form-page .page-title, .web-form-page .title-area,
-            .web-form-page .subtitle {
-                font-family: 'Merriweather', Georgia, serif !important;
-            }
-
-            .indicator-pill, .indicator, .badge {
-                font-family: 'Merriweather', Georgia, serif !important;
-                font-size: 11px !important;
-            }
-
-            table, thead, tbody, tr, td, th {
-                font-family: 'Merriweather', Georgia, serif !important;
-            }
-
-            /* Scoped link color — excludes autocomplete/dropdown anchors */
-            .web-form-page a:not(.awesomplete-item):not([data-value]):not(.dropdown-item),
-            .web-form-wrapper a:not(.awesomplete-item):not([data-value]):not(.dropdown-item) {
-                color: #8B0000 !important;
-            }
-            .web-form-page a:not(.awesomplete-item):not([data-value]):not(.dropdown-item):hover,
-            .web-form-wrapper a:not(.awesomplete-item):not([data-value]):not(.dropdown-item):hover {
-                color: #6a0000 !important;
-            }
-
-            /* Autocomplete / Link field dropdown items — always black text */
-            .awesomplete ul li,
-            .awesomplete ul li a,
-            .awesomplete ul li mark,
-            .awesomplete [role="option"],
-            .awesomplete [role="listbox"] li,
-            ul.awesomplete-list li,
-            .link-field-result,
-            .frappe-control .dropdown-menu a,
-            .frappe-control .dropdown-menu li,
-            .frappe-control .dropdown-item,
-            .web-form-page .dropdown-menu a,
-            .web-form-page .dropdown-menu li,
-            .web-form-page .dropdown-item,
-            .web-form-wrapper .dropdown-menu a,
-            .web-form-wrapper .dropdown-menu li,
-            .web-form-wrapper .dropdown-item {
-                color: #1a1a1a !important;
-                font-family: 'Merriweather', Georgia, serif !important;
-                font-size: 13px !important;
-                font-weight: 300 !important;
-            }
-            .awesomplete ul li:hover,
-            .awesomplete ul li[aria-selected="true"],
-            .awesomplete [role="option"]:hover,
-            .frappe-control .dropdown-item:hover,
-            .web-form-page .dropdown-item:hover,
-            .web-form-wrapper .dropdown-item:hover {
-                background-color: #f5f0f0 !important;
-                color: #8B0000 !important;
-            }
-
-            /* ── FIELD LABEL CASE FIX ── */
-            .control-label, .frappe-control .control-label, label.control-label,
-            .web-form-page label, .web-form-wrapper label, .form-group label,
-            .field-area label, .frappe-control label,
-            .web-form-page .control-label, .web-form-wrapper .control-label,
-            .section-body .control-label, .form-column .control-label {
-                text-transform: capitalize !important;
                 letter-spacing: 0.2px !important;
                 font-size: 13px !important;
                 font-weight: 400 !important;
@@ -913,8 +834,8 @@ window.inject_fle_header_footer = function () {
             }
             .fle-modal-btn-cancel { background:#f0f0f0; color:#444; border:1px solid #ddd; }
             .fle-modal-btn-cancel:hover { background:#e2e2e2; transform:translateY(-1px); }
-            .fle-modal-btn-confirm { background:#8B0000; color:#fff; box-shadow:0 2px 6px rgba(139,0,0,0.3); }
-            .fle-modal-btn-confirm:hover { background:#6a0000; transform:translateY(-1px); box-shadow:0 4px 12px rgba(139,0,0,0.4); }
+            .fle-modal-btn-confirm { background:#8B0000 !important; color:#ffffff !important; box-shadow:0 2px 6px rgba(139,0,0,0.3); }
+            .fle-modal-btn-confirm:hover { background:#6a0000 !important; color:#ffffff !important; transform:translateY(-1px); box-shadow:0 4px 12px rgba(139,0,0,0.4); }
             .fle-modal-btn-confirm:active, .fle-modal-btn-cancel:active { transform:translateY(0); }
             .fle-btn-spinner {
                 display:none; width:13px; height:13px; border:2px solid rgba(255,255,255,0.4);
@@ -963,7 +884,7 @@ window.inject_fle_header_footer = function () {
             </div>
             <div class="brand-text">
                 <h1 class="university-name">National Law School of India University, Bengaluru</h1>
-                <h2 class="department-name">Foundations for a Legal Education Certificate Course</h2>
+                <h2 class="department-name">Foundations for a Legal Education Certificate Course (FLE)</h2>
             </div>
             <div class="header-logout-area">
                 <button class="fle-logout-btn" id="fle-logout-btn" type="button">
@@ -977,14 +898,11 @@ window.inject_fle_header_footer = function () {
                 </button>
             </div>
         </div>
-        <nav class="navbar-navy">
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item" target="_blank">OVERVIEW</a>
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">COURSES</a>
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FACULTY</a>
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FEE</a>
-            <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item">FAQs</a>
-            <a href="https://pace.nls.ac.in/contact-us/" class="nav-item">Contact Us</a>
-        </nav>
+             <nav class="navbar-navy" aria-label="Main navigation">
+            <p></p>
+            <br>
+            <p></p>
+            </nav>
     </header>`;
 
     // ── 5. Inject Footer HTML ─────────────────────────────────────────────────
