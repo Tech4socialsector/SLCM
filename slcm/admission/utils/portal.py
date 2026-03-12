@@ -214,6 +214,7 @@ def get_active_programs():
                 as_dict=True
             )
             if prog_info:
+                prog_info = frappe._dict(prog_info)
                 p["program_slug"] = prog_info.program_slug or _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = prog_info.program_shortcode
                 p["duration"] = f"{prog_info.program_duration} Years" if prog_info.program_duration else ""

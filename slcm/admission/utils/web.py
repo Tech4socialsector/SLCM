@@ -410,6 +410,24 @@ def get_offer_list(limit_start=0, limit_page_length=10):
         ignore_permissions=True
     )
 
+    for offer in offers:
+        if offer.campus:
+            offer.campus_name = frappe.db.get_value("Campus", offer.campus, "campus_name") or offer.campus
+        else:
+            offer.campus_name = ""
+            
+        # Fetch scholarship info from Applicant Fee Assignment
+        afa = frappe.db.get_value("Applicant Fee Assignment", 
+            {"offer_letter": offer.name, "fee_type": "Admission Fee"}, 
+            ["scholarship_amount", "final_payable_amount"], as_dict=True)
+        
+        if afa:
+            offer.scholarship_amount = afa.scholarship_amount or 0
+            offer.final_payable_amount = afa.final_payable_amount or offer.payable_amount
+        else:
+            offer.scholarship_amount = 0
+            offer.final_payable_amount = offer.payable_amount
+
     return {
         "offers": offers,
         "total_count": total_count,

@@ -35,6 +35,16 @@ def get_context(context):
 
     # Formatted values for display (so data always renders from DB)
     context.fmt = _format_display(doc)
+
+    # Application fee (from Applicant)
+    context.application_fee = None
+    if doc.program and doc.admission_cycle:
+        from slcm.api.service.application_fee_service import get_application_fee_details
+        try:
+            context.application_fee = get_application_fee_details(doc.name)
+        except Exception:
+            pass
+
     return context
 
 
