@@ -24,7 +24,7 @@
 
             <!-- CENTRE — Brand text -->
             <div class="brand-text">
-                <h5 class="university-name">National Law School of India University, Bengaluru</h5>
+                <h1 class="university-name">National Law School of India University, Bengaluru</h1>
                 <h1 class="department-name">Foundations for a Legal Education Certificate Course</h1>
             </div>
 
@@ -35,13 +35,13 @@
 
         <nav class="navbar-navy" aria-label="Main navigation">
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
-                target="_blank" rel="noopener">OVERVIEW</a>
+                target="_blank" rel="noopener">Overview</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
-                target="_blank" rel="noopener">COURSES</a>
+                target="_blank" rel="noopener">Courses</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
-                target="_blank" rel="noopener">FACULTY</a>
+                target="_blank" rel="noopener">Faculty</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
-                target="_blank" rel="noopener">FEE</a>
+                target="_blank" rel="noopener">Fee</a>
             <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education/" class="nav-item"
                 target="_blank" rel="noopener">FAQs</a>
             <a href="https://pace.nls.ac.in/contact-us/" class="nav-item" target="_blank" rel="noopener">Contact Us</a>
@@ -56,17 +56,21 @@
             <div id="login-form">
                 <h3>myNLS Login</h3>
                 <div class="form-group mb-3">
-                    <label for="login_id">EMAIL OR USERNAME</label>
-                    <input type="text" id="login_id" class="form-control" autocomplete="username">
+                    <label for="login_id">Email or Username <span class="text-danger">*</span></label>
+                    <input type="text" id="login_id" class="form-control" autocomplete="username"
+                        placeholder="Please Enter" maxlength="80">
                 </div>
                 <div class="form-group mb-4">
                     <div class="d-flex justify-content-between">
-                        <label for="login_pwd">PASSWORD</label>
-                        <a href="/fle/forgot_password.html" class="small text-primary" style="text-decoration:none;">Forgot Password?</a>
+                        <label for="login_pwd">Password <span class="text-danger">*</span></label>
+                        <a href="/fle/forgot_password.html" class="small text-primary"
+                            style="text-decoration:none;">Forgot Password?</a>
                     </div>
                     <div class="input-group">
-                        <input type="password" id="login_pwd" class="form-control" autocomplete="current-password">
-                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#login_pwd" title="Toggle Password Visibility">
+                        <input type="password" id="login_pwd" class="form-control" autocomplete="current-password"
+                            placeholder="Please Enter" maxlength="15">
+                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#login_pwd"
+                            title="Toggle Password Visibility">
                             <i class="fa fa-eye"></i>
                         </button>
                     </div>
@@ -82,12 +86,12 @@
             <div id="reg-form" style="display:none;">
                 <h3>Create Account</h3>
                 <div class="form-group mb-4">
-                    <label for="reg_email">EMAIL ADDRESS <span class="text-danger">*</span></label>
+                    <label for="reg_email">Email Address <span class="text-danger">*</span></label>
                     <input type="email" id="reg_email" class="form-control" placeholder="Please Enter" maxlength="80"
                         autocomplete="email">
                 </div>
                 <div class="form-group mb-3">
-                    <label for="mobile_number">MOBILE NUMBER <span class="text-danger">*</span></label>
+                    <label for="mobile_number">Mobile Number <span class="text-danger">*</span></label>
                     <input type="text" id="mobile_number" class="form-control" placeholder="Please Enter" maxlength="10"
                         autocomplete="tel">
                 </div>
@@ -189,11 +193,11 @@
     });
 
     // Toggle password visibility
-    $(document).on('click', '.toggle-password', function() {
+    $(document).on('click', '.toggle-password', function () {
         var $btn = $(this);
         var $target = $($btn.data('target'));
         var $icon = $btn.find('i');
-        
+
         if ($target.attr('type') === 'password') {
             $target.attr('type', 'text');
             $icon.removeClass('fa-eye').addClass('fa-eye-slash');
