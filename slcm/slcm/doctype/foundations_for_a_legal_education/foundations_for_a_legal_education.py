@@ -113,17 +113,11 @@ class FoundationsforaLegalEducation(Document):
 					"Please use a different email address or contact support."
 				)
 
-		# Validate that students under 18 must agree to the declaration consent
-		if self.candidate_dob:
-			from frappe.utils import getdate, cint
-			from datetime import date
-			
-			dob = getdate(self.candidate_dob)
-			today = date.today()
-			age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-			
-			if age < 18 and not cint(self.declaration_consent):
-				frappe.throw("As the candidate is under 18 years of age, the declaration consent is mandatory.")
+		# Declaration consent is mandatory for all candidates
+		from frappe.utils import cint
+		if not cint(self.declaration_consent):
+			frappe.throw("Please accept the Declaration Consent before submitting the application.")
+
 
 	# --------------------------------------------------
 	# Fired right before the new document is inserted into the database.
