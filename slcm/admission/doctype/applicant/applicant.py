@@ -244,6 +244,11 @@ class Applicant(Document):
         rows = getattr(self, "ug_degree_details", None) or []
         return [flt(row.ug_cgpa) for row in rows if row.ug_cgpa not in (None, "")]
 
+    def _get_pg_cgpa_values(self):
+        """Return a list of all PG CGPA values from the pg_degree_details child table."""
+        rows = getattr(self, "pg_degree_details", None) or []
+        return [flt(row.pg_cgpa) for row in rows if row.pg_cgpa not in (None, "")]
+
     @frappe.whitelist()
     def waive_fee(self):
         """Admin marks fee as waived — records who waived and when."""
@@ -285,22 +290,27 @@ class Applicant(Document):
 
     def _get_selected_program_level(self):
         """
-        Returns the program_level ('UG', 'PG', 'Research Course') of the
+        Returns the level_of_study ('UG', 'PG', 'Research Course') of the
         currently selected program by querying the Program doctype.
+
+        NOTE: The correct DB column is `level_of_study`.
+        `program_level` is a different (often-null) field on older data.
 
         Returns None if not found.
         """
         if not self.program:
             return None
-        return frappe.db.get_value("Program", self.program, "program_level")
+        return frappe.db.get_value("Program", self.program, "level_of_study")
 
     def _get_all_programs_for_level(self, program_level):
         """
         Returns ALL programs from the Program doctype that match the given
-        program_level (e.g., 'UG', 'PG', 'Research Course').
+        level_of_study (e.g., 'UG', 'PG', 'Research Course').
 
         This ensures the eligibility table shows EVERY program of the same
         level — not just those with eligibility rules configured.
+
+        NOTE: Uses `level_of_study` (correct column) not `program_level` (often null).
         """
         if not program_level:
             return []
@@ -308,7 +318,7 @@ class Applicant(Document):
         programs = frappe.db.sql("""
             SELECT name AS program
             FROM `tabProgram`
-            WHERE program_level = %(program_level)s
+            WHERE level_of_study = %(program_level)s
             ORDER BY name ASC
         """, {"program_level": program_level}, as_dict=True)
 

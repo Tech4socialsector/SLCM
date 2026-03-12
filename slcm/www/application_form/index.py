@@ -238,22 +238,27 @@ def get_context(context):
         "ka_study_7yrs", "ka_defence_child", "ka_govt_child", "ka_ais_child", "ka_capf_child",
     ]
 
-    # ── Programs (for hidden/display only; selection is locked) ─────────
+    # ── Programs (for UG/PG degree link selects in the form) ─────────────
     try:
-        # Attempt with program_status filter; fall back without it
+        # level_of_study is the correct fieldname; program_level is null for PG/Research
         try:
-            context.programs = frappe.get_all(
+            raw_programs = frappe.get_all(
                 "Program",
-                fields=["name", "program_level"],
+                fields=["name", "level_of_study"],
                 filters={"program_status": "Active"},
                 order_by="name asc"
             )
         except Exception:
-            context.programs = frappe.get_all(
+            raw_programs = frappe.get_all(
                 "Program",
-                fields=["name", "program_level"],
+                fields=["name", "level_of_study"],
                 order_by="name asc"
             )
+        # Expose as program_level so the JS filter (p.program_level === 'UG' etc.) works
+        context.programs = [
+            {"name": p.name, "program_level": p.level_of_study or ""}
+            for p in raw_programs
+        ]
     except Exception:
         context.programs = []
 
@@ -847,9 +852,8 @@ def check_portal_eligibility(applicant_data):
 
         doc.flags.ignore_permissions = True
 
-        # Use the existing eligibility engine
-        # Get program level to find peer programs
-        program_level = doc._get_selected_program_level() if hasattr(doc, '_get_selected_program_level') else frappe.db.get_value("Program", program, "program_level")
+        # Get program level to find peer programs (use level_of_study — program_level is null for PG/Research)
+        program_level = doc._get_selected_program_level() if hasattr(doc, '_get_selected_program_level') else frappe.db.get_value("Program", program, "level_of_study")
         all_programs  = doc._get_all_programs_for_level(program_level) if hasattr(doc, '_get_all_programs_for_level') else [program]
 
         programs_result = []
@@ -1002,3 +1006,121 @@ def upload_applicant_file(doctype="Applicant", docname=None, is_private=0, field
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Applicant File Upload")
         return {"error": _("Upload failed: {0}").format(str(e))}
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  APPLICATION FEE RECEIPT — GET RECEIPT FOR APPLICANT
+# ═══════════════════════════════════════════════════════════════════
+@frappe.whitelist()
+def get_application_fee_receipt(applicant_name):
+    """
+    Returns the latest Applicant Payment Receipt name and print URL for
+    the given applicant's application fee, verifying the caller owns it.
+
+    Returns:
+      { "receipt_name": str, "print_url": str }   — if a receipt exists
+      { "receipt_name": None }                     — if no receipt found
+    """
+    import urllib.parse
+
+    if not frappe.session.user or frappe.session.user == "Guest":
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Verify the caller owns this applicant record
+    email = frappe.session.user
+    owner_email = frappe.db.get_value("Applicant", applicant_name, "email")
+    if not owner_email or owner_email.lower() != email.lower():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Confirm fee is actually Paid or Waived
+    fee_status = frappe.db.get_value("Applicant", applicant_name, "application_fee_status") or ""
+    if fee_status not in ("Paid", "Waived"):
+        return {"receipt_name": None, "fee_status": fee_status}
+
+    # Fetch the latest receipt for this applicant (application fee — no offer_letter)
+    receipts = frappe.get_all(
+        "Applicant Payment Receipt",
+        filters={
+            "applicant": applicant_name,
+            "offer_letter": ["in", ["", None]],   # application fee receipts have no offer letter
+        },
+        fields=["name"],
+        order_by="creation desc",
+        limit=1,
+        ignore_permissions=True,
+    )
+
+    # Fallback: fetch ANY receipt for this applicant
+    if not receipts:
+        receipts = frappe.get_all(
+            "Applicant Payment Receipt",
+            filters={"applicant": applicant_name},
+            fields=["name"],
+            order_by="creation desc",
+            limit=1,
+            ignore_permissions=True,
+        )
+
+    if not receipts:
+        return {"receipt_name": None, "fee_status": fee_status}
+
+    receipt_name = receipts[0].name
+    encoded_name = urllib.parse.quote(receipt_name)
+    print_url = (
+        f"/api/method/slcm.www.application_form.index.download_applicant_receipt"
+        f"?applicant_name={urllib.parse.quote(applicant_name)}"
+        f"&receipt_name={encoded_name}"
+    )
+    return {
+        "receipt_name": receipt_name,
+        "print_url": print_url,
+        "fee_status": fee_status,
+    }
+
+
+@frappe.whitelist()
+def download_applicant_receipt(applicant_name, receipt_name):
+    """
+    Whitelisted method to download the PDF of a receipt.
+    Validates ownership before generating and serving the PDF.
+    """
+    if not frappe.session.user or frappe.session.user == "Guest":
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Verify ownership
+    email = frappe.session.user
+    owner_email = frappe.db.get_value("Applicant", applicant_name, "email")
+    if not owner_email or owner_email.lower() != email.lower():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Verify the receipt belongs to this applicant
+    receipt_applicant = frappe.db.get_value("Applicant Payment Receipt", receipt_name, "applicant")
+    if receipt_applicant != applicant_name:
+        frappe.throw(_("Receipt does not belong to this applicant"), frappe.PermissionError)
+
+    # Generate PDF
+    current_user = frappe.session.user
+    try:
+        # We've already verified ownership manually, so we elevate to Administrator
+        # to generate the PDF, bypassing standard permission checks in get_print.
+        frappe.set_user("Administrator")
+        
+        doc = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+        pdf_content = frappe.get_print(
+            "Applicant Payment Receipt",
+            receipt_name,
+            "Standard",
+            as_pdf=True,
+            doc=doc
+        )
+        
+        frappe.local.response.filename = f"{receipt_name}.pdf"
+        frappe.local.response.filecontent = pdf_content
+        frappe.local.response.type = "download"
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Receipt PDF Generation Failed")
+        frappe.throw(_("Failed to generate PDF receipt. Please contact support: {0}").format(str(e)))
+    finally:
+        # Always restore the original user session
+        frappe.set_user(current_user)
