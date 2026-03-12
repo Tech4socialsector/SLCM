@@ -364,6 +364,7 @@ class FeeService:
             receipt.payment_date = frappe.utils.today()
             receipt.transaction_id = transaction_id
             receipt.payment_mode = payment_mode
+            # Temporarily set; will recompute from components (including scholarship) below
             receipt.total_amount = total_payable
             receipt.currency = frappe.defaults.get_global_default("currency") or "INR"
 
@@ -408,7 +409,14 @@ class FeeService:
                     )
                 )
 
+            # Append all components and then recompute the total from their amounts
+            total_from_components = 0
             for comp in components:
+                comp_total = _flt(getattr(comp, "total_amount", None))
+                if comp_total == 0 and (getattr(comp, "amount", None) is not None):
+                    comp_total = _flt(comp.amount)
+                total_from_components += comp_total
+
                 receipt.append("fee_components", {
                     "fee_component": comp.fee_component,
                     "component_name": comp.component_name,
@@ -418,6 +426,10 @@ class FeeService:
                     "tax_amount": comp.tax_amount,
                     "total_amount": comp.total_amount
                 })
+
+            # Ensure the header Total Amount reflects scholarship-adjusted sum
+            if total_from_components:
+                receipt.total_amount = total_from_components
             
             receipt.insert(ignore_permissions=True)
             receipt.submit()
@@ -781,6 +793,7 @@ class FeeService:
             receipt.payment_date = frappe.utils.today()
             receipt.transaction_id = transaction_id
             receipt.payment_mode = payment_mode
+            # Will recompute from fee_components (including scholarship) below
             receipt.total_amount = flt(applicant_doc.application_fee_amount)
             receipt.currency = frappe.defaults.get_global_default("currency") or "INR"
             receipt.bank_name = bank_name
@@ -793,7 +806,9 @@ class FeeService:
                 receipt.payment_reference = pr
             from frappe.utils import flt as _flt
 
+            total_from_components = 0
             for row in afa_doc.fee_components:
+                total_from_components += flt(row.total_amount or row.amount or 0)
                 receipt.append("fee_components", {
                     "fee_component": row.fee_component,
                     "component_name": row.component_name,
@@ -806,6 +821,7 @@ class FeeService:
 
             # Include scholarship benefit line when applicable so receipts show it
             if getattr(afa_doc, "scholarship_applied", 0) and _flt(getattr(afa_doc, "scholarship_amount", 0)) > 0:
+                total_from_components -= _flt(afa_doc.scholarship_amount or 0)
                 receipt.append("fee_components", {
                     "fee_component": "Scholarship",
                     "component_name": "Scholarship Benefit",
@@ -815,6 +831,10 @@ class FeeService:
                     "tax_amount": 0,
                     "total_amount": -_flt(afa_doc.scholarship_amount),
                 })
+
+            # Ensure Total Amount matches the net of all components (including scholarship)
+            if total_from_components:
+                receipt.total_amount = total_from_components
             receipt.insert(ignore_permissions=True)
             receipt.submit()
             return receipt.name
