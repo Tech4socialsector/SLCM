@@ -87,6 +87,19 @@ def get_context(context):
         "User", context.nav_user, "full_name"
     ) or context.nav_user.split("@")[0] if context.nav_user else ''
     context.user_first   = (context.user_display or 'U')[0].upper()
+    context.today = frappe.utils.getdate(frappe.utils.today())
+
+    # ── Active Admission Cycle ───────────────────────────────────
+    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    if active_cycle_name:
+        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name)
+        context.active_cycle = frappe._dict({
+            "name": active_cycle_doc.name,
+            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None
+        })
+    else:
+        context.active_cycle = None
 
     # ── All applicant records for this user (all cycles) ──────────
     try:
@@ -125,6 +138,7 @@ def get_context(context):
 
         for app in context.my_applications:
             app["program_name"] = frappe.db.get_value("Program", app.program, "program_name") or app.program
+            app["program_image"] = frappe.db.get_value("Program", app.program, "program_image")
             # Fetch current stage name if current_stage is a link/ID
             if app.current_stage:
                 app["current_stage_name"] = frappe.db.get_value("Stage Master", app.current_stage, "stage_name") or app.current_stage

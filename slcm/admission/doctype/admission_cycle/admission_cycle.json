@@ -14,9 +14,7 @@
   "col_break_basic",
   "status",
   "max_schemes_per_applicant",
-  "section_break_vnls",
   "cycle_start_date",
-  "column_break_rbxq",
   "cycle_end_date",
   "section_break_programs",
   "programs",
@@ -137,10 +135,20 @@
    "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
+  },
+  {
+   "fieldname": "cycle_start_date",
+   "fieldtype": "Date",
+   "label": "Cycle Start Date"
+  },
+  {
+   "fieldname": "cycle_end_date",
+   "fieldtype": "Date",
+   "label": "Cycle End Date"
   }
  ],
  "links": [],
- "modified": "2026-03-10 23:15:56.771521",
+ "modified": "2026-03-12 11:38:17.672056",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

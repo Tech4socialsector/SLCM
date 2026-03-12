@@ -7,6 +7,19 @@ no_cache = 1
 def get_context(context):
     context.portal_config = get_portal_config()
     _user = frappe.session.user
+    context.today = frappe.utils.getdate(frappe.utils.today())
+
+    # ── Active Admission Cycle ───────────────────────────────────
+    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    if active_cycle_name:
+        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name)
+        context.active_cycle = frappe._dict({
+            "name": active_cycle_doc.name,
+            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None
+        })
+    else:
+        context.active_cycle = None
     
     # Initialize all context variables
     context.no_applicant = False
@@ -80,7 +93,7 @@ def get_context(context):
         all_apps = frappe.get_all(
             "Scholarship Application",
             filters={"applicant_id": applicant.name},
-            fields=["name", "scholarship_scheme", "status", "creation", "approval_date", "calculated_benefit", "final_fee_amount"],
+            fields=["name", "scholarship_scheme", "status", "creation", "modified", "approval_date", "calculated_benefit", "final_fee_amount", "rejection_reason", "original_fee_amount"],
             order_by="creation desc",
             ignore_permissions=True
         )
@@ -104,6 +117,7 @@ def get_context(context):
                     "scheme_type": scheme_doc.scheme_type,
                     "description": scheme_doc.description,
                     "max_amount": scheme_doc.max_amount,
+                    "apply_on": scheme_doc.apply_on,
                     "coverage_type": scheme_doc.coverage_type,
                     "coverage_value": scheme_doc.coverage_value,
                     "application_end": scheme_doc.application_end,

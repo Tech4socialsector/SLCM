@@ -240,7 +240,7 @@ def get_context(context):
                 },
                 fields=[
                     "stage_name", "stage_type", "applicable_workflow",
-                    "sequence_no", "activate_status", "closed_status"
+                    "sequence_no", "activate_status", "completed_status", "closed_status"
                 ],
                 order_by="sequence_no asc",
                 ignore_permissions=True
@@ -255,15 +255,21 @@ def get_context(context):
                 current_status = applicant.application_status
                 active_index = -1
                 is_terminal_stop = False
+                is_completed_stop = False
                 
                 for i, s in enumerate(filtered_stages):
                     if s.activate_status == current_status:
                         active_index = i
-                        break
-                    if s.closed_status == current_status:
+                        is_terminal_stop = False
+                        is_completed_stop = False
+                    elif s.completed_status == current_status:
+                        active_index = i
+                        is_terminal_stop = False
+                        is_completed_stop = True
+                    elif s.closed_status == current_status:
                         active_index = i
                         is_terminal_stop = True
-                        break
+                        is_completed_stop = False
                 
                 for i, s in enumerate(filtered_stages):
                     state = "pending"
@@ -271,7 +277,12 @@ def get_context(context):
                         if i < active_index:
                             state = "completed"
                         elif i == active_index:
-                            state = "closed" if is_terminal_stop else "active"
+                            if is_terminal_stop:
+                                state = "closed"
+                            elif is_completed_stop:
+                                state = "completed"
+                            else:
+                                state = "active"
                     
                     stages_with_state.append({
                         "name": s.stage_name or s.stage_type,
@@ -344,6 +355,7 @@ def get_context(context):
                     if entry.get("profile", {}).get("applicant_id") == _app_name:
                         context.all_results = entry.get("results") or []
                         context.all_merit   = entry.get("merit") or []
+                        context.eligibility_result = entry.get("profile")
                         break
         except Exception: pass
 
@@ -392,6 +404,32 @@ def get_context(context):
                 context.et_show_result = (et_doc.entrance_test_status in ["Attended", "Absent"] and et_doc.result_published == 1)
                 context.et_preferences = [{"provider": p.provider, "center_name": p.center_name, "center_address": p.center_address} for p in (et_doc.re_assigned_preferences if context.et_is_rescheduled else et_doc.assigned_preferences)]
                 context.et_doc_json = frappe.as_json(et_doc.as_dict())
+                
+                # Add branding and reporting time
+                campus_branding = {"campus_name": et_doc.campus or "Institution of Legal Education", "logo": None}
+                try:
+                    if et_doc.campus:
+                        campus = frappe.get_doc("Campus", et_doc.campus)
+                        campus_branding["campus_name"] = campus.campus_name or et_doc.campus
+                        campus_branding["logo"] = campus.logo
+                except: pass
+                context.et_campus_branding = campus_branding
+
+                # Reporting time calculation (1 hour before exam)
+                from datetime import timedelta
+                f_date = et_doc.re_allocation_date if context.et_is_rescheduled else et_doc.allocation_date
+                if f_date:
+                    try:
+                        # Assuming f_date is a datetime object or can be parsed
+                        if isinstance(f_date, str):
+                            from frappe.utils import get_datetime
+                            f_date = get_datetime(f_date)
+                        rep_dt = f_date - timedelta(hours=1)
+                        context.et_reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
+                    except:
+                        context.et_reporting_time = "09:30 AM" # Fallback
+                else:
+                    context.et_reporting_time = "—"
         except Exception: pass
 
         # Interview details
@@ -403,6 +441,44 @@ def get_context(context):
                 context.interview_doc = i_doc
                 context.interview_is_rescheduled = (i_doc.is_rescheduled == 1 or i_doc.interview_slot_status == "Rescheduled")
                 context.interview_show_result = (i_doc.interview_status in ["Attended", "Absent", "Selected", "Rejected"] and i_doc.result_published == 1)
+                
+                # Show feedback section if results are published
+                context.interview_show_feedback = bool(i_doc.result_published)
+                context.interview_feedback_submitted = bool(i_doc.feedback)
+                
+                # Current slot details for display
+                is_re = context.interview_is_rescheduled
+                f_date = i_doc.re_interview_date if is_re else i_doc.interview_date
+                f_time = i_doc.re_interview_time if is_re else i_doc.interview_time
+                
+                # Format time for display
+                formatted_time = "—"
+                if f_date and f_time:
+                    try:
+                        formatted_time = frappe.utils.format_datetime(f"{f_date} {f_time}", "hh:mm a")
+                    except:
+                        formatted_time = f_time
+
+                # Calculate reporting time (1 hour before)
+                reporting_time = "—"
+                if f_date and f_time:
+                    try:
+                        from frappe.utils import get_datetime
+                        from datetime import timedelta
+                        dt = get_datetime(f"{f_date} {f_time}")
+                        rep_dt = dt - timedelta(hours=1)
+                        reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
+                    except: pass
+
+                context.interview_current_slot = {
+                    "staff_name": i_doc.re_staff_name if is_re else i_doc.staff_name,
+                    "interview_date": frappe.utils.format_date(f_date, "d MMM yyyy") if f_date else "—",
+                    "interview_time": formatted_time,
+                    "reporting_time": reporting_time,
+                    "interview_address": i_doc.re_interview_address if is_re else i_doc.interview_address,
+                    "attendance_confirmation": i_doc.re_interview_attendance_confirmation if is_re else i_doc.interview_attendance_confirmation
+                }
+                context.interview_attendance_options = ["Will Attend", "Will Not Attend", "Need Reschedule"]
         except Exception: pass
 
         context.show_detail = True

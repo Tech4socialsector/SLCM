@@ -8,12 +8,22 @@ class EntranceTestSeatAllocation(Document):
 
     def before_save(self):
         # Update attendance_marked_on if status changes to Attended, Absent, or Rescheduled
-        # This only happens when the status is changed manually (Admin)
+        doc_before = self.get_doc_before_save()
         if not self.is_new():
-            old_status = frappe.db.get_value("Entrance Test Seat Allocation", self.name, "entrance_test_status")
-            if self.entrance_test_status != old_status:
+            if doc_before and self.entrance_test_status != doc_before.entrance_test_status:
                 if self.entrance_test_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
+
+        # Update Applicant's application_status in DB immediately when user changes to Scheduled/Rescheduled/Absent (same transaction = fast, no refresh needed).
+        if self.applicant and self.entrance_test_status in ("Scheduled", "Rescheduled", "Absent"):
+            status_actually_changed = (
+                self.is_new()
+                or (doc_before and doc_before.entrance_test_status != self.entrance_test_status)
+            )
+            if status_actually_changed:
+                _update_applicant_status_for_entrance_test_status(
+                    self.applicant, self.entrance_test_status
+                )
 
         # Fetch categories from Applicant if newly set or empty
         # Priority: Seat Allocation category (if already filled) vs Applicant's categories
@@ -25,6 +35,35 @@ class EntranceTestSeatAllocation(Document):
             if not self.category:
                 for cat in app_categories:
                     self.append("category", {"category": cat})
+
+def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_test_status):
+    """
+    Update Applicant's application_status (Applicant Status doctype) when
+    Entrance Test Seat Allocation's entrance_test_status is Scheduled, Rescheduled, or Absent.
+    - Scheduled / Rescheduled → "Entrance Test Scheduled"
+    - Absent → "Rejected"
+    """
+    status_map = {
+        "Scheduled": "Entrance Test Scheduled",
+        "Rescheduled": "Entrance Test Scheduled",
+        "Absent": "Rejected",
+    }
+    new_status = status_map.get(entrance_test_status)
+    if not new_status:
+        return
+    if not frappe.db.exists("Applicant Status", new_status):
+        frappe.log_error(
+            message=f"Applicant Status '{new_status}' does not exist. Create it in Applicant Status doctype.",
+            title="Applicant Status Sync Skipped",
+        )
+        return
+    frappe.db.set_value("Applicant", applicant_name, "application_status", new_status)
+    frappe.clear_document_cache("Applicant", applicant_name)
+    # Notify clients so the Applicant form can auto-refresh if open
+    frappe.publish_realtime(
+        "applicant_application_status_updated",
+        {"docname": applicant_name, "application_status": new_status},
+    )
 
 
 @frappe.whitelist()
