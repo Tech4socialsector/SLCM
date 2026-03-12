@@ -359,6 +359,43 @@ def get_context(context):
                         break
         except Exception: pass
 
+        # Merit (fallback): pull from published Merit List if applicant_results pipeline didn't return it
+        try:
+            _need_merit = True
+            if context.all_merit and isinstance(context.all_merit, list):
+                m0 = context.all_merit[0] if context.all_merit else {}
+                if (m0.get("overall_rank") if hasattr(m0, "get") else getattr(m0, "overall_rank", None)) or \
+                   (m0.get("total_score") if hasattr(m0, "get") else getattr(m0, "total_score", None)):
+                    _need_merit = False
+
+            if _need_merit:
+                ml_rows = frappe.get_all(
+                    "Merit List",
+                    filters={
+                        "docstatus": 1,
+                        "status": "Published",
+                        "admission_cycle": applicant.admission_cycle,
+                        "campus": applicant.campus,
+                        "program_level": applicant.program_level or None,
+                    },
+                    fields=["name"],
+                    order_by="modified desc",
+                    limit=1,
+                    ignore_permissions=True,
+                )
+                if ml_rows:
+                    ml = frappe.get_doc("Merit List", ml_rows[0].name, ignore_permissions=True)
+                    row = next((r for r in (ml.merit_applicants or []) if r.applicant_id == _app_name), None)
+                    if row:
+                        context.all_merit = [{
+                            "overall_rank": row.overall_rank,
+                            "total_score": row.total_score,
+                            "status": row.status,
+                            "program_rank": row.program_rank,
+                        }]
+        except Exception as ex:
+            frappe.log_error(str(ex), "my_applications merit list fallback")
+
         context.fee_payment_status = applicant.get("application_fee_status") or ""
 
         # Interview
@@ -396,7 +433,11 @@ def get_context(context):
         # Entrance test
         try:
             et_rows = frappe.get_all("Entrance Test Seat Allocation",
-                filters={"applicant": _app_name}, fields=["*"], limit=1, ignore_permissions=True)
+                filters={"applicant": _app_name},
+                fields=["name"],
+                order_by="creation desc",
+                limit=1,
+                ignore_permissions=True)
             if et_rows:
                 et_doc = frappe.get_doc("Entrance Test Seat Allocation", et_rows[0].name, ignore_permissions=True)
                 context.et_doc = et_doc
@@ -435,7 +476,11 @@ def get_context(context):
         # Interview details
         try:
             i_rows = frappe.get_all("Interview Seat Allocation",
-                filters={"applicant": _app_name}, fields=["*"], limit=1, ignore_permissions=True)
+                filters={"applicant": _app_name},
+                fields=["name"],
+                order_by="creation desc",
+                limit=1,
+                ignore_permissions=True)
             if i_rows:
                 i_doc = frappe.get_doc("Interview Seat Allocation", i_rows[0].name, ignore_permissions=True)
                 context.interview_doc = i_doc

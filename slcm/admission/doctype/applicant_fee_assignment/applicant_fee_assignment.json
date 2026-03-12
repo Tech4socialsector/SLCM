@@ -11,6 +11,7 @@
         "applicant_name",
         "admission_cycle",
         "column_break_1",
+        "fee_type",
         "offer_letter",
         "program",
         "academic_year",
@@ -58,13 +59,22 @@
             "fieldtype": "Column Break"
         },
         {
+            "default": "Admission Fee",
+            "fieldname": "fee_type",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Fee Type",
+            "options": "Application Fee\nAdmission Fee"
+        },
+        {
+            "depends_on": "eval:doc.fee_type == 'Admission Fee'",
             "fieldname": "offer_letter",
             "fieldtype": "Link",
             "in_list_view": 1,
             "in_standard_filter": 1,
             "label": "Offer Letter",
-            "options": "Offer Letter",
-            "reqd": 1
+            "options": "Offer Letter"
         },
         {
             "fetch_from": "offer_letter.program",

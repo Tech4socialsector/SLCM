@@ -190,6 +190,25 @@
           <div class="va-row"><dt>CV / Resume</dt><dd>{{ d.cv or '—' }}</dd></div>
         </dl>
       </section>
+
+      {% if application_fee and application_fee.fee_amount and application_fee.fee_amount > 0 %}
+      <!-- Application Fee -->
+      <section class="va-card" id="application-fee-card">
+        <h2 class="va-card-title">Application Fee</h2>
+        <p class="va-fee-note">Your application can be submitted only after the application fee is paid. The amount depends on your category as per the Program Reservation Policy.</p>
+        <div class="va-fee-row">
+          <span class="va-fee-label">Amount</span>
+          <span class="va-fee-amount">&#8377; {{ application_fee.fee_amount }}</span>
+        </div>
+        {% if application_fee.reservation_category %}
+        <div class="va-fee-row"><span class="va-fee-label">Category</span><span>{{ application_fee.reservation_category }}</span></div>
+        {% endif %}
+        <div class="va-fee-row"><span class="va-fee-label">Status</span><span class="va-fee-status va-fee-status-{{ (application_fee.application_fee_status or 'unpaid')|lower }}">{{ application_fee.application_fee_status or 'Unpaid' }}</span></div>
+        {% if application_fee.application_fee_status != 'Paid' and application_fee.application_fee_status != 'Waived' %}
+        <button type="button" class="va-btn va-btn-primary va-pay-btn" id="pay-application-fee-btn">Pay Application Fee</button>
+        {% endif %}
+      </section>
+      {% endif %}
     </div>
 
     <div class="va-actions">
@@ -229,6 +248,73 @@
 .va-btn-primary:hover { filter: brightness(1.1); }
 .va-btn-outline { background: #fff; color: var(--primary, #1a3c6e); border: 2px solid var(--primary, #1a3c6e); }
 .va-btn-outline:hover { background: #f1f5f9; }
+.va-fee-note { font-size: 0.9rem; color: #64748b; margin: 0 0 16px 0; }
+.va-fee-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+.va-fee-row:last-of-type { border-bottom: none; }
+.va-fee-label { font-weight: 600; color: #64748b; }
+.va-fee-amount { font-size: 1.2rem; font-weight: 700; color: var(--primary, #1a3c6e); }
+.va-fee-status { font-weight: 600; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; }
+.va-fee-status.paid, .va-fee-status.waived { background: #d1fae5; color: #065f46; }
+.va-fee-status.unpaid, .va-fee-status.requested { background: #fef3c7; color: #92400e; }
+.va-pay-btn { margin-top: 16px; }
 @media (max-width: 640px) { .va-row { grid-template-columns: 1fr; } }
 </style>
+{% if application_fee and app_name and application_fee.application_fee_status != 'Paid' and application_fee.application_fee_status != 'Waived' %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+(function() {
+  const applicantName = {{ app_name|tojson }};
+  document.getElementById('pay-application-fee-btn').addEventListener('click', function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    frappe.call({
+      method: 'slcm.api.service.fee_service.create_application_fee_razorpay_order',
+      args: { applicant_name: applicantName },
+      callback: function(r) {
+        btn.disabled = false;
+        btn.textContent = 'Pay Application Fee';
+        if (r.exc) return;
+        const d = r.message;
+        const options = {
+          key: d.key_id,
+          amount: d.amount,
+          currency: d.currency || 'INR',
+          order_id: d.order_id,
+          name: 'Application Fee',
+          handler: function(res) {
+            frappe.call({
+              method: 'slcm.api.service.fee_service.verify_application_fee_payment',
+              args: {
+                razorpay_payment_id: res.razorpay_payment_id,
+                razorpay_order_id: res.razorpay_order_id,
+                razorpay_signature: res.razorpay_signature,
+                applicant_name: applicantName
+              },
+              callback: function(vr) {
+                if (vr.message && vr.message.status === 'success') {
+                  frappe.show_alert({ message: 'Payment successful!', indicator: 'green' }, 5);
+                  window.location.reload();
+                } else {
+                  frappe.msgprint({ message: vr.message && vr.message.message || 'Verification failed.', indicator: 'red' });
+                }
+              }
+            });
+          }
+        };
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function(err) {
+          frappe.call({
+            method: 'slcm.api.service.fee_service.log_application_fee_payment_failure',
+            args: { applicant_name: applicantName, order_id: d.order_id, error_data: JSON.stringify(err) }
+          });
+          frappe.msgprint({ message: err.error ? (err.error.description || err.error.reason) : 'Payment failed.', indicator: 'red' });
+        });
+        rzp.open();
+      }
+    });
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}
