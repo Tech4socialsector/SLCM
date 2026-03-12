@@ -11,7 +11,6 @@
   "pg_cgpa",
   "year_of_completion",
   "collegeuniversity",
-  "percentagecgpa_obtained",
   "pg_degree_certificatebonafide_certificate_to_be_uploaded",
   "transcriptsmarksheets_to_be_uploaded"
  ],
@@ -27,19 +26,13 @@
    "fieldname": "pg_cgpa",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "PG CGPA"
+   "label": "CGPA obtained"
   },
   {
    "fieldname": "collegeuniversity",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "College/University"
-  },
-  {
-   "fieldname": "percentagecgpa_obtained",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Percentage/CGPA obtained"
   },
   {
    "fieldname": "year_of_completion",
@@ -71,7 +64,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-02 22:22:26.420149",
+ "modified": "2026-03-12 18:51:50.138142",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "PG Degree Details",
