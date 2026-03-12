@@ -1,5 +1,68 @@
 {% extends "slcm/www/admission_base.html" %}
 
+{# ── Safe config extraction ────────────────────────────────── #}
+{% if portal_config and portal_config.get %}
+{% set _title = portal_config.get('portal_title') or 'Admissions' %}
+{% set _tagline = portal_config.get('portal_tagline') or portal_config.get('portal_subtitle') or '' %}
+{% set _mission = portal_config.get('portal_mission') or '' %}
+{% set _cta_tag = portal_config.get('hero_admission_tag') or (active_cycle.name ~ ' Admissions Open' if active_cycle
+else 'Admissions Open') %}
+{% elif portal_config %}
+{% set _title = portal_config.portal_title or 'Admissions' %}
+{% set _tagline = portal_config.portal_subtitle or '' %}
+{% set _mission = portal_config.portal_mission or '' %}
+{% set _cta_tag = (active_cycle.name ~ ' Admissions Open') if active_cycle else 'Admissions Open' %}
+{% else %}
+{% set _title='Admissions' %} {% set _tagline='' %} {% set _mission='' %}
+{% set _cta_tag='Admissions Open' %}
+{% endif %}
+
+{% set _user = nav_user or '' %}
+{% set _is_guest = is_guest or (_user == 'Guest' or not _user) %}
+{% set _display = user_display or (_user.split('@')[0] if _user else 'User') %}
+{% set _first = user_first or (_display[0]|upper if _display else 'U') %}
+{% set _hero_img = dashboard_hero_image or '' %}
+{% set _apps = my_applications or [] %}
+{% set _scholarships= scholarships or [] %}
+{% set _vcards = value_cards or [] %}
+{% set _mission_txt = portal_mission or _mission %}
+
+{# Cycle Active Check #}
+{% set _is_cycle_active = False %}
+{% if active_cycle %}
+    {% set _start = active_cycle.cycle_start_date %}
+    {% set _end = active_cycle.cycle_end_date %}
+    {% if (not _start or today >= _start) and (not _end or today <= _end) %}
+        {% set _is_cycle_active = True %}
+    {% endif %}
+{% endif %}
+
+{# Profile data shortcuts #}
+{% set _pd = profile_data or {} %}
+{% set _pname = _pd.get('candidate_name','') if _pd.get else (_pd.candidate_name or '') %}
+{% set _pemail = _pd.get('email','') if _pd.get else (_pd.email or '') %}
+{% set _pphoto = _pd.get('candidate_photo','') if _pd.get else (_pd.candidate_photo or '') %}
+{% set _pstatus = _pd.get('application_status','') if _pd.get else (_pd.application_status or '') %}
+{% set _app_id = _pd.get('name','') if _pd.get else (_pd.name or '') %}
+{% set _pfirst = (_pname[0]|upper) if _pname else (_first or 'A') %}
+{% set _pmobile = _pd.get('mobile_number','') if _pd.get else (_pd.mobile_number or '') %}
+{% set _pdob = _pd.get('date_of_birth','') if _pd.get else (_pd.date_of_birth or '') %}
+{% set _pgender = _pd.get('gender','') if _pd.get else (_pd.gender or '') %}
+{% set _pnation = _pd.get('nationality','') if _pd.get else (_pd.nationality or '') %}
+{% set _paddr = _pd.get('correspondence_address','') if _pd.get else (_pd.correspondence_address or '') %}
+{% set _pcity = _pd.get('city','') if _pd.get else (_pd.city or '') %}
+{% set _pstate = _pd.get('state','') if _pd.get else (_pd.state or '') %}
+{% set _ppincode= _pd.get('pincode','') if _pd.get else (_pd.pincode or '') %}
+
+{# Profile completion calculation (8 fields) #}
+{% set _completion_fields = [_pmobile, _pdob, _pgender, _pnation, _paddr, _pcity, _pstate, _ppincode] %}
+{% set _filled_count = namespace(v=0) %}
+{% for f in _completion_fields %}{% if f %}{% set _filled_count.v = _filled_count.v + 1 %}{% endif %}{% endfor %}
+{% set _completion_pct = ((_filled_count.v / 8) * 100) | round | int %}
+
+{# Documents #}
+{% set _docs = app_documents or [] %}
+
 {% block title %}Dashboard — Admissions{% endblock %}
 
 {% block theme_vars %}
@@ -653,69 +716,6 @@
 {% endblock %}
 
 {% block content %}
-
-{# ── Safe config extraction ────────────────────────────────── #}
-{% if portal_config and portal_config.get %}
-{% set _title = portal_config.get('portal_title') or 'Admissions' %}
-{% set _tagline = portal_config.get('portal_tagline') or portal_config.get('portal_subtitle') or '' %}
-{% set _mission = portal_config.get('portal_mission') or '' %}
-{% set _cta_tag = portal_config.get('hero_admission_tag') or (active_cycle.name ~ ' Admissions Open' if active_cycle
-else 'Admissions Open') %}
-{% elif portal_config %}
-{% set _title = portal_config.portal_title or 'Admissions' %}
-{% set _tagline = portal_config.portal_subtitle or '' %}
-{% set _mission = portal_config.portal_mission or '' %}
-{% set _cta_tag = (active_cycle.name ~ ' Admissions Open') if active_cycle else 'Admissions Open' %}
-{% else %}
-{% set _title='Admissions' %} {% set _tagline='' %} {% set _mission='' %}
-{% set _cta_tag='Admissions Open' %}
-{% endif %}
-
-{% set _user = nav_user or '' %}
-{% set _is_guest = is_guest or (_user == 'Guest' or not _user) %}
-{% set _display = user_display or (_user.split('@')[0] if _user else 'User') %}
-{% set _first = user_first or (_display[0]|upper if _display else 'U') %}
-{% set _hero_img = dashboard_hero_image or '' %}
-{% set _apps = my_applications or [] %}
-{% set _scholarships= scholarships or [] %}
-{% set _vcards = value_cards or [] %}
-{% set _mission_txt = portal_mission or _mission %}
-
-{# Cycle Active Check #}
-{% set _is_cycle_active = False %}
-{% if active_cycle %}
-    {% set _start = active_cycle.cycle_start_date %}
-    {% set _end = active_cycle.cycle_end_date %}
-    {% if (not _start or today >= _start) and (not _end or today <= _end) %}
-        {% set _is_cycle_active = True %}
-    {% endif %}
-{% endif %}
-
-{# Profile data shortcuts #}
-{% set _pd = profile_data or {} %}
-{% set _pname = _pd.get('candidate_name','') if _pd.get else (_pd.candidate_name or '') %}
-{% set _pemail = _pd.get('email','') if _pd.get else (_pd.email or '') %}
-{% set _pphoto = _pd.get('candidate_photo','') if _pd.get else (_pd.candidate_photo or '') %}
-{% set _pstatus = _pd.get('application_status','') if _pd.get else (_pd.application_status or '') %}
-{% set _app_id = _pd.get('name','') if _pd.get else (_pd.name or '') %}
-{% set _pfirst = (_pname[0]|upper) if _pname else (_first or 'A') %}
-{% set _pmobile = _pd.get('mobile_number','') if _pd.get else (_pd.mobile_number or '') %}
-{% set _pdob = _pd.get('date_of_birth','') if _pd.get else (_pd.date_of_birth or '') %}
-{% set _pgender = _pd.get('gender','') if _pd.get else (_pd.gender or '') %}
-{% set _pnation = _pd.get('nationality','') if _pd.get else (_pd.nationality or '') %}
-{% set _paddr = _pd.get('correspondence_address','') if _pd.get else (_pd.correspondence_address or '') %}
-{% set _pcity = _pd.get('city','') if _pd.get else (_pd.city or '') %}
-{% set _pstate = _pd.get('state','') if _pd.get else (_pd.state or '') %}
-{% set _ppincode= _pd.get('pincode','') if _pd.get else (_pd.pincode or '') %}
-
-{# Profile completion calculation (8 fields) #}
-{% set _completion_fields = [_pmobile, _pdob, _pgender, _pnation, _paddr, _pcity, _pstate, _ppincode] %}
-{% set _filled_count = namespace(v=0) %}
-{% for f in _completion_fields %}{% if f %}{% set _filled_count.v = _filled_count.v + 1 %}{% endif %}{% endfor %}
-{% set _completion_pct = ((_filled_count.v / 8) * 100) | round | int %}
-
-{# Documents #}
-{% set _docs = app_documents or [] %}
 
 <!-- ══ OUTER WRAPPER ══════════════════════════════════════════ -->
 <div style="min-height:calc(100vh - 60px);background:var(--bg);
