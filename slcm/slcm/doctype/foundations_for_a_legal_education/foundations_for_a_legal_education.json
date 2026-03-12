@@ -24,6 +24,7 @@
   "if_others_mention_here",
   "address_line_1",
   "pincode",
+  "city",
   "section_break_education",
   "last_examination_attended",
   "last_institution_attended",
@@ -32,7 +33,7 @@
   "latest_board_attended",
   "if_others2",
   "year_of_passing",
-  "city",
+  "please_specify_the_year_of_passing",
   "section_break_parent",
   "relationship_with_candidate",
   "parent_name",
@@ -327,7 +328,7 @@
    "fieldname": "year_of_passing",
    "fieldtype": "Select",
    "label": "Year of passing",
-   "options": "\n2019\n2020\n2021\n2022\n2023\n2024\n2025\n2026",
+   "options": "\n2019\n2020\n2021\n2022\n2023\n2024\n2025\n2026\nPrior to 2016",
    "reqd": 1
   },
   {
@@ -380,12 +381,18 @@
    "fieldtype": "Data",
    "label": "City",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.year_of_passing==\"Prior to 2016\"",
+   "fieldname": "please_specify_the_year_of_passing",
+   "fieldtype": "Data",
+   "label": "Please specify the year of passing"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-12 03:18:10.300675",
+ "modified": "2026-03-12 04:14:42.132303",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
