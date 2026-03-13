@@ -627,6 +627,11 @@ window.inject_fle_header_footer = function () {
     if ($('.sticky-header').length > 0) return;
 
     // ── 0. Global CSS refinement for FLE ──────────────────────────────────────
+    // Hide web form title on /new pages immediately (JS will update once doc loads)
+    if (window.location.pathname.indexOf('/new') !== -1) {
+        $('head').append('<style id="fle-new-form-title-hide">.web-form-title h1, .web-form-header h1 { display: none !important; }</style>');
+    }
+
     if ($('#fle-global-refinements').length === 0) {
         $('head').append(`
         <style id="fle-global-refinements">
@@ -745,6 +750,16 @@ window.inject_fle_header_footer = function () {
 
             .navbar-navy .nav-item { text-transform: uppercase !important; }
             button.fle-logout-btn  { text-transform: uppercase !important; }
+
+            .control-label, label.control-label, .web-form-page label,
+            .web-form-wrapper label, .frappe-control label, .form-group label {
+                text-transform: none !important;
+                margin-bottom: 8px !important;
+                display: block !important;
+                font-size: 13px !important;
+                font-weight: 600 !important;
+                color: #333 !important;
+            }
         </style>`);
     }
 
@@ -782,7 +797,8 @@ window.inject_fle_header_footer = function () {
                 font-size:21px !important; font-weight:700 !important; color:#8B0000 !important;
                 margin:0 !important; letter-spacing:0.2px !important;
             }
-            .breadcrumb, .page-breadcrumbs, .breadcrumb-container, .page-head,
+            .breadcrumb, .page-breadcrumbs, .breadcrumb-container,
+            .page-head .breadcrumb-container, .page-head .page-breadcrumbs,
             .navbar-user-icon, .avatar { display:none!important; visibility:hidden!important; }
             .sticky-header .header-logout-area {
                 flex:0 0 auto!important; display:flex!important; align-items:center!important;
@@ -1028,8 +1044,12 @@ window.inject_fle_header_footer = function () {
             '.control-label, label.control-label, .web-form-page label, ' +
             '.web-form-wrapper label, .frappe-control label, .form-group label'
         ).forEach(function (el) {
-            el.style.setProperty('text-transform', 'capitalize', 'important');
+            el.style.setProperty('text-transform', 'none', 'important');
             el.style.setProperty('letter-spacing', '0.2px', 'important');
+            el.style.setProperty('margin-bottom', '8px', 'important');
+            el.style.setProperty('font-size', '13px', 'important');
+            el.style.setProperty('font-weight', '600', 'important');
+            el.style.setProperty('color', '#333', 'important');
         });
 
         document.querySelectorAll('.section-head').forEach(function (el) {
@@ -1052,8 +1072,12 @@ window.inject_fle_header_footer = function () {
             '.control-label, label.control-label, .web-form-page label, ' +
             '.web-form-wrapper label, .frappe-control label, .form-group label'
         ).forEach(function (el) {
-            el.style.setProperty('text-transform', 'capitalize', 'important');
+            el.style.setProperty('text-transform', 'none', 'important');
             el.style.setProperty('letter-spacing', '0.2px', 'important');
+            el.style.setProperty('margin-bottom', '8px', 'important');
+            el.style.setProperty('font-size', '13px', 'important');
+            el.style.setProperty('font-weight', '600', 'important');
+            el.style.setProperty('color', '#333', 'important');
         });
 
         document.querySelectorAll('.section-head').forEach(function (el) {
@@ -1151,6 +1175,13 @@ window.check_payment_status_buttons = function () {
     var path = window.location.pathname;
     if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
 
+    // Prevent multiple simultaneous intervals from running
+    if (window._fle_payment_check_running) return;
+    window._fle_payment_check_running = true;
+
+    // Immediately remove any persisted title-hide CSS from /new page visits
+    $('#fle-new-form-title-hide').remove();
+
     var checks = 0;
     var maxChecks = 40; // Max 20 seconds
 
@@ -1159,14 +1190,30 @@ window.check_payment_status_buttons = function () {
         if (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.doc && frappe.web_form.doc.name) {
             clearInterval(interval);
 
-            // Override Web Form Title with the actual web form name
-            // if ($('.web-form-title h1').length > 0 && frappe.web_form.title) {
-            //     $('.web-form-title h1').text(frappe.web_form.title);
-            //     $('.web-form-title p').hide(); // Hide the sub-title (ID) if it exists
-            // }
+            // Show document ID in the title area (hide the long web form title)
+            var docName = frappe.web_form.doc.name;
+            var isRealDoc = docName && docName.indexOf('new-') === -1;
+            var $titleH1 = $('.web-form-title h1, .web-form-header h1').first();
 
-            // Only hide if it's an existing submission
-            if (!frappe.web_form.is_new) {
+            if (isRealDoc) {
+                // Remove any persisted hide CSS and make visible
+                $('#fle-new-form-title-hide').remove();
+                if ($titleH1.length > 0) {
+                    $titleH1[0].style.removeProperty('display');
+                    $titleH1.show().text(docName);
+                } else {
+                    // Fallback: insert a dedicated ID display if h1 isn't found
+                    if ($('#fle-doc-id-display').length === 0) {
+                        var $idDisplay = $('<div id="fle-doc-id-display" style="text-align:left; padding:8px 0 4px; font-family:Merriweather,Georgia,serif; font-weight:700; font-size:1.8em; color:#1a1a1a; margin-bottom:8px;">' + docName + '</div>');
+                        $('.web-form-wrapper, .web-form-container, .page-content').first().prepend($idDisplay);
+                    }
+                }
+            } else if ($titleH1.length > 0) {
+                $titleH1.hide();
+            }
+
+            // Only show payment/PDF controls for an existing (saved) submission
+            if (isRealDoc) {
                 frappe.call({
                     method: 'slcm.api.user.get_payment_status',
                     args: {
@@ -1180,34 +1227,58 @@ window.check_payment_status_buttons = function () {
                                 if ($('#fle-hide-btn-style').length === 0) {
                                     const styleBlock = `
                                         <style id="fle-hide-btn-style">
+                                            .submit-btn, .discard-btn, .delete-btn,
                                             .web-form-actions .btn:not(.download-pdf-btn),
                                             .web-form-footer .btn:not(.download-pdf-btn) {
                                                 display: none !important;
+                                                visibility: hidden !important;
                                             }
                                         </style>
                                     `;
                                     $('head').append(styleBlock);
                                 }
 
-                                // Add Download PDF button if not already present
-                                if ($('.download-pdf-btn').length === 0) {
-                                    const pdf_url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Foundations%20for%20a%20Legal%20Education&name=${frappe.web_form.doc.name}&format=Standard&no_letterhead=0`;
-                                    const pdf_btn = `<a href="${pdf_url}" target="_blank" class="btn btn-primary btn-sm ml-2 download-pdf-btn" style="background-color: #8B0000; color: #ffffff; border: none !important; display: inline-block !important;">Download PDF</a>`;
-
-                                    // Append to header actions
-                                    if ($('.web-form-actions .right-area').length > 0) {
-                                        $('.web-form-actions .right-area').append(pdf_btn);
-                                    } else {
-                                        $('.web-form-actions').append(pdf_btn);
-                                    }
-
-                                    // Append to footer
-                                    $('.web-form-footer').append(
-                                        `<div class="text-right download-pdf-wrapper" style="width: 100%; margin-top: 15px;">
-                                            <a href="${pdf_url}" target="_blank" class="btn btn-primary btn-md download-pdf-btn" style="background-color: #8B0000; color: #ffffff; border: none !important; display: inline-block !important;">Download PDF</a>
-                                        </div>`
-                                    );
+                                // Also hide directly via jQuery (belt-and-suspenders)
+                                function hideActionButtons() {
+                                    $('.submit-btn, .discard-btn, .delete-btn').hide();
+                                    $('.web-form-footer .btn:not(.download-pdf-btn)').hide();
                                 }
+                                hideActionButtons();
+                                setTimeout(hideActionButtons, 500);
+                                setTimeout(hideActionButtons, 1500);
+
+                                // Download Receipt button — hidden until enabled
+                                /* ENABLE WHEN READY:
+                                if ($('.download-pdf-btn').length === 0) {
+                                    const docname = frappe.web_form.doc.name;
+                                    window._fle_download_receipt = function () {
+                                        const url = `/api/method/slcm.api.user.download_fle_receipt?docname=${encodeURIComponent(docname)}`;
+                                        fetch(url, { method: 'GET', credentials: 'same-origin' })
+                                            .then(function (res) {
+                                                if (!res.ok) { frappe.msgprint(__('Failed to download receipt. Please try again.')); return null; }
+                                                return res.blob();
+                                            })
+                                            .then(function (blob) {
+                                                if (!blob) return;
+                                                var blobUrl = URL.createObjectURL(blob);
+                                                var a = document.createElement('a');
+                                                a.href = blobUrl;
+                                                a.download = 'FLE_Receipt_' + docname + '.pdf';
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                                URL.revokeObjectURL(blobUrl);
+                                            })
+                                            .catch(function () { frappe.msgprint(__('Failed to download receipt. Please try again.')); });
+                                    };
+                                    const pdf_btn = `<a href="#" onclick="window._fle_download_receipt(); return false;" class="btn btn-primary btn-sm ml-2 download-pdf-btn" style="background-color: #8B0000; color: #ffffff; border: none !important; display: inline-block !important;">Download Receipt</a>`;
+                                    if ($('.web-form-footer .right-area').length > 0) {
+                                        $('.web-form-footer .right-area').append(pdf_btn);
+                                    } else {
+                                        $('.web-form-footer').append(pdf_btn);
+                                    }
+                                }
+                                */
                             }
                         }
                     }
@@ -1215,6 +1286,7 @@ window.check_payment_status_buttons = function () {
             }
         } else if (checks >= maxChecks) {
             clearInterval(interval);
+            window._fle_payment_check_running = false;
         }
     }, 500);
 };
