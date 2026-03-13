@@ -362,7 +362,7 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 fade-in-up" style="animation-delay:0.15s">
           <!-- KPI 1: Eligible -->
           <div class="kpi-card border-t-2 border-t-emerald-500 shadow-sm px-4 py-3">
-            <p class="text-[11px] font-black text-slate-700 uppercase tracking-widest mb-1.5">Eligible Schemes</p>
+            <p class="text-[13px] font-black text-slate-700 tracking-widest mb-1.5" style="text-transform:none !important;">Eligible Schemes</p>
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-emerald-500 text-base">auto_awesome</span>
               <span class="text-2xl font-black text-slate-900">{{ kpis.eligible or 0 }}</span>
@@ -371,7 +371,7 @@
 
           <!-- KPI 2: Applied -->
           <div class="kpi-card border-t-2 border-t-blue-500 shadow-sm px-4 py-3">
-            <p class="text-[11px] font-black text-slate-700 uppercase tracking-widest mb-1.5">Submitted</p>
+            <p class="text-[13px] font-black text-slate-700 tracking-widest mb-1.5" style="text-transform:none !important;">Submitted</p>
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-blue-500 text-base">history_edu</span>
               <span class="text-2xl font-black text-slate-900">{{ kpis.applied or 0 }}</span>
@@ -380,7 +380,7 @@
 
           <!-- KPI 3: Approved -->
           <div class="kpi-card border-t-2 border-t-emerald-600 shadow-sm px-4 py-3">
-            <p class="text-[11px] font-black text-slate-700 uppercase tracking-widest mb-1.5">Approved</p>
+            <p class="text-[13px] font-black text-slate-700 tracking-widest mb-1.5" style="text-transform:none !important;">Approved</p>
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-emerald-600 text-base">verified</span>
               <span class="text-2xl font-black text-slate-900">{{ kpis.approved or 0 }}</span>
@@ -389,7 +389,7 @@
 
           <!-- KPI 4: Awarded -->
           <div class="kpi-card border-t-2 border-t-primary shadow-sm px-4 py-3">
-            <p class="text-[11px] font-black text-slate-700 uppercase tracking-widest mb-1.5">Awarded</p>
+            <p class="text-[13px] font-black text-slate-700 tracking-widest mb-1.5" style="text-transform:none !important;">Awarded</p>
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-base">payments</span>
               <span class="text-xl font-black text-slate-900">₹{{ "{:,.0f}".format(kpis.amount_awarded or 0) }}</span>

@@ -129,10 +129,9 @@
   },
   {
    "fieldname": "payment_gateway",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Payment Gateway",
-   "options": "Payment Gateway",
-   "reqd": 1
+   "options": "Payment Gateway"
   },
   {
    "fieldname": "payment_receipt_template",
@@ -143,7 +142,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-12 11:56:45.346026",
+ "modified": "2026-03-13 12:51:43.773843",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",
