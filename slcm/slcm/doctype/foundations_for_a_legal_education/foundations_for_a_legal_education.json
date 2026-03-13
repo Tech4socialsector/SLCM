@@ -177,7 +177,7 @@
   },
   {
    "fieldname": "parent_contact_number",
-   "fieldtype": "Data",
+   "fieldtype": "Phone",
    "label": "Parent's contact number"
   },
   {
@@ -392,7 +392,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-13 21:27:38.726508",
+ "modified": "2026-03-13 08:50:13.005582",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
