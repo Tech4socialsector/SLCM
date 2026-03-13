@@ -549,15 +549,16 @@
     font-size: 15px;
     font-weight: 600;
     color: var(--text-4);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .07em;
   }
 
   .merit-stat-value {
-    font-size: 50px;
+    font-size: clamp(24px, 8vw, 50px);
     font-weight: 800;
     line-height: 1;
     color: var(--primary);
+    word-break: break-all;
   }
 
   .merit-stat-value.score {
@@ -572,7 +573,7 @@
     font-weight: 700;
     background: #dcfce7;
     color: var(--success);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .05em;
     box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15);
   }
@@ -1753,7 +1754,7 @@ or _app.current_stage)) or _status %}
             <div class="merit-stat-row">
               <div class="merit-stat">
                 <span class="merit-stat-label">Overall Rank</span>
-                <span class="merit-stat-value">#{{ m.overall_rank }}</span>
+                <span class="merit-stat-value">{{ m.overall_rank }}</span>
               </div>
               <div class="merit-stat">
                 <span class="merit-stat-label">Merit Score</span>
@@ -1773,7 +1774,7 @@ or _app.current_stage)) or _status %}
         <!-- Right: Seat -->
         <div class="seat-panel">
           <div
-            style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 12px;">
+            style="font-size: 13px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 12px;">
             Seat Allocation Result</div>
           {% if all_results and all_results|length > 0 %}
           {% set r = all_results[0] %}
@@ -1785,7 +1786,7 @@ or _app.current_stage)) or _status %}
             </div>
             <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
               <div
-                style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">
+                style="font-size: 13px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">
                 Allocated Category</div>
               <div
                 style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
