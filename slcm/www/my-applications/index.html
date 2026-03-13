@@ -326,8 +326,8 @@
     content: '';
     position: absolute;
     top: 20px;
-    left: 0;
-    right: 0;
+    left: calc(100% / (var(--num-stages) * 2));
+    right: calc(100% / (var(--num-stages) * 2));
     height: 3px;
     background: var(--border);
     z-index: 0;
@@ -336,7 +336,7 @@
   .stage-track-fill {
     position: absolute;
     top: 20px;
-    left: 0;
+    left: calc(100% / (var(--num-stages) * 2));
     height: 3px;
     background: var(--success);
     border-radius: 2px;
@@ -1659,9 +1659,15 @@ or _app.current_stage)) or _status %}
         {% endif %}
         {% endif %}
         {% endfor %}
-        {% set _pct = ((ns.done / _stages|length) * 100)|int %}
+        
+        {% set _num_stages = _stages|length %}
+        {% if _num_stages > 1 %}
+          {% set _pct = (((ns.done - 1) / _num_stages) * 100) %}
+        {% else %}
+          {% set _pct = 0 %}
+        {% endif %}
 
-        <div class="stage-track">
+        <div class="stage-track" style="--num-stages: {{ _num_stages }};">
           <div class="stage-track-fill" style="width:{{ _pct }}%"></div>
 
           {% for s in _stages %}
