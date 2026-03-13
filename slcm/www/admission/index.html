@@ -429,16 +429,16 @@
     search_off
   </span>
   <h2 style="font-size:24px;font-weight:800;color:#0f172a;margin-bottom:8px;">
-    Program Not Found
+    Programme Not Found
   </h2>
   <p style="font-size:14px;color:#64748b;margin-bottom:24px;line-height:1.6;">
-    This program page does not exist or may have been removed.
+    This programme page does not exist or may have been removed.
   </p>
   <a href="/admission"
      style="display:inline-block;padding:10px 28px;border-radius:10px;
             background:var(--primary);color:white;font-weight:700;
             font-size:13px;text-decoration:none;">
-    ← Back to Programs
+    ← Back to Programme
   </a>
 </div>
 {% else %}
@@ -452,7 +452,7 @@
        onmouseover="this.style.color='var(--primary)'"
        onmouseout="this.style.color='#64748b'">
       <span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>
-      All Programs
+      All Programme
     </a>
   </div>
 
@@ -680,7 +680,7 @@
           {% else %}<div style="padding:32px;text-align:center;"><span class="material-symbols-outlined" style="font-size:44px;color:#e2e8f0;display:block;margin-bottom:8px;">groups</span><p style="font-size:13px;color:#94a3b8;margin:0;">Faculty profiles coming soon.</p></div>{% endif %}
         </div>
       </div>
-      {% if _desc %}<div style="background:white;border-radius:16px;padding:28px;border:1.5px solid #e2e8f0;margin-top:20px;"><h3 style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 14px;">About This Program</h3><div style="font-size:14px;color:#475569;line-height:1.78;">{{ _desc | safe }}</div></div>{% endif %}
+      {% if _desc %}<div style="background:white;border-radius:16px;padding:28px;border:1.5px solid #e2e8f0;margin-top:20px;"><h3 style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 14px;">About This Programme</h3><div style="font-size:14px;color:#475569;line-height:1.78;">{{ _desc | safe }}</div></div>{% endif %}
     </div>
     <div id="pd-sidebar" style="position:sticky;top:80px;">
       <div style="background:white;border-radius:16px;padding:28px;border:1.5px solid #e2e8f0;margin-bottom:16px;">
@@ -693,10 +693,10 @@
           <div style="padding-top:12px;border-top:1px solid #f1f5f9;"><a href="{{ '/application_form?program=' ~ (program.name if program else '') ~ '&admission_cycle=' ~ (active_cycle.name if active_cycle else '') if _is_cycle_active else 'javascript:void(0)' }}" style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);{{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}" {% if _is_cycle_active %}onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'"{% endif %}>{{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}</a>{% if _deadline %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Application deadline: {{ _deadline }}</p>{% elif active_cycle %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Cycle: {{ active_cycle.name }}</p>{% endif %}</div>
         </div>
       </div>
-      <div style="background:#0f172a;border-radius:16px;padding:28px;position:relative;overflow:hidden;"><div style="position:relative;z-index:2;"><h4 style="font-size:16px;font-weight:700;color:white;margin:0 0 8px;">Questions?</h4><p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0 0 20px;">Connect with our admissions team to learn more about this program.</p><a href="mailto:{{ support_email or 'admissions@nlsiu.ac.in' }}" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--secondary);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Contact Admissions<span class="material-symbols-outlined" style="font-size:18px;">arrow_forward</span></a></div><div style="position:absolute;right:-18px;bottom:-18px;opacity:0.1;"><span class="material-symbols-outlined" style="font-size:120px;color:white;">contact_support</span></div></div>
+      <div style="background:#0f172a;border-radius:16px;padding:28px;position:relative;overflow:hidden;"><div style="position:relative;z-index:2;"><h4 style="font-size:16px;font-weight:700;color:white;margin:0 0 8px;">Questions?</h4><p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0 0 20px;">Connect with our admissions team to learn more about this programme.</p><a href="mailto:{{ support_email or 'admissions@nlsiu.ac.in' }}" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--secondary);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Contact Admissions<span class="material-symbols-outlined" style="font-size:18px;">arrow_forward</span></a></div><div style="position:absolute;right:-18px;bottom:-18px;opacity:0.1;"><span class="material-symbols-outlined" style="font-size:120px;color:white;">contact_support</span></div></div>
     </div>
   </div>
-  <footer style="margin-top:40px;padding-top:20px;border-top:1px solid #e2e8f0;"><div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;"><p style="font-size:12px;color:#94a3b8;margin:0;">National Law School of India University — Admissions Portal</p><div style="display:flex;gap:20px;"><a href="/admission" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">All Programs</a><a href="/merit-and-scholarship/admission_dashboard" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">Dashboard</a></div></div></footer>
+  <footer style="margin-top:40px;padding-top:20px;border-top:1px solid #e2e8f0;"><div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;"><p style="font-size:12px;color:#94a3b8;margin:0;">National Law School of India University — Admissions Portal</p><div style="display:flex;gap:20px;"><a href="/admission" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">All Programmes</a><a href="/merit-and-scholarship/admission_dashboard" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">Dashboard</a></div></div></footer>
 </div>
 </div>
 {% endif %}
@@ -874,7 +874,7 @@
   {% endif %}
   <div class="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
     <div>
-      <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Academic Programs</h2>
+      <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Academic Programmes</h2>
       <p class="mt-2 text-slate-500">
         {{ programs|length }} program{{ 's' if programs|length != 1 }}
         {% if active_cycle %} available — {{ active_cycle.name }}{% endif %}
@@ -1012,7 +1012,7 @@
     {% else %}
     <div class="py-16 text-center text-slate-400" style="grid-column:1/-1">
       <span class="material-symbols-outlined" style="font-size:48px;display:block;margin-bottom:12px">menu_book</span>
-      No programs available for this cycle.
+      No programmes available for this cycle.
     </div>
     {% endfor %}
   </div>
