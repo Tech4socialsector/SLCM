@@ -162,6 +162,41 @@ def login_fle_user(usr, pwd):
     
     frappe.local.response["home_page"] = f"/foundations-for-a-legal-education/new?{query_params}"
 
+@frappe.whitelist()
+def download_fle_receipt(docname):
+    if not docname:
+        frappe.throw(_("Document name required"))
+
+    if not frappe.db.exists("Foundations for a Legal Education", docname):
+        frappe.throw(_("Document not found"), frappe.DoesNotExistError)
+
+    doc = frappe.get_doc("Foundations for a Legal Education", docname)
+
+    # Only allow owner or System Manager
+    if frappe.session.user != doc.owner:
+        if "System Manager" not in frappe.get_roles(frappe.session.user):
+            frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Generate PDF bypassing standard print permission check
+    frappe.flags.ignore_print_permissions = True
+    try:
+        html = frappe.get_print(
+            "Foundations for a Legal Education",
+            docname,
+            print_format=None,
+            no_letterhead=0
+        )
+    finally:
+        frappe.flags.ignore_print_permissions = False
+
+    from frappe.utils.pdf import get_pdf
+    pdf_content = get_pdf(html)
+
+    frappe.local.response.filename = f"FLE_Receipt_{docname}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
+
+
 @frappe.whitelist(allow_guest=True)
 def get_payment_status(docname):
     if not docname:

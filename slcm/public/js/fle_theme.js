@@ -1192,10 +1192,10 @@ window.check_payment_status_buttons = function () {
 
             // Show document ID in the title area (hide the long web form title)
             var docName = frappe.web_form.doc.name;
-            var isNew = frappe.web_form.is_new;
+            var isRealDoc = docName && docName.indexOf('new-') === -1;
             var $titleH1 = $('.web-form-title h1, .web-form-header h1').first();
 
-            if (!isNew && docName && docName.indexOf('new-') === -1) {
+            if (isRealDoc) {
                 // Remove any persisted hide CSS and make visible
                 $('#fle-new-form-title-hide').remove();
                 if ($titleH1.length > 0) {
@@ -1204,7 +1204,7 @@ window.check_payment_status_buttons = function () {
                 } else {
                     // Fallback: insert a dedicated ID display if h1 isn't found
                     if ($('#fle-doc-id-display').length === 0) {
-                        var $idDisplay = $('<div id="fle-doc-id-display" style="text-align:center; padding:8px 0 4px; font-family:Merriweather,Georgia,serif; font-weight:700; font-size:1.1em; color:#1a1a1a; margin-bottom:8px;">' + docName + '</div>');
+                        var $idDisplay = $('<div id="fle-doc-id-display" style="text-align:left; padding:8px 0 4px; font-family:Merriweather,Georgia,serif; font-weight:700; font-size:1.8em; color:#1a1a1a; margin-bottom:8px;">' + docName + '</div>');
                         $('.web-form-wrapper, .web-form-container, .page-content').first().prepend($idDisplay);
                     }
                 }
@@ -1212,8 +1212,8 @@ window.check_payment_status_buttons = function () {
                 $titleH1.hide();
             }
 
-            // Only hide if it's an existing submission
-            if (!frappe.web_form.is_new) {
+            // Only show payment/PDF controls for an existing (saved) submission
+            if (isRealDoc) {
                 frappe.call({
                     method: 'slcm.api.user.get_payment_status',
                     args: {
@@ -1227,34 +1227,58 @@ window.check_payment_status_buttons = function () {
                                 if ($('#fle-hide-btn-style').length === 0) {
                                     const styleBlock = `
                                         <style id="fle-hide-btn-style">
+                                            .submit-btn, .discard-btn, .delete-btn,
                                             .web-form-actions .btn:not(.download-pdf-btn),
                                             .web-form-footer .btn:not(.download-pdf-btn) {
                                                 display: none !important;
+                                                visibility: hidden !important;
                                             }
                                         </style>
                                     `;
                                     $('head').append(styleBlock);
                                 }
 
-                                // Add Download PDF button if not already present
-                                if ($('.download-pdf-btn').length === 0) {
-                                    const pdf_url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Foundations%20for%20a%20Legal%20Education&name=${frappe.web_form.doc.name}&format=Standard&no_letterhead=0`;
-                                    const pdf_btn = `<a href="${pdf_url}" target="_blank" class="btn btn-primary btn-sm ml-2 download-pdf-btn" style="background-color: #8B0000; color: #ffffff; border: none !important; display: inline-block !important;">Download PDF</a>`;
-
-                                    // Append to header actions
-                                    if ($('.web-form-actions .right-area').length > 0) {
-                                        $('.web-form-actions .right-area').append(pdf_btn);
-                                    } else {
-                                        $('.web-form-actions').append(pdf_btn);
-                                    }
-
-                                    // Append to footer
-                                    $('.web-form-footer').append(
-                                        `<div class="text-right download-pdf-wrapper" style="width: 100%; margin-top: 15px;">
-                                            <a href="${pdf_url}" target="_blank" class="btn btn-primary btn-md download-pdf-btn" style="background-color: #8B0000; color: #ffffff; border: none !important; display: inline-block !important;">Download PDF</a>
-                                        </div>`
-                                    );
+                                // Also hide directly via jQuery (belt-and-suspenders)
+                                function hideActionButtons() {
+                                    $('.submit-btn, .discard-btn, .delete-btn').hide();
+                                    $('.web-form-footer .btn:not(.download-pdf-btn)').hide();
                                 }
+                                hideActionButtons();
+                                setTimeout(hideActionButtons, 500);
+                                setTimeout(hideActionButtons, 1500);
+
+                                // Download Receipt button — hidden until enabled
+                                /* ENABLE WHEN READY:
+                                if ($('.download-pdf-btn').length === 0) {
+                                    const docname = frappe.web_form.doc.name;
+                                    window._fle_download_receipt = function () {
+                                        const url = `/api/method/slcm.api.user.download_fle_receipt?docname=${encodeURIComponent(docname)}`;
+                                        fetch(url, { method: 'GET', credentials: 'same-origin' })
+                                            .then(function (res) {
+                                                if (!res.ok) { frappe.msgprint(__('Failed to download receipt. Please try again.')); return null; }
+                                                return res.blob();
+                                            })
+                                            .then(function (blob) {
+                                                if (!blob) return;
+                                                var blobUrl = URL.createObjectURL(blob);
+                                                var a = document.createElement('a');
+                                                a.href = blobUrl;
+                                                a.download = 'FLE_Receipt_' + docname + '.pdf';
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                                URL.revokeObjectURL(blobUrl);
+                                            })
+                                            .catch(function () { frappe.msgprint(__('Failed to download receipt. Please try again.')); });
+                                    };
+                                    const pdf_btn = `<a href="#" onclick="window._fle_download_receipt(); return false;" class="btn btn-primary btn-sm ml-2 download-pdf-btn" style="background-color: #8B0000; color: #ffffff; border: none !important; display: inline-block !important;">Download Receipt</a>`;
+                                    if ($('.web-form-footer .right-area').length > 0) {
+                                        $('.web-form-footer .right-area').append(pdf_btn);
+                                    } else {
+                                        $('.web-form-footer').append(pdf_btn);
+                                    }
+                                }
+                                */
                             }
                         }
                     }
