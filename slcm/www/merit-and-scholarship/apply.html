@@ -192,25 +192,25 @@
 
                     <!-- Section 1: Applicant Details -->
                     <div class="space-y-4">
-                        <div class="flex items-center gap-2 text-primary font-bold uppercase text-[11px] tracking-widest">
+                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
                             <span class="material-symbols-outlined text-lg">person</span>
                             Applicant Information
                         </div>
                         <div class="info-grid">
                             <div class="space-y-1">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase">Candidate Name</p>
+                                <p class="text-[12px] font-bold text-slate-400">Candidate Name</p>
                                 <p class="text-sm font-bold text-slate-700">{{ applicant.candidate_name }}</p>
                             </div>
                             <div class="space-y-1">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase">Applicant ID</p>
+                                <p class="text-[12px] font-bold text-slate-400">Applicant ID</p>
                                 <p class="text-sm font-bold text-slate-700">{{ applicant.name }}</p>
                             </div>
                             <div class="space-y-1">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase">Program</p>
+                                <p class="text-[12px] font-bold text-slate-400">Program</p>
                                 <p class="text-sm font-bold text-slate-700">{{ applicant.program }}</p>
                             </div>
                             <div class="space-y-1">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase">Campus</p>
+                                <p class="text-[12px] font-bold text-slate-400">Campus</p>
                                 <p class="text-sm font-bold text-slate-700">{{ applicant.campus }}</p>
                             </div>
                         </div>
@@ -218,44 +218,44 @@
 
                     <!-- Section 2: Financials -->
                     <div class="space-y-4">
-                        <div class="flex items-center gap-2 text-primary font-bold uppercase text-[11px] tracking-widest">
+                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
                             <span class="material-symbols-outlined text-lg">payments</span>
                             Financial Details
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-600" for="family_income">
+                            <label class="text-sm font-bold text-slate-600" for="family_income">
                                 Annual Family Income (₹) <span class="text-red-500">*</span>
                             </label>
                             <input type="number" id="family_income" class="form-control" placeholder="e.g. 450000" required>
-                            <p class="text-[10px] text-slate-400 italic">Combine the total annual income of all earning family members.</p>
+                            <p class="text-[12px] text-slate-400 italic">Combine the total annual income of all earning family members.</p>
                         </div>
                     </div>
 
                     <!-- Section 3: Documents -->
                     <div class="space-y-6">
-                        <div class="flex items-center gap-2 text-primary font-bold uppercase text-[11px] tracking-widest">
+                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
                             <span class="material-symbols-outlined text-lg">description</span>
                             Required Documents
                         </div>
 
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-600">Income Certificate <span class="text-red-500">*</span></label>
+                            <label class="text-sm font-bold text-slate-600">Income Certificate <span class="text-red-500">*</span></label>
                             <div class="file-upload-box" id="box_income_cert" onclick="document.getElementById('income_certificate').click()">
                                 <input type="file" id="income_certificate" accept=".pdf,.jpg,.jpeg,.png" required style="display:none" onchange="handleFile(this, 'box_income_cert')">
                                 <span class="material-symbols-outlined text-3xl text-slate-300 mb-2">upload_file</span>
                                 <p class="text-sm font-bold text-slate-600">Click to upload Income Certificate</p>
-                                <p class="text-[10px] text-slate-400 mt-1">Accepted: PDF, JPG, PNG (Max 5MB)</p>
+                                <p class="text-[12px] text-slate-400 mt-1">Accepted: PDF, JPG, PNG (Max 5MB)</p>
                                 <div class="selected-filename text-primary font-bold text-xs mt-3 hidden"></div>
                             </div>
                         </div>
 
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-600">Supporting Documents (Optional)</label>
+                            <label class="text-sm font-bold text-slate-600">Supporting Documents (Optional)</label>
                             <div class="file-upload-box" id="box_supp_docs" onclick="document.getElementById('supporting_documents').click()">
                                 <input type="file" id="supporting_documents" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFile(this, 'box_supp_docs')">
                                 <span class="material-symbols-outlined text-3xl text-slate-300 mb-2">folder_open</span>
                                 <p class="text-sm font-bold text-slate-600">Click to upload additional documents</p>
-                                <p class="text-[10px] text-slate-400 mt-1">Upload any relevant proof for eligibility.</p>
+                                <p class="text-[12px] text-slate-400 mt-1">Upload any relevant proof for eligibility.</p>
                                 <div class="selected-filename text-primary font-bold text-xs mt-3 hidden"></div>
                             </div>
                         </div>

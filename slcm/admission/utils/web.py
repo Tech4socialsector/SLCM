@@ -503,6 +503,9 @@ def download_application(applicant_name):
 def download_receipt(receipt_name):
     """
     Generates and downloads the Applicant Payment Receipt PDF for the owner.
+
+    Uses Program Reservation Policy.payment_receipt_template (if configured)
+    as the print format, falling back to the default format.
     """
     user = frappe.session.user
     try:
@@ -511,21 +514,95 @@ def download_receipt(receipt_name):
         frappe.throw("Receipt not found")
 
     # Check if this user owns the receipt (via the Applicant record)
-    applicant_email = frappe.db.get_value("Applicant", receipt.applicant, "email")
-    
+    applicant_name = receipt.applicant
+    applicant_email = frappe.db.get_value("Applicant", applicant_name, "email")
+
     if receipt.owner != user and applicant_email != user:
         if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
             frappe.throw("Not permitted", frappe.PermissionError)
-    
+
+    # Resolve print format from Program Reservation Policy if possible
+    print_format = "Applicant Payment Receipt Format"  # Fallback
+    try:
+        if applicant_name:
+            app = frappe.get_doc("Applicant", applicant_name)
+            if app.admission_cycle and app.program:
+                # Prefer campus-specific policy; fall back to generic program+cycle
+                policy_name = None
+                if app.campus:
+                    policy_name = frappe.db.get_value(
+                        "Admission Cycle Program",
+                        {
+                            "parent": app.admission_cycle,
+                            "program": app.program,
+                            "campus": app.campus,
+                            "is_active": 1,
+                        },
+                        "reservation_policy",
+                    )
+                if not policy_name:
+                    policy_name = frappe.db.get_value(
+                        "Admission Cycle Program",
+                        {
+                            "parent": app.admission_cycle,
+                            "program": app.program,
+                            "is_active": 1,
+                        },
+                        "reservation_policy",
+                    )
+                if policy_name:
+                    template = frappe.db.get_value(
+                        "Program Reservation Policy",
+                        policy_name,
+                        "payment_receipt_template",
+                    )
+                    if template:
+                        print_format = template
+    except Exception:
+        # On any lookup error, quietly fall back to default format
+        pass
+
     frappe.flags.ignore_print_permissions = True
-    # Try to find a specific print format
-    print_format = "Applicant Payment Receipt Format" # Fallback
-    
-    pdf_content = frappe.get_print("Applicant Payment Receipt", receipt_name, print_format, as_pdf=True, doc=receipt)
-    
+    pdf_content = frappe.get_print(
+        "Applicant Payment Receipt",
+        receipt_name,
+        print_format,
+        as_pdf=True,
+        doc=receipt,
+    )
+
     frappe.local.response.filename = f"Receipt_{receipt_name}.pdf"
     frappe.local.response.filecontent = pdf_content
     frappe.local.response.type = "download"
+
+
+@frappe.whitelist()
+def get_latest_application_fee_receipt(applicant_name: str):
+    """
+    Returns the latest Applicant Payment Receipt name for the given applicant
+    for Application Fee payments (receipts not linked to an Offer Letter).
+    """
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    applicant_name = (applicant_name or "").strip()
+    if not applicant_name:
+        return {"receipt_name": None}
+
+    # Ownership check
+    applicant_email = frappe.db.get_value("Applicant", applicant_name, "email")
+    if applicant_email not in (user, frappe.db.get_value("User", user, "email")):
+        if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
+            frappe.throw("Not permitted", frappe.PermissionError)
+
+    receipt_name = frappe.db.get_value(
+        "Applicant Payment Receipt",
+        {"applicant": applicant_name, "offer_letter": ["is", "not set"], "docstatus": 1},
+        "name",
+        order_by="creation desc",
+    )
+    return {"receipt_name": receipt_name}
 
 @frappe.whitelist(methods=["POST", "GET"])
 def download_offer_letter(offer_letter):

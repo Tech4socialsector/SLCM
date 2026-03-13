@@ -71,7 +71,6 @@
   "tab_result",
   "entrance_test_status",
   "attendance_marked_on",
-  "total_score",
   "score_obtained",
   "result_status",
   "entrance_test_rank",
@@ -471,12 +470,6 @@
    "options": "Entrance Test"
   },
   {
-   "fieldname": "total_score",
-   "fieldtype": "Int",
-   "label": "Total Score",
-   "non_negative": 1
-  },
-  {
    "fieldname": "score_obtained",
    "fieldtype": "Int",
    "label": "Score Obtained",
@@ -510,7 +503,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-11 14:34:10.562798",
+ "modified": "2026-03-13 15:07:44.656381",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
