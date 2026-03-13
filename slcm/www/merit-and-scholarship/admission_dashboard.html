@@ -334,7 +334,7 @@ else 'Admissions Open') %}
     padding: 14px 20px;
     background: #f9fafb;
     border-radius: 10px;
-    margin-top: 16px;
+    /* margin-top: 16px; */
   }
 
   .completion-label {
@@ -792,7 +792,7 @@ else 'Admissions Open') %}
           <div style="display:flex;flex-direction:column;gap:16px;max-width:780px;margin:0 auto;">
 
             <!-- Identity Card -->
-            <div class="profile-identity-card">
+            <div class="profile-identity-card" style="position:relative;">
               <!-- Avatar -->
               <div class="avatar-wrap" onclick="document.getElementById('profile-photo-input').click()"
                 title="Change photo">
@@ -811,32 +811,29 @@ else 'Admissions Open') %}
               <input type="file" id="profile-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none;"
                 onchange="handleProfilePhotoUpload(this)" />
 
-              <!-- Name / Email / App ID -->
-              <div style="flex:1;min-width:0;">
-                <p class="profile-name">{{ _pname or _display or 'Applicant' }}</p>
+              <!-- Name / Email / Info -->
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding-left:10px; padding-top: 10px;">
+                <p class="profile-name" style="margin-bottom:2px;">{{ _pname or _display or 'Applicant' }}</p>
                 <p class="secondary-text">{{ _pemail or '' }}</p>
-                {% if _app_id %}
-                <div class="app-id-chip">
-                  <span class="ms-icon">badge</span>
-                  Application No
-                  <span style="color:var(--primary);font-weight:700;">{{ _app_id }}</span>
-                </div>
-                {% endif %}
+
                 <!-- Completion bar inside identity card -->
-                <div class="completion-row">
-                  <span class="completion-label">Profile Completion:</span>
-                  <div class="progress-bar-track">
-                    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+                <div class="completion-row" style="padding:10px 0px; margin-top:8px; border-radius:0; background:transparent; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">
+                  <span class="completion-label" style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">Profile Completion:</span>
+                  <div class="progress-bar-track" style="height:6px; max-width:200px;">
+                    <div class="progress-bar-fill" id="progress-fill" 
+                         style="width:0%; {% if _completion_pct == 100 %}background-color:var(--success);{% endif %}"></div>
                   </div>
-                  <span class="completion-pct" id="completion-pct-label">{{ _completion_pct }}%</span>
+                  <span class="completion-pct" id="completion-pct-label" 
+                        style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">{{ _completion_pct }}%</span>
                 </div>
-                <div id="profile-photo-status" style="font-size:11px;color:#94a3b8;min-height:14px;margin-top:4px;">
+
+                <div id="profile-photo-status" style="font-size:11px;color:#94a3b8;min-height:14px;">
                 </div>
               </div>
 
               <!-- Edit Button -->
               <button onclick="openProfileEditModal()" class="btn btn-primary"
-                style="flex-shrink:0;align-self:flex-start;">
+                style="position:absolute; top:20px; right:24px; padding:6px 14px; font-size:13px;">
                 <span class="ms-icon" style="font-size:16px;color:white;">edit</span>
                 Edit Profile
               </button>
@@ -892,7 +889,7 @@ else 'Admissions Open') %}
             </div>
 
             <!-- Documents Status Card -->
-            <div class="doc-status-card">
+            <!-- <div class="doc-status-card">
               <h3 class="card-title">Documents Status</h3>
 
               <div class="doc-rows-grid">
@@ -924,7 +921,7 @@ else 'Admissions Open') %}
                   <p style="color: var(--text-4); font-size: 13px; font-style: italic;">No documents required.</p>
                 {% endif %}
               </div>
-            </div>
+            </div> -->
 
             <!-- Account Settings Card -->
             <!-- <div class="account-settings-card">

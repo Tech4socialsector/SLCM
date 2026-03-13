@@ -1,6 +1,8 @@
+import html
+
 import frappe
 from frappe import _
-from frappe.utils import flt, now, nowdate
+from frappe.utils import flt, now, nowdate, strip_html
 
 from slcm.utils.phone_utils import sanitize_phone_for_frappe
 
@@ -161,6 +163,7 @@ def get_context(context):
         context.prefill_program_level = app_data.get("program_level") or session_sel.get("program_level") or ""
         context.prefill_intake_type = app_data.get("intake_type") or session_sel.get("intake_type") or ""
         context.prefill_academic_year = app_data.get("academic_year") or ""
+        context.prefill_admission_year = app_data.get("admission_year") or ""
     else:
         context.prefill_program = session_sel.get("program") or prefill_prog
         context.prefill_admission_cycle = session_sel.get("admission_cycle") or prefill_cycle
@@ -168,6 +171,7 @@ def get_context(context):
         context.prefill_program_level = session_sel.get("program_level") or ""
         context.prefill_intake_type = session_sel.get("intake_type") or ""
         context.prefill_academic_year = ""
+        context.prefill_admission_year = ""
 
     context.program_readonly = True  # Always lock: user must select from listing
 
@@ -180,14 +184,22 @@ def get_context(context):
     else:
         context.program_display_name = ""
 
-    # ── Academic year from Admission Cycle (before seeding) ──
-    if context.prefill_admission_cycle and not context.prefill_academic_year:
+    # ── Academic + Admission year from Admission Cycle (before seeding) ──
+    if context.prefill_admission_cycle:
         try:
-            context.prefill_academic_year = frappe.db.get_value(
-                "Admission Cycle", context.prefill_admission_cycle, "academic_year"
-            ) or ""
+            ad_year, ac_year = frappe.db.get_value(
+                "Admission Cycle",
+                context.prefill_admission_cycle,
+                ["admission_year", "academic_year"],
+            ) or (None, None)
         except Exception:
-            context.prefill_academic_year = ""
+            ad_year, ac_year = (None, None)
+
+        # Only fill from cycle when not already present on existing application
+        if not getattr(context, "prefill_admission_year", None) and ad_year:
+            context.prefill_admission_year = ad_year
+        if not context.prefill_academic_year and ac_year:
+            context.prefill_academic_year = ac_year or ""
 
     # When no existing application for this cycle, seed applicant_data with locked values and default Draft
     if not context.applicant_data or not context.applicant_data.get("name"):
@@ -197,6 +209,7 @@ def get_context(context):
         context.applicant_data.setdefault("campus", context.prefill_campus or "")
         context.applicant_data.setdefault("program_level", context.prefill_program_level or "")
         context.applicant_data.setdefault("academic_year", context.prefill_academic_year or "")
+        context.applicant_data.setdefault("admission_year", context.prefill_admission_year or "")
         context.applicant_data.setdefault("application_type", context.prefill_intake_type or "")
         context.applicant_data.setdefault("docstatus", 0)
         context.applicant_data.setdefault("application_status", "Draft")
@@ -225,22 +238,27 @@ def get_context(context):
         "ka_study_7yrs", "ka_defence_child", "ka_govt_child", "ka_ais_child", "ka_capf_child",
     ]
 
-    # ── Programs (for hidden/display only; selection is locked) ─────────
+    # ── Programs (for UG/PG degree link selects in the form) ─────────────
     try:
-        # Attempt with program_status filter; fall back without it
+        # level_of_study is the correct fieldname; program_level is null for PG/Research
         try:
-            context.programs = frappe.get_all(
+            raw_programs = frappe.get_all(
                 "Program",
-                fields=["name", "program_level"],
+                fields=["name", "level_of_study"],
                 filters={"program_status": "Active"},
                 order_by="name asc"
             )
         except Exception:
-            context.programs = frappe.get_all(
+            raw_programs = frappe.get_all(
                 "Program",
-                fields=["name", "program_level"],
+                fields=["name", "level_of_study"],
                 order_by="name asc"
             )
+        # Expose as program_level so the JS filter (p.program_level === 'UG' etc.) works
+        context.programs = [
+            {"name": p.name, "program_level": p.level_of_study or ""}
+            for p in raw_programs
+        ]
     except Exception:
         context.programs = []
 
@@ -618,6 +636,63 @@ def save_form(data):
     # Always stamp the authenticated email — do not trust form input
     doc.email = email
 
+    # ── Normalise academic metadata and program mapping ────────────────
+    # Admission / Academic Year from Admission Cycle
+    if getattr(doc, "admission_cycle", None):
+        try:
+            ad_year, ac_year = frappe.db.get_value(
+                "Admission Cycle",
+                doc.admission_cycle,
+                ["admission_year", "academic_year"],
+            ) or (None, None)
+        except Exception:
+            ad_year, ac_year = (None, None)
+
+        if ad_year:
+            doc.admission_year = ad_year
+        if ac_year:
+            doc.academic_year = ac_year
+
+    # Program Level + Intake Type from Program
+    if getattr(doc, "program", None):
+        try:
+            level_of_study, intake_type = frappe.db.get_value(
+                "Program",
+                doc.program,
+                ["level_of_study", "intake_type"],
+            ) or (None, None)
+        except Exception:
+            level_of_study, intake_type = (None, None)
+
+        if level_of_study:
+            doc.program_level = level_of_study
+        if intake_type:
+            # This will also be enforced again by Applicant.set_intake_type on validate
+            doc.intake_type = intake_type
+
+    # Campus validation against Admission Cycle Program
+    if getattr(doc, "admission_cycle", None) and getattr(doc, "program", None) and getattr(doc, "campus", None):
+        try:
+            acp_exists = frappe.db.exists(
+                "Admission Cycle Program",
+                {
+                    "parent": doc.admission_cycle,
+                    "program": doc.program,
+                    "campus": doc.campus,
+                    "is_active": 1,
+                },
+            )
+        except Exception:
+            acp_exists = True
+
+        if not acp_exists:
+            return {
+                "error": _(
+                    "Selected campus is not available for the chosen program and admission cycle. "
+                    "Please start the application again from the admission listing."
+                )
+            }
+
     # ── Save or Submit ───────────────────────────────────────────────
     try:
         doc.flags.ignore_permissions = True
@@ -675,8 +750,28 @@ def save_form(data):
 
     except frappe.ValidationError as e:
         frappe.db.rollback()
-        # Return the validation message directly — JS will display it to user
-        return {"error": str(e)}
+        raw_msg = str(e) or ""
+
+        # Special handling for rich ineligibility HTML coming from Applicant._build_ineligibility_message
+        lower_msg = raw_msg.lower()
+        if "ineligibility alert" in lower_msg or "program options" in lower_msg:
+            try:
+                # First unescape any HTML entities, then strip tags to get a clean sentence
+                unescaped = html.unescape(raw_msg)
+            except Exception:
+                unescaped = raw_msg
+
+            cleaned = strip_html(unescaped or "") if unescaped else ""
+            # Remove the label itself if present, to keep the message short
+            cleaned = cleaned.replace("Ineligibility Alert", "").strip()
+
+            if not cleaned:
+                cleaned = _("You are not eligible for the selected program. Please review the eligibility criteria.")
+
+            return {"error": cleaned}
+
+        # Fallback for all other validation errors
+        return {"error": raw_msg}
 
     except frappe.MandatoryError as e:
         frappe.db.rollback()
@@ -757,9 +852,8 @@ def check_portal_eligibility(applicant_data):
 
         doc.flags.ignore_permissions = True
 
-        # Use the existing eligibility engine
-        # Get program level to find peer programs
-        program_level = doc._get_selected_program_level() if hasattr(doc, '_get_selected_program_level') else frappe.db.get_value("Program", program, "program_level")
+        # Get program level to find peer programs (use level_of_study — program_level is null for PG/Research)
+        program_level = doc._get_selected_program_level() if hasattr(doc, '_get_selected_program_level') else frappe.db.get_value("Program", program, "level_of_study")
         all_programs  = doc._get_all_programs_for_level(program_level) if hasattr(doc, '_get_all_programs_for_level') else [program]
 
         programs_result = []
@@ -912,3 +1006,121 @@ def upload_applicant_file(doctype="Applicant", docname=None, is_private=0, field
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Applicant File Upload")
         return {"error": _("Upload failed: {0}").format(str(e))}
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  APPLICATION FEE RECEIPT — GET RECEIPT FOR APPLICANT
+# ═══════════════════════════════════════════════════════════════════
+@frappe.whitelist()
+def get_application_fee_receipt(applicant_name):
+    """
+    Returns the latest Applicant Payment Receipt name and print URL for
+    the given applicant's application fee, verifying the caller owns it.
+
+    Returns:
+      { "receipt_name": str, "print_url": str }   — if a receipt exists
+      { "receipt_name": None }                     — if no receipt found
+    """
+    import urllib.parse
+
+    if not frappe.session.user or frappe.session.user == "Guest":
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Verify the caller owns this applicant record
+    email = frappe.session.user
+    owner_email = frappe.db.get_value("Applicant", applicant_name, "email")
+    if not owner_email or owner_email.lower() != email.lower():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Confirm fee is actually Paid or Waived
+    fee_status = frappe.db.get_value("Applicant", applicant_name, "application_fee_status") or ""
+    if fee_status not in ("Paid", "Waived"):
+        return {"receipt_name": None, "fee_status": fee_status}
+
+    # Fetch the latest receipt for this applicant (application fee — no offer_letter)
+    receipts = frappe.get_all(
+        "Applicant Payment Receipt",
+        filters={
+            "applicant": applicant_name,
+            "offer_letter": ["in", ["", None]],   # application fee receipts have no offer letter
+        },
+        fields=["name"],
+        order_by="creation desc",
+        limit=1,
+        ignore_permissions=True,
+    )
+
+    # Fallback: fetch ANY receipt for this applicant
+    if not receipts:
+        receipts = frappe.get_all(
+            "Applicant Payment Receipt",
+            filters={"applicant": applicant_name},
+            fields=["name"],
+            order_by="creation desc",
+            limit=1,
+            ignore_permissions=True,
+        )
+
+    if not receipts:
+        return {"receipt_name": None, "fee_status": fee_status}
+
+    receipt_name = receipts[0].name
+    encoded_name = urllib.parse.quote(receipt_name)
+    print_url = (
+        f"/api/method/slcm.www.application_form.index.download_applicant_receipt"
+        f"?applicant_name={urllib.parse.quote(applicant_name)}"
+        f"&receipt_name={encoded_name}"
+    )
+    return {
+        "receipt_name": receipt_name,
+        "print_url": print_url,
+        "fee_status": fee_status,
+    }
+
+
+@frappe.whitelist()
+def download_applicant_receipt(applicant_name, receipt_name):
+    """
+    Whitelisted method to download the PDF of a receipt.
+    Validates ownership before generating and serving the PDF.
+    """
+    if not frappe.session.user or frappe.session.user == "Guest":
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Verify ownership
+    email = frappe.session.user
+    owner_email = frappe.db.get_value("Applicant", applicant_name, "email")
+    if not owner_email or owner_email.lower() != email.lower():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    # Verify the receipt belongs to this applicant
+    receipt_applicant = frappe.db.get_value("Applicant Payment Receipt", receipt_name, "applicant")
+    if receipt_applicant != applicant_name:
+        frappe.throw(_("Receipt does not belong to this applicant"), frappe.PermissionError)
+
+    # Generate PDF
+    current_user = frappe.session.user
+    try:
+        # We've already verified ownership manually, so we elevate to Administrator
+        # to generate the PDF, bypassing standard permission checks in get_print.
+        frappe.set_user("Administrator")
+        
+        doc = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+        pdf_content = frappe.get_print(
+            "Applicant Payment Receipt",
+            receipt_name,
+            "Standard",
+            as_pdf=True,
+            doc=doc
+        )
+        
+        frappe.local.response.filename = f"{receipt_name}.pdf"
+        frappe.local.response.filecontent = pdf_content
+        frappe.local.response.type = "download"
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Receipt PDF Generation Failed")
+        frappe.throw(_("Failed to generate PDF receipt. Please contact support: {0}").format(str(e)))
+    finally:
+        # Always restore the original user session
+        frappe.set_user(current_user)

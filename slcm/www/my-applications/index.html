@@ -338,7 +338,7 @@
     top: 20px;
     left: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    background: var(--success);
     border-radius: 2px;
     z-index: 1;
     transition: width .6s ease;
@@ -369,14 +369,14 @@
   }
 
   .stage-circle.completed {
-    background: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary);
+    background: var(--success);
+    box-shadow: 0 0 0 2px var(--success);
     color: white;
   }
 
   .stage-circle.active {
-    background: var(--secondary);
-    box-shadow: 0 0 0 2px var(--secondary);
+    background: var(--warning);
+    box-shadow: 0 0 0 2px var(--warning);
     color: white;
     animation: pulse-ring 2s ease-in-out infinite;
   }
@@ -421,11 +421,11 @@
   }
 
   .stage-label.completed {
-    color: var(--text-3);
+    color: var(--success);
   }
 
   .stage-label.active {
-    color: var(--primary);
+    color: var(--warning);
   }
 
   .stage-label.pending {
@@ -435,7 +435,7 @@
   /* ── Quick Status Grid ───────────────────────────────────── */
   .quick-status-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0;
     border-top: 1px solid var(--border);
   }
@@ -445,6 +445,9 @@
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     gap: 6px;
   }
 
@@ -455,6 +458,7 @@
   .qs-label {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     font-size: 11px;
     font-weight: 600;
@@ -1600,57 +1604,42 @@ or _app.current_stage)) or _status %}
 
       <!-- Header -->
       <div class="app-summary-head">
-        <div class="app-top-row">
-          <div>
-            <div class="app-id-row" style="margin-bottom:6px">
-              <!-- {# Status badge #}
-              {% if _status in ['Selected','Accepted','Offer Accepted'] %}
-              <span class="status-badge" style="background:#dcfce7;color:#16a34a;">
-                <span class="status-dot" style="background:#16a34a;"></span>{{ _status }}
-              </span>
-              {% elif _status in ['Submitted','Under Review','Shortlisted'] %}
-              <span class="status-badge" style="background:#dbeafe;color:#1d4ed8;">
-                <span class="status-dot" style="background:#1d4ed8;"></span>{{ _status }}
-              </span>
-              {% elif _status in ['Interview','Interview Scheduled'] %}
-              <span class="status-badge" style="background:#fef9c3;color:#ca8a04;">
-                <span class="status-dot" style="background:#ca8a04;"></span>{{ _status }}
-              </span>
-              {% elif _status in ['Rejected','Offer Declined'] %}
-              <span class="status-badge" style="background:#fee2e2;color:#dc2626;">
-                <span class="status-dot" style="background:#dc2626;"></span>{{ _status }}
-              </span>
-              {% else %}
-              <span class="status-badge" style="background:#f3f4f6;color:#6b7280;">
-                <span class="status-dot" style="background:#6b7280;"></span>{{ _status }}
-              </span>
-              {% endif %} -->
+        <div class="app-top-row" style="align-items: center;">
+          <div class="app-header-left">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
+              <h1 class="app-program-name" style="margin:0; font-size:24px;">{{ _prog }}</h1>
+              <span class="app-id-chip" style="margin:0; background:#f8fafc; color:#64748b; border-color:#e2e8f0; font-size:11px; text-transform:none; font-weight:600;">Application No: {{ _appid }}</span>
             </div>
-            <div class="app-program-name">{{ _prog }}</div>
-            <div class="app-id-row" style="margin-top:6px">
-              <span class="app-id-chip">Application No: {{ _appid }}</span>
+            <div class="app-id-row" style="margin-top:0; gap:16px;">
               <span class="app-submitted-date">Submitted On: {{ _subdate }}</span>
-              {% if _cycle %}<span class="app-submitted-date">Admission Cycle: {{ _cycle }}</span>{% endif %}
+              {% if _cycle %}
+              <span class="app-submitted-date" style="display:flex; align-items:center; gap:16px;">
+                <span style="color:var(--border);">|</span>
+                Cycle: {{ _cycle }}
+              </span>
+              {% endif %}
             </div>
           </div>
-          <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
-            title="{{ 'View' if _status != 'Draft' else 'Open and edit' }} this application">
-            <span class="material-symbols-outlined">{{ 'visibility' if _status != 'Draft' else 'edit' }}</span>
-            {{ 'View' if _status != 'Draft' else 'Edit' }}
-          </a>
-          <div class="fade-up" style="animation-delay:.3s;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+
+          <div class="app-header-right" style="flex-direction:row; align-items:center; gap:10px;">
+            <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
+              title="{{ 'View' if _status != 'Draft' else 'Open and edit' }} this application">
+              <span class="material-symbols-outlined">{{ 'visibility' if _status != 'Draft' else 'edit' }}</span>
+              {{ 'View' if _status != 'Draft' else 'Edit' }}
+            </a>
+            
             {% if app_name_param %}
             <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
-              target="_blank" class="btn-download">
-              <span class="material-symbols-outlined">download</span>
-              Download
+              target="_blank" class="btn-download" title="Download Application" 
+              style="padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
+              <span class="material-symbols-outlined" style="margin:0;">download</span>
             </a>
             {% endif %}
+            
             {% if offer_letter_url %}
-            <a href="{{ offer_letter_url }}" target="_blank" class="btn-download"
-              style="background:var(--text-1);color:white;border-color:var(--text-1)">
-              <span class="material-symbols-outlined">drafts</span>
-              Download Offer Letter
+            <a href="{{ offer_letter_url }}" target="_blank" class="btn-download" title="Download Offer Letter"
+              style="background:var(--text-1); color:white; border-color:var(--text-1); padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
+              <span class="material-symbols-outlined" style="margin:0;">drafts</span>
             </a>
             {% endif %}
           </div>
