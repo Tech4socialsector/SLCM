@@ -4448,7 +4448,7 @@
             const selectedProg = formData.program || '';
             programTableHTML = `
             <div style="margin-top:.85rem;">
-                <div style="font-weight:700;font-size:.82rem;color:var(--slate-600);margin-bottom:.5rem;">Available Programs at This Campus</div>
+                <div style="font-weight:700;font-size:.82rem;color:var(--slate-600);margin-bottom:.5rem;">Available Programmes at This Campus</div>
                 <div style="overflow-x:auto;">
                     <table class="elig-program-table">
                         <thead><tr><th>Program</th><th>Eligibility</th><th>Reason</th></tr></thead>
@@ -5324,7 +5324,7 @@
         const programs = eligRes.programs || [];
         let html = `<div class="toast-title">${mainMsg}</div>`;
         if (programs.length > 0) {
-            html += '<div class="toast-programs"><strong>Programs at this campus</strong>';
+            html += '<div class="toast-programs"><strong>Programmes at this campus</strong>';
             programs.forEach(p => {
                 const name = escapeHtml(p.program || '');
                 const status = p.eligible ? '<span class="eligible-yes">Eligible</span>' : '<span class="eligible-no">Not Eligible</span>';
@@ -5414,7 +5414,7 @@
 
                     <!-- Stats row -->
                     <div style="display:flex;align-items:center;gap:20px;margin-bottom:10px;flex-wrap:wrap;">
-                        <span style="font-weight:700;font-size:14px;color:#1a202c;">All Programs at This Level</span>
+                        <span style="font-weight:700;font-size:14px;color:#1a202c;">All Programmes at This Level</span>
                         <span style="font-size:12px;color:#888;">${escapeHtml(campus)}${cycle ? '&nbsp;&middot;&nbsp;' + escapeHtml(cycle) : ''}</span>
                         <span style="display:inline-flex;align-items:center;gap:5px;margin-left:auto;">
                             <span style="display:inline-block;width:8px;height:8px;background:#27ae60;border-radius:50%;"></span>
