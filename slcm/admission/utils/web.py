@@ -481,6 +481,8 @@ def download_admit_card(admit_card):
 def download_application(applicant_name):
     """
     Generates and downloads the Applicant PDF for the owner.
+    Prefers Chrome PDF generator to avoid wkhtmltopdf issues (unpatched Qt, network errors).
+    Falls back to wkhtmltopdf if Chrome is not available.
     """
     user = frappe.session.user
     try:
@@ -491,10 +493,36 @@ def download_application(applicant_name):
     if applicant.owner != user and applicant.email != user:
         if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
             frappe.throw("Not permitted", frappe.PermissionError)
-    
+
     frappe.flags.ignore_print_permissions = True
-    pdf_content = frappe.get_print("Applicant", applicant_name, "Applicant Application Form", as_pdf=True, doc=applicant)
-    
+    pdf_content = None
+    last_error = None
+
+    # Prefer Chrome to avoid wkhtmltopdf "unpatched qt" and "network error: InternalServerError"
+    for generator in ("chrome", "wkhtmltopdf"):
+        try:
+            pdf_content = frappe.get_print(
+                "Applicant",
+                applicant_name,
+                "Applicant Application Form",
+                as_pdf=True,
+                doc=applicant,
+                pdf_generator=generator,
+            )
+            if pdf_content:
+                break
+        except Exception as e:
+            last_error = e
+            if generator == "chrome":
+                continue
+            raise
+
+    if not pdf_content and last_error:
+        frappe.throw(
+            "PDF generation failed. Try: Print Format 'Applicant Application Form' → PDF generator = Chrome, or run: bench setup chromium. "
+            + str(last_error)
+        )
+
     frappe.local.response.filename = f"Application_{applicant_name}.pdf"
     frappe.local.response.filecontent = pdf_content
     frappe.local.response.type = "download"

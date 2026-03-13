@@ -210,92 +210,108 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
-   "label": "Full Name (As per Secondary School Certificate)"
+   "label": "Full name",
+   "reqd": 1
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth"
+   "label": "Date of birth",
+   "reqd": 1
   },
   {
    "fieldname": "gender",
    "fieldtype": "Select",
    "label": "Gender",
-   "options": "\nMale\nFemale\nOthers"
+   "options": "\nMale\nFemale\nOthers",
+   "reqd": 1
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile Number"
+   "label": "Mobile number",
+   "reqd": 1
   },
   {
    "fieldname": "alternate_contact",
    "fieldtype": "Phone",
-   "label": "Alternate Mobile Number"
+   "label": "Alternate contact number",
+   "reqd": 1
   },
   {
    "fieldname": "religion",
    "fieldtype": "Data",
-   "label": "Religion"
+   "label": "Religion",
+   "reqd": 1
   },
   {
    "fieldname": "nationality",
    "fieldtype": "Link",
    "label": "Nationality",
-   "options": "Country"
+   "options": "Country",
+   "reqd": 1
   },
   {
    "description": "Max 1MB - Supported formats png, jpeg, jpg",
    "fieldname": "id_proof",
    "fieldtype": "Attach Image",
-   "label": "Identification Proof (Aadhar/Voter ID/Passport)"
+   "label": "Upload ID proof (Government-issued photo ID)",
+   "reqd": 1
   },
   {
    "fieldname": "parent_and_guardian_details",
    "fieldtype": "Tab Break",
-   "label": "Parent & Guardian Details"
+   "label": "Parent and Guardian Details"
   },
   {
    "fieldname": "father_name",
    "fieldtype": "Data",
-   "label": "Father Name"
+   "label": "Father's name",
+   "reqd": 1
   },
   {
    "fieldname": "father_mobile",
    "fieldtype": "Phone",
-   "label": "Father Mobile"
+   "label": "Father's mobile number",
+   "reqd": 1
   },
   {
    "fieldname": "father_email",
    "fieldtype": "Data",
-   "label": "Father Email",
-   "options": "Email"
+   "label": "Father's email",
+   "options": "Email",
+   "reqd": 1
   },
   {
    "fieldname": "father_occupation",
    "fieldtype": "Data",
-   "label": "Father Occupation"
+   "label": "Father's occupation",
+   "reqd": 1
   },
   {
    "fieldname": "mother_name",
    "fieldtype": "Data",
-   "label": "Mother Name"
+   "label": "Mother's name",
+   "reqd": 1
   },
   {
    "fieldname": "mother_mobile",
    "fieldtype": "Phone",
-   "label": "Mother Mobile"
+   "label": "Mother's mobile number",
+   "reqd": 1
   },
   {
    "fieldname": "mother_email",
    "fieldtype": "Data",
-   "label": "Mother Email",
-   "options": "Email"
+   "label": "Mother's email",
+   "options": "Email",
+   "reqd": 1
   },
   {
    "fieldname": "mother_occupation",
    "fieldtype": "Data",
-   "label": "Mother Occupation"
+   "label": "Mother's occupation",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -307,108 +323,124 @@
    "depends_on": "eval:doc.guardian_required",
    "fieldname": "guardian_name",
    "fieldtype": "Data",
-   "label": "Guardian Name",
+   "in_list_view": 1,
+   "label": "Guardian name",
    "mandatory_depends_on": "eval:doc.guardian_required"
   },
   {
    "depends_on": "eval:doc.guardian_required",
    "fieldname": "guardian_mobile",
    "fieldtype": "Phone",
-   "label": "Guardian Mobile",
+   "label": "Guardian mobile",
    "mandatory_depends_on": "eval:doc.guardian_required"
   },
   {
    "depends_on": "eval:doc.guardian_required",
    "fieldname": "guardian_email",
    "fieldtype": "Data",
-   "label": "Guardian Email",
+   "label": "Guardian email",
+   "mandatory_depends_on": "eval:doc.guardian_required",
    "options": "Email"
   },
   {
    "fieldname": "correspondence_address",
    "fieldtype": "Small Text",
-   "label": "Address"
+   "label": "Address",
+   "reqd": 1
   },
   {
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City"
+   "label": "City",
+   "reqd": 1
   },
   {
    "fieldname": "state",
    "fieldtype": "Data",
-   "label": "State"
+   "label": "State",
+   "reqd": 1
   },
   {
    "fieldname": "pincode",
    "fieldtype": "Int",
    "label": "Pincode",
-   "non_negative": 1
+   "non_negative": 1,
+   "reqd": 1
   },
   {
    "fieldname": "academic_qualification_tab",
    "fieldtype": "Tab Break",
-   "label": "Academic qualification\t"
+   "label": "Academic Qualification"
   },
   {
    "fieldname": "class_x_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of Completion (Class X)"
+   "label": "Year of completion",
+   "reqd": 1
   },
   {
    "fieldname": "class_x_school",
    "fieldtype": "Data",
-   "label": "School/College/University (Class X)"
+   "label": "School",
+   "reqd": 1
   },
   {
    "fieldname": "class_x_board",
    "fieldtype": "Data",
-   "label": "Board (Class X)"
+   "label": "Board",
+   "reqd": 1
   },
   {
    "fieldname": "class_x_percentage",
    "fieldtype": "Float",
-   "label": "Percentage of Marks (Class X)",
+   "label": "Percentage or CGPA",
    "non_negative": 1,
-   "precision": "2"
+   "precision": "2",
+   "reqd": 1
   },
   {
    "fieldname": "class_x_cgpa",
    "fieldtype": "Float",
-   "label": "If CGPA, maximum CPGA (Class X)",
+   "label": "Maximum CGPA",
    "precision": "2"
   },
   {
    "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_x_marksheet",
    "fieldtype": "Attach",
-   "label": "Class X Marksheet to be uploaded"
+   "label": "Upload Class X marksheet",
+   "reqd": 1
   },
   {
    "fieldname": "class_xii_name_of_examination",
    "fieldtype": "Data",
-   "label": "Name of Examination (Class XII)"
+   "label": "Name of Examination (Class XII)",
+   "reqd": 1
   },
   {
    "fieldname": "class_xii_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of Completion (Class XII/Equivalent)"
+   "label": "Year of Completion (Class XII/Equivalent)",
+   "reqd": 1
   },
   {
    "fieldname": "class_xii_school",
    "fieldtype": "Data",
-   "label": "School/College/University (Class XII/Equivalent)"
+   "label": "School/College/University (Class XII/Equivalent)",
+   "reqd": 1
   },
   {
    "fieldname": "class_xii_board",
    "fieldtype": "Data",
-   "label": "Board (Class XII/Equivalent)"
+   "label": "Board (Class XII/Equivalent)",
+   "reqd": 1
   },
   {
    "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
-   "label": "Class XII Marksheet/Equivalent documents to be uploaded"
+   "label": "Class XII Marksheet/Equivalent documents to be uploaded",
+   "reqd": 1
   },
   {
    "fieldname": "employment_history_tab",
@@ -418,8 +450,9 @@
   {
    "fieldname": "post_degree_work_experience",
    "fieldtype": "Select",
-   "label": "Do you have any Post-Degree work experince?",
-   "options": "\nYes\nNo"
+   "label": "Do you have any post-degree work experience?",
+   "options": "\nYes\nNo",
+   "reqd": 1
   },
   {
    "depends_on": "eval:doc.post_degree_work_experience === \"Yes\"",
@@ -432,7 +465,7 @@
   {
    "fieldname": "eligibility_for_reservation_tab",
    "fieldtype": "Tab Break",
-   "label": "Eligibility for reservation"
+   "label": "Eligibility for Reservations"
   },
   {
    "depends_on": "eval:doc.whether_scstobc_ncl === \"NA\"",
@@ -462,7 +495,8 @@
    "fieldname": "pwd",
    "fieldtype": "Select",
    "label": "Whether Person with Disability (PWD)",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo",
+   "reqd": 1
   },
   {
    "depends_on": "eval:doc.pwd === \"Yes\"",
@@ -492,7 +526,8 @@
    "fieldname": "karnataka_category",
    "fieldtype": "Select",
    "label": "Whether Karnataka category",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -567,17 +602,20 @@
   {
    "fieldname": "first_preference",
    "fieldtype": "Data",
-   "label": "First Preference"
+   "label": "First Preference",
+   "reqd": 1
   },
   {
    "fieldname": "second_preference",
    "fieldtype": "Data",
-   "label": "Second Preference"
+   "label": "Second Preference",
+   "reqd": 1
   },
   {
    "fieldname": "third_preference",
    "fieldtype": "Data",
-   "label": "Third Preference"
+   "label": "Third Preference",
+   "reqd": 1
   },
   {
    "fieldname": "other_information_tab",
@@ -588,14 +626,16 @@
    "fieldname": "source_of_information",
    "fieldtype": "Select",
    "label": "Where Did You Hear About the Programme?",
-   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers"
+   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers",
+   "reqd": 1
   },
   {
    "description": "Curriculum Vitae (Max 5MB - Supported formats doc, docx pdf) Declaration.",
    "fieldname": "cv",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages"
+   "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -750,13 +790,15 @@
    "description": "Max 1MB - Supported formats png, jpeg, jpg",
    "fieldname": "candidate_photo",
    "fieldtype": "Attach Image",
-   "label": "Candidate Photo"
+   "label": "Candidate Photo",
+   "reqd": 1
   },
   {
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Email",
-   "options": "Email"
+   "options": "Email",
+   "reqd": 1
   },
   {
    "fieldname": "application_info_section",
@@ -801,7 +843,8 @@
    "fieldname": "annual_house_hold_income",
    "fieldtype": "Select",
    "label": "Annual House Hold Income",
-   "precision": "2"
+   "precision": "2",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_rnvz",
@@ -836,13 +879,15 @@
    "fieldtype": "Percent",
    "label": "Xll Percentage ",
    "non_negative": 1,
-   "precision": "2"
+   "precision": "2",
+   "reqd": 1
   },
   {
    "fieldname": "hsc_group",
    "fieldtype": "Link",
    "label": "Xll Group ",
-   "options": "HSC Groups"
+   "options": "HSC Groups",
+   "reqd": 1
   },
   {
    "fieldname": "ug_degree_details_column",
@@ -860,13 +905,14 @@
   {
    "fieldname": "national_test_name",
    "fieldtype": "Link",
-   "label": "National Test Name",
+   "label": "National test name",
    "options": "National Test"
   },
   {
    "fieldname": "percentage",
    "fieldtype": "Percent",
-   "label": "Percentage"
+   "label": "Score or percentage",
+   "mandatory_depends_on": "eval:doc.national_test_name"
   },
   {
    "fieldname": "campus",
@@ -1011,7 +1057,8 @@
    "fieldname": "whether_scstobc_ncl",
    "fieldtype": "Select",
    "label": "Whether SC/ST/OBC-NCL",
-   "options": "NA\nOBC-NCL\nST\nSC"
+   "options": "NA\nOBC-NCL\nST\nSC",
+   "reqd": 1
   },
   {
    "fieldname": "class_xii_cgpa",
@@ -1040,7 +1087,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-12 19:52:19.762628",
+ "modified": "2026-03-13 15:56:13.952010",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

@@ -27,6 +27,7 @@ class Applicant(Document):
             self._validate_application_fee_before_submit()
 
         if self.application_status == "Submitted":
+            self._validate_national_test_percentage()
             self.validate_eligibility()
             if self.evaluation_status == "Ineligible":
                 frappe.throw(
@@ -90,6 +91,16 @@ class Applicant(Document):
                 title="Missing Document"
             )
 
+    def _validate_national_test_percentage(self):
+        """When National test is selected, score/percentage is mandatory."""
+        if self.get("national_test_name") and not self.flags.ignore_mandatory:
+            pct = self.get("percentage")
+            if pct is None or pct == "" or (isinstance(pct, (int, float)) and flt(pct) < 0):
+                frappe.throw(
+                    _("Score or percentage is required when National test is selected."),
+                    title=_("National Test Score Required"),
+                )
+
     def validate_preferences(self):
         if not self.first_preference:
             frappe.throw(
@@ -109,27 +120,34 @@ class Applicant(Document):
             )
 
     def _validate_application_fee_before_submit(self):
-        """Block submission if application fee is required and not paid/waived."""
+        """Block submission if application fee is required and not paid/waived.
+        When category has no fee or fee is 0, allow submit and set application_fee_status to 'Paid'."""
         from slcm.api.service.application_fee_service import get_application_fee_for_category
         from slcm.api.service.application_fee_service import _get_applicant_category
 
         category = _get_applicant_category(self.name)
         fee_amount = get_application_fee_for_category(self.program, self.admission_cycle, category)
 
-        if flt(fee_amount, 2) > 0:
-            # Re-read status from DB to avoid using a stale in-memory value
-            db_status = frappe.db.get_value("Applicant", self.name, "application_fee_status")
-            status = (db_status or self.application_fee_status or "Pending").strip()
+        if flt(fee_amount, 2) <= 0:
+            # No fee or zero fee: allow submit without payment; set status to Paid so UI/reports treat as complete
+            self.application_fee_status = "Paid"
+            if flt(self.application_fee_amount or 0, 2) != flt(fee_amount, 2):
+                self.application_fee_amount = flt(fee_amount, 2)
+            return
 
-            if status not in ("Paid", "Waived"):
-                frappe.throw(
-                    _("Application fee must be paid or waived before you can submit. "
-                      "Current status: {0}. Amount: {1}. "
-                      "Go to View Application and click \"Pay Application Fee\" to open the payment gateway and pay; then return here to submit.").format(
-                        status, fee_amount
-                    ),
-                    title=_("Pay Application Fee First")
-                )
+        # Fee > 0: require Paid or Waived
+        db_status = frappe.db.get_value("Applicant", self.name, "application_fee_status")
+        status = (db_status or self.application_fee_status or "Pending").strip()
+
+        if status not in ("Paid", "Waived"):
+            frappe.throw(
+                _("Application fee must be paid or waived before you can submit. "
+                  "Current status: {0}. Amount: {1}. "
+                  "Go to View Application and click \"Pay Application Fee\" to open the payment gateway and pay; then return here to submit.").format(
+                    status, fee_amount
+                ),
+                title=_("Pay Application Fee First")
+            )
 
     def validate_declaration(self):
         if self.application_status == "Submitted" and not self.declaration_undertaking:

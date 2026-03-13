@@ -149,6 +149,7 @@ def get_context(context):
             doc = frappe.get_doc("Applicant", existing.name)
             context.applicant_data = frappe.parse_json(frappe.as_json(doc))
             context.application_submitted = (doc.application_status == "Submitted")
+            context.application_editable = (doc.application_status == "Draft")
     except frappe.Redirect:
         raise
     except Exception:
@@ -203,6 +204,7 @@ def get_context(context):
 
     # When no existing application for this cycle, seed applicant_data with locked values and default Draft
     if not context.applicant_data or not context.applicant_data.get("name"):
+        context.application_editable = True  # New application is editable
         context.applicant_data = dict(context.applicant_data or {})
         context.applicant_data.setdefault("program", context.prefill_program)
         context.applicant_data.setdefault("admission_cycle", context.prefill_admission_cycle)
@@ -515,12 +517,12 @@ def save_form(data):
     email = frappe.db.get_value("User", user, "email") or user
     is_submit = bool(data.get("__submit"))
 
-    # ── Prevent edits if already submitted ───────────────────────────
+    # ── Allow edits only when application status is Draft ─────────────
     existing_name = data.get("name")
     if existing_name:
         current_status = frappe.db.get_value("Applicant", existing_name, "application_status")
-        if current_status == "Submitted":
-            return {"error": _("Application is already submitted and cannot be edited.")}
+        if current_status and current_status != "Draft":
+            return {"error": _("Only draft applications can be edited. This application's status is '{0}'.").format(current_status or "unknown")}
     try:
         meta = frappe.get_meta("Applicant")
     except Exception:
@@ -1098,29 +1100,62 @@ def download_applicant_receipt(applicant_name, receipt_name):
     if receipt_applicant != applicant_name:
         frappe.throw(_("Receipt does not belong to this applicant"), frappe.PermissionError)
 
-    # Generate PDF
+    # Resolve print format from Program Reservation Policy (Payment Receipt Template)
+    print_format = "Applicant Payment Receipt Format"  # fallback
+    try:
+        app = frappe.get_doc("Applicant", applicant_name)
+        if app.admission_cycle and app.program:
+            policy_name = None
+            if app.campus:
+                policy_name = frappe.db.get_value(
+                    "Admission Cycle Program",
+                    {
+                        "parent": app.admission_cycle,
+                        "program": app.program,
+                        "campus": app.campus,
+                        "is_active": 1,
+                    },
+                    "reservation_policy",
+                )
+            if not policy_name:
+                policy_name = frappe.db.get_value(
+                    "Admission Cycle Program",
+                    {
+                        "parent": app.admission_cycle,
+                        "program": app.program,
+                        "is_active": 1,
+                    },
+                    "reservation_policy",
+                )
+            if policy_name:
+                template = frappe.db.get_value(
+                    "Program Reservation Policy",
+                    policy_name,
+                    "payment_receipt_template",
+                )
+                if template:
+                    print_format = template
+    except Exception:
+        pass
+
+    # Generate PDF using the template from Program Reservation Policy
     current_user = frappe.session.user
     try:
-        # We've already verified ownership manually, so we elevate to Administrator
-        # to generate the PDF, bypassing standard permission checks in get_print.
         frappe.set_user("Administrator")
-        
         doc = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+        frappe.flags.ignore_print_permissions = True
         pdf_content = frappe.get_print(
             "Applicant Payment Receipt",
             receipt_name,
-            "Standard",
+            print_format,
             as_pdf=True,
-            doc=doc
+            doc=doc,
         )
-        
-        frappe.local.response.filename = f"{receipt_name}.pdf"
+        frappe.local.response.filename = f"Receipt_{receipt_name}.pdf"
         frappe.local.response.filecontent = pdf_content
         frappe.local.response.type = "download"
-        
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Receipt PDF Generation Failed")
         frappe.throw(_("Failed to generate PDF receipt. Please contact support: {0}").format(str(e)))
     finally:
-        # Always restore the original user session
         frappe.set_user(current_user)
