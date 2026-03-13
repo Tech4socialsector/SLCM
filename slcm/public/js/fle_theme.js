@@ -627,6 +627,11 @@ window.inject_fle_header_footer = function () {
     if ($('.sticky-header').length > 0) return;
 
     // ── 0. Global CSS refinement for FLE ──────────────────────────────────────
+    // Hide web form title on /new pages immediately (JS will update once doc loads)
+    if (window.location.pathname.indexOf('/new') !== -1) {
+        $('head').append('<style id="fle-new-form-title-hide">.web-form-title h1, .web-form-header h1 { display: none !important; }</style>');
+    }
+
     if ($('#fle-global-refinements').length === 0) {
         $('head').append(`
         <style id="fle-global-refinements">
@@ -751,6 +756,9 @@ window.inject_fle_header_footer = function () {
                 text-transform: none !important;
                 margin-bottom: 8px !important;
                 display: block !important;
+                font-size: 13px !important;
+                font-weight: 600 !important;
+                color: #333 !important;
             }
         </style>`);
     }
@@ -1038,6 +1046,9 @@ window.inject_fle_header_footer = function () {
             el.style.setProperty('text-transform', 'none', 'important');
             el.style.setProperty('letter-spacing', '0.2px', 'important');
             el.style.setProperty('margin-bottom', '8px', 'important');
+            el.style.setProperty('font-size', '13px', 'important');
+            el.style.setProperty('font-weight', '600', 'important');
+            el.style.setProperty('color', '#333', 'important');
         });
 
         document.querySelectorAll('.section-head').forEach(function (el) {
@@ -1063,6 +1074,9 @@ window.inject_fle_header_footer = function () {
             el.style.setProperty('text-transform', 'none', 'important');
             el.style.setProperty('letter-spacing', '0.2px', 'important');
             el.style.setProperty('margin-bottom', '8px', 'important');
+            el.style.setProperty('font-size', '13px', 'important');
+            el.style.setProperty('font-weight', '600', 'important');
+            el.style.setProperty('color', '#333', 'important');
         });
 
         document.querySelectorAll('.section-head').forEach(function (el) {
@@ -1168,11 +1182,17 @@ window.check_payment_status_buttons = function () {
         if (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.doc && frappe.web_form.doc.name) {
             clearInterval(interval);
 
-            // Override Web Form Title with the actual web form name
-            // if ($('.web-form-title h1').length > 0 && frappe.web_form.title) {
-            //     $('.web-form-title h1').text(frappe.web_form.title);
-            //     $('.web-form-title p').hide(); // Hide the sub-title (ID) if it exists
-            // }
+            // Show document ID in the title area (hide the long web form title)
+            var docName = frappe.web_form.doc.name;
+            var isNew = frappe.web_form.is_new;
+            var $titleH1 = $('.web-form-title h1, .web-form-header h1').first();
+            if ($titleH1.length > 0) {
+                if (!isNew && docName && docName.indexOf('new-') === -1) {
+                    $titleH1.text(docName);
+                } else {
+                    $titleH1.hide();
+                }
+            }
 
             // Only hide if it's an existing submission
             if (!frappe.web_form.is_new) {
