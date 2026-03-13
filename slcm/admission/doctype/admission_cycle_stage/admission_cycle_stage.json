@@ -58,7 +58,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Stage Type",
-   "options": "\nApplication\nScreening\nExam\nInterview\nEvaluation\nMerit\nDocument\nFee\nEnrollment"
+   "options": "\nApplication\nScreening\nExam\nInterview\nEvaluation\nMerit\nDocument\nFee\nEnrollment",
+   "reqd": 1
   },
   {
    "fieldname": "applicable_workflow",
@@ -217,12 +218,13 @@
    "fieldname": "completed_status",
    "fieldtype": "Link",
    "label": "Completed Status",
-   "options": "Applicant Status"
+   "options": "Applicant Status",
+   "reqd": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-12 22:51:39.505193",
+ "modified": "2026-03-13 16:01:38.032226",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle Stage",
