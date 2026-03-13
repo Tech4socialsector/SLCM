@@ -161,11 +161,11 @@ class ScholarshipApplication(Document):
 			)
 			
 			if merit_score is None:
-				# Fallback to Eligibility Result entrance percentage
+				# Fallback to Eligibility Result entrance test score
 				merit_score = frappe.db.get_value(
 					"Eligibility Result",
 					{"applicant_id": self.applicant_id, "admission_cycle": self.admission_cycle},
-					"entrance_percentage"
+					"entrance_test_score"
 				)
 
 			if merit_score is not None:

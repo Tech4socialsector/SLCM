@@ -52,7 +52,8 @@
   {
    "fieldname": "logo",
    "fieldtype": "Attach Image",
-   "label": "Institution Logo"
+   "label": "Institution Logo",
+   "reqd": 1
   },
   {
    "fieldname": "portal_theme_color",
@@ -183,7 +184,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-03-12 14:54:18.786383",
+ "modified": "2026-03-13 15:42:55.682820",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Institution Settings",

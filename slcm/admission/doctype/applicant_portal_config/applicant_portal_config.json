@@ -84,7 +84,8 @@
   {
    "fieldname": "portal_subtitle",
    "fieldtype": "Small Text",
-   "label": "Portal Subtitle"
+   "label": "Portal Subtitle",
+   "reqd": 1
   },
   {
    "fieldname": "col_break_1",
@@ -93,18 +94,21 @@
   {
    "fieldname": "hero_image",
    "fieldtype": "Attach Image",
-   "label": "Hero / Banner Image"
+   "label": "Hero / Banner Image",
+   "reqd": 1
   },
   {
    "description": "Defaults to #1a3c6e if blank",
    "fieldname": "primary_color",
    "fieldtype": "Color",
-   "label": "Primary Color"
+   "label": "Primary Color",
+   "reqd": 1
   },
   {
    "fieldname": "secondary_color",
    "fieldtype": "Color",
-   "label": "Secondary Color"
+   "label": "Secondary Color",
+   "reqd": 1
   },
   {
    "collapsible": 1,
@@ -421,7 +425,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-03-12 15:03:36.990698",
+ "modified": "2026-03-13 15:44:32.084236",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",

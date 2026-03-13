@@ -25,6 +25,14 @@ frappe.ui.form.on("Admission Cycle", {
             }
         }
 
+        // Set date constraints
+        frm.set_df_property("cycle_start_date", "options", {
+            minDate: frappe.datetime.get_today()
+        });
+        frm.set_df_property("cycle_end_date", "options", {
+            minDate: frm.doc.cycle_start_date || frappe.datetime.get_today()
+        });
+
         // Quick actions
         if (!frm.is_new()) {
             if (frm.doc.status === "Draft") {
@@ -76,6 +84,42 @@ frappe.ui.form.on("Admission Cycle", {
                 indicator: "green"
             }, 5);
         }
+    },
+
+    cycle_start_date: function (frm) {
+        if (frm.doc.cycle_start_date) {
+            if (frm.doc.cycle_start_date < frappe.datetime.get_today()) {
+                frappe.msgprint(__("Cycle Start Date cannot be in the past."));
+                frm.set_value("cycle_start_date", null);
+            } else {
+                if (frm.doc.cycle_end_date && frm.doc.cycle_start_date > frm.doc.cycle_end_date) {
+                    frappe.msgprint(__("Cycle Start Date cannot be after Cycle End Date."));
+                    frm.set_value("cycle_start_date", null);
+                }
+                // Update minDate for end date picker
+                frm.set_df_property("cycle_end_date", "options", {
+                    minDate: frm.doc.cycle_start_date
+                });
+            }
+        } else {
+            frm.set_df_property("cycle_end_date", "options", {
+                minDate: frappe.datetime.get_today()
+            });
+        }
+    },
+
+    cycle_end_date: function (frm) {
+        if (frm.doc.cycle_end_date) {
+            const min_date = frm.doc.cycle_start_date || frappe.datetime.get_today();
+            if (frm.doc.cycle_end_date < min_date) {
+                if (frm.doc.cycle_end_date < frappe.datetime.get_today()) {
+                    frappe.msgprint(__("Cycle End Date cannot be in the past."));
+                } else {
+                    frappe.msgprint(__("Cycle End Date cannot be before Cycle Start Date."));
+                }
+                frm.set_value("cycle_end_date", null);
+            }
+        }
     }
 });
 
@@ -103,6 +147,27 @@ frappe.ui.form.on("Admission Cycle Program", {
     }
 });
 
+frappe.ui.form.on("Admission Cycle Stage", {
+    stage_name: function (frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+
+        if (row.stage_name) {
+            let duplicate = (frm.doc.stages || []).find(
+                d => d.name !== row.name && d.stage_name === row.stage_name
+            );
+
+            if (duplicate) {
+                frappe.msgprint({
+                    title: __("Duplicate Entry"),
+                    indicator: "red",
+                    message: __("Stage <b>{0}</b> is already added at row {1}.", [row.stage_name, duplicate.idx])
+                });
+
+                frappe.model.set_value(cdt, cdn, "stage_name", null);
+            }
+        }
+    }
+});
 function open_reservation_policy(frm, row) {
 
     let table_rows = [];
