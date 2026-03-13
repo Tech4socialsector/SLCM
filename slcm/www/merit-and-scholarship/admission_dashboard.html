@@ -148,7 +148,7 @@ else 'Admissions Open') %}
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
+    text-transform: none;
     color: var(--text-4);
     margin: 0 0 5px;
   }
@@ -226,7 +226,7 @@ else 'Admissions Open') %}
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
+    text-transform: none;
     color: #94a3b8;
     margin: 0 0 12px 4px;
   }
@@ -766,7 +766,7 @@ else 'Admissions Open') %}
 
           {% if _mission_txt %}
           <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-            <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;
+            <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:none !important;
                       color:var(--primary);margin:0 0 8px;display:flex;align-items:center;gap:6px;">
               <span class="ms-icon" style="font-size:14px;">auto_awesome</span>Our Mission
             </p>
@@ -1048,7 +1048,7 @@ else 'Admissions Open') %}
                   <!-- Content section (below image) -->
                   <div style="padding:16px 16px 14px;display:flex;flex-direction:column;gap:12px;flex:1;min-width:0;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-                      <span style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;">Admissions</span>
+                      <span style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:none !important;letter-spacing:0.06em;">Admissions</span>
                       <span class="{{ _badge }}" style="padding:4px 12px;border-radius:20px;font-size:10px;font-weight:800;white-space:nowrap;">{{ _st }}</span>
                     </div>
 
@@ -1295,7 +1295,7 @@ else 'Admissions Open') %}
     </div>
     <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
       <div class="pef">
-        <label class="modal-label" style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-4); margin-bottom:6px; display:block;">Select File</label>
+        <label class="modal-label" style="font-size:11px; font-weight:700; text-transform:none !important; color:var(--text-4); margin-bottom:6px; display:block;">Select File</label>
         <input type="file" id="modal-file-input" class="modal-input" 
                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
                onchange="handleModalFileSelect(this)"/>

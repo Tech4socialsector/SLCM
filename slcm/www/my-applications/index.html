@@ -1949,17 +1949,16 @@ or _app.current_stage)) or _status %}
         <div class="result-banner">
           <div class="result-banner-head">
             <span class="result-banner-title">Examination Result</span>
-            <span class="result-banner-badge">PUBLISHED</span>
+            <span class="result-banner-badge">Published</span>
           </div>
           <div class="result-score-grid">
             <div class="result-score-box">
               <div class="lbl">Score</div>
-              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ {{
-                  et_doc.total_score or 0 }}</small></div>
+              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Rank</div>
-              <div class="val green">#{{ et_doc.entrance_test_rank or '—' }}</div>
+              <div class="val green">{{ et_doc.entrance_test_rank or '—' }}</div>
             </div>
           </div>
         </div>
@@ -2130,10 +2129,10 @@ or _app.current_stage)) or _status %}
         {% else %}
         {% if interview_current_slot %}
         <div class="info-grid-2" style="margin-bottom:14px">
-          <div class="info-tile">
+          <!-- <div class="info-tile">
             <div class="info-tile-label">Panelist</div>
             <div class="info-tile-value">{{ interview_current_slot.staff_name or 'TBA' }}</div>
-          </div>
+          </div> -->
           <div class="info-tile">
             <div class="info-tile-label">Date</div>
             <div class="info-tile-value">{{ interview_current_slot.interview_date }}</div>
