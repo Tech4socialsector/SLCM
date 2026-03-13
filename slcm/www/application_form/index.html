@@ -213,10 +213,11 @@
         min-width: 6px;
     }
 
+    /* Current stage: standard blue */
     .step-pill.active .step-pill-inner {
-        background: var(--primary);
+        background: #2563eb;
         color: #fff;
-        border-color: var(--primary);
+        border-color: #2563eb;
     }
 
     .step-pill.done .step-pill-inner {
@@ -252,8 +253,8 @@
     }
 
     .step-pill.active .step-num {
-        background: var(--primary);
-        border-color: var(--primary);
+        background: #2563eb;
+        border-color: #2563eb;
         color: #fff;
     }
 
@@ -649,6 +650,12 @@
         cursor: not-allowed;
     }
 
+    /* Date of birth (Flatpickr): use pointer cursor so it doesn't look disabled on hover */
+    #date_of_birth.flatpickr-input[readonly],
+    .flatpickr .flatpickr-input {
+        cursor: pointer;
+    }
+
     .fc.is-error {
         border-color: var(--red);
         background: var(--red-bg);
@@ -926,12 +933,11 @@
         font-weight: 400;
     }
 
-    /* Section sub-label */
+    /* Section sub-label — Title/sentence case (no uppercase) per language guidelines */
     .section-sub {
         font-size: .8rem;
         font-weight: 800;
-        letter-spacing: .06em;
-        text-transform: uppercase;
+        letter-spacing: .02em;
         color: var(--navy-mid);
         margin: 1.5rem 0 1rem;
         padding-bottom: .5rem;
@@ -1877,7 +1883,7 @@
 
     <!-- ═══ Back to admission listing ─── -->
     <div class="application-form-back-row">
-        <a href="/admission" class="btn-back-to-admission" title="Back to program listing">
+        <a href="/admission" class="btn-back-to-admission" title="Back to programme listing">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -1945,18 +1951,17 @@
                                         <p>Upload<br>Photo</p>
                                     </div>
                                 </div>
-                                <span class="field-error" id="err_candidate_photo">Student Photo is required</span>
+                                <span class="field-error" id="err_candidate_photo">Student photo is required</span>
                             </div>
                             <div class="photo-label-buttons">
-                                <div class="photo-caption">Student Photo (Max 1MB - Supported formats png, jpeg, jpg)
+                                <div class="photo-caption">Student photo (max 1 MB — supported formats: png, jpeg, jpg)
                                     <span class="req">*</span>
                                 </div>
                                 <div class="photo-btn-row">
                                     <button type="button" class="btn-upload-image"
-                                        onclick="document.getElementById('candidatePhoto').click()">UPLOAD
-                                        IMAGE</button>
+                                        onclick="document.getElementById('candidatePhoto').click()">Upload image</button>
                                     <button type="button" class="btn-download-image" onclick="downloadStudentPhoto()"
-                                        title="Download current photo">DOWNLOAD IMAGE</button>
+                                        title="Download current photo">Download image</button>
                                 </div>
                             </div>
                         </div>
@@ -1964,7 +1969,7 @@
                         <!-- Email full width (readonly in all statuses: draft, submitted, etc.) -->
                         <div class="form-row cols-1" style="margin-bottom:1.25rem;">
                             <div class="fg">
-                                <label>Email Address <span class="req">*</span></label>
+                                <label>Email <span class="req">*</span></label>
                                 <input type="email" class="fc" name="email" id="email"
                                     value="{{ frappe.session.user if frappe.session.user != 'Guest' else '' }}"
                                     placeholder="email@example.com" required readonly>
@@ -1975,13 +1980,13 @@
                         <!-- Three columns: Col1 Candidate's Name, Mobile, Nationality | Col2 DOB, Alternate, Income | Col3 Gender, Religion, ID Proof -->
                         <div class="personal-info-three-cols">
                             <div class="fg">
-                                <label>Candidate's Name <span class="req">*</span></label>
+                                <label>Full name <span class="req">*</span></label>
                                 <input type="text" class="fc" name="candidate_name"
                                     placeholder="e.g. Rahul Kumar Sharma" required>
                                 <span class="field-error" id="err_candidate_name">Full name is required</span>
                             </div>
                             <div class="fg">
-                                <label>Date of Birth <span class="req">*</span></label>
+                                <label>Date of birth <span class="req">*</span></label>
                                 <input type="text" class="fc flatpickr" name="date_of_birth" id="date_of_birth"
                                     placeholder="DD/MM/YYYY" required>
                                 <span class="field-error" id="err_date_of_birth">Date of birth is required (must be
@@ -1998,7 +2003,7 @@
                                 <span class="field-error" id="err_gender">Gender is required</span>
                             </div>
                             <div class="fg">
-                                <label>Mobile Number of Candidate <span class="req">*</span></label>
+                                <label>Mobile number <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_mobile_number">
                                     <select class="phone-code" name="mobile_number_cc"
                                         onchange="onPhoneChange('mobile_number')">
@@ -2016,7 +2021,7 @@
                                     required</span>
                             </div>
                             <div class="fg">
-                                <label>Alternate Contact Number</label>
+                                <label>Alternate contact number</label>
                                 <div class="phone-wrap" id="pw_alternate_contact">
                                     <select class="phone-code" name="alternate_contact_cc"
                                         onchange="onPhoneChange('alternate_contact')">
@@ -2056,7 +2061,7 @@
                                 <span class="field-error" id="err_nationality">Nationality is required</span>
                             </div>
                             <div class="fg">
-                                <label>Current Annual Household Income (in INR) <span class="req">*</span></label>
+                                <label>Annual household income (INR) <span class="req">*</span></label>
                                 <select class="fc" name="annual_house_hold_income">
                                     <option value="">Select Income Range</option>
                                     <option value="0 - 3,00,000">0 - 3,00,000</option>
@@ -2068,8 +2073,7 @@
                                 </select>
                             </div>
                             <div class="fg">
-                                <label>ID Proof (Govt. issued photo ID, Max 5MB - Supported formats png, jpeg, jpg, pdf)
-                                    <span class="req">*</span></label>
+                                <label>Upload ID proof (Government-issued photo ID, max 5 MB) <span class="req">*</span></label>
                                 <div class="id-proof-upload-row">
                                     <input type="file" name="id_proof" id="id_proof"
                                         accept="image/png,image/jpeg,image/jpg,application/pdf"
@@ -2089,19 +2093,19 @@
                         <div class="section-sub" style="display:none;">Application Information</div>
                         <div class="form-row cols-2" style="display:none;">
                             <div class="fg">
-                                <label>Program <span class="req">*</span></label>
+                                <label>Programme <span class="req">*</span></label>
                                 <select class="fc" name="program" id="program" required
                                     onchange="onProgramChange(this.value)">
-                                    <option value="">Select Program</option>
+                                    <option value="">Select programme</option>
                                     {% for p in programs %}
                                     <option value="{{ p.name }}" data-level="{{ p.program_level or '' }}">{{ p.name }}
                                     </option>
                                     {% endfor %}
                                 </select>
-                                <span class="field-error" id="err_program">Program is required</span>
+                                <span class="field-error" id="err_program">Programme is required</span>
                             </div>
                             <div class="fg">
-                                <label>Program Level</label>
+                                <label>Programme level</label>
                                 <select class="fc" name="program_level" id="program_level"
                                     onchange="onProgramLevelChange(this.value)">
                                     <option value="">Select Level</option>
@@ -2111,7 +2115,7 @@
                                 </select>
                             </div>
                             <div class="fg">
-                                <label>Campus Name <span class="req">*</span></label>
+                                <label>Campus name <span class="req">*</span></label>
                                 <select class="fc" name="campus" id="campus" required onchange="collectFormData()">
                                     <option value="">Select Campus</option>
                                     {% for c in campuses %}
@@ -2121,7 +2125,7 @@
                                 <span class="field-error" id="err_campus">Campus is required</span>
                             </div>
                             <div class="fg">
-                                <label>Admission Cycle <span class="req">*</span></label>
+                                <label>Admission cycle <span class="req">*</span></label>
                                 <select class="fc" name="admission_cycle" id="admission_cycle" required
                                     onchange="collectFormData()">
                                     <option value="">Select Cycle</option>
@@ -2132,7 +2136,7 @@
                                 <span class="field-error" id="err_admission_cycle">Admission cycle is required</span>
                             </div>
                             <div class="fg">
-                                <label>Academic Year <span class="req">*</span></label>
+                                <label>Academic year <span class="req">*</span></label>
                                 <select class="fc" name="academic_year" id="academic_year" required
                                     onchange="collectFormData()">
                                     <option value="">Select Academic Year</option>
@@ -2143,7 +2147,7 @@
                                 <span class="field-error" id="err_academic_year">Academic year is required</span>
                             </div>
                             <div class="fg">
-                                <label>Application Type</label>
+                                <label>Application type</label>
                                 <select class="fc" name="application_type" id="application_type"
                                     onchange="onApplicationTypeChange(this.value)">
                                     <option value="">Select Type</option>
@@ -2173,22 +2177,22 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2>Parent &amp; Guardian Details</h2>
+                                <h2>Parent and Guardian Details</h2>
                                 <p>Provide contact details of your parents or legal guardian</p>
                             </div>
                         </div>
 
-                        <div class="section-sub">Father Details</div>
+                        <div class="section-sub">Father's details</div>
                         <div class="form-row cols-2">
-                            <div class="fg"><label>Father's Name</label><input type="text" class="fc" name="father_name"
-                                    placeholder="Full name"></div>
+                            <div class="fg"><label>Father's name <span class="req">*</span></label><input type="text" class="fc" name="father_name"
+                                    placeholder="Full name"><span class="field-error" id="err_father_name"></span></div>
                             <div class="fg">
-                                <label>Father Email ID</label>
+                                <label>Father's email <span class="req">*</span></label>
                                 <input type="email" class="fc" name="father_email" placeholder="father@example.com">
                                 <span class="field-error" id="err_father_email">Invalid email format</span>
                             </div>
                             <div class="fg">
-                                <label>Father Mobile Number</label>
+                                <label>Father's mobile number <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_father_mobile">
                                     <select class="phone-code" name="father_mobile_cc"
                                         onchange="onPhoneChange('father_mobile')">
@@ -2204,23 +2208,24 @@
                                 <span class="field-error" id="err_father_mobile"></span>
                             </div>
                             <div class="fg">
-                                <label>Father Occupation</label>
+                                <label>Father's occupation <span class="req">*</span></label>
                                 <input type="text" class="fc" name="father_occupation"
                                     placeholder="Enter father's occupation">
+                                <span class="field-error" id="err_father_occupation"></span>
                             </div>
                         </div>
 
-                        <div class="section-sub">Mother Details</div>
+                        <div class="section-sub">Mother's details</div>
                         <div class="form-row cols-2">
-                            <div class="fg"><label>Mother's Name</label><input type="text" class="fc" name="mother_name"
-                                    placeholder="Full name"></div>
+                            <div class="fg"><label>Mother's name <span class="req">*</span></label><input type="text" class="fc" name="mother_name"
+                                    placeholder="Full name"><span class="field-error" id="err_mother_name"></span></div>
                             <div class="fg">
-                                <label>Mother Email ID</label>
+                                <label>Mother's email <span class="req">*</span></label>
                                 <input type="email" class="fc" name="mother_email" placeholder="mother@example.com">
                                 <span class="field-error" id="err_mother_email">Invalid email format</span>
                             </div>
                             <div class="fg">
-                                <label>Mother Mobile Number</label>
+                                <label>Mother's mobile number <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_mother_mobile">
                                     <select class="phone-code" name="mother_mobile_cc"
                                         onchange="onPhoneChange('mother_mobile')">
@@ -2236,9 +2241,10 @@
                                 <span class="field-error" id="err_mother_mobile"></span>
                             </div>
                             <div class="fg">
-                                <label>Mother Occupation</label>
+                                <label>Mother's occupation <span class="req">*</span></label>
                                 <input type="text" class="fc" name="mother_occupation"
                                     placeholder="Enter mother's occupation">
+                                <span class="field-error" id="err_mother_occupation"></span>
                             </div>
                         </div>
 
@@ -2258,13 +2264,13 @@
                             <div class="section-sub">Guardian Details</div>
                             <div class="form-row cols-3">
                                 <div class="fg">
-                                    <label>Guardian Name <span class="req" id="gNameReq">*</span></label>
+                                    <label>Guardian name <span class="req" id="gNameReq">*</span></label>
                                     <input type="text" class="fc" name="guardian_name" id="guardian_name"
                                         placeholder="Full name">
                                     <span class="field-error" id="err_guardian_name">Guardian name is required</span>
                                 </div>
                                 <div class="fg">
-                                    <label>Guardian Mobile <span class="req" id="gMobileReq">*</span></label>
+                                    <label>Guardian mobile <span class="req" id="gMobileReq">*</span></label>
                                     <div class="phone-wrap" id="pw_guardian_mobile">
                                         <select class="phone-code" name="guardian_mobile_cc"
                                             onchange="onPhoneChange('guardian_mobile')">
@@ -2281,7 +2287,7 @@
                                         required</span>
                                 </div>
                                 <div class="fg">
-                                    <label>Guardian Email</label>
+                                    <label>Guardian email</label>
                                     <input type="email" class="fc" name="guardian_email"
                                         placeholder="guardian@example.com">
                                     <span class="field-error" id="err_guardian_email">Invalid email format</span>
@@ -2289,14 +2295,15 @@
                             </div>
                         </div>
 
-                        <div class="section-sub" style="margin-top:1.5rem;">Address for Correspondence</div>
+                        <div class="section-sub" style="margin-top:1.5rem;">Address for correspondence</div>
                         <div class="form-row cols-1">
-                            <div class="fg"><label>Address</label><textarea class="fc" name="correspondence_address"
-                                    placeholder="Door No., Street, Area" rows="2"></textarea></div>
+                            <div class="fg"><label>Address <span class="req">*</span></label><textarea class="fc" name="correspondence_address"
+                                    placeholder="Enter address" rows="2"></textarea>
+                                <span class="field-error" id="err_correspondence_address"></span></div>
                         </div>
                         <div class="form-row cols-3">
                             <div class="fg">
-                                <label>State</label>
+                                <label>State <span class="req">*</span></label>
                                 <select class="fc" name="state" id="state">
                                     {% if initial_states %}
                                     <option value="">Select State</option>
@@ -2307,9 +2314,10 @@
                                     <option value="">Select Nationality first</option>
                                     {% endif %}
                                 </select>
+                                <span class="field-error" id="err_state"></span>
                             </div>
                             <div class="fg">
-                                <label>City</label>
+                                <label>City <span class="req">*</span></label>
                                 <select class="fc" name="city" id="city">
                                     {% if initial_cities %}
                                     <option value="">Select City</option>
@@ -2320,9 +2328,11 @@
                                     <option value="">Select State first</option>
                                     {% endif %}
                                 </select>
+                                <span class="field-error" id="err_city"></span>
                             </div>
-                            <div class="fg"><label>Pincode</label><input type="text" class="fc numeric-integer"
+                            <div class="fg"><label>Pincode <span class="req">*</span></label><input type="text" class="fc numeric-integer"
                                     name="pincode" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
+                                <span class="field-error" id="err_pincode"></span>
                             </div>
                         </div>
                     </div>
@@ -2357,31 +2367,30 @@
                                 be submitted by <strong>December 31, 2026</strong>.</span>
                         </div>
 
-                        <div class="section-sub">Academic Qualification - Class X Details</div>
+                        <div class="section-sub">Class X Details</div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>Year of Completion (Class X)</label><input type="text"
+                            <div class="fg"><label>Year of completion <span class="req">*</span></label><input type="text"
                                     class="fc numeric-integer" name="class_x_year_of_completion" placeholder="e.g. 2018"
-                                    maxlength="4"></div>
-                            <div class="fg"><label>School/College/University (Class X) <span
-                                        class="req">*</span></label><input type="text" class="fc" name="class_x_school"
+                                    maxlength="4"><span class="field-error" id="err_class_x_year_of_completion"></span></div>
+                            <div class="fg"><label>School <span class="req">*</span></label><input type="text" class="fc" name="class_x_school"
                                     placeholder="School name" required><span class="field-error"
                                     id="err_class_x_school">School name is required</span></div>
-                            <div class="fg"><label>Board (Class X) <span class="req">*</span></label><input type="text"
+                            <div class="fg"><label>Board <span class="req">*</span></label><input type="text"
                                     class="fc" name="class_x_board" placeholder="e.g. CBSE, ICSE" required><span
                                     class="field-error" id="err_class_x_board">Board is required</span></div>
                             <div class="fg">
-                                <label>Percentage/CGPA obtained (Class X) <span class="req">*</span></label>
+                                <label>Percentage or CGPA <span class="req">*</span></label>
                                 <input type="text" class="fc numeric-decimal" name="class_x_percentage"
                                     placeholder="e.g. 85.50" inputmode="decimal" required
                                     oninput="validatePercentage(this, 'class_x_percentage')">
                                 <span class="field-error" id="err_class_x_percentage">Valid percentage (0–100) is
                                     required</span>
                             </div>
-                            <div class="fg"><label>If CGPA, maximum CGPA (Class X)</label><input type="text"
+                            <div class="fg"><label>Maximum CGPA</label><input type="text"
                                     class="fc numeric-decimal" name="class_x_cgpa" placeholder="Max CGPA"
                                     inputmode="decimal"></div>
                             <div class="fg">
-                                <label>Class X Marksheet</label>
+                                <label>Upload Class X marksheet <span class="req">*</span></label>
                                 <div class="file-zone">
                                     <input type="file" name="class_x_marksheet" accept=".pdf,image/png,image/jpeg"
                                         onchange="handleFileUpload('class_x_marksheet', this)">
@@ -2392,24 +2401,24 @@
                                             <path d="M5 13l4 4L19 7" />
                                         </svg><span id="fp_class_x_marksheet_name"></span></div>
                                 </div>
+                                <span class="field-error" id="err_class_x_marksheet"></span>
                             </div>
                         </div>
 
-                        <div class="section-sub">Class XII/Equivalent Details</div>
+                        <div class="section-sub">Class XII / Equivalent Details</div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>Name of Examination (Class XII/Equivalent)</label><input type="text"
-                                    class="fc" name="class_xii_name_of_examination" placeholder="e.g. AISSCE, ISC">
-                            </div>
-                            <div class="fg"><label>Year of Completion (Class XII/Equivalent)</label><input type="text"
+                            <div class="fg"><label>Examination name <span class="req">*</span></label><input type="text"
+                                    class="fc" name="class_xii_name_of_examination" placeholder="e.g. AISSCE, ISC"><span class="field-error" id="err_class_xii_name_of_examination"></span></div>
+                            <div class="fg"><label>Year of completion <span class="req">*</span></label><input type="text"
                                     class="fc numeric-integer" name="class_xii_year_of_completion"
-                                    placeholder="e.g. 2020" maxlength="4"></div>
-                            <div class="fg"><label>Board (Class XII/Equivalent)</label><input type="text" class="fc"
-                                    name="class_xii_board" placeholder="e.g. CBSE, State Board"></div>
-                            <div class="fg"><label>School/College/University (Class XII/Equivalent)</label><input
-                                    type="text" class="fc" name="class_xii_school" placeholder="School name"></div>
+                                    placeholder="e.g. 2020" maxlength="4"><span class="field-error" id="err_class_xii_year_of_completion"></span></div>
+                            <div class="fg"><label>Board <span class="req">*</span></label><input type="text" class="fc"
+                                    name="class_xii_board" placeholder="e.g. CBSE, State Board"><span class="field-error" id="err_class_xii_board"></span></div>
+                            <div class="fg"><label>School <span class="req">*</span></label><input
+                                    type="text" class="fc" name="class_xii_school" placeholder="School name"><span class="field-error" id="err_class_xii_school"></span></div>
 
                             <div class="fg">
-                                <label>Class XII Marksheet</label>
+                                <label>Upload Class XII marksheet <span class="req">*</span></label>
                                 <div class="file-zone">
                                     <input type="file" name="class_xii_marksheet" accept=".pdf,image/png,image/jpeg"
                                         onchange="handleFileUpload('class_xii_marksheet', this)">
@@ -2420,22 +2429,24 @@
                                             <path d="M5 13l4 4L19 7" />
                                         </svg><span id="fp_class_xii_marksheet_name"></span></div>
                                 </div>
+                                <span class="field-error" id="err_class_xii_marksheet"></span>
                             </div>
                         </div>
 
-                        <div class="section-sub">HSC Score Board</div>
+                        <div class="section-sub">HSC Details</div>
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>XII Group</label>
+                                <label>HSC group <span class="req">*</span></label>
                                 <select class="fc" name="hsc_group" id="hsc_group" onchange="collectFormData()">
                                     <option value="">Select HSC Group</option>
                                     {% for g in hsc_groups %}
                                     <option value="{{ g.name }}">{{ g.name }}</option>
                                     {% endfor %}
                                 </select>
+                                <span class="field-error" id="err_hsc_group"></span>
                             </div>
                             <div class="fg">
-                                <label>XII Percentage <span class="req">*</span></label>
+                                <label>HSC percentage <span class="req">*</span></label>
                                 <input type="text" class="fc numeric-decimal" name="hsc_percentage" id="hsc_percentage"
                                     inputmode="decimal" placeholder="e.g. 75.00" min="0" max="100" step="0.01"
                                     oninput="validateHSCPercentage(this)" onblur="collectFormData()">
@@ -2493,9 +2504,9 @@
                         <div class="section-sub">National Test (if applicable)</div>
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>National Test Name</label>
+                                <label>National test name</label>
                                 <select class="fc" name="national_test_name" id="national_test_name"
-                                    onchange="collectFormData()">
+                                    onchange="collectFormData(); togglePercentageRequired();">
                                     <option value="">Select National Test</option>
                                     {% for t in national_tests %}
                                     <option value="{{ t.name }}">{{ t.name }}</option>
@@ -2503,10 +2514,11 @@
                                 </select>
                             </div>
                             <div class="fg">
-                                <label>Percentage / Score</label>
+                                <label>Score or percentage <span class="req" id="percentageReq" style="display:none;">*</span></label>
                                 <input type="text" class="fc numeric-decimal" name="percentage" id="test_percentage"
                                     inputmode="decimal" placeholder="e.g. 78.5" min="0" max="100" step="0.01"
-                                    oninput="collectFormData()">
+                                    oninput="collectFormData(); togglePercentageRequired();">
+                                <span class="field-error" id="err_percentage">Score or percentage is required when National test is selected</span>
                             </div>
                         </div>
 
@@ -2548,7 +2560,7 @@
                             <div class="section-sub">PhD Details</div>
                             <div class="form-row cols-2">
                                 <div class="fg">
-                                    <label>PhD Programme Selection</label>
+                                    <label>PhD programme selection</label>
                                     <select class="fc" name="phd_program_type">
                                         <option value="">Select</option>
                                         <option value="Law">Law</option>
@@ -2556,7 +2568,7 @@
                                     </select>
                                 </div>
                                 <div class="fg">
-                                    <label>PhD Proposal Upload</label>
+                                    <label>Upload PhD proposal</label>
                                     <div class="file-zone">
                                         <input type="file" name="phd_proposal" accept=".pdf,.doc,.docx"
                                             onchange="handleFileUpload('phd_proposal', this)">
@@ -2571,7 +2583,7 @@
                                 </div>
                             </div>
                             <div class="form-row cols-1">
-                                <div class="fg"><label>Proposed PhD Topic</label><textarea class="fc"
+                                <div class="fg"><label>Proposed PhD topic</label><textarea class="fc"
                                         name="proposed_phd_topic"
                                         placeholder="Briefly describe your proposed research topic" rows="3"></textarea>
                                 </div>
@@ -2624,7 +2636,7 @@
                         </div>
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>Do you have any Post-Degree work experience? <span class="req">*</span></label>
+                                <label>Do you have any post-degree work experience? <span class="req">*</span></label>
                                 <select class="fc" name="post_degree_work_experience" required
                                     onchange="toggleWorkExp(this.value)">
                                     <option value="">Select</option>
@@ -2661,15 +2673,15 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2>Eligibility for Reservation</h2>
+                                <h2>Eligibility for Reservations</h2>
                                 <p>Information relating to your reservation category</p>
                             </div>
                         </div>
 
-                        <div class="section-sub">Eligibility for Reservations</div>
+                        <div class="section-sub">Reservation category</div>
                         <div class="form-row cols-1" style="margin-bottom:1rem;">
                             <div class="fg">
-                                <label>Whether SC/ST/OBC-NCL</label>
+                                <label>Reservation category</label>
                                 <select class="fc" name="whether_scstobc_ncl" id="reservation_category"
                                     onchange="toggleReservationCategory(this.value)">
                                     <option value="">Select one</option>
@@ -2684,7 +2696,7 @@
                         <!-- Caste Certificate — shown if SC/ST/OBC/OBC-NCL selected -->
                         <div id="casteCertSection" style="display:none;">
                             <div class="fg" style="margin-bottom:1.25rem;">
-                                <label>Caste Certificate <span class="req">*</span></label>
+                                <label>Upload caste certificate <span class="req">*</span></label>
                                 <div class="file-zone">
                                     <input type="file" name="caste_certificate" accept=".pdf,image/png,image/jpeg"
                                         onchange="handleFileUpload('caste_certificate', this)">
@@ -2704,7 +2716,7 @@
                         <div id="ewsSection" style="display:none;">
                             <div class="form-row cols-2">
                                 <div class="fg">
-                                    <label>Whether EWS (Economically Weaker Section)? <span class="req">*</span></label>
+                                    <label>EWS (Economically Weaker Section) <span class="req">*</span></label>
                                     <select class="fc" name="ews" id="ews" onchange="toggleEWS(this.value)">
                                         <option value="">Select</option>
                                         <option value="Yes">Yes</option>
@@ -2715,7 +2727,7 @@
                             </div>
                             <div id="ewsCertSection" style="display:none;margin-bottom:1.25rem;">
                                 <div class="fg">
-                                    <label>EWS Certificate <span class="req">*</span> <span class="hint">Max 5MB —
+                                    <label>Upload EWS certificate <span class="req">*</span> <span class="hint">Max 5 MB —
                                             PDF/PNG/JPG</span></label>
                                     <div class="file-zone">
                                         <input type="file" name="ews_certificate" accept=".pdf,image/png,image/jpeg"
@@ -2733,10 +2745,10 @@
                             </div>
                         </div>
 
-                        <div class="section-sub">Person with Disability (PWD)</div>
+                        <div class="section-sub">Person with disability (PwD)</div>
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>Whether Person with Disability (PWD) <span class="req">*</span></label>
+                                <label>Person with disability (PwD) <span class="req">*</span></label>
                                 <select class="fc" name="pwd" required onchange="togglePWD(this.value)">
                                     <option value="">Select</option>
                                     <option value="Yes">Yes</option>
@@ -2748,7 +2760,7 @@
                         <div id="pwdSection" style="display:none;">
                             <div class="form-row cols-2" style="margin-top:1rem;">
                                 <div class="fg">
-                                    <label>Whether scribe required for the test <span class="req">*</span></label>
+                                    <label>Scribe required for the test <span class="req">*</span></label>
                                     <select class="fc" name="pwd_required_test" id="pwd_required_test"
                                         onchange="toggleScribe(this.value)">
                                         <option value="">Select</option>
@@ -2773,7 +2785,7 @@
                                 </div>
                             </div>
                             <div class="fg" style="margin-top:1rem;">
-                                <label>PWD Certificate <span class="req">*</span></label>
+                                <label>Upload PWD certificate <span class="req">*</span></label>
                                 <div class="file-zone">
                                     <input type="file" name="pwd_certificate" accept=".pdf,image/png,image/jpeg"
                                         onchange="handleFileUpload('pwd_certificate', this)">
@@ -2788,10 +2800,10 @@
                             </div>
                         </div>
 
-                        <div class="section-sub">Karnataka Category</div>
+                        <div class="section-sub">Karnataka category</div>
                         <div class="form-row cols-1">
                             <div class="fg">
-                                <label>Whether Karnataka category <span class="req">*</span></label>
+                                <label>Karnataka category <span class="req">*</span></label>
                                 <select class="fc" name="karnataka_category" required
                                     onchange="toggleKarnataka(this.value)">
                                     <option value="">Select</option>
@@ -2944,7 +2956,7 @@
                             </div>
                             <div>
                                 <h2>Preference of Test Centre</h2>
-                                <p>Indicate your preferred test center locations in priority order</p>
+                                <p>Indicate your preferred test centre locations in priority order</p>
                             </div>
                         </div>
                         <div class="alert-note warning" style="margin-bottom:1.5rem;">
@@ -2959,7 +2971,7 @@
                         </div>
                         <div class="form-row cols-3">
                             <div class="fg">
-                                <label>First Preference <span class="req">*</span></label>
+                                <label>First preference <span class="req">*</span></label>
                                 <select class="fc" name="first_preference" id="first_preference" required
                                     onchange="validatePreferences()">
                                     <option value="">Select provider</option>
@@ -2970,7 +2982,7 @@
                                 <span class="field-error" id="err_first_preference">First preference is required</span>
                             </div>
                             <div class="fg">
-                                <label>Second Preference</label>
+                                <label>Second preference</label>
                                 <select class="fc" name="second_preference" id="second_preference"
                                     onchange="validatePreferences()">
                                     <option value="">Select provider</option>
@@ -2981,7 +2993,7 @@
                                 <span class="field-error" id="err_second_preference">Preferences must be unique</span>
                             </div>
                             <div class="fg">
-                                <label>Third Preference</label>
+                                <label>Third preference</label>
                                 <select class="fc" name="third_preference" id="third_preference"
                                     onchange="validatePreferences()">
                                     <option value="">Select provider</option>
@@ -3013,7 +3025,7 @@
                         </div>
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>Where Did You Hear About the Programme? <span class="req">*</span></label>
+                                <label>How did you hear about the programme? <span class="req">*</span></label>
                                 <select class="fc" name="source_of_information" required
                                     onchange="togglePleaseSpecify(this.value)">
                                     <option value="">Select Source</option>
@@ -3032,7 +3044,7 @@
                                 <span class="field-error" id="err_source_of_information">Please select a source</span>
                             </div>
                             <div class="fg" id="pleaseMentionField" style="display:none;">
-                                <label>Please Mention <span class="req">*</span></label>
+                                <label>Please mention <span class="req">*</span></label>
                                 <input type="text" class="fc" name="please_mention" id="please_mention"
                                     placeholder="Specify the source">
                                 <span class="field-error" id="err_please_mention">Please specify the source</span>
@@ -3041,7 +3053,7 @@
 
                         <div class="form-row cols-1" style="margin-top:.5rem;">
                             <div class="fg">
-                                <label>Curriculum Vitae (CV)</label>
+                                <label>Curriculum vitae (CV)</label>
                                 <div class="file-zone">
                                     <input type="file" name="cv" accept=".pdf,.doc,.docx"
                                         onchange="handleFileUpload('cv', this)">
@@ -3052,7 +3064,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                         </svg>
-                                        <br>Upload a current <strong>CV</strong> not exceeding two pages
+                                        <br>Upload your CV (maximum two pages)
                                     </div>
                                     <div class="file-preview" id="fp_cv"><svg xmlns="http://www.w3.org/2000/svg"
                                             width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -3074,7 +3086,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2>Review &amp; Submit</h2>
+                                <h2>Review and Submit</h2>
                                 <p>Please review all information before final submission</p>
                             </div>
                         </div>
@@ -3086,8 +3098,7 @@
                                     style="width:18px;height:18px;margin-top:.2rem;accent-color:var(--navy);flex-shrink:0;"
                                     onchange="onDeclarationChange(this)">
                                 <span style="font-size:.88rem;line-height:1.7;color:var(--slate-700);">
-                                    Undertaking of truthful information — I declare that the information provided is
-                                    true and that false information may lead to disqualification.
+                                    I declare that the information provided is true. Providing false information may lead to disqualification.
                                 </span>
                             </label>
                         </div>
@@ -3097,8 +3108,7 @@
                                 <input type="checkbox" name="consent_third_party" id="consent_third_party"
                                     style="width:18px;height:18px;margin-top:.2rem;accent-color:var(--navy);flex-shrink:0;">
                                 <span style="font-size:.85rem;line-height:1.7;color:var(--slate-600);">
-                                    Consent to details being shared with third party affiliates. <strong>Please Note:
-                                        The Application Fee is non-refundable.</strong>
+                                    I consent to sharing my details with authorised partners. The application fee is non-refundable.
                                 </span>
                             </label>
                         </div>
@@ -3124,7 +3134,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                         </svg>
-                        Save Draft
+                        Save draft
                     </button>
 
                     <!-- Download Receipt — shown only when application fee has been paid -->
@@ -3142,11 +3152,11 @@
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3" />
                         </svg>
-                        Download Receipt
+                        Download receipt
                     </button>
 
                     <button type="button" class="btn-next" id="nextBtn" onclick="handleNext()">
-                        Next Step
+                        Next
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                             stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
@@ -3168,10 +3178,24 @@
                 <p>Your application has been received and is now under review. You will be notified of further updates
                     via email.</p>
                 <div class="app-ref-box">
-                    <div class="app-ref-field"><label>Application No</label><span id="finalAppId"></span></div>
-                    <div class="app-ref-field"><label>Submission Date</label><span id="finalDate"></span></div>
-                    <div class="app-ref-field"><label>Program</label><span id="finalProgram"></span></div>
+                    <div class="app-ref-field"><label>Application no</label><span id="finalAppId"></span></div>
+                    <div class="app-ref-field"><label>Submission date</label><span id="finalDate"></span></div>
+                    <div class="app-ref-field"><label>Programme</label><span id="finalProgram"></span></div>
                     <div class="app-ref-field"><label>Campus</label><span id="finalCampus"></span></div>
+                </div>
+
+                <!-- Application fee payment receipt (uses Payment Receipt Template from Program Reservation Policy) -->
+                <div id="successReceiptBtnWrap" style="display:none; margin-top:1.5rem;">
+                    <button type="button" id="successDownloadReceiptBtn" onclick="downloadFeeReceiptFromSuccess()"
+                        title="Download your application fee payment receipt"
+                        style="display:inline-flex; align-items:center; gap:8px; padding:0 1.4rem; height:44px; border-radius:10px;
+                               background:#1e40af; color:#fff; border:none; font-weight:600; font-size:.88rem; cursor:pointer;
+                               transition:background .2s, box-shadow .2s;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3"/>
+                        </svg>
+                        Download payment receipt
+                    </button>
                 </div>
 
                 <div id="exemptionSuccessBox"
@@ -3289,67 +3313,71 @@
 
     // Field names → user-visible labels (for validation error messages from backend)
     const FIELD_LABELS = {
-        candidate_name: 'Candidate\'s Name',
-        candidate_photo: 'Student Photo',
+        candidate_name: 'Full name',
+        candidate_photo: 'Student photo',
         email: 'Email',
-        mobile_number: 'Mobile Number of Candidate',
-        alternate_contact: 'Alternate Contact Number',
-        date_of_birth: 'Date of Birth',
+        mobile_number: 'Mobile number',
+        alternate_contact: 'Alternate contact number',
+        date_of_birth: 'Date of birth',
         gender: 'Gender',
         nationality: 'Nationality',
         religion: 'Religion',
-        annual_house_hold_income: 'Current Annual Household Income',
-        id_proof: 'ID Proof',
-        program: 'Program',
-        program_level: 'Program Level',
-        campus: 'Campus Name',
-        admission_cycle: 'Admission Cycle',
-        academic_year: 'Academic Year',
-        application_type: 'Application Type',
-        father_name: 'Father\'s Name',
-        father_email: 'Father Email ID',
-        father_mobile: 'Father Mobile Number',
-        father_occupation: 'Father Occupation',
-        mother_name: 'Mother\'s Name',
-        mother_email: 'Mother Email ID',
-        mother_mobile: 'Mother Mobile Number',
-        mother_occupation: 'Mother Occupation',
-        guardian_name: 'Guardian Name',
-        guardian_mobile: 'Guardian Mobile',
-        guardian_email: 'Guardian Email',
+        annual_house_hold_income: 'Annual household income (INR)',
+        id_proof: 'Upload ID proof',
+        program: 'Programme',
+        program_level: 'Programme level',
+        campus: 'Campus name',
+        admission_cycle: 'Admission cycle',
+        academic_year: 'Academic year',
+        application_type: 'Application type',
+        father_name: 'Father\'s name',
+        father_email: 'Father\'s email',
+        father_mobile: 'Father\'s mobile number',
+        father_occupation: 'Father\'s occupation',
+        mother_name: 'Mother\'s name',
+        mother_email: 'Mother\'s email',
+        mother_mobile: 'Mother\'s mobile number',
+        mother_occupation: 'Mother\'s occupation',
+        guardian_name: 'Guardian name',
+        guardian_mobile: 'Guardian mobile',
+        guardian_email: 'Guardian email',
         correspondence_address: 'Address',
         city: 'City',
         state: 'State',
         pincode: 'Pincode',
-        class_x_school: 'School/College/University (Class X)',
-        class_x_board: 'Board (Class X)',
-        class_x_year_of_completion: 'Year of Completion (Class X)',
-        class_x_percentage: 'Percentage/CGPA (Class X)',
-        class_x_cgpa: 'If CGPA, maximum CGPA (Class X)',
-        class_xii_school: 'School/College/University (Class XII)',
-        class_xii_board: 'Board (Class XII)',
-        class_xii_year_of_completion: 'Year of Completion (Class XII)',
-        hsc_group: 'HSC Group',
-        hsc_percentage: 'HSC Percentage',
-        first_preference: 'First Preference (Test Centre)',
-        second_preference: 'Second Preference (Test Centre)',
-        third_preference: 'Third Preference (Test Centre)',
-        source_of_information: 'Where Did You Hear About the Programme?',
-        please_mention: 'Please Mention',
+        class_x_school: 'School',
+        class_x_board: 'Board',
+        class_x_year_of_completion: 'Year of completion',
+        class_x_percentage: 'Percentage or CGPA',
+        class_x_cgpa: 'Maximum CGPA',
+        class_x_marksheet: 'Upload Class X marksheet',
+        class_xii_name_of_examination: 'Examination name',
+        class_xii_school: 'School',
+        class_xii_board: 'Board',
+        class_xii_year_of_completion: 'Year of completion',
+        class_xii_marksheet: 'Upload Class XII marksheet',
+        hsc_group: 'HSC group',
+        hsc_percentage: 'HSC percentage',
+        first_preference: 'First preference',
+        second_preference: 'Second preference',
+        third_preference: 'Third preference',
+        source_of_information: 'How did you hear about the programme?',
+        please_mention: 'Please mention',
         declaration_undertaking: 'Declaration',
         consent_third_party: 'Consent',
-        post_degree_work_experience: 'Post-Degree work experience',
+        post_degree_work_experience: 'Post-degree work experience',
         years_of_work_experience: 'Years of work experience',
-        ews: 'Whether EWS',
-        pwd: 'Whether Person with Disability (PWD)',
-        pwd_required_test: 'Whether scribe required for the test',
+        ews: 'EWS',
+        pwd: 'Person with disability (PwD)',
+        pwd_required_test: 'Scribe required for the test',
         scribe_allotment: 'Scribe arrangement',
-        karnataka_category: 'Whether Karnataka category',
-        ug_degree_completion: 'Have you completed your UG degree',
+        karnataka_category: 'Karnataka category',
+        ug_degree_completion: 'UG degree completion',
+        percentage: 'Score or percentage',
         other_degree_details: 'Other degrees',
-        caste_certificate: 'Caste Certificate',
-        ews_certificate: 'EWS Certificate',
-        pwd_certificate: 'PWD Certificate'
+        caste_certificate: 'Upload caste certificate',
+        ews_certificate: 'Upload EWS certificate',
+        pwd_certificate: 'Upload PWD certificate'
     };
 
     function humanizeError(msg) {
@@ -3376,19 +3404,47 @@
     //  INIT
     // ═══════════════════════════════════════════════════════
     const PHONE_COUNTRY_CODES = [
-        { code: '+91', label: '🇮🇳 +91' }, { code: '+1', label: '🇺🇸 +1' }, { code: '+44', label: '🇬🇧 +44' },
-        { code: '+971', label: '🇦🇪 +971' }, { code: '+61', label: '🇦🇺 +61' }, { code: '+81', label: '🇯🇵 +81' },
-        { code: '+86', label: '🇨🇳 +86' }, { code: '+33', label: '🇫🇷 +33' }, { code: '+49', label: '🇩🇪 +49' },
-        { code: '+39', label: '🇮🇹 +39' }, { code: '+34', label: '🇪🇸 +34' }, { code: '+31', label: '🇳🇱 +31' },
-        { code: '+65', label: '🇸🇬 +65' }, { code: '+60', label: '🇲🇾 +60' }, { code: '+62', label: '🇮🇩 +62' },
-        { code: '+63', label: '🇵🇭 +63' }, { code: '+64', label: '🇳🇿 +64' }, { code: '+27', label: '🇿🇦 +27' },
-        { code: '+55', label: '🇧🇷 +55' }, { code: '+52', label: '🇲🇽 +52' }, { code: '+966', label: '🇸🇦 +966' },
-        { code: '+974', label: '🇶🇦 +974' }, { code: '+973', label: '🇧🇭 +973' }, { code: '+968', label: '🇴🇲 +968' },
-        { code: '+20', label: '🇪🇬 +20' }, { code: '+92', label: '🇵🇰 +92' }, { code: '+880', label: '🇧🇩 +880' },
-        { code: '+94', label: '🇱🇰 +94' }, { code: '+977', label: '🇳🇵 +977' }, { code: '+234', label: '🇳🇬 +234' },
-        { code: '+254', label: '🇰🇪 +254' }, { code: '+353', label: '🇮🇪 +353' }, { code: '+46', label: '🇸🇪 +46' },
-        { code: '+47', label: '🇳🇴 +47' }, { code: '+45', label: '🇩🇰 +45' }, { code: '+358', label: '🇫🇮 +358' },
+        { code: '+91', label: '🇮🇳 India +91' }, { code: '+1', label: '🇺🇸 USA/Canada +1' }, { code: '+44', label: '🇬🇧 UK +44' },
+        { code: '+971', label: '🇦🇪 UAE +971' }, { code: '+61', label: '🇦🇺 Australia +61' }, { code: '+81', label: '🇯🇵 Japan +81' },
+        { code: '+86', label: '🇨🇳 China +86' }, { code: '+33', label: '🇫🇷 France +33' }, { code: '+49', label: '🇩🇪 Germany +49' },
+        { code: '+39', label: '🇮🇹 Italy +39' }, { code: '+34', label: '🇪🇸 Spain +34' }, { code: '+31', label: '🇳🇱 Netherlands +31' },
+        { code: '+65', label: '🇸🇬 Singapore +65' }, { code: '+60', label: '🇲🇾 Malaysia +60' }, { code: '+62', label: '🇮🇩 Indonesia +62' },
+        { code: '+63', label: '🇵🇭 Philippines +63' }, { code: '+64', label: '🇳🇿 New Zealand +64' }, { code: '+27', label: '🇿🇦 South Africa +27' },
+        { code: '+55', label: '🇧🇷 Brazil +55' }, { code: '+52', label: '🇲🇽 Mexico +52' }, { code: '+966', label: '🇸🇦 Saudi Arabia +966' },
+        { code: '+974', label: '🇶🇦 Qatar +974' }, { code: '+973', label: '🇧🇭 Bahrain +973' }, { code: '+968', label: '🇴🇲 Oman +968' },
+        { code: '+965', label: '🇰🇼 Kuwait +965' }, { code: '+20', label: '🇪🇬 Egypt +20' }, { code: '+92', label: '🇵🇰 Pakistan +92' },
+        { code: '+880', label: '🇧🇩 Bangladesh +880' }, { code: '+94', label: '🇱🇰 Sri Lanka +94' }, { code: '+977', label: '🇳🇵 Nepal +977' },
+        { code: '+93', label: '🇦🇫 Afghanistan +93' }, { code: '+234', label: '🇳🇬 Nigeria +234' }, { code: '+254', label: '🇰🇪 Kenya +254' },
+        { code: '+353', label: '🇮🇪 Ireland +353' }, { code: '+46', label: '🇸🇪 Sweden +46' }, { code: '+47', label: '🇳🇴 Norway +47' },
+        { code: '+45', label: '🇩🇰 Denmark +45' }, { code: '+358', label: '🇫🇮 Finland +358' }, { code: '+41', label: '🇨🇭 Switzerland +41' },
+        { code: '+43', label: '🇦🇹 Austria +43' }, { code: '+32', label: '🇧🇪 Belgium +32' }, { code: '+351', label: '🇵🇹 Portugal +351' },
+        { code: '+30', label: '🇬🇷 Greece +30' }, { code: '+48', label: '🇵🇱 Poland +48' }, { code: '+90', label: '🇹🇷 Turkey +90' },
+        { code: '+7', label: '🇷🇺 Russia/Kazakhstan +7' }, { code: '+82', label: '🇰🇷 South Korea +82' }, { code: '+66', label: '🇹🇭 Thailand +66' },
+        { code: '+84', label: '🇻🇳 Vietnam +84' }, { code: '+852', label: '🇭🇰 Hong Kong +852' }, { code: '+853', label: '🇲🇴 Macau +853' },
+        { code: '+886', label: '🇹🇼 Taiwan +886' }, { code: '+98', label: '🇮🇷 Iran +98' }, { code: '+964', label: '🇮🇶 Iraq +964' },
+        { code: '+962', label: '🇯🇴 Jordan +962' }, { code: '+961', label: '🇱🇧 Lebanon +961' }, { code: '+972', label: '🇮🇱 Israel +972' },
+        { code: '+212', label: '🇲🇦 Morocco +212' }, { code: '+213', label: '🇩🇿 Algeria +213' }, { code: '+249', label: '🇸🇩 Sudan +249' },
+        { code: '+233', label: '🇬🇭 Ghana +233' }, { code: '+255', label: '🇹🇿 Tanzania +255' }, { code: '+256', label: '🇺🇬 Uganda +256' },
+        { code: '+237', label: '🇨🇲 Cameroon +237' },
+        { code: '+380', label: '🇺🇦 Ukraine +380' }, { code: '+40', label: '🇷🇴 Romania +40' }, { code: '+36', label: '🇭🇺 Hungary +36' },
+        { code: '+420', label: '🇨🇿 Czech Republic +420' }, { code: '+381', label: '🇷🇸 Serbia +381' }, { code: '+385', label: '🇭🇷 Croatia +385' },
+        { code: '+359', label: '🇧🇬 Bulgaria +359' }, { code: '+370', label: '🇱🇹 Lithuania +370' }, { code: '+371', label: '🇱🇻 Latvia +371' },
+        { code: '+372', label: '🇪🇪 Estonia +372' }, { code: '+994', label: '🇦🇿 Azerbaijan +994' }, { code: '+995', label: '🇬🇪 Georgia +995' },
+        { code: '+374', label: '🇦🇲 Armenia +374' }, { code: '+998', label: '🇺🇿 Uzbekistan +998' }, { code: '+996', label: '🇰🇬 Kyrgyzstan +996' },
     ];
+
+    // Review section: Edit buttons navigate to the respective stage (event delegation for dynamically added buttons)
+    document.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest && e.target.closest('.btn-review-edit');
+        if (!btn) return;
+        const step = btn.getAttribute('data-step');
+        if (step) {
+            e.preventDefault();
+            e.stopPropagation();
+            const n = parseInt(step, 10);
+            if (n >= 1 && n <= TOTAL_STEPS) showStep(n);
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         buildProgressStrip();
@@ -3404,6 +3460,7 @@
         initSearchableSelects();
         initStateCityFilter();
         toggleSaveDraftVisibility();
+        togglePercentageRequired();
         refreshReceiptButton();   // show Download Receipt btn if fee already paid
     });
 
@@ -3716,10 +3773,10 @@
                 nextBtn.textContent = 'Save';
                 nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg> Save';
             } else if (currentStep === TOTAL_STEPS) {
-                nextBtn.textContent = 'Submit Application';
-                nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                nextBtn.textContent = 'Submit application';
+                nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit application';
             } else {
-                nextBtn.innerHTML = 'Next Step <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
+                nextBtn.innerHTML = 'Next <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
             }
 
             // Ensure Submit/Save is hidden on last step if already submitted
@@ -3851,6 +3908,7 @@
         if (!f('campus')) { showError('campus'); v = false; }
         if (!f('admission_cycle')) { showError('admission_cycle'); v = false; }
         if (!f('academic_year')) { showError('academic_year'); v = false; }
+        if (!f('annual_house_hold_income')) { showError('annual_house_hold_income'); v = false; }
 
         const dobInput = document.getElementById('date_of_birth');
         const dob = (dobInput && dobInput.value) ? dobInput.value.trim() : (f('date_of_birth') || '');
@@ -3864,13 +3922,34 @@
         const mobCheck = validatePhoneLength('mobile_number', true);
         if (!mobCheck.ok) { showError('mobile_number', mobCheck.msg); v = false; }
 
-        // Optional phones: if any digits entered, require 10–15 digits
-        ['alternate_contact', 'father_mobile', 'mother_mobile'].forEach(fieldBase => {
-            const check = validatePhoneLength(fieldBase, false);
-            if (!check.ok) { showError(fieldBase, check.msg); v = false; }
-        });
+        // Optional phone: alternate_contact — if any digits entered, require 10–15 digits
+        const altCheck = validatePhoneLength('alternate_contact', false);
+        if (!altCheck.ok) { showError('alternate_contact', altCheck.msg); v = false; }
 
-        // Parent & Guardian (within Student Information)
+        // Parent details (mandatory per Applicant doctype)
+        if (!f('father_name')) { showError('father_name'); v = false; }
+        if (!f('father_email')) { showError('father_email'); v = false; }
+        if (f('father_email') && !validateEmail(f('father_email'))) { showError('father_email'); v = false; }
+        const fatherMobCheck = validatePhoneLength('father_mobile', true);
+        if (!fatherMobCheck.ok) { showError('father_mobile', fatherMobCheck.msg); v = false; }
+        if (!f('father_occupation')) { showError('father_occupation'); v = false; }
+
+        if (!f('mother_name')) { showError('mother_name'); v = false; }
+        if (!f('mother_email')) { showError('mother_email'); v = false; }
+        if (f('mother_email') && !validateEmail(f('mother_email'))) { showError('mother_email'); v = false; }
+        const motherMobCheck = validatePhoneLength('mother_mobile', true);
+        if (!motherMobCheck.ok) { showError('mother_mobile', motherMobCheck.msg); v = false; }
+        if (!f('mother_occupation')) { showError('mother_occupation'); v = false; }
+
+        // Address (mandatory per Applicant doctype)
+        if (!f('correspondence_address')) { showError('correspondence_address'); v = false; }
+        if (!f('city')) { showError('city'); v = false; }
+        if (!f('state')) { showError('state'); v = false; }
+        const pincodeVal = f('pincode');
+        if (!pincodeVal) { showError('pincode'); v = false; }
+        else if (!/^\d{6}$/.test(pincodeVal)) { showError('pincode', 'Enter a valid 6-digit pincode'); v = false; }
+
+        // Guardian (when checkbox is checked)
         const guardianReq = document.getElementById('guardian_required')?.checked;
         if (guardianReq) {
             const gName = document.querySelector('[name="guardian_name"]')?.value?.trim();
@@ -3878,7 +3957,7 @@
             const gCheck = validatePhoneLength('guardian_mobile', true);
             if (!gCheck.ok) { showError('guardian_mobile', gCheck.msg); v = false; }
         }
-        ['father_email', 'mother_email', 'guardian_email'].forEach(fn => {
+        ['guardian_email'].forEach(fn => {
             const val = document.querySelector(`[name="${fn}"]`)?.value?.trim();
             if (val && !validateEmail(val)) { showError(fn); v = false; }
         });
@@ -3889,17 +3968,29 @@
     function validateStep2() {
         let v = true;
         const f = name => parseFloat(document.querySelector(`[name="${name}"]`)?.value);
+        const fStr = name => (document.querySelector(`[name="${name}"]`)?.value || '').trim();
 
-        if (!document.querySelector('[name="class_x_school"]')?.value?.trim()) { showError('class_x_school'); v = false; }
-        if (!document.querySelector('[name="class_x_board"]')?.value?.trim()) { showError('class_x_board'); v = false; }
-
+        // Class X (all mandatory in Applicant doctype)
+        if (!fStr('class_x_year_of_completion')) { showError('class_x_year_of_completion'); v = false; }
+        if (!fStr('class_x_school')) { showError('class_x_school'); v = false; }
+        if (!fStr('class_x_board')) { showError('class_x_board'); v = false; }
         const x_pct = f('class_x_percentage');
         if (isNaN(x_pct) || x_pct < 0 || x_pct > 100) { showError('class_x_percentage'); v = false; }
+        if (!(formData.class_x_marksheet && String(formData.class_x_marksheet).trim())) { showError('class_x_marksheet', 'Class X marksheet upload is required'); v = false; }
 
-        const hsc = f('hsc_percentage');
-        if (!isNaN(hsc)) {
-            if (hsc < 35 || hsc > 100) { showError('hsc_percentage', 'HSC percentage must be between 35 and 100'); v = false; }
-        }
+        // Class XII (all mandatory in Applicant doctype)
+        if (!fStr('class_xii_name_of_examination')) { showError('class_xii_name_of_examination'); v = false; }
+        if (!fStr('class_xii_year_of_completion')) { showError('class_xii_year_of_completion'); v = false; }
+        if (!fStr('class_xii_school')) { showError('class_xii_school'); v = false; }
+        if (!fStr('class_xii_board')) { showError('class_xii_board'); v = false; }
+        if (!(formData.class_xii_marksheet && String(formData.class_xii_marksheet).trim())) { showError('class_xii_marksheet', 'Class XII marksheet upload is required'); v = false; }
+
+        // HSC (hsc_group and hsc_percentage mandatory in Applicant doctype)
+        if (!fStr('hsc_group')) { showError('hsc_group'); v = false; }
+        const hscVal = fStr('hsc_percentage');
+        const hsc = parseFloat(hscVal);
+        if (!hscVal || isNaN(hsc)) { showError('hsc_percentage', 'HSC percentage is required'); v = false; }
+        else if (hsc < 35 || hsc > 100) { showError('hsc_percentage', 'HSC percentage must be between 35 and 100'); v = false; }
 
         // UG CGPA validation in rows
         document.querySelectorAll('.ug-cgpa-input').forEach(inp => {
@@ -3931,6 +4022,17 @@
         if (document.querySelector('[name="other_degree"]')?.value === 'Yes') {
             if (!document.querySelector('[name="other_degree_details"]')?.value?.trim()) {
                 showError('other_degree_details'); v = false;
+            }
+        }
+
+        // When National test is selected, percentage/score is mandatory
+        const nationalTest = document.querySelector('[name="national_test_name"]')?.value?.trim();
+        if (nationalTest) {
+            const pctVal = document.querySelector('[name="percentage"]')?.value?.trim();
+            const pctNum = pctVal ? parseFloat(pctVal) : NaN;
+            if (!pctVal || isNaN(pctNum) || pctNum < 0) {
+                showError('percentage', 'Score or percentage is required when National test is selected.');
+                v = false;
             }
         }
         return v;
@@ -4082,6 +4184,12 @@
     // ═══════════════════════════════════════════════════════
     //  CONDITIONAL SHOW/HIDE
     // ═══════════════════════════════════════════════════════
+    function togglePercentageRequired() {
+        const natTest = document.querySelector('[name="national_test_name"]')?.value?.trim();
+        const reqEl = document.getElementById('percentageReq');
+        if (reqEl) reqEl.style.display = natTest ? 'inline' : 'none';
+    }
+
     function toggleGuardian(show) {
         document.getElementById('guardianSection').style.display = show ? 'block' : 'none';
         formData.guardian_required = show ? 1 : 0;
@@ -4333,14 +4441,14 @@
         try {
             const url = await uploadFileToFrappe(file);
             updateDegreeRow(type, rowIdx, field, url);
-            // Refresh the cell display
+            // Refresh the cell display (keep id on cell so future clicks work)
             if (cell) {
-                cell.innerHTML = buildAttachCell(cellId, type, rowIdx, field, url).replace(`id="${cellId}"`, '').replace(`</div>`, '');
-                // Rebuild properly
-                const fname = url.split('/').pop();
+                const fname = (url && typeof url === 'string') ? url.split('/').pop() : '';
+                cell.id = cellId;
                 cell.innerHTML = `
-                    <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" id="fi_${cellId}" onchange="handleDegreeFileUpload(this,'${cellId}','${type}',${rowIdx},'${field}')"><button type="button" class="btn-attach uploaded" onclick="document.getElementById('fi_${cellId}').click()">✓ Uploaded</button>
-                    <span class="attach-filename" title="${escapeAttr(url)}">${escapeAttr(fname)}</span>
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" id="fi_${cellId}" onchange="handleDegreeFileUpload(this,'${cellId}','${type}',${rowIdx},'${field}')">
+                    <button type="button" class="btn-attach uploaded" onclick="document.getElementById('fi_${cellId}').click()">✓ Uploaded</button>
+                    <span class="attach-filename" title="${escapeAttr(url || '')}">${escapeAttr(fname)}</span>
                     <button type="button" class="attach-clear" title="Remove" onclick="clearDegreeAttach('${cellId}','${type}',${rowIdx},'${field}')">✕</button>`;
             }
             showToast('File uploaded successfully.', 'success');
@@ -4451,7 +4559,7 @@
                 <div style="font-weight:700;font-size:.82rem;color:var(--slate-600);margin-bottom:.5rem;">Available Programmes at This Campus</div>
                 <div style="overflow-x:auto;">
                     <table class="elig-program-table">
-                        <thead><tr><th>Program</th><th>Eligibility</th><th>Reason</th></tr></thead>
+                        <thead><tr><th>Programme</th><th>Eligibility</th><th>Reason</th></tr></thead>
                         <tbody>
                             ${result.programs.map(p => `
                                 <tr>
@@ -4471,7 +4579,7 @@
             </div>`;
         }
 
-        const headerText = isEligible ? 'Eligibility check passed' : 'You are not eligible for the selected program';
+        const headerText = isEligible ? 'Eligibility check passed' : 'You are not eligible for the selected programme';
         const messageText = (result.message || '').trim() || (isEligible ? 'You meet the eligibility criteria.' : 'Please review the reason below and contact admissions if you have questions.');
         resultDiv.innerHTML = `
         <div class="elig-panel ${cls}">
@@ -4504,10 +4612,22 @@
             headers: { 'X-Frappe-CSRF-Token': csrfToken }
         });
         const data = await r.json();
-        if (data && data.message && data.message.file_url) {
-            return data.message.file_url;
+        if (data && data.message) {
+            const msg = data.message;
+            if (typeof msg === 'object' && msg.file_url) return msg.file_url;
+            if (typeof msg === 'string' && msg) return msg.startsWith('/') ? msg : '/' + msg;
         }
-        throw new Error((data._server_messages && JSON.parse(data._server_messages)) || 'Upload failed');
+        let err = 'Upload failed';
+        try {
+            if (data._server_messages) {
+                const arr = typeof data._server_messages === 'string' ? JSON.parse(data._server_messages) : data._server_messages;
+                if (Array.isArray(arr) && arr[0]) {
+                    const first = typeof arr[0] === 'string' ? JSON.parse(arr[0]) : arr[0];
+                    if (first && first.message) err = first.message;
+                }
+            }
+        } catch (_) {}
+        throw new Error(err);
     }
 
     function handlePhotoUpload(input) {
@@ -4651,6 +4771,57 @@
         formData.whether_scstobc_ncl = normalizedResCat;
         formData.reservation_category = normalizedResCat;
         formData.categories = (normalizedResCat && normalizedResCat !== 'NA') ? [{ category: normalizedResCat }] : [];
+
+        // Sync UG/PG degree tables from DOM so text inputs and file URLs are both sent to backend
+        syncDegreeTablesFromDOM();
+    }
+
+    /** Read UG/PG table rows from DOM and merge into formData (preserves existing file URLs). */
+    function syncDegreeTablesFromDOM() {
+        const ugBody = document.getElementById('ugTableBody');
+        if (ugBody && ugBody.rows.length) {
+            const existingRows = (formData.ug_degree_details && formData.ug_degree_details.slice()) || [];
+            formData.ug_degree_details = [];
+            Array.from(ugBody.rows).forEach((tr, idx) => {
+                if (tr.cells.length < 6) return;
+                const progSel = tr.cells[0].querySelector('input[list], select');
+                const college = (tr.cells[1].querySelector('input') || {}).value || '';
+                const year = (tr.cells[2].querySelector('input') || {}).value || '';
+                const cgpa = (tr.cells[3].querySelector('input') || {}).value || '';
+                const ugProgram = (progSel && progSel.value) || '';
+                const prev = existingRows[idx] || {};
+                formData.ug_degree_details.push({
+                    ug_program: ugProgram,
+                    college,
+                    year_of_completion: year,
+                    ug_cgpa: cgpa,
+                    degree_certificate: prev.degree_certificate || '',
+                    marksheets: prev.marksheets || ''
+                });
+            });
+        }
+        const pgBody = document.getElementById('pgTableBody');
+        if (pgBody && pgBody.rows.length) {
+            const existingRows = (formData.pg_degree_details && formData.pg_degree_details.slice()) || [];
+            formData.pg_degree_details = [];
+            Array.from(pgBody.rows).forEach((tr, idx) => {
+                if (tr.cells.length < 6) return;
+                const progSel = tr.cells[0].querySelector('input[list], select');
+                const college = (tr.cells[1].querySelector('input') || {}).value || '';
+                const year = (tr.cells[2].querySelector('input') || {}).value || '';
+                const cgpa = (tr.cells[3].querySelector('input') || {}).value || '';
+                const pgProgram = (progSel && progSel.value) || '';
+                const prev = existingRows[idx] || {};
+                formData.pg_degree_details.push({
+                    pg_program: pgProgram,
+                    collegeuniversity: college,
+                    year_of_completion: year,
+                    pg_cgpa: cgpa,
+                    pg_degree_certificatebonafide_certificate_to_be_uploaded: prev.pg_degree_certificatebonafide_certificate_to_be_uploaded || '',
+                    transcriptsmarksheets_to_be_uploaded: prev.transcriptsmarksheets_to_be_uploaded || ''
+                });
+            });
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -4810,62 +4981,64 @@
         collectFormData();
         const d = formData;
         const v = (val) => val || '<span style="color:var(--slate-400);">—</span>';
+        const isSubmitted = (d.application_status === 'Submitted');
+        const reviewBtnText = isSubmitted ? 'View' : 'Edit';
 
         document.getElementById('reviewContent').innerHTML = `
         <div class="review-section">
             <div class="review-section-header">
                 Personal Information
-                <button class="btn-review-edit" onclick="showStep(1)">Edit</button>
+                <button type="button" class="btn-review-edit" data-step="1" aria-label="${reviewBtnText} Personal Information">${reviewBtnText}</button>
             </div>
             <div class="review-section-body">
-                <div class="review-field"><label>Full Name</label><span>${v(d.candidate_name)}</span></div>
+                <div class="review-field"><label>Full name</label><span>${v(d.candidate_name)}</span></div>
                 <div class="review-field"><label>Email</label><span>${v(d.email)}</span></div>
                 <div class="review-field"><label>Mobile</label><span>${v(d.mobile_number)}</span></div>
-                <div class="review-field"><label>Date of Birth</label><span>${v(d.date_of_birth)}</span></div>
+                <div class="review-field"><label>Date of birth</label><span>${v(d.date_of_birth)}</span></div>
                 <div class="review-field"><label>Gender</label><span>${v(d.gender)}</span></div>
                 <div class="review-field"><label>Nationality</label><span>${v(d.nationality)}</span></div>
-                <div class="review-field"><label>Program</label><span>${v(d.program)}</span></div>
-                <div class="review-field"><label>Campus Name</label><span>${v(d.campus)}</span></div>
-                <div class="review-field"><label>Admission Cycle</label><span>${v(d.admission_cycle)}</span></div>
-                <div class="review-field"><label>Academic Year</label><span>${v(d.academic_year)}</span></div>
+                <div class="review-field"><label>Programme</label><span>${v(d.program)}</span></div>
+                <div class="review-field"><label>Campus name</label><span>${v(d.campus)}</span></div>
+                <div class="review-field"><label>Admission cycle</label><span>${v(d.admission_cycle)}</span></div>
+                <div class="review-field"><label>Academic year</label><span>${v(d.academic_year)}</span></div>
             </div>
         </div>
         <div class="review-section">
             <div class="review-section-header">
-                Parent / Guardian Details
-                <button class="btn-review-edit" onclick="showStep(1)">Edit</button>
+                Parent and Guardian Details
+                <button type="button" class="btn-review-edit" data-step="1" aria-label="${reviewBtnText} Parent and Guardian Details">${reviewBtnText}</button>
             </div>
             <div class="review-section-body">
-                <div class="review-field"><label>Father Name</label><span>${v(d.father_name)}</span></div>
-                <div class="review-field"><label>Father Mobile</label><span>${v(d.father_mobile)}</span></div>
-                <div class="review-field"><label>Mother Name</label><span>${v(d.mother_name)}</span></div>
-                <div class="review-field"><label>Mother Mobile</label><span>${v(d.mother_mobile)}</span></div>
+                <div class="review-field"><label>Father's name</label><span>${v(d.father_name)}</span></div>
+                <div class="review-field"><label>Father's mobile</label><span>${v(d.father_mobile)}</span></div>
+                <div class="review-field"><label>Mother's name</label><span>${v(d.mother_name)}</span></div>
+                <div class="review-field"><label>Mother's mobile</label><span>${v(d.mother_mobile)}</span></div>
                 ${d.guardian_required ? `<div class="review-field"><label>Guardian</label><span>${v(d.guardian_name)}</span></div>` : ''}
             </div>
         </div>
         <div class="review-section">
             <div class="review-section-header">
                 Academic Details
-                <button class="btn-review-edit" onclick="showStep(2)">Edit</button>
+                <button type="button" class="btn-review-edit" data-step="2" aria-label="${reviewBtnText} Academic Details">${reviewBtnText}</button>
             </div>
             <div class="review-section-body">
-                <div class="review-field"><label>Class X School</label><span>${v(d.class_x_school)}</span></div>
+                <div class="review-field"><label>Class X school</label><span>${v(d.class_x_school)}</span></div>
                 <div class="review-field"><label>Class X %</label><span>${v(d.class_x_percentage)}</span></div>
-                <div class="review-field"><label>Class XII School</label><span>${v(d.class_xii_school)}</span></div>
+                <div class="review-field"><label>Class XII school</label><span>${v(d.class_xii_school)}</span></div>
                 <div class="review-field"><label>HSC %</label><span>${v(d.hsc_percentage)}</span></div>
-                <div class="review-field"><label>HSC Group</label><span>${v(d.hsc_group)}</span></div>
-                ${d.national_test_name ? `<div class="review-field"><label>National Test</label><span>${d.national_test_name} — ${v(d.percentage)}%</span></div>` : ''}
+                <div class="review-field"><label>HSC group</label><span>${v(d.hsc_group)}</span></div>
+                ${d.national_test_name ? `<div class="review-field"><label>National test</label><span>${d.national_test_name} — ${v(d.percentage)}%</span></div>` : ''}
             </div>
         </div>
         <div class="review-section">
             <div class="review-section-header">
-                Test Center Preferences
-                <button class="btn-review-edit" onclick="showStep(5)">Edit</button>
+                Test Centre Preferences
+                <button type="button" class="btn-review-edit" data-step="5" aria-label="${reviewBtnText} Test Centre Preferences">${reviewBtnText}</button>
             </div>
             <div class="review-section-body">
-                <div class="review-field"><label>1st Preference</label><span>${v(d.first_preference)}</span></div>
-                <div class="review-field"><label>2nd Preference</label><span>${v(d.second_preference)}</span></div>
-                <div class="review-field"><label>3rd Preference</label><span>${v(d.third_preference)}</span></div>
+                <div class="review-field"><label>First preference</label><span>${v(d.first_preference)}</span></div>
+                <div class="review-field"><label>Second preference</label><span>${v(d.second_preference)}</span></div>
+                <div class="review-field"><label>Third preference</label><span>${v(d.third_preference)}</span></div>
             </div>
         </div>`;
     }
@@ -4884,7 +5057,7 @@
 
         collectFormData();
 
-        // 2. check all the manditatory fields are filed
+        // 2. check all the mandatory fields are filled
         if (!validateAllSteps()) return;
 
         const btn = document.getElementById('nextBtn');
@@ -4894,11 +5067,11 @@
         try {
             const eligRes = await apiFetch('slcm.www.application_form.index.check_portal_eligibility', { applicant_data: JSON.stringify(formData) });
             if (eligRes && eligRes.eligible === false) {
-                const msg = eligRes.message || 'You are not eligible for the selected program.';
+                const msg = eligRes.message || 'You are not eligible for the selected programme.';
                 showEligibilityModal(eligRes);
                 showValidationBanner(msg, 'error');
                 btn.disabled = false;
-                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit application';
                 return;
             }
 
@@ -4914,7 +5087,7 @@
         } catch (e) {
             showToast('Eligibility check failed. Please try again or save and submit.', 'error');
             btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit application';
             return;
         }
 
@@ -4929,7 +5102,7 @@
             }
         } catch (e) {
             btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit application';
             showToast('Could not sync application data. Please try again.', 'error');
             return;
         }
@@ -4942,7 +5115,7 @@
             const canSubmit = feeDetails && feeDetails.can_submit;
             if (feeAmount > 0 && !canSubmit) {
                 btn.disabled = false;
-                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit application';
                 showApplicationFeeModal(feeAmount, applicantName);
                 return;
             }
@@ -4971,6 +5144,13 @@
                 const navBtns = document.querySelector('.nav-buttons');
                 if (navBtns) navBtns.style.display = 'none';
                 document.getElementById('successScreen').style.display = 'block';
+
+                // Show payment receipt button on success page if application fee is paid/waived
+                const successReceiptWrap = document.getElementById('successReceiptBtnWrap');
+                if (successReceiptWrap) {
+                    const feeStatus = formData.application_fee_status || message.application_fee_status || '';
+                    successReceiptWrap.style.display = (feeStatus === 'Paid' || feeStatus === 'Waived') ? 'block' : 'none';
+                }
 
                 const now = new Date();
                 document.getElementById('finalAppId').textContent = message.name || 'APP-' + Date.now();
@@ -5023,7 +5203,7 @@
 
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit application';
                 }
             }
         } catch (e) {
@@ -5044,7 +5224,7 @@
             }
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit Application';
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit application';
             }
         }
     }
@@ -5464,11 +5644,29 @@
     }
 
     /**
+     * Download the application fee payment receipt from the success page.
+     * Uses the same backend (Program Reservation Policy Payment Receipt Template).
+     */
+    async function downloadFeeReceiptFromSuccess() {
+        const btn = document.getElementById('successDownloadReceiptBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>&nbsp;Loading…'; }
+        try {
+            await downloadFeeReceiptCore(document.getElementById('successDownloadReceiptBtn'));
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3"/></svg> Download payment receipt'; }
+        }
+    }
+
+    /**
      * Download the application fee payment receipt as a PDF.
-     * Calls the backend to get the receipt doc name, then opens the print view.
+     * Uses Payment Receipt Template from Program Reservation Policy (via backend).
      */
     async function downloadFeeReceipt() {
         const btn = document.getElementById('downloadReceiptBtn');
+        await downloadFeeReceiptCore(btn);
+    }
+
+    async function downloadFeeReceiptCore(btn) {
         const applicantName = formData.name;
 
         if (!applicantName) {
@@ -5476,14 +5674,12 @@
             return;
         }
 
-        const origInner = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>&nbsp;Loading…`;
+        const origInner = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>&nbsp;Loading…'; }
 
         let receiptOpened = false;
 
         try {
-            // Use the raw fetch + Frappe API directly (most reliable approach for portal pages)
             const csrfToken = window.csrf_token || '';
             const resp = await fetch('/api/method/slcm.www.application_form.index.get_application_fee_receipt', {
                 method: 'POST',
@@ -5501,8 +5697,9 @@
             if (data && data.message) {
                 const msg = data.message;
                 if (msg.receipt_name) {
+                    // print_url from backend uses Program Reservation Policy Payment Receipt Template
                     const printUrl = msg.print_url ||
-                        `/printview?doctype=Applicant+Payment+Receipt&name=${encodeURIComponent(msg.receipt_name)}&format=Standard&no_letterhead=0`;
+                        `/api/method/slcm.www.application_form.index.download_applicant_receipt?applicant_name=${encodeURIComponent(applicantName)}&receipt_name=${encodeURIComponent(msg.receipt_name)}`;
                     console.log('[Receipt] Opening:', printUrl);
                     window.open(printUrl, '_blank');
                     receiptOpened = true;
@@ -5530,8 +5727,7 @@
             console.error('[Receipt] Network error:', e);
             showToast('Network error. Please check your connection and try again.', 'error');
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = origInner;
+            if (btn) { btn.disabled = false; btn.innerHTML = origInner; }
         }
     }
 

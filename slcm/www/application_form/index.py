@@ -1098,29 +1098,62 @@ def download_applicant_receipt(applicant_name, receipt_name):
     if receipt_applicant != applicant_name:
         frappe.throw(_("Receipt does not belong to this applicant"), frappe.PermissionError)
 
-    # Generate PDF
+    # Resolve print format from Program Reservation Policy (Payment Receipt Template)
+    print_format = "Applicant Payment Receipt Format"  # fallback
+    try:
+        app = frappe.get_doc("Applicant", applicant_name)
+        if app.admission_cycle and app.program:
+            policy_name = None
+            if app.campus:
+                policy_name = frappe.db.get_value(
+                    "Admission Cycle Program",
+                    {
+                        "parent": app.admission_cycle,
+                        "program": app.program,
+                        "campus": app.campus,
+                        "is_active": 1,
+                    },
+                    "reservation_policy",
+                )
+            if not policy_name:
+                policy_name = frappe.db.get_value(
+                    "Admission Cycle Program",
+                    {
+                        "parent": app.admission_cycle,
+                        "program": app.program,
+                        "is_active": 1,
+                    },
+                    "reservation_policy",
+                )
+            if policy_name:
+                template = frappe.db.get_value(
+                    "Program Reservation Policy",
+                    policy_name,
+                    "payment_receipt_template",
+                )
+                if template:
+                    print_format = template
+    except Exception:
+        pass
+
+    # Generate PDF using the template from Program Reservation Policy
     current_user = frappe.session.user
     try:
-        # We've already verified ownership manually, so we elevate to Administrator
-        # to generate the PDF, bypassing standard permission checks in get_print.
         frappe.set_user("Administrator")
-        
         doc = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+        frappe.flags.ignore_print_permissions = True
         pdf_content = frappe.get_print(
             "Applicant Payment Receipt",
             receipt_name,
-            "Standard",
+            print_format,
             as_pdf=True,
-            doc=doc
+            doc=doc,
         )
-        
-        frappe.local.response.filename = f"{receipt_name}.pdf"
+        frappe.local.response.filename = f"Receipt_{receipt_name}.pdf"
         frappe.local.response.filecontent = pdf_content
         frappe.local.response.type = "download"
-        
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Receipt PDF Generation Failed")
         frappe.throw(_("Failed to generate PDF receipt. Please contact support: {0}").format(str(e)))
     finally:
-        # Always restore the original user session
         frappe.set_user(current_user)

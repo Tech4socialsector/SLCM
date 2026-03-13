@@ -134,6 +134,8 @@ frappe.ui.form.on("Applicant", {
         // Guardian fields required only when flag is set
         frm.toggle_reqd("guardian_name", frm.doc.guardian_required);
         frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
+        // Percentage required when National test is selected
+        frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
     },
 
     // ── VALIDATE (runs before every save / submit) ──
@@ -179,6 +181,11 @@ frappe.ui.form.on("Applicant", {
             });
         }
 
+        // When National test is selected, percentage is required
+        if (frm.doc.national_test_name && (frm.doc.percentage === undefined || frm.doc.percentage === null || frm.doc.percentage === "")) {
+            errors.push(__("Score or percentage is required when National test is selected."));
+        }
+
         // Declaration must be accepted when submitting
         if (frm.doc.application_status === "Submitted" && !frm.doc.declaration_undertaking) {
             errors.push(__("You must accept the Declaration & Undertaking before submitting."));
@@ -217,6 +224,10 @@ frappe.ui.form.on("Applicant", {
     guardian_required: function (frm) {
         frm.toggle_reqd("guardian_name", frm.doc.guardian_required);
         frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
+    },
+
+    national_test_name: function (frm) {
+        frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
     },
 
     // ── DECLARATION UNDERTAKING ──────────────
