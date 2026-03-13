@@ -745,6 +745,13 @@ window.inject_fle_header_footer = function () {
 
             .navbar-navy .nav-item { text-transform: uppercase !important; }
             button.fle-logout-btn  { text-transform: uppercase !important; }
+
+            .control-label, label.control-label, .web-form-page label,
+            .web-form-wrapper label, .frappe-control label, .form-group label {
+                text-transform: none !important;
+                margin-bottom: 8px !important;
+                display: block !important;
+            }
         </style>`);
     }
 
@@ -1028,8 +1035,9 @@ window.inject_fle_header_footer = function () {
             '.control-label, label.control-label, .web-form-page label, ' +
             '.web-form-wrapper label, .frappe-control label, .form-group label'
         ).forEach(function (el) {
-            el.style.setProperty('text-transform', 'capitalize', 'important');
+            el.style.setProperty('text-transform', 'none', 'important');
             el.style.setProperty('letter-spacing', '0.2px', 'important');
+            el.style.setProperty('margin-bottom', '8px', 'important');
         });
 
         document.querySelectorAll('.section-head').forEach(function (el) {
@@ -1052,8 +1060,9 @@ window.inject_fle_header_footer = function () {
             '.control-label, label.control-label, .web-form-page label, ' +
             '.web-form-wrapper label, .frappe-control label, .form-group label'
         ).forEach(function (el) {
-            el.style.setProperty('text-transform', 'capitalize', 'important');
+            el.style.setProperty('text-transform', 'none', 'important');
             el.style.setProperty('letter-spacing', '0.2px', 'important');
+            el.style.setProperty('margin-bottom', '8px', 'important');
         });
 
         document.querySelectorAll('.section-head').forEach(function (el) {
