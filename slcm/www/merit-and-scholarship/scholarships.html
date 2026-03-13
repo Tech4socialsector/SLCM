@@ -183,8 +183,6 @@
     border-radius: 9999px;
     font-size: 12px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   .line-clamp-2 {
@@ -421,11 +419,10 @@
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ sch.scheme_name }}</h4>
                     <span class="status-pill bg-emerald-50 text-emerald-600">Eligible</span>
                   </div>
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">{{ sch.scheme_type }}
-                  </p>
+                  <p class="text-[12px] font-black text-slate-400 tracking-wider mb-3">{{ sch.scheme_type }}</p>
 
                   {% if sch.description %}
-                  <p class="text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed">
+                  <p class="text-sm text-slate-500 mb-4 line-clamp-2 leading-relaxed">
                     {{ sch.description | striptags }}
                   </p>
                   {% endif %}
@@ -434,8 +431,8 @@
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-slate-400 text-base">loyalty</span>
                       <div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Coverage</p>
-                        <p class="text-xs font-bold text-slate-600">
+                        <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Coverage</p>
+                        <p class="text-sm font-bold text-slate-600">
                           {% if sch.coverage_type == 'Percentage' %}Up to {{ sch.coverage_value }}%
                           {% else %}₹{{ "{:,.0f}".format(sch.coverage_value) }}{% endif %}
                         </p>
@@ -445,11 +442,11 @@
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
                       <div>
                         {% if sch.max_amount and sch.max_amount > 0 %}
-                          <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Max Amount</p>
-                          <p class="text-xs font-bold text-slate-600">₹{{ "{:,.0f}".format(sch.max_amount) }}</p>
+                          <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Maximum amount</p>
+                          <p class="text-sm font-bold text-slate-600">₹{{ "{:,.0f}".format(sch.max_amount) }}</p>
                         {% else %}
-                          <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Applies On</p>
-                          <p class="text-xs font-bold text-slate-600">{{ sch.apply_on or "Total Fee" }}</p>
+                          <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Applies to</p>
+                          <p class="text-sm font-bold text-slate-600">{{ sch.apply_on or "Total Fee" }}</p>
                         {% endif %}
                       </div>
                     </div>
@@ -458,15 +455,15 @@
                   {% if sch.application_end %}
                   <div class="flex items-center gap-2 mb-5 p-2 bg-amber-50/50 rounded-lg border border-amber-100/50">
                     <span class="material-symbols-outlined text-amber-600 text-base">event_busy</span>
-                    <p class="text-[10px] font-bold text-amber-700">Deadline: {{
+                    <p class="text-[12px] font-bold text-amber-700">Deadline: {{
                       frappe.utils.format_date(sch.application_end, "dd MMM yyyy") }}</p>
                   </div>
                   {% endif %}
                   <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
                     <button onclick="viewDetails('{{ sch.name }}')"
-                      class="text-[10px] font-bold text-slate-500 hover:text-slate-900 uppercase">Details</button>
+                      class="text-[12px] font-bold text-slate-500 hover:text-slate-900">Details</button>
                     <a href="{{ '/merit-and-scholarship/apply?scheme=' ~ sch.name if _is_cycle_active else 'javascript:void(0)' }}"
-                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm transition-opacity {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
+                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[12px] font-bold shadow-sm transition-opacity {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
                       style="{{ 'pointer-events: none;' if not _is_cycle_active else '' }}">
                       {{ 'Apply Now' if _is_cycle_active else 'Closed' }}
                     </a>
@@ -506,11 +503,10 @@
                     %}{% endif %}
                     <span class="status-pill {{ _pill }}">{{ _lbl }}</span>
                   </div>
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">{{ app.scheme_type }}
-                  </p>
+                  <p class="text-[12px] font-black text-slate-400 tracking-wider mb-3">{{ app.scheme_type }}</p>
 
                   {% if app.description %}
-                  <p class="text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed">
+                  <p class="text-sm text-slate-500 mb-4 line-clamp-2 leading-relaxed">
                     {{ app.description | striptags }}
                   </p>
                   {% endif %}
@@ -519,8 +515,8 @@
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-slate-400 text-base">loyalty</span>
                       <div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Coverage</p>
-                        <p class="text-xs font-bold text-slate-600">
+                        <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Coverage</p>
+                        <p class="text-sm font-bold text-slate-600">
                           {% if app.coverage_type == 'Percentage' %}Up to {{ app.coverage_value }}%
                           {% else %}₹{{ "{:,.0f}".format(app.coverage_value) }}{% endif %}
                         </p>
@@ -530,18 +526,18 @@
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
                       <div>
                         {% if app.max_amount and app.max_amount > 0 %}
-                          <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Max Amount</p>
-                          <p class="text-xs font-bold text-slate-600">₹{{ "{:,.0f}".format(app.max_amount) }}</p>
+                          <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Maximum amount</p>
+                          <p class="text-sm font-bold text-slate-600">₹{{ "{:,.0f}".format(app.max_amount) }}</p>
                         {% else %}
-                          <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Applies On</p>
-                          <p class="text-xs font-bold text-slate-600">{{ app.apply_on or "Total Fee" }}</p>
+                          <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Applies to</p>
+                          <p class="text-sm font-bold text-slate-600">{{ sch.apply_on or "Total Fee" }}</p>
                         {% endif %}
                       </div>
                     </div>
                   </div>
 
                   <div class="bg-slate-50 rounded-lg p-2.5 flex justify-between items-center mb-4">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Status Tracker</span>
+                    <span class="text-[12px] font-bold text-slate-500 tracking-tight">Status Tracker</span>
                     <div class="flex gap-1">
                       <div
                         class="w-5 h-1 rounded-full {{ 'bg-blue-500' if _ast in ['Submitted','Applied','Under Review','Approved','Rejected'] else 'bg-slate-200' }}">
@@ -557,12 +553,12 @@
 
                   <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div class="space-y-0.5">
-                      <p class="text-[10px] font-bold text-slate-400 uppercase">Applied: {{
+                      <p class="text-[10px] font-bold text-slate-400">Applied: {{
                         frappe.utils.formatdate(app.creation, "dd MMM yyyy") }}</p>
-                      <p class="text-[10px] font-black uppercase" style="color: {{ _st_color }}">{{ _lbl }}</p>
+                      <p class="text-[10px] font-black" style="color: {{ _st_color }}">{{ _lbl }}</p>
                     </div>
                     <button onclick="viewDetails('{{ app.scholarship_scheme }}')"
-                      class="text-[10px] font-bold text-slate-900 bg-white border border-slate-200 px-3 py-1 rounded-lg uppercase">View
+                      class="text-[10px] font-bold text-slate-900 bg-white border border-slate-200 px-3 py-1 rounded-lg">View
                       Info</button>
                   </div>
                 </div>
@@ -588,17 +584,16 @@
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ app.scheme_name }}</h4>
                     <span class="status-pill bg-emerald-50 text-emerald-600">Approved</span>
                   </div>
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">{{ app.scheme_type }}
-                  </p>
+                  <p class="text-[12px] font-black text-slate-400 tracking-wider mb-3">{{ app.scheme_type }}</p>
 
                   <div class="grid grid-cols-2 gap-3 mb-4">
                     <div class="p-2.5 bg-white rounded-lg border border-emerald-50 shadow-sm text-center">
-                      <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Benefit Awarded</p>
+                      <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Benefit Awarded</p>
                       <p class="text-sm font-black text-emerald-600 leading-none">₹{{
                         "{:,.0f}".format(app.calculated_benefit or 0) }}</p>
                     </div>
                     <div class="p-2.5 bg-white rounded-lg border border-emerald-50 shadow-sm text-center">
-                      <p class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Final Fee</p>
+                      <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Final Fee</p>
                       <p class="text-sm font-black text-slate-900 leading-none">₹{{
                         "{:,.0f}".format(app.final_fee_amount or 0) }}</p>
                     </div>
@@ -616,19 +611,19 @@
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
                       <p class="text-xs font-bold text-slate-600">
                         {% if app.max_amount and app.max_amount > 0 %}
-                          Max Cap: ₹{{ "{:,.0f}".format(app.max_amount) }}
+                          Maximum amount: ₹{{ "{:,.0f}".format(app.max_amount) }}
                         {% else %}
-                          Applies On: {{ app.apply_on or "Total Fee" }}
+                          Applies to: {{ app.apply_on or "Total Fee" }}
                         {% endif %}
                       </p>
                     </div>
                   </div>
 
                   <div class="mt-auto pt-3 border-t border-emerald-50 flex items-center justify-between">
-                    <p class="text-[10px] font-bold text-emerald-600 uppercase">Approved On: {{
+                    <p class="text-[10px] font-bold text-emerald-600">Approved On: {{
                       frappe.utils.formatdate(app.approval_date or app.modified, "dd MMM yyyy") }}</p>
                     <button onclick="viewDetails('{{ app.scholarship_scheme }}')"
-                      class="text-[10px] font-bold text-slate-900 uppercase">Details</button>
+                      class="text-[10px] font-bold text-slate-900">Details</button>
                   </div>
                 </div>
               </div>
@@ -653,8 +648,7 @@
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ app.scheme_name }}</h4>
                     <span class="status-pill bg-red-50 text-red-600">Rejected</span>
                   </div>
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">{{ app.scheme_type }}
-                  </p>
+                  <p class="text-[12px] font-black text-slate-400 tracking-wider mb-3">{{ app.scheme_type }}</p>
 
                   {% if app.description %}
                   <p class="text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed">
@@ -674,9 +668,9 @@
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
                       <p class="text-xs font-bold text-slate-400">
                         {% if app.max_amount and app.max_amount > 0 %}
-                          ₹{{ "{:,.0f}".format(app.max_amount) }}
+                          Maximum amount: ₹{{ "{:,.0f}".format(app.max_amount) }}
                         {% else %}
-                          {{ app.apply_on or "Total Fee" }}
+                          Applies to: {{ app.apply_on or "Total Fee" }}
                         {% endif %}
                       </p>
                     </div>
@@ -684,16 +678,16 @@
 
                   {% if app.rejection_reason %}
                   <div class="mb-4 p-3 bg-red-100/50 rounded-lg border border-red-100">
-                    <p class="text-[10px] font-bold text-red-700 uppercase mb-1">Reason for Rejection</p>
+                    <p class="text-[10px] font-bold text-red-700 mb-1">Reason for Rejection</p>
                     <p class="text-xs text-red-600 leading-relaxed">{{ app.rejection_reason }}</p>
                   </div>
                   {% endif %}
 
                   <div class="mt-auto pt-3 border-t border-red-50 flex items-center justify-between">
-                    <p class="text-[10px] font-bold text-red-600 uppercase">Rejected On: {{
+                    <p class="text-[12px] font-bold text-red-600">Rejected On: {{
                       frappe.utils.formatdate(app.modified, "dd MMM yyyy") }}</p>
                     <button onclick="viewDetails('{{ app.scholarship_scheme }}')"
-                      class="text-[10px] font-bold text-slate-400 hover:text-red-600 uppercase">View Criteria</button>
+                      class="text-[12px] font-bold text-slate-400 hover:text-red-600">View Criteria</button>
                   </div>
                 </div>
               </div>
@@ -784,18 +778,18 @@
       <div class="flex flex-col gap-6">
         ${s.rejection_reason ? `
         <div class="p-4 bg-red-50 rounded-xl border border-red-100">
-          <p class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Reason for Rejection</p>
-          <p class="text-xs font-bold text-red-700 leading-relaxed">${s.rejection_reason}</p>
+          <p class="text-[12px] font-black text-red-600 mb-1">Reason for Rejection</p>
+          <p class="text-sm font-bold text-red-700 leading-relaxed">${s.rejection_reason}</p>
         </div>` : ''}
 
         <div class="grid grid-cols-2 gap-3">
           <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
-             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Category</p>
-             <p class="text-xs font-bold text-slate-900">${s.type}</p>
+             <p class="text-[12px] font-black text-slate-400 mb-1">Category</p>
+             <p class="text-sm font-bold text-slate-900">${s.type}</p>
           </div>
           <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
-             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Max Cap</p>
-             <p class="text-xs font-bold text-slate-900">₹${Number(s.max).toLocaleString()}</p>
+             <p class="text-[12px] font-bold text-slate-400 mb-1">Maximum amount</p>
+             <p class="text-sm font-bold text-slate-900">₹${Number(s.max).toLocaleString()}</p>
           </div>
         </div>
 
@@ -803,22 +797,22 @@
         <div class="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-center gap-3">
           <span class="material-symbols-outlined text-amber-600">event_busy</span>
           <div>
-            <p class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-0.5">Application Deadline</p>
-            <p class="text-xs font-black text-amber-700">${s.deadline}</p>
+            <p class="text-[12px] font-bold text-amber-600 mb-0.5">Application Deadline</p>
+            <p class="text-sm font-black text-amber-700">${s.deadline}</p>
           </div>
         </div>` : ''}
         
         ${s.description ? `
         <div>
-          <h5 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <h5 class="text-sm font-black text-slate-900 mb-3 flex items-center gap-2">
             <span class="material-symbols-outlined text-base text-primary">info</span>
             About Scheme
           </h5>
-          <div class="text-xs text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">${s.description}</div>
+          <div class="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">${s.description}</div>
         </div>` : ''}
 
         <div>
-          <h5 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <h5 class="text-sm font-black text-slate-900 mb-3 flex items-center gap-2">
             <span class="material-symbols-outlined text-base text-primary">analytics</span>
             Coverage Details
           </h5>
@@ -826,11 +820,11 @@
         </div>
 
         <div>
-          <h5 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <h5 class="text-sm font-black text-slate-900 mb-3 flex items-center gap-2">
             <span class="material-symbols-outlined text-base text-primary">verified_user</span>
             Eligibility Criteria
           </h5>
-          <div class="text-xs text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">${s.eligibility}</div>
+          <div class="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">${s.eligibility}</div>
         </div>
       </div>`;
 

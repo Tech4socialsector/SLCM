@@ -192,7 +192,7 @@
     border-radius: 20px;
     font-size: 11px;
     font-weight: 600;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .05em;
   }
 
@@ -268,7 +268,7 @@
     padding: 6px 14px;
     border-radius: 9px;
     border: 1px solid #e2e8f0;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 0.02em;
   }
 
@@ -343,8 +343,8 @@
     content: '';
     position: absolute;
     top: 20px;
-    left: 0;
-    right: 0;
+    left: calc(100% / (var(--num-stages) * 2));
+    right: calc(100% / (var(--num-stages) * 2));
     height: 3px;
     background: var(--border);
     z-index: 0;
@@ -353,7 +353,7 @@
   .stage-track-fill {
     position: absolute;
     top: 20px;
-    left: 0;
+    left: calc(100% / (var(--num-stages) * 2));
     height: 3px;
     background: var(--success);
     border-radius: 2px;
@@ -429,7 +429,7 @@
   .stage-label {
     font-size: 10px;
     font-weight: 600;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .06em;
     text-align: center;
     line-height: 1.3;
@@ -480,7 +480,7 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--text-3);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .05em;
   }
 
@@ -545,7 +545,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding-top: 48px;
+    /* padding-top: 28px; */
   }
 
   .merit-stat-row {
@@ -598,7 +598,7 @@
   .merit-panel .merit-chip,
   .seat-panel .merit-chip {
     position: absolute;
-    top: 20px;
+    /* top: 20px; */
     right: 22px;
   }
 
@@ -968,7 +968,7 @@
     font-size: 10px;
     font-weight: 600;
     color: var(--text-4);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .07em;
     margin-bottom: 4px;
   }
@@ -1036,7 +1036,7 @@
     font-size: 10px;
     color: var(--text-3);
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
     margin-bottom: 4px;
   }
 
@@ -1293,7 +1293,7 @@
     font-size: 11px;
     font-weight: 700;
     color: var(--primary);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .06em;
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
@@ -1304,7 +1304,7 @@
     font-size: 10px;
     font-weight: 600;
     color: var(--text-4);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .06em;
     margin-bottom: 3px;
   }
@@ -1406,7 +1406,7 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--text-3);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: .05em;
     margin-bottom: 5px;
   }
@@ -1596,7 +1596,7 @@ DETAIL VIEW
 {% set _aname = (_app.get('candidate_name') or _app.get('applicant_name') if _app.get else (_app.candidate_name or
 _app.applicant_name)) or '' %}
 {% set _prog = (_app.get('program_name') or _app.get('program') if _app.get else (_app.program_name or _app.program)) or
-'Program' %}
+'Programme' %}
 {% set _cycle = (_app.get('admission_cycle') if _app.get else _app.admission_cycle) or '' %}
 {% set _status = (_app.get('application_status') if _app.get else _app.application_status) or 'Draft' %}
 {% set _stage = (_app.get('current_stage_name') or _app.get('current_stage') if _app.get else (_app.current_stage_name
@@ -1638,14 +1638,14 @@ or _app.current_stage)) or _status %}
           <div class="app-header-left">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
               <h1 class="app-program-name" style="margin:0; font-size:24px;">{{ _prog }}</h1>
-              <span class="app-id-chip" style="margin:0; background:#f8fafc; color:#64748b; border-color:#e2e8f0; font-size:11px; text-transform:none; font-weight:600;">Application No: {{ _appid }}</span>
+              <span class="app-id-chip" style="margin:0; background:#f8fafc; color:#64748b; border-color:#e2e8f0; font-size:11px; text-transform:none; font-weight:600;">Application number: {{ _appid }}</span>
             </div>
             <div class="app-id-row" style="margin-top:0; gap:16px;">
-              <span class="app-submitted-date">Submitted On: {{ _subdate }}</span>
+              <span class="app-submitted-date">Submitted on: {{ _subdate }}</span>
               {% if _cycle %}
               <span class="app-submitted-date" style="display:flex; align-items:center; gap:16px;">
                 <span style="color:var(--border);">|</span>
-                Cycle: {{ _cycle }}
+                Admission cycle: {{ _cycle }}
               </span>
               {% endif %}
             </div>
@@ -1660,14 +1660,14 @@ or _app.current_stage)) or _status %}
             
             {% if app_name_param %}
             <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
-              target="_blank" class="btn-download" title="Download Application" 
+              target="_blank" class="btn-download" title="Download application" 
               style="padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
               <span class="material-symbols-outlined" style="margin:0;">download</span>
             </a>
             {% endif %}
             
             {% if offer_letter_url %}
-            <a href="{{ offer_letter_url }}" target="_blank" class="btn-download" title="Download Offer Letter"
+            <a href="{{ offer_letter_url }}" target="_blank" class="btn-download" title="Download offer letter"
               style="background:var(--text-1); color:white; border-color:var(--text-1); padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
               <span class="material-symbols-outlined" style="margin:0;">drafts</span>
             </a>
@@ -1690,9 +1690,15 @@ or _app.current_stage)) or _status %}
         {% endif %}
         {% endif %}
         {% endfor %}
-        {% set _pct = ((ns.done / _stages|length) * 100)|int %}
+        
+        {% set _num_stages = _stages|length %}
+        {% if _num_stages > 1 %}
+          {% set _pct = (((ns.done - 1) / _num_stages) * 100) %}
+        {% else %}
+          {% set _pct = 0 %}
+        {% endif %}
 
-        <div class="stage-track">
+        <div class="stage-track" style="--num-stages: {{ _num_stages }};">
           <div class="stage-track-fill" style="width:{{ _pct }}%"></div>
 
           {% for s in _stages %}
@@ -1734,7 +1740,7 @@ or _app.current_stage)) or _status %}
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined">record_voice_over</span>
-            Interview On
+            Interview date
           </span>
           {% if interview_status %}
           <span class="qs-value pending">{{ interview_date }}</span>
@@ -1745,7 +1751,7 @@ or _app.current_stage)) or _status %}
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined"></span>
-            Application Fee
+            Application fee
           </span>
           {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
           <span class="qs-value success">{{ fee_payment_status }}</span>
@@ -1767,7 +1773,7 @@ or _app.current_stage)) or _status %}
       <div class="ma-card-head">
         <div class="ma-card-title">
           <span class="ico"><span class="material-symbols-outlined">military_tech</span></span>
-          Merit Result &amp; Seat Allocation
+          Merit Result and Seat Allocation
         </div>
       </div>
       <div class="ma-card-body">
@@ -1777,18 +1783,18 @@ or _app.current_stage)) or _status %}
             {% set m = all_merit[0] %}
             <div class="merit-stat-row">
               <div class="merit-stat">
-                <span class="merit-stat-label">Overall Rank</span>
+                <span class="merit-stat-label">Overall rank</span>
                 <span class="merit-stat-value">{{ m.overall_rank }}</span>
+                <span class="merit-chip" style="position: static; margin-top: 8px;">{{ m.status or 'Selected' }}</span>
               </div>
               <div class="merit-stat">
-                <span class="merit-stat-label">Merit Score</span>
+                <span class="merit-stat-label">Merit score</span>
                 <span class="merit-stat-value score">{{ m.total_score }}</span>
               </div>
             </div>
-            <span class="merit-chip">{{ m.status or 'Selected' }}</span>
           {% else %}
             <div style="padding:12px 0; text-align: center; display: flex; flex-direction: column; align-items: center;">
-              <span class="merit-stat-label" style="display:block;margin-bottom:8px">Overall Rank</span>
+              <span class="merit-stat-label" style="display:block;margin-bottom:8px">Overall rank</span>
               <span style="font-size:32px;font-weight:700;color:var(--text-4)">—</span>
               <p style="font-size:12px;color:var(--text-4);margin-top:8px">Merit list not yet published</p>
             </div>
@@ -1799,7 +1805,7 @@ or _app.current_stage)) or _status %}
         <div class="seat-panel">
           <div
             style="font-size: 13px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 12px;">
-            Seat Allocation Result</div>
+            Seat allocation result</div>
           {% if all_results and all_results|length > 0 %}
           {% set r = all_results[0] %}
 
@@ -1811,7 +1817,7 @@ or _app.current_stage)) or _status %}
             <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
               <div
                 style="font-size: 13px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">
-                Allocated Category</div>
+                Allocated category</div>
               <div
                 style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
                 {{ r.allocated_category or 'General' }}
@@ -1819,7 +1825,7 @@ or _app.current_stage)) or _status %}
             </div>
             {% if payment_details and payment_details.payment_date %}
             <div class="seat-deadline">
-              Accept Before: <strong>{{ payment_details.payment_date }}</strong>
+              Accept before: <strong>{{ payment_details.payment_date }}</strong>
             </div>
             {% endif %}
           </div>
@@ -1856,7 +1862,7 @@ or _app.current_stage)) or _status %}
         <div class="ma-card-head">
           <div class="ma-card-title">
             <span class="ico"><span class="material-symbols-outlined">folder_open</span></span>
-            Documents Checklist
+            Document checklist
           </div>
           {% if _docs %}
           <span style="font-size:12px;font-weight:500;color:var(--text-3)">
@@ -1870,7 +1876,12 @@ or _app.current_stage)) or _status %}
           {% for doc in app_documents %}
           {% set _is_done = doc.is_uploaded %}
           <div class="doc-row"
-            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
+            {% if _status == 'Draft' %}
+            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}')"
+            style="cursor:pointer;"
+            {% else %}
+            style="cursor:default;"
+            {% endif %}>
             <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
             <span class="doc-name">{{ doc.document_name }}</span>
             <div style="display:flex; align-items:center; gap:10px;">
@@ -1878,9 +1889,12 @@ or _app.current_stage)) or _status %}
               <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
                 onclick="event.stopPropagation()">View</a>
               {% endif %}
+              
+              {% if _status == 'Draft' %}
               <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
                 {% if _is_done %}edit_square{% else %}upload{% endif %}
               </span>
+              {% endif %}
             </div>
           </div>
           {% endfor %}
@@ -1897,7 +1911,7 @@ or _app.current_stage)) or _status %}
         <div class="ma-card-head">
           <div class="ma-card-title">
             <span class="ico"><span class="material-symbols-outlined">task_alt</span></span>
-            Next Steps
+            Next steps
           </div>
         </div>
 
@@ -1924,15 +1938,15 @@ or _app.current_stage)) or _status %}
           {% else %}
           <div class="ns-item">
             <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Pay Admission Fee</span>
+            <span class="ns-text">Pay admission fee</span>
           </div>
           <div class="ns-item">
             <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Upload Original Documents</span>
+            <span class="ns-text">Upload original documents</span>
           </div>
           <div class="ns-item">
             <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Attend Orientation</span>
+            <span class="ns-text">Attend orientation</span>
           </div>
           {% endif %}
         </div>
@@ -1960,24 +1974,24 @@ or _app.current_stage)) or _status %}
           Entrance Test
         </div>
         <span class="status-badge" style="background:#dbeafe;color:#1d4ed8">
-          {{ et_doc.entrance_test_status|upper }}
+          {{ et_doc.entrance_test_status|title }}
         </span>
       </div>
       <div class="ma-card-body">
         {% if et_show_result %}
         <div class="result-banner">
           <div class="result-banner-head">
-            <span class="result-banner-title">Examination Result</span>
-            <span class="result-banner-badge">PUBLISHED</span>
+            <span class="result-banner-title">Examination result</span>
+            <span class="result-banner-badge">Published</span>
           </div>
           <div class="result-score-grid">
             <div class="result-score-box">
               <div class="lbl">Score</div>
-              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ {{ et_doc.total_score or 0 }}</small></div>
+              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Rank</div>
-              <div class="val green">#{{ et_doc.entrance_test_rank or '—' }}</div>
+              <div class="val green">{{ et_doc.entrance_test_rank or '—' }}</div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Result Status</div>
@@ -1992,32 +2006,32 @@ or _app.current_stage)) or _status %}
           style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
           <div>
             <div style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:uppercase;margin-bottom:3px">
-              Exam Center</div>
+              Exam centre</div>
             <div style="font-size:15px;font-weight:600;color:var(--text-1)">{{ et_doc.re_center_name if
               et_is_rescheduled else et_doc.center_name }}</div>
           </div>
           <button onclick="downloadAdmitCard()"
             style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;color:white;background:var(--primary);cursor:pointer;font-family:'Poppins',sans-serif">
             <span class="material-symbols-outlined" style="font-size:17px">download</span>
-            Download Admit Card
+            Download admit card
           </button>
         </div>
         <div class="info-grid-2">
           <div class="info-tile">
-            <div class="info-tile-label">Test Date</div>
+            <div class="info-tile-label">Test date</div>
             <div class="info-tile-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else
               et_doc.allocation_date) }}</div>
           </div>
           <div class="info-tile">
-            <div class="info-tile-label">Reporting Time</div>
+            <div class="info-tile-label">Reporting time</div>
             <div class="info-tile-value red">{{ et_reporting_time }}</div>
           </div>
           <div class="info-tile">
-            <div class="info-tile-label">Room / Hall</div>
+            <div class="info-tile-label">Room / hall</div>
             <div class="info-tile-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name }}</div>
           </div>
           <div class="info-tile">
-            <div class="info-tile-label">Seat Number</div>
+            <div class="info-tile-label">Seat number</div>
             <div class="info-tile-value blue">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}
             </div>
           </div>
@@ -2032,15 +2046,15 @@ or _app.current_stage)) or _status %}
         {% else %}
         <!-- Provider selection -->
         <div id="allocation-view-section">
-          <h4 style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px">Test Center Selection</h4>
-          <p style="font-size:12px;color:var(--text-3);margin-bottom:18px">Select your preferred examination center.
+          <h4 style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px">Test centre selection</h4>
+          <p style="font-size:12px;color:var(--text-3);margin-bottom:18px">Select your preferred examination centre.
             <strong>This choice cannot be changed.</strong>
           </p>
           <div style="display:flex;flex-direction:column;gap:13px">
             <div>
               <label
-                style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:uppercase;display:block;margin-bottom:5px">Available
-                Centers</label>
+                style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:none;display:block;margin-bottom:5px">Available
+                centres</label>
               <select id="providerDropdown"
                 style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px">
                 <option value="" disabled selected>Choose a location...</option>
@@ -2065,7 +2079,7 @@ or _app.current_stage)) or _status %}
             <button id="btnSaveProvider"
               style="width:100%;height:42px;border-radius:9px;background:var(--primary);color:white;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
               disabled>
-              Confirm Allocation
+              Confirm allocation
             </button>
           </div>
         </div>
@@ -2094,17 +2108,17 @@ or _app.current_stage)) or _status %}
         {% set i_status = interview_doc.interview_status %}
         {% if i_status and i_status != 'Scheduled' %}
         {% if i_status == 'Absent' %}
-        <span class="status-badge" style="background:#fee2e2;color:#dc2626">ABSENT</span>
+        <span class="status-badge" style="background:#fee2e2;color:#dc2626">Absent</span>
         {% elif i_status == 'Attended' %}
-        <span class="status-badge" style="background:#dcfce7;color:#16a34a">ATTENDED</span>
+        <span class="status-badge" style="background:#dcfce7;color:#16a34a">Attended</span>
         {% else %}
-        <span class="status-badge" style="background:#f0fdf4;color:#166534">{{ i_status|upper
+        <span class="status-badge" style="background:#f0fdf4;color:#166534">{{ i_status|title
           }}</span>
         {% endif %}
         {% else %}
         <span class="status-badge" style="background:#f0fdf4;color:#166534">
           {{ (interview_doc.re_interview_slot_status if interview_is_rescheduled else
-          interview_doc.interview_slot_status)|upper }}
+          interview_doc.interview_slot_status)|title }}
         </span>
         {% endif %}
       </div>
@@ -2112,8 +2126,8 @@ or _app.current_stage)) or _status %}
         {% if interview_show_result %}
         <div class="result-banner">
           <div class="result-banner-head">
-            <span class="result-banner-title">Assessment Outcome</span>
-            <span class="result-banner-badge">VERIFIED</span>
+            <span class="result-banner-title">Assessment outcome</span>
+            <span class="result-banner-badge">Verified</span>
           </div>
           <div class="result-score-grid">
             <div class="result-score-box">
@@ -2142,7 +2156,7 @@ or _app.current_stage)) or _status %}
             <div class="info-tile-value red">{{ interview_current_slot.reporting_time }}</div>
           </div>
           <div class="info-tile">
-            <div class="info-tile-label">Slot Time</div>
+            <div class="info-tile-label">Slot time</div>
             <div class="info-tile-value blue">{{ interview_current_slot.interview_time }}</div>
           </div>
         </div>
@@ -2202,22 +2216,22 @@ or _app.current_stage)) or _status %}
       </div>
       <div class="ma-card-body" style="padding: 0;">
         <!-- Scores Section -->
-        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em;">
+        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: none; letter-spacing: .06em;">
           Scores
         </div>
         <div class="info-grid-2" style="padding: 20px 22px; border-bottom: 1px solid var(--border);">
           <div class="info-tile">
-            <div class="info-tile-label">Entrance Score</div>
+            <div class="info-tile-label">Entrance score</div>
             <div class="info-tile-value">{{ eligibility_result.entrance_test_score or '0' }}</div>
           </div>
           <div class="info-tile">
-            <div class="info-tile-label">Interview Score</div>
+            <div class="info-tile-label">Interview score</div>
             <div class="info-tile-value">{{ eligibility_result.interview_score or '0' }}</div>
           </div>
         </div>
 
         <!-- Status Section -->
-        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em;">
+        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: none; letter-spacing: .06em;">
           Status
         </div>
         <div class="info-grid-2" style="padding: 20px 22px;">
@@ -2226,7 +2240,7 @@ or _app.current_stage)) or _status %}
             <div class="info-tile-value">{{ eligibility_result.source_type or '—' }}</div>
           </div>
           <div class="info-tile">
-            <div class="info-tile-label">Result Status</div>
+            <div class="info-tile-label">Result status</div>
             <div class="info-tile-value blue">{{ eligibility_result.result_status or '—' }}</div>
           </div>
         </div>
@@ -2287,7 +2301,7 @@ LIST / DASHBOARD VIEW
 
       <div class="prof-sidebar">
         <div class="prof-avatar" id="prof-avatar-circle"
-          onclick="openUploadModal('Photo', 'Photo', 'candidate_photo', '', 'field')"
+          onclick="openUploadModal('Photo', 'Photo', 'candidate_photo', '', 'field', '{{ prof_app_name }}')"
           style="cursor:pointer; position:relative;" title="Click to change photo">
           {%- if _pphoto -%}
           <img src="{{ _pphoto }}" id="prof-avatar-img" alt="{{ _pinitial }}">
@@ -2309,21 +2323,21 @@ LIST / DASHBOARD VIEW
         {%- endif -%}
 
         <a href="/my-applications" class="prof-action primary">
-          <span class="material-symbols-outlined">description</span>My Application
+          <span class="material-symbols-outlined">description</span>My application
         </a>
         {% if prof_app_name %}
         <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant&name={{ prof_app_name }}&format=Applicant Application Form"
           class="prof-action" target="_blank">
-          <span class="material-symbols-outlined">download</span>Download Applicatio
+          <span class="material-symbols-outlined">download</span>Download application
         </a>
         {% endif %}
         <div class="prof-divider"></div>
         <a href="/update-password" class="prof-action">
-          <span class="material-symbols-outlined">lock_reset</span>Change Password
+          <span class="material-symbols-outlined">lock_reset</span>Change password
         </a>
         <div class="prof-divider"></div>
         <button class="prof-action danger" onclick="doLogout()">
-          <span class="material-symbols-outlined">logout</span>Logout
+          <span class="material-symbols-outlined">logout</span>Log out
         </button>
       </div><!-- end prof-sidebar -->
 
@@ -2331,25 +2345,33 @@ LIST / DASHBOARD VIEW
         <div class="prof-section-card">
           <div class="prof-section-head">
             <div class="prof-section-title">
-              <span class="material-symbols-outlined">badge</span>Personal Details
+              <span class="material-symbols-outlined">badge</span>Personal details
             </div>
+            {% if prof_app_status == 'Draft' %}
             <button class="prof-edit-btn" onclick="openEditModal()">
-              <span class="material-symbols-outlined">edit</span>Edit All
+              <span class="material-symbols-outlined">edit</span>Edit all
             </button>
+            {% endif %}
           </div>
           <div class="doc-list" style="border-top: 1px solid var(--border);">
             {% set profile_fields = [
-            {'label': 'Full Name', 'value': prof_candidate_name, 'id': 'disp-name'},
-            {'label': 'Date of Birth', 'value': prof_dob, 'id': 'disp-dob'},
+            {'label': 'Full name', 'value': prof_candidate_name, 'id': 'disp-name'},
+            {'label': 'Date of birth', 'value': prof_dob, 'id': 'disp-dob'},
             {'label': 'Gender', 'value': prof_gender, 'id': 'disp-gender'},
             {'label': 'Nationality', 'value': prof_nationality, 'id': 'disp-nationality'},
             {'label': 'Religion', 'value': prof_religion, 'id': 'disp-religion'},
-            {'label': 'Mobile Number', 'value': prof_mobile, 'id': 'disp-mobile'},
-            {'label': 'Alternate Contact', 'value': prof_alternate_contact, 'id': 'disp-alternate'},
-            {'label': 'Correspondence Address', 'value': prof_address, 'id': 'disp-address'}
+            {'label': 'Mobile number', 'value': prof_mobile, 'id': 'disp-mobile'},
+            {'label': 'Alternate contact', 'value': prof_alternate_contact, 'id': 'disp-alternate'},
+            {'label': 'Correspondence address', 'value': prof_address, 'id': 'disp-address'}
             ] %}
             {% for pf in profile_fields %}
-            <div class="doc-row" onclick="openEditModal()">
+            <div class="doc-row" 
+              {% if prof_app_status == 'Draft' %}
+              onclick="openEditModal()"
+              style="cursor:pointer;"
+              {% else %}
+              style="cursor:default;"
+              {% endif %}>
               <div class="doc-checkbox {% if pf.value %}checked{% endif %}"></div>
               <div style="flex:1;">
                 <div class="prof-fl" style="margin-bottom:0;">{{ pf.label }}</div>
@@ -2361,8 +2383,10 @@ LIST / DASHBOARD VIEW
                   {% endif %}
                 </div>
               </div>
+              {% if prof_app_status == 'Draft' %}
               <span class="material-symbols-outlined"
                 style="font-size:18px; color:var(--primary); cursor:pointer;">edit</span>
+              {% endif %}
             </div>
             {% endfor %}
           </div>
@@ -2372,7 +2396,7 @@ LIST / DASHBOARD VIEW
         <div class="prof-section-card" style="margin-top:18px;">
           <div class="prof-section-head">
             <div class="prof-section-title">
-              <span class="material-symbols-outlined">folder_open</span>Document Status
+              <span class="material-symbols-outlined">folder_open</span>Document status
             </div>
           </div>
           <div class="doc-list">
@@ -2380,7 +2404,12 @@ LIST / DASHBOARD VIEW
             {% for doc in app_documents %}
             {% set _is_done = doc.is_uploaded %}
             <div class="doc-row"
-              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
+              {% if prof_app_status == 'Draft' %}
+              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ prof_app_name }}')"
+              style="cursor:pointer;"
+              {% else %}
+              style="cursor:default;"
+              {% endif %}>
               <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
               <span class="doc-name">{{ doc.document_name }}</span>
               <div style="display:flex; align-items:center; gap:10px;">
@@ -2388,9 +2417,12 @@ LIST / DASHBOARD VIEW
                 <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
                   onclick="event.stopPropagation()">View</a>
                 {% endif %}
+                
+                {% if prof_app_status == 'Draft' %}
                 <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
                   {% if _is_done %}edit_square{% else %}upload{% endif %}
                 </span>
+                {% endif %}
               </div>
             </div>
             {% endfor %}
@@ -2409,16 +2441,16 @@ LIST / DASHBOARD VIEW
     <div class="prof-overlay" id="editOverlay">
       <div class="prof-modal">
         <div class="prof-modal-head">
-          <h3>Edit Personal Details</h3>
+          <h3>Edit personal details</h3>
           <button class="prof-modal-close" onclick="closeEditModal()">
             <span class="material-symbols-outlined" style="font-size:17px">close</span>
           </button>
         </div>
         <div class="prof-modal-body">
           <div class="pef-row">
-            <div class="pef"><label>Full Name</label><input type="text" id="edit-name"
+            <div class="pef"><label>Full name</label><input type="text" id="edit-name"
                 value="{{ prof_candidate_name or '' }}" placeholder="Full name"></div>
-            <div class="pef"><label>Date of Birth</label><input type="date" id="edit-dob" value="{{ prof_dob or '' }}">
+            <div class="pef"><label>Date of birth</label><input type="date" id="edit-dob" value="{{ prof_dob or '' }}">
             </div>
           </div>
           <div class="pef-row">
@@ -2438,31 +2470,31 @@ LIST / DASHBOARD VIEW
           <div class="pef-row">
             <div class="pef"><label>Religion</label><input type="text" id="edit-religion"
                 value="{{ prof_religion or '' }}"></div>
-            <div class="pef"><label>Mobile Number</label><input type="tel" id="edit-mobile"
+            <div class="pef"><label>Mobile number</label><input type="tel" id="edit-mobile"
                 value="{{ prof_mobile or '' }}" placeholder="+91 9XXXXXXXXX"></div>
           </div>
           <div class="pef-row">
-            <div class="pef"><label>Alternate Contact</label><input type="tel" id="edit-alternate"
+            <div class="pef"><label>Alternate contact</label><input type="tel" id="edit-alternate"
                 value="{{ prof_alternate_contact or '' }}"></div>
-            <div class="pef"><label>ID Proof Type</label><input type="text" id="edit-idproof"
+            <div class="pef"><label>ID proof type</label><input type="text" id="edit-idproof"
                 value="{{ prof_id_proof or '' }}" placeholder="e.g. Aadhaar, Passport"></div>
           </div>
           <div class="pef-row full">
-            <div class="pef"><label>Correspondence Address</label><textarea id="edit-address"
+            <div class="pef"><label>Correspondence address</label><textarea id="edit-address"
                 placeholder="Street address">{{ prof_address or '' }}</textarea></div>
           </div>
           <div class="pef-row">
             <div class="pef"><label>State</label>
               <select id="edit-state" onchange="loadDistricts(this.value)">
-                <option value="">— Select State —</option>
+                <option value="">— Select state —</option>
                 {% for s in states %}
                 <option value="{{ s.name }}" {% if prof_state==s.name %}selected{% endif %}>{{ s.name }}</option>
                 {% endfor %}
               </select>
             </div>
-            <div class="pef"><label>City (District)</label>
+            <div class="pef"><label>City (district)</label>
               <select id="edit-city">
-                <option value="">— Select City —</option>
+                <option value="">— Select city —</option>
                 {% for d in districts %}
                 <option value="{{ d.name }}" {% if prof_city==d.name %}selected{% endif %}>{{ d.name }}</option>
                 {% endfor %}
@@ -2470,14 +2502,14 @@ LIST / DASHBOARD VIEW
             </div>
           </div>
           <div class="pef-row">
-            <div class="pef"><label>Pincode</label><input type="text" id="edit-pincode"
+            <div class="pef"><label>Pin code</label><input type="text" id="edit-pincode"
                 value="{{ prof_pincode or '' }}"></div>
             <div class="pef"></div>
           </div>
         </div>
         <div class="prof-modal-foot">
           <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
-          <button class="btn-save" id="saveBtn" onclick="saveProfile()">Save Changes</button>
+          <button class="btn-save" id="saveBtn" onclick="saveProfile()">Save changes</button>
         </div>
       </div>
     </div>
@@ -2509,7 +2541,7 @@ LIST / DASHBOARD VIEW
           </div>
           <a href="/my-applications?app={{ app.name }}"
             style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;text-decoration:none;color:white;background:var(--primary);flex-shrink:0">
-            View Details
+            View details
             <span class="material-symbols-outlined" style="font-size:17px">arrow_forward</span>
           </a>
         </div>
@@ -2534,11 +2566,11 @@ LIST / DASHBOARD VIEW
           <span class="qs-value">{{ app.personal[0].value if app.personal else '—' }}</span>
         </div>
         <div class="qs-item">
-          <span class="qs-label"><span class="material-symbols-outlined">school</span>Program</span>
+          <span class="qs-label"><span class="material-symbols-outlined">school</span>Programme</span>
           <span class="qs-value" style="font-size:13px">{{ h.program_name }}</span>
         </div>
         <div class="qs-item">
-          <span class="qs-label"><span class="material-symbols-outlined">military_tech</span>Merit Score</span>
+          <span class="qs-label"><span class="material-symbols-outlined">military_tech</span>Merit score</span>
           <span class="qs-value {% if h.merit_score %}{% else %}muted{% endif %}">{{ h.merit_score or 'Pending'
             }}</span>
         </div>
@@ -2558,7 +2590,7 @@ LIST / DASHBOARD VIEW
         <h3>No application found</h3>
         <p>You haven't started an application for the current admission cycle yet.</p>
         <a href="/admission" class="btn-upload" style="display:inline-flex;width:auto;padding:11px 28px">Browse
-          Programmes</a>
+          programmes</a>
       </div>
     </div>
     {% endif %}
@@ -2678,8 +2710,8 @@ LIST / DASHBOARD VIEW
       label: '', type: '', field: '', docName: '', source: '', file: null
     };
 
-    window.openUploadModal = function (label, type, field, docName, source) {
-      currentUploadTarget = { label, type, field, docName, source, file: null };
+    window.openUploadModal = function (label, type, field, docName, source, applicantId) {
+      currentUploadTarget = { label, type, field, docName, source, applicantId, file: null };
       document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
       document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
       document.getElementById('modal-file-input').value = '';
@@ -2739,9 +2771,13 @@ LIST / DASHBOARD VIEW
         progFill.style.width = '60%';
 
         if (currentUploadTarget.field) {
-          await apiFetch('slcm.admission.api.profile.update_profile', {
+          const updateData = {
             [currentUploadTarget.field]: fileUrl
-          });
+          };
+          if (currentUploadTarget.applicantId) {
+            updateData.applicant = currentUploadTarget.applicantId;
+          }
+          await apiFetch('slcm.admission.api.profile.update_profile', updateData);
         } else {
           throw new Error('This document type does not map to a profile field.');
         }
@@ -2988,8 +3024,8 @@ LIST / DASHBOARD VIEW
       }
             </div>
             <div class="hdr-center" style="flex: 1; text-align: center;">
-              <div class="univ-name" style="font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;">${esc(campus_display_name)}</div>
-              <div class="univ-sub" style="font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
+              <div class="univ-name" style="font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: none; letter-spacing: 1.5px; line-height: 1.2;">${esc(campus_display_name)}</div>
+              <div class="univ-sub" style="font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: none; margin-top: 3px;">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
             </div>
           </div>`;
   }
@@ -3005,8 +3041,8 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
 .card-page { width: 710px; margin: 20px auto; background: #fff; border: 1.5px solid #555; }
 .header { background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e; }
 .logo-box { width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
-.univ-name { font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2; }
-.univ-sub { font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px; }
+.univ-name { font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: none; letter-spacing: 1.5px; line-height: 1.2; }
+.univ-sub { font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: none; margin-top: 3px; }
 .title-row { text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }
 .title-row .t1 { font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }
 .title-row .t2 { font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }
@@ -3080,7 +3116,7 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       </div>
       <div class="photo-sig-box" style="width: 100%; text-align: center; margin-top: auto; padding-bottom: 5px;">
         <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
-        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333;">Candidate's Signature</div>
+        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: none; color: #333;">Candidate's Signature</div>
       </div>
     </div>
   </div>
@@ -3182,7 +3218,7 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       else if (s.status === 'active') { circle.style.background = 'var(--secondary)'; circle.style.boxShadow = '0 0 0 2px var(--secondary)'; circle.textContent = '↻'; circle.style.color = 'white'; }
       else { circle.style.background = '#f9fafb'; circle.style.boxShadow = '0 0 0 2px var(--border)'; circle.textContent = '○'; circle.style.color = 'var(--text-4)'; }
       var label = document.createElement('div');
-      label.style.cssText = 'font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;text-align:center;max-width:70px;word-break:break-word;color:' + (s.status === 'active' ? 'var(--primary)' : s.status === 'completed' ? 'var(--text-3)' : 'var(--text-4)') + ';';
+      label.style.cssText = 'font-size:10px;font-weight:600;text-transform:none;letter-spacing:.06em;text-align:center;max-width:70px;word-break:break-word;color:' + (s.status === 'active' ? 'var(--primary)' : s.status === 'completed' ? 'var(--text-3)' : 'var(--text-4)') + ';';
       label.textContent = s.stage_name;
       node.appendChild(circle);
       node.appendChild(label);
@@ -3263,8 +3299,8 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       city: document.getElementById('edit-city')?.value || '',
       state: document.getElementById('edit-state')?.value || '',
       pincode: document.getElementById('edit-pincode')?.value || '',
-    };
-    try {
+      applicant: '{{ prof_app_name }}'
+    };    try {
       const message = await apiFetch('slcm.admission.api.profile.update_profile', payload);
       if (message && message.success) {
         var dmap = {
@@ -3288,7 +3324,7 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
     } catch (e) {
       showProfToast(e.message || 'Network error — please try again.', true);
     }
-    if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+    btn.textContent = 'Save changes'; }
   };
 
   window.doLogout = function () {
@@ -3299,13 +3335,13 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
     const citySelect = document.getElementById('edit-city');
     if (!citySelect) return;
     if (!state) {
-      citySelect.innerHTML = '<option value="">— Select City —</option>';
+      citySelect.innerHTML = '<option value="">— Select city —</option>';
       return;
     }
     citySelect.innerHTML = '<option value="">Loading...</option>';
     try {
       const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
-      let html = '<option value="">— Select City —</option>';
+      let html = '<option value="">— Select city —</option>';
       districts.forEach(d => {
         html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
       });

@@ -13,27 +13,38 @@ def update_profile(**kwargs):
         return {"success": False, "error": "Authentication required."}
 
     # Find the applicant record related to this user
-    # Priority 1: Email match (official contact)
-    # Priority 2: Owner match (creator)
-    apps = frappe.get_all("Applicant",
-        filters={"email": user},
-        fields=["name"], limit=1, order_by="creation desc")
+    app_name = kwargs.get("applicant")
     
-    if not apps:
+    if app_name:
+        # Verify ownership if app_name is provided
+        if not frappe.db.exists("Applicant", {"name": app_name, "owner": user}) and \
+           not frappe.db.exists("Applicant", {"name": app_name, "email": user}) and \
+           "Admission Admin" not in frappe.get_roles():
+            return {"success": False, "error": "Access denied for this application."}
+    else:
+        # Priority 1: Email match (official contact)
+        # Priority 2: Owner match (creator)
         apps = frappe.get_all("Applicant",
-            filters={"owner": user},
+            filters={"email": user},
             fields=["name"], limit=1, order_by="creation desc")
+        
+        if not apps:
+            apps = frappe.get_all("Applicant",
+                filters={"owner": user},
+                fields=["name"], limit=1, order_by="creation desc")
 
-    if not apps:
-        return {"success": False, "error": "No application found for your account."}
-
-    app_name = apps[0].name
+        if not apps:
+            return {"success": False, "error": "No application found for your account."}
+        
+        app_name = apps[0].name
 
     # Allowed fields to update via this endpoint
     allowed = {
         "candidate_name", "date_of_birth", "gender", "nationality",
         "mobile_number", "alternate_contact", "id_proof",
-        "correspondence_address", "city", "state", "pincode", "candidate_photo"
+        "correspondence_address", "city", "state", "pincode", "candidate_photo",
+        "class_x_marksheet", "class_xii_marksheet", "caste_certificate",
+        "pwd_certificate", "phd_proposal", "cv", "ka_study_7yrs_certificate"
     }
 
     from slcm.utils.phone_utils import sanitize_phone_for_frappe

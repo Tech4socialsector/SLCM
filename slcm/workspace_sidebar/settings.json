@@ -22,51 +22,6 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "setting-gear",
-   "indent": 1,
-   "keep_closed": 1,
-   "label": "Configure",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Section Break"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Exam Type",
-   "link_to": "Exam Type Config",
-   "link_type": "DocType",
-   "navigate_to_tab": "",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Quota Policy",
-   "link_to": "Quota Policy",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Evaluation Config",
-   "link_to": "Evaluation Config",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
    "icon": "layout-template",
    "indent": 1,
    "keep_closed": 1,
@@ -74,17 +29,6 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Section Break"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Stage Template",
-   "link_to": "Admission Stage Template",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
   },
   {
    "child": 1,
@@ -119,40 +63,6 @@
    "show_arrow": 0,
    "type": "Link"
   },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Admission Cycle",
-   "link_to": "Admission Cycle",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Cycle Deadline",
-   "link_to": "Admission Cycle Deadline",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Cycle Rule",
-   "link_to": "Admission Cycle Rule",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-
   {
    "child": 0,
    "collapsible": 1,
@@ -218,20 +128,9 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Program Media",
-   "link_to": "Program Media",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
   }
  ],
- "modified": "2026-03-04 18:09:14.111456",
+ "modified": "2026-03-12 23:25:55.777795",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Settings",

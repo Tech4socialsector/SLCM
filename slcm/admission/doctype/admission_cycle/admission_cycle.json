@@ -22,6 +22,7 @@
   "stages",
   "section_break_rounds",
   "enable_multiple_rounds",
+  "admission_rounds",
   "section_break_remarks",
   "remarks"
  ],
@@ -114,7 +115,6 @@
   },
   {
    "default": "0",
-   "description": "Configure rounds in the Admission Round DocType",
    "fieldname": "enable_multiple_rounds",
    "fieldtype": "Check",
    "label": "Enable Multiple Rounds"
@@ -145,10 +145,17 @@
    "fieldname": "cycle_end_date",
    "fieldtype": "Date",
    "label": "Cycle End Date"
+  },
+  {
+   "depends_on": "eval: doc.enable_multiple_rounds",
+   "fieldname": "admission_rounds",
+   "fieldtype": "Table",
+   "label": "Admission Rounds",
+   "options": "Admission Round"
   }
  ],
  "links": [],
- "modified": "2026-03-12 11:38:17.672056",
+ "modified": "2026-03-12 22:39:13.026359",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

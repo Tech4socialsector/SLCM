@@ -885,16 +885,22 @@
   <div class="grid gap-8" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
     {% for p in programs %}
     {% set _slug  = p.get('program_slug') if p.get else (p.program_slug or '') %}
-    {% set _img   = p.get('program_image') or p.get('featured_image') if p.get else (p.program_image or p.featured_image or '') %}
+    {% set _img   = p.get('program_image') if p.get else (p.program_image or '') %}
     {% set _name  = p.get('program_name') if p.get else (p.program_name or '') %}
     {% set _abbr  = p.get('program_abbreviation') if p.get else (p.program_abbreviation or '') %}
-    {% set _desc  = (p.get('desc_short') or (p.get('desciption') or '')[:120]) if p.get else ((p.desc_short or '') or (p.desciption or '')[:120]) %}
+    
+    {% set _desc_raw = p.get('program_description') if p.get else (p.program_description or '') %}
+    {% set _desc_plain = _desc_raw | striptags %}
+    {% set _words = _desc_plain.split() %}
+    {% set _desc_display = _words[:20]|join(' ') %}
+    {% if _words|length > 20 %}{% set _desc_display = _desc_display ~ '...' %}{% endif %}
+
     {% set _seats = (p.get('seats') or p.get('total_seats') or 0) if p.get else (p.seats or p.total_seats or 0) %}
     {% set _dur   = p.get('duration') or '' if p.get else (p.duration or '') %}
     {% set _level = p.get('program_level') or '' if p.get else (p.program_level or '') %}
     {% set _can   = p.get('can_apply') if p.get else p.can_apply %}
     {% set _cur   = p.get('current_stage_name') or '' if p.get else (p.current_stage_name or '') %}
-    {% set _bro   = p.get('brochure_url') or '' if p.get else (p.brochure_url or '') %}
+    {% set _bro   = p.get('brochure_file') or p.get('brochure_url') if p.get else (p.brochure_file or p.brochure_url or '') %}
     {% set _pid   = p.get('program') or p.get('name') if p.get else (p.program or p.name or '') %}
 
     <article class="prog-card fade-card flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm"
@@ -931,7 +937,14 @@
       <!-- Body -->
       <div class="flex flex-1 flex-col p-6">
         <h4 class="text-xl font-bold text-slate-900">{{ _name }}</h4>
-        {% if _desc %}<p class="mt-2 flex-grow text-sm leading-relaxed text-slate-500">{{ _desc }}</p>{% endif %}
+        {% if _desc_display %}
+        <p class="mt-2 flex-grow text-sm leading-relaxed text-slate-500">
+            {{ _desc_display }}
+            {% if _words|length > 20 %}
+            <a href="/admission/{{ _slug }}" class="text-blue-600 font-bold hover:underline" onclick="event.stopPropagation()">View More</a>
+            {% endif %}
+        </p>
+        {% endif %}
 
         <!-- Meta -->
         <div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
@@ -1000,7 +1013,8 @@
         <div class="mt-3 border-t border-slate-100 pt-3">
           <a href="{{ _bro }}" target="_blank"
              class="flex items-center gap-1 text-xs text-slate-400 hover:underline transition-colors"
-             style="color:var(--muted,#94a3b8)" onclick="event.stopPropagation()">
+             style="color:var(--muted,#94a3b8)" onclick="event.stopPropagation()"
+             title="Download Brochure">
             <span class="material-symbols-outlined" style="font-size:14px">download</span>
             Download Brochure
           </a>
@@ -1094,7 +1108,7 @@
           <!-- Calendar card -->
           <div class="evt-card fade-card flex cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center shadow-lg"
                style="background:var(--primary);color:white;"
-               onclick="window.location='/academic-calendar'">
+               onclick="window.location='#'">
             <span class="material-symbols-outlined text-white mb-2" style="font-size:40px">calendar_month</span>
             <p class="font-bold text-white">View Full Academic Calendar</p>
             <span class="mt-3 rounded-lg px-4 py-2 text-xs font-bold text-white"

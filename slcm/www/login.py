@@ -44,7 +44,7 @@ def get_context(context):
     try:
         context.events = frappe.get_all(
             "Portal Announcement",
-            filters={"is_active": 1, "announcement_type": "Event"},
+            filters={"is_active": 1, "announcement_type": "Event", "status": "Published"},
             fields=["title", "summary", "event_date", "featured_image", "event_registration_url"],
             order_by="event_date asc",
             limit=4
