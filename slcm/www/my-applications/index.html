@@ -1839,7 +1839,12 @@ or _app.current_stage)) or _status %}
           {% for doc in app_documents %}
           {% set _is_done = doc.is_uploaded %}
           <div class="doc-row"
-            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
+            {% if _status == 'Draft' %}
+            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}')"
+            style="cursor:pointer;"
+            {% else %}
+            style="cursor:default;"
+            {% endif %}>
             <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
             <span class="doc-name">{{ doc.document_name }}</span>
             <div style="display:flex; align-items:center; gap:10px;">
@@ -1847,9 +1852,12 @@ or _app.current_stage)) or _status %}
               <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
                 onclick="event.stopPropagation()">View</a>
               {% endif %}
+              
+              {% if _status == 'Draft' %}
               <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
                 {% if _is_done %}edit_square{% else %}upload{% endif %}
               </span>
+              {% endif %}
             </div>
           </div>
           {% endfor %}
@@ -2273,7 +2281,7 @@ LIST / DASHBOARD VIEW
 
       <div class="prof-sidebar">
         <div class="prof-avatar" id="prof-avatar-circle"
-          onclick="openUploadModal('Photo', 'Photo', 'candidate_photo', '', 'field')"
+          onclick="openUploadModal('Photo', 'Photo', 'candidate_photo', '', 'field', '{{ prof_app_name }}')"
           style="cursor:pointer; position:relative;" title="Click to change photo">
           {%- if _pphoto -%}
           <img src="{{ _pphoto }}" id="prof-avatar-img" alt="{{ _pinitial }}">
@@ -2319,9 +2327,11 @@ LIST / DASHBOARD VIEW
             <div class="prof-section-title">
               <span class="material-symbols-outlined">badge</span>Personal Details
             </div>
+            {% if prof_app_status == 'Draft' %}
             <button class="prof-edit-btn" onclick="openEditModal()">
               <span class="material-symbols-outlined">edit</span>Edit All
             </button>
+            {% endif %}
           </div>
           <div class="doc-list" style="border-top: 1px solid var(--border);">
             {% set profile_fields = [
@@ -2335,7 +2345,13 @@ LIST / DASHBOARD VIEW
             {'label': 'Correspondence Address', 'value': prof_address, 'id': 'disp-address'}
             ] %}
             {% for pf in profile_fields %}
-            <div class="doc-row" onclick="openEditModal()">
+            <div class="doc-row" 
+              {% if prof_app_status == 'Draft' %}
+              onclick="openEditModal()"
+              style="cursor:pointer;"
+              {% else %}
+              style="cursor:default;"
+              {% endif %}>
               <div class="doc-checkbox {% if pf.value %}checked{% endif %}"></div>
               <div style="flex:1;">
                 <div class="prof-fl" style="margin-bottom:0;">{{ pf.label }}</div>
@@ -2347,8 +2363,10 @@ LIST / DASHBOARD VIEW
                   {% endif %}
                 </div>
               </div>
+              {% if prof_app_status == 'Draft' %}
               <span class="material-symbols-outlined"
                 style="font-size:18px; color:var(--primary); cursor:pointer;">edit</span>
+              {% endif %}
             </div>
             {% endfor %}
           </div>
@@ -2366,7 +2384,12 @@ LIST / DASHBOARD VIEW
             {% for doc in app_documents %}
             {% set _is_done = doc.is_uploaded %}
             <div class="doc-row"
-              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}')">
+              {% if prof_app_status == 'Draft' %}
+              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ prof_app_name }}')"
+              style="cursor:pointer;"
+              {% else %}
+              style="cursor:default;"
+              {% endif %}>
               <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
               <span class="doc-name">{{ doc.document_name }}</span>
               <div style="display:flex; align-items:center; gap:10px;">
@@ -2374,9 +2397,12 @@ LIST / DASHBOARD VIEW
                 <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
                   onclick="event.stopPropagation()">View</a>
                 {% endif %}
+                
+                {% if prof_app_status == 'Draft' %}
                 <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
                   {% if _is_done %}edit_square{% else %}upload{% endif %}
                 </span>
+                {% endif %}
               </div>
             </div>
             {% endfor %}
@@ -2611,8 +2637,8 @@ LIST / DASHBOARD VIEW
       label: '', type: '', field: '', docName: '', source: '', file: null
     };
 
-    window.openUploadModal = function (label, type, field, docName, source) {
-      currentUploadTarget = { label, type, field, docName, source, file: null };
+    window.openUploadModal = function (label, type, field, docName, source, applicantId) {
+      currentUploadTarget = { label, type, field, docName, source, applicantId, file: null };
       document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
       document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
       document.getElementById('modal-file-input').value = '';
@@ -2672,9 +2698,13 @@ LIST / DASHBOARD VIEW
         progFill.style.width = '60%';
 
         if (currentUploadTarget.field) {
-          await apiFetch('slcm.admission.api.profile.update_profile', {
+          const updateData = {
             [currentUploadTarget.field]: fileUrl
-          });
+          };
+          if (currentUploadTarget.applicantId) {
+            updateData.applicant = currentUploadTarget.applicantId;
+          }
+          await apiFetch('slcm.admission.api.profile.update_profile', updateData);
         } else {
           throw new Error('This document type does not map to a profile field.');
         }
@@ -3216,8 +3246,8 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       city: document.getElementById('edit-city')?.value || '',
       state: document.getElementById('edit-state')?.value || '',
       pincode: document.getElementById('edit-pincode')?.value || '',
-    };
-    try {
+      applicant: '{{ prof_app_name }}'
+    };    try {
       const message = await apiFetch('slcm.admission.api.profile.update_profile', payload);
       if (message && message.success) {
         var dmap = {

@@ -208,9 +208,9 @@ def get_active_programs():
         import re as _re
         for p in programs:
             p["admission_cycle"] = active_cycle
-            # Fetch slug and abbreviation from Program
+            # Fetch slug, abbreviation, and other details from Program
             prog_info = frappe.db.get_value("Program", p.program, 
-                ["program_slug", "program_shortcode", "program_duration", "program_image"], 
+                ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file"], 
                 as_dict=True
             )
             if prog_info:
@@ -219,10 +219,14 @@ def get_active_programs():
                 p["program_abbreviation"] = prog_info.program_shortcode
                 p["duration"] = f"{prog_info.program_duration} Years" if prog_info.program_duration else ""
                 p["program_image"] = prog_info.program_image or p.get("program_image")
+                p["program_description"] = prog_info.program_description
+                p["brochure_file"] = prog_info.brochure_file
             else:
                 p["program_slug"] = _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = ""
                 p["duration"] = ""
+                p["program_description"] = ""
+                p["brochure_file"] = ""
 
             p["description"] = p.get("desciption") or ""
             
@@ -286,7 +290,8 @@ def get_active_events(limit=4):
             "Portal Announcement",
             filters={
                 "announcement_type": "Event",
-                "is_active": 1
+                "is_active": 1,
+                "status": "Published"
             },
             fields=fields,
             order_by="event_date asc" if "event_date" in fields_available else "creation desc",
@@ -446,7 +451,7 @@ def get_active_announcements(limit=10):
     """Returns active announcements for display on portal"""
     try:
         anns = frappe.get_all("Portal Announcement",
-            filters={"is_active": 1},
+            filters={"is_active": 1, "status": "Published"},
             fields=["name", "title", "announcement_type", "summary",
                     "featured_image", "publish_date", "event_date",
                     "event_venue", "created_by_role", "owner"],

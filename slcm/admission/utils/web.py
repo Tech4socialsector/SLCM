@@ -126,7 +126,7 @@ def get_public_announcements():
     """Returns announcements visible without login"""
     try:
         ann = frappe.get_all("Portal Announcement",
-            filters={"is_active": 1},
+            filters={"is_active": 1, "status": "Published"},
             fields=["name", "title", "publish_date",
                     "announcement_type", "summary as content",
                     "featured_image", "owner"],
