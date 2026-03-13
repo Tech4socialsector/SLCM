@@ -149,6 +149,7 @@ def get_context(context):
             doc = frappe.get_doc("Applicant", existing.name)
             context.applicant_data = frappe.parse_json(frappe.as_json(doc))
             context.application_submitted = (doc.application_status == "Submitted")
+            context.application_editable = (doc.application_status == "Draft")
     except frappe.Redirect:
         raise
     except Exception:
@@ -203,6 +204,7 @@ def get_context(context):
 
     # When no existing application for this cycle, seed applicant_data with locked values and default Draft
     if not context.applicant_data or not context.applicant_data.get("name"):
+        context.application_editable = True  # New application is editable
         context.applicant_data = dict(context.applicant_data or {})
         context.applicant_data.setdefault("program", context.prefill_program)
         context.applicant_data.setdefault("admission_cycle", context.prefill_admission_cycle)
@@ -515,12 +517,12 @@ def save_form(data):
     email = frappe.db.get_value("User", user, "email") or user
     is_submit = bool(data.get("__submit"))
 
-    # ── Prevent edits if already submitted ───────────────────────────
+    # ── Allow edits only when application status is Draft ─────────────
     existing_name = data.get("name")
     if existing_name:
         current_status = frappe.db.get_value("Applicant", existing_name, "application_status")
-        if current_status == "Submitted":
-            return {"error": _("Application is already submitted and cannot be edited.")}
+        if current_status and current_status != "Draft":
+            return {"error": _("Only draft applications can be edited. This application's status is '{0}'.").format(current_status or "unknown")}
     try:
         meta = frappe.get_meta("Applicant")
     except Exception:

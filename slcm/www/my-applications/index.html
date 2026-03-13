@@ -1020,7 +1020,7 @@
 
   .result-score-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 14px;
   }
 
@@ -2136,7 +2136,7 @@ or _app.current_stage)) or _status %}
             </div>
             <div class="result-score-box">
               <div class="lbl">Rank</div>
-              <div class="val" style="font-size:18px">{% if interview_doc.rank %}#{{ interview_doc.rank }}{% else %}—{% endif %}</div>
+              <div class="val" style="font-size:18px">{% if interview_doc.rank %}{{ interview_doc.rank }}{% else %}—{% endif %}</div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Result Status</div>

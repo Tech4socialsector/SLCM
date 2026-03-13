@@ -1883,13 +1883,13 @@
 
     <!-- ═══ Back to admission listing ─── -->
     <div class="application-form-back-row">
-        <a href="/admission" class="btn-back-to-admission" title="Back to programme listing">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back
-        </a>
+            <a href="/my-applications?app={{ applicant_data.name }}" class="btn-back-to-admission" title="Back to programme listing">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back
+            </a>
     </div>
 
     <!-- ═══ Program applied for (information only) ─── -->
@@ -1924,6 +1924,13 @@
         <!-- MAIN FORM -->
         <main>
             <form id="appForm" novalidate>
+                {% if not application_editable %}
+                <div id="formViewOnlyBanner" style="display:block; margin-bottom:14px; padding:12px 16px; background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; font-size:13px; color:#92400e;">
+                    This application can no longer be edited. Only draft applications can be modified. Current status: <strong>{{ applicant_data.application_status or '—' }}</strong>. You can view the details below.
+                </div>
+                {% else %}
+                <div id="formViewOnlyBanner" style="display:none;"></div>
+                {% endif %}
 
                 <!-- ═══════ STEP 1: STUDENT INFORMATION ═══════ -->
                 <div class="step-view active" id="step1">
@@ -3288,6 +3295,8 @@
 
     // Application already submitted for this cycle — show read-only, block save/submit
     const APPLICATION_SUBMITTED = {{ 'true' if application_submitted else 'false' }};
+    // Only draft applications can be edited; non-draft is view-only
+    const APPLICATION_EDITABLE = {{ 'true' if application_editable else 'false' }};
     const READONLY_AFTER_SUBMIT = {{ (readonly_after_submit or[]) | tojson }};
 
     // Form config by admission cycle (entrance test / program levels) — for conditional sections
@@ -3455,6 +3464,7 @@
         initFlatpickr();
         applyProgramFromUrl();
         applySubmittedReadOnly();
+        applyNonDraftReadOnly();  // When status is not Draft, form is view-only
         if (APPLICATION_SUBMITTED) { STEPS.forEach(s => completedSteps.add(s.id)); }
         updateUI();
         initSearchableSelects();
@@ -3483,6 +3493,23 @@
             }
         });
         // When submitted, only email, candidate_name, mobile are read-only; applicant may edit and save other fields
+    }
+
+    function applyNonDraftReadOnly() {
+        if (APPLICATION_EDITABLE) return;
+        const form = document.getElementById('appForm');
+        if (!form) return;
+        form.querySelectorAll('input, select, textarea, button[type="button"]').forEach(el => {
+            if (el.id === 'prevBtn' || el.id === 'downloadReceiptBtn') return;
+            el.disabled = true;
+            if (el.readOnly !== undefined) el.readOnly = true;
+        });
+        const saveBtn = document.getElementById('saveDraftBtn');
+        if (saveBtn) saveBtn.style.display = 'none';
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn) { nextBtn.disabled = true; nextBtn.style.opacity = '0.6'; nextBtn.style.cursor = 'not-allowed'; }
+        const banner = document.getElementById('formViewOnlyBanner');
+        if (banner) banner.style.display = 'block';
     }
 
     function initNumericInputs() {
@@ -5047,6 +5074,7 @@
     //  FORM SUBMISSION (eligibility check, then application fee modal if needed)
     // ═══════════════════════════════════════════════════════
     async function submitForm() {
+        if (!APPLICATION_EDITABLE) { showToast('Only draft applications can be submitted.', 'error'); return; }
         // 1. Declaration is validated (handled within Step 6 validation, but checked explicitly for immediate feedback)
         if (!document.getElementById('declaration_undertaking')?.checked) {
             showToast('Please accept the declaration before submitting.', 'error');
@@ -5394,6 +5422,7 @@
     //  SAVE DRAFT (no auto-save)
     // ═══════════════════════════════════════════════════════
     async function saveDraft() {
+        if (!APPLICATION_EDITABLE) { showToast('Only draft applications can be edited.', 'error'); return; }
         collectFormData();
         const saveText = document.getElementById('saveText');
         const btn = document.getElementById('saveDraftBtn');
