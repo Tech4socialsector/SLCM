@@ -797,7 +797,8 @@ window.inject_fle_header_footer = function () {
                 font-size:21px !important; font-weight:700 !important; color:#8B0000 !important;
                 margin:0 !important; letter-spacing:0.2px !important;
             }
-            .breadcrumb, .page-breadcrumbs, .breadcrumb-container, .page-head,
+            .breadcrumb, .page-breadcrumbs, .breadcrumb-container,
+            .page-head .breadcrumb-container, .page-head .page-breadcrumbs,
             .navbar-user-icon, .avatar { display:none!important; visibility:hidden!important; }
             .sticky-header .header-logout-area {
                 flex:0 0 auto!important; display:flex!important; align-items:center!important;
@@ -1174,6 +1175,13 @@ window.check_payment_status_buttons = function () {
     var path = window.location.pathname;
     if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
 
+    // Prevent multiple simultaneous intervals from running
+    if (window._fle_payment_check_running) return;
+    window._fle_payment_check_running = true;
+
+    // Immediately remove any persisted title-hide CSS from /new page visits
+    $('#fle-new-form-title-hide').remove();
+
     var checks = 0;
     var maxChecks = 40; // Max 20 seconds
 
@@ -1186,12 +1194,22 @@ window.check_payment_status_buttons = function () {
             var docName = frappe.web_form.doc.name;
             var isNew = frappe.web_form.is_new;
             var $titleH1 = $('.web-form-title h1, .web-form-header h1').first();
-            if ($titleH1.length > 0) {
-                if (!isNew && docName && docName.indexOf('new-') === -1) {
-                    $titleH1.text(docName);
+
+            if (!isNew && docName && docName.indexOf('new-') === -1) {
+                // Remove any persisted hide CSS and make visible
+                $('#fle-new-form-title-hide').remove();
+                if ($titleH1.length > 0) {
+                    $titleH1[0].style.removeProperty('display');
+                    $titleH1.show().text(docName);
                 } else {
-                    $titleH1.hide();
+                    // Fallback: insert a dedicated ID display if h1 isn't found
+                    if ($('#fle-doc-id-display').length === 0) {
+                        var $idDisplay = $('<div id="fle-doc-id-display" style="text-align:center; padding:8px 0 4px; font-family:Merriweather,Georgia,serif; font-weight:700; font-size:1.1em; color:#1a1a1a; margin-bottom:8px;">' + docName + '</div>');
+                        $('.web-form-wrapper, .web-form-container, .page-content').first().prepend($idDisplay);
+                    }
                 }
+            } else if ($titleH1.length > 0) {
+                $titleH1.hide();
             }
 
             // Only hide if it's an existing submission
@@ -1244,6 +1262,7 @@ window.check_payment_status_buttons = function () {
             }
         } else if (checks >= maxChecks) {
             clearInterval(interval);
+            window._fle_payment_check_running = false;
         }
     }, 500);
 };
