@@ -59,7 +59,7 @@ def register_fle_user(email, mobile_number):
     # Reliable fallback cache assignment
     frappe.cache().hset("redirect_after_login", user.name, "/fle/login.html")
     
-    return {"status": "success", "message": "Check your email to set your password and activate your account!"}
+    return {"status": "success", "message": "Check your email to set your password and activate your account! Complete Registration within 10 minutes."}
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def update_password_fle(new_password, key, confirm_password=None):
