@@ -1,6 +1,7 @@
 # Copyright (c) 2026, TFSS and contributors
 # For license information, please see license.txt
 
+import json
 import frappe
 from frappe.model.document import Document
 from frappe.utils import flt, add_days, nowdate
@@ -122,24 +123,41 @@ def create_invoice(docname):
 	if doc.fee_type == "Application Fee":
 		frappe.throw(frappe._("Create Invoice is only for Admission Fee assignments. Application Fee does not create Fee Invoice."))
 
-	if doc.status not in ["Assigned", "Partially Paid", "Paid"]:
-		frappe.throw(frappe._("Invoice can only be created for assignments with status 'Assigned', 'Partially Paid', or 'Paid'."))
+	if doc.status != "Paid":
+		frappe.throw(frappe._("Invoice and conversion are only allowed when the fee has been paid. Current status is '{0}'. Please ensure payment is completed before converting to student.").format(doc.status or "unknown"))
 
 	applicant = frappe.get_doc("Applicant", doc.applicant)
 
-	# 1. Create Student Master if not exists
+	# 1. Create Student Master if not exists (map Applicant fields to Student Master)
 	student_name = frappe.db.get_value("Student Master", {"application_number": applicant.name}, "name")
 	if not student_name:
 		student = frappe.new_doc("Student Master")
 		student.application_number = applicant.name
-		student.first_name = applicant.candidate_name
+		# Map Applicant personal fields to Student Master (matching field names / semantics)
+		_full_name = (applicant.get("candidate_name") or "").strip()
+		if _full_name:
+			parts = _full_name.split(None, 2)
+			student.first_name = parts[0]
+			student.middle_name = parts[1] if len(parts) >= 2 else None
+			student.last_name = parts[2] if len(parts) >= 3 else None
+		else:
+			student.first_name = applicant.name or "Applicant"
 		student.dob = applicant.date_of_birth or nowdate()
-		student.email = applicant.email
-		student.phone = applicant.mobile_number
+		student.email = applicant.email or ""
+		student.phone = applicant.mobile_number or applicant.get("alternate_contact") or ""
 		student.programme = doc.program
-
-		if applicant.gender and frappe.db.exists("Gender", applicant.gender):
-			student.gender = applicant.gender
+		if applicant.get("alternate_contact") and applicant.mobile_number:
+			student.alternate_phone = applicant.alternate_contact
+		if applicant.get("nationality"):
+			student.nationality = applicant.nationality
+		if applicant.get("religion"):
+			student.religion = applicant.religion
+		# Gender: Applicant may use Select; Student Master uses Link to Genders
+		if applicant.get("gender"):
+			if frappe.db.exists("Genders", applicant.gender):
+				student.gender = applicant.gender
+			elif frappe.db.exists("Gender", applicant.gender):
+				student.gender = applicant.gender
 
 		student.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
 		student_name = student.name
@@ -212,6 +230,12 @@ def create_invoice(docname):
 	doc.db_set("fee_invoice", invoice.name)
 	doc.db_set("status", "Converted")
 
+	# 6. Set Applicant status to Enrolled (applicant has become student)
+	_enrolled_status = "Enrolled"
+	if frappe.db.exists("Applicant Status", _enrolled_status):
+		frappe.db.set_value("Applicant", doc.applicant, "application_status", _enrolled_status, update_modified=True)
+		frappe.db.commit()
+
 	return invoice.name
 
 
@@ -245,3 +269,98 @@ def create_payment(docname, amount, payment_mode, reference_number=None):
 		assignment.db_set("status", "Partially Paid")
 
 	return payment.name
+
+
+# --------------- Bulk Convert to Student (job/queue) ---------------
+
+@frappe.whitelist()
+def bulk_convert_to_student(assignments):
+	"""
+	Convert multiple Applicant Fee Assignments to Student (create invoice & convert).
+	assignments: list of AFA docnames or JSON string. Uses background job if batch > 10.
+	"""
+	if isinstance(assignments, str):
+		assignments = json.loads(assignments)
+	if not assignments:
+		return {"message": frappe._("No assignments provided")}
+
+	# Filter to only eligible: Admission Fee, status Paid (payment completed), not already Converted
+	eligible = []
+	for name in assignments:
+		if not name:
+			continue
+		afa = frappe.db.get_value(
+			"Applicant Fee Assignment",
+			name,
+			["fee_type", "status", "docstatus"],
+			as_dict=True,
+		)
+		if not afa:
+			continue
+		if afa.fee_type != "Admission Fee" or afa.docstatus != 1:
+			continue
+		if afa.status != "Paid":
+			continue
+		eligible.append(name)
+
+	if not eligible:
+		return {"message": frappe._("No eligible assignments to convert. Only assignments with status 'Paid' (fee payment completed) can be converted to student.")}
+
+	# Large batch: enqueue background job
+	if len(eligible) > 10:
+		frappe.enqueue(
+			method="slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment.background_bulk_convert_worker",
+			queue="long",
+			assignments=eligible,
+			user=frappe.session.user,
+			now=frappe.flags.in_test,
+		)
+		return {
+			"queued": True,
+			"message": frappe._("Large batch ({0} assignments). Processing in the background. You will be notified when finished.").format(len(eligible)),
+		}
+
+	# Small batch: process synchronously
+	return _process_bulk_convert_batch(eligible)
+
+
+def _process_bulk_convert_batch(assignments):
+	"""Process a list of AFA docnames; return { success: [], errors: [] }."""
+	results = {"success": [], "errors": []}
+	for docname in assignments:
+		try:
+			invoice_name = create_invoice(docname)
+			results["success"].append({"assignment": docname, "invoice": invoice_name})
+		except Exception as e:
+			frappe.db.rollback()
+			results["errors"].append({"assignment": docname, "error": str(e)})
+			frappe.log_error(frappe.get_traceback(), "Bulk Convert to Student Error")
+	return results
+
+
+def background_bulk_convert_worker(assignments, user):
+	"""Background worker for bulk convert; notifies user when done."""
+	frappe.set_user(user)
+	results = _process_bulk_convert_batch(assignments)
+	success_count = len(results["success"])
+	error_count = len(results["errors"])
+
+	summary_msg = frappe._("Successfully converted {0} applicants to students.").format(success_count)
+	if error_count > 0:
+		summary_msg += " " + frappe._("{0} errors encountered.").format(error_count)
+
+	from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+	enqueue_create_notification(
+		[user],
+		{
+			"subject": frappe._("Bulk Convert to Student Report"),
+			"email_content": f"<h4>{summary_msg}</h4><p>{frappe._('Check Applicant Fee Assignment and Fee Invoice list for details.')}</p>",
+			"type": "Alert",
+			"document_type": "Applicant Fee Assignment",
+		},
+	)
+	frappe.publish_realtime(
+		event="bulk_convert_to_student_done",
+		message={"success": success_count, "errors": error_count},
+		user=user,
+	)
