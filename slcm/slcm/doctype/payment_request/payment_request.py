@@ -5,10 +5,29 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 
+# Mapping: Razorpay gateway_status -> internal system status (only backend/webhook may set status)
+GATEWAY_TO_SYSTEM_STATUS = {
+	"created": "Requested",
+	"authorized": "Requested",
+	"captured": "Paid",
+	"failed": "Failed",
+	"refunded": "Cancelled",
+}
+
+
 class PaymentRequest(Document):
 	def validate(self):
 		if self.amount <= 0:
 			frappe.throw(_("Amount must be greater than zero."))
+		# System status must never be set directly from frontend; only backend/webhook updates it.
+		if self.get("__islocal"):
+			return
+		old_status = frappe.db.get_value(self.doctype, self.name, "status")
+		if old_status is not None and self.status != old_status:
+			if not frappe.flags.get("payment_request_status_from_backend"):
+				frappe.throw(
+					_("Status cannot be changed from the form. It is updated by the payment gateway webhook.")
+				)
 
 	def on_submit(self):
 		if not self.payment_url:

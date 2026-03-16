@@ -228,6 +228,24 @@ class FeeService:
             
             if offer.offer_status == "Payment Completed":
                 frappe.throw(_("Payment has already been completed."))
+
+            # Block if a Payment Request for this offer is already Paid (gateway truth)
+            existing_paid_pr = frappe.db.get_value(
+                "Payment Request",
+                {"reference_doctype": "Offer Letter", "reference_name": offer.name, "status": "Paid"},
+                "name",
+            )
+            if existing_paid_pr:
+                frappe.throw(_("Payment has already been completed for this offer. You cannot pay again."))
+
+            # Block if Applicant Fee Assignment for this offer is already Paid or Converted
+            afa_status = frappe.db.get_value(
+                "Applicant Fee Assignment",
+                {"offer_letter": offer.name, "docstatus": ["!=", 2]},
+                "status",
+            )
+            if afa_status in ("Paid", "Converted"):
+                frappe.throw(_("Fee for this offer has already been paid or the applicant has been converted. You cannot pay again."))
             
             if offer.offer_status in ["Rejected", "Expired", "Withdrawn"]:
                 frappe.throw(_("Cannot initiate payment. The offer is currently {0}.").format(offer.offer_status))
@@ -523,51 +541,75 @@ class FeeService:
                 pr.payment_gateway = gateway
             pr.transaction_id = transaction_id
 
+        # Gateway fields: razorpay_order_id and gateway_status for webhook and audit
+        if transaction_id and status == "Requested":
+            try:
+                pr.razorpay_order_id = transaction_id
+                pr.gateway_status = "created"
+            except AttributeError:
+                pass
+
         if pr.name and pr.docstatus > 0:
             # If doc is already submitted, we use db_set/set_value for direct DB update
             frappe.logger().debug(f"Updating submitted Payment Request {pr.name} to status {status}")
-            
+            frappe.flags.payment_request_status_from_backend = True
+
             update_data = {"status": status}
             if status == "Paid":
                 update_data["failure_message"] = None
+                update_data["gateway_status"] = "captured"
             elif failure_reason:
                 update_data["status"] = "Failed"
                 update_data["failure_message"] = failure_reason
-            
+
             if payment_id:
                 update_data["transaction_id"] = payment_id
-                
+                if status == "Paid":
+                    update_data["razorpay_payment_id"] = payment_id
+            if transaction_id and status == "Requested":
+                update_data["razorpay_order_id"] = transaction_id
+                update_data["gateway_status"] = "created"
+
             if response_data:
                 update_data["gateway_response"] = json.dumps(response_data, indent=4)
-            
+
             if gateway and frappe.db.exists("Payment Gateway", gateway):
                 update_data["payment_gateway"] = gateway
 
             frappe.db.set_value("Payment Request", pr.name, update_data, update_modified=True)
             frappe.db.commit()
+            if hasattr(frappe.flags, "payment_request_status_from_backend"):
+                del frappe.flags.payment_request_status_from_backend
         else:
             # Draft or New
             pr.status = status
             if payment_id:
-                pr.transaction_id = payment_id 
-            
+                pr.transaction_id = payment_id
+            if transaction_id and status == "Requested":
+                pr.razorpay_order_id = transaction_id
+                pr.gateway_status = "created"
+
             if response_data:
                 pr.gateway_response = json.dumps(response_data, indent=4)
-            
+
             if status == "Paid":
                 pr.failure_message = None
-                
+                pr.gateway_status = "captured"
+
             if failure_reason:
                 pr.status = "Failed"
                 pr.failure_message = failure_reason
-            
+
+            frappe.flags.payment_request_status_from_backend = True
             if pr.name:
                 pr.save(ignore_permissions=True)
             else:
                 pr.insert(ignore_permissions=True)
-            
+
             if status in ["Paid", "Requested"]:
                 pr.submit()
+            if hasattr(frappe.flags, "payment_request_status_from_backend"):
+                del frappe.flags.payment_request_status_from_backend
 
 
 
