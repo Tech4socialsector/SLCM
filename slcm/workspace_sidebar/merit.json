@@ -1,6 +1,6 @@
 {
  "app": "slcm",
- "creation": "2026-02-25 15:56:18.586643",
+ "creation": "2026-03-16 11:07:04.719812",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "award",
@@ -27,7 +27,6 @@
    "label": "Merit Rule",
    "link_to": "Merit Rule",
    "link_type": "DocType",
-   "navigate_to_tab": "",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -139,11 +138,11 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-27 12:35:05.267020",
+ "modified": "2026-03-16 11:08:52.369850",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "MSA",
+ "name": "Merit",
  "owner": "Administrator",
  "standard": 1,
- "title": "MSA"
+ "title": "Merit"
 }
