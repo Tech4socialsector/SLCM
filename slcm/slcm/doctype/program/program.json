@@ -7,7 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "program_code",
-  "url_slug",
+  "program_slug",
   "program_name",
   "program_shortcode",
   "department",
@@ -41,11 +41,6 @@
    "in_list_view": 1,
    "label": "Program Code",
    "reqd": 1
-  },
-  {
-   "fieldname": "url_slug",
-   "fieldtype": "Data",
-   "label": "URL Slug"
   },
   {
    "fieldname": "program_name",
@@ -191,12 +186,17 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
+  },
+  {
+   "fieldname": "program_slug",
+   "fieldtype": "Data",
+   "label": "URL Slug"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-12 11:28:49.598126",
+ "modified": "2026-03-16 10:57:16.987419",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",
@@ -214,6 +214,24 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Merit Admin",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Scholarship Admin",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

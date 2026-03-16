@@ -442,7 +442,7 @@
   </a>
 </div>
 {% else %}
-<div style="background:#f5f7f8;margin:-20px -20px 0;padding-bottom:52px;">
+<div style="background:#f5f7f8;margin:0 -20px 0;padding-bottom:52px;">
 <div style="max-width:1200px;margin:0 auto;padding:0 20px;">
   <!-- BREADCRUMB -->
   <div style="padding:16px 0 0;">
@@ -890,10 +890,15 @@
     {% set _abbr  = p.get('program_abbreviation') if p.get else (p.program_abbreviation or '') %}
     
     {% set _desc_raw = p.get('program_description') if p.get else (p.program_description or '') %}
-    {% set _desc_plain = _desc_raw | striptags %}
-    {% set _words = _desc_plain.split() %}
-    {% set _desc_display = _words[:20]|join(' ') %}
-    {% if _words|length > 20 %}{% set _desc_display = _desc_display ~ '...' %}{% endif %}
+    {% set _desc_display = '' %}
+    {% if _desc_raw and _desc_raw|string != 'None' %}
+        {% set _desc_plain = _desc_raw | striptags %}
+        {% if _desc_plain and _desc_plain|string != 'None' %}
+            {% set _words = _desc_plain.split() %}
+            {% set _desc_display = _words[:20]|join(' ') %}
+            {% if _words|length > 20 %}{% set _desc_display = _desc_display ~ '...' %}{% endif %}
+        {% endif %}
+    {% endif %}
 
     {% set _seats = (p.get('seats') or p.get('total_seats') or 0) if p.get else (p.seats or p.total_seats or 0) %}
     {% set _dur   = p.get('duration') or '' if p.get else (p.duration or '') %}
