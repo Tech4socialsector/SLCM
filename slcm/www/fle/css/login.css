@@ -4,6 +4,16 @@
 body {
     padding-top: 0 !important;
     margin: 0 !important;
+    font-family: 'Merriweather', Georgia, serif !important;
+}
+
+.page-wrapper p,
+.page-wrapper a,
+.page-wrapper span,
+.page-wrapper label,
+.page-wrapper input,
+.page-wrapper button {
+    font-family: 'Merriweather', Georgia, serif !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -168,9 +178,9 @@ body {
 
 .form-group label {
     font-family: 'Merriweather', Georgia, serif;
-    font-size: 10.5px;
+    font-size: 13.5px;
     font-weight: 700;
-    letter-spacing: 1.2px;
+    letter-spacing: 0.4px;
     /* text-transform: uppercase; */
     color: #444;
     display: block;
@@ -183,7 +193,7 @@ body {
     border: 1px solid #d0d0d0;
     border-radius: 4px;
     padding: 10px 13px;
-    font-family: 'Merriweather', Georgia, serif;
+    font-family: 'Merriweather', Georgia, serif !important;
     font-size: 13.5px;
     color: #222;
     background: #fafafa;

@@ -22,7 +22,7 @@ frappe.ready(function () {
     if (frappe.web_form && frappe.web_form.fields_dict) {
         $.each(frappe.web_form.fields_dict, function (fieldname, field) {
             if (['Data', 'Small Text', 'Text'].includes(field.df.fieldtype) && !excluded_fields.includes(fieldname)) {
-                frappe.web_form.on(fieldname, function (f, value) {
+                frappe.web_form.on(fieldname, function (_f, value) {
                     value = value || frappe.web_form.get_value(fieldname);
                     if (value && typeof value === 'string') {
                         const capitalized = value.replace(/\b[a-zA-Z]/g, function (l) { return l.toUpperCase(); });
@@ -57,6 +57,23 @@ frappe.ready(function () {
             }
         }
     }, 500);
+
+    // Poll until the phone control is fully initialised (make_input is async),
+    // then set India (+91) as default if no country has been selected yet.
+    function set_india_default(attempts) {
+        attempts = attempts || 0;
+        const phone_field = frappe.web_form.fields_dict &&
+            frappe.web_form.fields_dict['candidate_contact_number'];
+        if (phone_field && phone_field.country_code_picker &&
+            phone_field.country_codes && phone_field.$isd) {
+            if (!phone_field.$isd.text().trim()) {
+                phone_field.country_code_picker.on_change('India', false);
+            }
+        } else if (attempts < 20) {
+            setTimeout(function () { set_india_default(attempts + 1); }, 200);
+        }
+    }
+    set_india_default();
 });
 
 
