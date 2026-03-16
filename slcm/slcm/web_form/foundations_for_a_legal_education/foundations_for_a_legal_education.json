@@ -167,7 +167,7 @@
         {
             "allow_read_on_all_link_options": 0,
             "fieldname": "candidate_contact_number",
-            "fieldtype": "Data",
+            "fieldtype": "Phone",
             "hidden": 0,
             "label": "Contact Number",
             "max_length": 0,

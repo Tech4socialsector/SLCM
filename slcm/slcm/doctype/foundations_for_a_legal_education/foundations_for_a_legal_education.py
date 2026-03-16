@@ -148,8 +148,8 @@ class FoundationsforaLegalEducation(Document):
 		from frappe.utils.password import update_password
 		
 		# Ensure we only try to create exactly once
-		if self.lms_account_created and self.generated_password_temp:
-			return
+		# if self.lms_account_created and self.generated_password_temp:
+		# 	return
 
 		password = random_string(12)
 
@@ -174,7 +174,7 @@ class FoundationsforaLegalEducation(Document):
 			if "LMS Student" in [r.name for r in frappe.get_all("Role")]:
 				user.add_roles("LMS Student")
 			
-			self.generated_password_temp = password
+			# self.generated_password_temp = password
 			self.lms_account_created = 1
 			frappe.db.commit() # Ensure user creation is committed during automated webhook
 			frappe.msgprint("New LMS Student account created successfully.")
@@ -188,7 +188,7 @@ class FoundationsforaLegalEducation(Document):
 			# ALWAYS generate and update the password for this specific flow if we need to send it via notification
 			update_password(self.email_address, password)
 			
-			self.generated_password_temp = password
+			# self.generated_password_temp = password
 			self.lms_account_created = 1
 			frappe.db.commit() # Ensure role update is committed
 			frappe.msgprint("User already exists. Password updated and roles verified.")
