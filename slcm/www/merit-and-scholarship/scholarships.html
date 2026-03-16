@@ -206,7 +206,7 @@
     {% endif %}
 {% endif %}
 
-<div style="min-height:calc(100vh - 60px);background:#f5f7f8; margin:-20px -20px 0;padding:32px 20px 40px;">
+<div style="min-height:calc(100vh - 60px);background:#f5f7f8; margin:0 -20px 0;padding:32px 20px 40px;">
   <div style="max-width:1200px;margin:0 auto;">
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -530,7 +530,7 @@
                           <p class="text-sm font-bold text-slate-600">₹{{ "{:,.0f}".format(app.max_amount) }}</p>
                         {% else %}
                           <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Applies to</p>
-                          <p class="text-sm font-bold text-slate-600">{{ sch.apply_on or "Total Fee" }}</p>
+                          <p class="text-sm font-bold text-slate-600">{{ app.apply_on or "Total Fee" }}</p>
                         {% endif %}
                       </div>
                     </div>

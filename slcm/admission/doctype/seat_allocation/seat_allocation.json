@@ -132,7 +132,8 @@
    "read": 1,
    "report": 1,
    "role": "Merit Admin",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "create": 1,

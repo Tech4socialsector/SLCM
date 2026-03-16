@@ -10,7 +10,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": null,
- "modified": "2026-02-17 14:15:51.922064",
+ "modified": "2026-03-16 11:28:17.327656",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Overall Merit Report",
@@ -19,6 +19,16 @@
  "ref_doctype": "Merit List",
  "report_name": "Overall Merit Report",
  "report_type": "Script Report",
- "roles": [],
+ "roles": [
+  {
+   "role": "Campus Admin"
+  },
+  {
+   "role": "Admission Admin"
+  },
+  {
+   "role": "Merit Admin"
+  }
+ ],
  "timeout": 0
 }

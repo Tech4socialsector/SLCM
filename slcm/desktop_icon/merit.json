@@ -1,28 +1,32 @@
 {
  "app": "slcm",
  "bg_color": "gray",
- "creation": "2026-02-26 18:13:26.263170",
+ "creation": "2026-03-16 11:10:53.145699",
  "docstatus": 0,
  "doctype": "Desktop Icon",
  "hidden": 0,
  "icon_type": "Link",
  "idx": 0,
- "label": "ETM",
- "link_to": "ETM",
+ "label": "Merit",
+ "link_to": "Merit",
  "link_type": "Workspace Sidebar",
- "modified": "2026-03-06 12:25:25.901393",
+ "modified": "2026-03-16 11:12:11.577885",
  "modified_by": "Administrator",
- "name": "ETM",
+ "name": "Merit",
  "owner": "Administrator",
  "parent_icon": "Admission",
  "restrict_removal": 0,
  "roles": [
   {
-   "role": "Entrance Test Admin"
+   "role": "Merit Admin"
   },
   {
-   "role": "Entrance Test Provider"
+   "role": "Admission Admin"
+  },
+  {
+   "role": "Campus Admin"
   }
  ],
+ "sidebar": "Merit",
  "standard": 1
 }
