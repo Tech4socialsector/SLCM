@@ -176,7 +176,6 @@
   {
    "fieldname": "ug_cgpa",
    "fieldtype": "Float",
-   "hidden": 1,
    "label": "Ug cgpa",
    "precision": "2"
   },
@@ -201,7 +200,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 11:57:58.367919",
+ "modified": "2026-03-16 17:45:01.883056",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",
