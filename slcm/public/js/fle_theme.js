@@ -1200,11 +1200,11 @@ window.check_payment_status_buttons = function () {
                 $('#fle-new-form-title-hide').remove();
                 if ($titleH1.length > 0) {
                     $titleH1[0].style.removeProperty('display');
-                    $titleH1.show().text(docName);
+                    $titleH1.show().text('Application Number: ' + docName);
                 } else {
                     // Fallback: insert a dedicated ID display if h1 isn't found
                     if ($('#fle-doc-id-display').length === 0) {
-                        var $idDisplay = $('<div id="fle-doc-id-display" style="text-align:left; padding:8px 0 4px; font-family:Merriweather,Georgia,serif; font-weight:700; font-size:1.8em; color:#1a1a1a; margin-bottom:8px;">' + docName + '</div>');
+                        var $idDisplay = $('<div id="fle-doc-id-display" style="text-align:left; padding:8px 0 4px; font-family:Merriweather,Georgia,serif; font-weight:700; font-size:1.8em; color:#1a1a1a; margin-bottom:8px;">Application Number: ' + docName + '</div>');
                         $('.web-form-wrapper, .web-form-container, .page-content').first().prepend($idDisplay);
                     }
                 }
