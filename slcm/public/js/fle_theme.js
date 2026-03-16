@@ -1331,3 +1331,46 @@ document.addEventListener('DOMContentLoaded', try_inject_fle_theme);
 if (typeof frappe !== 'undefined' && frappe.ready) { frappe.ready(try_inject_fle_theme); }
 setTimeout(try_inject_fle_theme, 500);
 setTimeout(try_inject_fle_theme, 1000);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION: Hide "Not Saved" indicator on FLE web form pages
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+    var path = window.location.pathname;
+    if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
+
+    var style = document.createElement('style');
+    style.textContent = '.indicator-pill.orange { display: none !important; }';
+    document.head.appendChild(style);
+})();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION: Set India (+91) as default for candidate contact number
+// Frappe v16 uses its own ControlPhone (not intl-tel-input).
+// set_default_country() is skipped when a value is already present (URL param),
+// so we poll until the control is ready and apply India manually.
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+    var path = window.location.pathname;
+    if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
+
+    function setIndiaDefault(attempts) {
+        attempts = attempts || 0;
+        if (!window.frappe || !frappe.web_form) {
+            if (attempts < 30) setTimeout(function () { setIndiaDefault(attempts + 1); }, 200);
+            return;
+        }
+        var fd = frappe.web_form.fields_dict;
+        var field = fd && fd['candidate_contact_number'];
+        if (field && field.country_code_picker && field.country_codes && field.$isd) {
+            if (!field.$isd.text().trim()) {
+                field.country_code_picker.on_change('India', false);
+            }
+        } else if (attempts < 30) {
+            setTimeout(function () { setIndiaDefault(attempts + 1); }, 200);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () { setIndiaDefault(); });
+    setTimeout(function () { setIndiaDefault(); }, 800);
+})();
