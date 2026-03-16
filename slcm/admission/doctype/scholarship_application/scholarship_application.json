@@ -51,7 +51,7 @@
    "fieldname": "applicant_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Candidate Name",
+   "label": "Candidate name",
    "read_only": 1,
    "reqd": 1
   },
@@ -59,7 +59,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission Cycle",
+   "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
@@ -67,7 +67,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Academic Year",
+   "label": "Academic year",
    "options": "Academic Year",
    "read_only": 1
   },
@@ -79,7 +79,7 @@
    "fieldname": "scholarship_scheme",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Scholarship Scheme",
+   "label": "Scholarship scheme",
    "options": "Scholarship Scheme",
    "reqd": 1
   },
@@ -105,7 +105,7 @@
   {
    "fieldname": "family_income",
    "fieldtype": "Currency",
-   "label": "Family Income",
+   "label": "Family income",
    "reqd": 1
   },
   {
@@ -132,13 +132,13 @@
   {
    "fieldname": "original_fee_amount",
    "fieldtype": "Currency",
-   "label": "Original Fee Amount",
+   "label": "Original fee amount",
    "read_only": 1
   },
   {
    "fieldname": "calculated_benefit",
    "fieldtype": "Currency",
-   "label": "Calculated Benefit",
+   "label": "Calculated benefit",
    "read_only": 1
   },
   {
@@ -177,7 +177,7 @@
    "allow_on_submit": 1,
    "fieldname": "approval_date",
    "fieldtype": "Datetime",
-   "label": "Approval Date"
+   "label": "Approval date"
   },
   {
    "allow_on_submit": 1,
@@ -202,7 +202,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-09 10:13:07.982050",
+ "modified": "2026-03-16 12:04:29.787271",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Application",

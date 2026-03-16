@@ -3324,7 +3324,7 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
     } catch (e) {
       showProfToast(e.message || 'Network error — please try again.', true);
     }
-    btn.textContent = 'Save changes'; }
+    btn.textContent = 'Save changes';
   };
 
   window.doLogout = function () {
@@ -3350,6 +3350,6 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       citySelect.innerHTML = '<option value="">Error loading cities</option>';
     }
   };
-}) ();
+})();
 </script>
 {% endblock %}

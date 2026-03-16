@@ -36,7 +36,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Cycle Name",
+   "label": "Cycle name",
    "reqd": 1,
    "unique": 1
   },
@@ -44,7 +44,7 @@
    "fieldname": "cycle_code",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Cycle Code",
+   "label": "Cycle code",
    "reqd": 1,
    "unique": 1
   },
@@ -52,7 +52,7 @@
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission Year",
+   "label": "Admission year",
    "options": "Admission Year",
    "reqd": 1
   },
@@ -81,7 +81,7 @@
    "description": "Reference number for this cycle's approval",
    "fieldname": "approval_reference",
    "fieldtype": "Data",
-   "label": "Approval Reference"
+   "label": "Approval reference"
   },
   {
    "description": "Add all programs offered in this cycle. These appear on the applicant portal.",
@@ -92,7 +92,7 @@
   {
    "fieldname": "programs",
    "fieldtype": "Table",
-   "label": "Programs",
+   "label": "Programmes",
    "options": "Admission Cycle Program"
   },
   {
@@ -132,23 +132,23 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
-   "label": "Academic Year",
+   "label": "Academic year",
    "options": "Academic Year",
    "reqd": 1
   },
   {
    "fieldname": "cycle_start_date",
    "fieldtype": "Date",
-   "label": "Cycle Start Date"
+   "label": "Cycle start date"
   },
   {
    "fieldname": "cycle_end_date",
    "fieldtype": "Date",
-   "label": "Cycle End Date"
+   "label": "Cycle end date"
   }
  ],
  "links": [],
- "modified": "2026-03-16 10:09:26.591296",
+ "modified": "2026-03-16 11:21:27.088619",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
@@ -163,6 +163,8 @@
    "write": 1
   },
   {
+   "create": 1,
+   "read": 1,
    "role": "Admission Admin",
    "write": 1
   },

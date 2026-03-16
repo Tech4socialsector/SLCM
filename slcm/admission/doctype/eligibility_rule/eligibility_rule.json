@@ -29,27 +29,27 @@
   {
    "fieldname": "rule_name",
    "fieldtype": "Data",
-   "label": "Rule Name",
+   "label": "Rule name",
    "reqd": 1,
    "unique": 1
   },
   {
    "fieldname": "rule_code",
    "fieldtype": "Data",
-   "label": "Rule Code",
+   "label": "Rule code",
    "read_only": 1
   },
   {
    "fieldname": "qualification_level",
    "fieldtype": "Select",
-   "label": "Qualification Level",
+   "label": "Qualification level",
    "options": "XII\nUG\nPG",
    "reqd": 1
   },
   {
    "fieldname": "rule_type",
    "fieldtype": "Select",
-   "label": "Rule Type",
+   "label": "Rule type",
    "options": "HSC Group\nPercentage\nCGPA",
    "reqd": 1
   },
@@ -63,7 +63,7 @@
   {
    "fieldname": "unit_type",
    "fieldtype": "Select",
-   "label": "Unit Type",
+   "label": "Unit type",
    "options": "Percentage\nCGPA",
    "reqd": 1
   },
@@ -77,13 +77,13 @@
   {
    "fieldname": "effective_from",
    "fieldtype": "Date",
-   "label": "Effective From",
+   "label": "Effective from",
    "reqd": 1
   },
   {
    "fieldname": "effective_to",
    "fieldtype": "Date",
-   "label": "Effective To",
+   "label": "Effective to",
    "reqd": 1
   },
   {
@@ -95,7 +95,7 @@
   {
    "fieldname": "allowed_degrees",
    "fieldtype": "Table",
-   "label": "Allowed Degrees",
+   "label": "Allowed degrees",
    "options": "Eligibility Allowed Degree"
   },
   {
@@ -107,14 +107,14 @@
    "fieldname": "required_cgpa",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Required CGPA",
+   "label": "Required cgpa",
    "options": "Marks / CGPA"
   },
   {
    "fieldname": "required_percentage",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "Required Percentage"
+   "label": "Required percentage"
   },
   {
    "fieldname": "campus",
@@ -126,14 +126,14 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
-   "label": "Academic Year ",
+   "label": "Academic year ",
    "options": "Academic Year",
    "reqd": 1
   },
   {
    "fieldname": "hsc_group",
    "fieldtype": "Table",
-   "label": "HSC Group ",
+   "label": "HSC group ",
    "options": "HSC Groups Mapping"
   },
   {
@@ -144,7 +144,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 11:06:25.168870",
+ "modified": "2026-03-16 11:59:31.861417",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",

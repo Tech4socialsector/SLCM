@@ -27,14 +27,14 @@
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
-   "label": "Admission Cycle",
+   "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
   {
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
+   "label": "Programme",
    "options": "Program",
    "reqd": 1
   },
@@ -48,7 +48,7 @@
   {
    "fieldname": "reservation_category",
    "fieldtype": "Table",
-   "label": "Reservation Category",
+   "label": "Reservation category",
    "options": "Rule Mapping Category",
    "reqd": 1
   },
@@ -62,7 +62,7 @@
    "fieldname": "failure_message",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Failure Message",
+   "label": "Failure message",
    "reqd": 1
   },
   {
@@ -78,7 +78,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 02:06:07.887536",
+ "modified": "2026-03-16 11:54:32.711305",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",

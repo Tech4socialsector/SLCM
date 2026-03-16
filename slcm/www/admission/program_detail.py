@@ -188,25 +188,49 @@ def get_context(context):
         frappe.log_error(str(ex), "prog_detail:faculty")
         context.prog_faculty = []
 
-    # ── Eligibility Rules ─────────────────────────────────────────
-    try:
-        context.eligibility_rules = frappe.get_all(
-            "Eligibility Rule",
-            filters={"is_active": 1},
-            fields=["rule_name", "qualification_level", "rule_type",
-                    "required_cgpa", "required_percentage",
-                    "description"],
-            limit=5
-        ) or []
-    except Exception:
-        context.eligibility_rules = []
-
     # ── Active cycle ──────────────────────────────────────────────
     try:
         context.active_cycle = frappe.get_last_doc(
             "Admission Cycle", filters={"status": "Active"})
+        if context.active_cycle:
+            context.admission_cycle = context.active_cycle.name
+            context.admission_year = context.active_cycle.admission_year
     except Exception:
         context.active_cycle = None
+        context.admission_cycle = None
+        context.admission_year = None
+
+    # ── Eligibility Rules ─────────────────────────────────────────
+    try:
+        rules = []
+        if prog_name and context.active_cycle:
+            mappings = frappe.get_all(
+                "Eligibility Rule Mapping",
+                filters={
+                    "program": prog_name,
+                    "admission_cycle": context.active_cycle.name,
+                    "is_active": 1
+                },
+                fields=["name"]
+            )
+            
+            for mapping in mappings:
+                mapping_doc = frappe.get_doc("Eligibility Rule Mapping", mapping.name)
+                for r_row in mapping_doc.rule:
+                    rule_doc = frappe.get_doc("Eligibility Rule", r_row.rule)
+                    if rule_doc.is_active:
+                        rules.append({
+                            "rule_name": rule_doc.rule_name,
+                            "qualification_level": rule_doc.qualification_level,
+                            "rule_type": rule_doc.rule_type,
+                            "required_cgpa": rule_doc.required_cgpa,
+                            "required_percentage": rule_doc.required_percentage,
+                            "description": rule_doc.description
+                        })
+        context.eligibility_rules = rules
+    except Exception as ex:
+        frappe.log_error(str(ex), "prog_detail:eligibility_rules")
+        context.eligibility_rules = []
 
     # ── Support email ─────────────────────────────────────────────
     try:
@@ -245,5 +269,7 @@ def _set_empty_context(context, slug):
     context.prog_faculty    = []
     context.eligibility_rules = []
     context.active_cycle    = None
+    context.admission_cycle = None
+    context.admission_year  = None
     context.support_email   = "admissions@nlsiu.ac.in"
     context.title           = "Program Not Found"

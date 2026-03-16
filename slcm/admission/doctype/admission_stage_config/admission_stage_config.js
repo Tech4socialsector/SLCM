@@ -1,6 +1,6 @@
 frappe.ui.form.on("Admission Stage Config", {
     refresh: function(frm) {
-        if (frm.doc.is_locked) {
+        if (frm.doc.is_stage_locked) {
             frm.dashboard.set_headline(
                 `<span style="color: red; font-weight: bold;">
                 🔒 Stage Locked - Live Applicants Present
