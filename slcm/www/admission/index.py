@@ -317,7 +317,7 @@ def get_context(context):
     # ── 3. Active Admission Cycle ────────────────────────────────────
     active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
     if active_cycle_name:
-        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name)
+        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name, ignore_permissions=True)
         active_cycle = frappe._dict({
             "name": active_cycle_doc.name,
             "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,

@@ -1,10 +1,11 @@
+{% set ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Admissions{% endblock %} — {{ frappe.get_doc("Website Settings").title or "SLCM" }}</title>
+    <title>{% block title %}Admissions{% endblock %} — {{ ws.title or "SLCM" }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
@@ -528,7 +529,6 @@
     {% endif %}
 
     <nav class="adm-nav">
-        {% set ws = frappe.get_doc("Website Settings") %}
         <a href="/admission" class="adm-nav-brand">
             {% if ws.banner_image %}<img src="{{ ws.banner_image }}" alt="Logo">{% endif %}
             {{ _pc_title or ws.title or "Admissions" }}
@@ -876,11 +876,11 @@
         }
     </style>
 
-    {% set _portal_config = frappe.get_doc("Applicant Portal Config") %}
-    {% set _f_addr = _portal_config.footer_address or '' %}
-    {% set _f_phone = _portal_config.footer_phone or '' %}
-    {% set _f_email = _portal_config.footer_email or _portal_config.contact_email or '' %}
-    {% set _f_title = _portal_config.portal_title or 'Admissions' %}
+    {% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+    {% set _f_addr = (_pc.get('footer_address') if _pc.get else _pc.footer_address) or '' %}
+    {% set _f_phone = (_pc.get('footer_phone') if _pc.get else _pc.footer_phone) or '' %}
+    {% set _f_email = (_pc.get('footer_email') or _pc.get('contact_email')) if _pc.get else (_pc.footer_email or _pc.contact_email) or '' %}
+    {% set _f_title = (_pc.get('portal_title') if _pc.get else _pc.portal_title) or 'Admissions' %}
 
     {# Fetch active programs for the footer using robust SQL #}
     {% set _f_programs = frappe.db.sql("""
