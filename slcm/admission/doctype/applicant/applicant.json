@@ -94,6 +94,7 @@
   "national_test_name",
   "column_break_qiha",
   "percentage",
+  "national_test_certificate",
   "section_break_cris",
   "ug_degree_details_column",
   "ug_degree_details",
@@ -210,7 +211,7 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
-   "label": "Full name",
+   "label": "Candidate's name",
    "reqd": 1
   },
   {
@@ -240,8 +241,9 @@
   },
   {
    "fieldname": "religion",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Religion",
+   "options": "\nHindu\nMuslim\nChristian\nSikh\nBuddhist\nJain\nOther",
    "reqd": 1
   },
   {
@@ -252,10 +254,10 @@
    "reqd": 1
   },
   {
-   "description": "Max 1MB - Supported formats png, jpeg, jpg",
+   "description": "Max 5 MB \u2014 supported formats: png, jpeg, jpg, pdf",
    "fieldname": "id_proof",
    "fieldtype": "Attach Image",
-   "label": "Upload ID proof (Government-issued photo ID)",
+   "label": "ID proof (Govt. issued photo ID)",
    "reqd": 1
   },
   {
@@ -314,32 +316,33 @@
    "reqd": 1
   },
   {
-   "default": "0",
+   "default": "No",
    "fieldname": "guardian_required",
-   "fieldtype": "Check",
-   "label": "If contact details of both parents are not available, would you like to enter the details of a legal guardian?"
+   "fieldtype": "Select",
+   "label": "If contact details of both parents are not available, would you like to enter the details of a legal guardian?",
+   "options": "No\nYes"
   },
   {
-   "depends_on": "eval:doc.guardian_required",
+   "depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "fieldname": "guardian_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Guardian name",
-   "mandatory_depends_on": "eval:doc.guardian_required"
+   "mandatory_depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'"
   },
   {
-   "depends_on": "eval:doc.guardian_required",
+   "depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "fieldname": "guardian_mobile",
    "fieldtype": "Phone",
    "label": "Guardian mobile",
-   "mandatory_depends_on": "eval:doc.guardian_required"
+   "mandatory_depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'"
   },
   {
-   "depends_on": "eval:doc.guardian_required",
+   "depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "fieldname": "guardian_email",
    "fieldtype": "Data",
    "label": "Guardian email",
-   "mandatory_depends_on": "eval:doc.guardian_required",
+   "mandatory_depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "options": "Email"
   },
   {
@@ -356,8 +359,9 @@
   },
   {
    "fieldname": "state",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "State",
+   "options": "State",
    "reqd": 1
   },
   {
@@ -375,7 +379,7 @@
   {
    "fieldname": "class_x_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of completion",
+   "label": "Year of completion (Class X)",
    "reqd": 1
   },
   {
@@ -405,7 +409,7 @@
    "precision": "2"
   },
   {
-   "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_x_marksheet",
    "fieldtype": "Attach",
    "label": "Upload Class X marksheet",
@@ -414,13 +418,13 @@
   {
    "fieldname": "class_xii_name_of_examination",
    "fieldtype": "Data",
-   "label": "Name of Examination (Class XII)",
+   "label": "Name of examination (Class XII/Equivalent \u2014 as per marksheet)",
    "reqd": 1
   },
   {
    "fieldname": "class_xii_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of Completion (Class XII/Equivalent)",
+   "label": "Year of completion (Class XII/Equivalent)",
    "reqd": 1
   },
   {
@@ -436,10 +440,10 @@
    "reqd": 1
   },
   {
-   "description": "Max 2MB - Supported formats png, jpeg, jpg, pdf",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
-   "label": "Class XII Marksheet/Equivalent documents to be uploaded",
+   "label": "Class XII marksheet",
    "reqd": 1
   },
   {
@@ -597,24 +601,24 @@
   {
    "fieldname": "preference_of_test_center_tab",
    "fieldtype": "Tab Break",
-   "label": "Preference of test center"
+   "label": "Preference of test centre"
   },
   {
    "fieldname": "first_preference",
    "fieldtype": "Data",
-   "label": "First Preference",
+   "label": "First preference",
    "reqd": 1
   },
   {
    "fieldname": "second_preference",
    "fieldtype": "Data",
-   "label": "Second Preference",
+   "label": "Second preference",
    "reqd": 1
   },
   {
    "fieldname": "third_preference",
    "fieldtype": "Data",
-   "label": "Third Preference",
+   "label": "Third preference",
    "reqd": 1
   },
   {
@@ -625,7 +629,7 @@
   {
    "fieldname": "source_of_information",
    "fieldtype": "Select",
-   "label": "Where Did You Hear About the Programme?",
+   "label": "Where did you hear about the programme?",
    "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers",
    "reqd": 1
   },
@@ -666,7 +670,7 @@
   {
    "fieldname": "father_details_section",
    "fieldtype": "Section Break",
-   "label": "Father Details"
+   "label": "Father's details"
   },
   {
    "fieldname": "column_break_sddq",
@@ -675,7 +679,7 @@
   {
    "fieldname": "mother_details_section",
    "fieldtype": "Section Break",
-   "label": "Mother Details"
+   "label": "Mother's details"
   },
   {
    "fieldname": "column_break_yojx",
@@ -686,16 +690,18 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval:doc.guardian_required",
+   "depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "fieldname": "guardian_details_section",
    "fieldtype": "Section Break",
    "label": "Guardian Details"
   },
   {
+   "depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "fieldname": "column_break_rbqz",
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "fieldname": "column_break_kdxw",
    "fieldtype": "Column Break"
   },
@@ -842,7 +848,8 @@
   {
    "fieldname": "annual_house_hold_income",
    "fieldtype": "Select",
-   "label": "Annual House Hold Income",
+   "label": "Annual household income (INR)",
+   "options": "0 - 3,00,000\n3,00,001 - 8,00,000\n8,00,001 - 15,00,000\n15,00,001 - 25,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
    "precision": "2",
    "reqd": 1
   },
@@ -877,7 +884,7 @@
   {
    "fieldname": "hsc_percentage",
    "fieldtype": "Percent",
-   "label": "Xll Percentage ",
+   "label": "XII percentage",
    "non_negative": 1,
    "precision": "2",
    "reqd": 1
@@ -885,7 +892,7 @@
   {
    "fieldname": "hsc_group",
    "fieldtype": "Link",
-   "label": "Xll Group ",
+   "label": "XII group",
    "options": "HSC Groups",
    "reqd": 1
   },
@@ -912,6 +919,13 @@
    "fieldname": "percentage",
    "fieldtype": "Percent",
    "label": "Score or percentage",
+   "mandatory_depends_on": "eval:doc.national_test_name"
+  },
+  {
+   "description": "Max 5 MB \u2014 supported formats: png, jpeg, jpg, pdf",
+   "fieldname": "national_test_certificate",
+   "fieldtype": "Attach",
+   "label": "National test certificate",
    "mandatory_depends_on": "eval:doc.national_test_name"
   },
   {
@@ -1087,7 +1101,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-13 15:56:13.952010",
+ "modified": "2026-03-16 17:46:32.068774",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

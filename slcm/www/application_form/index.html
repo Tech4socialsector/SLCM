@@ -593,6 +593,21 @@
         grid-template-columns: 1fr 1fr 1fr;
     }
 
+    /* Parent and Guardian: 3 cols, then 2 on medium, 1 on small */
+    .parent-guardian-grid.cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 900px) {
+        .parent-guardian-grid.cols-3 {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    @media (max-width: 640px) {
+        .parent-guardian-grid.cols-3 {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .form-row.cols-4 {
         grid-template-columns: 1fr 1fr 1fr 1fr;
     }
@@ -650,10 +665,12 @@
         cursor: not-allowed;
     }
 
-    /* Date of birth (Flatpickr): use pointer cursor so it doesn't look disabled on hover */
-    #date_of_birth.flatpickr-input[readonly],
-    .flatpickr .flatpickr-input {
-        cursor: pointer;
+    /* Date of birth: always pointer cursor (readonly is from Flatpickr, not disabled state) */
+    #date_of_birth[readonly],
+    #date_of_birth.flatpickr-input,
+    .flatpickr .flatpickr-input,
+    .flatpickr input.fc {
+        cursor: pointer !important;
     }
 
     .fc.is-error {
@@ -733,7 +750,7 @@
         font-size: .85rem;
         font-weight: 700;
         color: var(--navy);
-        width: 90px;
+        width: 130px;
         outline: none;
         cursor: pointer;
         flex-shrink: 0;
@@ -776,6 +793,12 @@
         cursor: pointer;
         width: 100%;
         height: 100%;
+        z-index: 0;
+    }
+
+    .file-zone-actions {
+        position: relative;
+        z-index: 2;
     }
 
     .file-zone-label {
@@ -800,6 +823,53 @@
     .file-preview.show {
         display: flex;
     }
+
+    .file-zone-actions {
+        position: relative;
+        z-index: 2;
+    }
+    .file-zone-actions:not(.show) {
+        display: none;
+    }
+    .file-zone-actions.show {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .file-zone-actions .btn-download-file,
+    .file-zone-actions .btn-delete-file {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid var(--slate-200);
+        background: var(--white);
+        color: var(--slate-700);
+    }
+
+    .file-zone-actions .btn-download-file:hover {
+        background: var(--navy-light);
+        border-color: var(--navy);
+        color: var(--navy);
+    }
+
+    .file-zone-actions .btn-delete-file {
+        color: var(--red);
+        border-color: var(--red);
+        background: #fff;
+    }
+
+    .file-zone-actions .btn-delete-file:hover {
+        background: var(--red-bg);
+    }
+
+    .pincode-fg { max-width: 140px; }
+    .pincode-input { max-width: 120px; }
 
     /* Photo upload — square preview */
     .photo-upload-area {
@@ -1051,7 +1121,7 @@
 
     /* Attach upload cell inside table */
     .td-attach {
-        min-width: 140px;
+        min-width: 200px;
     }
 
     .attach-cell {
@@ -1103,6 +1173,29 @@
         border: none;
         padding: 0;
         line-height: 1;
+    }
+
+    .btn-attach-download {
+        font-size: .72rem;
+        font-weight: 600;
+        color: var(--red);
+        background: transparent;
+        border: 1px solid var(--red);
+        border-radius: 4px;
+        padding: .25rem .5rem;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .btn-attach-download:hover {
+        background: var(--red);
+        color: #fff;
+    }
+
+    .attach-format-hint {
+        font-size: .65rem;
+        color: var(--slate-500);
+        white-space: nowrap;
     }
 
     .attach-clear:hover {
@@ -1266,7 +1359,6 @@
         font-weight: 700;
         font-size: .82rem;
         color: var(--slate-600);
-        text-transform: uppercase;
         letter-spacing: .06em;
     }
 
@@ -1280,8 +1372,7 @@
     .review-field label {
         font-size: .7rem;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .06em;
+        letter-spacing: .02em;
         color: var(--slate-400);
         display: block;
         margin-bottom: .2rem;
@@ -1905,7 +1996,7 @@
         <div class="progress-steps" id="progressSteps">
             <!-- injected by JS -->
         </div>
-        <div class="progress-pct" id="progressPct">0%</div>
+        <!-- <div class="progress-pct" id="progressPct">0%</div> -->
     </div>
 
     <!-- ═══ Submitted application notice: single banner (no duplicate with formViewOnlyBanner below) ─── -->
@@ -1917,7 +2008,7 @@
 
         <!-- MAIN FORM -->
         <main>
-            <form id="appForm" novalidate>
+            <form id="appForm" class="{% if application_submitted %}application-submitted{% endif %}" novalidate>
                 {% if not application_editable %}
                 <div id="formViewOnlyBanner" style="display:block; margin-bottom:14px; padding:12px 16px; background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; font-size:13px; color:#92400e;">
                     <strong>Application already submitted.</strong> You can view your application but cannot edit it. Current status: <strong>{{ applicant_data.application_status or '—' }}</strong>.
@@ -1935,13 +2026,13 @@
                             </div>
                         </div>
 
-                        <!-- Student Photo: square photo left, label + UPLOAD/DOWNLOAD buttons right (match image) -->
+                        <!-- Student Photo: use label so one click opens file dialog once (no double-open) -->
                         <div class="personal-info-photo-block">
                             <div class="photo-cell">
-                                <div class="photo-upload-area" id="photoUploadArea"
-                                    onclick="document.getElementById('candidatePhoto').click()">
-                                    <input type="file" id="candidatePhoto" name="candidate_photo"
-                                        accept="image/png,image/jpeg,image/jpg" onchange="handlePhotoUpload(this)">
+                                <input type="file" id="candidatePhoto" name="candidate_photo"
+                                    accept="image/png,image/jpeg,image/jpg" onchange="handlePhotoUpload(this)"
+                                    style="position:absolute;left:-9999px;width:0;height:0;opacity:0;pointer-events:none;">
+                                <label for="candidatePhoto" class="photo-upload-area" id="photoUploadArea">
                                     <img id="photoPreview" alt="Photo">
                                     <div class="photo-placeholder" id="photoPlaceholder">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -1951,7 +2042,7 @@
                                         </svg>
                                         <p>Upload<br>Photo</p>
                                     </div>
-                                </div>
+                                </label>
                                 <span class="field-error" id="err_candidate_photo">Student photo is required</span>
                             </div>
                             <div class="photo-label-buttons">
@@ -1967,29 +2058,21 @@
                             </div>
                         </div>
 
-                        <!-- Email full width (readonly in all statuses: draft, submitted, etc.) -->
-                        <div class="form-row cols-1" style="margin-bottom:1.25rem;">
-                            <div class="fg">
-                                <label>Email <span class="req">*</span></label>
-                                <input type="email" class="fc" name="email" id="email"
-                                    value="{{ frappe.session.user if frappe.session.user != 'Guest' else '' }}"
-                                    placeholder="email@example.com" required readonly>
-                                <span class="field-error" id="err_email">Valid email is required</span>
-                            </div>
-                        </div>
+                        <!-- Email is taken from logged-in user; not shown on form per requirement -->
+                        <input type="hidden" name="email" id="email" value="{{ frappe.session.user if frappe.session.user != 'Guest' else '' }}">
 
                         <!-- Three columns: Col1 Candidate's Name, Mobile, Nationality | Col2 DOB, Alternate, Income | Col3 Gender, Religion, ID Proof -->
                         <div class="personal-info-three-cols">
                             <div class="fg">
-                                <label>Full name <span class="req">*</span></label>
+                                <label>Candidate's name <span class="req">*</span></label>
                                 <input type="text" class="fc" name="candidate_name"
                                     placeholder="e.g. Rahul Kumar Sharma" required>
-                                <span class="field-error" id="err_candidate_name">Full name is required</span>
+                                <span class="field-error" id="err_candidate_name">Candidate's Name is required</span>
                             </div>
                             <div class="fg">
                                 <label>Date of birth <span class="req">*</span></label>
                                 <input type="text" class="fc flatpickr" name="date_of_birth" id="date_of_birth"
-                                    placeholder="DD/MM/YYYY" required>
+                                    placeholder="DD/MM/YYYY" required data-date-format="DD/MM/YYYY">
                                 <span class="field-error" id="err_date_of_birth">Date of birth is required (must be
                                     17+)</span>
                             </div>
@@ -2004,10 +2087,10 @@
                                 <span class="field-error" id="err_gender">Gender is required</span>
                             </div>
                             <div class="fg">
-                                <label>Mobile number <span class="req">*</span></label>
+                                <label>Mobile number of candidate <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_mobile_number">
                                     <select class="phone-code" name="mobile_number_cc"
-                                        onchange="onPhoneChange('mobile_number')">
+                                        onchange="onPhoneChange('mobile_number'); applyPhoneMaxLength('mobile_number')">
                                         <option value="+91">🇮🇳 +91</option>
                                         <option value="+1">🇺🇸 +1</option>
                                         <option value="+44">🇬🇧 +44</option>
@@ -2015,17 +2098,17 @@
                                         <option value="+61">🇦🇺 +61</option>
                                     </select>
                                     <input type="tel" class="phone-num phone-num-digits" name="mobile_number_num"
-                                        placeholder="10-digit number" maxlength="15" inputmode="numeric"
-                                        oninput="onPhoneChange('mobile_number')">
+                                        placeholder="10-digit number" maxlength="15" inputmode="numeric" data-phone-field="mobile_number"
+                                        oninput="onPhoneChange('mobile_number'); applyPhoneMaxLengthFromInput(this)">
                                 </div>
                                 <span class="field-error" id="err_mobile_number">Valid 10-digit mobile number
                                     required</span>
                             </div>
                             <div class="fg">
-                                <label>Alternate contact number</label>
+                                <label>Alternate contact number <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_alternate_contact">
                                     <select class="phone-code" name="alternate_contact_cc"
-                                        onchange="onPhoneChange('alternate_contact')">
+                                        onchange="onPhoneChange('alternate_contact'); applyPhoneMaxLength('alternate_contact')">
                                         <option value="+91">🇮🇳 +91</option>
                                         <option value="+1">🇺🇸 +1</option>
                                         <option value="+44">🇬🇧 +44</option>
@@ -2033,13 +2116,13 @@
                                         <option value="+61">🇦🇺 +61</option>
                                     </select>
                                     <input type="tel" class="phone-num phone-num-digits" name="alternate_contact_num"
-                                        placeholder="Alternate number" maxlength="15" inputmode="numeric"
-                                        oninput="onPhoneChange('alternate_contact')">
+                                        placeholder="Alternate number" maxlength="15" inputmode="numeric" data-phone-field="alternate_contact"
+                                        oninput="onPhoneChange('alternate_contact'); applyPhoneMaxLengthFromInput(this)">
                                 </div>
                                 <span class="field-error" id="err_alternate_contact"></span>
                             </div>
                             <div class="fg">
-                                <label>Religion</label>
+                                <label>Religion <span class="req">*</span></label>
                                 <select class="fc" name="religion">
                                     <option value="">Select Religion</option>
                                     <option value="Hindu">Hindu</option>
@@ -2055,8 +2138,11 @@
                                 <label>Nationality <span class="req">*</span></label>
                                 <select class="fc" name="nationality" id="nationality" required>
                                     <option value="">Select Nationality</option>
+                                    <option value="India" selected>🇮🇳 India</option>
                                     {% for n in nationalities %}
+                                    {% if n.name != 'India' %}
                                     <option value="{{ n.name }}">{{ n.name }}</option>
+                                    {% endif %}
                                     {% endfor %}
                                 </select>
                                 <span class="field-error" id="err_nationality">Nationality is required</span>
@@ -2074,19 +2160,24 @@
                                 </select>
                             </div>
                             <div class="fg">
-                                <label>Upload ID proof (Government-issued photo ID, max 5 MB) <span class="req">*</span></label>
+                                <label>ID proof (Govt. issued photo ID, max 5 MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
                                 <div class="id-proof-upload-row">
                                     <input type="file" name="id_proof" id="id_proof"
                                         accept="image/png,image/jpeg,image/jpg,application/pdf"
                                         onchange="handleFileUpload('id_proof', this)"
                                         style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
-                                    <button type="button" class="btn-upload-image"
+                                    <button type="button" class="btn-upload-image" id="id_proof_upload_btn"
                                         onclick="document.getElementById('id_proof').click()">UPLOAD</button>
+                                    <div class="file-zone-actions" id="id_proof_actions">
+                                        <button type="button" class="btn-download-file" onclick="downloadUploadedFile('id_proof')">Download</button>
+                                        <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('id_proof'); return false;" title="Remove file">Delete</button>
+                                    </div>
                                     <span class="id-proof-filename" id="id_proof_name"></span>
                                 </div>
                                 <div class="file-zone" id="fz_id_proof" style="display:none;">
                                     <div class="file-preview" id="fp_id_proof"><span id="fp_id_proof_name"></span></div>
                                 </div>
+                                <span class="field-error" id="err_id_proof"></span>
                             </div>
                         </div>
 
@@ -2184,7 +2275,7 @@
                         </div>
 
                         <div class="section-sub">Father's details</div>
-                        <div class="form-row cols-2">
+                        <div class="form-row cols-3 parent-guardian-grid">
                             <div class="fg"><label>Father's name <span class="req">*</span></label><input type="text" class="fc" name="father_name"
                                     placeholder="Full name"><span class="field-error" id="err_father_name"></span></div>
                             <div class="fg">
@@ -2196,15 +2287,15 @@
                                 <label>Father's mobile number <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_father_mobile">
                                     <select class="phone-code" name="father_mobile_cc"
-                                        onchange="onPhoneChange('father_mobile')">
+                                        onchange="onPhoneChange('father_mobile'); applyPhoneMaxLength('father_mobile')">
                                         <option value="+91">🇮🇳 +91</option>
                                         <option value="+1">🇺🇸 +1</option>
                                         <option value="+44">🇬🇧 +44</option>
                                         <option value="+971">🇦🇪 +971</option>
                                     </select>
                                     <input type="tel" class="phone-num phone-num-digits" name="father_mobile_num"
-                                        placeholder="Mobile number" maxlength="15" inputmode="numeric"
-                                        oninput="onPhoneChange('father_mobile')">
+                                        placeholder="Mobile number" maxlength="15" inputmode="numeric" data-phone-field="father_mobile"
+                                        oninput="onPhoneChange('father_mobile'); applyPhoneMaxLengthFromInput(this)">
                                 </div>
                                 <span class="field-error" id="err_father_mobile"></span>
                             </div>
@@ -2217,7 +2308,7 @@
                         </div>
 
                         <div class="section-sub">Mother's details</div>
-                        <div class="form-row cols-2">
+                        <div class="form-row cols-3 parent-guardian-grid">
                             <div class="fg"><label>Mother's name <span class="req">*</span></label><input type="text" class="fc" name="mother_name"
                                     placeholder="Full name"><span class="field-error" id="err_mother_name"></span></div>
                             <div class="fg">
@@ -2229,15 +2320,15 @@
                                 <label>Mother's mobile number <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_mother_mobile">
                                     <select class="phone-code" name="mother_mobile_cc"
-                                        onchange="onPhoneChange('mother_mobile')">
+                                        onchange="onPhoneChange('mother_mobile'); applyPhoneMaxLength('mother_mobile')">
                                         <option value="+91">🇮🇳 +91</option>
                                         <option value="+1">🇺🇸 +1</option>
                                         <option value="+44">🇬🇧 +44</option>
                                         <option value="+971">🇦🇪 +971</option>
                                     </select>
                                     <input type="tel" class="phone-num phone-num-digits" name="mother_mobile_num"
-                                        placeholder="Mobile number" maxlength="15" inputmode="numeric"
-                                        oninput="onPhoneChange('mother_mobile')">
+                                        placeholder="Mobile number" maxlength="15" inputmode="numeric" data-phone-field="mother_mobile"
+                                        oninput="onPhoneChange('mother_mobile'); applyPhoneMaxLengthFromInput(this)">
                                 </div>
                                 <span class="field-error" id="err_mother_mobile"></span>
                             </div>
@@ -2250,20 +2341,19 @@
                         </div>
 
                         <div class="form-row cols-1" style="margin-top:1rem;">
-                            <label class="toggle-row">
-                                <input type="checkbox" name="guardian_required" id="guardian_required"
-                                    onchange="toggleGuardian(this.checked)" value="1">
-                                <div>
-                                    <div class="toggle-row-label">If contact details of both parents are not available,
-                                        would you like to enter the details of a legal guardian?</div>
-                                    <div class="toggle-row-sub"></div>
-                                </div>
-                            </label>
+                            <div class="fg">
+                                <label>If contact details of both parents are not available, would you like to enter the details of a legal guardian? <span class="req">*</span></label>
+                                <select class="fc" name="guardian_required" id="guardian_required"
+                                    onchange="toggleGuardian(this.value === 'Yes')">
+                                    <option value="No">No</option>
+                                    <option value="Yes">Yes</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div id="guardianSection" style="display:none;">
-                            <div class="section-sub">Guardian Details</div>
-                            <div class="form-row cols-3">
+                            <div class="section-sub">Guardian details</div>
+                            <div class="form-row cols-3 parent-guardian-grid">
                                 <div class="fg">
                                     <label>Guardian name <span class="req" id="gNameReq">*</span></label>
                                     <input type="text" class="fc" name="guardian_name" id="guardian_name"
@@ -2274,15 +2364,15 @@
                                     <label>Guardian mobile <span class="req" id="gMobileReq">*</span></label>
                                     <div class="phone-wrap" id="pw_guardian_mobile">
                                         <select class="phone-code" name="guardian_mobile_cc"
-                                            onchange="onPhoneChange('guardian_mobile')">
+                                            onchange="onPhoneChange('guardian_mobile'); applyPhoneMaxLength('guardian_mobile')">
                                             <option value="+91">🇮🇳 +91</option>
                                             <option value="+1">🇺🇸 +1</option>
                                             <option value="+44">🇬🇧 +44</option>
                                             <option value="+971">🇦🇪 +971</option>
                                         </select>
                                         <input type="tel" class="phone-num phone-num-digits" name="guardian_mobile_num"
-                                            placeholder="Mobile number" maxlength="15" inputmode="numeric"
-                                            oninput="onPhoneChange('guardian_mobile')">
+                                            placeholder="Mobile number" maxlength="15" inputmode="numeric" data-phone-field="guardian_mobile"
+                                            oninput="onPhoneChange('guardian_mobile'); applyPhoneMaxLengthFromInput(this)">
                                     </div>
                                     <span class="field-error" id="err_guardian_mobile">Guardian mobile is
                                         required</span>
@@ -2319,19 +2409,10 @@
                             </div>
                             <div class="fg">
                                 <label>City <span class="req">*</span></label>
-                                <select class="fc" name="city" id="city">
-                                    {% if initial_cities %}
-                                    <option value="">Select City</option>
-                                    {% for c in initial_cities %}
-                                    <option value="{{ c }}">{{ c }}</option>
-                                    {% endfor %}
-                                    {% else %}
-                                    <option value="">Select State first</option>
-                                    {% endif %}
-                                </select>
+                                <input type="text" class="fc" name="city" id="city" placeholder="Enter city">
                                 <span class="field-error" id="err_city"></span>
                             </div>
-                            <div class="fg"><label>Pincode <span class="req">*</span></label><input type="text" class="fc numeric-integer"
+                            <div class="fg pincode-fg"><label>Pincode <span class="req">*</span></label><input type="text" class="fc numeric-integer pincode-input"
                                     name="pincode" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
                                 <span class="field-error" id="err_pincode"></span>
                             </div>
@@ -2368,32 +2449,32 @@
                                 be submitted by <strong>December 31, 2026</strong>.</span>
                         </div>
 
-                        <div class="section-sub">Class X Details</div>
+                        <div class="section-sub">Class X details</div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>Year of completion <span class="req">*</span></label><input type="text"
+                            <div class="fg"><label>Year of completion (Class X) <span class="req">*</span></label><input type="text"
                                     class="fc numeric-integer" name="class_x_year_of_completion" placeholder="e.g. 2018"
                                     maxlength="4"><span class="field-error" id="err_class_x_year_of_completion"></span></div>
-                            <div class="fg"><label>School <span class="req">*</span></label><input type="text" class="fc" name="class_x_school"
+                            <div class="fg"><label>School/College/University (Class X) <span class="req">*</span></label><input type="text" class="fc" name="class_x_school"
                                     placeholder="School name" required><span class="field-error"
                                     id="err_class_x_school">School name is required</span></div>
-                            <div class="fg"><label>Board <span class="req">*</span></label><input type="text"
+                            <div class="fg"><label>Board (Class X) <span class="req">*</span></label><input type="text"
                                     class="fc" name="class_x_board" placeholder="e.g. CBSE, ICSE" required><span
                                     class="field-error" id="err_class_x_board">Board is required</span></div>
                             <div class="fg">
-                                <label>Percentage or CGPA <span class="req">*</span></label>
+                                <label>Percentage/CGPA obtained (Class X) <span class="req">*</span></label>
                                 <input type="text" class="fc numeric-decimal" name="class_x_percentage"
                                     placeholder="e.g. 85.50" inputmode="decimal" required
                                     oninput="validatePercentage(this, 'class_x_percentage')">
                                 <span class="field-error" id="err_class_x_percentage">Valid percentage (0–100) is
                                     required</span>
                             </div>
-                            <div class="fg"><label>Maximum CGPA</label><input type="text"
+                            <div class="fg"><label>If CGPA, maximum CGPA (Class X)</label><input type="text"
                                     class="fc numeric-decimal" name="class_x_cgpa" placeholder="Max CGPA"
                                     inputmode="decimal"></div>
                             <div class="fg">
-                                <label>Upload Class X marksheet <span class="req">*</span></label>
+                                <label>Class X marksheet to be uploaded (Max 5MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
                                 <div class="file-zone">
-                                    <input type="file" name="class_x_marksheet" accept=".pdf,image/png,image/jpeg"
+                                    <input type="file" name="class_x_marksheet" accept=".pdf,image/png,image/jpeg,image/jpg"
                                         onchange="handleFileUpload('class_x_marksheet', this)">
                                     <div class="file-zone-label">Browse or drop <strong>marksheet</strong></div>
                                     <div class="file-preview" id="fp_class_x_marksheet"><svg
@@ -2401,27 +2482,31 @@
                                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M5 13l4 4L19 7" />
                                         </svg><span id="fp_class_x_marksheet_name"></span></div>
+                                    <div class="file-zone-actions" id="class_x_marksheet_actions">
+                                        <button type="button" class="btn-download-file" onclick="downloadUploadedFile('class_x_marksheet')">Download</button>
+                                        <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('class_x_marksheet'); return false;" title="Remove file">Delete</button>
+                                    </div>
                                 </div>
                                 <span class="field-error" id="err_class_x_marksheet"></span>
                             </div>
                         </div>
 
-                        <div class="section-sub">Class XII / Equivalent Details</div>
+                        <div class="section-sub">Class XII/Equivalent details</div>
                         <div class="form-row cols-3">
-                            <div class="fg"><label>Examination name <span class="req">*</span></label><input type="text"
+                            <div class="fg"><label>Name of examination (Class XII/Equivalent - as per marksheet) <span class="req">*</span></label><input type="text"
                                     class="fc" name="class_xii_name_of_examination" placeholder="e.g. AISSCE, ISC"><span class="field-error" id="err_class_xii_name_of_examination"></span></div>
-                            <div class="fg"><label>Year of completion <span class="req">*</span></label><input type="text"
+                            <div class="fg"><label>Year of completion (Class XII/Equivalent) <span class="req">*</span></label><input type="text"
                                     class="fc numeric-integer" name="class_xii_year_of_completion"
                                     placeholder="e.g. 2020" maxlength="4"><span class="field-error" id="err_class_xii_year_of_completion"></span></div>
-                            <div class="fg"><label>Board <span class="req">*</span></label><input type="text" class="fc"
+                            <div class="fg"><label>Board (Class XII/Equivalent) <span class="req">*</span></label><input type="text" class="fc"
                                     name="class_xii_board" placeholder="e.g. CBSE, State Board"><span class="field-error" id="err_class_xii_board"></span></div>
-                            <div class="fg"><label>School <span class="req">*</span></label><input
+                            <div class="fg"><label>School/College/University (Class XII/Equivalent) <span class="req">*</span></label><input
                                     type="text" class="fc" name="class_xii_school" placeholder="School name"><span class="field-error" id="err_class_xii_school"></span></div>
 
                             <div class="fg">
-                                <label>Upload Class XII marksheet <span class="req">*</span></label>
+                                <label>Class XII marksheet/Equivalent documents to be uploaded (Max 5MB — supported formats: jpg, jpeg, png, pdf) <span class="req">*</span></label>
                                 <div class="file-zone">
-                                    <input type="file" name="class_xii_marksheet" accept=".pdf,image/png,image/jpeg"
+                                    <input type="file" name="class_xii_marksheet" accept=".pdf,image/png,image/jpeg,image/jpg"
                                         onchange="handleFileUpload('class_xii_marksheet', this)">
                                     <div class="file-zone-label">Browse or drop <strong>marksheet</strong></div>
                                     <div class="file-preview" id="fp_class_xii_marksheet"><svg
@@ -2429,17 +2514,17 @@
                                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M5 13l4 4L19 7" />
                                         </svg><span id="fp_class_xii_marksheet_name"></span></div>
+                                    <div class="file-zone-actions" id="class_xii_marksheet_actions">
+                                        <button type="button" class="btn-download-file" onclick="downloadUploadedFile('class_xii_marksheet')">Download</button>
+                                        <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('class_xii_marksheet'); return false;" title="Remove file">Delete</button>
+                                    </div>
                                 </div>
                                 <span class="field-error" id="err_class_xii_marksheet"></span>
                             </div>
-                        </div>
-
-                        <div class="section-sub">HSC Details</div>
-                        <div class="form-row cols-2">
                             <div class="fg">
-                                <label>HSC group <span class="req">*</span></label>
+                                <label>XII group <span class="req">*</span></label>
                                 <select class="fc" name="hsc_group" id="hsc_group" onchange="collectFormData()">
-                                    <option value="">Select HSC Group</option>
+                                    <option value="">Select XII Group</option>
                                     {% for g in hsc_groups %}
                                     <option value="{{ g.name }}">{{ g.name }}</option>
                                     {% endfor %}
@@ -2447,11 +2532,11 @@
                                 <span class="field-error" id="err_hsc_group"></span>
                             </div>
                             <div class="fg">
-                                <label>HSC percentage <span class="req">*</span></label>
+                                <label>XII percentage <span class="req">*</span></label>
                                 <input type="text" class="fc numeric-decimal" name="hsc_percentage" id="hsc_percentage"
                                     inputmode="decimal" placeholder="e.g. 75.00" min="0" max="100" step="0.01"
                                     oninput="validateHSCPercentage(this)" onblur="collectFormData()">
-                                <span class="field-error" id="err_hsc_percentage">HSC percentage must be between 35 and
+                                <span class="field-error" id="err_hsc_percentage">XII percentage must be between 35 and
                                     100</span>
                             </div>
                         </div>
@@ -2472,16 +2557,15 @@
                                 </div>
                             </div>
                             <div class="dt-wrap" style="overflow-x:auto;">
-                                <table style="min-width:900px;">
+                                <table class="degree-table" style="min-width:1000px;">
                                     <thead>
                                         <tr>
-                                            <th style="min-width:160px;">Name of Degree (UG) <span
-                                                    style="color:var(--red)">*</span></th>
-                                            <th style="min-width:150px;">College / University</th>
-                                            <th style="min-width:100px;">Year of Completion</th>
-                                            <th style="min-width:120px;">CGPA Obtained</th>
-                                            <th style="min-width:170px;">UG Degree Certificate / Bonafide</th>
-                                            <th style="min-width:160px;">Transcripts / Marksheets</th>
+                                            <th style="min-width:160px;">Name of degree (UG) <span class="req">*</span></th>
+                                            <th style="min-width:160px;">College / University <span class="req">*</span></th>
+                                            <th style="min-width:100px;">Year of completion <span class="req">*</span></th>
+                                            <th style="min-width:110px;">CGPA obtained <span class="req">*</span></th>
+                                            <th style="min-width:220px;">UG degree certificate / Bonafide <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Max 5MB — png, jpeg, jpg, pdf</small></th>
+                                            <th style="min-width:220px;">Transcripts / Marksheets <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Max 5MB — png, jpeg, jpg, pdf</small></th>
                                             <th class="th-del"></th>
                                         </tr>
                                     </thead>
@@ -2522,21 +2606,41 @@
                                 <span class="field-error" id="err_percentage">Score or percentage is required when National test is selected</span>
                             </div>
                         </div>
+                        <div class="form-row cols-1" id="national_test_certificate_row" style="display:none;">
+                            <div class="fg">
+                                <label>National test certificate (max 5 MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
+                                <div class="file-zone">
+                                    <input type="file" name="national_test_certificate" id="national_test_certificate"
+                                        accept=".pdf,image/png,image/jpeg,image/jpg"
+                                        onchange="handleFileUpload('national_test_certificate', this)">
+                                    <div class="file-zone-label">Browse or drop <strong>national test certificate</strong></div>
+                                    <div class="file-preview" id="fp_national_test_certificate"><svg
+                                            xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M5 13l4 4L19 7" />
+                                        </svg><span id="fp_national_test_certificate_name"></span></div>
+                                    <div class="file-zone-actions" id="national_test_certificate_actions">
+                                        <button type="button" class="btn-download-file" onclick="downloadUploadedFile('national_test_certificate')">Download</button>
+                                        <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('national_test_certificate'); return false;" title="Remove file">Delete</button>
+                                    </div>
+                                </div>
+                                <span class="field-error" id="err_national_test_certificate"></span>
+                            </div>
+                        </div>
 
                         <!-- PG Degree — shown for Research Course only -->
                         <div id="pgSection" style="display:none;">
                             <div class="section-sub">PG Degree Details</div>
                             <div class="dt-wrap" style="overflow-x:auto;">
-                                <table style="min-width:900px;">
+                                <table class="degree-table" style="min-width:1000px;">
                                     <thead>
                                         <tr>
-                                            <th style="min-width:160px;">Name of Degree (PG) <span
-                                                    style="color:var(--red)">*</span></th>
-                                            <th style="min-width:150px;">College / University</th>
-                                            <th style="min-width:100px;">Year of Completion</th>
-                                            <th style="min-width:120px;">CGPA Obtained</th>
-                                            <th style="min-width:170px;">PG Degree Certificate / Bonafide</th>
-                                            <th style="min-width:160px;">Transcripts / Marksheets</th>
+                                            <th style="min-width:160px;">Name of degree (PG) <span class="req">*</span></th>
+                                            <th style="min-width:160px;">College / University <span class="req">*</span></th>
+                                            <th style="min-width:100px;">Year of completion <span class="req">*</span></th>
+                                            <th style="min-width:110px;">CGPA obtained <span class="req">*</span></th>
+                                            <th style="min-width:220px;">PG degree certificate / Bonafide <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Max 5MB — png, jpeg, jpg, pdf</small></th>
+                                            <th style="min-width:220px;">Transcripts / Marksheets <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Max 5MB — png, jpeg, jpg, pdf</small></th>
                                             <th class="th-del"></th>
                                         </tr>
                                     </thead>
@@ -2569,17 +2673,21 @@
                                     </select>
                                 </div>
                                 <div class="fg">
-                                    <label>Upload PhD proposal</label>
+                                    <label>PhD proposal (Max 5MB — supported formats: jpg, jpeg, png, pdf)</label>
                                     <div class="file-zone">
-                                        <input type="file" name="phd_proposal" accept=".pdf,.doc,.docx"
+                                        <input type="file" name="phd_proposal" accept=".pdf,.jpg,.jpeg,image/png,image/jpeg,image/jpg,application/pdf"
                                             onchange="handleFileUpload('phd_proposal', this)">
-                                        <div class="file-zone-label">Upload <strong>PhD Proposal</strong> (PDF/DOC)
+                                        <div class="file-zone-label">Upload <strong>PhD proposal</strong> (jpg, jpeg, png, pdf)
                                         </div>
                                         <div class="file-preview" id="fp_phd_proposal"><svg
                                                 xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path d="M5 13l4 4L19 7" />
                                             </svg><span id="fp_phd_proposal_name"></span></div>
+                                        <div class="file-zone-actions" id="phd_proposal_actions">
+                                            <button type="button" class="btn-download-file" onclick="downloadUploadedFile('phd_proposal')">Download</button>
+                                            <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('phd_proposal'); return false;" title="Remove file">Delete</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2592,24 +2700,13 @@
                         </div>
 
                         <!-- Others -->
-                        <div class="section-sub">Other Degrees</div>
+                        <div class="section-sub">Do you have any other degrees?</div>
                         <div class="form-row cols-1">
                             <div class="fg">
-                                <label>Do you have any other degrees?</label>
-                                <select class="fc" name="other_degree" onchange="toggleOtherDegree(this.value)">
-                                    <option value="">Select</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="No">No</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="otherDegreeSection" style="display:none;">
-                            <div class="fg">
-                                <label>Please specify the names of all other degrees <span class="req">*</span></label>
-                                <textarea class="fc" name="other_degree_details" id="other_degree_details"
-                                    placeholder="List all other degrees" rows="2"></textarea>
-                                <span class="field-error" id="err_other_degree_details">Please specify your other
-                                    degrees</span>
+                                <label>Specify any other degrees (if applicable)</label>
+                                <input type="text" class="fc" name="other_degree_details" id="other_degree_details"
+                                    placeholder="e.g. Diploma, Certificate course">
+                                <span class="field-error" id="err_other_degree_details"></span>
                             </div>
                         </div>
 
@@ -2679,10 +2776,10 @@
                             </div>
                         </div>
 
-                        <div class="section-sub">Reservation category</div>
+                        <div class="section-sub">Whether SC/ST/OBC-NCL</div>
                         <div class="form-row cols-1" style="margin-bottom:1rem;">
                             <div class="fg">
-                                <label>Reservation category</label>
+                                <label>Whether SC/ST/OBC-NCL</label>
                                 <select class="fc" name="whether_scstobc_ncl" id="reservation_category"
                                     onchange="toggleReservationCategory(this.value)">
                                     <option value="">Select one</option>
@@ -2697,16 +2794,20 @@
                         <!-- Caste Certificate — shown if SC/ST/OBC/OBC-NCL selected -->
                         <div id="casteCertSection" style="display:none;">
                             <div class="fg" style="margin-bottom:1.25rem;">
-                                <label>Upload caste certificate <span class="req">*</span></label>
+                                <label>Caste certificate (Max 5MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
                                 <div class="file-zone">
-                                    <input type="file" name="caste_certificate" accept=".pdf,image/png,image/jpeg"
+                                    <input type="file" name="caste_certificate" accept=".pdf,image/png,image/jpeg,image/jpg"
                                         onchange="handleFileUpload('caste_certificate', this)">
-                                    <div class="file-zone-label">Upload your <strong>Caste Certificate</strong></div>
+                                    <div class="file-zone-label">Upload your <strong>caste certificate</strong></div>
                                     <div class="file-preview" id="fp_caste_certificate"><svg
                                             xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M5 13l4 4L19 7" />
                                         </svg><span id="fp_caste_certificate_name"></span></div>
+                                    <div class="file-zone-actions" id="caste_certificate_actions">
+                                        <button type="button" class="btn-download-file" onclick="downloadUploadedFile('caste_certificate')">Download</button>
+                                        <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('caste_certificate'); return false;" title="Remove file">Delete</button>
+                                    </div>
                                 </div>
                                 <span class="field-error" id="err_caste_certificate">Caste certificate is required for
                                     this category</span>
@@ -2728,17 +2829,20 @@
                             </div>
                             <div id="ewsCertSection" style="display:none;margin-bottom:1.25rem;">
                                 <div class="fg">
-                                    <label>Upload EWS certificate <span class="req">*</span> <span class="hint">Max 5 MB —
-                                            PDF/PNG/JPG</span></label>
+                                    <label>EWS certificate (Max 5MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
                                     <div class="file-zone">
-                                        <input type="file" name="ews_certificate" accept=".pdf,image/png,image/jpeg"
+                                        <input type="file" name="ews_certificate" accept=".pdf,image/png,image/jpeg,image/jpg"
                                             onchange="handleFileUpload('ews_certificate', this)">
-                                        <div class="file-zone-label">Upload your <strong>EWS Certificate</strong></div>
+                                        <div class="file-zone-label">Upload your <strong>EWS certificate</strong></div>
                                         <div class="file-preview" id="fp_ews_certificate"><svg
                                                 xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path d="M5 13l4 4L19 7" />
                                             </svg><span id="fp_ews_certificate_name"></span></div>
+                                        <div class="file-zone-actions" id="ews_certificate_actions">
+                                            <button type="button" class="btn-download-file" onclick="downloadUploadedFile('ews_certificate')">Download</button>
+                                            <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('ews_certificate'); return false;" title="Remove file">Delete</button>
+                                        </div>
                                     </div>
                                     <span class="field-error" id="err_ews_certificate">EWS certificate is
                                         required</span>
@@ -2786,16 +2890,20 @@
                                 </div>
                             </div>
                             <div class="fg" style="margin-top:1rem;">
-                                <label>Upload PWD certificate <span class="req">*</span></label>
+                                <label>PWD certificate (Max 5MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
                                 <div class="file-zone">
-                                    <input type="file" name="pwd_certificate" accept=".pdf,image/png,image/jpeg"
+                                    <input type="file" name="pwd_certificate" accept=".pdf,image/png,image/jpeg,image/jpg"
                                         onchange="handleFileUpload('pwd_certificate', this)">
-                                    <div class="file-zone-label">Upload your <strong>PWD Certificate</strong></div>
+                                    <div class="file-zone-label">Upload your <strong>PWD certificate</strong></div>
                                     <div class="file-preview" id="fp_pwd_certificate"><svg
                                             xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M5 13l4 4L19 7" />
                                         </svg><span id="fp_pwd_certificate_name"></span></div>
+                                    <div class="file-zone-actions" id="pwd_certificate_actions">
+                                        <button type="button" class="btn-download-file" onclick="downloadUploadedFile('pwd_certificate')">Download</button>
+                                        <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('pwd_certificate'); return false;" title="Remove file">Delete</button>
+                                    </div>
                                 </div>
                                 <span class="field-error" id="err_pwd_certificate">PWD certificate is required</span>
                             </div>
@@ -2831,13 +2939,17 @@
                                         <div class="file-zone"><input type="file" name="ka_study_7yrs_certificate"
                                                 accept="image/png,image/jpeg,image/jpg"
                                                 onchange="handleFileUpload('ka_study_7yrs_certificate', this)">
-                                            <div class="file-zone-label">Upload <strong>certificate</strong></div>
+                                            <div class="file-zone-label">Upload <strong>certificate</strong> (Max 5MB — png, jpeg, jpg)</div>
                                             <div class="file-preview" id="fp_ka_study_7yrs_certificate"><svg
                                                     xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                                     stroke-width="2">
                                                     <path d="M5 13l4 4L19 7" />
                                                 </svg><span id="fp_ka_study_7yrs_certificate_name"></span></div>
+                                            <div class="file-zone-actions" id="ka_study_7yrs_certificate_actions">
+                                                <button type="button" class="btn-download-file" onclick="downloadUploadedFile('ka_study_7yrs_certificate')">Download</button>
+                                                <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('ka_study_7yrs_certificate'); return false;" title="Remove file">Delete</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2846,8 +2958,8 @@
                                     <input type="checkbox" name="ka_defence_child" id="ka_defence_child" value="1"
                                         onchange="toggleKACertField('ka_defence_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of defence personnel/ex-serviceman
-                                            (Karnataka domicile)</div>
+                                        <div class="toggle-row-label">
+                                            Child of defence personnel/ex-serviceman, who at the time of joining service, has declared their hometown to be in the State of Karnataka, and who have served or are serving outside Karnataka, corresponding to the candidate’s years of study outside Karnataka</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_defence_child" style="display:none;padding-left:1.5rem;">
@@ -2855,13 +2967,17 @@
                                         <div class="file-zone"><input type="file" name="ka_defence_child_certificate"
                                                 accept="image/png,image/jpeg,image/jpg"
                                                 onchange="handleFileUpload('ka_defence_child_certificate', this)">
-                                            <div class="file-zone-label">Upload <strong>certificate</strong></div>
+                                            <div class="file-zone-label">Upload <strong>certificate</strong> (Max 5MB — png, jpeg, jpg)</div>
                                             <div class="file-preview" id="fp_ka_defence_child_certificate"><svg
                                                     xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                                     stroke-width="2">
                                                     <path d="M5 13l4 4L19 7" />
                                                 </svg><span id="fp_ka_defence_child_certificate_name"></span></div>
+                                            <div class="file-zone-actions" id="ka_defence_child_certificate_actions">
+                                                <button type="button" class="btn-download-file" onclick="downloadUploadedFile('ka_defence_child_certificate')">Download</button>
+                                                <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('ka_defence_child_certificate'); return false;" title="Remove file">Delete</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2870,8 +2986,8 @@
                                     <input type="checkbox" name="ka_govt_child" id="ka_govt_child" value="1"
                                         onchange="toggleKACertField('ka_govt_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of an employee of the Karnataka State
-                                            Government (serving or retired)</div>
+                                        <div class="toggle-row-label">
+                                            Child of an employee of the Karnataka State Government who has served or are serving outside Karnataka corresponding to the candidate's years of study outside Karnataka.</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_govt_child" style="display:none;padding-left:1.5rem;">
@@ -2879,13 +2995,17 @@
                                         <div class="file-zone"><input type="file" name="ka_govt_child_certificate"
                                                 accept="image/png,image/jpeg,image/jpg"
                                                 onchange="handleFileUpload('ka_govt_child_certificate', this)">
-                                            <div class="file-zone-label">Upload <strong>certificate</strong></div>
+                                            <div class="file-zone-label">Upload <strong>certificate</strong> (Max 5MB — png, jpeg, jpg)</div>
                                             <div class="file-preview" id="fp_ka_govt_child_certificate"><svg
                                                     xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                                     stroke-width="2">
                                                     <path d="M5 13l4 4L19 7" />
                                                 </svg><span id="fp_ka_govt_child_certificate_name"></span></div>
+                                            <div class="file-zone-actions" id="ka_govt_child_certificate_actions">
+                                                <button type="button" class="btn-download-file" onclick="downloadUploadedFile('ka_govt_child_certificate')">Download</button>
+                                                <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('ka_govt_child_certificate'); return false;" title="Remove file">Delete</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2894,8 +3014,8 @@
                                     <input type="checkbox" name="ka_ais_child" id="ka_ais_child" value="1"
                                         onchange="toggleKACertField('ka_ais_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of a serving or retired employee belonging
-                                            to the Karnataka cadre of the All India Services (IAS/IFS/IPS)</div>
+                                        <div class="toggle-row-label">
+                                            Child of a serving or retired employee belonging to the Karnataka cadre of the All India Services (IAS/IFS/IPS), who has served or is serving outside Karnataka corresponding to the candidate's years of study outside Karnataka</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_ais_child" style="display:none;padding-left:1.5rem;">
@@ -2903,13 +3023,17 @@
                                         <div class="file-zone"><input type="file" name="ka_ais_child_certificate"
                                                 accept="image/png,image/jpeg,image/jpg"
                                                 onchange="handleFileUpload('ka_ais_child_certificate', this)">
-                                            <div class="file-zone-label">Upload <strong>certificate</strong></div>
+                                            <div class="file-zone-label">Upload <strong>certificate</strong> (Max 5MB — png, jpeg, jpg)</div>
                                             <div class="file-preview" id="fp_ka_ais_child_certificate"><svg
                                                     xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                                     stroke-width="2">
                                                     <path d="M5 13l4 4L19 7" />
                                                 </svg><span id="fp_ka_ais_child_certificate_name"></span></div>
+                                            <div class="file-zone-actions" id="ka_ais_child_certificate_actions">
+                                                <button type="button" class="btn-download-file" onclick="downloadUploadedFile('ka_ais_child_certificate')">Download</button>
+                                                <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('ka_ais_child_certificate'); return false;" title="Remove file">Delete</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2918,8 +3042,7 @@
                                     <input type="checkbox" name="ka_capf_child" id="ka_capf_child" value="1"
                                         onchange="toggleKACertField('ka_capf_child', this.checked)">
                                     <div>
-                                        <div class="toggle-row-label">Child of a working or retired employee in the
-                                            Central Armed Police Force service (Karnataka domicile)</div>
+                                        <div class="toggle-row-label">Child of a working or retired employee in the Central Armed Police Force service, who upon joining service declared their hometown to be in the State of Karnataka, and who has served or is serving outside Karnataka, corresponding to the candidate's years of study outside Karnataka</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_capf_child" style="display:none;padding-left:1.5rem;">
@@ -2927,13 +3050,17 @@
                                         <div class="file-zone"><input type="file" name="ka_capf_child_certificate"
                                                 accept="image/png,image/jpeg,image/jpg"
                                                 onchange="handleFileUpload('ka_capf_child_certificate', this)">
-                                            <div class="file-zone-label">Upload <strong>certificate</strong></div>
+                                            <div class="file-zone-label">Upload <strong>certificate</strong> (Max 5MB — png, jpeg, jpg)</div>
                                             <div class="file-preview" id="fp_ka_capf_child_certificate"><svg
                                                     xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                                     stroke-width="2">
                                                     <path d="M5 13l4 4L19 7" />
                                                 </svg><span id="fp_ka_capf_child_certificate_name"></span></div>
+                                            <div class="file-zone-actions" id="ka_capf_child_certificate_actions">
+                                                <button type="button" class="btn-download-file" onclick="downloadUploadedFile('ka_capf_child_certificate')">Download</button>
+                                                <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('ka_capf_child_certificate'); return false;" title="Remove file">Delete</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2956,7 +3083,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2>Preference of Test Centre</h2>
+                                <h2>Preference of test centre</h2>
                                 <p>Indicate your preferred test centre locations in priority order</p>
                             </div>
                         </div>
@@ -2983,7 +3110,7 @@
                                 <span class="field-error" id="err_first_preference">First preference is required</span>
                             </div>
                             <div class="fg">
-                                <label>Second preference</label>
+                                <label>Second preference <span class="req">*</span></label>
                                 <select class="fc" name="second_preference" id="second_preference"
                                     onchange="validatePreferences()">
                                     <option value="">Select provider</option>
@@ -2994,7 +3121,7 @@
                                 <span class="field-error" id="err_second_preference">Preferences must be unique</span>
                             </div>
                             <div class="fg">
-                                <label>Third preference</label>
+                                <label>Third preference <span class="req">*</span></label>
                                 <select class="fc" name="third_preference" id="third_preference"
                                     onchange="validatePreferences()">
                                     <option value="">Select provider</option>
@@ -3026,7 +3153,7 @@
                         </div>
                         <div class="form-row cols-2">
                             <div class="fg">
-                                <label>How did you hear about the programme? <span class="req">*</span></label>
+                                <label>Where did you hear about the programme? <span class="req">*</span></label>
                                 <select class="fc" name="source_of_information" required
                                     onchange="togglePleaseSpecify(this.value)">
                                     <option value="">Select Source</option>
@@ -3054,9 +3181,9 @@
 
                         <div class="form-row cols-1" style="margin-top:.5rem;">
                             <div class="fg">
-                                <label>Curriculum vitae (CV) <span class="req">*</span></label>
+                                <label>Curriculum vitae (CV) (Max 5MB — supported formats: jpg, jpeg, png, pdf) <span class="req">*</span></label>
                                 <div class="file-zone">
-                                    <input type="file" name="cv" accept=".pdf,.doc,.docx"
+                                    <input type="file" name="cv" accept=".pdf,.jpg,.jpeg,image/png,image/jpeg,image/jpg,application/pdf"
                                         onchange="handleFileUpload('cv', this)">
                                     <div class="file-zone-label">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
@@ -3072,7 +3199,12 @@
                                             stroke-width="2">
                                             <path d="M5 13l4 4L19 7" />
                                         </svg><span id="fp_cv_name"></span></div>
+                                    <div class="file-zone-actions" id="cv_actions">
+                                        <button type="button" class="btn-download-file" onclick="downloadUploadedFile('cv')">Download</button>
+                                        <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('cv'); return false;" title="Remove file">Delete</button>
+                                    </div>
                                 </div>
+                                <span class="field-error" id="err_cv">Curriculum vitae (CV) is required</span>
                             </div>
                         </div>
 
@@ -3099,7 +3231,8 @@
                                     style="width:18px;height:18px;margin-top:.2rem;accent-color:var(--navy);flex-shrink:0;"
                                     onchange="onDeclarationChange(this)">
                                 <span style="font-size:.88rem;line-height:1.7;color:var(--slate-700);">
-                                    I declare that the information provided is true. Providing false information may lead to disqualification.
+                                    
+I hereby undertake that the information and documents furnished by me are true to the best of my knowledge and belief. I acknowledge that the submission of incorrect or false information/documents shall result in my disqualification. I acknowledge that my admission is contingent upon my meeting the eligibility criteria.
                                 </span>
                             </label>
                         </div>
@@ -3109,10 +3242,13 @@
                                 <input type="checkbox" name="consent_third_party" id="consent_third_party"
                                     style="width:18px;height:18px;margin-top:.2rem;accent-color:var(--navy);flex-shrink:0;">
                                 <span style="font-size:.85rem;line-height:1.7;color:var(--slate-600);">
-                                    I consent to sharing my details with authorised partners. The application fee is non-refundable.
+                                    I consent to my details being shared with third party affiliates.
                                 </span>
                             </label>
                         </div>
+                    <div>
+                        Please Note: The Application Fee is non-refundable.
+                    </div>
                         <span class="field-error" id="err_declaration" style="margin-top:.5rem;">You must accept the
                             Declaration before submission</span>
                     </div>
@@ -3273,6 +3409,62 @@
     // ═══════════════════════════════════════════════════════
     //  MASTER DATA FROM SERVER
     // ═══════════════════════════════════════════════════════
+    const COUNTRY_FLAGS = {
+        'India': '\uD83C\uDDEE\uD83C\uDDF3', 'United States': '\uD83C\uDDFA\uD83C\uDDF8', 'United Kingdom': '\uD83C\uDDEC\uD83C\uDDE7',
+        'Pakistan': '\uD83C\uDDF5\uD83C\uDDF0', 'Bangladesh': '\uD83C\uDDE7\uD83C\uDDE9', 'Nepal': '\uD83C\uDDF3\uD83C\uDDF5',
+        'Sri Lanka': '\uD83C\uDDF1\uD83C\uDDF0', 'China': '\uD83C\uDDE8\uD83C\uDDF3', 'Japan': '\uD83C\uDDEF\uD83C\uDDF5',
+        'Australia': '\uD83C\uDDE6\uD83C\uDDFA', 'Canada': '\uD83C\uDDE8\uD83C\uDDE6', 'Germany': '\uD83C\uDDE9\uD83C\uDDEA',
+        'France': '\uD83C\uDDEB\uD83C\uDDF7', 'Italy': '\uD83C\uDDEE\uD83C\uDDF9', 'Spain': '\uD83C\uDDEA\uD83C\uDDF8',
+        'Russia': '\uD83C\uDDF7\uD83C\uDDFA', 'South Africa': '\uD83C\uDDFF\uD83C\uDDE6', 'Nigeria': '\uD83C\uDDF3\uD83C\uDDEC',
+        'Kenya': '\uD83C\uDDF0\uD83C\uDDEA', 'Egypt': '\uD83C\uDDEA\uD83C\uDDF8', 'Saudi Arabia': '\uD83C\uDDF8\uD83C\uDDE6',
+        'United Arab Emirates': '\uD83C\uDDE6\uD83C\uDDEA', 'UAE': '\uD83C\uDDE6\uD83C\uDDEA', 'Qatar': '\uD83C\uDDF6\uD83C\uDDE6',
+        'Singapore': '\uD83C\uDDF8\uD83C\uDDEC', 'Malaysia': '\uD83C\uDDF2\uD83C\uDDFE', 'Indonesia': '\uD83C\uDDEE\uD83C\uDDE9',
+        'Thailand': '\uD83C\uDDF9\uD83C\uDDED', 'Vietnam': '\uD83C\uDDFB\uD83C\uDDF3', 'Philippines': '\uD83C\uDDF5\uD83C\uDDED',
+        'South Korea': '\uD83C\uDDF0\uD83C\uDDF7', 'Afghanistan': '\uD83C\uDDE6\uD83C\uDDEB', 'Iran': '\uD83C\uDDEE\uD83C\uDDF7',
+        'Iraq': '\uD83C\uDDEE\uD83C\uDDF6', 'Israel': '\uD83C\uDDEE\uD83C\uDDF1', 'Jordan': '\uD83C\uDDEF\uD83C\uDDF4',
+        'Lebanon': '\uD83C\uDDF1\uD83C\uDDE7', 'Turkey': '\uD83C\uDDF9\uD83C\uDDF7', 'Ireland': '\uD83C\uDDEE\uD83C\uDDEA',
+        'Netherlands': '\uD83C\uDDF3\uD83C\uDDF1', 'Belgium': '\uD83C\uDDE7\uD83C\uDDEA', 'Switzerland': '\uD83C\uDDE8\uD83C\uDDFD',
+        'Austria': '\uD83C\uDDE6\uD83C\uDDF9', 'Sweden': '\uD83C\uDDF8\uD83C\uDDEA', 'Norway': '\uD83C\uDDF3\uD83C\uDDF4',
+        'Denmark': '\uD83C\uDDE9\uD83C\uDDF0', 'Finland': '\uD83C\uDDEB\uD83C\uDDEE', 'Poland': '\uD83C\uDDF5\uD83C\uDDF1',
+        'Ukraine': '\uD83C\uDDFA\uD83C\uDDE6', 'Brazil': '\uD83C\uDDE7\uD83C\uDDF7', 'Mexico': '\uD83C\uDDF2\uD83C\uDDFD',
+        'Argentina': '\uD83C\uDDE6\uD83C\uDDF7', 'Chile': '\uD83C\uDDE8\uD83C\uDDF1', 'Colombia': '\uD83C\uDDE8\uD83C\uDDF4',
+        'New Zealand': '\uD83C\uDDF3\uD83C\uDDFF', 'Hong Kong': '\uD83C\uDDED\uD83C\uDDF0', 'Taiwan': '\uD83C\uDDF9\uD83C\uDDFC',
+        'Myanmar': '\uD83C\uDDF2\uD83C\uDDF2', 'Bhutan': '\uD83C\uDDE7\uD83C\uDDF9', 'Maldives': '\uD83C\uDDF2\uD83C\uDDFB',
+        'Oman': '\uD83C\uDDF4\uD83C\uDDF2', 'Kuwait': '\uD83C\uDDF0\uD83C\uDDFC', 'Bahrain': '\uD83C\uDDE7\uD83C\uDDED',
+        'Yemen': '\uD83C\uDDFE\uD83C\uDDEA', 'Ethiopia': '\uD83C\uDDEA\uD83C\uDDF9', 'Ghana': '\uD83C\uDDEC\uD83C\uDDED',
+        'Morocco': '\uD83C\uDDF2\uD83C\uDDE6', 'Tanzania': '\uD83C\uDDF9\uD83C\uDDEF', 'Uganda': '\uD83C\uDDFA\uD83C\uDDFF',
+        'Belize': '\uD83C\uDDE7\uD83C\uDDFF', 'Benin': '\uD83C\uDDE7\uD83C\uDDEF', 'Bermuda': '\uD83C\uDDE7\uD83C\uDDF2',
+        'Bolivia': '\uD83C\uDDE7\uD83C\uDDF4', 'Botswana': '\uD83C\uDDE7\uD83C\uDDFC', 'Brunei Darussalam': '\uD83C\uDDE7\uD83C\uDDF3',
+        'Brunei': '\uD83C\uDDE7\uD83C\uDDF3', 'Bulgaria': '\uD83C\uDDE7\uD83C\uDDEC', 'Burkina Faso': '\uD83C\uDDE7\uD83C\uDDEB',
+        'Burundi': '\uD83C\uDDE7\uD83C\uDDEA', 'Cambodia': '\uD83C\uDDF0\uD83C\uDDED', 'Cameroon': '\uD83C\uDDE8\uD83C\uDDF2',
+        'Bouvet Island': '\uD83C\uDDE7\uD83C\uDDFB', 'British Indian Ocean Territory': '\uD83C\uDDEE\uD83C\uDDF4',
+        'Costa Rica': '\uD83C\uDDE8\uD83C\uDDF7', 'Croatia': '\uD83C\uDDE8\uD83C\uDDF7', 'Cuba': '\uD83C\uDDE8\uD83C\uDDFA',
+        'Cyprus': '\uD83C\uDDE8\uD83C\uDDFE', 'Czech Republic': '\uD83C\uDDE8\uD83C\uDDFF', 'Czechia': '\uD83C\uDDE8\uD83C\uDDFF',
+        'Democratic Republic of the Congo': '\uD83C\uDDE8\uD83C\uDDE9', 'Ecuador': '\uD83C\uDDEA\uD83C\uDDE8',
+        'Estonia': '\uD83C\uDDEA\uD83C\uDDEA', 'Fiji': '\uD83C\uDDEB\uD83C\uDDEF', 'Gabon': '\uD83C\uDDEC\uD83C\uDDE6',
+        'Gambia': '\uD83C\uDDEC\uD83C\uDDF2', 'Georgia': '\uD83C\uDDEC\uD83C\uDDEA', 'Greece': '\uD83C\uDDEC\uD83C\uDDF7',
+        'Hungary': '\uD83C\uDDED\uD83C\uDDFA', 'Iceland': '\uD83C\uDDEE\uD83C\uDDF8', 'Jamaica': '\uD83C\uDDEF\uD83C\uDDF2',
+        'Kazakhstan': '\uD83C\uDDF0\uD83C\uDDFF', 'Luxembourg': '\uD83C\uDDF1\uD83C\uDDFA', 'Libya': '\uD83C\uDDF1\uD83C\uDDFE',
+        'Madagascar': '\uD83C\uDDF2\uD83C\uDDEB', 'Malawi': '\uD83C\uDDF2\uD83C\uDDFC', 'Mali': '\uD83C\uDDF2\uD83C\uDDF1',
+        'Malta': '\uD83C\uDDF2\uD83C\uDDF9', 'Mauritius': '\uD83C\uDDF2\uD83C\uDDFA', 'Mongolia': '\uD83C\uDDF2\uD83C\uDDF3',
+        'Mozambique': '\uD83C\uDDF2\uD83C\uDDFF', 'Namibia': '\uD83C\uDDF3\uD83C\uDDE6', 'Peru': '\uD83C\uDDF5\uD83C\uDDEA',
+        'Portugal': '\uD83C\uDDF5\uD83C\uDDF9', 'Romania': '\uD83C\uDDF7\uD83C\uDDF4', 'Rwanda': '\uD83C\uDDF7\uD83C\uDDFC',
+        'Senegal': '\uD83C\uDDF8\uD83C\uDDF3', 'Serbia': '\uD83C\uDDF7\uD83C\uDDF8', 'Slovakia': '\uD83C\uDDF8\uD83C\uDDF0',
+        'Slovenia': '\uD83C\uDDF8\uD83C\uDDFE', 'Sudan': '\uD83C\uDDF8\uD83C\uDDE9', 'Syria': '\uD83C\uDDF8\uD83C\uDDFE',
+        'Trinidad and Tobago': '\uD83C\uDDF9\uD83C\uDDF9', 'Tunisia': '\uD83C\uDDF9\uD83C\uDDF3',
+        'Venezuela': '\uD83C\uDDFB\uD83C\uDDEA', 'Zambia': '\uD83C\uDDFF\uD83C\uDDF2', 'Zimbabwe': '\uD83C\uDDFF\uD83C\uDDFC',
+        'Albania': '\uD83C\uDDE6\uD83C\uDDF1', 'Algeria': '\uD83C\uDDE9\uD83C\uDDFF', 'Armenia': '\uD83C\uDDE6\uD83C\uDDF2',
+        'Azerbaijan': '\uD83C\uDDE6\uD83C\uDDFF', 'Bahamas': '\uD83C\uDDE7\uD83C\uDDF8', 'Barbados': '\uD83C\uDDE7\uD83C\uDDE7',
+        'Belarus': '\uD83C\uDDE7\uD83C\uDDFE', 'Bosnia and Herzegovina': '\uD83C\uDDE7\uD83C\uDDE6',
+        'Congo': '\uD83C\uDDE8\uD83C\uDDE9', 'Dominican Republic': '\uD83C\uDDE9\uD83C\uDDF4', 'Eritrea': '\uD83C\uDDEA\uD83C\uDDF7',
+        'Guatemala': '\uD83C\uDDEC\uD83C\uDDF9', 'Honduras': '\uD83C\uDDED\uD83C\uDDF3', 'Kyrgyzstan': '\uD83C\uDDF0\uD83C\uDDEC',
+        'Latvia': '\uD83C\uDDF1\uD83C\uDDFB', 'Lithuania': '\uD83C\uDDF1\uD83C\uDDF9', 'North Korea': '\uD83C\uDDF0\uD83C\uDDF5',
+        'North Macedonia': '\uD83C\uDDF2\uD83C\uDDF0', 'Palestine': '\uD83C\uDDF5\uD83C\uDDF8', 'Panama': '\uD83C\uDDF5\uD83C\uDDE6',
+        'Paraguay': '\uD83C\uDDF5\uD83C\uDDFE', 'R\u00e9union': '\uD83C\uDDF7\uD83C\uDDEA', 'Sierra Leone': '\uD83C\uDDF8\uD83C\uDDF1',
+        'Somalia': '\uD83C\uDDF8\uD83C\uDDF4', 'Tajikistan': '\uD83C\uDDF9\uD83C\uDDEF', 'Turkmenistan': '\uD83C\uDDF9\uD83C\uDDF2',
+        'Uzbekistan': '\uD83C\uDDFA\uD83C\uDDFF', 'Vatican City': '\uD83C\uDDFB\uD83C\uDDE6'
+    };
+
     const SERVER_DATA = {
         programs: {{ programs | tojson }},
     campuses: {{ campuses | tojson }},
@@ -3307,7 +3499,7 @@
         { id: 2, label: "Academic Qualification", icon: "2" },
         { id: 3, label: "Employment History", icon: "3" },
         { id: 4, label: "Eligibility for Reservations", icon: "4" },
-        { id: 5, label: "Preference of Test Centre", icon: "5" },
+        { id: 5, label: "Preference of test centre", icon: "5" },
         { id: 6, label: "Other Information", icon: "6" }
     ];
     const TOTAL_STEPS = 6;
@@ -3326,7 +3518,7 @@
         nationality: 'Nationality',
         religion: 'Religion',
         annual_house_hold_income: 'Annual household income (INR)',
-        id_proof: 'Upload ID proof',
+        id_proof: 'ID proof',
         program: 'Programme',
         program_level: 'Programme level',
         campus: 'Campus name',
@@ -3350,22 +3542,23 @@
         pincode: 'Pincode',
         class_x_school: 'School',
         class_x_board: 'Board',
-        class_x_year_of_completion: 'Year of completion',
-        class_x_percentage: 'Percentage or CGPA',
-        class_x_cgpa: 'Maximum CGPA',
-        class_x_marksheet: 'Upload Class X marksheet',
-        class_xii_name_of_examination: 'Examination name',
-        class_xii_school: 'School',
-        class_xii_board: 'Board',
-        class_xii_year_of_completion: 'Year of completion',
-        class_xii_marksheet: 'Upload Class XII marksheet',
+        class_x_year_of_completion: 'Year of completion (Class X)',
+        class_x_percentage: 'Percentage/CGPA obtained (Class X)',
+        class_x_cgpa: 'If CGPA, maximum CGPA (Class X)',
+        class_x_marksheet: 'Class X marksheet to be uploaded',
+        class_xii_name_of_examination: 'Name of examination (Class XII/Equivalent - as per marksheet)',
+        class_xii_school: 'School/College/University (Class XII/Equivalent)',
+        class_xii_board: 'Board (Class XII/Equivalent)',
+        class_xii_year_of_completion: 'Year of completion (Class XII/Equivalent)',
+        class_xii_marksheet: 'Class XII marksheet/Equivalent documents to be uploaded',
         hsc_group: 'HSC group',
         hsc_percentage: 'HSC percentage',
         first_preference: 'First preference',
         second_preference: 'Second preference',
         third_preference: 'Third preference',
-        source_of_information: 'How did you hear about the programme?',
+        source_of_information: 'Where did you hear about the programme?',
         please_mention: 'Please mention',
+        cv: 'Curriculum vitae (CV)',
         declaration_undertaking: 'Declaration',
         consent_third_party: 'Consent',
         post_degree_work_experience: 'Post-degree work experience',
@@ -3376,11 +3569,13 @@
         scribe_allotment: 'Scribe arrangement',
         karnataka_category: 'Karnataka category',
         ug_degree_completion: 'UG degree completion',
+        national_test_name: 'National test name',
         percentage: 'Score or percentage',
+        national_test_certificate: 'National test certificate',
         other_degree_details: 'Other degrees',
-        caste_certificate: 'Upload caste certificate',
-        ews_certificate: 'Upload EWS certificate',
-        pwd_certificate: 'Upload PWD certificate'
+        caste_certificate: 'Caste certificate',
+        ews_certificate: 'EWS certificate',
+        pwd_certificate: 'PWD certificate'
     };
 
     function humanizeError(msg) {
@@ -3455,6 +3650,7 @@
         initPhoneCountryCodes();
         initNumericInputs();
         populateExistingData();
+        ['mobile_number', 'alternate_contact', 'father_mobile', 'mother_mobile', 'guardian_mobile'].forEach(applyPhoneMaxLength);
         initFlatpickr();
         applyProgramFromUrl();
         applySubmittedReadOnly();
@@ -3466,7 +3662,31 @@
         toggleSaveDraftVisibility();
         togglePercentageRequired();
         refreshReceiptButton();   // show Download Receipt btn if fee already paid
+        applyNationalityFlags();
+        const natEl = document.getElementById('nationality');
+        if (natEl && natEl.value) {
+            fetchStatesForNationality(natEl.value, true).then(function () {
+                if (formData && formData.state) {
+                    const se = document.getElementById('state');
+                    if (se && se.options.length) se.value = formData.state;
+                }
+                if (formData && formData.city) {
+                    const ce = document.getElementById('city');
+                    if (ce) ce.value = formData.city;
+                }
+            });
+        }
     });
+
+    function applyNationalityFlags() {
+        const sel = document.getElementById('nationality');
+        if (!sel) return;
+        Array.from(sel.options).forEach(opt => {
+            if (!opt.value) return;
+            const flag = COUNTRY_FLAGS[opt.value];
+            opt.textContent = (flag ? flag + ' ' : '') + opt.value;
+        });
+    }
 
 
     function applySubmittedReadOnly() {
@@ -3514,7 +3734,9 @@
             if (!t || !t.classList) return;
             if (t.classList.contains('phone-num-digits')) {
                 t.value = t.value.replace(/\D/g, '');
-                if (t.value.length > 15) t.value = t.value.slice(0, 15);
+                const field = t.getAttribute('data-phone-field');
+                const maxLen = field ? getPhoneMaxDigits(field) : DEFAULT_PHONE_MAX;
+                if (t.value.length > maxLen) t.value = t.value.slice(0, maxLen);
             } else if (t.classList.contains('numeric-integer')) {
                 t.value = t.value.replace(/\D/g, '');
                 const maxLen = parseInt(t.getAttribute('maxlength'), 10);
@@ -3528,17 +3750,51 @@
         });
     }
 
+    const PHONE_DIGITS_BY_CODE = {
+        '+91': 10, '+1': 10, '+44': 11, '+971': 9, '+61': 9, '+81': 10, '+86': 11, '+33': 9, '+49': 10,
+        '+39': 10, '+34': 9, '+31': 9, '+65': 8, '+60': 9, '+62': 10, '+63': 10, '+64': 9, '+27': 9,
+        '+55': 11, '+52': 10, '+966': 9, '+974': 8, '+973': 8, '+968': 8, '+965': 8, '+20': 10, '+92': 10,
+        '+880': 10, '+94': 9, '+977': 10, '+93': 9, '+234': 11, '+254': 9, '+353': 9, '+46': 9, '+47': 8,
+        '+45': 8, '+358': 9, '+41': 9, '+43': 10, '+32': 9, '+351': 9, '+30': 10, '+48': 9, '+90': 10,
+        '+7': 10, '+82': 9, '+66': 9, '+84': 9, '+852': 8, '+853': 8, '+886': 9, '+98': 10, '+964': 10,
+        '+962': 9, '+961': 8, '+972': 9, '+212': 9, '+213': 9, '+380': 9, '+40': 10, '+36': 9
+    };
+    const DEFAULT_PHONE_MAX = 15;
+
+    function getPhoneMaxDigits(fieldBase) {
+        const ccEl = document.querySelector(`[name="${fieldBase}_cc"]`);
+        const code = (ccEl && ccEl.value) ? String(ccEl.value).trim() : '+91';
+        return PHONE_DIGITS_BY_CODE[code] || DEFAULT_PHONE_MAX;
+    }
+
+    function applyPhoneMaxLength(fieldBase) {
+        const maxLen = getPhoneMaxDigits(fieldBase);
+        const numEl = document.querySelector(`[name="${fieldBase}_num"]`);
+        if (numEl) {
+            numEl.setAttribute('maxlength', maxLen);
+            numEl.placeholder = maxLen === 10 ? '10-digit number' : (maxLen + '-digit number');
+            const digits = numEl.value.replace(/\D/g, '');
+            if (digits.length > maxLen) numEl.value = digits.slice(0, maxLen);
+        }
+    }
+
+    function applyPhoneMaxLengthFromInput(inputEl) {
+        const field = inputEl && inputEl.getAttribute('data-phone-field');
+        if (field) applyPhoneMaxLength(field);
+    }
+
     function getPhoneNumDigits(fieldBase) {
         const numEl = document.querySelector(`[name="${fieldBase}_num"]`);
         return (numEl && numEl.value) ? numEl.value.replace(/\D/g, '') : '';
     }
 
     function validatePhoneLength(fieldBase, required, minLen, maxLen) {
-        minLen = minLen || 10;
-        maxLen = maxLen || 15;
+        const maxForCountry = getPhoneMaxDigits(fieldBase);
+        minLen = minLen !== undefined ? minLen : (maxForCountry === 10 ? 10 : 10);
+        maxLen = maxLen !== undefined ? maxLen : maxForCountry;
         const digits = getPhoneNumDigits(fieldBase);
         if (required) {
-            if (digits.length < minLen) return { ok: false, msg: 'Valid ' + minLen + '-digit mobile number required' };
+            if (digits.length < minLen) return { ok: false, msg: 'Valid ' + maxForCountry + '-digit mobile number required' };
             if (digits.length > maxLen) return { ok: false, msg: 'Phone number must not exceed ' + maxLen + ' digits' };
         } else {
             if (digits.length > 0 && digits.length < minLen) return { ok: false, msg: 'Phone number must be at least ' + minLen + ' digits' };
@@ -3583,7 +3839,7 @@
         if (!(nationality && nationality.trim())) {
             stateEl.innerHTML = '<option value="">Select Nationality first</option>';
             stateEl.value = '';
-            if (cityEl) { cityEl.innerHTML = '<option value="">Select State first</option>'; cityEl.value = ''; }
+            if (cityEl) cityEl.value = '';
             return;
         }
         try {
@@ -3596,19 +3852,19 @@
                 stateEl.value = currentState;
             } else {
                 stateEl.value = '';
-                if (cityEl) { cityEl.innerHTML = '<option value="">Select State first</option>'; cityEl.value = ''; }
+                if (cityEl) cityEl.value = '';
             }
         } catch (e) {
             stateEl.innerHTML = '<option value="">Select Nationality first</option>';
             stateEl.value = '';
-            if (cityEl) { cityEl.innerHTML = '<option value="">Select State first</option>'; cityEl.value = ''; }
+            if (cityEl) cityEl.value = '';
         }
     }
 
-    // ── State / City: filter city by state (City DocType); clear city if state changes and city no longer matches ──
+    // ── State: city is now a text input, no longer linked to state ──
     async function fetchCitiesForState(state, keepCurrentCityIfInList) {
         const cityEl = document.getElementById('city');
-        if (!cityEl) return;
+        if (!cityEl || cityEl.tagName !== 'SELECT') return;
         const currentCity = (cityEl.value || '').trim();
         if (!(state && state.trim())) {
             cityEl.innerHTML = '<option value="">Select State first</option>';
@@ -3636,11 +3892,12 @@
         const stateEl = document.getElementById('state');
         const cityEl = document.getElementById('city');
         const nationalityEl = document.getElementById('nationality');
-        if (!stateEl || !cityEl) return;
-        stateEl.addEventListener('change', function () {
-            const state = (this.value || '').trim();
-            fetchCitiesForState(state, false);
-        });
+        if (!stateEl) return;
+        if (cityEl && cityEl.tagName === 'SELECT') {
+            stateEl.addEventListener('change', function () {
+                fetchCitiesForState((this.value || '').trim(), false);
+            });
+        }
         if (nationalityEl) {
             nationalityEl.addEventListener('change', function () {
                 const nationality = (this.value || '').trim();
@@ -3722,6 +3979,29 @@
     }
 
     function navigateToStep(targetStep) {
+        // When moving forward, validate all steps we're skipping so duplicate preferences block navigation.
+        if (targetStep > currentStep) {
+            clearErrors();
+            for (let s = currentStep; s < targetStep; s++) {
+                let valid = true;
+                switch (s) {
+                    case 1: valid = validateStep1(); break;
+                    case 2: valid = validateStep2(); break;
+                    case 3: valid = validateStep3(); break;
+                    case 4: valid = validateStep4(); break;
+                    case 5: valid = validateStep5(); break;
+                    case 6: valid = validateStep6(); break;
+                }
+                if (!valid) {
+                    showToast('Please fix the highlighted errors before proceeding.', 'error');
+                    showStep(s);
+                    scrollToFirstError();
+                    return;
+                }
+            }
+            showStep(targetStep);
+            return;
+        }
         // When submitted, or when an Applicant doc already exists (draft with saved data),
         // allow free navigation across all stages from the progress strip/sidebar.
         if (APPLICATION_SUBMITTED || (formData && formData.name)) {
@@ -3922,7 +4202,7 @@
         if (!f('candidate_name')) { showError('candidate_name'); v = false; }
         const hasPhoto = document.getElementById('candidatePhoto')?.files?.length > 0 || (formData.candidate_photo && String(formData.candidate_photo).trim());
         if (!hasPhoto) { showError('candidate_photo'); v = false; }
-        if (!f('email') || !validateEmail(f('email'))) { showError('email'); v = false; }
+        /* email is from session (hidden), not validated here */
         if (!f('gender')) { showError('gender'); v = false; }
         if (!f('nationality')) { showError('nationality'); v = false; }
         if (!f('program')) { showError('program'); v = false; }
@@ -3930,6 +4210,10 @@
         if (!f('admission_cycle')) { showError('admission_cycle'); v = false; }
         if (!f('academic_year')) { showError('academic_year'); v = false; }
         if (!f('annual_house_hold_income')) { showError('annual_house_hold_income'); v = false; }
+
+        // ID proof (mandatory): either file selected for upload or already uploaded URL in formData
+        const hasIdProof = (document.getElementById('id_proof')?.files?.length > 0) || (formData.id_proof && String(formData.id_proof).trim());
+        if (!hasIdProof) { showError('id_proof', 'ID proof upload is required'); v = false; }
 
         const dobInput = document.getElementById('date_of_birth');
         const dob = (dobInput && dobInput.value) ? dobInput.value.trim() : (f('date_of_birth') || '');
@@ -3971,7 +4255,7 @@
         else if (!/^\d{6}$/.test(pincodeVal)) { showError('pincode', 'Enter a valid 6-digit pincode'); v = false; }
 
         // Guardian (when checkbox is checked)
-        const guardianReq = document.getElementById('guardian_required')?.checked;
+        const guardianReq = document.getElementById('guardian_required')?.value === 'Yes';
         if (guardianReq) {
             const gName = document.querySelector('[name="guardian_name"]')?.value?.trim();
             if (!gName) { showError('guardian_name'); v = false; }
@@ -4010,8 +4294,8 @@
         if (!fStr('hsc_group')) { showError('hsc_group'); v = false; }
         const hscVal = fStr('hsc_percentage');
         const hsc = parseFloat(hscVal);
-        if (!hscVal || isNaN(hsc)) { showError('hsc_percentage', 'HSC percentage is required'); v = false; }
-        else if (hsc < 35 || hsc > 100) { showError('hsc_percentage', 'HSC percentage must be between 35 and 100'); v = false; }
+        if (!hscVal || isNaN(hsc)) { showError('hsc_percentage', 'XII percentage is required'); v = false; }
+        else if (hsc < 35 || hsc > 100) { showError('hsc_percentage', 'XII percentage must be between 35 and 100'); v = false; }
 
         // UG CGPA validation in rows
         document.querySelectorAll('.ug-cgpa-input').forEach(inp => {
@@ -4038,21 +4322,47 @@
             if (!document.getElementById('ug_degree_completion')?.value) {
                 showError('ug_degree_completion'); v = false;
             }
-        }
-
-        if (document.querySelector('[name="other_degree"]')?.value === 'Yes') {
-            if (!document.querySelector('[name="other_degree_details"]')?.value?.trim()) {
-                showError('other_degree_details'); v = false;
+            syncDegreeTablesFromDOM();
+            const ugRows = formData.ug_degree_details || [];
+            if (ugRows.length === 0) {
+                showToast('Add at least one UG degree.', 'error');
+                v = false;
             }
+            ugRows.forEach((row, idx) => {
+                if (!(row.ug_program && String(row.ug_program).trim())) { showToast(`Row ${idx + 1}: Name of degree (UG) is required.`, 'error'); v = false; }
+                if (!(row.college && String(row.college).trim())) { showToast(`Row ${idx + 1}: College / University is required.`, 'error'); v = false; }
+                if (!(row.year_of_completion && String(row.year_of_completion).trim())) { showToast(`Row ${idx + 1}: Year of completion is required.`, 'error'); v = false; }
+                if (row.ug_cgpa === undefined || row.ug_cgpa === null || String(row.ug_cgpa).trim() === '') { showToast(`Row ${idx + 1}: CGPA obtained is required.`, 'error'); v = false; }
+                if (!(row.degree_certificate && String(row.degree_certificate).trim())) { showToast(`Row ${idx + 1}: UG degree certificate is required.`, 'error'); v = false; }
+                if (!(row.marksheets && String(row.marksheets).trim())) { showToast(`Row ${idx + 1}: Transcripts / Marksheets is required.`, 'error'); v = false; }
+            });
+        }
+        if (pgLevel === 'Research Course') {
+            syncDegreeTablesFromDOM();
+            const pgRows = formData.pg_degree_details || [];
+            pgRows.forEach((row, idx) => {
+                if (!(row.pg_program && String(row.pg_program).trim())) { showToast(`PG Row ${idx + 1}: Name of degree (PG) is required.`, 'error'); v = false; }
+                if (!(row.collegeuniversity && String(row.collegeuniversity).trim())) { showToast(`PG Row ${idx + 1}: College / University is required.`, 'error'); v = false; }
+                if (!(row.year_of_completion && String(row.year_of_completion).trim())) { showToast(`PG Row ${idx + 1}: Year of completion is required.`, 'error'); v = false; }
+                if (row.pg_cgpa === undefined || row.pg_cgpa === null || String(row.pg_cgpa).trim() === '') { showToast(`PG Row ${idx + 1}: CGPA obtained is required.`, 'error'); v = false; }
+                if (!(row.pg_degree_certificatebonafide_certificate_to_be_uploaded && String(row.pg_degree_certificatebonafide_certificate_to_be_uploaded).trim())) { showToast(`PG Row ${idx + 1}: PG degree certificate is required.`, 'error'); v = false; }
+                if (!(row.transcriptsmarksheets_to_be_uploaded && String(row.transcriptsmarksheets_to_be_uploaded).trim())) { showToast(`PG Row ${idx + 1}: Transcripts / Marksheets is required.`, 'error'); v = false; }
+            });
         }
 
-        // When National test is selected, percentage/score is mandatory
+        /* other_degree_details is optional text */
+
+        // When National test is selected, percentage/score and certificate are mandatory
         const nationalTest = document.querySelector('[name="national_test_name"]')?.value?.trim();
         if (nationalTest) {
             const pctVal = document.querySelector('[name="percentage"]')?.value?.trim();
             const pctNum = pctVal ? parseFloat(pctVal) : NaN;
             if (!pctVal || isNaN(pctNum) || pctNum < 0) {
                 showError('percentage', 'Score or percentage is required when National test is selected.');
+                v = false;
+            }
+            if (!(formData.national_test_certificate && String(formData.national_test_certificate).trim())) {
+                showError('national_test_certificate', 'National test certificate upload is required when National test is selected.');
                 v = false;
             }
         }
@@ -4129,6 +4439,7 @@
         if (document.querySelector('[name="source_of_information"]')?.value === 'Others') {
             if (!document.getElementById('please_mention')?.value?.trim()) { showError('please_mention'); v = false; }
         }
+        if (!(formData.cv && String(formData.cv).trim())) { showError('cv', 'Curriculum vitae (CV) is required'); v = false; }
         if (!document.getElementById('declaration_undertaking')?.checked) {
             const errEl = document.getElementById('err_declaration');
             if (errEl) errEl.classList.add('show');
@@ -4176,18 +4487,15 @@
         let v = true;
 
         if (f && s && f === s) {
-            showError('second_preference', 'Second preference must differ from first');
-            document.getElementById('second_preference').value = '';
+            showError('second_preference', 'Same preference cannot be selected more than once.');
             v = false;
         }
         if (f && t && f === t) {
-            showError('third_preference', 'Third preference must differ from first');
-            document.getElementById('third_preference').value = '';
+            showError('third_preference', 'Same preference cannot be selected more than once.');
             v = false;
         }
         if (s && t && s === t) {
-            showError('third_preference', 'Third preference must differ from second');
-            document.getElementById('third_preference').value = '';
+            showError('third_preference', 'Same preference cannot be selected more than once.');
             v = false;
         }
         return v;
@@ -4209,11 +4517,21 @@
         const natTest = document.querySelector('[name="national_test_name"]')?.value?.trim();
         const reqEl = document.getElementById('percentageReq');
         if (reqEl) reqEl.style.display = natTest ? 'inline' : 'none';
+        const certRow = document.getElementById('national_test_certificate_row');
+        if (certRow) certRow.style.display = natTest ? '' : 'none';
     }
 
     function toggleGuardian(show) {
         document.getElementById('guardianSection').style.display = show ? 'block' : 'none';
         formData.guardian_required = show ? 1 : 0;
+    }
+
+    function setGuardianRequiredFromValue(val) {
+        const el = document.getElementById('guardian_required');
+        if (!el) return;
+        const isYes = val === 1 || val === '1' || val === true || (typeof val === 'string' && val.toLowerCase() === 'yes');
+        el.value = isYes ? 'Yes' : 'No';
+        toggleGuardian(isYes);
     }
 
     function onProgramChange(val) {
@@ -4262,8 +4580,9 @@
     }
 
     function toggleWorkExp(val) {
-        document.getElementById('workExpYearsField').style.display = val === 'Yes' ? 'block' : 'none';
-        if (val !== 'Yes') {
+        const isYes = val === 'Yes' || (typeof val === 'string' && val.toLowerCase() === 'yes') || val === true || val === 1;
+        document.getElementById('workExpYearsField').style.display = isYes ? 'block' : 'none';
+        if (!isYes) {
             const el = document.getElementById('years_of_work_experience');
             if (el) el.value = '';
         }
@@ -4315,11 +4634,65 @@
     }
 
     function toggleOtherDegree(val) {
-        document.getElementById('otherDegreeSection').style.display = val === 'Yes' ? 'block' : 'none';
+        const el = document.getElementById('otherDegreeSection');
+        if (el) el.style.display = val === 'Yes' ? 'block' : 'none';
     }
 
     function togglePleaseSpecify(val) {
         document.getElementById('pleaseMentionField').style.display = val === 'Others' ? 'block' : 'none';
+    }
+
+    /**
+     * Apply all conditional show/hide based on current form values.
+     * Call after populating existing data so that conditional fields (e.g. work experience years,
+     * guardian, national test certificate, reservation sections, EWS/PWD/Karnataka, etc.) display correctly.
+     */
+    function applyConditionalVisibility() {
+        const form = document.getElementById('appForm');
+        if (!form) return;
+
+        const getVal = (name) => {
+            const el = form.elements[name];
+            return el ? (el.type === 'checkbox' ? el.checked : (el.value || '').trim()) : '';
+        };
+
+        // Work experience: use formData when available so conditional field shows correctly when applicant data is loaded
+        let workExp = getVal('post_degree_work_experience');
+        if ((!workExp || workExp === 'Select') && formData && formData.post_degree_work_experience != null && formData.post_degree_work_experience !== '') {
+            const v = formData.post_degree_work_experience;
+            workExp = (v === true || v === 1 || v === '1' || (typeof v === 'string' && v.toLowerCase() === 'yes')) ? 'Yes' : ((v === false || v === 0 || v === '0' || (typeof v === 'string' && v.toLowerCase() === 'no')) ? 'No' : String(v));
+        }
+        if (typeof toggleWorkExp === 'function') toggleWorkExp(workExp);
+
+        if (typeof togglePercentageRequired === 'function') togglePercentageRequired();
+
+        const resCat = getVal('reservation_category');
+        if (typeof toggleReservationCategory === 'function') toggleReservationCategory(resCat || '');
+
+        const guardianVal = getVal('guardian_required');
+        if (guardianVal !== '' && typeof setGuardianRequiredFromValue === 'function') {
+            setGuardianRequiredFromValue(guardianVal);
+        }
+
+        const ewsVal = getVal('ews');
+        if (typeof toggleEWS === 'function') toggleEWS(ewsVal);
+
+        const pwdVal = getVal('pwd');
+        if (typeof togglePWD === 'function') togglePWD(pwdVal);
+
+        const scribeVal = getVal('scribe_allotment');
+        if (typeof toggleScribe === 'function') toggleScribe(scribeVal);
+
+        const kaVal = getVal('karnataka_category');
+        if (typeof toggleKarnataka === 'function') toggleKarnataka(kaVal);
+
+        const sourceVal = getVal('source_of_information');
+        if (typeof togglePleaseSpecify === 'function') togglePleaseSpecify(sourceVal);
+
+        ['ka_study_7yrs', 'ka_defence_child', 'ka_govt_child', 'ka_ais_child', 'ka_capf_child'].forEach(function (name) {
+            const cb = form.elements[name];
+            if (cb && typeof toggleKACertField === 'function') toggleKACertField(name, !!cb.checked);
+        });
     }
 
     function onDeclarationChange(cb) {
@@ -4332,14 +4705,13 @@
     // ═══════════════════════════════════════════════════════
 
     /**
-     * Build a program picker using <input> + <datalist>.
-     * The datalist is attached to document.body so it renders OUTSIDE
-     * the table's overflow container — no clipping issues.
+     * Build a program picker using <input> + <datalist> so the suggestion list is not clipped by table overflow.
+     * The datalist is attached to document.body so it renders outside the table.
      * level: 'UG' | 'PG' | '' (all programs)
      */
     function _ensureProgramDatalist(type, level) {
         const dlId = `dl_prog_${type}`;
-        if (document.getElementById(dlId)) return dlId;   // already created
+        if (document.getElementById(dlId)) return dlId;
         const allProgs = (SERVER_DATA.programs || []);
         const filtered = level ? allProgs.filter(p => p.program_level === level) : allProgs;
         const dl = document.createElement('datalist');
@@ -4363,23 +4735,51 @@
             oninput="updateDegreeRow('${type}', ${rowIdx}, '${fieldName}', this.value)">`;
     }
 
+    /** Download a file from URL (for degree table attach cells). Call with type, rowIdx, field to get URL from formData. */
+    function downloadDegreeFileByRow(type, rowIdx, field) {
+        const key = type === 'ug' ? 'ug_degree_details' : 'pg_degree_details';
+        const rows = formData[key];
+        const row = (rows && rows[rowIdx]) ? rows[rowIdx] : null;
+        const url = row ? row[field] : '';
+        if (!url || !String(url).trim()) { showToast('No file to download.', 'info'); return; }
+        const fullUrl = url.startsWith('http') ? url : (window.location.origin + (url.startsWith('/') ? '' : '/') + url);
+        const pathPart = fullUrl.split('?')[0];
+        const hasExt = pathPart.match(/\.(pdf|png|jpe?g)$/i);
+        const downloadName = hasExt ? (pathPart.split('/').pop() || 'document.pdf') : 'document.pdf';
+        fetch(fullUrl, { credentials: 'include', mode: 'cors' })
+            .then(res => { if (!res.ok) throw new Error('Download failed'); return res.blob(); })
+            .then(blob => {
+                const objectUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = objectUrl;
+                a.download = downloadName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(objectUrl);
+                showToast('Download started.', 'success');
+            })
+            .catch(() => { showToast('Could not download file.', 'info'); window.open(fullUrl, '_blank', 'noopener'); });
+    }
+
     /**
      * Build an attach-upload cell for a child table row.
-     * cellId: unique DOM id for the cell element
-     * type: 'ug'|'pg'
-     * rowIdx: row index in formData array
-     * field: fieldname in the child table row object
-     * currentUrl: existing file url (or '')
+     * Includes Upload, Download (when file present), Delete, and format hint.
      */
     function buildAttachCell(cellId, type, rowIdx, field, currentUrl) {
         const fname = currentUrl ? currentUrl.split('/').pop() : '';
-        const btnClass = currentUrl ? 'btn-attach uploaded' : 'btn-attach';
         const fnameDisplay = fname ? `<span class="attach-filename" title="${escapeAttr(currentUrl)}">${escapeAttr(fname)}</span>` : '';
-        const clearBtn = currentUrl ? `<button type="button" class="attach-clear" title="Remove" onclick="clearDegreeAttach('${cellId}','${type}',${rowIdx},'${field}')">✕</button>` : '';
+        const uploadBtn = `<button type="button" class="btn-attach" onclick="document.getElementById('fi_${cellId}').click()">⬆ Upload</button>`;
+        const downloadBtn = currentUrl ? `<button type="button" class="btn-attach-download" onclick="downloadDegreeFileByRow('${type}',${rowIdx},'${field}'); return false;">Download</button>` : '';
+        const deleteBtn = currentUrl ? `<button type="button" class="attach-clear" title="Remove file" onclick="clearDegreeAttach('${cellId}','${type}',${rowIdx},'${field}'); return false;">Delete</button>` : '';
+        const formatHint = '<span class="attach-format-hint">Max 5MB — png, jpeg, jpg, pdf</span>';
         return `<div class="attach-cell" id="${cellId}">
-            <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" id="fi_${cellId}" onchange="handleDegreeFileUpload(this,'${cellId}','${type}',${rowIdx},'${field}')">
-            <button type="button" class="${btnClass}" onclick="document.getElementById('fi_${cellId}').click()">${currentUrl ? '✓ Uploaded' : '⬆ Upload'}</button>
-            ${fnameDisplay}${clearBtn}
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg,image/png,image/jpeg,image/jpg,application/pdf" style="display:none" id="fi_${cellId}" onchange="handleDegreeFileUpload(this,'${cellId}','${type}',${rowIdx},'${field}')">
+            ${uploadBtn}
+            ${downloadBtn}${deleteBtn}
+            ${fnameDisplay}
+            ${formatHint}
         </div>`;
     }
 
@@ -4464,13 +4864,8 @@
             updateDegreeRow(type, rowIdx, field, url);
             // Refresh the cell display (keep id on cell so future clicks work)
             if (cell) {
-                const fname = (url && typeof url === 'string') ? url.split('/').pop() : '';
                 cell.id = cellId;
-                cell.innerHTML = `
-                    <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" id="fi_${cellId}" onchange="handleDegreeFileUpload(this,'${cellId}','${type}',${rowIdx},'${field}')">
-                    <button type="button" class="btn-attach uploaded" onclick="document.getElementById('fi_${cellId}').click()">✓ Uploaded</button>
-                    <span class="attach-filename" title="${escapeAttr(url || '')}">${escapeAttr(fname)}</span>
-                    <button type="button" class="attach-clear" title="Remove" onclick="clearDegreeAttach('${cellId}','${type}',${rowIdx},'${field}')">✕</button>`;
+                cell.innerHTML = buildAttachCell(cellId, type, rowIdx, field, url);
             }
             showToast('File uploaded successfully.', 'success');
         } catch (err) {
@@ -4485,9 +4880,7 @@
         updateDegreeRow(type, rowIdx, field, '');
         const cell = document.getElementById(cellId);
         if (cell) {
-            cell.innerHTML = `
-                <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" id="fi_${cellId}" onchange="handleDegreeFileUpload(this,'${cellId}','${type}',${rowIdx},'${field}')">
-                <button type="button" class="btn-attach" onclick="document.getElementById('fi_${cellId}').click()">⬆ Upload</button>`;
+            cell.innerHTML = buildAttachCell(cellId, type, rowIdx, field, '');
         }
     }
 
@@ -4620,6 +5013,9 @@
     // ═══════════════════════════════════════════════════════
     const MAX_FILE_SIZE_MB = 5;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+    const MAX_PHOTO_SIZE_MB = 1;
+    const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024;
+    const PHOTO_EXTENSIONS = ['png', 'jpeg', 'jpg'];
 
     async function uploadFileToFrappe(file) {
         var fd = new FormData();
@@ -4651,11 +5047,24 @@
         throw new Error(err);
     }
 
+    function validatePhotoFile(file) {
+        const name = (file.name || '').toLowerCase();
+        const ext = name.split('.').pop();
+        if (!PHOTO_EXTENSIONS.some(e => e === ext)) {
+            showToast('File format not supported. Student photo must be: png, jpeg, jpg (Max 1MB).', 'error');
+            return false;
+        }
+        if (file.size > MAX_PHOTO_SIZE_BYTES) {
+            showToast(`Student photo must be ${MAX_PHOTO_SIZE_MB} MB or less. Supported formats: png, jpeg, jpg.`, 'error');
+            return false;
+        }
+        return true;
+    }
+
     function handlePhotoUpload(input) {
         if (!input.files[0]) return;
         const file = input.files[0];
-        if (file.size > MAX_FILE_SIZE_BYTES) {
-            showToast(`File size must be ${MAX_FILE_SIZE_MB} MB or less.`, 'error');
+        if (!validatePhotoFile(file)) {
             input.value = '';
             return;
         }
@@ -4684,11 +5093,105 @@
             });
     }
 
+    const FILE_FIELD_EXTENSIONS = {
+        id_proof: ['jpg', 'jpeg', 'png', 'pdf'],
+        class_x_marksheet: ['jpg', 'jpeg', 'png', 'pdf'],
+        class_xii_marksheet: ['jpg', 'jpeg', 'png', 'pdf'],
+        national_test_certificate: ['jpg', 'jpeg', 'png', 'pdf'],
+        caste_certificate: ['jpg', 'jpeg', 'png', 'pdf'],
+        ews_certificate: ['jpg', 'jpeg', 'png', 'pdf'],
+        pwd_certificate: ['jpg', 'jpeg', 'png', 'pdf'],
+        cv: ['jpg', 'jpeg', 'png', 'pdf'],
+        phd_proposal: ['jpg', 'jpeg', 'png', 'pdf'],
+        ka_study_7yrs_certificate: ['jpg', 'jpeg', 'png'],
+        ka_defence_child_certificate: ['jpg', 'jpeg', 'png'],
+        ka_govt_child_certificate: ['jpg', 'jpeg', 'png'],
+        ka_ais_child_certificate: ['jpg', 'jpeg', 'png'],
+        ka_capf_child_certificate: ['jpg', 'jpeg', 'png']
+    };
+
+    function validateFileType(fieldName, file) {
+        const allowed = FILE_FIELD_EXTENSIONS[fieldName];
+        if (!allowed) return true;
+        const name = (file.name || '').toLowerCase();
+        const ext = name.split('.').pop();
+        return allowed.some(e => e.toLowerCase() === ext);
+    }
+
+    function updateFileFieldUI(fieldName, hasFile) {
+        const actions = document.getElementById(fieldName + '_actions');
+        const preview = document.getElementById('fp_' + fieldName);
+        const nameEl = document.getElementById('fp_' + fieldName + '_name');
+        if (actions) actions.classList.toggle('show', !!hasFile);
+        if (preview) preview.classList.toggle('show', !!hasFile);
+        if (fieldName === 'id_proof') {
+            const uploadBtn = document.getElementById('id_proof_upload_btn');
+            if (uploadBtn) uploadBtn.style.display = hasFile ? 'none' : '';
+            if (actions) actions.style.display = hasFile ? 'flex' : 'none';
+            const nameSpan = document.getElementById('id_proof_name');
+            if (nameSpan && !hasFile) nameSpan.textContent = '';
+        }
+    }
+
+    function downloadUploadedFile(fieldName) {
+        const url = formData && formData[fieldName];
+        if (!url || !String(url).trim()) {
+            showToast('No file to download.', 'info');
+            return;
+        }
+        const fullUrl = url.startsWith('http') ? url : (window.location.origin + (url.startsWith('/') ? '' : '/') + url);
+        const pathPart = fullUrl.split('?')[0];
+        const hasExt = pathPart.match(/\.(pdf|png|jpe?g)$/i);
+        const downloadName = hasExt ? (pathPart.split('/').pop() || fieldName + '.pdf') : (fieldName + '.pdf');
+
+        fetch(fullUrl, { credentials: 'include', mode: 'cors' })
+            .then(res => {
+                if (!res.ok) throw new Error('Download failed');
+                return res.blob();
+            })
+            .then(blob => {
+                const objectUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = objectUrl;
+                a.download = downloadName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(objectUrl);
+                showToast('Download started.', 'success');
+            })
+            .catch(() => {
+                showToast('Could not download file; opening in new tab.', 'info');
+                window.open(fullUrl, '_blank', 'noopener');
+            });
+    }
+
+    function deleteUploadedFile(fieldName) {
+        if (!fieldName) return;
+        formData[fieldName] = '';
+        const input = document.querySelector(`[name="${fieldName}"]`);
+        if (input && input.type === 'file') input.value = '';
+        const nameEl = document.getElementById('fp_' + fieldName + '_name');
+        if (nameEl) nameEl.textContent = '';
+        updateFileFieldUI(fieldName, false);
+        if (fieldName === 'id_proof') {
+            const nameSpan = document.getElementById('id_proof_name');
+            if (nameSpan) nameSpan.textContent = '';
+        }
+    }
+
     function handleFileUpload(fieldName, input) {
         if (!input.files[0]) return;
         const file = input.files[0];
         if (file.size > MAX_FILE_SIZE_BYTES) {
             showToast(`File size must be ${MAX_FILE_SIZE_MB} MB or less.`, 'error');
+            input.value = '';
+            return;
+        }
+        if (!validateFileType(fieldName, file)) {
+            const allowed = FILE_FIELD_EXTENSIONS[fieldName] || [];
+            showToast(`File format not supported. Please use: ${allowed.join(', ')}. Maximum size: ${MAX_FILE_SIZE_MB}MB.`, 'error');
             input.value = '';
             return;
         }
@@ -4708,6 +5211,7 @@
                 }
                 formData[fieldName] = url;
                 input.disabled = false;
+                updateFileFieldUI(fieldName, true);
                 showToast(`File uploaded successfully.`, 'success');
             })
             .catch(err => {
@@ -4717,6 +5221,7 @@
                 input.value = '';
                 formData[fieldName] = '';
                 input.disabled = false;
+                updateFileFieldUI(fieldName, false);
             });
     }
 
@@ -4747,7 +5252,7 @@
             'correspondence_address', 'city', 'state', 'pincode', 'class_x_school', 'class_x_board',
             'class_x_year_of_completion', 'class_x_percentage', 'class_x_cgpa', 'class_xii_name_of_examination',
             'class_xii_school', 'class_xii_board', 'class_xii_year_of_completion',
-            'hsc_group', 'hsc_percentage', 'national_test_name', 'percentage', 'other_degree',
+            'hsc_group', 'hsc_percentage', 'national_test_name', 'percentage',
             'other_degree_details', 'phd_program_type', 'proposed_phd_topic', 'ug_degree_completion',
             'post_degree_work_experience', 'years_of_work_experience', 'ews', 'pwd', 'pwd_required_test',
             'scribe_allotment', 'karnataka_category', 'source_of_information', 'please_mention',
@@ -4755,7 +5260,10 @@
 
         fields.forEach(f => {
             const el = form.elements[f];
-            if (el) formData[f] = el.value;
+            if (!el) return;
+            if (el.type === 'file') return; // do not overwrite file URLs (input.value is empty for security)
+            const val = el.value;
+            formData[f] = (typeof val === 'string') ? val.trim() : val;
         });
         // Ensure program is set when locked (hidden input may not be in form.elements in some cases)
         if (typeof PREFILL_PROGRAM !== 'undefined' && PREFILL_PROGRAM && !formData.program) {
@@ -4776,8 +5284,8 @@
             formData[f] = combined;
         });
 
-        // Checkboxes
-        formData.guardian_required = document.getElementById('guardian_required')?.checked ? 1 : 0;
+        // Guardian: Yes/No select (store as 1 for Yes, 0 for No for backend)
+        formData.guardian_required = document.getElementById('guardian_required')?.value === 'Yes' ? 1 : 0;
         formData.declaration_undertaking = document.getElementById('declaration_undertaking')?.checked ? 1 : 0;
         formData.consent_third_party = document.getElementById('consent_third_party')?.checked ? 1 : 0;
 
@@ -4921,18 +5429,30 @@
 
         // Guardian
         if (formData.guardian_required) {
-            document.getElementById('guardian_required').checked = true;
-            toggleGuardian(true);
+            setGuardianRequiredFromValue(formData.guardian_required);
         }
 
         if (isSubmitted) {
             applyReadonlyState();
         }
-        // ID Proof filename display (when loading draft)
-        if (formData.id_proof) {
-            const idProofNameSpan = document.getElementById('id_proof_name');
-            if (idProofNameSpan) idProofNameSpan.textContent = formData.id_proof;
+        // Default nationality to India for new applications
+        const nationalityEl = document.getElementById('nationality');
+        if (nationalityEl && !(formData.nationality && String(formData.nationality).trim())) {
+            if (nationalityEl.querySelector('option[value="India"]')) nationalityEl.value = 'India';
         }
+        // File fields: show download/delete when URL is present
+        const fileFields = ['id_proof', 'class_x_marksheet', 'class_xii_marksheet', 'national_test_certificate', 'caste_certificate', 'ews_certificate', 'pwd_certificate', 'cv', 'phd_proposal', 'ka_study_7yrs_certificate', 'ka_defence_child_certificate', 'ka_govt_child_certificate', 'ka_ais_child_certificate', 'ka_capf_child_certificate'];
+        fileFields.forEach(f => {
+            if (formData[f] && String(formData[f]).trim()) {
+                const nameEl = document.getElementById('fp_' + f + '_name');
+                if (nameEl) nameEl.textContent = 'Uploaded file';
+                if (f === 'id_proof') {
+                    const idProofNameSpan = document.getElementById('id_proof_name');
+                    if (idProofNameSpan) idProofNameSpan.textContent = 'Uploaded file';
+                }
+                updateFileFieldUI(f, true);
+            }
+        });
         // Student Photo preview: when backend returns a URL, show it in the preview
         const photoUrl = formData.candidate_photo && String(formData.candidate_photo).trim();
         if (photoUrl) {
@@ -4992,18 +5512,41 @@
                 });
             }
         }
+        // Apply conditional visibility so fields like work experience years, guardian, reservation sections, etc. show correctly when applicant data is loaded
+        applyConditionalVisibility();
+        // Ensure work experience years field is shown when loaded data has post_degree_work_experience = Yes
+        if (formData.post_degree_work_experience != null && formData.post_degree_work_experience !== '') {
+            const v = formData.post_degree_work_experience;
+            const isYes = v === true || v === 1 || v === '1' || (typeof v === 'string' && v.toLowerCase() === 'yes');
+            if (typeof toggleWorkExp === 'function') toggleWorkExp(isYes ? 'Yes' : 'No');
+        }
     }
     function escapeAttr(s) { return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
     // ═══════════════════════════════════════════════════════
     //  REVIEW BUILDER
     // ═══════════════════════════════════════════════════════
+    function formatDateForDisplay(ymd) {
+        if (!ymd || typeof ymd !== 'string') return '';
+        const s = ymd.trim();
+        if (!s) return '';
+        const parts = s.split(/[-/]/);
+        if (parts.length >= 3) {
+            const y = parts[0];
+            const m = parts[1];
+            const d = parts[2];
+            if (y.length === 4 && m.length <= 2 && d.length <= 2) return (d.padStart(2, '0') + '/' + m.padStart(2, '0') + '/' + y);
+        }
+        return s;
+    }
+
     function buildReview() {
         collectFormData();
         const d = formData;
         const v = (val) => val || '<span style="color:var(--slate-400);">—</span>';
         const isSubmitted = (d.application_status === 'Submitted');
         const reviewBtnText = isSubmitted ? 'View' : 'Edit';
+        const dobDisplay = formatDateForDisplay(d.date_of_birth) || v(d.date_of_birth);
 
         document.getElementById('reviewContent').innerHTML = `
         <div class="review-section">
@@ -5015,7 +5558,7 @@
                 <div class="review-field"><label>Full name</label><span>${v(d.candidate_name)}</span></div>
                 <div class="review-field"><label>Email</label><span>${v(d.email)}</span></div>
                 <div class="review-field"><label>Mobile</label><span>${v(d.mobile_number)}</span></div>
-                <div class="review-field"><label>Date of birth</label><span>${v(d.date_of_birth)}</span></div>
+                <div class="review-field"><label>Date of birth</label><span>${dobDisplay}</span></div>
                 <div class="review-field"><label>Gender</label><span>${v(d.gender)}</span></div>
                 <div class="review-field"><label>Nationality</label><span>${v(d.nationality)}</span></div>
                 <div class="review-field"><label>Programme</label><span>${v(d.program)}</span></div>
@@ -5464,6 +6007,7 @@
                 formData.date_of_birth = date ? date.toISOString().split('T')[0] : '';
             }
         });
+        if (fp.altInput) fp.altInput.placeholder = 'DD/MM/YYYY';
         if (existingDate && fp) { formData.date_of_birth = existingDate; }
     }
 
