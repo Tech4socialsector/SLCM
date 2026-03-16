@@ -105,7 +105,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 18:41:14.700004",
+ "modified": "2026-03-16 10:53:55.229828",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Seat Allocation",
@@ -132,7 +132,8 @@
    "read": 1,
    "report": 1,
    "role": "Merit Admin",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "create": 1,

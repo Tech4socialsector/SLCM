@@ -1,0 +1,23 @@
+{
+ "app": "slcm",
+ "bg_color": "gray",
+ "creation": "2026-03-16 10:40:13.825050",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_image": "/files/Boy.jpeg",
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Merit",
+ "link_to": "MSA",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-03-16 10:41:07.638341",
+ "modified_by": "Administrator",
+ "name": "Merit",
+ "owner": "Administrator",
+ "parent_icon": "Admission",
+ "restrict_removal": 0,
+ "roles": [],
+ "sidebar": "MSA",
+ "standard": 1
+}
