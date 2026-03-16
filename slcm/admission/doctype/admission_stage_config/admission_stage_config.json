@@ -46,7 +46,7 @@
    "reqd": 1
   },
   {
-   "fieldname": "is_locked",
+   "fieldname": "is_stage_locked",
    "fieldtype": "Check",
    "label": "Is Locked",
    "read_only": 1

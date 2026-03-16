@@ -27,6 +27,7 @@
   "column_break_hdcy",
   "payment_deadline",
   "offer_status",
+  "seat_locked",
   "edit_reason",
   "notification_receiver",
   "receipt_print_format"
@@ -56,7 +57,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program",
    "reqd": 1
   },
@@ -66,7 +67,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Admission Cycle",
+   "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
@@ -74,7 +75,7 @@
    "fetch_from": "email_template_used.version",
    "fieldname": "template_version",
    "fieldtype": "Data",
-   "label": "Template Version",
+   "label": "Template version",
    "options": "Offer Letter Template"
   },
   {
@@ -95,7 +96,7 @@
    "fieldname": "rendered_content",
    "fieldtype": "HTML Editor",
    "in_preview": 1,
-   "label": "Rendered Content"
+   "label": "Rendered content"
   },
   {
    "fieldname": "controls_tab",
@@ -131,6 +132,13 @@
    "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn"
   },
   {
+   "default": "0",
+   "fieldname": "seat_locked",
+   "fieldtype": "Check",
+   "label": "Seat Locked",
+   "read_only": 1
+  },
+  {
    "fieldname": "offer_configrationn",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -141,7 +149,7 @@
    "fetch_from": "offer_configrationn.email_template",
    "fieldname": "email_template_used",
    "fieldtype": "Link",
-   "label": "Email Template Used",
+   "label": "Email template used",
    "options": "Email Templates"
   },
   {
@@ -156,7 +164,7 @@
    "fetch_from": "fee_structure.total_amount",
    "fieldname": "payable_amount",
    "fieldtype": "Currency",
-   "label": "Payable Amount"
+   "label": "Payable amount"
   },
   {
    "fieldname": "edit_reason",
@@ -170,7 +178,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Academic Year",
+   "label": "Academic year",
    "options": "Academic Year",
    "reqd": 1
   },
@@ -178,7 +186,7 @@
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Admission Year",
+   "label": "Admission year",
    "options": "Admission Year",
    "reqd": 1
   },
@@ -205,7 +213,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 18:31:52.010458",
+ "modified": "2026-03-16 11:56:54.659951",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

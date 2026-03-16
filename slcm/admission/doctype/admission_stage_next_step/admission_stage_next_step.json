@@ -17,7 +17,7 @@
    "fieldname": "stage_name",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Stage Name",
+   "label": "Stage name",
    "options": "Stages",
    "reqd": 1
   },
@@ -25,7 +25,7 @@
    "fieldname": "step_text",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Next Step Text",
+   "label": "Next step text",
    "reqd": 1
   },
   {
@@ -44,12 +44,12 @@
    "depends_on": "is_link",
    "fieldname": "link_label",
    "fieldtype": "Data",
-   "label": "Link Label"
+   "label": "Link label"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-12 15:00:21.887668",
+ "modified": "2026-03-16 10:52:12.281418",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Stage Next Step",

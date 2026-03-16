@@ -1,6 +1,6 @@
 {
  "app": "slcm",
- "creation": "2026-02-26 18:11:25.733693",
+ "creation": "2026-03-16 10:44:18.305445",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "book-audio",
@@ -121,18 +121,6 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Update Result ",
-   "link_to": "Data Import",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "\u27a1\ufe0f",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Export Result ",
    "link_to": "Data Export",
    "link_type": "DocType",
    "show_arrow": 0,
@@ -144,9 +132,9 @@
    "icon": "\u27a1\ufe0f",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Admission Eligibility",
-   "link_to": "Admission Eligibility",
-   "link_type": "Workspace",
+   "label": "Export Result ",
+   "link_to": "Data Import",
+   "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -199,11 +187,11 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-01 12:52:50.483436",
+ "modified": "2026-03-16 10:45:29.918568",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "ETM",
+ "name": "Test",
  "owner": "Administrator",
  "standard": 1,
- "title": "ETM"
+ "title": "Test"
 }

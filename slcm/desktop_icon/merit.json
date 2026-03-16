@@ -1,23 +1,32 @@
 {
  "app": "slcm",
  "bg_color": "gray",
- "creation": "2026-03-16 10:40:13.825050",
+ "creation": "2026-03-16 11:10:53.145699",
  "docstatus": 0,
  "doctype": "Desktop Icon",
  "hidden": 0,
- "icon_image": "/files/Boy.jpeg",
  "icon_type": "Link",
  "idx": 0,
  "label": "Merit",
- "link_to": "MSA",
+ "link_to": "Merit",
  "link_type": "Workspace Sidebar",
- "modified": "2026-03-16 10:41:07.638341",
+ "modified": "2026-03-16 11:12:11.577885",
  "modified_by": "Administrator",
  "name": "Merit",
  "owner": "Administrator",
  "parent_icon": "Admission",
  "restrict_removal": 0,
- "roles": [],
- "sidebar": "MSA",
+ "roles": [
+  {
+   "role": "Merit Admin"
+  },
+  {
+   "role": "Admission Admin"
+  },
+  {
+   "role": "Campus Admin"
+  }
+ ],
+ "sidebar": "Merit",
  "standard": 1
 }

@@ -45,7 +45,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Applicant ID",
+   "label": "Applicant id",
    "options": "Applicant",
    "reqd": 1,
    "unique": 1
@@ -55,7 +55,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Candidate Name"
+   "label": "Candidate name"
   },
   {
    "fieldname": "email",
@@ -85,21 +85,21 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Program Level",
+   "label": "Program level",
    "options": "UG\nPG\nResearch Course"
   },
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Academic Year",
+   "label": "Academic year",
    "options": "Academic Year"
   },
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Admission Cycle",
+   "label": "Admission cycle",
    "options": "Admission Cycle"
   },
   {
@@ -118,12 +118,12 @@
    "fieldname": "entrance_test_score",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Entrance Score"
+   "label": "Entrance score"
   },
   {
    "fieldname": "interview_score",
    "fieldtype": "Int",
-   "label": "Interview Score"
+   "label": "Interview score"
   },
   {
    "fieldname": "status_section",
@@ -141,13 +141,13 @@
    "fieldname": "result_status",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Result Status",
+   "label": "Result status",
    "options": "Qualified\nSelected"
   },
   {
    "fieldname": "configuration_reference",
    "fieldtype": "Link",
-   "label": "Configuration Reference",
+   "label": "Configuration reference",
    "options": "Eligibility Result Configuration",
    "read_only": 1
   },
@@ -159,37 +159,37 @@
   {
    "fieldname": "hsc_group",
    "fieldtype": "Link",
-   "label": "HSC Group ",
+   "label": "HSC group ",
    "options": "HSC Groups"
   },
   {
    "fieldname": "hsc_percentage",
    "fieldtype": "Percent",
-   "label": "HSC Percentage "
+   "label": "HSC percentage "
   },
   {
    "fieldname": "ug_degree_details",
    "fieldtype": "Table",
-   "label": "UG Degree Details",
+   "label": "UG degree details",
    "options": "UG Degree Detail"
   },
   {
    "fieldname": "ug_cgpa",
    "fieldtype": "Float",
    "hidden": 1,
-   "label": "UG CGPA",
+   "label": "Ug cgpa",
    "precision": "2"
   },
   {
    "fieldname": "pg_degree_details",
    "fieldtype": "Table",
-   "label": "PG Degree Details ",
+   "label": "Pg degree details ",
    "options": "PG Degree Details"
   },
   {
    "fieldname": "pg_cgpa",
    "fieldtype": "Float",
-   "label": "PG CGPA",
+   "label": "Pg cgpa",
    "precision": "2"
   },
   {
@@ -201,7 +201,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-11 11:47:07.554694",
+ "modified": "2026-03-16 11:57:58.367919",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",

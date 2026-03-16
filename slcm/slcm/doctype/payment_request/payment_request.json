@@ -18,6 +18,14 @@
   "transaction_id",
   "gateway_response",
   "failure_message",
+  "section_break_gateway",
+  "gateway_status",
+  "razorpay_order_id",
+  "razorpay_payment_id",
+  "razorpay_signature",
+  "column_break_gateway_2",
+  "paid_on",
+  "webhook_received",
   "amended_from"
  ],
  "fields": [
@@ -98,6 +106,52 @@
    "read_only": 1
   },
   {
+   "fieldname": "section_break_gateway",
+   "fieldtype": "Section Break",
+   "label": "Gateway Details"
+  },
+  {
+   "fieldname": "gateway_status",
+   "fieldtype": "Select",
+   "label": "Gateway Status",
+   "options": "created\nauthorized\ncaptured\nfailed\nrefunded",
+   "read_only": 1
+  },
+  {
+   "fieldname": "razorpay_order_id",
+   "fieldtype": "Data",
+   "label": "Razorpay Order ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "razorpay_payment_id",
+   "fieldtype": "Data",
+   "label": "Razorpay Payment ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "razorpay_signature",
+   "fieldtype": "Data",
+   "label": "Razorpay Signature",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_gateway_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "paid_on",
+   "fieldtype": "Datetime",
+   "label": "Paid On",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "webhook_received",
+   "fieldtype": "Check",
+   "label": "Webhook Received"
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -110,7 +164,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-02 18:36:07.814417",
+ "modified": "2026-03-16 11:07:52.478677",
  "modified_by": "Administrator",
  "module": "slcm",
  "name": "Payment Request",
@@ -183,6 +237,27 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
+ "states": [
+  {
+   "color": "Gray",
+   "title": "Draft"
+  },
+  {
+   "color": "Yellow",
+   "title": "Requested"
+  },
+  {
+   "color": "Green",
+   "title": "Paid"
+  },
+  {
+   "color": "Orange",
+   "title": "Cancelled"
+  },
+  {
+   "color": "Red",
+   "title": "Failed"
+  }
+ ],
  "track_changes": 1
 }

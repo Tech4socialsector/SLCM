@@ -666,7 +666,16 @@
                     applicant: cur_offer_data.offer.applicant,
                     reason: 'Applicant accepted another offer ' + cur_offer_data.offer.name
                 });
-                
+
+                // Re-fetch offer details so UI updates immediately: Accepted status (hides Reject button)
+                // and fee breakdown with scholarship applied, without requiring a manual refresh.
+                const offer_name = cur_offer_data.offer.name;
+                const fresh = await apiFetch('slcm.admission.page.applicant_offer_lett.applicant_offer_lett.get_offer_details', { offer_name: offer_name });
+                if (fresh && !fresh.error) {
+                    cur_offer_data = fresh;
+                    render_offer_detail(fresh);
+                }
+
                 hide_processing();
 
                 if (cur_offer_data.online_payment_enabled) {

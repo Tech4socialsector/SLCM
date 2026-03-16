@@ -275,7 +275,10 @@ def get_applicant_preferences(applicant_id, entrance_test_list):
     if not allocation_name:
         return []
 
-    allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
+    try:
+        allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation_name, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        return []
     
     # Check if we should serve rescheduled preferences
     use_rescheduled = getattr(allocation, "is_rescheduled", 0) == 1 and \
