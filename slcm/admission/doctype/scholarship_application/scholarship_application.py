@@ -105,7 +105,7 @@ class ScholarshipApplication(Document):
 			"Scholarship Scheme Mapping",
 			filters={
 				"scholarship_scheme": self.scholarship_scheme,
-				"admission_cycle": self.admission_cycle,
+				"admission_cycle": self.admission_cycle,	
 				"campus": self.campus,
 				"is_active": 1
 			},

@@ -48,14 +48,16 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Email",
-   "options": "Email"
+   "options": "Email",
+   "reqd": 1
   },
   {
    "fieldname": "contact_number",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Contact Number",
-   "options": "Phone"
+   "options": "Phone",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_ism1",
@@ -64,7 +66,8 @@
   {
    "fieldname": "designation",
    "fieldtype": "Data",
-   "label": "Designation"
+   "label": "Designation",
+   "reqd": 1
   },
   {
    "default": "1",
@@ -108,13 +111,14 @@
   {
    "fieldname": "interview_address",
    "fieldtype": "Small Text",
-   "label": "Interview Address"
+   "label": "Interview Address",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-06 11:11:45.574764",
+ "modified": "2026-03-13 17:57:44.154275",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Staff Member",
