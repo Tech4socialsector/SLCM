@@ -41,7 +41,6 @@
         font-weight: 700;
         padding: 6px 12px;
         border-radius: 100px;
-        text-transform: uppercase;
     }
 
     .status-badge.payment-completed {
@@ -76,7 +75,6 @@
         font-size: 11px;
         font-weight: 700;
         color: #94a3b8;
-        text-transform: uppercase;
     }
 
     .program-name {
@@ -110,7 +108,6 @@
     .price-label {
         font-size: 10px;
         font-weight: 700;
-        text-transform: uppercase;
         color: #94a3b8;
     }
 
@@ -230,6 +227,7 @@
 
         offers.forEach(offer => {
             const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
+            const display_status = offer.offer_status.charAt(0).toUpperCase() + offer.offer_status.slice(1).toLowerCase();
             html += `
 <div class="col-12 col-lg-6 col-xl-4 mb-4">
 <div class="offer-card" onclick="window.location.href='/offer_letter/offer-letter-detail?offer=${offer.name}'">
@@ -238,12 +236,12 @@
 
 <div class="card-top-header">
 <span class="status-badge ${status_class}">
-${offer.offer_status}
+${display_status}
 </span>
 </div>
 
 <div class="offer-id-tag">
-Offer Letter No: ${offer.name}
+Offer letter no: ${offer.name}
 </div>
 
 <div class="program-label">Program</div>
@@ -259,7 +257,7 @@ Offer Letter No: ${offer.name}
 <div class="card-footer">
 
 <div>
-<div class="price-label">Payable Amount</div>
+<div class="price-label">Payable amount</div>
 <div class="price-value">
 ${format_currency(offer.final_payable_amount || offer.payable_amount, currency)}
 </div>
@@ -267,7 +265,7 @@ ${format_currency(offer.final_payable_amount || offer.payable_amount, currency)}
 ${offer.scholarship_amount > 0 ? `
 <div class="scholarship-info">
 <i class="fa fa-star"></i>
-Scholarship Applied (-${format_currency(offer.scholarship_amount, currency)})
+Scholarship applied (-${format_currency(offer.scholarship_amount, currency)})
 </div>
 ` : ''}
 

@@ -45,7 +45,6 @@
         font-size: 0.65rem;
         font-weight: 700;
         color: #a0aec0;
-        text-transform: uppercase;
         letter-spacing: 0.08em;
         margin-bottom: 16px;
         display: block;
@@ -477,12 +476,12 @@
 
             if (distance > 24 * 60 * 60 * 1000) {
                 // More than 24 hours - show date only
-                label_el.text("{{ _("Offer Expiry Date") }}");
+                label_el.text("{{ _("Offer expiry date") }}");
                 timer_el.text(deadline_str.split(' ')[0]);
                 timer_el.next().hide(); // Hide the redundant deadline line
             } else {
                 // 24 hours or less - show timer
-                label_el.text("{{ _("Offer Expiry Timer") }}");
+                label_el.text("{{ _("Offer expiry timer") }}");
                 timer_el.next().show();
 
                 const hours = Math.floor(distance / (1000 * 60 * 60));
@@ -503,22 +502,23 @@
         const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid, online_payment_enabled } = data;
         const wrapper = $('#offer-detail-wrapper');
         const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
+        const display_status = offer.offer_status.charAt(0).toUpperCase() + offer.offer_status.slice(1).toLowerCase();
 
         let html = `
         <div class="row">
             <!-- Sidebar -->
             <div class="col-lg-4">
                 <div class="ui-card">
-                    <span class="ui-card-label">{{ _("Offer Status") }}</span>
+                    <span class="ui-card-label">{{ _("Offer status") }}</span>
                     <div class="status-badge-row ${status_class}">
                         <span class="status-dot ${status_class}"></span>
-                        ${offer.offer_status}
+                        ${display_status}
                     </div>
                 </div>
 
                 ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
                     <div class="ui-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border: none;">
-                        <span class="ui-card-label" style="color: rgba(255,255,255,0.6);">{{ _("Offer Expiry Timer") }}</span>
+                        <span class="ui-card-label" style="color: rgba(255,255,255,0.6);">{{ _("Offer expiry timer") }}</span>
                         <div id="expiry-timer-display" style="color: #fff; font-size: 1.5rem; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 8px;">
                             -- : -- : --
                         </div>
@@ -539,13 +539,13 @@
                         <div class="value">${offer.campus}</div>
                     </div>
                     <div class="summary-item">
-                        <span class="label">{{ _("Payable Amount") }}</span>
+                        <span class="label">{{ _("Payable amount") }}</span>
                         <div class="value amount">${format_currency(offer.payable_amount, currency)}</div>
                     </div>
                 </div>
 
                 <div class="ui-card">
-                    <span class="ui-card-label">{{ _("Fee Details") }}</span>
+                    <span class="ui-card-label">{{ _("Fee details") }}</span>
                     ${fee_breakdown.map(f => `
                         <div class="fee-row ${f.is_discount ? 'discount' : ''}">
                             <span>${f.is_discount ? '🎓 ' : ''}${f.component}</span>
@@ -554,7 +554,7 @@
                     `).join('')}
                     
                     <div class="fee-row total">
-                        <span>{{ _("Payable Amount") }}</span>
+                        <span>{{ _("Payable amount") }}</span>
                         <span>${format_currency(offer.payable_amount, currency)}</span>
                     </div>
 
@@ -587,7 +587,7 @@
             <div class="col-lg-8">
                 <div class="ui-card" style="padding: 0;">
                     <div class="preview-header px-4 pt-4">
-                        <h5>{{ _("Offer Letter Preview") }}</h5>
+                        <h5>{{ _("Offer letter preview") }}</h5>
                     </div>
                     
                     <div class="px-4 pb-4">
@@ -708,11 +708,11 @@
         let fee_html = `
             <div class="text-center mb-4">
                 <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">${format_currency(offer.payable_amount, currency)}</div>
-                <div class="text-muted small text-uppercase font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total Payable Amount") }}</div>
+                <div class="text-muted small font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total payable amount") }}</div>
             </div>
             
             <div class="mt-4 pt-2">
-                <h6 class="text-muted text-uppercase small font-weight-bold mb-3" style="letter-spacing: 0.05em;">{{ _("Fee Components") }}</h6>
+                <h6 class="text-muted small font-weight-bold mb-3" style="letter-spacing: 0.05em;">{{ _("Fee components") }}</h6>
                 <div class="fee-breakdown-list">
                     ${fee_breakdown.map(f => `
                         <div class="d-flex justify-content-between py-2 border-bottom-dashed">

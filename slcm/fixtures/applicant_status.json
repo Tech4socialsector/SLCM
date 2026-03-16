@@ -2,6 +2,27 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-12 11:02:34.026894",
+  "name": "Seat Selected",
+  "status": "Seat Selected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-12 11:03:02.677687",
+  "name": "Seat Waitlisted",
+  "status": "Seat Waitlisted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-12 11:03:27.290354",
+  "name": "Seat Rejected",
+  "status": "Seat Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-12 11:44:52.444429",
   "name": "Draft",
   "status": "Draft"
@@ -114,7 +135,7 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "intake_type": "All",
+  "modified": "2026-03-16 17:57:51.243587",
   "name": "Enrolled",
   "status": "Enrolled"
  }
