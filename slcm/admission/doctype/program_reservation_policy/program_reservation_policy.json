@@ -142,7 +142,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-13 12:51:43.773843",
+ "modified": "2026-03-16 11:20:53.634287",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",
@@ -160,6 +160,17 @@
    "create": 1,
    "read": 1,
    "role": "Admission Admin",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Merit Admin",
+   "share": 1,
    "write": 1
   }
  ],
