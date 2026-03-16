@@ -5881,10 +5881,11 @@ I hereby undertake that the information and documents furnished by me are true t
                     payBtn.disabled = false;
                     payBtn.textContent = 'Pay Now';
                 })
-                .catch(function () {
+                .catch(function (e) {
                     payBtn.disabled = false;
                     payBtn.textContent = 'Pay Now';
-                    showToast('Could not start payment. Please try again.', 'error');
+                    const msg = (e && e.message) ? e.message : 'Could not start payment. Please try again.';
+                    showToast(msg, 'error');
                 });
         }
 
