@@ -47,7 +47,7 @@ def register_fle_user(email, mobile_number):
 
     user.send_login_mail(
         subject,
-        "new_user",
+        "fle_new_user",
         dict(link=correct_link, site_url=get_url()),
         custom_template=welcome_email_template,
     )

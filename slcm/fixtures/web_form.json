@@ -1369,7 +1369,7 @@
   "meta_description": null,
   "meta_image": null,
   "meta_title": null,
-  "modified": "2026-03-13 08:47:07.526831",
+  "modified": "2026-03-15 23:50:17.932722",
   "module": "SLCM",
   "name": "foundations-for-a-legal-education",
   "payment_button_help": null,
@@ -1663,7 +1663,7 @@
     "precision": "",
     "read_only": 0,
     "read_only_depends_on": null,
-    "reqd": 0,
+    "reqd": 1,
     "show_in_filter": 0
    },
    {
