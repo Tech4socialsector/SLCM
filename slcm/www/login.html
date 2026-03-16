@@ -83,6 +83,7 @@
     .lp-field { margin-bottom: 18px; }
     .lp-label { display: block; font-size: 12px; font-weight: 700;
                 color: #374151; margin-bottom: 6px; letter-spacing: .02em; }
+    .lp-label.mandatory::after { content: " *"; color: #dc2626; }
     .lp-input {
       width: 100%; padding: 11px 14px; border: 1.5px solid #d1d5db;
       border-radius: 8px; font-size: 13px; color: #111827;
@@ -98,7 +99,11 @@
     .lp-row   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     .lp-forgot { font-size: 12px; color: var(--primary); font-weight: 600; text-decoration: none; }
     .lp-forgot:hover { text-decoration: underline; }
-    .pw-wrap { position: relative; }
+    .pw-wrap, .lp-input-wrap { position: relative; }
+    .lp-input-status {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      font-size: 10px; font-weight: 700; pointer-events: none; z-index: 5;
+    }
     .pw-btn  {
       position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
       background: none; border: none; cursor: pointer; color: #9ca3af;
@@ -349,13 +354,13 @@
       <div id="lp-notify-register" class="lp-notify"></div>
 
       <div class="lp-field">
-        <label class="lp-label" for="reg-name">Name of the Applicant</label>
+        <label class="lp-label mandatory" for="reg-name">Name of the Applicant</label>
         <input class="lp-input" type="text" id="reg-name"
                placeholder="Your full name" autocomplete="name">
         <div class="lp-field-error" id="err-reg-name"></div>
       </div>
       <div class="lp-field">
-        <label class="lp-label" for="reg-mobile">Mobile Number</label>
+        <label class="lp-label mandatory" for="reg-mobile">Mobile Number</label>
         <input class="lp-input" type="tel" id="reg-mobile"
                placeholder="e.g. 9876543210" autocomplete="tel"
                oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);"
@@ -363,13 +368,17 @@
         <div class="lp-field-error" id="err-reg-mobile"></div>
       </div>
       <div class="lp-field">
-        <label class="lp-label" for="reg-email">Email Address</label>
-        <input class="lp-input" type="email" id="reg-email"
-               placeholder="your @email.com" autocomplete="email">
+        <label class="lp-label mandatory" for="reg-email">Email Address</label>
+        <div class="lp-input-wrap">
+          <input class="lp-input" type="email" id="reg-email"
+                 placeholder="your @email.com" autocomplete="email"
+                 onblur="verifyEmailInput()" oninput="handleEmailInput()">
+          <div id="email-status" class="lp-input-status"></div>
+        </div>
         <div class="lp-field-hint">A verification email will be sent to set your password.</div>
         <div class="lp-field-error" id="err-reg-email"></div>
       </div>
-      <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
+      <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()" disabled>
         <div class="lp-btn-spin" id="lp-reg-spin"></div>
         <span class="material-symbols-outlined">person_add</span>
         <span id="lp-reg-label">Register</span>
@@ -670,12 +679,124 @@ async function doLogin() {
 }
 
 /* ── REGISTER ── */
+var EMAIL_CACHE = {};
+var EMAIL_DEBOUNCE_TIMER = null;
+var EMAIL_VERIFICATION_STATUS = null; // 'valid', 'invalid', 'unknown', 'checking', null
+
+function setEmailStatus(msg, color, type) {
+  var el = document.getElementById('email-status');
+  var btn = document.getElementById('lp-reg-btn');
+  var inp = document.getElementById('reg-email');
+  if (!el) return;
+  
+  el.textContent = msg;
+  el.style.color = color;
+  EMAIL_VERIFICATION_STATUS = type;
+  
+  if (inp) {
+    if (type === 'invalid') inp.classList.add('invalid');
+    else inp.classList.remove('invalid');
+    
+    // Adjust padding to make room for absolute text
+    if (msg) inp.style.paddingRight = (el.offsetWidth + 20) + 'px';
+    else inp.style.paddingRight = '';
+  }
+
+  // Only enable button if valid
+  if (btn) {
+    btn.disabled = (type !== 'valid');
+  }
+}
+
+function handleEmailInput() {
+  clearTimeout(EMAIL_DEBOUNCE_TIMER);
+  var email = document.getElementById('reg-email').value.trim();
+  
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setEmailStatus('', '', null);
+    return;
+  }
+  
+  if (EMAIL_CACHE[email]) {
+    applyVerificationResult(EMAIL_CACHE[email]);
+    return;
+  }
+
+  EMAIL_DEBOUNCE_TIMER = setTimeout(verifyEmailInput, 800);
+}
+
+async function verifyEmailInput() {
+  var email = document.getElementById('reg-email').value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+  
+  if (EMAIL_CACHE[email]) {
+    applyVerificationResult(EMAIL_CACHE[email]);
+    return;
+  }
+
+  setEmailStatus('Checking email...', '#6b7280', 'checking');
+
+  try {
+    var resp = await fetch('/api/method/slcm.api.email_verifier.verify_email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': LP_CSRF
+      },
+      body: JSON.stringify({ email: email })
+    });
+    var data = await resp.json();
+    var result = data.message;
+    
+    EMAIL_CACHE[email] = result;
+    applyVerificationResult(result);
+  } catch (e) {
+    setEmailStatus('⚠ Connection error. Check internet connection.', '#f59e0b', 'unknown');
+  }
+}
+
+function applyVerificationResult(res) {
+  if (!res || !res.success) {
+    if (res && res.error === 'rate_limit') {
+      setEmailStatus('⚠ Email verification temporarily unavailable', '#f59e0b', 'unknown');
+    } else if (res && res.error === 'timeout') {
+      setEmailStatus('⚠ Timeout. Check internet connection.', '#f59e0b', 'unknown');
+    } else {
+      setEmailStatus('⚠ Verification service unavailable', '#f59e0b', 'unknown');
+    }
+    return;
+  }
+
+  if (res.status === 'valid') {
+    setEmailStatus('Email Verified', '#16a34a', 'valid');
+  } else if (res.status === 'invalid') {
+    setEmailStatus('Email does not exist', '#dc2626', 'invalid');
+  } else {
+    setEmailStatus('⚠ Unable to verify email', '#f59e0b', 'unknown');
+  }
+}
+
 async function doRegister() {
+  var email = document.getElementById('reg-email').value.trim();
+  
   if (!lpValidate([
     { id: 'reg-name',   type: 'text',   msg: 'Please enter your full name.' },
     { id: 'reg-mobile', type: 'mobile', msg: 'Please enter your mobile number.' },
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
   ], 'register')) return;
+
+  // Block if invalid
+  if (EMAIL_VERIFICATION_STATUS === 'invalid') {
+    lpNotify('Please enter a valid email address.', 'error', 'register');
+    lpFieldError('reg-email', 'This email is invalid.');
+    return;
+  }
+
+  // If still checking, wait or re-verify
+  if (EMAIL_VERIFICATION_STATUS === 'checking') {
+    lpNotify('Please wait while we verify your email...', 'info', 'register');
+    return;
+  }
 
   var btn   = document.getElementById('lp-reg-btn');
   var spin  = document.getElementById('lp-reg-spin');
