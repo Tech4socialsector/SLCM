@@ -57,7 +57,6 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
     color: #94a3b8;
     margin: 0 0 12px 4px;
   }
@@ -530,7 +529,7 @@
                           <p class="text-sm font-bold text-slate-600">₹{{ "{:,.0f}".format(app.max_amount) }}</p>
                         {% else %}
                           <p class="text-[12px] font-bold text-slate-400 leading-none mb-1">Applies to</p>
-                          <p class="text-sm font-bold text-slate-600">{{ app.apply_on or "Total Fee" }}</p>
+                          <p class="text-sm font-bold text-slate-600">{{ app.apply_on or "Total Fee (Fixed)" }}</p> 
                         {% endif %}
                       </div>
                     </div>

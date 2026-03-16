@@ -46,12 +46,13 @@
     /* ─── LAYOUT ─── */
     .lp-wrap { display: flex; min-height: 100vh; }
 
-    /* ─── LEFT ─── */
+    /* ─── LEFT — base (desktop ≥1100px) ─── */
     .lp-left {
       width: 460px; flex: 0 0 460px;
       background: #fff; display: flex; flex-direction: column;
       justify-content: center; padding: 52px 48px;
       box-shadow: 4px 0 24px rgba(0,0,0,.07); position: relative; z-index: 2;
+      overflow-y: auto;
     }
 
     /* brand */
@@ -83,6 +84,7 @@
     .lp-field { margin-bottom: 18px; }
     .lp-label { display: block; font-size: 12px; font-weight: 700;
                 color: #374151; margin-bottom: 6px; letter-spacing: .02em; }
+    .lp-label .mandatory { color: #ef4444; margin-left: 2px; }
     .lp-input {
       width: 100%; padding: 11px 14px; border: 1.5px solid #d1d5db;
       border-radius: 8px; font-size: 13px; color: #111827;
@@ -156,8 +158,10 @@
     }
     .lp-right-body {
       position: relative; z-index: 2;
-      display: flex; flex-direction: column; justify-content: flex-end;
-      height: 100%; min-height: 100vh; padding: 48px 44px; color: #fff;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-start;
+      height: 100%; min-height: 100vh;
+      padding: 48px 44px; color: #fff;
       overflow-y: auto;
     }
     .lp-tagline { font-size: 36px; font-weight: 900; line-height: 1.15;
@@ -167,7 +171,7 @@
     .glass {
       background: rgba(255,255,255,.08); backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.15);
-      border-radius: 14px; padding: 20px 22px; margin-bottom: 14px;
+      border-radius: 14px; padding: 20px 22px; margin-bottom: 14px; width: 100%;
     }
     .glass-head  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .glass-title { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 700; }
@@ -265,15 +269,66 @@
     .ann-mcontent p  { margin-bottom: 10px; }
     .ann-mcontent ul { padding-left: 18px; margin-bottom: 10px; }
 
-    /* ─── RESPONSIVE REFINEMENTS ─── */
+    /* ══════════════════════════════════════════════════
+       RESPONSIVE — left panel GROWS as screen shrinks,
+       right panel shrinks (flex:1 handles it automatically)
+    ══════════════════════════════════════════════════ */
+
+    /* 4K / 2K (≥2000px): left = 1/3 of screen */
+    @media (min-width: 2000px) {
+      .lp-left { width: 33.333vw; flex: 0 0 33.333vw; padding: 72px 80px; }
+      .lp-heading { font-size: 36px; }
+      .lp-sub { font-size: 15px; }
+      .lp-input { font-size: 15px; padding: 14px 16px; }
+      .lp-btn { font-size: 15px; padding: 16px; }
+      .lp-brand-name { font-size: 22px; }
+      .lp-right-body { padding: 80px 72px; }
+      .lp-tagline { font-size: 52px; max-width: 520px; }
+    }
+
+    /* Large desktop (1400px–1999px) */
+    @media (min-width: 1400px) and (max-width: 1999px) {
+      .lp-left { width: 520px; flex: 0 0 520px; padding: 60px 56px; }
+      .lp-right-body { padding: 64px 60px; }
+      .lp-tagline { font-size: 42px; max-width: 460px; }
+    }
+
+    /* Medium desktop (1100px–1399px) — default styles apply */
+
+    /* Small desktop (861px–1099px): left grows to take more space */
+    @media (min-width: 861px) and (max-width: 1099px) {
+      .lp-left { width: 440px; flex: 0 0 440px; padding: 44px 36px; }
+      .lp-right-body { padding: 36px 28px; }
+      .lp-tagline { font-size: 26px; max-width: 300px; }
+      .glass { padding: 16px 18px; }
+      .glass-title { font-size: 13px; }
+      .date-val { font-size: 17px; }
+    }
+
+    /* Tablet (≤860px): right hidden, left fills full screen */
     @media (max-width: 860px) {
-      .lp-left  { flex: 1; width: 100%; padding: 48px 32px; }
+      .lp-wrap { justify-content: center; background: #fff; }
+      .lp-left {
+        width: 100%; flex: 1; max-width: 540px;
+        margin: 0 auto; padding: 48px 36px;
+        justify-content: flex-start;
+        box-shadow: none; min-height: 100vh;
+      }
       .lp-right { display: none; }
     }
-    @media (max-width: 480px) {
-      .lp-left { padding: 32px 20px; }
+
+    /* Mobile (≤600px) */
+    @media (max-width: 600px) {
+      .lp-left { padding: 36px 24px; max-width: 100%; }
       .lp-heading { font-size: 24px; }
       .lp-sub { font-size: 12px; margin-bottom: 24px; }
+      .lp-brand { margin-bottom: 32px; }
+    }
+
+    /* Small mobile (≤480px) */
+    @media (max-width: 480px) {
+      .lp-left { padding: 28px 16px; }
+      .lp-heading { font-size: 22px; }
       .lp-tabs { margin-bottom: 20px; }
       .lp-tab { padding: 8px 16px; font-size: 12px; }
       .lp-support-grid { grid-template-columns: 1fr; }
@@ -349,13 +404,13 @@
       <div id="lp-notify-register" class="lp-notify"></div>
 
       <div class="lp-field">
-        <label class="lp-label" for="reg-name">Name of the Applicant</label>
+        <label class="lp-label" for="reg-name">Name of the Applicant<span class="mandatory">*</span></label>
         <input class="lp-input" type="text" id="reg-name"
                placeholder="Your full name" autocomplete="name">
         <div class="lp-field-error" id="err-reg-name"></div>
       </div>
       <div class="lp-field">
-        <label class="lp-label" for="reg-mobile">Mobile Number</label>
+        <label class="lp-label" for="reg-mobile">Mobile Number<span class="mandatory">*</span></label>
         <input class="lp-input" type="tel" id="reg-mobile"
                placeholder="e.g. 9876543210" autocomplete="tel"
                oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);"
@@ -363,7 +418,7 @@
         <div class="lp-field-error" id="err-reg-mobile"></div>
       </div>
       <div class="lp-field">
-        <label class="lp-label" for="reg-email">Email Address</label>
+        <label class="lp-label" for="reg-email">Email Address<span class="mandatory">*</span></label>
         <input class="lp-input" type="email" id="reg-email"
                placeholder="your @email.com" autocomplete="email">
         <div class="lp-field-hint">A verification email will be sent to set your password.</div>
@@ -527,16 +582,9 @@ function lpNotify(msg, type, panel) {
   var target = panel === 'login' ? 'lp-notify-login' : 'lp-notify-register';
   var el = document.getElementById(target);
   if (!el) return;
-  
-  if (!msg) {
-    el.style.display = 'none';
-    el.innerHTML = '';
-    return;
-  }
-  
+  if (!msg) { el.style.display = 'none'; el.innerHTML = ''; return; }
   type = type || 'info';
   var icons = { success: 'check_circle', error: 'error', info: 'info' };
-  
   el.className = 'lp-notify ' + type;
   el.innerHTML = '<span class="material-symbols-outlined">' + icons[type] + '</span>' + msg;
   el.style.display = 'flex';
@@ -548,14 +596,9 @@ function lpTab(t) {
   document.getElementById('panel-register').style.display = t==='register' ? '' : 'none';
   document.getElementById('tab-login').classList.toggle('active',    t==='login');
   document.getElementById('tab-register').classList.toggle('active', t==='register');
-  
-  // Clear all errors when switching
   lpNotify(null, null, 'login');
   lpNotify(null, null, 'register');
-  document.querySelectorAll('.lp-field-error').forEach(el => {
-    el.textContent = '';
-    el.style.display = 'none';
-  });
+  document.querySelectorAll('.lp-field-error').forEach(el => { el.textContent = ''; el.style.display = 'none'; });
   document.querySelectorAll('.lp-input').forEach(el => el.classList.remove('invalid'));
 }
 
@@ -570,38 +613,22 @@ function lpTogglePw() {
 function lpFieldError(fieldId, msg) {
   var errEl = document.getElementById('err-' + fieldId);
   var inpEl = document.getElementById(fieldId);
-  if (errEl) {
-    errEl.textContent = msg || '';
-    errEl.style.display = msg ? 'block' : 'none';
-  }
-  if (inpEl) {
-    inpEl.classList.toggle('invalid', !!msg);
-  }
+  if (errEl) { errEl.textContent = msg || ''; errEl.style.display = msg ? 'block' : 'none'; }
+  if (inpEl) { inpEl.classList.toggle('invalid', !!msg); }
 }
 
 function lpValidate(fields, panel) {
   var ok = true;
-  lpNotify(null, null, panel); // Clear top notify
-  
+  lpNotify(null, null, panel);
   fields.forEach(function(f) {
-    lpFieldError(f.id, null); // Clear field error
-    
+    lpFieldError(f.id, null);
     var el = document.getElementById(f.id);
     var val = el.value.trim();
-    
-    if (!val) {
-      lpFieldError(f.id, f.msg);
-      ok = false;
-    } else if (f.type === 'email') {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
-        lpFieldError(f.id, 'Please enter a valid email address.');
-        ok = false;
-      }
+    if (!val) { lpFieldError(f.id, f.msg); ok = false; }
+    else if (f.type === 'email') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { lpFieldError(f.id, 'Please enter a valid email address.'); ok = false; }
     } else if (f.type === 'mobile') {
-      if (!/^\d{10}$/.test(val)) {
-        lpFieldError(f.id, 'Please enter a valid 10-digit mobile number.');
-        ok = false;
-      }
+      if (!/^\d{10}$/.test(val)) { lpFieldError(f.id, 'Please enter a valid 10-digit mobile number.'); ok = false; }
     }
   });
   return ok;
@@ -619,9 +646,7 @@ async function doLogin() {
   var label = document.getElementById('lp-login-label');
   var redir = document.getElementById('lp-redir').value || '/admission';
 
-  btn.disabled = true;
-  spin.style.display = 'block';
-  label.textContent = 'Login…';
+  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Login…';
 
   var fd = new FormData();
   fd.append('usr', document.getElementById('lp-email').value.trim());
@@ -629,43 +654,27 @@ async function doLogin() {
   fd.append('cmd', 'login');
 
   try {
-    var resp = await fetch('/api/method/login', {
-      method: 'POST', body: fd,
-      headers: { 'X-Frappe-CSRF-Token': LP_CSRF }
-    });
+    var resp = await fetch('/api/method/login', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = await resp.json();
-
     if (resp.ok && (data.message === 'Logged In' || data.home_page)) {
       lpNotify('Login successful! Redirecting…', 'success', 'login');
       setTimeout(async function() {
         try {
-          if (redir && (redir.startsWith('/app') || redir.startsWith('/desk'))) {
-            window.location.href = redir;
-            return;
-          }
-          var r2 = await fetch('/api/method/slcm.api.user.get_login_redirect', {
-            method: 'GET',
-            headers: { 'X-Frappe-CSRF-Token': LP_CSRF }
-          });
+          if (redir && (redir.startsWith('/app') || redir.startsWith('/desk'))) { window.location.href = redir; return; }
+          var r2 = await fetch('/api/method/slcm.api.user.get_login_redirect', { method: 'GET', headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
           var d2 = await r2.json();
           window.location.href = d2.message || redir;
-        } catch(e) {
-          window.location.href = redir;
-        }
+        } catch(e) { window.location.href = redir; }
       }, 800);
     } else {
       var errMsg = data.message || 'Invalid credentials. Please try again.';
       if (errMsg === 'No App') errMsg = 'Incorrect email or password.';
       lpNotify(errMsg, 'error', 'login');
-      btn.disabled = false;
-      spin.style.display = 'none';
-      label.textContent = 'Login';
+      btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
     }
   } catch(e) {
     lpNotify('Connection error. Please try again.', 'error', 'login');
-    btn.disabled = false;
-    spin.style.display = 'none';
-    label.textContent = 'Login';
+    btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
   }
 }
 
@@ -681,9 +690,7 @@ async function doRegister() {
   var spin  = document.getElementById('lp-reg-spin');
   var label = document.getElementById('lp-reg-label');
 
-  btn.disabled = true;
-  spin.style.display = 'block';
-  label.textContent = 'Creating account…';
+  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Creating account…';
 
   var name   = document.getElementById('reg-name').value.trim();
   var email  = document.getElementById('reg-email').value.trim();
@@ -692,34 +699,21 @@ async function doRegister() {
   try {
     var resp = await fetch('/api/method/slcm.api.user.custom_sign_up', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Frappe-CSRF-Token': LP_CSRF
-      },
-      body: JSON.stringify({
-        email: email,
-        full_name: name,
-        mobile_no: mobile,
-        redirect_to: '/admission'
-      })
+      headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': LP_CSRF },
+      body: JSON.stringify({ email: email, full_name: name, mobile_no: mobile, redirect_to: '/admission' })
     });
     var data = await resp.json();
-
     if (!resp.ok) {
-      // Handle server-side errors (like the 500 IntegrityError before catch)
       var errMsg = data._server_messages ? JSON.parse(data._server_messages).join('\n') : 'Registration failed.';
-      if (errMsg.includes('Duplicate entry') && errMsg.includes('mobile_no')) {
-        errMsg = 'Mobile number already registered.';
-      }
+      if (errMsg.includes('Duplicate entry') && errMsg.includes('mobile_no')) errMsg = 'Mobile number already registered.';
       lpNotify(errMsg, 'error', 'register');
       return;
     }
-
     var result = data.message;
     if (result && result[0] === 1) {
       lpNotify('Account created! Check your email to set your password.', 'success', 'register');
-      document.getElementById('reg-name').value   = '';
-      document.getElementById('reg-email').value  = '';
+      document.getElementById('reg-name').value = '';
+      document.getElementById('reg-email').value = '';
       document.getElementById('reg-mobile').value = '';
       setTimeout(function() { lpTab('login'); }, 3000);
     } else {
@@ -729,9 +723,7 @@ async function doRegister() {
   } catch(e) {
     lpNotify('Connection error. Please try again.', 'error', 'register');
   } finally {
-    btn.disabled = false;
-    spin.style.display = 'none';
-    label.textContent = 'Register';
+    btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Register';
   }
 }
 
@@ -740,20 +732,14 @@ function lpAnnOpen(idx) {
   var a = LP_ANN[idx];
   if (!a) return;
   document.getElementById('ann-mtitle').textContent = a.title;
-
   var meta = '';
   if (a.type) meta += '<span class="ann-mmeta-item"><span class="material-symbols-outlined">label</span>' + a.type + '</span>';
   if (a.date) meta += '<span class="ann-mmeta-item"><span class="material-symbols-outlined">calendar_today</span>' + a.date + '</span>';
   document.getElementById('ann-mmeta').innerHTML = meta;
-
   var img = document.getElementById('ann-mimg');
-  if (a.image) { img.src = a.image; img.style.display = 'block'; }
-  else          { img.style.display = 'none'; }
-
+  if (a.image) { img.src = a.image; img.style.display = 'block'; } else { img.style.display = 'none'; }
   var sum = document.getElementById('ann-msummary');
-  if (a.summary) { sum.textContent = a.summary; sum.style.display = 'block'; }
-  else            { sum.style.display = 'none'; }
-
+  if (a.summary) { sum.textContent = a.summary; sum.style.display = 'block'; } else { sum.style.display = 'none'; }
   document.getElementById('ann-mcontent').innerHTML = a.content || '<p style="color:#9ca3af;font-size:13px;">No additional details.</p>';
   document.getElementById('ann-modal-bg').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -769,7 +755,6 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') lpAnnClose({ target: document.getElementById('ann-modal-bg') });
 });
 
-/* Enter key triggers login */
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   var panelLogin = document.getElementById('panel-login');
