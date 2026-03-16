@@ -25,7 +25,7 @@
    "fieldname": "rule_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Rule Name",
+   "label": "Rule name",
    "reqd": 1,
    "unique": 1
   },
@@ -33,7 +33,7 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Program Level",
+   "label": "Program level",
    "options": "UG\nPG\nResearch Cource",
    "reqd": 1
   },
@@ -41,7 +41,7 @@
    "default": "0",
    "fieldname": "minimum_marks",
    "fieldtype": "Float",
-   "label": "Minimum Marks",
+   "label": "Minimum marks",
    "reqd": 1
   },
   {
@@ -60,14 +60,14 @@
   {
    "fieldname": "approval_authority",
    "fieldtype": "Select",
-   "label": "Approval Authority",
+   "label": "Approval authority",
    "options": "Admissions Committee\nVC",
    "reqd": 1
   },
   {
    "fieldname": "effective_from",
    "fieldtype": "Date",
-   "label": "Effective From",
+   "label": "Effective from",
    "reqd": 1
   },
   {
@@ -93,7 +93,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission Cycle",
+   "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
@@ -112,7 +112,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 16:15:22.421035",
+ "modified": "2026-03-16 12:05:22.426647",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit Rule",

@@ -14,7 +14,7 @@
    "fieldname": "national_exam_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "National Exam Name ",
+   "label": "National exam name ",
    "reqd": 1,
    "unique": 1
   },
@@ -27,7 +27,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-01 18:30:22.477995",
+ "modified": "2026-03-16 11:59:59.560683",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "National Test",

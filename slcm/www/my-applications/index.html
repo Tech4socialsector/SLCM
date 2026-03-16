@@ -2882,7 +2882,7 @@ LIST / DASHBOARD VIEW
               alert((selected.center_name || selected.provider) + ' is currently full.');
               dropdown.value = '';
               centerDetails.style.display = 'none';
-              btnSave.textContent = 'Confirm Allocation';
+              btnSave.textContent = 'Confirm allocation';
               btnSave.disabled = true;
               btnSave.style.opacity = '.5';
               return;
@@ -2893,12 +2893,12 @@ LIST / DASHBOARD VIEW
             selectedCenterAddr.textContent = selected.center_address || '';
             btnSave.disabled = false;
             btnSave.style.opacity = '1';
-            btnSave.textContent = 'Confirm Allocation';
+            btnSave.textContent = 'Confirm allocation';
           } catch (e) {
             alert('Verification failed: ' + e.message);
             btnSave.disabled = false;
             btnSave.style.opacity = '1';
-            btnSave.textContent = 'Confirm Allocation';
+            btnSave.textContent = 'Confirm allocation';
           }
         });
 
@@ -2920,7 +2920,7 @@ LIST / DASHBOARD VIEW
             } catch (e) {
               alert('Allocation failed: ' + e.message);
               btnSave.disabled = false;
-              btnSave.textContent = 'Confirm Allocation';
+              btnSave.textContent = 'Confirm allocation';
             }
           });
         }
@@ -3324,7 +3324,7 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
     } catch (e) {
       showProfToast(e.message || 'Network error — please try again.', true);
     }
-    btn.textContent = 'Save changes'; }
+    btn.textContent = 'Save changes';
   };
 
   window.doLogout = function () {
@@ -3350,6 +3350,6 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       citySelect.innerHTML = '<option value="">Error loading cities</option>';
     }
   };
-}) ();
+})();
 </script>
 {% endblock %}

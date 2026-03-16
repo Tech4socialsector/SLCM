@@ -172,7 +172,7 @@
    "fieldname": "application_type",
    "fieldtype": "Select",
    "hidden": 1,
-   "label": "Application Type"
+   "label": "Application type"
   },
   {
    "fieldname": "program",
@@ -191,7 +191,7 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
-   "label": "Academic Year",
+   "label": "Academic year",
    "options": "Academic Year"
   },
   {
@@ -199,7 +199,7 @@
    "default": "Submitted",
    "fieldname": "application_status",
    "fieldtype": "Link",
-   "label": "Application Status",
+   "label": "Application status",
    "options": "Applicant Status"
   },
   {
@@ -240,8 +240,9 @@
   },
   {
    "fieldname": "religion",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Religion",
+   "options": "\nHindu\nMuslim\nChristian\nSikh\nBuddhist\nJain\nOther",
    "reqd": 1
   },
   {
@@ -480,7 +481,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "ews_certificate",
    "fieldtype": "Attach",
-   "label": "EWS Certificate",
+   "label": "EWS certificate",
    "mandatory_depends_on": "eval:doc.ews === \"Yes\""
   },
   {
@@ -488,7 +489,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "caste_certificate",
    "fieldtype": "Attach",
-   "label": "Caste Certificate",
+   "label": "Caste certificate",
    "mandatory_depends_on": "eval:doc.whether_scstobc_ncl && doc.whether_scstobc_ncl !== \"NA\""
   },
   {
@@ -519,7 +520,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "pwd_certificate",
    "fieldtype": "Attach",
-   "label": "PWD Certificate",
+   "label": "PWD certificate",
    "mandatory_depends_on": "eval:doc.pwd === \"Yes\""
   },
   {
@@ -601,20 +602,24 @@
   },
   {
    "fieldname": "first_preference",
-   "fieldtype": "Data",
-   "label": "First Preference",
+   "fieldtype": "Link",
+   "label": "First preference",
+   "options": "Entrance Test Provider",
    "reqd": 1
   },
   {
    "fieldname": "second_preference",
-   "fieldtype": "Data",
-   "label": "Second Preference",
+   "fieldtype": "Link",
+   "label": "Second preference",
+   "options": "Entrance Test Provider",
    "reqd": 1
   },
   {
    "fieldname": "third_preference",
-   "fieldtype": "Data",
-   "label": "Third Preference",
+   "fieldtype": "Link",
+   "label": "Third preference",
+   "not_nullable": 1,
+   "options": "Entrance Test Provider",
    "reqd": 1
   },
   {
@@ -775,7 +780,7 @@
    "depends_on": "eval:doc.source_of_information === \"Others\"",
    "fieldname": "please_mention",
    "fieldtype": "Data",
-   "label": "Please Mention",
+   "label": "Please mention",
    "mandatory_depends_on": "eval:doc.source_of_information === \"Others\""
   },
   {
@@ -842,7 +847,8 @@
   {
    "fieldname": "annual_house_hold_income",
    "fieldtype": "Select",
-   "label": "Annual House Hold Income",
+   "label": "Annual house hold income",
+   "options": "\n0 - 3,00,000\n3,00,001 - 8,00,000\n8,00,001 - 15,00,000\n15,00,001 - 25,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
    "precision": "2",
    "reqd": 1
   },
@@ -855,7 +861,7 @@
    "depends_on": "eval:doc.application_status === \"Rejected\"",
    "fieldname": "rejected_reason",
    "fieldtype": "Small Text",
-   "label": "Rejected Reason",
+   "label": "Rejected reason",
    "read_only": 1
   },
   {
@@ -871,7 +877,7 @@
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
-   "label": "Admission Cycle",
+   "label": "Admission cycle",
    "options": "Admission Cycle"
   },
   {
@@ -892,13 +898,13 @@
   {
    "fieldname": "ug_degree_details_column",
    "fieldtype": "Column Break",
-   "label": "UG Degree Details "
+   "label": "UG degree details "
   },
   {
    "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "pg_degree_details",
    "fieldtype": "Table",
-   "label": "PG Degree Details ",
+   "label": "Pg degree details ",
    "mandatory_depends_on": "eval:doc.program_level == \"PHD\"",
    "options": "PG Degree Details"
   },
@@ -929,7 +935,7 @@
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
-   "label": "Admission Year",
+   "label": "Admission year",
    "options": "Admission Year"
   },
   {
@@ -947,20 +953,20 @@
    "fieldname": "application_fee_status",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Application Fee Status",
+   "label": "Application fee status",
    "options": "Pending\nRequested\nPaid\nWaived"
   },
   {
    "fieldname": "application_fee_amount",
    "fieldtype": "Currency",
-   "label": "Application Fee Amount",
+   "label": "Application fee amount",
    "read_only": 1
   },
   {
    "depends_on": "eval:doc.application_fee_status=='Waived'",
    "fieldname": "fee_waived_by",
    "fieldtype": "Link",
-   "label": "Fee Waived By",
+   "label": "Fee waived by",
    "options": "User",
    "read_only": 1
   },
@@ -968,19 +974,19 @@
    "depends_on": "eval:doc.application_fee_status=='Waived'",
    "fieldname": "fee_waived_on",
    "fieldtype": "Datetime",
-   "label": "Fee Waived On",
+   "label": "Fee waived on",
    "read_only": 1
   },
   {
    "fieldname": "current_stage",
    "fieldtype": "Link",
-   "label": "Current Stage",
+   "label": "Current stage",
    "options": "Stages"
   },
   {
    "fieldname": "merit_score",
    "fieldtype": "Float",
-   "label": "Merit Score",
+   "label": "Merit score",
    "precision": "2",
    "read_only": 1
   },
@@ -1000,18 +1006,18 @@
    "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "proposed_phd_topic",
    "fieldtype": "Small Text",
-   "label": "Proposed PhD Topic ",
+   "label": "Proposed phd topic ",
    "mandatory_depends_on": "eval:doc.program_level == \"PHD\""
   },
   {
    "fieldname": "phd_proposal",
    "fieldtype": "Attach",
-   "label": "PhD Proposal Upload"
+   "label": "PhD proposal upload"
   },
   {
    "fieldname": "phd_program_type",
    "fieldtype": "Select",
-   "label": "PhD Programme Selection",
+   "label": "PhD programme selection",
    "options": "\nLaw\nInterdisciplinary"
   },
   {
@@ -1038,7 +1044,7 @@
    "depends_on": "eval: doc.other_degree == \"Yes\"",
    "fieldname": "other_degree_details",
    "fieldtype": "Small Text",
-   "label": "Please Specify the names of all other degrees",
+   "label": "Please specify the names of all other degrees",
    "mandatory_depends_on": "eval: doc.other_degree == \"Yes\""
   },
   {
@@ -1087,7 +1093,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-13 15:56:13.952010",
+ "modified": "2026-03-16 13:05:26.216818",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

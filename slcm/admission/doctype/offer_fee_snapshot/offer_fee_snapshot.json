@@ -27,40 +27,40 @@
   {
    "fieldname": "scholarship_amount",
    "fieldtype": "Currency",
-   "label": "Scholarship Amount",
+   "label": "Scholarship amount",
    "read_only": 1
   },
   {
    "fieldname": "total_payable",
    "fieldtype": "Currency",
-   "label": "Total Payable",
+   "label": "Total payable",
    "read_only": 1
   },
   {
    "fieldname": "frozen_on",
    "fieldtype": "Datetime",
-   "label": "Frozen On",
+   "label": "Frozen on",
    "read_only": 1
   },
   {
    "fieldname": "frozen_by",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Frozen By",
+   "label": "Frozen by",
    "options": "User",
    "read_only": 1
   },
   {
    "fieldname": "fee_component",
    "fieldtype": "Table",
-   "label": "Fee Component",
+   "label": "Fee component",
    "options": "Fee Component Child"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-26 18:04:05.581534",
+ "modified": "2026-03-16 11:57:41.020402",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Fee Snapshot",

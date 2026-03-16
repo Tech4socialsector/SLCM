@@ -624,9 +624,25 @@
 
           <!-- TAB: ELIGIBILITY -->
           <div id="pd-eligibility" style="padding:28px;display:none;">
-            <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">
-              Eligibility Criteria
-            </h3>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+              <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0;">
+                Eligibility Criteria
+              </h3>
+              {% if admission_year or admission_cycle %}
+              <div style="display:flex;gap:12px;font-size:12px;font-weight:600;color:#64748b;">
+                {% if admission_year %}
+                <span style="background:#f1f5f9;padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;">
+                  Year: {{ admission_year }}
+                </span>
+                {% endif %}
+                {% if admission_cycle %}
+                <span style="background:#f1f5f9;padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;">
+                  Cycle: {{ admission_cycle }}
+                </span>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
             {% if _elig %}
             <div style="font-size:14px;color:#475569;line-height:1.75;margin-bottom:20px;">
               {{ _elig | safe }}

@@ -55,14 +55,14 @@
    "fieldname": "scheme_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Scheme Name",
+   "label": "Scheme name",
    "reqd": 1
   },
   {
    "fieldname": "scheme_code",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Scheme Code",
+   "label": "Scheme code",
    "reqd": 1,
    "unique": 1
   },
@@ -70,14 +70,14 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission Cycle",
+   "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
   {
    "fieldname": "approval_authority",
    "fieldtype": "Select",
-   "label": "Approval Authority",
+   "label": "Approval authority",
    "options": "Admissions Committee\nFinance Head\nVC",
    "reqd": 1
   },
@@ -85,7 +85,7 @@
    "fieldname": "scheme_type",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Scheme Type",
+   "label": "Scheme type",
    "options": "Need\nMerit\nGovernment\nInstitutional",
    "reqd": 1
   },
@@ -96,7 +96,7 @@
   {
    "fieldname": "eligibility_criteria",
    "fieldtype": "Small Text",
-   "label": "Eligibility Criteria"
+   "label": "Eligibility criteria"
   },
   {
    "fieldname": "description",
@@ -106,12 +106,12 @@
   {
    "fieldname": "min_income",
    "fieldtype": "Currency",
-   "label": "Minimum Income"
+   "label": "Minimum income"
   },
   {
    "fieldname": "max_income",
    "fieldtype": "Currency",
-   "label": "Maximum Income"
+   "label": "Maximum income"
   },
   {
    "fieldname": "section_coverage",
@@ -129,7 +129,7 @@
    "depends_on": "eval:doc.apply_on != 'Component-wise'",
    "fieldname": "coverage_type",
    "fieldtype": "Select",
-   "label": "Coverage Type",
+   "label": "Coverage type",
    "mandatory_depends_on": "eval:doc.apply_on != 'Component-wise'",
    "options": "Percentage\nFixed\nComponent-wise"
   },
@@ -137,13 +137,13 @@
    "depends_on": "eval:doc.apply_on != 'Component-wise'",
    "fieldname": "coverage_value",
    "fieldtype": "Float",
-   "label": "Coverage Value",
+   "label": "Coverage value",
    "mandatory_depends_on": "eval:doc.apply_on != 'Component-wise'"
   },
   {
    "fieldname": "max_amount",
    "fieldtype": "Currency",
-   "label": "Maximum Amount"
+   "label": "Maximum amount"
   },
   {
    "fieldname": "column_coverage_2",
@@ -205,7 +205,7 @@
    "default": "0",
    "fieldname": "exclusive_scheme",
    "fieldtype": "Check",
-   "label": "Exclusive Scheme",
+   "label": "Exclusive scheme",
    "reqd": 1
   },
   {
@@ -220,14 +220,14 @@
   {
    "fieldname": "stage_availability",
    "fieldtype": "Select",
-   "label": "Stage Availability",
+   "label": "Stage availability",
    "options": "Anytime\nPost-Selection\nPost-Offer",
    "reqd": 1
   },
   {
    "fieldname": "application_start",
    "fieldtype": "Date",
-   "label": "Application Start"
+   "label": "Application start"
   },
   {
    "fieldname": "column_availability_2",
@@ -236,7 +236,7 @@
   {
    "fieldname": "application_end",
    "fieldtype": "Date",
-   "label": "Application End"
+   "label": "Application end"
   },
   {
    "fieldname": "status",
@@ -248,7 +248,7 @@
   {
    "fieldname": "approval_reference",
    "fieldtype": "Data",
-   "label": "Approval Reference"
+   "label": "Approval reference"
   },
   {
    "fieldname": "remarks",
@@ -268,7 +268,7 @@
   {
    "fieldname": "min_merit_score",
    "fieldtype": "Float",
-   "label": "Minimum Merit Score"
+   "label": "Minimum merit score"
   },
   {
    "default": "0",
@@ -280,7 +280,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-06 12:42:31.750429",
+ "modified": "2026-03-16 12:03:01.125416",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme",
