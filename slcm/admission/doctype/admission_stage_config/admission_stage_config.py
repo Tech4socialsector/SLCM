@@ -8,7 +8,7 @@ class AdmissionStageConfig(Document):
         # unless user is System Manager
         if not frappe.utils.cint(frappe.db.get_single_value("Admission Settings", "bypass_stage_lock")):
             cycle_status = frappe.db.get_value("Admission Cycle", self.admission_cycle, "status")
-            if cycle_status == "Active" or self.is_locked:
+            if cycle_status == "Active" or self.is_stage_locked:
                 if "System Manager" not in frappe.get_roles():
                     frappe.throw(
                         "Admission Stage Config cannot be modified after cycle is Active or if stage is locked. "

@@ -78,13 +78,13 @@
    "fieldname": "portal_title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Portal Title",
+   "label": "Portal title",
    "reqd": 1
   },
   {
    "fieldname": "portal_subtitle",
    "fieldtype": "Small Text",
-   "label": "Portal Subtitle",
+   "label": "Portal subtitle",
    "reqd": 1
   },
   {
@@ -94,20 +94,20 @@
   {
    "fieldname": "hero_image",
    "fieldtype": "Attach Image",
-   "label": "Hero / Banner Image",
+   "label": "Hero / Banner image",
    "reqd": 1
   },
   {
    "description": "Defaults to #1a3c6e if blank",
    "fieldname": "primary_color",
    "fieldtype": "Color",
-   "label": "Primary Color",
+   "label": "Primary color",
    "reqd": 1
   },
   {
    "fieldname": "secondary_color",
    "fieldtype": "Color",
-   "label": "Secondary Color",
+   "label": "Secondary color",
    "reqd": 1
   },
   {
@@ -139,7 +139,7 @@
    "depends_on": "eval:doc.show_announcement==1",
    "fieldname": "header_announcement",
    "fieldtype": "Text Editor",
-   "label": "Announcement Content"
+   "label": "Announcement chontent"
   },
   {
    "collapsible": 1,
@@ -161,7 +161,7 @@
    "depends_on": "eval:doc.portal_active==0",
    "fieldname": "maintenance_message",
    "fieldtype": "Text Editor",
-   "label": "Maintenance Message"
+   "label": "Maintenance message"
   },
   {
    "collapsible": 1,
@@ -173,7 +173,7 @@
    "default": "Grid",
    "fieldname": "program_card_layout",
    "fieldtype": "Select",
-   "label": "Program Card Layout",
+   "label": "Program card layout",
    "options": "Grid\nList"
   },
   {
@@ -192,6 +192,7 @@
    "collapsible": 1,
    "fieldname": "section_break_edit_rules",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Edit Rules After Submission"
   },
   {
@@ -264,7 +265,7 @@
    "fieldname": "application_template",
    "fieldtype": "Link",
    "label": "Application PDF Template",
-   "options": "Offer Letter"
+   "options": "Print Format"
   },
   {
    "collapsible": 1,
@@ -319,13 +320,13 @@
   {
    "fieldname": "contact_email",
    "fieldtype": "Data",
-   "label": "Contact Email",
+   "label": "Contact email",
    "options": "Email"
   },
   {
    "fieldname": "contact_phone",
    "fieldtype": "Data",
-   "label": "Contact Phone"
+   "label": "Contact phone"
   },
   {
    "fieldname": "col_break_6",
@@ -334,7 +335,7 @@
   {
    "fieldname": "footer_text",
    "fieldtype": "Small Text",
-   "label": "Footer Text"
+   "label": "Footer text"
   },
   {
    "collapsible": 1,
@@ -352,80 +353,80 @@
   {
    "fieldname": "portal_tagline",
    "fieldtype": "Small Text",
-   "label": "Portal Tagline / Subtitle"
+   "label": "Portal tagline / Subtitle"
   },
   {
    "fieldname": "institution_since",
    "fieldtype": "Data",
-   "label": "Institution Founded Year (e.g. 1924)"
+   "label": "Institution founded year (e.g. 1924)"
   },
   {
    "fieldname": "hero_cta_label",
    "fieldtype": "Data",
-   "label": "Hero Primary CTA Label"
+   "label": "Hero primary CTA label"
   },
   {
    "fieldname": "hero_cta2_label",
    "fieldtype": "Data",
-   "label": "Hero Secondary CTA Label"
+   "label": "Hero secondary CTA label"
   },
   {
    "fieldname": "footer_address",
    "fieldtype": "Small Text",
-   "label": "Footer Address"
+   "label": "Footer address"
   },
   {
    "fieldname": "footer_phone",
    "fieldtype": "Data",
-   "label": "Footer Phone"
+   "label": "Footer phone"
   },
   {
    "fieldname": "footer_email",
    "fieldtype": "Data",
-   "label": "Footer Email"
+   "label": "Footer email"
   },
   {
    "fieldname": "social_links",
    "fieldtype": "Table",
-   "label": "Social Media Links",
+   "label": "Social media links",
    "options": "Portal Social Link"
   },
   {
    "fieldname": "value_cards",
    "fieldtype": "Table",
-   "label": "Dashboard Value Cards",
+   "label": "Dashboard value cards",
    "options": "Portal Value Card"
   },
   {
    "fieldname": "portal_mission",
    "fieldtype": "Small Text",
-   "label": "Institution Mission Statement"
+   "label": "Institution mission statement"
   },
   {
    "fieldname": "support_name",
    "fieldtype": "Data",
-   "label": "Support Contact Name"
+   "label": "Support contact name"
   },
   {
    "fieldname": "support_role",
    "fieldtype": "Data",
-   "label": "Support Contact Role"
+   "label": "Support contact role"
   },
   {
    "fieldname": "support_email",
    "fieldtype": "Data",
-   "label": "Support Contact Email"
+   "label": "Support contact email"
   },
   {
    "fieldname": "stage_next_steps",
    "fieldtype": "Table",
-   "label": "Stage-wise Next Steps",
+   "label": "Stage-wise next steps",
    "options": "Admission Stage Next Step"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-03-13 15:44:32.084236",
+ "modified": "2026-03-16 10:55:55.294942",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",

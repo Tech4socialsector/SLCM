@@ -28,7 +28,7 @@
    "fieldname": "scholarship_scheme",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Scholarship Scheme",
+   "label": "Scholarship scheme",
    "options": "Scholarship Scheme",
    "reqd": 1
   },
@@ -36,7 +36,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission Cycle",
+   "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
@@ -80,7 +80,7 @@
   {
    "fieldname": "intake_limit",
    "fieldtype": "Int",
-   "label": "Intake Limit"
+   "label": "Intake limit"
   },
   {
    "fieldname": "column_intake_2",
@@ -90,14 +90,14 @@
    "default": "0",
    "fieldname": "current_count",
    "fieldtype": "Int",
-   "label": "Current Count",
+   "label": "Current count",
    "read_only": 1,
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-06 12:43:02.714760",
+ "modified": "2026-03-16 12:03:25.598378",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme Mapping",

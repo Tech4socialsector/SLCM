@@ -44,6 +44,9 @@ fixtures = [
     },
     {
         "doctype": "Stages",
+    },
+    {
+        "doctype": "Merit Component",
     }
 ]
 # Apps  
