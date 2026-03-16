@@ -852,8 +852,8 @@
   {
    "fieldname": "annual_house_hold_income",
    "fieldtype": "Select",
-   "label": "Annual household income (INR)",
-   "options": "0 - 3,00,000\n3,00,001 - 8,00,000\n8,00,001 - 15,00,000\n15,00,001 - 25,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
+   "label": "Annual house hold income (in INR)",
+   "options": "\n0 - 3,00,000\n3,00,001 - 8,00,000\n8,00,001 - 15,00,000\n15,00,001 - 25,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
    "precision": "2",
    "reqd": 1
   },
@@ -1105,11 +1105,7 @@
    "link_fieldname": "applicant"
   }
  ],
-<<<<<<< HEAD
  "modified": "2026-03-16 17:46:32.068774",
-=======
- "modified": "2026-03-16 13:05:26.216818",
->>>>>>> bsoft-admission
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
