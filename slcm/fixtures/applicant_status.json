@@ -118,5 +118,12 @@
   "modified": "2026-03-11 14:39:33.006879",
   "name": "Entrance Test Allocated",
   "status": "Entrance Test Allocated"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "intake_type": "All",
+  "name": "Enrolled",
+  "status": "Enrolled"
  }
 ]

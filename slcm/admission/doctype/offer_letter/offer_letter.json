@@ -27,6 +27,7 @@
   "column_break_hdcy",
   "payment_deadline",
   "offer_status",
+  "seat_locked",
   "edit_reason",
   "notification_receiver",
   "receipt_print_format"
@@ -129,6 +130,13 @@
    "in_standard_filter": 1,
    "label": "Offer Status",
    "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn"
+  },
+  {
+   "default": "0",
+   "fieldname": "seat_locked",
+   "fieldtype": "Check",
+   "label": "Seat Locked",
+   "read_only": 1
   },
   {
    "fieldname": "offer_configrationn",

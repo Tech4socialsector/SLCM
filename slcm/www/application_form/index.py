@@ -696,10 +696,18 @@ def save_form(data):
             }
 
     # ── Save or Submit ───────────────────────────────────────────────
+    # Draft save (user clicked "Save Draft"): do not check mandatory or eligibility.
+    # Submit (user clicked "Submit Application"): we set application_status = "Submitted"
+    # *before* save(), so when Applicant.validate() runs it sees Submitted and runs
+    # eligibility + mandatory checks in the same request (status is not "after" submit — it's set for this submit).
+    if not is_submit:
+        doc.flags.ignore_mandatory = True
+
     try:
         doc.flags.ignore_permissions = True
 
         if is_submit:
+            # Set before save() so Applicant.validate() runs eligibility and mandatory on this submit.
             doc.application_status = "Submitted"
             # Save the record
             if not doc.name or doc.is_new():

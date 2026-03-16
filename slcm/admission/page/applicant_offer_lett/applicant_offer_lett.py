@@ -97,9 +97,12 @@ def get_offer_details(offer_name=None):
                 "amount": comp.total_amount or comp.amount
             })
 
-    # Check if Fee is paid
+    # Check if Fee is paid: AFA status Paid/Converted, or Payment Request for this offer is Paid
     fee_paid = frappe.db.get_value("Applicant Fee Assignment",
-        {"offer_letter": offer_id, "status": ["in", ["Paid", "Fee Paid"]]}, "name")
+        {"offer_letter": offer_id, "status": ["in", ["Paid", "Converted"]]}, "name")
+    if not fee_paid:
+        fee_paid = frappe.db.get_value("Payment Request",
+            {"reference_doctype": "Offer Letter", "reference_name": offer_id, "status": "Paid"}, "name")
 
     # Scholarship Amount: prefer live total from Scholarship Application (most accurate)
     applicant_id = target_applicant

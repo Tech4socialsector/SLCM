@@ -11,14 +11,16 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def before_validate(self):
-        # Ignore mandatory fields when application is essentially a Draft
+        # Save Draft: skip mandatory check so user can save incomplete form.
         if self.application_status == "Draft":
             self.flags.ignore_mandatory = True
 
     def validate(self):
         """
-        Runs on every save. Eligibility is only run when the application
-        status is Submitted, so that Save Draft does not trigger eligibility errors.
+        Runs on every save.
+        Eligibility and mandatory are checked only when the user clicks "Submit Application":
+        the portal sets application_status = "Submitted" before save(), so this block runs
+        during that submit request. Save Draft does not set Submitted, so no eligibility/mandatory here.
         create_or_update_evaluation() is called inside validate_eligibility().
         """
         set_intake_type(self)
