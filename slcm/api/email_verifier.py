@@ -1,74 +1,53 @@
 import frappe
-import requests
+import re
+import dns.resolver
 from frappe import _
 
 @frappe.whitelist(allow_guest=True)
 def verify_email(email):
     """
-    Verifies an email address using Hunter.io API.
-    Returns a structured response to the frontend.
+    Verifies an email address using DNS MX record validation.
+    Returns status: domain_valid, domain_invalid, invalid_format, or verification_error.
     """
     if not email:
-        return {"success": False, "error": "missing_email"}
+        return {"status": "invalid_format"}
 
-    api_key = frappe.conf.get("hunter_api_key")
-    if not api_key:
-        frappe.log_error("Hunter API key not found in site_config.json", "Email Verification Error")
-        return {"success": False, "error": "invalid_api_key"}
+    # Step 1: Validate email format using regex
+    # Standard email regex: name@domain.tld
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_regex, email):
+        return {"status": "invalid_format"}
 
-    url = "https://api.hunter.io/v2/email-verifier"
-    params = {"email": email, "api_key": api_key}
+    # Step 2: Extract domain
+    try:
+        domain = email.split('@')[1]
+    except IndexError:
+        return {"status": "invalid_format"}
 
-    # Retry logic for transient errors (timeouts or 5xx)
-    max_retries = 2
-    for attempt in range(max_retries + 1):
-        try:
-            response = requests.get(url, params=params, timeout=10)
-            status_code = response.status_code
-            
-            try:
-                data = response.json()
-            except ValueError:
-                data = {}
+    # Step 3: Check MX records using dnspython
+    try:
+        # We use a 10 second timeout for the DNS resolution
+        resolver = dns.resolver.Resolver()
+        resolver.timeout = 10
+        resolver.lifetime = 10
+        
+        mx_records = resolver.resolve(domain, 'MX')
+        
+        if mx_records:
+            return {"status": "domain_valid"}
+        else:
+            return {"status": "domain_invalid"}
 
-            if status_code == 200:
-                result = data.get("data", {})
-                return {
-                    "success": True,
-                    "status": result.get("status"),
-                    "score": result.get("score")
-                }
-            
-            # Handle Hunter API Errors
-            errors = data.get("errors", [])
-            error_data = errors[0] if errors else {}
-            
-            if status_code == 401:
-                frappe.log_error(f"Hunter API Unauthorized: {data}", "Email Verification Error")
-                return {"success": False, "error": "invalid_api_key"}
-            
-            if status_code in [403, 429]:
-                return {"success": False, "error": "rate_limit"}
-
-            if status_code == 400 or status_code == 422:
-                # Often occurs if the email format is rejected by Hunter before verification
-                return {"success": True, "status": "invalid"}
-
-            if status_code >= 500:
-                if attempt < max_retries: continue # Retry
-                return {"success": False, "error": "service_unavailable"}
-
-            # Log other unexpected 4xx errors
-            frappe.log_error(f"Hunter API Error {status_code}: {data}", "Email Verification Error")
-            return {"success": False, "error": "unknown_error", "details": error_data.get("details")}
-
-        except requests.exceptions.Timeout:
-            if attempt < max_retries: continue # Retry
-            return {"success": False, "error": "timeout"}
-        except requests.exceptions.RequestException as e:
-            if attempt < max_retries: continue # Retry
-            frappe.log_error(f"Hunter API Request Exception: {str(e)}", "Email Verification Error")
-            return {"success": False, "error": "service_unavailable"}
-        except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "Email Verification Error")
-            return {"success": False, "error": "internal_error"}
+    except dns.resolver.NXDOMAIN:
+        # Domain does not exist
+        return {"status": "domain_invalid"}
+    except (dns.resolver.NoAnswer, dns.resolver.NoNameservers):
+        # Domain exists but no MX records found (no mail server)
+        return {"status": "domain_invalid"}
+    except dns.exception.Timeout:
+        # Connection timeout - consider it a verification error
+        return {"status": "verification_error"}
+    except Exception as e:
+        # Log unexpected errors for debugging
+        frappe.log_error(f"Email Verification DNS Error for {domain}: {str(e)}", "Email Verification Error")
+        return {"status": "verification_error"}

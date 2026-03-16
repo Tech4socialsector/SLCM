@@ -101,10 +101,7 @@
     .lp-forgot { font-size: 12px; color: var(--primary); font-weight: 600; text-decoration: none; }
     .lp-forgot:hover { text-decoration: underline; }
     .pw-wrap, .lp-input-wrap { position: relative; }
-    .lp-input-status {
-      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-      font-size: 10px; font-weight: 700; pointer-events: none; z-index: 5;
-    }
+    
     .pw-btn  {
       position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
       background: none; border: none; cursor: pointer; color: #9ca3af;
@@ -112,6 +109,20 @@
     }
     .pw-btn .material-symbols-outlined { font-size: 18px; }
     .lp-field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+    
+    /* Email Verification Status Indicator — Positioned Inside Input */
+    #email-status {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      font-weight: 800;
+      pointer-events: none;
+      z-index: 5;
+      white-space: nowrap;
+      transition: opacity .2s;
+    }
 
     /* buttons */
     .lp-btn {
@@ -422,17 +433,17 @@
         <div class="lp-field-error" id="err-reg-mobile"></div>
       </div>
       <div class="lp-field">
-        <label class="lp-label mandatory" for="reg-email">Email Address<span class="mandatory">*</span></label>
+        <label class="lp-label" for="reg-email">Email Address<span class="mandatory">*</span></label>
         <div class="lp-input-wrap">
           <input class="lp-input" type="email" id="reg-email"
                  placeholder="your @email.com" autocomplete="email"
                  onblur="verifyEmailInput()" oninput="handleEmailInput()">
-          <div id="email-status" class="lp-input-status"></div>
+          <div id="email-status"></div>
         </div>
         <div class="lp-field-hint">A verification email will be sent to set your password.</div>
         <div class="lp-field-error" id="err-reg-email"></div>
       </div>
-      <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()" disabled>
+      <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
         <div class="lp-btn-spin" id="lp-reg-spin"></div>
         <span class="material-symbols-outlined">person_add</span>
         <span id="lp-reg-label">Register</span>
@@ -689,30 +700,36 @@ async function doLogin() {
 /* ── REGISTER ── */
 var EMAIL_CACHE = {};
 var EMAIL_DEBOUNCE_TIMER = null;
-var EMAIL_VERIFICATION_STATUS = null; // 'valid', 'invalid', 'unknown', 'checking', null
+var EMAIL_VERIFICATION_STATUS = null; // 'domain_valid', 'domain_invalid', 'invalid_format', 'verification_error', 'checking', null
 
 function setEmailStatus(msg, color, type) {
   var el = document.getElementById('email-status');
-  var btn = document.getElementById('lp-reg-btn');
   var inp = document.getElementById('reg-email');
-  if (!el) return;
+  if (!el || !inp) return;
   
   el.textContent = msg;
   el.style.color = color;
   EMAIL_VERIFICATION_STATUS = type;
   
-  if (inp) {
-    if (type === 'invalid') inp.classList.add('invalid');
-    else inp.classList.remove('invalid');
-    
-    // Adjust padding to make room for absolute text
-    if (msg) inp.style.paddingRight = (el.offsetWidth + 20) + 'px';
-    else inp.style.paddingRight = '';
+  if (type === 'domain_invalid' || type === 'invalid_format') {
+    inp.classList.add('invalid');
+  } else {
+    inp.classList.remove('invalid');
   }
 
-  // Only enable button if valid
-  if (btn) {
-    btn.disabled = (type !== 'valid');
+  // Adjust input padding dynamically to prevent text overlap
+  if (msg) {
+    setTimeout(() => {
+      var width = el.offsetWidth;
+      if (width > 0) {
+        inp.style.paddingRight = (width + 20) + 'px';
+      } else {
+        // Fallback estimation
+        inp.style.paddingRight = '120px';
+      }
+    }, 0);
+  } else {
+    inp.style.paddingRight = '';
   }
 }
 
@@ -720,8 +737,14 @@ function handleEmailInput() {
   clearTimeout(EMAIL_DEBOUNCE_TIMER);
   var email = document.getElementById('reg-email').value.trim();
   
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email) {
     setEmailStatus('', '', null);
+    return;
+  }
+  
+  // Basic format check before calling API
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setEmailStatus('Invalid format', '#dc2626', 'invalid_format');
     return;
   }
   
@@ -730,7 +753,7 @@ function handleEmailInput() {
     return;
   }
 
-  EMAIL_DEBOUNCE_TIMER = setTimeout(verifyEmailInput, 800);
+  EMAIL_DEBOUNCE_TIMER = setTimeout(verifyEmailInput, 500);
 }
 
 async function verifyEmailInput() {
@@ -742,7 +765,7 @@ async function verifyEmailInput() {
     return;
   }
 
-  setEmailStatus('Checking email...', '#6b7280', 'checking');
+  setEmailStatus('Checking...', '#6b7280', 'checking');
 
   try {
     var resp = await fetch('/api/method/slcm.api.email_verifier.verify_email', {
@@ -756,53 +779,40 @@ async function verifyEmailInput() {
     var data = await resp.json();
     var result = data.message;
     
-    EMAIL_CACHE[email] = result;
-    applyVerificationResult(result);
+    if (result && result.status) {
+      EMAIL_CACHE[email] = result.status;
+      applyVerificationResult(result.status);
+    } else {
+      setEmailStatus('⚠ Error', '#f59e0b', 'verification_error');
+    }
   } catch (e) {
-    setEmailStatus('⚠ Connection error. Check internet connection.', '#f59e0b', 'unknown');
+    setEmailStatus('⚠ Error', '#f59e0b', 'verification_error');
   }
 }
 
-function applyVerificationResult(res) {
-  if (!res || !res.success) {
-    if (res && res.error === 'rate_limit') {
-      setEmailStatus('⚠ Email verification temporarily unavailable', '#f59e0b', 'unknown');
-    } else if (res && res.error === 'timeout') {
-      setEmailStatus('⚠ Timeout. Check internet connection.', '#f59e0b', 'unknown');
-    } else {
-      setEmailStatus('⚠ Verification service unavailable', '#f59e0b', 'unknown');
-    }
-    return;
-  }
-
-  if (res.status === 'valid') {
-    setEmailStatus('Email Verified', '#16a34a', 'valid');
-  } else if (res.status === 'invalid') {
-    setEmailStatus('Email does not exist', '#dc2626', 'invalid');
+function applyVerificationResult(status) {
+  if (status === 'domain_valid') {
+    setEmailStatus('Email verified', '#16a34a', 'domain_valid');
+  } else if (status === 'domain_invalid') {
+    setEmailStatus('Invalid domain', '#dc2626', 'domain_invalid');
+  } else if (status === 'invalid_format') {
+    setEmailStatus('Invalid format', '#dc2626', 'invalid_format');
   } else {
-    setEmailStatus('⚠ Unable to verify email', '#f59e0b', 'unknown');
+    setEmailStatus('⚠ Verification error', '#f59e0b', 'verification_error');
   }
 }
 
 async function doRegister() {
-  var email = document.getElementById('reg-email').value.trim();
-  
   if (!lpValidate([
     { id: 'reg-name',   type: 'text',   msg: 'Please enter your full name.' },
     { id: 'reg-mobile', type: 'mobile', msg: 'Please enter your mobile number.' },
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
   ], 'register')) return;
 
-  // Block if invalid
-  if (EMAIL_VERIFICATION_STATUS === 'invalid') {
+  // Signup Restriction: Allow only if domain is valid
+  if (EMAIL_VERIFICATION_STATUS !== 'domain_valid') {
     lpNotify('Please enter a valid email address.', 'error', 'register');
-    lpFieldError('reg-email', 'This email is invalid.');
-    return;
-  }
-
-  // If still checking, wait or re-verify
-  if (EMAIL_VERIFICATION_STATUS === 'checking') {
-    lpNotify('Please wait while we verify your email...', 'info', 'register');
+    lpFieldError('reg-email', 'Please provide a valid email with a working mail server.');
     return;
   }
 
