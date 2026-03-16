@@ -1200,11 +1200,11 @@ window.check_payment_status_buttons = function () {
                 $('#fle-new-form-title-hide').remove();
                 if ($titleH1.length > 0) {
                     $titleH1[0].style.removeProperty('display');
-                    $titleH1.show().text(docName);
+                    $titleH1.show().text('Application Number: ' + docName);
                 } else {
                     // Fallback: insert a dedicated ID display if h1 isn't found
                     if ($('#fle-doc-id-display').length === 0) {
-                        var $idDisplay = $('<div id="fle-doc-id-display" style="text-align:left; padding:8px 0 4px; font-family:Merriweather,Georgia,serif; font-weight:700; font-size:1.8em; color:#1a1a1a; margin-bottom:8px;">' + docName + '</div>');
+                        var $idDisplay = $('<div id="fle-doc-id-display" style="text-align:left; padding:8px 0 4px; font-family:Merriweather,Georgia,serif; font-weight:700; font-size:1.8em; color:#1a1a1a; margin-bottom:8px;">Application Number: ' + docName + '</div>');
                         $('.web-form-wrapper, .web-form-container, .page-content').first().prepend($idDisplay);
                     }
                 }
@@ -1331,3 +1331,46 @@ document.addEventListener('DOMContentLoaded', try_inject_fle_theme);
 if (typeof frappe !== 'undefined' && frappe.ready) { frappe.ready(try_inject_fle_theme); }
 setTimeout(try_inject_fle_theme, 500);
 setTimeout(try_inject_fle_theme, 1000);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION: Hide "Not Saved" indicator on FLE web form pages
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+    var path = window.location.pathname;
+    if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
+
+    var style = document.createElement('style');
+    style.textContent = '.indicator-pill.orange { display: none !important; }';
+    document.head.appendChild(style);
+})();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION: Set India (+91) as default for candidate contact number
+// Frappe v16 uses its own ControlPhone (not intl-tel-input).
+// set_default_country() is skipped when a value is already present (URL param),
+// so we poll until the control is ready and apply India manually.
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+    var path = window.location.pathname;
+    if (path.indexOf('/foundations-for-a-legal-education') === -1) return;
+
+    function setIndiaDefault(attempts) {
+        attempts = attempts || 0;
+        if (!window.frappe || !frappe.web_form) {
+            if (attempts < 30) setTimeout(function () { setIndiaDefault(attempts + 1); }, 200);
+            return;
+        }
+        var fd = frappe.web_form.fields_dict;
+        var field = fd && fd['candidate_contact_number'];
+        if (field && field.country_code_picker && field.country_codes && field.$isd) {
+            if (!field.$isd.text().trim()) {
+                field.country_code_picker.on_change('India', false);
+            }
+        } else if (attempts < 30) {
+            setTimeout(function () { setIndiaDefault(attempts + 1); }, 200);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () { setIndiaDefault(); });
+    setTimeout(function () { setIndiaDefault(); }, 800);
+})();
