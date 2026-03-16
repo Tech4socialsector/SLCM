@@ -885,6 +885,82 @@ window.inject_fle_header_footer = function () {
                 font-weight:300!important; letter-spacing:0.3px!important;
                 margin-top:auto!important; width:100%!important;
             }
+
+            /* ── Mobile responsive styles ── */
+            @media (max-width: 600px) {
+                .sticky-header .header-top {
+                    padding: 5px 8px !important;
+                    flex-wrap: nowrap !important;
+                }
+                .sticky-header .logo-img {
+                    height: 38px !important;
+                    max-width: 38px !important;
+                }
+                .sticky-header .logo-container {
+                    margin-right: 6px !important;
+                    flex-shrink: 0 !important;
+                }
+                .sticky-header .brand-text {
+                    padding: 0 4px !important;
+                    min-width: 0 !important;
+                }
+                .sticky-header .brand-text .university-name {
+                    font-size: 11px !important;
+                    letter-spacing: 0px !important;
+                    margin: 0 0 2px !important;
+                }
+                .sticky-header .brand-text .department-name {
+                    font-size: 10px !important;
+                    letter-spacing: 0px !important;
+                }
+                .sticky-header .header-logout-area {
+                    min-width: auto !important;
+                    flex-shrink: 0 !important;
+                }
+                button.fle-logout-btn {
+                    padding: 5px 8px !important;
+                    font-size: 10px !important;
+                    letter-spacing: 0.2px !important;
+                    gap: 3px !important;
+                }
+                button.fle-logout-btn svg {
+                    width: 11px !important;
+                    height: 11px !important;
+                }
+                .navbar-navy .nav-item {
+                    padding: 8px 10px !important;
+                    font-size: 10px !important;
+                    letter-spacing: 0.3px !important;
+                }
+            }
+
+            @media (max-width: 400px) {
+                .sticky-header .header-top {
+                    padding: 4px 6px !important;
+                }
+                .sticky-header .logo-img {
+                    height: 32px !important;
+                    max-width: 32px !important;
+                }
+                .sticky-header .logo-container {
+                    margin-right: 5px !important;
+                }
+                .sticky-header .brand-text .university-name {
+                    font-size: 9.5px !important;
+                }
+                .sticky-header .brand-text .department-name {
+                    font-size: 9px !important;
+                }
+                button.fle-logout-btn {
+                    padding: 4px 7px !important;
+                    font-size: 9.5px !important;
+                    gap: 3px !important;
+                }
+                button.fle-logout-btn svg {
+                    width: 10px !important;
+                    height: 10px !important;
+                }
+            }
         </style>`);
     }
 
@@ -993,7 +1069,14 @@ window.inject_fle_header_footer = function () {
     $('body').css({ 'display': 'flex', 'flex-direction': 'column', 'min-height': '100vh', 'margin': '0' });
     $('.web-form-page, .page-container').css('flex', '1 0 auto');
     $('.sticky-header').css({ 'position': 'fixed', 'top': '0', 'left': '0', 'z-index': '1020', 'width': '100%' });
-    $('body').css('padding-top', '150px');
+    function updateBodyPaddingTop() {
+        var hdr = document.querySelector('.sticky-header');
+        if (hdr) $('body').css('padding-top', hdr.offsetHeight + 'px');
+    }
+    updateBodyPaddingTop();
+    $(window).on('resize', updateBodyPaddingTop);
+    setTimeout(updateBodyPaddingTop, 300);
+    setTimeout(updateBodyPaddingTop, 800);
     $('.sticky-footer').css({ 'margin-top': 'auto', 'width': '100%' });
 
     // ── 9. Force visibility + fonts after a short delay ───────────────────────
