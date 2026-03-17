@@ -1,4 +1,10 @@
 frappe.ready(function () {
+    // Mask the URL — replace any path like /foundations-for-a-legal-education/FLE-2026-XXXX
+    // with the clean base route so document names are never visible in the browser bar.
+    if (window.location.pathname !== '/foundations-for-a-legal-education') {
+        history.replaceState(null, '', '/foundations-for-a-legal-education');
+    }
+
     // --------------------------------------------------
     // Master-level Guest Restrictor:
     // Prevent direct access to the web form without login
@@ -36,27 +42,29 @@ frappe.ready(function () {
     }
 
 
-    // Pre-fill email and mobile from URL parameters if present
-    const params = new URLSearchParams(window.location.search);
-    const email = params.get('email');
-    const mobile = params.get('mobile');
-
-    setTimeout(() => {
-        if (email) {
-            frappe.web_form.set_value('email_address', email);
-            if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['email_address']) {
-                frappe.web_form.fields_dict['email_address'].df.read_only = 1;
-                frappe.web_form.fields_dict['email_address'].refresh();
-            }
+    // Pre-fill email and mobile from server-side cache (URL is kept clean)
+    frappe.call({
+        method: 'slcm.api.user.get_fle_prefill_data',
+        callback: function (r) {
+            const data = r.message || {};
+            setTimeout(() => {
+                if (data.email) {
+                    frappe.web_form.set_value('email_address', data.email);
+                    if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['email_address']) {
+                        frappe.web_form.fields_dict['email_address'].df.read_only = 1;
+                        frappe.web_form.fields_dict['email_address'].refresh();
+                    }
+                }
+                if (data.mobile) {
+                    frappe.web_form.set_value('candidate_contact_number', data.mobile);
+                    if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['candidate_contact_number']) {
+                        frappe.web_form.fields_dict['candidate_contact_number'].df.read_only = 1;
+                        frappe.web_form.fields_dict['candidate_contact_number'].refresh();
+                    }
+                }
+            }, 500);
         }
-        if (mobile) {
-            frappe.web_form.set_value('candidate_contact_number', mobile);
-            if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['candidate_contact_number']) {
-                frappe.web_form.fields_dict['candidate_contact_number'].df.read_only = 1;
-                frappe.web_form.fields_dict['candidate_contact_number'].refresh();
-            }
-        }
-    }, 500);
+    });
 
     // Poll until the phone control is fully initialised (make_input is async),
     // then set India (+91) as default if no country has been selected yet.

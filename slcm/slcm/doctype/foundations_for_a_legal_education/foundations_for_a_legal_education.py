@@ -168,7 +168,6 @@ class FoundationsforaLegalEducation(Document):
 			user.insert(ignore_permissions=True)
 			
 			# Set the password
-			update_password(self.email_address, password)
 			
 			# Add role if exists
 			if "LMS Student" in [r.name for r in frappe.get_all("Role")]:
@@ -185,11 +184,12 @@ class FoundationsforaLegalEducation(Document):
 				if "LMS Student" in [r.name for r in frappe.get_all("Role")]:
 					user.add_roles("LMS Student")
 			
-			# ALWAYS generate and update the password for this specific flow if we need to send it via notification
-			update_password(self.email_address, password)
+			# Do NOT reset the password for existing users — they registered via the FLE
+			# login flow and already have a password they set themselves.
+			# update_password(self.email_address, password)  # commented out: was resetting password on every payment
 			
 			# self.generated_password_temp = password
 			self.lms_account_created = 1
 			frappe.db.commit() # Ensure role update is committed
-			frappe.msgprint("User already exists. Password updated and roles verified.")
+			frappe.msgprint("User already exists. Roles verified.")
 
