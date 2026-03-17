@@ -742,6 +742,11 @@
         background: var(--red-bg);
     }
 
+    .file-zone:has(input.is-error) {
+        border-color: var(--red);
+        background: var(--red-bg);
+    }
+
     .phone-code {
         border: none;
         background: rgba(15, 27, 76, .04);
@@ -856,6 +861,21 @@
         background: var(--navy-light);
         border-color: var(--navy);
         color: var(--navy);
+    }
+
+    /* Download buttons always clickable (draft, submitted, view-only) */
+    .btn-download-file,
+    .btn-download-image,
+    .btn-attach-download {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+    .btn-download-file[disabled],
+    .btn-download-image[disabled],
+    .btn-attach-download[disabled] {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        opacity: 1 !important;
     }
 
     .file-zone-actions .btn-delete-file {
@@ -1974,7 +1994,7 @@
 
     <!-- ═══ Back to admission listing ─── -->
     <div class="application-form-back-row">
-            <a href="/my-applications?app={{ applicant_data.name }}" class="btn-back-to-admission" title="Back to programme listing">
+            <a href="{% if applicant_data and applicant_data.name %}/my-applications?app={{ applicant_data.name }}{% else %}/admission{% endif %}" class="btn-back-to-admission" title="Back to programme listing">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -2278,27 +2298,28 @@
                         <div class="form-row cols-3 parent-guardian-grid">
                             <div class="fg"><label>Father's name <span class="req">*</span></label><input type="text" class="fc" name="father_name"
                                     placeholder="Full name"><span class="field-error" id="err_father_name"></span></div>
+                                <div class="fg">
+                                    <label>Father's mobile number <span class="req">*</span></label>
+                                        <div class="phone-wrap" id="pw_father_mobile">
+                                            <select class="phone-code" name="father_mobile_cc"
+                                                onchange="onPhoneChange('father_mobile'); applyPhoneMaxLength('father_mobile')">
+                                                <option value="+91">🇮🇳 +91</option>
+                                                <option value="+1">🇺🇸 +1</option>
+                                                <option value="+44">🇬🇧 +44</option>
+                                                <option value="+971">🇦🇪 +971</option>
+                                            </select>
+                                            <input type="tel" class="phone-num phone-num-digits" name="father_mobile_num"
+                                                placeholder="Mobile number" maxlength="15" inputmode="numeric" data-phone-field="father_mobile"
+                                                oninput="onPhoneChange('father_mobile'); applyPhoneMaxLengthFromInput(this)">
+                                        </div>
+                                    <span class="field-error" id="err_father_mobile"></span>
+                                </div>
                             <div class="fg">
-                                <label>Father's email <span class="req">*</span></label>
+                                <label>Father's email ID <span class="req">*</span></label>
                                 <input type="email" class="fc" name="father_email" placeholder="father@example.com">
                                 <span class="field-error" id="err_father_email">Invalid email format</span>
                             </div>
-                            <div class="fg">
-                                <label>Father's mobile number <span class="req">*</span></label>
-                                <div class="phone-wrap" id="pw_father_mobile">
-                                    <select class="phone-code" name="father_mobile_cc"
-                                        onchange="onPhoneChange('father_mobile'); applyPhoneMaxLength('father_mobile')">
-                                        <option value="+91">🇮🇳 +91</option>
-                                        <option value="+1">🇺🇸 +1</option>
-                                        <option value="+44">🇬🇧 +44</option>
-                                        <option value="+971">🇦🇪 +971</option>
-                                    </select>
-                                    <input type="tel" class="phone-num phone-num-digits" name="father_mobile_num"
-                                        placeholder="Mobile number" maxlength="15" inputmode="numeric" data-phone-field="father_mobile"
-                                        oninput="onPhoneChange('father_mobile'); applyPhoneMaxLengthFromInput(this)">
-                                </div>
-                                <span class="field-error" id="err_father_mobile"></span>
-                            </div>
+                            
                             <div class="fg">
                                 <label>Father's occupation <span class="req">*</span></label>
                                 <input type="text" class="fc" name="father_occupation"
@@ -2311,11 +2332,7 @@
                         <div class="form-row cols-3 parent-guardian-grid">
                             <div class="fg"><label>Mother's name <span class="req">*</span></label><input type="text" class="fc" name="mother_name"
                                     placeholder="Full name"><span class="field-error" id="err_mother_name"></span></div>
-                            <div class="fg">
-                                <label>Mother's email <span class="req">*</span></label>
-                                <input type="email" class="fc" name="mother_email" placeholder="mother@example.com">
-                                <span class="field-error" id="err_mother_email">Invalid email format</span>
-                            </div>
+                            
                             <div class="fg">
                                 <label>Mother's mobile number <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_mother_mobile">
@@ -2331,6 +2348,11 @@
                                         oninput="onPhoneChange('mother_mobile'); applyPhoneMaxLengthFromInput(this)">
                                 </div>
                                 <span class="field-error" id="err_mother_mobile"></span>
+                            </div>
+                            <div class="fg">
+                                <label>Mother's email ID<span class="req">*</span></label>
+                                <input type="email" class="fc" name="mother_email" placeholder="mother@example.com">
+                                <span class="field-error" id="err_mother_email">Invalid email format</span>
                             </div>
                             <div class="fg">
                                 <label>Mother's occupation <span class="req">*</span></label>
@@ -2394,6 +2416,11 @@
                         </div>
                         <div class="form-row cols-3">
                             <div class="fg">
+                                <label>City <span class="req">*</span></label>
+                                <input type="text" class="fc" name="city" id="city" placeholder="Enter city">
+                                <span class="field-error" id="err_city"></span>
+                            </div>
+                            <div class="fg">
                                 <label>State <span class="req">*</span></label>
                                 <select class="fc" name="state" id="state">
                                     {% if initial_states %}
@@ -2406,11 +2433,6 @@
                                     {% endif %}
                                 </select>
                                 <span class="field-error" id="err_state"></span>
-                            </div>
-                            <div class="fg">
-                                <label>City <span class="req">*</span></label>
-                                <input type="text" class="fc" name="city" id="city" placeholder="Enter city">
-                                <span class="field-error" id="err_city"></span>
                             </div>
                             <div class="fg pincode-fg"><label>Pincode <span class="req">*</span></label><input type="text" class="fc numeric-integer pincode-input"
                                     name="pincode" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
@@ -2438,16 +2460,11 @@
                             </div>
                         </div>
 
-                        <div class="alert-note warning" style="margin-bottom:1.5rem;">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <span><strong>Note:</strong> Applicants in the final year of their undergraduate programme
-                                can also apply. Upload a Bonafide Certificate and transcripts. Proof of completion must
-                                be submitted by <strong>December 31, 2026</strong>.</span>
+                        {% if ug_final_year_note %}
+                        <div class="ug-final-year-note-wrap" style="margin-bottom:1.5rem;">
+                            {{ ug_final_year_note | safe }}
                         </div>
+                        {% endif %}
 
                         <div class="section-sub">Class X details</div>
                         <div class="form-row cols-3">
@@ -2498,11 +2515,23 @@
                             <div class="fg"><label>Year of completion (Class XII/Equivalent) <span class="req">*</span></label><input type="text"
                                     class="fc numeric-integer" name="class_xii_year_of_completion"
                                     placeholder="e.g. 2020" maxlength="4"><span class="field-error" id="err_class_xii_year_of_completion"></span></div>
-                            <div class="fg"><label>Board (Class XII/Equivalent) <span class="req">*</span></label><input type="text" class="fc"
-                                    name="class_xii_board" placeholder="e.g. CBSE, State Board"><span class="field-error" id="err_class_xii_board"></span></div>
                             <div class="fg"><label>School/College/University (Class XII/Equivalent) <span class="req">*</span></label><input
                                     type="text" class="fc" name="class_xii_school" placeholder="School name"><span class="field-error" id="err_class_xii_school"></span></div>
-
+                            <div class="fg"><label>Board (Class XII/Equivalent) <span class="req">*</span></label><input type="text" class="fc"
+                                    name="class_xii_board" placeholder="e.g. CBSE, State Board"><span class="field-error" id="err_class_xii_board"></span></div>
+                            <div class="fg">
+                                <label>Percentage/CGPA obtained (Class XII/Equivalent) <span class="req">*</span></label>
+                                    <input type="text" class="fc numeric-decimal" name="class_xii_percentage" id="class_xii_percentage"
+                                        inputmode="decimal" placeholder="e.g. 75.00" min="0" max="100" step="0.01"
+                                        oninput="validateHSCPercentage(this)" onblur="collectFormData()">
+                                    <span class="field-error" id="err_class_xii_percentage">Percentage/CGPA obtained (Class XII/Equivalent) must be between 35 and
+                                            100</span>
+                            </div>
+                            <div class="fg">
+                                <label>If CGPA, maximum CGPA (Class XII/Equivalent)</label>
+                                <input type="text" class="fc numeric-decimal" name="class_xii_cgpa" id="class_xii_cgpa"
+                                    placeholder="Max CGPA" inputmode="decimal" onblur="collectFormData()">
+                            </div>
                             <div class="fg">
                                 <label>Class XII marksheet/Equivalent documents to be uploaded (Max 5MB — supported formats: jpg, jpeg, png, pdf) <span class="req">*</span></label>
                                 <div class="file-zone">
@@ -2531,14 +2560,7 @@
                                 </select>
                                 <span class="field-error" id="err_hsc_group"></span>
                             </div>
-                            <div class="fg">
-                                <label>XII percentage <span class="req">*</span></label>
-                                <input type="text" class="fc numeric-decimal" name="hsc_percentage" id="hsc_percentage"
-                                    inputmode="decimal" placeholder="e.g. 75.00" min="0" max="100" step="0.01"
-                                    oninput="validateHSCPercentage(this)" onblur="collectFormData()">
-                                <span class="field-error" id="err_hsc_percentage">XII percentage must be between 35 and
-                                    100</span>
-                            </div>
+                            
                         </div>
 
                         <!-- UG Degree — shown for PG / Research Course -->
@@ -2561,11 +2583,11 @@
                                     <thead>
                                         <tr>
                                             <th style="min-width:160px;">Name of degree (UG) <span class="req">*</span></th>
-                                            <th style="min-width:160px;">College / University <span class="req">*</span></th>
-                                            <th style="min-width:100px;">Year of completion <span class="req">*</span></th>
-                                            <th style="min-width:110px;">CGPA obtained <span class="req">*</span></th>
-                                            <th style="min-width:220px;">UG degree certificate / Bonafide <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Max 5MB — png, jpeg, jpg, pdf</small></th>
-                                            <th style="min-width:220px;">Transcripts / Marksheets <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Max 5MB — png, jpeg, jpg, pdf</small></th>
+                                            <th style="min-width:100px;">Year of Completion (UG Degree) <span class="req">*</span></th>
+                                            <th style="min-width:160px;">College / University (UG Degree) <span class="req">*</span></th>
+                                            <th style="min-width:110px;">Percentage/CGPA obtained (UG Degree) <span class="req">*</span></th>
+                                            <th style="min-width:220px;">UG degree certificate / Bonafide <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Certificate to be uploaded (Max 5MB — png, jpeg, jpg, pdf)</small></th>
+                                            <th style="min-width:220px;">Transcripts / Marksheets <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Transcripts/Marksheets to be uploaded (Max 5MB — png, jpeg, jpg, pdf)</small></th>
                                             <th class="th-del"></th>
                                         </tr>
                                     </thead>
@@ -2636,11 +2658,11 @@
                                     <thead>
                                         <tr>
                                             <th style="min-width:160px;">Name of degree (PG) <span class="req">*</span></th>
-                                            <th style="min-width:160px;">College / University <span class="req">*</span></th>
-                                            <th style="min-width:100px;">Year of completion <span class="req">*</span></th>
-                                            <th style="min-width:110px;">CGPA obtained <span class="req">*</span></th>
-                                            <th style="min-width:220px;">PG degree certificate / Bonafide <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Max 5MB — png, jpeg, jpg, pdf</small></th>
-                                            <th style="min-width:220px;">Transcripts / Marksheets <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Max 5MB — png, jpeg, jpg, pdf</small></th>
+                                            <th style="min-width:100px;">Year of completion (PG Degree) <span class="req">*</span></th>
+                                            <th style="min-width:160px;">College/University (PG Degree) <span class="req">*</span></th>
+                                            <th style="min-width:110px;">Percentage/CGPA obtained (PG Degree) <span class="req">*</span></th>
+                                            <th style="min-width:220px;">PG degree certificate / Bonafide <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Certificate to be uploaded (Max 5MB — png, jpeg, jpg, pdf)</small></th>
+                                            <th style="min-width:220px;">Transcripts / Marksheets <span class="req">*</span><br><small style="font-weight:normal;color:var(--slate-500);">Transcripts/Marksheets to be uploaded (Max 5MB — png, jpeg, jpg, pdf)</small></th>
                                             <th class="th-del"></th>
                                         </tr>
                                     </thead>
@@ -2689,6 +2711,7 @@
                                             <button type="button" class="btn-delete-file" onclick="deleteUploadedFile('phd_proposal'); return false;" title="Remove file">Delete</button>
                                         </div>
                                     </div>
+                                    <span class="field-error" id="err_phd_proposal"></span>
                                 </div>
                             </div>
                             <div class="form-row cols-1">
@@ -2776,10 +2799,10 @@
                             </div>
                         </div>
 
-                        <div class="section-sub">Whether SC/ST/OBC-NCL</div>
-                        <div class="form-row cols-1" style="margin-bottom:1rem;">
+                        <div class="section-sub">Reservation category</div>
+                        <div class="form-row cols-2" style="margin-bottom:1rem;">
                             <div class="fg">
-                                <label>Whether SC/ST/OBC-NCL</label>
+                                <label>Whether SC/ST/OBC-NCL <span class="req">*</span></label>
                                 <select class="fc" name="whether_scstobc_ncl" id="reservation_category"
                                     onchange="toggleReservationCategory(this.value)">
                                     <option value="">Select one</option>
@@ -2788,12 +2811,10 @@
                                     <option value="OBC-NCL">OBC-NCL</option>
                                     <option value="NA">NA</option>
                                 </select>
+                                <p id="obcnclCertHint" class="cert-hint" style="display:none;font-size:.85rem;color:var(--slate-600);margin-top:.35rem;">Please ensure that you upload a valid OBC-NCL certificate</p>
+                                <p id="scstCertHint" class="cert-hint" style="display:none;font-size:.85rem;color:var(--slate-600);margin-top:.35rem;">Please ensure that you upload a valid caste certificate</p>
                             </div>
-                        </div>
-
-                        <!-- Caste Certificate — shown if SC/ST/OBC/OBC-NCL selected -->
-                        <div id="casteCertSection" style="display:none;">
-                            <div class="fg" style="margin-bottom:1.25rem;">
+                            <div class="fg" id="casteCertSection" style="display:none;">
                                 <label>Caste certificate (Max 5MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
                                 <div class="file-zone">
                                     <input type="file" name="caste_certificate" accept=".pdf,image/png,image/jpeg,image/jpg"
@@ -2851,9 +2872,9 @@
                         </div>
 
                         <div class="section-sub">Person with disability (PwD)</div>
-                        <div class="form-row cols-2">
+                        <div class="form-row cols-1" style="margin-bottom:1rem;">
                             <div class="fg">
-                                <label>Person with disability (PwD) <span class="req">*</span></label>
+                                <label>Whether Person with Disability (PWD) <span class="req">*</span></label>
                                 <select class="fc" name="pwd" required onchange="togglePWD(this.value)">
                                     <option value="">Select</option>
                                     <option value="Yes">Yes</option>
@@ -2910,9 +2931,9 @@
                         </div>
 
                         <div class="section-sub">Karnataka category</div>
-                        <div class="form-row cols-1">
+                        <div class="form-row cols-1" style="margin-bottom:1rem;">
                             <div class="fg">
-                                <label>Karnataka category <span class="req">*</span></label>
+                                <label>Whether Karnataka category <span class="req">*</span></label>
                                 <select class="fc" name="karnataka_category" required
                                     onchange="toggleKarnataka(this.value)">
                                     <option value="">Select</option>
@@ -3087,16 +3108,11 @@
                                 <p>Indicate your preferred test centre locations in priority order</p>
                             </div>
                         </div>
-                        <div class="alert-note warning" style="margin-bottom:1.5rem;">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <span>The University reserves the right to allot candidates a test centre other than their
-                                preference if not logistically feasible. The application fee is
-                                <strong>non-refundable</strong> in such cases.</span>
+                        {% if test_center_allocation_note %}
+                        <div class="test-center-note-wrap" style="margin-bottom:1.5rem;">
+                            {{ test_center_allocation_note | safe }}
                         </div>
+                        {% endif %}
                         <div class="form-row cols-3">
                             <div class="fg">
                                 <label>First preference <span class="req">*</span></label>
@@ -3714,16 +3730,27 @@ I hereby undertake that the information and documents furnished by me are true t
         const form = document.getElementById('appForm');
         if (!form) return;
         form.querySelectorAll('input, select, textarea, button[type="button"]').forEach(el => {
-            if (el.id === 'prevBtn' || el.id === 'downloadReceiptBtn') return;
+            if (el.id === 'prevBtn' || el.id === 'nextBtn' || el.id === 'downloadReceiptBtn') return;
+            if (el.classList && (el.classList.contains('btn-download-file') || el.classList.contains('btn-download-image') || el.classList.contains('btn-attach-download'))) return;
             el.disabled = true;
             if (el.readOnly !== undefined) el.readOnly = true;
         });
         const saveBtn = document.getElementById('saveDraftBtn');
         if (saveBtn) saveBtn.style.display = 'none';
-        const nextBtn = document.getElementById('nextBtn');
-        if (nextBtn) { nextBtn.disabled = true; nextBtn.style.opacity = '0.6'; nextBtn.style.cursor = 'not-allowed'; }
+        // Keep Next button enabled so user can navigate steps when viewing a submitted application
         const banner = document.getElementById('formViewOnlyBanner');
         if (banner) banner.style.display = 'block';
+        ensureDownloadButtonsEnabled();
+    }
+
+    function ensureDownloadButtonsEnabled() {
+        const form = document.getElementById('appForm');
+        if (!form) return;
+        form.querySelectorAll('.btn-download-file, .btn-download-image, .btn-attach-download').forEach(el => {
+            el.disabled = false;
+            el.style.pointerEvents = '';
+            el.style.opacity = '';
+        });
     }
 
     function initNumericInputs() {
@@ -3979,6 +4006,12 @@ I hereby undertake that the information and documents furnished by me are true t
     }
 
     function navigateToStep(targetStep) {
+        // When submitted or when an Applicant doc already exists (draft with saved data),
+        // allow free navigation in both directions so stage-bar clicks never block on validation.
+        if (APPLICATION_SUBMITTED || (formData && formData.name)) {
+            showStep(targetStep);
+            return;
+        }
         // When moving forward, validate all steps we're skipping so duplicate preferences block navigation.
         if (targetStep > currentStep) {
             clearErrors();
@@ -3999,12 +4032,6 @@ I hereby undertake that the information and documents furnished by me are true t
                     return;
                 }
             }
-            showStep(targetStep);
-            return;
-        }
-        // When submitted, or when an Applicant doc already exists (draft with saved data),
-        // allow free navigation across all stages from the progress strip/sidebar.
-        if (APPLICATION_SUBMITTED || (formData && formData.name)) {
             showStep(targetStep);
             return;
         }
@@ -4093,8 +4120,8 @@ I hereby undertake that the information and documents furnished by me are true t
     //  NAVIGATION
     // ═══════════════════════════════════════════════════════
     function handleNext() {
-        if (!APPLICATION_SUBMITTED && !validateCurrentStep()) return;
         collectFormData();
+        if (!APPLICATION_SUBMITTED && !validateCurrentStep()) return;
         completedSteps.add(currentStep);
         if (currentStep < TOTAL_STEPS) {
             showStep(currentStep + 1);
@@ -4113,8 +4140,10 @@ I hereby undertake that the information and documents furnished by me are true t
     function clearErrors() {
         document.querySelectorAll('.field-error.show').forEach(e => e.classList.remove('show'));
         document.querySelectorAll('.fc.is-error').forEach(e => e.classList.remove('is-error'));
+        document.querySelectorAll('input.is-error').forEach(e => e.classList.remove('is-error'));
         document.querySelectorAll('.phone-wrap.is-error').forEach(e => e.classList.remove('is-error'));
         document.querySelectorAll('.fg.is-error').forEach(e => e.classList.remove('is-error'));
+        document.querySelectorAll('.file-zone.is-error').forEach(e => e.classList.remove('is-error'));
     }
 
     function showError(fieldName, message) {
@@ -4134,6 +4163,7 @@ I hereby undertake that the information and documents furnished by me are true t
             } else {
                 input.classList.add('is-error');
                 if (fieldName === 'date_of_birth') input.closest('.fg')?.classList.add('is-error');
+                if (input.type === 'file') input.closest('.file-zone')?.classList.add('is-error');
             }
         }
         // Field-level message is shown above; only the generic toast is shown once by validateCurrentStep
@@ -4290,12 +4320,12 @@ I hereby undertake that the information and documents furnished by me are true t
         if (!fStr('class_xii_board')) { showError('class_xii_board'); v = false; }
         if (!(formData.class_xii_marksheet && String(formData.class_xii_marksheet).trim())) { showError('class_xii_marksheet', 'Class XII marksheet upload is required'); v = false; }
 
-        // HSC (hsc_group and hsc_percentage mandatory in Applicant doctype)
+        // HSC (hsc_group and class_xii_percentage mandatory; backend field is hsc_percentage)
         if (!fStr('hsc_group')) { showError('hsc_group'); v = false; }
-        const hscVal = fStr('hsc_percentage');
+        const hscVal = fStr('class_xii_percentage');
         const hsc = parseFloat(hscVal);
-        if (!hscVal || isNaN(hsc)) { showError('hsc_percentage', 'XII percentage is required'); v = false; }
-        else if (hsc < 35 || hsc > 100) { showError('hsc_percentage', 'XII percentage must be between 35 and 100'); v = false; }
+        if (!hscVal || isNaN(hsc)) { showError('class_xii_percentage', 'Percentage/CGPA obtained (Class XII/Equivalent) is required'); v = false; }
+        else if (hsc < 35 || hsc > 100) { showError('class_xii_percentage', 'Percentage/CGPA obtained (Class XII/Equivalent) must be between 35 and 100'); v = false; }
 
         // UG CGPA validation in rows
         document.querySelectorAll('.ug-cgpa-input').forEach(inp => {
@@ -4340,6 +4370,10 @@ I hereby undertake that the information and documents furnished by me are true t
         if (pgLevel === 'Research Course') {
             syncDegreeTablesFromDOM();
             const pgRows = formData.pg_degree_details || [];
+            if (pgRows.length === 0) {
+                showToast('Add at least one PG degree for Research Course.', 'error');
+                v = false;
+            }
             pgRows.forEach((row, idx) => {
                 if (!(row.pg_program && String(row.pg_program).trim())) { showToast(`PG Row ${idx + 1}: Name of degree (PG) is required.`, 'error'); v = false; }
                 if (!(row.collegeuniversity && String(row.collegeuniversity).trim())) { showToast(`PG Row ${idx + 1}: College / University is required.`, 'error'); v = false; }
@@ -4348,6 +4382,15 @@ I hereby undertake that the information and documents furnished by me are true t
                 if (!(row.pg_degree_certificatebonafide_certificate_to_be_uploaded && String(row.pg_degree_certificatebonafide_certificate_to_be_uploaded).trim())) { showToast(`PG Row ${idx + 1}: PG degree certificate is required.`, 'error'); v = false; }
                 if (!(row.transcriptsmarksheets_to_be_uploaded && String(row.transcriptsmarksheets_to_be_uploaded).trim())) { showToast(`PG Row ${idx + 1}: Transcripts / Marksheets is required.`, 'error'); v = false; }
             });
+            var phdProposalNameEl = document.getElementById('fp_phd_proposal_name');
+            var uploadInProgress = phdProposalNameEl && phdProposalNameEl.textContent && phdProposalNameEl.textContent.indexOf('Uploading') >= 0;
+            if (uploadInProgress) {
+                showError('phd_proposal', 'Please wait for the PhD proposal upload to complete.');
+                v = false;
+            } else if (!(formData.phd_proposal && String(formData.phd_proposal).trim())) {
+                showError('phd_proposal', 'PhD proposal upload is required for Research Course.');
+                v = false;
+            }
         }
 
         /* other_degree_details is optional text */
@@ -4457,16 +4500,17 @@ I hereby undertake that the information and documents furnished by me are true t
         if (val < 35) {
             showToast('HSC percentage must be at least 35%', 'error');
             input.classList.add('is-error');
-            document.getElementById('err_hsc_percentage').classList.add('show');
-            // Don't clear — let user see the error; they must correct it
+            var errEl = document.getElementById('err_class_xii_percentage');
+            if (errEl) { errEl.textContent = 'Percentage/CGPA obtained (Class XII/Equivalent) must be between 35 and 100'; errEl.classList.add('show'); }
         } else if (val > 100) {
             showToast('HSC percentage cannot exceed 100%', 'error');
-            input.value = '';
             input.classList.add('is-error');
+            var errEl = document.getElementById('err_class_xii_percentage');
+            if (errEl) { errEl.textContent = 'Percentage/CGPA obtained (Class XII/Equivalent) must be between 35 and 100'; errEl.classList.add('show'); }
         } else {
             input.classList.remove('is-error');
             input.classList.add('is-ok');
-            document.getElementById('err_hsc_percentage')?.classList.remove('show');
+            document.getElementById('err_class_xii_percentage')?.classList.remove('show');
         }
     }
 
@@ -4523,7 +4567,7 @@ I hereby undertake that the information and documents furnished by me are true t
 
     function toggleGuardian(show) {
         document.getElementById('guardianSection').style.display = show ? 'block' : 'none';
-        formData.guardian_required = show ? 1 : 0;
+        formData.guardian_required = show ? 'Yes' : 'No';
     }
 
     function setGuardianRequiredFromValue(val) {
@@ -4604,9 +4648,12 @@ I hereby undertake that the information and documents furnished by me are true t
         const ewsSection = document.getElementById('ewsSection');
         if (casteSection) casteSection.style.display = hasCaste ? 'block' : 'none';
         if (ewsSection) ewsSection.style.display = hasNA ? 'block' : 'none';
-    }
 
-    const ewsSection = document.getElementById('ewsSection');
+        const obcnclHint = document.getElementById('obcnclCertHint');
+        const scstHint = document.getElementById('scstCertHint');
+        if (obcnclHint) obcnclHint.style.display = val === 'OBC-NCL' ? 'block' : 'none';
+        if (scstHint) scstHint.style.display = (val === 'SC' || val === 'ST') ? 'block' : 'none';
+    }
 
     function toggleEWS(val) {
         document.getElementById('ewsCertSection').style.display = val === 'Yes' ? 'block' : 'none';
@@ -4798,8 +4845,8 @@ I hereby undertake that the information and documents furnished by me are true t
         if (type === 'ug') {
             row.innerHTML = `
             <td>${buildProgramSelect('ug', rowIdx, '', 'UG')}</td>
-            <td><input type="text" class="fc" placeholder="College / University" onchange="updateDegreeRow('ug',${rowIdx},'college',this.value)"></td>
             <td><input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" onchange="updateDegreeRow('ug',${rowIdx},'year_of_completion',this.value)"></td>
+            <td><input type="text" class="fc" placeholder="College / University" onchange="updateDegreeRow('ug',${rowIdx},'college',this.value)"></td>
             <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" oninput="validateUGCGPA(this,${rowIdx})" onchange="updateDegreeRow('ug',${rowIdx},'ug_cgpa',this.value)"></td>
             <td class="td-attach">${buildAttachCell(cellId_cert, 'ug', rowIdx, 'degree_certificate', '')}</td>
             <td class="td-attach">${buildAttachCell(cellId_ms, 'ug', rowIdx, 'marksheets', '')}</td>
@@ -4811,8 +4858,8 @@ I hereby undertake that the information and documents furnished by me are true t
         } else {
             row.innerHTML = `
             <td>${buildProgramSelect('pg', rowIdx, '', 'PG')}</td>
-            <td><input type="text" class="fc" placeholder="College / University" onchange="updateDegreeRow('pg',${rowIdx},'collegeuniversity',this.value)"></td>
             <td><input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" onchange="updateDegreeRow('pg',${rowIdx},'year_of_completion',this.value)"></td>
+            <td><input type="text" class="fc" placeholder="College / University" onchange="updateDegreeRow('pg',${rowIdx},'collegeuniversity',this.value)"></td>
             <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" oninput="validatePGCGPA(this,${rowIdx})" onchange="updateDegreeRow('pg',${rowIdx},'pg_cgpa',this.value)"></td>
             <td class="td-attach">${buildAttachCell(cellId_cert, 'pg', rowIdx, 'pg_degree_certificatebonafide_certificate_to_be_uploaded', '')}</td>
             <td class="td-attach">${buildAttachCell(cellId_ms, 'pg', rowIdx, 'transcriptsmarksheets_to_be_uploaded', '')}</td>
@@ -5251,7 +5298,7 @@ I hereby undertake that the information and documents furnished by me are true t
             'mother_name', 'mother_email', 'mother_occupation', 'guardian_name', 'guardian_email',
             'correspondence_address', 'city', 'state', 'pincode', 'class_x_school', 'class_x_board',
             'class_x_year_of_completion', 'class_x_percentage', 'class_x_cgpa', 'class_xii_name_of_examination',
-            'class_xii_school', 'class_xii_board', 'class_xii_year_of_completion',
+            'class_xii_school', 'class_xii_board', 'class_xii_year_of_completion', 'class_xii_cgpa',
             'hsc_group', 'hsc_percentage', 'national_test_name', 'percentage',
             'other_degree_details', 'phd_program_type', 'proposed_phd_topic', 'ug_degree_completion',
             'post_degree_work_experience', 'years_of_work_experience', 'ews', 'pwd', 'pwd_required_test',
@@ -5265,6 +5312,8 @@ I hereby undertake that the information and documents furnished by me are true t
             const val = el.value;
             formData[f] = (typeof val === 'string') ? val.trim() : val;
         });
+        var classXiiPct = form.elements['class_xii_percentage'] ? (form.elements['class_xii_percentage'].value || '').trim() : '';
+        formData.hsc_percentage = classXiiPct === '' ? '' : (isNaN(parseFloat(classXiiPct)) ? classXiiPct : parseFloat(classXiiPct));
         // Ensure program is set when locked (hidden input may not be in form.elements in some cases)
         if (typeof PREFILL_PROGRAM !== 'undefined' && PREFILL_PROGRAM && !formData.program) {
             const programHidden = document.getElementById('program_hidden');
@@ -5284,8 +5333,8 @@ I hereby undertake that the information and documents furnished by me are true t
             formData[f] = combined;
         });
 
-        // Guardian: Yes/No select (store as 1 for Yes, 0 for No for backend)
-        formData.guardian_required = document.getElementById('guardian_required')?.value === 'Yes' ? 1 : 0;
+        // Guardian: Yes/No select (backend expects "Yes" or "No", not 1/0)
+        formData.guardian_required = document.getElementById('guardian_required')?.value === 'Yes' ? 'Yes' : 'No';
         formData.declaration_undertaking = document.getElementById('declaration_undertaking')?.checked ? 1 : 0;
         formData.consent_third_party = document.getElementById('consent_third_party')?.checked ? 1 : 0;
 
@@ -5314,8 +5363,8 @@ I hereby undertake that the information and documents furnished by me are true t
             Array.from(ugBody.rows).forEach((tr, idx) => {
                 if (tr.cells.length < 6) return;
                 const progSel = tr.cells[0].querySelector('input[list], select');
-                const college = (tr.cells[1].querySelector('input') || {}).value || '';
-                const year = (tr.cells[2].querySelector('input') || {}).value || '';
+                const year = (tr.cells[1].querySelector('input') || {}).value || '';
+                const college = (tr.cells[2].querySelector('input') || {}).value || '';
                 const cgpa = (tr.cells[3].querySelector('input') || {}).value || '';
                 const ugProgram = (progSel && progSel.value) || '';
                 const prev = existingRows[idx] || {};
@@ -5336,8 +5385,8 @@ I hereby undertake that the information and documents furnished by me are true t
             Array.from(pgBody.rows).forEach((tr, idx) => {
                 if (tr.cells.length < 6) return;
                 const progSel = tr.cells[0].querySelector('input[list], select');
-                const college = (tr.cells[1].querySelector('input') || {}).value || '';
-                const year = (tr.cells[2].querySelector('input') || {}).value || '';
+                const year = (tr.cells[1].querySelector('input') || {}).value || '';
+                const college = (tr.cells[2].querySelector('input') || {}).value || '';
                 const cgpa = (tr.cells[3].querySelector('input') || {}).value || '';
                 const pgProgram = (progSel && progSel.value) || '';
                 const prev = existingRows[idx] || {};
@@ -5410,11 +5459,16 @@ I hereby undertake that the information and documents furnished by me are true t
                 if (numEl) numEl.value = num;
                 return;
             }
-            const el = form.elements[key];
+            let el = form.elements[key];
+            if (key === 'hsc_percentage' && !el) el = form.elements['class_xii_percentage'];
             if (!el) return;
             if (el.type === 'file') return; // File inputs cannot have value set programmatically (security)
             if (el.type === 'checkbox') el.checked = val == 1 || val === true;
-            else el.value = val;
+            else {
+                var displayVal = val;
+                if (['class_x_percentage', 'class_x_cgpa', 'class_x_year_of_completion', 'class_xii_year_of_completion', 'class_xii_percentage', 'class_xii_cgpa', 'percentage', 'hsc_percentage'].indexOf(key) >= 0 && (val === 0 || val === '0')) displayVal = '';
+                el.value = displayVal;
+            }
 
             if (isSubmitted) {
                 el.disabled = true;
@@ -5480,9 +5534,9 @@ I hereby undertake that the information and documents furnished by me are true t
                     const cellId_ms = `ug_ms_${idx}`;
                     tr.innerHTML = `
                         <td>${buildProgramSelect('ug', idx, row.ug_program || '', 'UG')}</td>
-                        <td><input type="text" class="fc" placeholder="College / University" value="${escapeAttr(row.college || '')}" onchange="updateDegreeRow('ug',${idx},'college',this.value)"></td>
                         <td><input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(row.year_of_completion || '')}" onchange="updateDegreeRow('ug',${idx},'year_of_completion',this.value)"></td>
-                        <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr(row.ug_cgpa != null && row.ug_cgpa !== '' ? row.ug_cgpa : '')}" oninput="validateUGCGPA(this,${idx})" onchange="updateDegreeRow('ug',${idx},'ug_cgpa',this.value)"></td>
+                        <td><input type="text" class="fc" placeholder="College / University" value="${escapeAttr(row.college || '')}" onchange="updateDegreeRow('ug',${idx},'college',this.value)"></td>
+                        <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr((row.ug_cgpa != null && row.ug_cgpa !== '' && row.ug_cgpa !== 0 && row.ug_cgpa !== '0') ? row.ug_cgpa : '')}" oninput="validateUGCGPA(this,${idx})" onchange="updateDegreeRow('ug',${idx},'ug_cgpa',this.value)"></td>
                         <td class="td-attach">${buildAttachCell(cellId_cert, 'ug', idx, 'degree_certificate', row.degree_certificate || '')}</td>
                         <td class="td-attach">${buildAttachCell(cellId_ms, 'ug', idx, 'marksheets', row.marksheets || '')}</td>
                         <td class="td-del"><button type="button" class="btn-del-row" onclick="removeRow('ug',this)" title="Remove">
@@ -5501,9 +5555,9 @@ I hereby undertake that the information and documents furnished by me are true t
                     const cellId_ms = `pg_ms_${idx}`;
                     tr.innerHTML = `
                         <td>${buildProgramSelect('pg', idx, row.pg_program || '', 'PG')}</td>
-                        <td><input type="text" class="fc" placeholder="College / University" value="${escapeAttr(row.collegeuniversity || '')}" onchange="updateDegreeRow('pg',${idx},'collegeuniversity',this.value)"></td>
                         <td><input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(row.year_of_completion || '')}" onchange="updateDegreeRow('pg',${idx},'year_of_completion',this.value)"></td>
-                        <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr(row.pg_cgpa != null && row.pg_cgpa !== '' ? row.pg_cgpa : '')}" oninput="validatePGCGPA(this,${idx})" onchange="updateDegreeRow('pg',${idx},'pg_cgpa',this.value)"></td>
+                        <td><input type="text" class="fc" placeholder="College / University" value="${escapeAttr(row.collegeuniversity || '')}" onchange="updateDegreeRow('pg',${idx},'collegeuniversity',this.value)"></td>
+                        <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr((row.pg_cgpa != null && row.pg_cgpa !== '' && row.pg_cgpa !== 0 && row.pg_cgpa !== '0') ? row.pg_cgpa : '')}" oninput="validatePGCGPA(this,${idx})" onchange="updateDegreeRow('pg',${idx},'pg_cgpa',this.value)"></td>
                         <td class="td-attach">${buildAttachCell(cellId_cert, 'pg', idx, 'pg_degree_certificatebonafide_certificate_to_be_uploaded', row.pg_degree_certificatebonafide_certificate_to_be_uploaded || '')}</td>
                         <td class="td-attach">${buildAttachCell(cellId_ms, 'pg', idx, 'transcriptsmarksheets_to_be_uploaded', row.transcriptsmarksheets_to_be_uploaded || '')}</td>
                         <td class="td-del"><button type="button" class="btn-del-row" onclick="removeRow('pg',this)" title="Remove">
@@ -5577,7 +5631,7 @@ I hereby undertake that the information and documents furnished by me are true t
                 <div class="review-field"><label>Father's mobile</label><span>${v(d.father_mobile)}</span></div>
                 <div class="review-field"><label>Mother's name</label><span>${v(d.mother_name)}</span></div>
                 <div class="review-field"><label>Mother's mobile</label><span>${v(d.mother_mobile)}</span></div>
-                ${d.guardian_required ? `<div class="review-field"><label>Guardian</label><span>${v(d.guardian_name)}</span></div>` : ''}
+                ${(d.guardian_required === 'Yes' || d.guardian_required === 1) ? `<div class="review-field"><label>Guardian</label><span>${v(d.guardian_name)}</span></div>` : ''}
             </div>
         </div>
         <div class="review-section">
@@ -6016,16 +6070,17 @@ I hereby undertake that the information and documents furnished by me are true t
     //  TOAST & ELIGIBILITY ERROR DISPLAY
     // ═══════════════════════════════════════════════════════
     function applyReadonlyState() {
-        // Disable all standard inputs
+        // Disable all standard inputs; keep file download buttons enabled so user can download attachments when status is submitted
         const form = document.getElementById('appForm');
         if (!form) return;
 
-        const inputs = form.querySelectorAll('input, select, textarea, button:not(.btn-next):not(.btn-prev):not(.step-circle):not(#downloadReceiptBtn)');
+        const inputs = form.querySelectorAll('input, select, textarea, button:not(.btn-next):not(.btn-prev):not(.step-circle):not(#downloadReceiptBtn):not(.btn-download-file):not(.btn-download-image):not(.btn-attach-download)');
         inputs.forEach(el => {
             el.disabled = true;
             el.style.pointerEvents = 'none';
             el.style.opacity = '0.7';
         });
+        ensureDownloadButtonsEnabled();
 
 
         // Specific handling for custom file upload buttons or delete buttons

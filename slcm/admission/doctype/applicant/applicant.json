@@ -725,6 +725,7 @@
   {
    "fieldname": "ug_final_year_note",
    "fieldtype": "HTML",
+   "label": "UG final year note",
    "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545;\">\n<b>Note:</b> Applicants who are in the final year of their undergraduate programme can also apply.\nThey must upload:\n<ol>\n  <li>Bonafide Certificate from the University/College/Department</li>\n  <li>Transcripts of previous years</li>\n</ol>\nProof of completion must be submitted no later than <b>December 31, 2026</b>.\n</div>\n"
   },
   {
@@ -839,7 +840,7 @@
    "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
    "fieldname": "section_break_cris",
    "fieldtype": "Section Break",
-   "label": "UG Degree Details "
+   "label": "UG Degree Details"
   },
   {
    "depends_on": "eval: doc.program_level == \"PG\" || doc.program_level == \"Research Course\"",
@@ -888,7 +889,7 @@
   {
    "fieldname": "hsc_percentage",
    "fieldtype": "Percent",
-   "label": "XII percentage",
+   "label": "Percentage/CGPA obtained (Class XII/Equivalent)",
    "non_negative": 1,
    "precision": "2",
    "reqd": 1
@@ -903,13 +904,13 @@
   {
    "fieldname": "ug_degree_details_column",
    "fieldtype": "Column Break",
-   "label": "UG degree details "
+   "label": "UG degree details"
   },
   {
    "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "pg_degree_details",
    "fieldtype": "Table",
-   "label": "Pg degree details ",
+   "label": "PG Degree Details",
    "mandatory_depends_on": "eval:doc.program_level == \"PHD\"",
    "options": "PG Degree Details"
   },
@@ -1081,7 +1082,7 @@
   {
    "fieldname": "class_xii_cgpa",
    "fieldtype": "Float",
-   "label": "If CGPA, maximum CPGA (Class XII/Equivalent)",
+   "label": "If CGPA, maximum CGPA (Class XII/Equivalent)",
    "precision": "2"
   }
  ],
@@ -1105,7 +1106,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-16 17:46:32.068774",
+ "modified": "2026-03-17 09:38:38.569463",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
