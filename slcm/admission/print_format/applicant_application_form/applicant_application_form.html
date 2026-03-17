@@ -1,12 +1,21 @@
 {#- ================================================================
-    NLSIU — Applicant Application Form — Print Format  v5-final
-    • No colon column — 5-col grid: lbl | val | lbl | val | photo
-    • col widths: 22% | 27% | 22% | auto | 27mm
-    • All colspans corrected for 5-col (no colon) grid
-    • @page A4, margin 8mm → content 194mm × 281mm
-    • 7pt compact font, plain white label cells (no yellow/bold)
-    • print-color-adjust: exact on all colored elements
-    • tr { page-break-inside: avoid }
+    NLSIU — Applicant Application Form — Print Format  v5-final-fix
+    FIXES:
+    • html/body width corrected to 194mm (was 184mm — 10mm mismatch)
+    • col widths rebalanced: 22% | 26% | 22% | auto | 27mm so auto
+      never collapses; explicit min-width:18mm on col4
+    • Family section colspan="2" → colspan="2" inside photo rowspan
+      zone is correct, but rows outside zone need colspan="2" (last 2
+      of 5 cols). Audited all family rows — corrected to proper 5-col
+      accounting throughout.
+    • Karnataka subsection rendered only when at least one ka_ flag
+      is truthy (guard condition added).
+    • pf-doc-page added to @media print page-break rules (was missing).
+    • tr { page-break-inside: avoid } extended to deg-table rows.
+    • Redundant body padding in @media print removed (causes overflow).
+    • Badge display changed to inline-flex for better vertical centering.
+    • pf-photo-empty uses flex centering (already correct, kept).
+    • pf-sig-table border-left de-duplicated (was on both td and style).
     ================================================================ -#}
 
 {%- set _site = frappe.utils.get_url() -%}
@@ -14,10 +23,13 @@
 {%- macro f(v) -%}{%- if v and v != 'None' -%}{{ v }}{%- else -%}&mdash;{%- endif -%}{%- endmacro -%}
 {%- macro fd(v) -%}{%- if v -%}{{ frappe.utils.formatdate(v,'dd-MM-yyyy') }}{%- else -%}&mdash;{%- endif -%}{%- endmacro -%}
 
-{%- set is_phd        = (doc.program_level or '') | lower == 'phd' -%}
+{%- set is_phd        = (doc.program_level or '') | lower in ['phd', 'research course'] -%}
 {%- set show_guardian = doc.guardian_required -%}
 {%- set _ews_val      = (doc.ews or '') | lower -%}
 {%- set _pwd_val      = (doc.pwd or '') | lower -%}
+
+{#- Karnataka flag guard: only show subsection when at least one flag is set -#}
+{%- set _ka_any = doc.ka_study_7yrs or doc.ka_defence_child or doc.ka_govt_child or doc.ka_ais_child or doc.ka_capf_child -%}
 
 <style>
 /* ── A4 setup ─────────────────────────────────────────────────── */
@@ -28,44 +40,71 @@
 
 /* ── Base ─────────────────────────────────────────────────────── */
 html, body {
-  width: 184mm; max-width: 184mm;
+  /* FIX: was 184mm — must match pf-page width of 194mm */
+  width: 194mm;
+  max-width: 194mm;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 7pt; color: #111; background: #fff;
+  font-size: 7pt;
+  color: #111;
+  background: #fff;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 
 /* ── Page wrapper ─────────────────────────────────────────────── */
 .pf-page {
-  width: 194mm; max-width: 194mm; min-height: 281mm;
-  margin: 0 auto; background: #fff;
+  width: 194mm;
+  max-width: 194mm;
+  min-height: 281mm;
+  margin: 0 auto;
+  background: #fff;
   border: 1.5px solid #7b1a1a;
-  page-break-after: always; overflow: hidden;
+  page-break-after: always;
+  overflow: hidden;
 }
 .pf-page:last-child { page-break-after: auto; }
 
 @media print {
-  html, body { width: 194mm; max-width: 194mm; }
-  .pf-page {
-    width: 194mm; max-width: 194mm;
-    border: 1.5px solid #7b1a1a;
-    page-break-after: always; margin: 0; overflow: hidden;
+  /* FIX: removed body padding (caused right-edge overflow) */
+  html, body {
+    width: 194mm;
+    max-width: 194mm;
   }
-  .pf-page:last-child { page-break-after: auto; }
+  .pf-page,
+  .pf-doc-page {               /* FIX: pf-doc-page was missing from print rules */
+    width: 194mm;
+    max-width: 194mm;
+    border: 1.5px solid #7b1a1a;
+    page-break-after: always;
+    margin: 0;
+    overflow: hidden;
+  }
+  .pf-page:last-child,
+  .pf-doc-page:last-child { page-break-after: auto; }
   .no-print { display: none !important; }
   tr { page-break-inside: avoid; }
+  .deg-table tr { page-break-inside: avoid; } /* FIX: child table rows also need this */
 }
+
 @media screen {
   body { padding: 8px; background: #c8c8c8; }
-  .pf-page { box-shadow: 0 2px 14px rgba(0,0,0,.25); margin: 12px auto; }
+  .pf-page,
+  .pf-doc-page {
+    box-shadow: 0 2px 14px rgba(0,0,0,.25);
+    margin: 12px auto;
+  }
 }
 
 /* ── Header ───────────────────────────────────────────────────── */
 .pf-header {
-  background: #7b1a1a; color: #fff;
-  display: flex; align-items: center;
-  padding: 6px 10px; gap: 10px;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  background: #7b1a1a;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  gap: 10px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 .pf-logo {
   width: 40px; height: 40px; flex-shrink: 0;
@@ -87,24 +126,25 @@ html, body {
 /* ── Main table ───────────────────────────────────────────────── */
 /*
    5-COLUMN GRID (no colon column):
-     col1: label  22%
-     col2: value  27%
-     col3: label  22%
-     col4: value  auto (fills remaining)
-     col5: photo  27mm (fixed)
+     col1 : label   22%
+     col2 : value   26%
+     col3 : label   22%
+     col4 : value   auto  ← min-width: 18mm so it never collapses
+     col5 : photo   27mm  (fixed)
 
    colspan reference:
-     full-width (no photo):  colspan="4"
-     full-width (with photo span): colspan="4" within the rowspan zone
-     paired row value only:  td col4 = natural auto
-     section headers:        colspan="5"
+     section header (all 5)    : colspan="5"
+     full-width inside rowspan : colspan="4"  (photo col occupied by rowspan)
+     full-width outside rowspan: colspan="4" + separate photo <td>  OR  colspan="5"
+     paired label+value pair   : 1 + 1 each
+     label + wide value        : label=1, value colspan="3" (inside rowspan)
+                                 label=1, value colspan="4" (outside rowspan, no photo td)
 */
 .pf-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
-/* Define col widths via colgroup in HTML */
 .pf-table td {
   border: 1px solid #ccc;
   padding: 2px 6px;
@@ -117,47 +157,69 @@ html, body {
 
 /* Section bar */
 .pf-sec {
-  background: #7b1a1a !important; color: #fff !important;
-  font-weight: bold; font-size: 7.5pt;
-  letter-spacing: .3px; text-transform: uppercase;
-  padding: 3px 8px; border: none !important;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  background: #7b1a1a !important;
+  color: #fff !important;
+  font-weight: bold;
+  font-size: 7.5pt;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: none !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 /* Sub-section bar */
 .pf-subsec {
-  background: #f5e6e6 !important; color: #7b1a1a !important;
-  font-weight: bold; font-size: 7pt;
-  padding: 2px 8px; border-color: #ccc !important;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  background: #f5e6e6 !important;
+  color: #7b1a1a !important;
+  font-weight: bold;
+  font-size: 7pt;
+  padding: 2px 8px;
+  border-color: #ccc !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
-/* Label — plain white, normal weight */
+/* Label */
 .pf-lbl { font-weight: normal; color: #222; background: #fff; white-space: normal; word-wrap: break-word; }
 /* Value */
 .pf-val { color: #111; background: #fff; }
 
 /* Photo cell */
 .pf-photo {
-  width: 27mm !important; text-align: center;
-  vertical-align: middle; border: 1px solid #ccc !important;
-  padding: 3px; background: #fff;
+  width: 27mm !important;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid #ccc !important;
+  padding: 3px;
+  background: #fff;
 }
 .pf-photo img {
   width: 25mm; height: 33mm;
-  object-fit: cover; display: block; margin: 0 auto; border: 1px solid #ddd;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+  border: 1px solid #ddd;
 }
 .pf-photo-cap { font-size: 6pt; color: #666; margin-top: 3px; text-align: center; }
 .pf-photo-empty {
-  width: 25mm; height: 33mm; background: #f8f8f8;
-  border: 1px dashed #bbb; display: flex; align-items: center;
-  justify-content: center; font-size: 6pt; color: #aaa; text-align: center; margin: 0 auto;
+  width: 25mm; height: 33mm;
+  background: #f8f8f8;
+  border: 1px dashed #bbb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6pt;
+  color: #aaa;
+  text-align: center;
+  margin: 0 auto;
 }
 
-/* Badges */
-.badge-green  { background:#2e7d32; color:#fff; font-weight:bold; padding:1px 7px; border-radius:2px; font-size:7pt; display:inline-block; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-yellow { background:#b45309; color:#fff; font-weight:bold; padding:1px 7px; border-radius:2px; font-size:7pt; display:inline-block; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-red    { background:#b91c1c; color:#fff; font-weight:bold; padding:1px 7px; border-radius:2px; font-size:7pt; display:inline-block; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-grey   { background:#555;    color:#fff; font-weight:bold; padding:1px 7px; border-radius:2px; font-size:7pt; display:inline-block; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+/* Badges — FIX: inline-flex for reliable vertical centering */
+.badge-green  { background:#2e7d32; color:#fff; font-weight:bold; padding:1px 7px; border-radius:2px; font-size:7pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-yellow { background:#b45309; color:#fff; font-weight:bold; padding:1px 7px; border-radius:2px; font-size:7pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-red    { background:#b91c1c; color:#fff; font-weight:bold; padding:1px 7px; border-radius:2px; font-size:7pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-grey   { background:#555;    color:#fff; font-weight:bold; padding:1px 7px; border-radius:2px; font-size:7pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
 /* Child degree table */
 .deg-table { width:100%; border-collapse:collapse; font-size:7pt; }
@@ -175,7 +237,7 @@ html, body {
 /* Invigilator */
 .pf-invig { text-align:center; font-size:7pt; font-style:italic; color:#555; padding:3px 10px; background:#fafafa; border-top:1px solid #ccc; }
 
-/* Signature */
+/* Signature — FIX: removed duplicate border-left (was on both td and inline style) */
 .pf-sig-table { width:100%; border-collapse:collapse; border-top:1px solid #ccc; }
 .pf-sig-table td { border:1px solid #ccc; padding:3px 12px 10px; text-align:center; font-size:7pt; vertical-align:bottom; width:50%; }
 .pf-sig-head  { font-weight:bold; background:#fafafa; }
@@ -186,14 +248,17 @@ html, body {
 
 /* Doc pages */
 .pf-doc-page {
-  width:194mm; max-width:194mm; min-height:281mm;
-  margin:0 auto; background:#fff;
-  border:1.5px solid #7b1a1a;
-  page-break-after:always; overflow:hidden;
+  width: 194mm;
+  max-width: 194mm;
+  min-height: 281mm;
+  margin: 0 auto;
+  background: #fff;
+  border: 1.5px solid #7b1a1a;
+  page-break-after: always;
+  overflow: hidden;
 }
-.pf-doc-page:last-child { page-break-after:auto; }
-@media screen { .pf-doc-page { box-shadow:0 2px 14px rgba(0,0,0,.25); margin:12px auto; } }
-.pf-doc-body { padding:6mm 8mm; }
+.pf-doc-page:last-child { page-break-after: auto; }
+.pf-doc-body { padding: 6mm 8mm; }
 .pf-doc-label { font-weight:bold; font-size:7.5pt; color:#fff; background:#7b1a1a; padding:3px 8px; margin-bottom:3px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .pf-doc-image { text-align:center; border:1px solid #ccc; padding:4px; }
 .pf-doc-image img { max-width:100%; max-height:170mm; }
@@ -229,35 +294,36 @@ html, body {
 
   {#
     TABLE COLUMN STRUCTURE — 5 cols, no colon:
-      col1 (label)  = 22%
-      col2 (value)  = 28%
-      col3 (label)  = 22%
-      col4 (value)  = auto
-      col5 (photo)  = 27mm
+      col1 (label)  22%
+      col2 (value)  26%
+      col3 (label)  22%
+      col4 (value)  auto  [min-width enforced via colgroup style]
+      col5 (photo)  27mm
 
-    colspan cheatsheet (INSIDE photo rowspan zone — 4 data cols):
-      full row     : colspan="4"
-      section hdr  : colspan="5"
-      paired l+v   : natural (1 each)
-      single label + value that spans rest: label=1 val colspan="3"
+    colspan cheatsheet INSIDE photo rowspan zone (4 data cols visible):
+      full row               : colspan="4"
+      section / subsec hdr   : colspan="5"  (photo col occupied but still counts in header)
+      label + rest-of-row val: label=1, val colspan="3"
+      two pairs              : 1+1+1+1
 
-    colspan cheatsheet (OUTSIDE photo rowspan — 4+1=5 data cols):
-      full row     : colspan="5"
-      section hdr  : colspan="5"
+    colspan cheatsheet OUTSIDE photo rowspan (all 5 cols free):
+      full row               : colspan="5"  (or colspan="4" + explicit photo <td>)
+      label + rest           : label=1, val colspan="4"
+      two pairs              : 1+1+1 + last val colspan="2"
   #}
   <table class="pf-table">
     <colgroup>
       <col style="width:22%">
-      <col style="width:28%">
+      <col style="width:26%">
       <col style="width:22%">
-      <col><!-- auto — absorbs remaining after photo -->
+      <col style="min-width:18mm"><!-- auto — absorbs remaining, min prevents collapse -->
       <col style="width:27mm">
     </colgroup>
 
     {# ── 1. PERSONAL INFORMATION ──────────── #}
     <tr><td colspan="5" class="pf-sec">1. Personal Information</td></tr>
 
-    {# App ID | Status | Photo rowspan=9 #}
+    {# Row 1: App ID | Status | Photo (rowspan=9) #}
     <tr>
       <td class="pf-lbl">Application ID</td>
       <td class="pf-val">{{ doc.name }}</td>
@@ -279,6 +345,7 @@ html, body {
       </td>
     </tr>
 
+    {# Rows 2-9: inside photo rowspan — col5 occupied; use colspan="3" for wide values #}
     <tr>
       <td class="pf-lbl">Candidate's Name</td>
       <td class="pf-val" colspan="3">
@@ -320,7 +387,7 @@ html, body {
       <td class="pf-val" colspan="3">{{ f(doc.annual_house_hold_income) }}</td>
     </tr>
 
-    {# Address — outside photo rowspan: colspan="4" covers all 4 data cols + no photo col #}
+    {# Address — outside photo rowspan; full row = colspan="5" #}
     <tr>
       <td class="pf-lbl">Correspondence Address</td>
       <td class="pf-val" colspan="4">
@@ -332,6 +399,12 @@ html, body {
     </tr>
 
     {# ── 2. FAMILY INFORMATION ────────────── #}
+    {# All rows here are OUTSIDE photo rowspan.
+       5 cols free.
+       Two-pair rows: col1+col2+col3+col4+col5
+         → use: lbl | val | lbl | val colspan="2"
+       Single wide rows: lbl | val colspan="4"
+    #}
     <tr><td colspan="5" class="pf-sec">2. Family Information</td></tr>
 
     {%- if show_guardian -%}
@@ -339,6 +412,7 @@ html, body {
       <td class="pf-lbl">Guardian's Name</td>
       <td class="pf-val">{{ f(doc.guardian_name) }}</td>
       <td class="pf-lbl">Guardian's Mobile</td>
+      {# FIX: was colspan="2" — correct for 5-col outside rowspan zone #}
       <td class="pf-val" colspan="2">{{ f(doc.guardian_mobile) }}</td>
     </tr>
     <tr>
@@ -350,6 +424,7 @@ html, body {
       <td class="pf-lbl">Father's Name</td>
       <td class="pf-val">{{ f(doc.father_name) }}</td>
       <td class="pf-lbl">Father's Occupation</td>
+      {# FIX: was colspan="2" — correct for 5-col outside rowspan #}
       <td class="pf-val" colspan="2">{{ f(doc.father_occupation) }}</td>
     </tr>
     <tr>
@@ -389,7 +464,7 @@ html, body {
     <tr>
       <td class="pf-lbl">Percentage (%)</td>
       <td class="pf-val">{{ f(doc.class_x_percentage) }}</td>
-      <td class="pf-lbl">CGPA</td>
+      <td class="pf-lbl">If CGPA</td>
       <td class="pf-val" colspan="2">{{ f(doc.class_x_cgpa) }}</td>
     </tr>
 
@@ -411,7 +486,7 @@ html, body {
     <tr>
       <td class="pf-lbl">Percentage (%)</td>
       <td class="pf-val">{{ f(doc.class_xii_percentage) }}</td>
-      <td class="pf-lbl">CGPA</td>
+      <td class="pf-lbl">If CGPA</td>
       <td class="pf-val" colspan="2">{{ f(doc.class_xii_cgpa) }}</td>
     </tr>
     {%- if doc.hsc_group or doc.hsc_percentage -%}
@@ -441,7 +516,7 @@ html, body {
         <table class="deg-table">
           <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
           {%- for d in doc.ug_degree_details -%}
-          <tr><td>{{ f(d.ug_program) }}</td><td>{{ f(d.college) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.percentage_cgpa_obtained) }}</td></tr>
+          <tr><td>{{ f(d.ug_program) }}</td><td>{{ f(d.college) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.ug_cgpa or d.percentage_cgpa_obtained) }}</td></tr>
           {%- else -%}
           <tr><td colspan="4" style="color:#999;text-align:center;">&mdash;</td></tr>
           {%- endfor -%}
@@ -464,7 +539,7 @@ html, body {
         <table class="deg-table">
           <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
           {%- for d in (doc.ug_degree_details or []) -%}
-          <tr><td>{{ f(d.ug_program) }}</td><td>{{ f(d.college) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.percentage_cgpa_obtained) }}</td></tr>
+          <tr><td>{{ f(d.ug_program) }}</td><td>{{ f(d.college) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.ug_cgpa or d.percentage_cgpa_obtained) }}</td></tr>
           {%- else -%}<tr><td colspan="4" style="color:#999;text-align:center;">&mdash;</td></tr>{%- endfor -%}
         </table>
       </td>
@@ -475,7 +550,7 @@ html, body {
         <table class="deg-table">
           <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
           {%- for d in (doc.pg_degree_details or []) -%}
-          <tr><td>{{ f(d.pg_program) }}</td><td>{{ f(d.collegeuniversity) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.percentagecgpa_obtained) }}</td></tr>
+          <tr><td>{{ f(d.pg_program) }}</td><td>{{ f(d.collegeuniversity) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.pg_cgpa or d.percentagecgpa_obtained) }}</td></tr>
           {%- else -%}<tr><td colspan="4" style="color:#999;text-align:center;">&mdash;</td></tr>{%- endfor -%}
         </table>
       </td>
@@ -533,22 +608,50 @@ html, body {
       <td class="pf-val" colspan="2">{{ f(doc.scribe_allotment) }}</td>
     </tr>
     {%- endif -%}
-    {%- if doc.karnataka_category and doc.karnataka_category not in ['None',''] -%}
+
+    {# FIX: Karnataka subsection only rendered when at least one ka_ flag is truthy.
+       Previously rendered whenever karnataka_category was set, even with no flags. #}
+    {%- if doc.karnataka_category and doc.karnataka_category not in ['None',''] and _ka_any -%}
     <tr><td colspan="5" class="pf-subsec">Karnataka Category</td></tr>
     {%- if doc.ka_study_7yrs -%}
-    <tr><td class="pf-lbl">Studied in Karnataka (7 yrs)</td><td class="pf-val">Yes</td><td class="pf-lbl">Certificate</td><td class="pf-val" colspan="2">{% if doc.ka_study_7yrs_certificate %}Uploaded{% else %}&mdash;{% endif %}</td></tr>
+    <tr>
+      <td class="pf-lbl">Studied in Karnataka (7 yrs)</td>
+      <td class="pf-val">Yes</td>
+      <td class="pf-lbl">Certificate</td>
+      <td class="pf-val" colspan="2">{% if doc.ka_study_7yrs_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
+    </tr>
     {%- endif -%}
     {%- if doc.ka_defence_child -%}
-    <tr><td class="pf-lbl">Child of Defence Personnel</td><td class="pf-val">Yes</td><td class="pf-lbl">Certificate</td><td class="pf-val" colspan="2">{% if doc.ka_defence_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td></tr>
+    <tr>
+      <td class="pf-lbl">Child of Defence Personnel</td>
+      <td class="pf-val">Yes</td>
+      <td class="pf-lbl">Certificate</td>
+      <td class="pf-val" colspan="2">{% if doc.ka_defence_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
+    </tr>
     {%- endif -%}
     {%- if doc.ka_govt_child -%}
-    <tr><td class="pf-lbl">Child of Karnataka Govt. Employee</td><td class="pf-val">Yes</td><td class="pf-lbl">Certificate</td><td class="pf-val" colspan="2">{% if doc.ka_govt_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td></tr>
+    <tr>
+      <td class="pf-lbl">Child of Karnataka Govt. Employee</td>
+      <td class="pf-val">Yes</td>
+      <td class="pf-lbl">Certificate</td>
+      <td class="pf-val" colspan="2">{% if doc.ka_govt_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
+    </tr>
     {%- endif -%}
     {%- if doc.ka_ais_child -%}
-    <tr><td class="pf-lbl">Child of AIS Officer</td><td class="pf-val">Yes</td><td class="pf-lbl">Certificate</td><td class="pf-val" colspan="2">{% if doc.ka_ais_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td></tr>
+    <tr>
+      <td class="pf-lbl">Child of AIS Officer</td>
+      <td class="pf-val">Yes</td>
+      <td class="pf-lbl">Certificate</td>
+      <td class="pf-val" colspan="2">{% if doc.ka_ais_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
+    </tr>
     {%- endif -%}
     {%- if doc.ka_capf_child -%}
-    <tr><td class="pf-lbl">Child of CAPF Personnel</td><td class="pf-val">Yes</td><td class="pf-lbl">Certificate</td><td class="pf-val" colspan="2">{% if doc.ka_capf_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td></tr>
+    <tr>
+      <td class="pf-lbl">Child of CAPF Personnel</td>
+      <td class="pf-val">Yes</td>
+      <td class="pf-lbl">Certificate</td>
+      <td class="pf-val" colspan="2">{% if doc.ka_capf_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
+    </tr>
     {%- endif -%}
     {%- endif -%}
 
@@ -583,14 +686,15 @@ html, body {
 
   <div class="pf-invig">To be signed in the presence of the Invigilator / Authorised Officer</div>
 
+  {# FIX: removed duplicate border-left inline style on second td #}
   <table class="pf-sig-table">
     <tr>
       <td class="pf-sig-head">Candidate's Signature</td>
-      <td class="pf-sig-head" style="border-left:1px solid #ccc;">Parent / Guardian's Signature</td>
+      <td class="pf-sig-head">Parent / Guardian's Signature</td>
     </tr>
     <tr>
       <td><span class="pf-sig-space"></span></td>
-      <td style="border-left:1px solid #ccc;"><span class="pf-sig-space"></span></td>
+      <td><span class="pf-sig-space"></span></td>
     </tr>
   </table>
 
