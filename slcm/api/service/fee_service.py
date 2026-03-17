@@ -690,19 +690,24 @@ class FeeService:
             frappe.db.set_value("Payment Request", pr.name, update_data, update_modified=True)
             frappe.db.commit()
         else:
-            pr.status = status
-            if payment_id:
-                pr.transaction_id = payment_id
-            if response_data:
-                pr.gateway_response = json.dumps(response_data, indent=4)
-            if status == "Paid":
-                pr.failure_message = None
-            if failure_reason:
-                pr.status = "Failed"
-                pr.failure_message = failure_reason
-            pr.save(ignore_permissions=True)
-            if status in ["Paid", "Requested"]:
-                pr.submit()
+            frappe.flags.payment_request_status_from_backend = True
+            try:
+                pr.status = status
+                if payment_id:
+                    pr.transaction_id = payment_id
+                if response_data:
+                    pr.gateway_response = json.dumps(response_data, indent=4)
+                if status == "Paid":
+                    pr.failure_message = None
+                if failure_reason:
+                    pr.status = "Failed"
+                    pr.failure_message = failure_reason
+                pr.save(ignore_permissions=True)
+                if status in ["Paid", "Requested"]:
+                    pr.submit()
+            finally:
+                if frappe.flags.get("payment_request_status_from_backend"):
+                    del frappe.flags.payment_request_status_from_backend
 
     @staticmethod
     @frappe.whitelist()
@@ -734,8 +739,14 @@ class FeeService:
                 or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name")
                 or "Razorpay"
             )
-            from payments.utils import get_payment_gateway_controller
-            controller = get_payment_gateway_controller(gateway)
+            try:
+                from payments.utils import get_payment_gateway_controller
+                controller = get_payment_gateway_controller(gateway)
+            except ImportError as e:
+                frappe.log_error(frappe.get_traceback(), "Application Fee Order Creation Failed")
+                frappe.throw(_("Payment gateway is not available. Please install the Payments app and configure a Payment Gateway (e.g. Razorpay)."))
+            if not controller:
+                frappe.throw(_("Payment Gateway '{0}' not found or not configured. Please set up Razorpay (or your gateway) in Payment Gateway doctype.").format(gateway))
 
             payment_details = {
                 "amount": actual_payable,
@@ -743,12 +754,17 @@ class FeeService:
                 "description": _("Application Fee for {0}").format(applicant.program or ""),
                 "reference_doctype": "Applicant",
                 "reference_docname": applicant_name,
-                "payer_email": applicant.email,
+                "payer_email": applicant.email or "",
                 "payer_name": applicant.candidate_name,
                 "currency": frappe.defaults.get_global_default("currency") or "INR",
                 "receipt": (applicant_name[:40]) if applicant_name else None
             }
-            order = controller.create_order(**payment_details)
+            try:
+                order = controller.create_order(**payment_details)
+            except Exception as order_err:
+                frappe.log_error(frappe.get_traceback(), "Application Fee Order Creation Failed")
+                err_msg = str(order_err) if order_err else _("Unknown error")
+                frappe.throw(_("Payment gateway could not create order: {0}").format(err_msg))
             if not order or not order.get("id"):
                 frappe.throw(_("Order creation failed. Please check gateway logs."))
 
