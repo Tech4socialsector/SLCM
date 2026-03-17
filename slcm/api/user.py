@@ -65,28 +65,24 @@ def register_fle_user(email, mobile_number):
 def update_password_fle(new_password, key, confirm_password=None):
     # Call the core update_password function
     from frappe.core.doctype.user.user import update_password
-    
+
     # This will log the user in and return a redirect URL (usually /me or /desk)
     core_redirect = update_password(new_password=new_password, key=key)
-    
+
     # We want to force redirect to the FLE form
     user = frappe.session.user
     if user == "Guest":
         # If somehow not logged in, just go to login
         return "/fle/login.html"
-        
+
     user_doc = frappe.get_doc("User", user)
     email = user_doc.email or ""
     mobile = user_doc.mobile_no or ""
-    
-    import urllib.parse
-    
-    query_params = urllib.parse.urlencode({
-        "email_address": email,
-        "candidate_contact_number": mobile
-    })
-    
-    return f"/foundations-for-a-legal-education/new?{query_params}"
+
+    # Store prefill data server-side so the URL stays clean
+    frappe.cache().hset("fle_prefill", user, {"email": email, "mobile": mobile})
+
+    return "/foundations-for-a-legal-education/new"
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def reset_password_fle(user: str):
@@ -151,16 +147,23 @@ def login_fle_user(usr, pwd):
     user_doc = frappe.get_doc("User", usr)
     email = user_doc.email or ""
     mobile = user_doc.mobile_no or ""
-    
-    import urllib.parse
-    import base64
-    
-    query_params = urllib.parse.urlencode({
-        "email_address": email,
-        "candidate_contact_number": mobile
-    })
-    
-    frappe.local.response["home_page"] = f"/foundations-for-a-legal-education/new?{query_params}"
+
+    # Store prefill data server-side so the URL stays clean
+    frappe.cache().hset("fle_prefill", frappe.session.user, {"email": email, "mobile": mobile})
+
+    frappe.local.response["home_page"] = "/foundations-for-a-legal-education/new"
+
+@frappe.whitelist()
+def get_fle_prefill_data():
+    """Return cached prefill data for the current user and clear it (one-time use)."""
+    user = frappe.session.user
+    if user == "Guest":
+        return {}
+    data = frappe.cache().hget("fle_prefill", user) or {}
+    if data:
+        frappe.cache().hdel("fle_prefill", user)
+    return data
+
 
 @frappe.whitelist()
 def download_fle_receipt(docname):
