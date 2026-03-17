@@ -19,45 +19,45 @@
    "fieldname": "pg_program",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "PG Program ",
+   "label": "Name of degree (PG)",
    "options": "Program"
   },
   {
    "fieldname": "pg_cgpa",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "CGPA obtained"
+   "label": "Percentage/CGPA obtained (PG degree)"
   },
   {
    "fieldname": "collegeuniversity",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "College/University"
+   "label": "College/University (PG degree)"
   },
   {
    "fieldname": "year_of_completion",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Year of Completion"
+   "label": "Year of completion (PG degree)"
   },
   {
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "pg_degree_certificatebonafide_certificate_to_be_uploaded",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "PG Degree Certificate/Bonafide Certificate to be uploaded"
+   "label": "PG degree certificate / Bonafide"
   },
   {
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "transcriptsmarksheets_to_be_uploaded",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "Transcripts/Marksheets to be uploaded"
+   "label": "Transcripts / Marksheets"
   },
   {
    "fieldname": "pg_degree_details_section",
    "fieldtype": "Section Break",
-   "label": "PG Degree Details "
+   "label": "PG Degree Details"
   }
  ],
  "grid_page_length": 50,

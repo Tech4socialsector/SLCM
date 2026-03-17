@@ -1,6 +1,6 @@
 frappe.ui.form.on("Eligibility Result Configuration", {
     refresh: function (frm) {
-        if (frm.doc.docstatus === 0 && ["Draft", "In Progress", "Failed"].includes(frm.doc.status) &&
+        if (!frm.is_new() && frm.doc.docstatus === 0 && ["Draft", "In Progress", "Failed"].includes(frm.doc.status) &&
             frm.doc.academic_year && frm.doc.campus && frm.doc.admission_cycle && frm.doc.program_level) {
 
             frm.add_custom_button(__("Generate Result"), function () {

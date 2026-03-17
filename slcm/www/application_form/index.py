@@ -377,6 +377,22 @@ def get_context(context):
     # Used to show/hide sections by program (e.g. PhD section only for Research Course)
     context.form_config = get_form_config_for_cycles()
 
+    # ── UG final year note: from Applicant doc (if set) else default from DocType field options ──
+    try:
+        meta = frappe.get_meta("Applicant")
+        default_note = (meta.get_field("ug_final_year_note").options or "") if meta and meta.get_field("ug_final_year_note") else ""
+    except Exception:
+        default_note = ""
+    context.ug_final_year_note = (app_data.get("ug_final_year_note") or default_note or "").strip()
+
+    # ── Test centre allocation note: from Applicant doc (if set) else default from DocType field options ──
+    try:
+        meta_tc = frappe.get_meta("Applicant")
+        default_tc_note = (meta_tc.get_field("test_center_allocation_note").options or "") if meta_tc and meta_tc.get_field("test_center_allocation_note") else ""
+    except Exception:
+        default_tc_note = ""
+    context.test_center_allocation_note = (app_data.get("test_center_allocation_note") or default_tc_note or "").strip()
+
     return context
 
 
