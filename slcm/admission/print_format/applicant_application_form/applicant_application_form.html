@@ -1,10 +1,13 @@
 {#- ================================================================
-    NLSIU — Applicant Application Form — Print Format  v7
-    KEY FIX: Frappe wraps print formats in its own letterhead/body
-    container that adds padding. We override ALL of that with aggressive
-    negative-margin / full-bleed CSS so the pf-page fills the A4 sheet
-    edge-to-edge, then we add a uniform 6px inner padding inside the
-    content table. The visible border stays; white gaps are gone.
+    NLSIU — Applicant Application Form — Print Format  v8
+    ROOT FIX: wkhtmltopdf renders at 96dpi but treats the viewport
+    as ~794px wide (A4 @ 96dpi). Using mm widths on the wrapper
+    causes it to over-scale. Solution:
+    • Set explicit viewport meta for wkhtmltopdf
+    • Use px-based widths on page wrapper (794px = A4 @ 96dpi)
+    • Remove mm units from table/colgroup — use % only
+    • @page margin: 0 and handle margins via wrapper padding
+    • Force -webkit-print-color-adjust everywhere
     ================================================================ -#}
 
 {%- set _site = frappe.utils.get_url() -%}
@@ -28,19 +31,12 @@
   {%- set _addr_str = _addr_str ~ (' \u2013 ' if _addr_str else '') ~ doc.pincode -%}
 {%- endif -%}
 
+<meta name="viewport" content="width=794, initial-scale=1.0">
+
 <style>
 /* ══════════════════════════════════════════════════════════════
-   FRAPPE OVERRIDE — strip every wrapper container's padding so
-   our page div sits flush against the A4 @page margin box.
-   Frappe v14/v15 injects: #page-body, .print-format-gutter,
-   .print-format, .page-break, div[style*="padding"] wrappers.
-   We nuke them all.
+   RESET — strip Frappe wrapper padding completely
    ══════════════════════════════════════════════════════════════ */
-@page {
-  size: A4 portrait;
-  margin: 8mm;           /* uniform 8 mm on all 4 sides = ~23px */
-}
-
 *,
 *::before,
 *::after {
@@ -49,7 +45,6 @@
   padding: 0;
 }
 
-/* Frappe body / wrapper resets */
 html,
 body,
 #page-body,
@@ -58,243 +53,262 @@ body,
 .page-break,
 .letter-head,
 .letter-head-content,
-form[data-doctype],
+.frappe-card,
 .layout-main,
-.layout-main-section,
-.frappe-card {
+.layout-main-section {
   margin:  0 !important;
   padding: 0 !important;
   border:  none !important;
   background: transparent !important;
-  width: auto !important;
-  max-width: none !important;
+  box-shadow: none !important;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   @page — zero margins; we control spacing via wrapper padding
+   wkhtmltopdf honours @page margin: 0 reliably when combined
+   with a fixed-px page wrapper.
+   ══════════════════════════════════════════════════════════════ */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BASE
+   794px = A4 width at 96 dpi (wkhtmltopdf default screen dpi)
+   We add 20px padding on each side → content = 754px
+   ══════════════════════════════════════════════════════════════ */
 html, body {
+  width: 794px;
+  min-width: 794px;
+  max-width: 794px;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 7pt;
+  font-size: 9px;
   color: #111;
   background: #fff;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 
-/* ── Page wrapper — fills A4 content area exactly ─────────────
-   A4 = 210mm × 297mm. @page margin 8mm each side →
-   content box = 194mm × 281mm.
-   We let the wrapper BE that content box with no extra margin.
-   The 1.5px border is purely decorative (print). */
+/* ══════════════════════════════════════════════════════════════
+   PAGE WRAPPER
+   794px wide, 1123px tall (A4 @ 96dpi)
+   20px padding gives ~7.5mm gutter all around
+   ══════════════════════════════════════════════════════════════ */
 .pf-page,
 .pf-doc-page {
-  width: 194mm;
-  max-width: 194mm;
-  min-height: 281mm;
+  width: 794px;
+  min-width: 794px;
+  max-width: 794px;
+  min-height: 1123px;
   margin: 0;
-  padding: 0;
+  padding: 18px 20px;
   background: #fff;
-  border: 1.5px solid #7b1a1a;
   overflow: hidden;
-  /* wkhtmltopdf needs this to avoid injecting extra space */
   display: block;
+  position: relative;
 }
 
-/* Screen-only: add visual separation between pages */
+/* Screen: show border + shadow for desk preview */
 @media screen {
-  html, body {
-    background: #909090;
-    padding: 0;
-  }
+  html, body { background: #888; padding: 0; }
   .pf-page,
   .pf-doc-page {
-    box-shadow: 0 3px 18px rgba(0,0,0,.35);
+    border: 2px solid #7b1a1a;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
     margin: 12px auto !important;
   }
 }
 
+/* Print: no border (PDF has its own page boundary) */
 @media print {
   html, body {
-    width: 194mm;
-    max-width: 194mm;
+    width: 794px;
+    max-width: 794px;
     margin: 0;
     padding: 0;
     background: #fff;
   }
   .pf-page,
   .pf-doc-page {
-    width: 194mm;
-    max-width: 194mm;
+    width: 794px;
+    max-width: 794px;
     margin: 0 !important;
-    padding: 0 !important;
-    border: 1.5px solid #7b1a1a;
+    padding: 18px 20px !important;
+    border: none !important;
     page-break-after: always;
     overflow: hidden;
   }
   .pf-page:last-child,
-  .pf-doc-page:last-child {
-    page-break-after: auto;
-  }
+  .pf-doc-page:last-child { page-break-after: auto; }
   .no-print { display: none !important; }
   tr { page-break-inside: avoid; }
   .deg-table tr { page-break-inside: avoid; }
 }
 
-/* ── Header ────────────────────────────────────────────────────
-   Flush to top of wrapper, no rounding, exact dark red.        */
+/* ── Header ─────────────────────────────────────────────────── */
 .pf-header {
   background: #7b1a1a;
   color: #fff;
   display: flex;
   align-items: center;
-  padding: 5px 8px;
-  gap: 8px;
-  border-radius: 0;
+  padding: 6px 10px;
+  gap: 10px;
+  margin-bottom: 0;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 .pf-logo {
-  width: 36px; height: 36px; flex-shrink: 0;
-  background: #fff; border-radius: 2px;
+  width: 44px; height: 44px; flex-shrink: 0;
+  background: #fff; border-radius: 3px;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
-.pf-logo img  { width: 32px; height: 32px; object-fit: contain; }
-.pf-logo-text { font-size: 5.5pt; color: #7b1a1a; font-weight: bold; text-align: center; line-height: 1.2; }
+.pf-logo img  { width: 40px; height: 40px; object-fit: contain; }
+.pf-logo-text { font-size: 7px; color: #7b1a1a; font-weight: bold; text-align: center; line-height: 1.2; }
 .pf-hdr-body  { flex: 1; text-align: center; }
-.pf-hdr-inst  { font-size: 10pt; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; line-height: 1.2; color: #fff; }
-.pf-hdr-sub   { font-size: 5.5pt; letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; color: #ffcccc; }
+.pf-hdr-inst  { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: .6px; line-height: 1.2; color: #fff; }
+.pf-hdr-sub   { font-size: 7.5px; letter-spacing: 1.2px; text-transform: uppercase; margin-top: 2px; color: #ffcccc; }
 
-/* ── Title bar ────────────────────────────────────────────────── */
+/* ── Title bar ──────────────────────────────────────────────── */
 .pf-title-bar {
   text-align: center;
-  padding: 3px 6px;
+  padding: 4px 8px 3px;
   background: #fff;
   border-bottom: 1px solid #ddd;
+  margin-bottom: 0;
 }
-.pf-title    { font-size: 8.5pt; font-weight: bold; color: #111; }
-.pf-subtitle { font-size: 6.5pt; color: #555; margin-top: 1px; }
-.sep         { margin: 0 3px; color: #bbb; }
+.pf-title    { font-size: 11px; font-weight: bold; color: #111; }
+.pf-subtitle { font-size: 8px; color: #555; margin-top: 1px; }
+.sep         { margin: 0 4px; color: #bbb; }
 
-/* ── Main table ────────────────────────────────────────────────
-   5-col fixed-layout. No outer table border — the .pf-page
-   border provides the outer frame.                              */
+/* ── Main table ─────────────────────────────────────────────── */
+/*
+  5 columns (% only — no mm in table):
+    col1  label   22%
+    col2  value   26%
+    col3  label   21%
+    col4  value   auto
+    col5  photo   100px  (fixed px)
+*/
 .pf-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  margin-top: 0;
 }
 .pf-table td {
-  border: 1px solid #d0d0d0;
-  padding: 2px 5px;
+  border: 1px solid #ccc;
+  padding: 3px 6px;
   vertical-align: middle;
-  font-size: 6.8pt;
-  line-height: 1.35;
+  font-size: 8.5px;
+  line-height: 1.4;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
 
-/* Section header row */
+/* Section header */
 .pf-sec {
   background: #7b1a1a !important;
   color: #fff !important;
   font-weight: bold;
-  font-size: 7pt;
-  letter-spacing: .25px;
+  font-size: 8.5px;
   text-transform: uppercase;
-  padding: 2px 8px;
+  letter-spacing: .3px;
+  padding: 3px 8px;
   border: none !important;
-  border-top: 1px solid #5a0e0e !important;
-  border-bottom: 1px solid #5a0e0e !important;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
-/* Sub-section header row */
+/* Sub-section header */
 .pf-subsec {
   background: #f4e4e4 !important;
   color: #7b1a1a !important;
   font-weight: bold;
-  font-size: 6.8pt;
-  padding: 1px 8px;
+  font-size: 8px;
+  padding: 2px 8px;
   border-color: #ccc !important;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 
-/* Label / Value cells */
-.pf-lbl { font-weight: normal; color: #444; background: #f9f6f6; }
+/* Label / Value */
+.pf-lbl { font-weight: normal; color: #444; background: #faf7f7; }
 .pf-val { color: #111; background: #fff; }
 
 /* ── Photo cell ─────────────────────────────────────────────── */
 .pf-photo {
-  width: 27mm !important;
-  max-width: 27mm !important;
+  width: 100px !important;
+  max-width: 100px !important;
   text-align: center;
   vertical-align: top;
-  padding: 3px;
+  padding: 4px 3px;
   background: #fff;
-  border: 1px solid #d0d0d0 !important;
+  border: 1px solid #ccc !important;
 }
 .pf-photo img {
-  width: 23mm;
-  height: 30mm;
+  width: 86px;
+  height: 110px;
   object-fit: cover;
   display: block;
-  margin: 0 auto 2px;
-  border: 1px solid #ccc;
+  margin: 0 auto 3px;
+  border: 1px solid #ddd;
 }
 .pf-photo-cap {
-  font-size: 5.5pt; color: #888; text-align: center; line-height: 1.3;
+  font-size: 7px; color: #888; text-align: center; line-height: 1.3;
 }
 .pf-photo-empty {
-  width: 23mm; height: 30mm;
+  width: 86px; height: 110px;
   background: #f2f2f2;
   border: 1px dashed #bbb;
   display: flex; align-items: center; justify-content: center;
-  font-size: 5.5pt; color: #aaa; text-align: center; margin: 0 auto 2px;
+  font-size: 7px; color: #aaa; text-align: center;
+  margin: 0 auto 3px;
 }
 
-/* ── Status badges ──────────────────────────────────────────── */
-.badge-green  { background:#276726; color:#fff; font-weight:bold; padding:1px 5px; border-radius:2px; font-size:6.2pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-yellow { background:#a34d00; color:#fff; font-weight:bold; padding:1px 5px; border-radius:2px; font-size:6.2pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-red    { background:#a81616; color:#fff; font-weight:bold; padding:1px 5px; border-radius:2px; font-size:6.2pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-grey   { background:#3d3d3d; color:#fff; font-weight:bold; padding:1px 5px; border-radius:2px; font-size:6.2pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+/* ── Badges ─────────────────────────────────────────────────── */
+.badge-green  { background:#276726; color:#fff; font-weight:bold; padding:1px 6px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-yellow { background:#a34d00; color:#fff; font-weight:bold; padding:1px 6px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-red    { background:#a81616; color:#fff; font-weight:bold; padding:1px 6px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-grey   { background:#3d3d3d; color:#fff; font-weight:bold; padding:1px 6px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
 /* ── Degree inner table ─────────────────────────────────────── */
-.deg-table { width:100%; border-collapse:collapse; font-size:6.5pt; }
-.deg-table th { background:#f4e4e4 !important; color:#7b1a1a; font-weight:bold; padding:1px 5px; border:1px solid #ccc; text-align:left; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.deg-table td { padding:1px 5px; border:1px solid #ccc; vertical-align:middle; }
+.deg-table { width:100%; border-collapse:collapse; font-size:8px; }
+.deg-table th { background:#f4e4e4 !important; color:#7b1a1a; font-weight:bold; padding:2px 6px; border:1px solid #ccc; text-align:left; font-size:7.5px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.deg-table td { padding:2px 6px; border:1px solid #ccc; vertical-align:middle; }
 .deg-table tr:nth-child(even) td { background:#fafafa; }
 
 /* ── Declaration ────────────────────────────────────────────── */
-.pf-decl { padding:3px 8px; font-size:6.5pt; line-height:1.45; color:#111; background:#fff; border-top:1px solid #ddd; }
-.pf-decl-item { display:flex; align-items:flex-start; gap:4px; margin-bottom:2px; }
+.pf-decl { padding:4px 8px; font-size:8px; line-height:1.5; color:#111; background:#fff; border-top:1px solid #ddd; }
+.pf-decl-item { display:flex; align-items:flex-start; gap:5px; margin-bottom:3px; }
 .pf-decl-item:last-child { margin-bottom:0; }
-.pf-chk  { font-size:9pt; line-height:1; flex-shrink:0; margin-top:0px; }
+.pf-chk  { font-size:11px; line-height:1; flex-shrink:0; margin-top:1px; }
 .pf-decl-text { flex:1; }
 
 /* ── Invigilator note ───────────────────────────────────────── */
-.pf-invig { text-align:center; font-size:6pt; font-style:italic; color:#666; padding:2px 8px; background:#f9f9f9; border-top:1px solid #ddd; }
+.pf-invig { text-align:center; font-size:7.5px; font-style:italic; color:#666; padding:3px 8px; background:#f9f9f9; border-top:1px solid #ddd; }
 
 /* ── Signature table ────────────────────────────────────────── */
 .pf-sig-table { width:100%; border-collapse:collapse; border-top:1px solid #ddd; }
-.pf-sig-table td { border:1px solid #d0d0d0; padding:2px 10px 12px; text-align:center; font-size:6.5pt; vertical-align:bottom; width:50%; }
-.pf-sig-head  { font-weight:bold; font-size:6.5pt; background:#f9f9f9; }
-.pf-sig-space { height:26px; display:block; }
+.pf-sig-table td { border:1px solid #ccc; padding:3px 12px 14px; text-align:center; font-size:8px; vertical-align:bottom; width:50%; }
+.pf-sig-head  { font-weight:bold; background:#f9f9f9; }
+.pf-sig-space { height:30px; display:block; }
 
 /* ── Footer ─────────────────────────────────────────────────── */
 .pf-footer {
-  border-top:1px dashed #ccc;
-  text-align:center;
-  font-size:5.8pt;
-  color:#888;
-  padding:2px 6px;
-  background:#fff;
+  border-top: 1px dashed #ccc;
+  text-align: center;
+  font-size: 7px;
+  color: #888;
+  padding: 3px 8px;
+  background: #fff;
 }
 
-/* ── Document page body ─────────────────────────────────────── */
-.pf-doc-body  { padding: 5mm 6mm; }
-.pf-doc-label { font-weight:bold; font-size:6.8pt; color:#fff; background:#7b1a1a; padding:2px 7px; margin-bottom:2px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.pf-doc-image { text-align:center; border:1px solid #ccc; padding:3px; }
-.pf-doc-image img { max-width:100%; max-height:160mm; }
-.pf-doc-pdf   { padding:8px; background:#fafafa; border:1px solid #ccc; text-align:center; color:#555; font-size:6.8pt; }
+/* ── Doc page body ──────────────────────────────────────────── */
+.pf-doc-body  { padding-top: 8px; }
+.pf-doc-label { font-weight:bold; font-size:8.5px; color:#fff; background:#7b1a1a; padding:3px 8px; margin-bottom:3px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.pf-doc-image { text-align:center; border:1px solid #ccc; padding:4px; }
+.pf-doc-image img { max-width:100%; max-height:640px; }
+.pf-doc-pdf   { padding:10px; background:#fafafa; border:1px solid #ccc; text-align:center; color:#555; font-size:8.5px; }
 </style>
 
 
@@ -324,30 +338,13 @@ html, body {
     </div>
   </div>
 
-  {#
-    5-COLUMN GRID (table-layout: fixed):
-      col1  label   22%
-      col2  value   26%
-      col3  label   22%
-      col4  value   auto
-      col5  photo   27mm
-
-    INSIDE photo rowspan (rows 1-9):
-      full width  → colspan="4"
-      wide value  → label + val colspan="3"
-      two pairs   → 1+1+1+1
-
-    OUTSIDE photo rowspan (all 5 cols free):
-      full width    → label + val colspan="4"
-      two-pair row  → 1+1+1 + last-val colspan="2"
-  #}
   <table class="pf-table">
     <colgroup>
       <col style="width:22%">
       <col style="width:26%">
-      <col style="width:22%">
-      <col><!-- auto -->
-      <col style="width:27mm">
+      <col style="width:21%">
+      <col><!-- auto fills remaining after photo col -->
+      <col style="width:100px">
     </colgroup>
 
     {# ══ 1. PERSONAL INFORMATION ══ #}
@@ -415,7 +412,6 @@ html, body {
       <td class="pf-val" colspan="3">{{ f(doc.annual_house_hold_income) }}</td>
     </tr>
 
-    {# outside rowspan — label + val colspan="4" #}
     <tr>
       <td class="pf-lbl">Correspondence Address</td>
       <td class="pf-val" colspan="4">
@@ -528,7 +524,7 @@ html, body {
     {%- if not is_phd and doc.ug_degree_details -%}
     <tr><td colspan="5" class="pf-subsec">Undergraduate Degree(s)</td></tr>
     <tr>
-      <td colspan="5" style="padding:3px 5px;">
+      <td colspan="5" style="padding:4px 6px;">
         <table class="deg-table">
           <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
           {%- for d in doc.ug_degree_details -%}
@@ -550,7 +546,7 @@ html, body {
     {%- if is_phd -%}
     <tr><td colspan="5" class="pf-subsec">Undergraduate Degree(s)</td></tr>
     <tr>
-      <td colspan="5" style="padding:3px 5px;">
+      <td colspan="5" style="padding:4px 6px;">
         <table class="deg-table">
           <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
           {%- for d in (doc.ug_degree_details or []) -%}
@@ -561,7 +557,7 @@ html, body {
     </tr>
     <tr><td colspan="5" class="pf-subsec">Postgraduate Degree(s)</td></tr>
     <tr>
-      <td colspan="5" style="padding:3px 5px;">
+      <td colspan="5" style="padding:4px 6px;">
         <table class="deg-table">
           <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
           {%- for d in (doc.pg_degree_details or []) -%}
@@ -781,15 +777,15 @@ html, body {
     {%- for item in _docs -%}
       {%- set _ext = (item.url or '').split('.')[-1] | lower -%}
       {%- set _is_img = _ext in ['jpg','jpeg','png','gif','webp','bmp'] -%}
-      <div style="margin-bottom:9px; page-break-inside:avoid;">
+      <div style="margin-bottom:10px; page-break-inside:avoid;">
         <div class="pf-doc-label">{{ loop.index }}. {{ item.label }}</div>
         {%- if _is_img -%}
         <div class="pf-doc-image"><img src="{{ _site }}{{ item.url }}" alt="{{ item.label }}"></div>
         {%- else -%}
         <div class="pf-doc-pdf">
           <strong>{{ item.label }}</strong><br>
-          <span style="font-size:6pt;">{{ item.url.split('/')[-1] }}</span><br>
-          <span style="font-size:5.8pt;color:#999;">(Open the portal to view this document)</span>
+          <span style="font-size:7.5px;">{{ item.url.split('/')[-1] }}</span><br>
+          <span style="font-size:7px;color:#999;">(Open the portal to view this document)</span>
         </div>
         {%- endif -%}
       </div>
