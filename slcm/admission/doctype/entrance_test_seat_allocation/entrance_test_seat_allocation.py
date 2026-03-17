@@ -6,6 +6,10 @@ from frappe.utils import now_datetime, get_url, get_datetime
 
 class EntranceTestSeatAllocation(Document):
 
+    def validate(self):
+        if self.score_obtained and self.score_obtained > 100:
+            frappe.throw("Score Obtained cannot be more than 100.")
+
     def before_save(self):
         # Update attendance_marked_on if status changes to Attended, Absent, or Rescheduled
         doc_before = self.get_doc_before_save()

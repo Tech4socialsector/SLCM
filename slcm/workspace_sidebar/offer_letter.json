@@ -45,11 +45,11 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "baggage-claim",
+   "icon": "badge-indian-rupee",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Payment request",
-   "link_to": "Payment Request",
+   "label": "Applicant fee assignment",
+   "link_to": "Applicant Fee Assignment",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -57,11 +57,11 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "badge-indian-rupee",
+   "icon": "baggage-claim",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Applicant fee assignment",
-   "link_to": "Applicant Fee Assignment",
+   "label": "Payment request",
+   "link_to": "Payment Request",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -116,6 +116,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "list",
    "indent": 0,
    "keep_closed": 0,
    "label": "Setup",
@@ -132,7 +133,6 @@
    "label": "Configuration",
    "link_to": "Offer Configuration",
    "link_type": "DocType",
-   "navigate_to_tab": "",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -171,20 +171,9 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Fee recept",
-   "link_to": "Applicant Payment Receipt",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
   }
  ],
- "modified": "2026-03-17 12:12:59.440736",
+ "modified": "2026-03-17 15:25:05.736845",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
