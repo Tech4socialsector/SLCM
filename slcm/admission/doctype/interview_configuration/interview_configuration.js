@@ -12,6 +12,7 @@ frappe.ui.form.on("Interview Configuration", {
         //   2. Status is Draft, In Progress or Failed
         //   3. All required fields are filled
         if (
+            !frm.is_new() &&
             frm.doc.docstatus === 0 &&
             ["Draft", "In Progress", "Failed"].includes(frm.doc.status || "Draft") &&
             frm.doc.academic_year &&
