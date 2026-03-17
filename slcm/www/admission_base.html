@@ -102,17 +102,22 @@
             text-decoration: none;
             color: #fff;
             font-weight: 700;
-            font-size: 18px;
+            font-size: clamp(14px, 4vw, 18px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 65%;
         }
 
         .adm-nav-brand img {
-            height: 36px;
+            height: clamp(28px, 6vw, 36px);
             width: auto;
+            flex-shrink: 0;
         }
 
         .adm-nav-links {
             display: flex;
-            gap: 20px;
+            gap: clamp(10px, 2vw, 20px);
             align-items: center;
         }
 
@@ -168,50 +173,15 @@
             padding: 0 24px;
         }
 
-        /* Ultra-wide screen scaling */
-        @media (min-width: 1600px) {
-            .adm-container {
-                max-width: 1540px;
-            }
-        }
+        /* Responsive container logic */
+        @media (min-width: 1600px) { .adm-container { max-width: 1540px; } }
+        @media (min-width: 1920px) { .adm-container { max-width: 1840px; } }
+        @media (min-width: 2500px) { .adm-container { max-width: 2300px; } }
 
-        @media (min-width: 1920px) {
-            .adm-container {
-                max-width: 1840px;
-            }
-        }
-
-        @media (min-width: 2500px) {
-            .adm-container {
-                max-width: 2300px;
-            }
-        }
-
-        @media (max-width: 1200px) {
-            .adm-container {
-                max-width: 1140px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .adm-container {
-                max-width: 960px;
-                padding: 0 20px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .adm-container {
-                max-width: 720px;
-                padding: 0 16px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .adm-container {
-                max-width: 100%;
-            }
-        }
+        @media (max-width: 1200px) { .adm-container { max-width: 1140px; padding: 0 20px; } }
+        @media (max-width: 992px)  { .adm-container { max-width: 960px;  padding: 0 18px; } }
+        @media (max-width: 768px)  { .adm-container { max-width: 720px;  padding: 0 16px; } }
+        @media (max-width: 576px)  { .adm-container { max-width: 100%;   padding: 0 14px; } }
 
         .adm-footer {
             background: var(--primary);
@@ -887,24 +857,60 @@
             position: relative;
             background: #0f172a;
             color: #94a3b8;
-            padding: 40px 0 24px;
-            /* margin-top: 30px; */
+            padding: 48px 0 24px;
         }
 
         .footer-container {
-            max-width: 1100px;
+            width: 100%;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 24px;
         }
+
+        /* Synchronize with main container */
+        @media (min-width: 1600px) { .footer-container { max-width: 1540px; } }
+        @media (min-width: 1920px) { .footer-container { max-width: 1840px; } }
+        @media (min-width: 2500px) { .footer-container { max-width: 2300px; } }
+        @media (max-width: 1200px) { .footer-container { max-width: 1140px; padding: 0 20px; } }
+        @media (max-width: 992px)  { .footer-container { max-width: 960px;  padding: 0 18px; } }
+        @media (max-width: 768px)  { .footer-container { max-width: 720px;  padding: 0 16px; } }
+        @media (max-width: 576px)  { .footer-container { max-width: 100%;   padding: 0 14px; } }
 
         .footer-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
+            gap: 32px;
+        }
+
+        .footer-col {
+            grid-column: span 4;
+        }
+
+        @media (max-width: 1024px) {
+            .footer-col { grid-column: span 6; }
+            .footer-col:first-child { 
+                grid-column: span 12;
+                margin-bottom: 8px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .footer-col { grid-column: span 12; }
+            .footer-col:first-child { margin-bottom: 0; }
+            .footer-grid { gap: 40px; }
+        }
+
+        .footer-links-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 24px;
         }
 
-        .footer-col-4 {
-            grid-column: span 4 / span 4;
+        @media (max-width: 480px) {
+            .footer-links-grid {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
         }
 
         .footer-title {
@@ -970,16 +976,6 @@
                 flex-direction: row;
             }
         }
-
-        @media (max-width: 1024px) {
-            .footer-col-4 {
-                grid-column: span 12 / span 12;
-            }
-
-            .footer-grid {
-                gap: 32px;
-            }
-        }
     </style>
 
     {% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
@@ -1013,7 +1009,7 @@
         <div class="footer-container">
             <div class="footer-grid">
                 <!-- Brand -->
-                <div class="footer-col-4">
+                <div class="footer-col">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
                         <div
                             style="width: 32px; height: 32px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff;">
@@ -1021,15 +1017,15 @@
                         </div>
                         <h2 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0;">{{ _f_title }}</h2>
                     </div>
-                    <p style="font-size: 13px; line-height: 1.5; max-width: 300px; margin: 0;">
+                    <p style="font-size: 13px; line-height: 1.5; max-width: 400px; margin: 0;">
                         National Law School of India University Admissions Portal. Empowering the next generation of
                         legal professionals.
                     </p>
                 </div>
 
                 <!-- Links -->
-                <div class="footer-col-4">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="footer-col">
+                    <div class="footer-links-grid">
                         <div>
                             <h4 class="footer-title">Programme</h4>
                             <ul class="footer-links">
@@ -1051,7 +1047,7 @@
                 </div>
 
                 <!-- Contact -->
-                <div class="footer-col-4">
+                <div class="footer-col">
                     <h4 class="footer-title">Contact</h4>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         {% if _f_addr %}
