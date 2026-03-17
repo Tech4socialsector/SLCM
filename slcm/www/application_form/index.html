@@ -801,6 +801,17 @@
         z-index: 0;
     }
 
+    /* In read-only, when file is uploaded hide the native file input so "No file chosen" is not shown */
+    .file-zone.readonly-has-file input[type=file] {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        left: -9999px !important;
+        overflow: hidden !important;
+    }
+
     .file-zone-actions {
         position: relative;
         z-index: 2;
@@ -888,8 +899,8 @@
         background: var(--red-bg);
     }
 
-    .pincode-fg { max-width: 140px; }
-    .pincode-input { max-width: 120px; }
+    .pincode-fg { max-width: 160px; }
+    .pincode-input { max-width: 160px; }
 
     /* Photo upload — square preview */
     .photo-upload-area {
@@ -1061,7 +1072,6 @@
         text-align: left;
         font-size: .7rem;
         font-weight: 800;
-        text-transform: uppercase;
         letter-spacing: .06em;
         color: var(--slate-400);
         border-bottom: 1px solid var(--slate-200);
@@ -1112,9 +1122,9 @@
     }
 
     .btn-del-row {
-        background: none;
-        border: none;
-        color: var(--slate-400);
+        background: #fefce8;
+        border: 1.5px solid #eab308;
+        color: #b45309;
         cursor: pointer;
         padding: .25rem;
         border-radius: 4px;
@@ -1126,8 +1136,9 @@
     }
 
     .btn-del-row:hover {
-        color: var(--red);
-        background: var(--red-bg);
+        color: #a16207;
+        background: #fef08a;
+        border-color: #ca8a04;
     }
 
     /* Delete column — centered, fixed width */
@@ -1186,13 +1197,22 @@
     }
 
     .attach-clear {
-        font-size: .7rem;
-        color: var(--slate-400);
+        font-size: .72rem;
+        font-weight: 600;
+        color: #b45309;
         cursor: pointer;
-        background: none;
-        border: none;
-        padding: 0;
-        line-height: 1;
+        background: #fefce8;
+        border: 1.5px solid #eab308;
+        border-radius: 4px;
+        padding: .25rem .5rem;
+        line-height: 1.2;
+        transition: var(--transition);
+    }
+
+    .attach-clear:hover {
+        background: #fef08a;
+        border-color: #ca8a04;
+        color: #a16207;
     }
 
     .btn-attach-download {
@@ -1580,7 +1600,6 @@
     .app-ref-field label {
         font-size: .68rem;
         font-weight: 800;
-        text-transform: uppercase;
         letter-spacing: .08em;
         color: var(--slate-400);
         display: block;
@@ -2362,7 +2381,7 @@
                             </div>
                         </div>
 
-                        <div class="form-row cols-1" style="margin-top:1rem;">
+                        <div class="form-row cols-3" style="margin-top:1rem;">
                             <div class="fg">
                                 <label>If contact details of both parents are not available, would you like to enter the details of a legal guardian? <span class="req">*</span></label>
                                 <select class="fc" name="guardian_required" id="guardian_required"
@@ -2630,7 +2649,7 @@
                         </div>
                         <div class="form-row cols-1" id="national_test_certificate_row" style="display:none;">
                             <div class="fg">
-                                <label>National test certificate (max 5 MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
+                                <label>National test certificate (Max 5 MB — supported formats: png, jpeg, jpg, pdf) <span class="req">*</span></label>
                                 <div class="file-zone">
                                     <input type="file" name="national_test_certificate" id="national_test_certificate"
                                         accept=".pdf,image/png,image/jpeg,image/jpg"
@@ -3327,7 +3346,7 @@ I hereby undertake that the information and documents furnished by me are true t
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
-                <h2>Application Submitted Successfully!</h2>
+                <h2>Application submitted successfully!</h2>
                 <p>Your application has been received and is now under review. You will be notified of further updates
                     via email.</p>
                 <div class="app-ref-box">
@@ -3737,6 +3756,17 @@ I hereby undertake that the information and documents furnished by me are true t
         });
         const saveBtn = document.getElementById('saveDraftBtn');
         if (saveBtn) saveBtn.style.display = 'none';
+        // When a file is uploaded, mark file-zone so "No file chosen" is hidden in read-only
+        var fileFieldNames = ['id_proof', 'class_x_marksheet', 'class_xii_marksheet', 'national_test_certificate', 'caste_certificate', 'ews_certificate', 'pwd_certificate', 'cv', 'phd_proposal', 'ka_study_7yrs_certificate', 'ka_defence_child_certificate', 'ka_govt_child_certificate', 'ka_ais_child_certificate', 'ka_capf_child_certificate'];
+        fileFieldNames.forEach(function (fname) {
+            if (formData[fname] && String(formData[fname]).trim()) {
+                var inp = form.querySelector('[name="' + fname + '"]');
+                if (inp) {
+                    var zone = inp.closest('.file-zone');
+                    if (zone) zone.classList.add('readonly-has-file');
+                }
+            }
+        });
         // Keep Next button enabled so user can navigate steps when viewing a submitted application
         const banner = document.getElementById('formViewOnlyBanner');
         if (banner) banner.style.display = 'block';
@@ -5643,8 +5673,8 @@ I hereby undertake that the information and documents furnished by me are true t
                 <div class="review-field"><label>Class X school</label><span>${v(d.class_x_school)}</span></div>
                 <div class="review-field"><label>Class X %</label><span>${v(d.class_x_percentage)}</span></div>
                 <div class="review-field"><label>Class XII school</label><span>${v(d.class_xii_school)}</span></div>
-                <div class="review-field"><label>HSC %</label><span>${v(d.hsc_percentage)}</span></div>
-                <div class="review-field"><label>HSC group</label><span>${v(d.hsc_group)}</span></div>
+                <div class="review-field"><label>Percentage/CGPA obtained (Class XII/Equivalent)</label><span>${v(d.hsc_percentage)}</span></div>
+                <div class="review-field"><label>XII group</label><span>${v(d.hsc_group)}</span></div>
                 ${d.national_test_name ? `<div class="review-field"><label>National test</label><span>${d.national_test_name} — ${v(d.percentage)}%</span></div>` : ''}
             </div>
         </div>
@@ -6083,6 +6113,18 @@ I hereby undertake that the information and documents furnished by me are true t
         ensureDownloadButtonsEnabled();
 
 
+        // When a file is uploaded, mark file-zone so we hide native "No file chosen" text in read-only
+        var fileFieldNames = ['id_proof', 'class_x_marksheet', 'class_xii_marksheet', 'national_test_certificate', 'caste_certificate', 'ews_certificate', 'pwd_certificate', 'cv', 'phd_proposal', 'ka_study_7yrs_certificate', 'ka_defence_child_certificate', 'ka_govt_child_certificate', 'ka_ais_child_certificate', 'ka_capf_child_certificate'];
+        fileFieldNames.forEach(function (fname) {
+            if (formData[fname] && String(formData[fname]).trim()) {
+                var inp = form.querySelector('[name="' + fname + '"]');
+                if (inp) {
+                    var zone = inp.closest('.file-zone');
+                    if (zone) zone.classList.add('readonly-has-file');
+                }
+            }
+        });
+
         // Specific handling for custom file upload buttons or delete buttons
         document.querySelectorAll('.btn-del-row, .btn-add-row, .upload-btn, .remove-btn').forEach(el => {
             el.style.display = 'none';
@@ -6263,7 +6305,8 @@ I hereby undertake that the information and documents furnished by me are true t
         const btn = document.getElementById('downloadReceiptBtn');
         if (!btn) return;
         const feeStatus = formData.application_fee_status || '';
-        const isPaid = (feeStatus === 'Paid' || feeStatus === 'Waived');
+        const feeAmount = parseFloat(formData.application_fee_amount) || 0;
+        const isPaid = (feeStatus === 'Paid' || feeStatus === 'Waived') && feeAmount > 0;
         btn.style.display = isPaid ? 'inline-flex' : 'none';
     }
 

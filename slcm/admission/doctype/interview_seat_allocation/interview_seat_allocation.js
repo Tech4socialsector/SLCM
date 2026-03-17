@@ -70,6 +70,17 @@ frappe.ui.form.on("Interview Seat Allocation", {
             }
         });
     },
+
+    interview_score: function (frm) {
+        if (frm.doc.interview_score > 100) {
+            frappe.msgprint({
+                title: __("Invalid Score"),
+                indicator: "red",
+                message: __("Interview Score cannot be more than 100. The field has been cleared.")
+            });
+            frm.set_value("interview_score", "");
+        }
+    },
 });
 
 function _apply_applicant_permissions(frm) {

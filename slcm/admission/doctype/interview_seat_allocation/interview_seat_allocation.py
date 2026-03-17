@@ -9,6 +9,10 @@ from datetime import datetime
 
 
 class InterviewSeatAllocation(Document):
+    def validate(self):
+        if self.interview_score and self.interview_score > 100:
+            frappe.throw("Interview Score cannot be more than 100.")
+
     def before_save(self):
         doc_before = self.get_doc_before_save()
         # Mirror entrance test behaviour: stamp attendance when status changed manually

@@ -134,6 +134,17 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
     }
   },
 
+  score_obtained: function (frm) {
+    if (frm.doc.score_obtained > 100) {
+      frappe.msgprint({
+        title: __("Invalid Score"),
+        indicator: "red",
+        message: __("Score Obtained cannot be more than 100. The field has been cleared.")
+      });
+      frm.set_value("score_obtained", "");
+    }
+  },
+
   applicant: function (frm) {
     if (!frm.doc.applicant) {
       frm.set_df_property("category", "hidden", 1);
