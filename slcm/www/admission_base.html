@@ -1139,34 +1139,22 @@
             <span style="font-size:11px;color:var(--muted);font-weight:600;">
                 Filter:
             </span>
-            <button class="ann-filter-btn active" data-type="all" onclick="setAnnFilter('all', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
-                    border:1px solid var(--primary);background:var(--primary);
-                    color:#fff;cursor:pointer;transition:all 0.2s;">
+            <button class="ann-filter-btn active" data-type="all" onclick="setAnnFilter('all', this)">
                 All
             </button>
-            <button class="ann-filter-btn" data-type="Event" onclick="setAnnFilter('Event', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
-                    border:1px solid var(--border);background:#fff;
-                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
+            <button class="ann-filter-btn" data-type="Event" onclick="setAnnFilter('Event', this)">
                 Event
             </button>
-            <button class="ann-filter-btn" data-type="Announcement" onclick="setAnnFilter('Announcement', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
-                    border:1px solid var(--border);background:#fff;
-                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
+            <button class="ann-filter-btn" data-type="Announcement" onclick="setAnnFilter('Announcement', this)">
                 Announcement
             </button>
-            <button class="ann-filter-btn" data-type="Alert" onclick="setAnnFilter('Alert', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
-                    border:1px solid var(--border);background:#fff;
-                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
+            <button class="ann-filter-btn" data-type="Alert" onclick="setAnnFilter('Alert', this)">
                 Alert
             </button>
-            <button class="ann-filter-btn" data-type="Notice" onclick="setAnnFilter('Notice', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
-                    border:1px solid var(--border);background:#fff;
-                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
+            <button class="ann-filter-btn" data-type="Notice" onclick="setAnnFilter('Notice', this)">
                 Notice
             </button>
-            <button class="ann-filter-btn" data-type="News" onclick="setAnnFilter('News', this)" style="font-size:11px;padding:3px 10px;border-radius:20px;
-                    border:1px solid var(--border);background:#fff;
-                    color:var(--muted);cursor:pointer;transition:all 0.2s;">
+            <button class="ann-filter-btn" data-type="News" onclick="setAnnFilter('News', this)">
                 News
             </button>
         </div>
@@ -1298,10 +1286,7 @@
         function setAnnFilter(type, btn) {
             _annFilter = type;
             document.querySelectorAll('.ann-filter-btn').forEach(function (b) {
-                var isActive = b.getAttribute('data-type') === type;
-                b.style.background = isActive ? 'var(--primary)' : '#fff';
-                b.style.color = isActive ? '#fff' : 'var(--muted)';
-                b.style.borderColor = isActive ? 'var(--primary)' : 'var(--border)';
+                b.classList.toggle('active', b.getAttribute('data-type') === type);
             });
             renderPanelContent();
         }
