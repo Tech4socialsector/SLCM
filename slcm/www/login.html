@@ -66,7 +66,7 @@
     .lp-brand-icon .material-symbols-outlined { font-size: 26px; }
     .lp-brand-name { font-size: 18px; font-weight: 800; color: var(--primary); line-height: 1.2; }
     .lp-brand-sub  { font-size: 10px; font-weight: 600; letter-spacing: .12em;
-                     text-transform: uppercase; color: #9ca3af; margin-top: 2px; }
+                     color: #9ca3af; margin-top: 2px; }
     .lp-heading { font-size: 28px; font-weight: 900; color: #111827; margin-bottom: 6px; }
     .lp-sub     { font-size: 13px; color: #6b7280; margin-bottom: 30px; line-height: 1.5; }
 
@@ -100,7 +100,8 @@
     .lp-row   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     .lp-forgot { font-size: 12px; color: var(--primary); font-weight: 600; text-decoration: none; }
     .lp-forgot:hover { text-decoration: underline; }
-    .pw-wrap { position: relative; }
+    .pw-wrap, .lp-input-wrap { position: relative; }
+    
     .pw-btn  {
       position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
       background: none; border: none; cursor: pointer; color: #9ca3af;
@@ -108,6 +109,20 @@
     }
     .pw-btn .material-symbols-outlined { font-size: 18px; }
     .lp-field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+    
+    /* Email Verification Status Indicator — Positioned Inside Input */
+    #email-status {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      font-weight: 800;
+      pointer-events: none;
+      z-index: 5;
+      white-space: nowrap;
+      transition: opacity .2s;
+    }
 
     /* buttons */
     .lp-btn {
@@ -419,8 +434,12 @@
       </div>
       <div class="lp-field">
         <label class="lp-label" for="reg-email">Email Address<span class="mandatory">*</span></label>
-        <input class="lp-input" type="email" id="reg-email"
-               placeholder="your @email.com" autocomplete="email">
+        <div class="lp-input-wrap">
+          <input class="lp-input" type="email" id="reg-email"
+                 placeholder="your @email.com" autocomplete="email"
+                 onblur="verifyEmailInput()" oninput="handleEmailInput()">
+          <div id="email-status"></div>
+        </div>
         <div class="lp-field-hint">A verification email will be sent to set your password.</div>
         <div class="lp-field-error" id="err-reg-email"></div>
       </div>
@@ -679,12 +698,123 @@ async function doLogin() {
 }
 
 /* ── REGISTER ── */
+var EMAIL_CACHE = {};
+var EMAIL_DEBOUNCE_TIMER = null;
+var EMAIL_VERIFICATION_STATUS = null; // 'domain_valid', 'domain_invalid', 'invalid_format', 'verification_error', 'checking', null
+
+function setEmailStatus(msg, color, type) {
+  var el = document.getElementById('email-status');
+  var inp = document.getElementById('reg-email');
+  if (!el || !inp) return;
+  
+  el.textContent = msg;
+  el.style.color = color;
+  EMAIL_VERIFICATION_STATUS = type;
+  
+  if (type === 'domain_invalid' || type === 'invalid_format') {
+    inp.classList.add('invalid');
+  } else {
+    inp.classList.remove('invalid');
+  }
+
+  // Adjust input padding dynamically to prevent text overlap
+  if (msg) {
+    setTimeout(() => {
+      var width = el.offsetWidth;
+      if (width > 0) {
+        inp.style.paddingRight = (width + 20) + 'px';
+      } else {
+        // Fallback estimation
+        inp.style.paddingRight = '120px';
+      }
+    }, 0);
+  } else {
+    inp.style.paddingRight = '';
+  }
+}
+
+function handleEmailInput() {
+  clearTimeout(EMAIL_DEBOUNCE_TIMER);
+  var email = document.getElementById('reg-email').value.trim();
+  
+  if (!email) {
+    setEmailStatus('', '', null);
+    return;
+  }
+  
+  // Basic format check before calling API
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setEmailStatus('Invalid format', '#dc2626', 'invalid_format');
+    return;
+  }
+  
+  if (EMAIL_CACHE[email]) {
+    applyVerificationResult(EMAIL_CACHE[email]);
+    return;
+  }
+
+  EMAIL_DEBOUNCE_TIMER = setTimeout(verifyEmailInput, 500);
+}
+
+async function verifyEmailInput() {
+  var email = document.getElementById('reg-email').value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+  
+  if (EMAIL_CACHE[email]) {
+    applyVerificationResult(EMAIL_CACHE[email]);
+    return;
+  }
+
+  setEmailStatus('Checking...', '#6b7280', 'checking');
+
+  try {
+    var resp = await fetch('/api/method/slcm.api.email_verifier.verify_email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': LP_CSRF
+      },
+      body: JSON.stringify({ email: email })
+    });
+    var data = await resp.json();
+    var result = data.message;
+    
+    if (result && result.status) {
+      EMAIL_CACHE[email] = result.status;
+      applyVerificationResult(result.status);
+    } else {
+      setEmailStatus('⚠ Error', '#f59e0b', 'verification_error');
+    }
+  } catch (e) {
+    setEmailStatus('⚠ Error', '#f59e0b', 'verification_error');
+  }
+}
+
+function applyVerificationResult(status) {
+  if (status === 'domain_valid') {
+    setEmailStatus('Email verified', '#16a34a', 'domain_valid');
+  } else if (status === 'domain_invalid') {
+    setEmailStatus('Invalid domain', '#dc2626', 'domain_invalid');
+  } else if (status === 'invalid_format') {
+    setEmailStatus('Invalid format', '#dc2626', 'invalid_format');
+  } else {
+    setEmailStatus('⚠ Verification error', '#f59e0b', 'verification_error');
+  }
+}
+
 async function doRegister() {
   if (!lpValidate([
     { id: 'reg-name',   type: 'text',   msg: 'Please enter your full name.' },
     { id: 'reg-mobile', type: 'mobile', msg: 'Please enter your mobile number.' },
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
   ], 'register')) return;
+
+  // Signup Restriction: Allow only if domain is valid
+  if (EMAIL_VERIFICATION_STATUS !== 'domain_valid') {
+    lpNotify('Please enter a valid email address.', 'error', 'register');
+    lpFieldError('reg-email', 'Please provide a valid email with a working mail server.');
+    return;
+  }
 
   var btn   = document.getElementById('lp-reg-btn');
   var spin  = document.getElementById('lp-reg-spin');

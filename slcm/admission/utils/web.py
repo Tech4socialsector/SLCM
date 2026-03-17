@@ -513,15 +513,19 @@ def download_application(applicant_name):
                 break
         except Exception as e:
             last_error = e
+            # Log error for each attempt to help debugging
+            frappe.log_error(
+                title=f"Application Download failed with {generator}",
+                message=f"Applicant: {applicant_name}\nError: {str(e)}\n{frappe.get_traceback()}"
+            )
             if generator == "chrome":
                 continue
-            raise
+            # Do not raise here, let it reach the throw below if both fail
+            break
 
-    if not pdf_content and last_error:
-        frappe.throw(
-            "PDF generation failed. Try: Print Format 'Applicant Application Form' → PDF generator = Chrome, or run: bench setup chromium. "
-            + str(last_error)
-        )
+    if not pdf_content:
+        error_msg = f"PDF generation failed. Try: Print Format 'Applicant Application Form' → PDF generator = Chrome, or run: bench setup chromium. Error: {str(last_error)}"
+        frappe.throw(_(error_msg))
 
     frappe.local.response.filename = f"Application_{applicant_name}.pdf"
     frappe.local.response.filecontent = pdf_content
