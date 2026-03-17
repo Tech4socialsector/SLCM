@@ -265,13 +265,13 @@ function open_reservation_policy(frm, row) {
             <table class="table table-bordered" style="table-layout:fixed; width:100%;">
                 <thead>
                     <tr>
-                        <th style="width:18%;">Quota</th>
-                        <th style="width:18%;">Category Name</th>
-                        <th style="width:10%;">Priority</th>
-                        <th style="width:10%;">%</th>
-                        <th style="width:10%;">Seats</th>
-                        <th style="width:14%;">Fee</th>
-                        <th style="width:10%; text-align:center;">Action</th>
+                        <th style="width:20%;">Quota</th>
+                        <th style="width:20%;">Category Name</th>
+                        <th style="width:12%;">Priority</th>
+                        <th style="width:12%;">Percentage</th>
+                        <th style="width:12%;">Seats</th>
+                        <th style="width:12%;">Fee</th>
+                        <th style="width:12%; text-align:center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -334,6 +334,8 @@ function open_reservation_policy(frm, row) {
                 total_seats: dialog.get_value("total_seats"),
                 status: dialog.get_value("status"),
                 policy_document: dialog.get_value("policy_document"),
+                payment_gateway: dialog.get_value("payment_gateway"),
+                payment_receipt_template: dialog.get_value("payment_receipt_template"),
                 reservation_rows: table_rows,
                 existing_policy: existing_policy_name || ""   // empty string, not null — null may not pass cleanly
             },
@@ -426,14 +428,6 @@ function open_reservation_policy(frm, row) {
             },
             { fieldtype: "Column Break" },
             {
-                fieldtype: "Int",
-                fieldname: "total_seats",
-                label: __("Total Seats"),
-                read_only: 1,
-                default: row.seats
-            },
-            { fieldtype: "Column Break" },
-            {
                 fieldtype: "Select",
                 fieldname: "status",
                 label: __("Status"),
@@ -449,6 +443,30 @@ function open_reservation_policy(frm, row) {
             },
             { fieldtype: "Section Break" },
             {
+                fieldtype: "Link",
+                fieldname: "payment_gateway",
+                label: __("Payment Gateway"),
+                options: "Payment Gateway",
+                reqd: 1
+            },
+            { fieldtype: "Column Break" },
+            {
+                fieldtype: "Link",
+                fieldname: "payment_receipt_template",
+                label: __("Payment Receipt Template"),
+                options: "Print Format",
+                reqd: 1
+            },
+            { fieldtype: "Column Break" },
+            {
+                fieldtype: "Int",
+                fieldname: "total_seats",
+                label: __("Total Seats"),
+                read_only: 1,
+                default: row.seats
+            },
+            { fieldtype: "Section Break" },
+            {
                 fieldtype: "HTML",
                 fieldname: "policy_table"
             }
@@ -458,6 +476,7 @@ function open_reservation_policy(frm, row) {
     });
 
     dialog.show();
+    dialog.$wrapper.find('.modal-dialog').css("max-width", "75%");
     render_table();
 
     // Load existing policy if any
@@ -466,7 +485,7 @@ function open_reservation_policy(frm, row) {
         args: {
             doctype: "Program Reservation Policy",
             filters: { admission_cycle: frm.doc.name, program: row.program },
-            fieldname: ["name", "admission_cycle", "status", "total_seats", "policy_document"]
+            fieldname: ["name", "admission_cycle", "status", "total_seats", "policy_document", "payment_gateway", "payment_receipt_template"]
         },
         callback(res) {
             if (res.message && res.message.name) {
@@ -496,6 +515,8 @@ function open_reservation_policy(frm, row) {
                             dialog.set_value("total_seats", doc.total_seats);
                             dialog.set_value("status", doc.status);
                             dialog.set_value("policy_document", doc.policy_document);
+                            dialog.set_value("payment_gateway", doc.payment_gateway);
+                            dialog.set_value("payment_receipt_template", doc.payment_receipt_template);
 
                             table_rows = (doc.categories || []).map(item => ({
                                 category: item.reservation_quota || "",

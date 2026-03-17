@@ -1,6 +1,6 @@
 {% extends "slcm/www/admission_base.html" %}
 
-{% block title %}{{ prog_name or 'Program' }} — Admissions{% endblock %}
+{% block title %}{{ prog_name or 'Programme' }} — Admissions{% endblock %}
 
 {% block theme_vars %}
 <style>
@@ -172,7 +172,7 @@
 {% block content %}
 
 {# ── safe vars ──────────────────────────────────────────────────── #}
-{% set _name = prog_name or 'Program' %}
+{% set _name = prog_name or 'Programme' %}
 {% set _level = prog_level or '' %}
 {% set _dur = prog_duration or '' %}
 {% set _credits = prog_credits or '' %}
@@ -201,10 +201,10 @@
     search_off
   </span>
   <h2 style="font-size:24px;font-weight:800;color:#0f172a;margin-bottom:8px;">
-    Program Not Found
+    Programme Not Found
   </h2>
   <p style="font-size:14px;color:#64748b;margin-bottom:24px;line-height:1.6;">
-    This program page does not exist or may have been removed.
+    This programme page does not exist or may have been removed.
   </p>
   <a href="/admission" style="display:inline-block;padding:10px 28px;border-radius:10px;
             background:var(--primary);color:white;font-weight:700;
@@ -214,7 +214,7 @@
 </div>
 
 {% else %}
-{# ── PROGRAM DETAIL ──────────────────────────────────────────────── #}
+{# ── PROGRAMME DETAIL ──────────────────────────────────────────────── #}
 
 <div style="background:#f5f7f8;margin:0 -20px 0;padding-bottom:32px;">
   <div style="max-width:1200px;margin:0 auto;padding:0 20px;">
@@ -225,7 +225,7 @@
               font-size:13px;font-weight:600;color:#64748b;text-decoration:none;"
         onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">
         <span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>
-        All Programmes
+        All programmes
       </a>
     </div>
 
@@ -245,7 +245,7 @@
           {% if _level %}
           <span style="display:inline-block;padding:4px 12px;
                      background:var(--primary);color:white;
-                     font-size:11px;font-weight:700;text-transform:uppercase;
+                     font-size:11px;font-weight:700;
                      letter-spacing:0.08em;border-radius:6px;
                      margin-bottom:14px;width:fit-content;">
             {{ _level }}
@@ -272,7 +272,7 @@
       <div style="display:flex;flex-wrap:wrap;gap:32px;">
         {% if _dur %}
         <div>
-          <p style="font-size:10px;font-weight:700;text-transform:uppercase;
+          <p style="font-size:10px;font-weight:700;
                   letter-spacing:0.08em;color:#94a3b8;margin:0 0 3px;">Duration</p>
           <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
             {{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)
@@ -281,7 +281,7 @@
         {% endif %}
         {% if _credits %}
         <div>
-          <p style="font-size:10px;font-weight:700;text-transform:uppercase;
+          <p style="font-size:10px;font-weight:700;
                   letter-spacing:0.08em;color:#94a3b8;margin:0 0 3px;">Credits</p>
           <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
             {{ _credits }} Units
@@ -290,8 +290,8 @@
         {% endif %}
         {% if _intake %}
         <div>
-          <p style="font-size:10px;font-weight:700;text-transform:uppercase;
-                  letter-spacing:0.08em;color:#94a3b8;margin:0 0 3px;">Admission Via</p>
+          <p style="font-size:10px;font-weight:700;
+                  letter-spacing:0.08em;color:#94a3b8;margin:0 0 3px;">Admission via</p>
           <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
             {{ _intake }}
           </p>
@@ -318,7 +318,7 @@
                   background:var(--primary,#CB2929);transition:opacity .2s;" onmouseover="this.style.opacity='.85'"
           onmouseout="this.style.opacity='1'">
           <span class="material-symbols-outlined" style="font-size:18px;">assignment</span>
-          View Application
+          View application
           {% if user_app_status %}
           <span style="font-size:10px;font-weight:700;letter-spacing:.04em;
                        background:rgba(255,255,255,.2);padding:2px 8px;
@@ -335,7 +335,7 @@
                   background:var(--primary,#CB2929);transition:opacity .2s;" onmouseover="this.style.opacity='.85'"
           onmouseout="this.style.opacity='1'">
           <span class="material-symbols-outlined" style="font-size:18px;">edit_square</span>
-          Apply Now
+          Apply now
         </a>
         {% else %}
         <a href="/login?redirect-to=/application_form" style="display:inline-flex;align-items:center;gap:8px;
@@ -344,7 +344,7 @@
                   background:var(--primary,#CB2929);transition:opacity .2s;" onmouseover="this.style.opacity='.85'"
           onmouseout="this.style.opacity='1'">
           <span class="material-symbols-outlined" style="font-size:18px;">login</span>
-          Apply Now
+          Apply now
         </a>
         {% endif %}
       </div>
@@ -556,7 +556,7 @@
               Eligibility
             </button>
             <button onclick="pdTab(this,'pd-career')">
-              Career Prospects
+              Career prospects
             </button>
             <button onclick="pdTab(this,'pd-faculty')">
               Faculty
@@ -566,7 +566,7 @@
           <!-- TAB: DESCRIPTION -->
           <div id="pd-description" style="padding:28px;">
             <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">
-              About This Program
+              About This Programme
             </h3>
             {% if _desc %}
             <div style="font-size:14px;color:#475569;line-height:1.78;">
@@ -579,7 +579,7 @@
                 info
               </span>
               <p style="font-size:13px;color:#94a3b8;margin:0;">
-                Program description will be updated soon.
+                Programme description will be updated soon.
               </p>
             </div>
             {% endif %}
@@ -605,7 +605,7 @@
                     {{ _yl }}
                   </h4>
                   {% if _cr %}
-                  <span style="font-size:11px;font-weight:700;text-transform:uppercase;
+                  <span style="font-size:11px;font-weight:700;
                              letter-spacing:0.06em;color:#94a3b8;">{{ _cr }}</span>
                   {% endif %}
                 </div>
@@ -811,7 +811,7 @@
                 <a href="{{ _fu }}" style="font-size:12px;color:var(--primary);font-weight:600;
                         text-decoration:none;" onmouseover="this.style.textDecoration='underline'"
                   onmouseout="this.style.textDecoration='none'">
-                  View Profile
+                  View profile
                 </a>
                 {% endif %}
               </div>
@@ -849,9 +849,9 @@
 
             {% if _intake %}
             <div>
-              <p style="font-size:10px;font-weight:700;text-transform:uppercase;
+              <p style="font-size:10px;font-weight:700;
                       letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
-                Admission Via
+                Admission via
               </p>
               <p style="font-size:14px;color:#475569;margin:0;">{{ _intake }}</p>
             </div>
@@ -859,7 +859,7 @@
 
             {% if _dur %}
             <div>
-              <p style="font-size:10px;font-weight:700;text-transform:uppercase;
+              <p style="font-size:10px;font-weight:700;
                       letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
                 Duration
               </p>
@@ -871,7 +871,7 @@
 
             {% if _elig %}
             <div>
-              <p style="font-size:10px;font-weight:700;text-transform:uppercase;
+              <p style="font-size:10px;font-weight:700;
                       letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
                 Eligibility
               </p>
@@ -881,7 +881,7 @@
             </div>
             {% elif _erules %}
             <div>
-              <p style="font-size:10px;font-weight:700;text-transform:uppercase;
+              <p style="font-size:10px;font-weight:700;
                       letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
                 Eligibility
               </p>
@@ -896,9 +896,9 @@
 
             {% if _fee %}
             <div>
-              <p style="font-size:10px;font-weight:700;text-transform:uppercase;
+              <p style="font-size:10px;font-weight:700;
                       letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
-                Application Fee
+                Application fee
               </p>
               <p style="font-size:14px;color:#475569;margin:0;">{{ _fee }}</p>
             </div>
@@ -912,7 +912,7 @@
                 onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                 <span class="material-symbols-outlined"
                   style="font-size:18px;vertical-align:middle;margin-right:4px;">download</span>
-                Download Brochure
+                Download brochure
               </a>
               {% endif %}
 
@@ -922,7 +922,7 @@
                         font-weight:700;font-size:14px;text-decoration:none;
                         box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'"
                 onmouseout="this.style.opacity='1'">
-                View Application
+                View application
               </a>
               {% elif frappe.session.user and frappe.session.user != "Guest" %}
               <a href="/application_form?program={{ program.name }}&admission_cycle={{ active_cycle.name if active_cycle else '' }}"
@@ -931,7 +931,7 @@
                         font-weight:700;font-size:14px;text-decoration:none;
                         box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'"
                 onmouseout="this.style.opacity='1'">
-                Apply Now
+                Apply now
               </a>
               {% else %}
               <a href="/login?redirect-to=/application_form" style="display:block;width:100%;padding:13px;text-align:center;
@@ -939,7 +939,7 @@
                         font-weight:700;font-size:14px;text-decoration:none;
                         box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'"
                 onmouseout="this.style.opacity='1'">
-                Apply Now
+                Apply now
               </a>
               {% endif %}
 
@@ -965,13 +965,13 @@
               Questions?
             </h4>
             <p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0 0 20px;">
-              Connect with our admissions team to learn more about this program.
+              Connect with our admissions team to learn more about this programme.
             </p>
             <a href="mailto:{{ support_email or 'admissions@nlsiu.ac.in' }}" style="display:inline-flex;align-items:center;gap:8px;
                     font-size:13px;font-weight:700;
                     color:var(--secondary);text-decoration:none;" onmouseover="this.style.textDecoration='underline'"
               onmouseout="this.style.textDecoration='none'">
-              Contact Admissions
+              Contact admissions
               <span class="material-symbols-outlined" style="font-size:18px;">
                 arrow_forward
               </span>
@@ -999,7 +999,7 @@
         </p>
         <div style="display:flex;gap:20px;">
           <a href="/admission" style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
-            onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">All Programmes</a>
+            onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">All programmes</a>
           <a href="/merit-and-scholarship/admission_dashboard"
             style="font-size:12px;color:#64748b;text-decoration:none;font-weight:500;"
             onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">Dashboard</a>

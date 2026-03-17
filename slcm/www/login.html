@@ -147,7 +147,7 @@
     .lp-support { margin-top: 40px; }
     .lp-support-title {
       font-size: 10px; font-weight: 700; letter-spacing: .12em;
-      text-transform: uppercase; color: #9ca3af; margin-bottom: 14px;
+      color: #9ca3af; margin-bottom: 14px;
     }
     .lp-support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .lp-support-link {
@@ -197,7 +197,7 @@
     }
     .glass-icon .material-symbols-outlined { font-size: 14px; }
     .glass-badge { font-size: 9px; font-weight: 700; letter-spacing: .1em;
-                   text-transform: uppercase; opacity: .65; }
+                   opacity: .65; }
 
     /* announcement rows */
     .ann-row {
@@ -227,7 +227,7 @@
     .dates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .date-card  { background: rgba(255,255,255,.1); border-radius: 9px; padding: 12px; }
     .date-label { font-size: 9px; font-weight: 700; letter-spacing: .1em;
-                  text-transform: uppercase; opacity: .6; margin-bottom: 4px; }
+                  opacity: .6; margin-bottom: 4px; }
     .date-val   { font-size: 20px; font-weight: 900; line-height: 1; }
     .date-sub   { font-size: 10px; opacity: .55; margin-top: 3px; }
 
@@ -371,7 +371,7 @@
       </div>
       <div>
         <div class="lp-brand-name">{{ _name }}</div>
-        <div class="lp-brand-sub">Admissions Portal</div>
+        <div class="lp-brand-sub">Admission portal</div>
       </div>
     </div>
 
@@ -389,7 +389,7 @@
       <div id="lp-notify-login" class="lp-notify"></div>
       
       <div class="lp-field">
-        <label class="lp-label" for="lp-email">Username / Email</label>
+        <label class="lp-label" for="lp-email">Username or email</label>
         <input class="lp-input" type="text" id="lp-email"
                placeholder="username or email" autocomplete="username">
         <div class="lp-field-error" id="err-lp-email"></div>
@@ -419,13 +419,13 @@
       <div id="lp-notify-register" class="lp-notify"></div>
 
       <div class="lp-field">
-        <label class="lp-label" for="reg-name">Name of the Applicant<span class="mandatory">*</span></label>
+        <label class="lp-label" for="reg-name">Name of applicant<span class="mandatory">*</span></label>
         <input class="lp-input" type="text" id="reg-name"
                placeholder="Your full name" autocomplete="name">
         <div class="lp-field-error" id="err-reg-name"></div>
       </div>
       <div class="lp-field">
-        <label class="lp-label" for="reg-mobile">Mobile Number<span class="mandatory">*</span></label>
+        <label class="lp-label" for="reg-mobile">Mobile number<span class="mandatory">*</span></label>
         <input class="lp-input" type="tel" id="reg-mobile"
                placeholder="e.g. 9876543210" autocomplete="tel"
                oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);"
@@ -433,14 +433,14 @@
         <div class="lp-field-error" id="err-reg-mobile"></div>
       </div>
       <div class="lp-field">
-        <label class="lp-label" for="reg-email">Email Address<span class="mandatory">*</span></label>
+        <label class="lp-label" for="reg-email">Email address<span class="mandatory">*</span></label>
         <div class="lp-input-wrap">
           <input class="lp-input" type="email" id="reg-email"
                  placeholder="your @email.com" autocomplete="email"
                  onblur="verifyEmailInput()" oninput="handleEmailInput()">
           <div id="email-status"></div>
         </div>
-        <div class="lp-field-hint">A verification email will be sent to set your password.</div>
+        <div class="lp-field-hint">We'll send a verification email to help you set your password.</div>
         <div class="lp-field-error" id="err-reg-email"></div>
       </div>
       <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
@@ -466,7 +466,7 @@
         </a>
         <a href="/admission" class="lp-support-link">
           <span class="material-symbols-outlined">public</span>
-          Programme Portal
+          Programme portal
         </a>
       </div>
     </div>
@@ -554,7 +554,7 @@
         <div class="lp-social-icon">
           <span class="material-symbols-outlined">school</span>
         </div>
-        <span class="lp-social-text">Join thousands of students applying this year</span>
+        <span class="lp-social-text">Join thousands of students who apply each year</span>
       </div>
 
     </div>
@@ -665,7 +665,7 @@ async function doLogin() {
   var label = document.getElementById('lp-login-label');
   var redir = document.getElementById('lp-redir').value || '/admission';
 
-  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Login…';
+  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Login';
 
   var fd = new FormData();
   fd.append('usr', document.getElementById('lp-email').value.trim());
@@ -676,7 +676,7 @@ async function doLogin() {
     var resp = await fetch('/api/method/login', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = await resp.json();
     if (resp.ok && (data.message === 'Logged In' || data.home_page)) {
-      lpNotify('Login successful! Redirecting…', 'success', 'login');
+      lpNotify('Login successful. Please wait...', 'success', 'login');
       setTimeout(async function() {
         try {
           if (redir && (redir.startsWith('/app') || redir.startsWith('/desk'))) { window.location.href = redir; return; }
@@ -765,7 +765,7 @@ async function verifyEmailInput() {
     return;
   }
 
-  setEmailStatus('Checking...', '#6b7280', 'checking');
+  setEmailStatus('Wait...', '#6b7280', 'checking');
 
   try {
     var resp = await fetch('/api/method/slcm.api.email_verifier.verify_email', {
@@ -820,7 +820,7 @@ async function doRegister() {
   var spin  = document.getElementById('lp-reg-spin');
   var label = document.getElementById('lp-reg-label');
 
-  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Creating account…';
+  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Create account';
 
   var name   = document.getElementById('reg-name').value.trim();
   var email  = document.getElementById('reg-email').value.trim();
