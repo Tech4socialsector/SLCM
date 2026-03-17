@@ -51,9 +51,9 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 14:49:55.173081",
+ "modified": "2026-03-17 14:57:58.085228",
  "modified_by": "Administrator",
- "module": "SLCM",
+ "module": "slcm",
  "name": "Academic Year",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
@@ -117,6 +117,15 @@
    "role": "Entrance Test Provider",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offer Letter Admin",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",
