@@ -280,7 +280,10 @@
             freeze: true, freeze_message: "Signing in…",
             callback: function (r) {
                 if (r.message == "Logged In") {
-                    window.location.replace(r.home_page || "/foundations-for-a-legal-education");
+                    // Honour redirect_to query param (set when redirected from a protected page)
+                    var params = new URLSearchParams(window.location.search);
+                    var redirectTo = params.get('redirect_to');
+                    window.location.replace(redirectTo || r.home_page || "/foundations-for-a-legal-education");
                 } else if (r.message) { frappe.msgprint(r.message); }
             },
             error: function () { frappe.msgprint('Login failed. Please try again.'); },
