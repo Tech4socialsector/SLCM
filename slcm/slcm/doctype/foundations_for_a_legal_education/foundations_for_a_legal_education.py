@@ -116,7 +116,7 @@ class FoundationsforaLegalEducation(Document):
 		# Declaration consent is mandatory for all candidates
 		from frappe.utils import cint
 		if not cint(self.declaration_consent):
-			frappe.throw("Please accept the Declaration Consent before submitting the application.")
+			frappe.throw("Please accept the declaration consent before submitting the application.")
 
 
 	# --------------------------------------------------
