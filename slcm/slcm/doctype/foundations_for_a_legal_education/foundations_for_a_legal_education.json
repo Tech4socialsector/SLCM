@@ -303,7 +303,7 @@
    "fieldname": "where_did_you_hear",
    "fieldtype": "Select",
    "label": "Where did you hear about the FLE Programme?",
-   "options": "\nSocial Media\nNLSIU Website\nFrom my School\nWhatsapp\nWord of mouth\nOther",
+   "options": "\nSocial media\nNLSIU website\nFrom my school\nWhatsapp\nWord of mouth\nOther",
    "reqd": 1
   },
   {
@@ -321,7 +321,7 @@
    "fieldname": "latest_board_attended",
    "fieldtype": "Select",
    "label": "Latest Board attended",
-   "options": "\nCBSE\nICSE\nState Board\nCAIE\nIB\nNIOS(Open Schooling)\nCISCE\nOthers",
+   "options": "\nCBSE\nICSE\nState Board\nCAIE\nIB\nNIOS(Open Schooling)\nCISCE\nOther",
    "reqd": 1
   },
   {
@@ -335,7 +335,7 @@
    "fieldname": "last_class_attended",
    "fieldtype": "Select",
    "label": "Last examination attended",
-   "options": "\n10th\n12th\nUG\nPG\nOthers",
+   "options": "\n10th\n12th\nUG\nPG\nOther",
    "reqd": 1
   },
   {
@@ -392,7 +392,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 21:39:19.206315",
+ "modified": "2026-03-17 12:28:05.800359",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
