@@ -216,7 +216,7 @@
 {% else %}
 {# ── PROGRAM DETAIL ──────────────────────────────────────────────── #}
 
-<div style="background:#f5f7f8;margin:0 -20px 0;padding-bottom:52px;">
+<div style="background:#f5f7f8;margin:0 -20px 0;padding-bottom:32px;">
   <div style="max-width:1200px;margin:0 auto;padding:0 20px;">
 
     <!-- BREADCRUMB -->
@@ -299,7 +299,7 @@
         {% endif %}
       </div>
       <div style="display:flex;gap:10px;flex-shrink:0;">
-        {% if _brochure %}
+        <!-- {% if _brochure %}
         <a href="{{ _brochure }}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;
                 padding:10px 20px;border-radius:10px;
                 background:#f1f5f9;color:#475569;font-size:13px;
@@ -309,7 +309,7 @@
           <span class="material-symbols-outlined" style="font-size:18px;">download</span>
           Brochure
         </a>
-        {% endif %}
+        {% endif %} -->
 
         {% if frappe.session.user and frappe.session.user != "Guest" and user_app_name %}
         <a href="/my-applications?app={{ user_app_name }}" style="display:inline-flex;align-items:center;gap:8px;
@@ -546,7 +546,10 @@
 
           <!-- Tab nav -->
           <div id="pd-tab-nav" style="display:flex;border-bottom:1px solid #f1f5f9;overflow-x:auto;">
-            <button class="pd-active" onclick="pdTab(this,'pd-curriculum')">
+            <button class="pd-active" onclick="pdTab(this,'pd-description')">
+              Description
+            </button>
+            <button onclick="pdTab(this,'pd-curriculum')">
               Curriculum
             </button>
             <button onclick="pdTab(this,'pd-eligibility')">
@@ -560,8 +563,30 @@
             </button>
           </div>
 
+          <!-- TAB: DESCRIPTION -->
+          <div id="pd-description" style="padding:28px;">
+            <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">
+              About This Program
+            </h3>
+            {% if _desc %}
+            <div style="font-size:14px;color:#475569;line-height:1.78;">
+              {{ _desc | safe }}
+            </div>
+            {% else %}
+            <div style="padding:32px;text-align:center;">
+              <span class="material-symbols-outlined"
+                style="font-size:44px;color:#e2e8f0;display:block;margin-bottom:8px;">
+                info
+              </span>
+              <p style="font-size:13px;color:#94a3b8;margin:0;">
+                Program description will be updated soon.
+              </p>
+            </div>
+            {% endif %}
+          </div>
+
           <!-- TAB: CURRICULUM -->
-          <div id="pd-curriculum" style="padding:28px;">
+          <div id="pd-curriculum" style="padding:28px;display:none;">
             <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">
               What You'll Study
             </h3>
@@ -628,7 +653,7 @@
               <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0;">
                 Eligibility Criteria
               </h3>
-              {% if admission_year or admission_cycle %}
+              <!-- {% if admission_year or admission_cycle %}
               <div style="display:flex;gap:12px;font-size:12px;font-weight:600;color:#64748b;">
                 {% if admission_year %}
                 <span style="background:#f1f5f9;padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;">
@@ -641,7 +666,7 @@
                 </span>
                 {% endif %}
               </div>
-              {% endif %}
+              {% endif %} -->
             </div>
             {% if _elig %}
             <div style="font-size:14px;color:#475569;line-height:1.75;margin-bottom:20px;">
@@ -808,19 +833,6 @@
         </div>
         <!-- END TABS -->
 
-        <!-- ABOUT THIS PROGRAM -->
-        {% if _desc %}
-        <div style="background:white;border-radius:16px;padding:28px;
-                  border:1.5px solid #e2e8f0;margin-top:20px;">
-          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 14px;">
-            About This Program
-          </h3>
-          <div style="font-size:14px;color:#475569;line-height:1.78;">
-            {{ _desc | safe }}
-          </div>
-        </div>
-        {% endif %}
-
       </div>
       <!-- END LEFT COLUMN -->
 
@@ -892,7 +904,18 @@
             </div>
             {% endif %}
 
-            <div style="padding-top:12px;border-top:1px solid #f1f5f9;">
+            <div style="padding-top:12px;border-top:1px solid #f1f5f9;display:flex;flex-direction:column;gap:10px;">
+              {% if _brochure %}
+              <a href="{{ _brochure }}" target="_blank" style="display:block;width:100%;padding:13px;text-align:center;
+                        border-radius:10px;background:#f1f5f9;color:#475569;font-size:14px;
+                        font-weight:700;text-decoration:none;border:1.5px solid #e2e8f0;"
+                onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <span class="material-symbols-outlined"
+                  style="font-size:18px;vertical-align:middle;margin-right:4px;">download</span>
+                Download Brochure
+              </a>
+              {% endif %}
+
               {% if frappe.session.user and frappe.session.user != "Guest" and user_app_name %}
               <a href="/my-applications?app={{ user_app_name }}" style="display:block;width:100%;padding:13px;text-align:center;
                         border-radius:10px;background:var(--primary);color:white;
@@ -901,9 +924,9 @@
                 onmouseout="this.style.opacity='1'">
                 View Application
               </a>
-            {% elif frappe.session.user and frappe.session.user != "Guest" %}
+              {% elif frappe.session.user and frappe.session.user != "Guest" %}
               <a href="/application_form?program={{ program.name }}&admission_cycle={{ active_cycle.name if active_cycle else '' }}"
-                 style="display:block;width:100%;padding:13px;text-align:center;
+                style="display:block;width:100%;padding:13px;text-align:center;
                         border-radius:10px;background:var(--primary);color:white;
                         font-weight:700;font-size:14px;text-decoration:none;
                         box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'"
@@ -968,7 +991,7 @@
     <!-- END MAIN GRID -->
 
     <!-- PAGE FOOTER -->
-    <footer style="margin-top:40px;padding-top:20px;border-top:1px solid #e2e8f0;">
+    <!-- <footer style="margin-top:40px;padding-top:20px;border-top:1px solid #e2e8f0;">
       <div style="display:flex;flex-wrap:wrap;align-items:center;
                 justify-content:space-between;gap:12px;">
         <p style="font-size:12px;color:#94a3b8;margin:0;">
@@ -982,7 +1005,7 @@
             onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">Dashboard</a>
         </div>
       </div>
-    </footer>
+    </footer> -->
 
   </div>
 </div>
@@ -996,7 +1019,7 @@
       b.classList.remove('pd-active');
     });
     document.querySelectorAll(
-      '#pd-curriculum,#pd-eligibility,#pd-career,#pd-faculty'
+      '#pd-description,#pd-curriculum,#pd-eligibility,#pd-career,#pd-faculty'
     ).forEach(function (p) { p.style.display = 'none'; });
     btn.classList.add('pd-active');
     var p = document.getElementById(panelId);

@@ -446,7 +446,7 @@
   }
 
   .stage-label.pending {
-    color: var(--border);
+    color: var(--text-1);
   }
 
   /* ── Quick Status Grid ───────────────────────────────────── */
@@ -2166,7 +2166,7 @@ or _app.current_stage)) or _status %}
           <span class="material-symbols-outlined"
             style="font-size:17px;color:var(--text-4);flex-shrink:0">location_on</span>
           <div>
-            <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Venue address</div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.04em;margin-bottom:4px">Venue address</div>
             <span style="font-size:13px;color:var(--text-2);line-height:1.5">{{ interview_current_slot.interview_address }}</span>
           </div>
         </div>
@@ -3218,7 +3218,7 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       else if (s.status === 'active') { circle.style.background = 'var(--secondary)'; circle.style.boxShadow = '0 0 0 2px var(--secondary)'; circle.textContent = '↻'; circle.style.color = 'white'; }
       else { circle.style.background = '#f9fafb'; circle.style.boxShadow = '0 0 0 2px var(--border)'; circle.textContent = '○'; circle.style.color = 'var(--text-4)'; }
       var label = document.createElement('div');
-      label.style.cssText = 'font-size:10px;font-weight:600;text-transform:none;letter-spacing:.06em;text-align:center;max-width:70px;word-break:break-word;color:' + (s.status === 'active' ? 'var(--primary)' : s.status === 'completed' ? 'var(--text-3)' : 'var(--text-4)') + ';';
+      label.style.cssText = 'font-size:10px;font-weight:600;text-transform:none;letter-spacing:.06em;text-align:center;max-width:70px;word-break:break-word;color:' + (s.status === 'active' ? 'var(--primary)' : 'var(--text-1)') + ';';
       label.textContent = s.stage_name;
       node.appendChild(circle);
       node.appendChild(label);

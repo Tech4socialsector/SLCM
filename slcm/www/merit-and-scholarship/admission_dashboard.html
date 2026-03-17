@@ -818,7 +818,7 @@ else 'Admissions Open') %}
 
                 <!-- Completion bar inside identity card -->
                 <div class="completion-row" style="padding:10px 0px; margin-top:8px; border-radius:0; background:transparent; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">
-                  <span class="completion-label" style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">Profile Completion:</span>
+                  <span class="completion-label" style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">Profile completion:</span>
                   <div class="progress-bar-track" style="height:6px; max-width:200px;">
                     <div class="progress-bar-fill" id="progress-fill" 
                          style="width:0%; {% if _completion_pct == 100 %}background-color:var(--success);{% endif %}"></div>
@@ -835,7 +835,7 @@ else 'Admissions Open') %}
               <button onclick="openProfileEditModal()" class="btn btn-primary"
                 style="position:absolute; top:20px; right:24px; padding:6px 14px; font-size:13px;">
                 <span class="ms-icon" style="font-size:16px;color:white;">edit</span>
-                Edit Profile
+                Edit profile
               </button>
             </div>
 
@@ -845,7 +845,7 @@ else 'Admissions Open') %}
               <div class="profile-fields-grid">
 
                 <div>
-                  <p class="field-label">Full Name</p>
+                  <p class="field-label">Full name</p>
                   <p class="field-value {{ '' if _pname else 'not-set' }}">{{ _pname or 'Not set' }}</p>
                 </div>
                 <div>
@@ -857,7 +857,7 @@ else 'Admissions Open') %}
                   <p class="field-value {{ '' if _pmobile else 'not-provided' }}">{{ _pmobile or 'Not provided' }}</p>
                 </div>
                 <div>
-                  <p class="field-label">Date of Birth</p>
+                  <p class="field-label">Date of birth</p>
                   <p class="field-value {{ '' if _pdob else 'not-set' }}">{{ _pdob or 'Not set' }}</p>
                 </div>
                 <div>
@@ -1003,7 +1003,7 @@ else 'Admissions Open') %}
               <a href="/my-applications"
                 style="font-size:12px;font-weight:600;color:var(--primary);text-decoration:none;"
                 onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">View
-                All</a>
+                all</a>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -1070,7 +1070,7 @@ else 'Admissions Open') %}
                     <div style="margin-top:auto;border-top:1px solid #f1f5f9;padding-top:12px;">
                       <div style="width:100%;padding:10px 12px;border-radius:12px;border:1.5px solid #f1f5f9;background:white;
                                   font-size:13px;font-weight:800;color:var(--text-1);display:flex;align-items:center;justify-content:center;gap:8px;">
-                        View Details <span class="ms-icon" style="font-size:18px;">chevron_right</span>
+                        View <span class="ms-icon" style="font-size:18px;">chevron_right</span>
                       </div>
                     </div>
                   </div>
