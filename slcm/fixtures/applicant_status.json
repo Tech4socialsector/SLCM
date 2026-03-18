@@ -101,9 +101,8 @@
   "docstatus": 0,
   "doctype": "Applicant Status",
   "modified": "2026-03-11 14:41:22.044734",
-  "name": "Interview Sheduled",
-  "status": "Interview Sheduled"
- },
+  "name": "Interview Scheduled",
+  "status": "Interview Scheduled" },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
