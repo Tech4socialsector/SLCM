@@ -24,6 +24,52 @@
    "in_list_view": 1
   },
   {
+   "fieldname": "action_type",
+   "fieldtype": "Data",
+   "label": "Action Type"
+  },
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "label": "Applicant",
+   "options": "Applicant"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "performed_by",
+   "fieldtype": "Link",
+   "label": "Performed By",
+   "options": "User",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "performed_on",
+   "fieldtype": "Datetime",
+   "label": "Performed On",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "snapshot_json",
+   "fieldtype": "Code",
+   "label": "Snapshot JSON",
+   "options": "JSON"
+  },
+  {
    "fieldname": "field_changed",
    "fieldtype": "Data",
    "label": "Field Changed"
