@@ -278,6 +278,14 @@ Details
 
 </div>
 
+${offer.offer_status === 'Payment Completed' ? `
+<div class="px-4 pb-3">
+    <button class="btn btn-outline-danger btn-sm w-100 py-2" style="border-radius: 10px; font-weight: 700;" onclick="event.stopPropagation(); window.location.href='/offer_letter/cancellation_form?offer=${offer.name}'">
+        <i class="fa fa-times-circle mr-1"></i> {{ _('Cancel Admission') }}
+    </button>
+</div>
+` : ''}
+
 </div>
 </div>
 `;

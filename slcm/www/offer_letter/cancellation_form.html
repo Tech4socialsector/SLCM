@@ -1,0 +1,305 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block title %}Request Admission Cancellation{% endblock %}
+
+{% block page_css %}
+<style>
+    :root {
+        --primary: {{ portal_config.primary_color or '#1a3c6e' }};
+        --secondary: {{ portal_config.secondary_color or '#2563eb' }};
+    }
+
+    .cancellation-container {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .form-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        padding: 32px 40px;
+        color: #ffffff;
+    }
+
+    .form-header h2 {
+        font-weight: 800;
+        margin-bottom: 8px;
+        font-size: 1.75rem;
+        letter-spacing: -0.01em;
+    }
+
+    .form-header p {
+        opacity: 0.9;
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+
+    .form-body {
+        padding: 40px 48px;
+    }
+
+    .info-summary {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 32px;
+        border: 1px solid #eef2f7;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px 24px;
+    }
+
+    .info-item .label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .info-item .value {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    .form-group label {
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #eef2f7;
+        padding: 12px 16px;
+        transition: all 0.2s;
+        font-size: 1rem;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    .btn-submit {
+        background: var(--primary);
+        color: #ffffff;
+        font-weight: 800;
+        padding: 16px 32px;
+        border-radius: 12px;
+        border: none;
+        width: 100%;
+        margin-top: 16px;
+        transition: all 0.2s;
+        font-size: 1.1rem;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+    }
+
+    .alert-notice {
+        background: #fffafa;
+        border: 1px solid #fee2e2;
+        color: #991b1b;
+        padding: 20px 24px;
+        border-radius: 12px;
+        margin-bottom: 32px;
+        display: flex;
+        gap: 16px;
+        font-size: 0.9rem;
+        align-items: flex-start;
+    }
+
+    .alert-notice i {
+        font-size: 20px;
+        margin-top: 2px;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+    }
+
+    .btn-back:hover {
+        color: var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cancellation-container">
+    <a href="/offer_letter/offer-letter-list" class="btn-back">
+        <i class="fa fa-arrow-left"></i>
+        {{ _('Back to Offers') }}
+    </a>
+
+    <div class="form-card">
+        <div class="form-header text-center">
+            <h2>{{ _('Admission Cancellation') }}</h2>
+            <p>{{ _('Please provide the details below to initiate your cancellation and refund request.') }}</p>
+        </div>
+
+        <div class="form-body">
+            <div class="alert-notice">
+                <i class="fa fa-exclamation-triangle"></i>
+                <div>
+                    <strong>{{ _('Important Notice') }}</strong>
+                    <p class="mb-0 mt-1 small opacity-90">{{ _('By submitting this form, you are requesting to cancel your admission. Once processed, your offer will be withdrawn, and your seat will be released. Refund will be calculated as per the university policy.') }}</p>
+                </div>
+            </div>
+
+            <div class="info-summary">
+                <div class="info-item">
+                    <span class="label">{{ _('Applicant Name') }}</span>
+                    <div class="value">{{ applicant_name }}</div>
+                </div>
+                <div class="info-item">
+                    <span class="label">{{ _('Program') }}</span>
+                    <div class="value">{{ offer.program }}</div>
+                </div>
+                <div class="info-item">
+                    <span class="label">{{ _('Offer ID') }}</span>
+                    <div class="value">{{ offer.name }}</div>
+                </div>
+                <div class="info-item">
+                    <span class="label">{{ _('Campus') }}</span>
+                    <div class="value">{{ offer.campus }}</div>
+                </div>
+                {% if payment %}
+                <div class="info-item">
+                    <span class="label">{{ _('Fee Paid') }}</span>
+                    <div class="value">{{ _('INR') }} {{ "{:,.2f}".format(payment.amount) }}</div>
+                </div>
+                <div class="info-item">
+                    <span class="label">{{ _('Transaction ID') }}</span>
+                    <div class="value">{{ payment.reference_number }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <form id="cancellation-form">
+                <input type="hidden" name="offer" value="{{ offer.name }}">
+                <input type="hidden" name="applicant" value="{{ offer.applicant }}">
+                <input type="hidden" name="payment_request" value="{{ payment.name if payment else '' }}">
+                <input type="hidden" name="campus" value="{{ offer.campus }}">
+                <input type="hidden" name="program" value="{{ offer.program }}">
+
+                <div class="form-group mb-4">
+                    <label for="cancellation_reason_type">{{ _('Reason Category') }}</label>
+                    <select class="form-control" name="cancellation_reason_type" id="cancellation_reason_type" required>
+                        <option value="">{{ _('Select a reason...') }}</option>
+                        {% for reason in cancellation_reasons %}
+                        <option value="{{ reason }}">{{ reason }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="cancellation_reason">{{ _('Detailed Explanation') }}</label>
+                    <textarea class="form-control" name="cancellation_reason" id="cancellation_reason" rows="4" required placeholder="{{ _('Please explain why you wish to cancel your admission...') }}"></textarea>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="additional_comments">{{ _('Additional Comments (Optional)') }}</label>
+                    <textarea class="form-control" name="additional_comments" id="additional_comments" rows="2"></textarea>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="declaration" required>
+                    <label class="form-check-label small text-muted" for="declaration">
+                        {{ _('I understand that this action is irreversible and I agree to the refund terms and conditions.') }}
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    {{ _('Submit Cancellation Request') }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="processing-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; backdrop-filter:blur(4px);">
+    <div class="d-flex flex-column align-items-center justify-content-center h-100 text-white">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <h4 class="mt-4">{{ _('Submitting Request...') }}</h4>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $('#cancellation-form').on('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        $('#processing-overlay').fadeIn(200);
+        
+        try {
+            const response = await apiFetch('slcm.admission_cancel_api.submit_admission_cancellation', data);
+            $('#processing-overlay').fadeOut(200);
+            
+            if (response && response.status === 'Success') {
+                Swal.fire({
+                    title: "{{ _('Request Submitted') }}",
+                    text: "{{ _('Your admission cancellation request has been submitted successfully and is currently under review.') }}",
+                    icon: 'success',
+                    confirmButtonColor: 'var(--primary)',
+                    confirmButtonText: "{{ _('Return to Offers') }}"
+                }).then(() => {
+                    window.location.href = '/offer_letter/offer-letter-list';
+                });
+            }
+        } catch (error) {
+            $('#processing-overlay').fadeOut(200);
+            Swal.fire({
+                title: "{{ _('Error') }}",
+                text: error.message || "{{ _('Something went wrong. Please try again later.') }}",
+                icon: 'error',
+                confirmButtonColor: 'var(--primary)'
+            });
+        }
+    });
+
+    // Helper for apiFetch if not globally available
+    if (typeof apiFetch === 'undefined') {
+        window.apiFetch = function(method, args) {
+            return new Promise((resolve, reject) => {
+                frappe.call({
+                    method: method,
+                    args: args,
+                    callback: (r) => {
+                        if (r.exc) reject(r.exc);
+                        else resolve(r.message);
+                    }
+                });
+            });
+        };
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
