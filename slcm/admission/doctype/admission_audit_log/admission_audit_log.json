@@ -19,9 +19,8 @@
   },
   {
    "fieldname": "action",
-   "fieldtype": "Select",
+   "fieldtype": "Data",
    "label": "Action",
-   "options": "\nCreated\nModified\nSubmitted\nCancelled\nDeleted",
    "in_list_view": 1
   },
   {
