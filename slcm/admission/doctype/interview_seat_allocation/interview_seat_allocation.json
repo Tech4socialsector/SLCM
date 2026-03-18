@@ -306,7 +306,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Interview Status",
-   "options": "\nScheduled\nAttended\nAbsent\nSelected\nRejected\nWithheld"
+   "options": "\nScheduled\nAttended\nAbsent"
   },
   {
    "fieldname": "attendance_marked_on",
@@ -323,7 +323,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Result Status",
-   "options": "\nPass\nFail\nWithheld\nPending"
+   "options": "\nPass\nFail"
   },
   {
    "default": "0",
@@ -375,7 +375,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-08 21:03:44.652813",
+ "modified": "2026-03-18 11:34:48.998448",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
