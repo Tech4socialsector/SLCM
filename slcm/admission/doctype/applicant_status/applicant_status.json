@@ -6,7 +6,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "status"
+  "status",
+  "stage_type"
  ],
  "fields": [
   {
@@ -14,12 +15,19 @@
    "fieldtype": "Data",
    "label": "Status",
    "unique": 1
+  },
+  {
+   "fieldname": "stage_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Stage Type",
+   "options": "\nApplication\nScreening\nExam\nInterview\nEvaluation\nMerit\nDocument\nFee\nOffer\nEnrollment"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-12 11:11:14.684297",
+ "modified": "2026-03-18 14:21:37.215592",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Status",

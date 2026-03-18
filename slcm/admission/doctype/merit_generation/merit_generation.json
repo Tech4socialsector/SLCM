@@ -41,18 +41,20 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Draft\nIn Progress\nCompleted\nFailed"
+   "options": "Draft\nIn Progress\nCompleted\nFailed",
+   "read_only": 1
   },
   {
    "fieldname": "generated_on",
    "fieldtype": "Datetime",
-   "label": "Generated On"
+   "label": "Generated On",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 12:06:00.230135",
+ "modified": "2026-03-18 14:40:13.114787",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit Generation",

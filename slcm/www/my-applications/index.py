@@ -1,5 +1,5 @@
 import frappe
-from slcm.admission.utils.portal import get_portal_config
+from slcm.admission.utils.portal import get_portal_config, is_application_editable
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 
 login_required = True
@@ -228,6 +228,14 @@ def get_context(context):
             return
 
         context.selected_app = applicant
+        context.is_editable = is_application_editable(applicant)
+
+        # ── Fetch Eligibility Evaluation for exemptions ─────────────
+        evaluation = frappe.db.get_value("Eligibility Evaluation", 
+            {"applicant_name": applicant.name}, 
+            ["exempts_entrance_test", "exempts_interview"], 
+            as_dict=True) or {}
+        context.evaluation_exemption = evaluation
 
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
@@ -284,9 +292,16 @@ def get_context(context):
                             else:
                                 state = "active"
                     
+                    is_exempted = False
+                    if s.stage_type == "Exam" and evaluation.get("exempts_entrance_test"):
+                        is_exempted = True
+                    elif s.stage_type == "Interview" and evaluation.get("exempts_interview"):
+                        is_exempted = True
+
                     stages_with_state.append({
                         "name": s.stage_name or s.stage_type,
-                        "state": state
+                        "state": state,
+                        "is_exempted": is_exempted
                     })
         except Exception as e:
             frappe.log_error(f"Stage tracker context error: {e}")
@@ -570,6 +585,7 @@ def get_context(context):
 
         summary = {
             "name": app_doc.name,
+            "is_editable": is_application_editable(app_doc),
             "header": {
                 "program_name": program_name,
                 "applicant_id": app_doc.name,

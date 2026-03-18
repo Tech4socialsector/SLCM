@@ -212,6 +212,12 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
     if not filtered_stages:
         return {"stages": [], "progress_pct": 0, "current_status": applicant.application_status}
 
+    # Fetch Eligibility Evaluation for exemptions
+    evaluation = frappe.db.get_value("Eligibility Evaluation", 
+        {"applicant_name": applicant_name}, 
+        ["exempts_entrance_test", "exempts_interview"], 
+        as_dict=True) or {}
+
     # Find the active stage by matching application_status
     # We look for the furthest stage that matches the current status.
     current_status = applicant.application_status
@@ -259,6 +265,12 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
             # This part is tricky. If status doesn't match, maybe it's Draft or something else.
             state = "pending"
 
+        is_exempted = False
+        if s.get("stage_type") == "Exam" and evaluation.get("exempts_entrance_test"):
+            is_exempted = True
+        elif s.get("stage_type") == "Interview" and evaluation.get("exempts_interview"):
+            is_exempted = True
+
         stages_out.append({
             "name":                      s.get("name"),
             "stage_name":                s.get("stage_name") or s.get("stage_type"),
@@ -267,6 +279,7 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
             "sequence":                  s.get("sequence_no") or 0,
             "state":                     state,
             "status":                    state, # Added for JS compatibility
+            "is_exempted":               is_exempted,
             "start_date":                str(s.start_date) if s.get("start_date") else None,
             "end_date":                  str(s.end_date)   if s.get("end_date")   else None,
             "action_label":              s.get("action_label") or "",

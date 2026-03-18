@@ -375,7 +375,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 11:34:48.998448",
+ "modified": "2026-03-18 15:14:43.582770",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
@@ -418,12 +418,16 @@
    "write": 1
   },
   {
+   "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
+   "import": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Interview Staff Member",
+   "select": 1,
    "share": 1,
    "write": 1
   },
@@ -432,10 +436,12 @@
    "delete": 1,
    "email": 1,
    "export": 1,
+   "import": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Interview Admin",
+   "select": 1,
    "share": 1,
    "write": 1
   }

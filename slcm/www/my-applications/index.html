@@ -449,6 +449,20 @@
     color: var(--text-1);
   }
 
+  .exemption-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+
   /* ── Quick Status Grid ───────────────────────────────────── */
   .quick-status-grid {
     display: grid;
@@ -1653,9 +1667,9 @@ or _app.current_stage)) or _status %}
 
           <div class="app-header-right" style="flex-direction:row; align-items:center; gap:10px;">
             <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
-              title="{{ 'View' if _status != 'Draft' else 'Open and edit' }} this application">
-              <span class="material-symbols-outlined">{{ 'visibility' if _status != 'Draft' else 'edit' }}</span>
-              {{ 'View' if _status != 'Draft' else 'Edit' }}
+              title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
+              <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
+              {{ 'View' if not is_editable else 'Edit' }}
             </a>
             
             {% if app_name_param %}
@@ -1721,6 +1735,9 @@ or _app.current_stage)) or _status %}
               {% endif %}
             </div>
             <span class="stage-label {{ _sstate }}">{{ _slabel }}</span>
+            {% if s.is_exempted %}
+              <span class="exemption-badge">Exempted</span>
+            {% endif %}
           </div>
           {% endfor %}
 
@@ -2005,7 +2022,7 @@ or _app.current_stage)) or _status %}
         <div
           style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
           <div>
-            <div style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:uppercase;margin-bottom:3px">
+            <div style="font-size:11px;color:var(--text-4);font-weight:600;margin-bottom:3px">
               Exam centre</div>
             <div style="font-size:15px;font-weight:600;color:var(--text-1)">{{ et_doc.re_center_name if
               et_is_rescheduled else et_doc.center_name }}</div>
@@ -3222,6 +3239,12 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       label.textContent = s.stage_name;
       node.appendChild(circle);
       node.appendChild(label);
+      if (s.is_exempted) {
+        var badge = document.createElement('div');
+        badge.className = 'exemption-badge';
+        badge.textContent = 'Exempted';
+        node.appendChild(badge);
+      }
       wrap.appendChild(node);
     });
   }

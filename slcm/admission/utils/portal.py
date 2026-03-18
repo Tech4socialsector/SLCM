@@ -527,3 +527,55 @@ def api_get_stage_progress(applicant=None):
 def api_get_campus_status(applicant=None):
     """Stub for applicant_portal.js"""
     return []
+
+def is_application_editable(applicant):
+    """
+    Returns True if the application is currently editable by the applicant.
+    This is determined by the 'is_editable' flag on the current stage
+    of the Admission Cycle that matches the application's status.
+    """
+    if isinstance(applicant, str):
+        applicant = frappe.get_doc("Applicant", applicant, ignore_permissions=True)
+    
+    # If no status, default to True (Draft-like)
+    if not applicant.get("application_status"):
+        return True
+    
+    # If no admission_cycle, we can't look up stages
+    if not applicant.get("admission_cycle"):
+        return True
+    
+    current_status = applicant.application_status
+    
+    # Draft is always editable by default, overriding stage settings
+    if current_status == "Draft":
+        return True
+    
+    # Fetch stages for this cycle
+    stages = frappe.get_all(
+        "Admission Cycle Stage",
+        filters={
+            "parent": applicant.admission_cycle,
+            "is_enabled": 1
+        },
+        fields=["activate_status", "completed_status", "closed_status", "is_editable", "applicable_workflow"],
+        order_by="sequence_no asc"
+    )
+    
+    intake = applicant.get("intake_type") or "External Test"
+    filtered_stages = [
+        s for s in stages
+        if s.applicable_workflow == "All" or s.applicable_workflow == intake
+    ]
+    
+    # Look for the stage that matches current status
+    for s in filtered_stages:
+        if s.activate_status == current_status:
+            return bool(s.is_editable)
+        if s.completed_status == current_status:
+            next_stage_match = any(st.activate_status == current_status for st in filtered_stages)
+            if next_stage_match:
+                continue
+            return bool(s.is_editable)
+        
+    return False

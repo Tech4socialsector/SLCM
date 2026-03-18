@@ -5,6 +5,7 @@ from frappe import _
 from frappe.utils import flt, now, nowdate, strip_html
 
 from slcm.utils.phone_utils import sanitize_phone_for_frappe
+from slcm.admission.utils.portal import is_application_editable
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -149,7 +150,7 @@ def get_context(context):
             doc = frappe.get_doc("Applicant", existing.name)
             context.applicant_data = frappe.parse_json(frappe.as_json(doc))
             context.application_submitted = (doc.application_status == "Submitted")
-            context.application_editable = (doc.application_status == "Draft")
+            context.application_editable = is_application_editable(doc)
     except frappe.Redirect:
         raise
     except Exception:
@@ -533,12 +534,12 @@ def save_form(data):
     email = frappe.db.get_value("User", user, "email") or user
     is_submit = bool(data.get("__submit"))
 
-    # ── Allow edits only when application status is Draft ─────────────
+    # ── Allow edits based on Admission Cycle Stage ─────────────
     existing_name = data.get("name")
     if existing_name:
-        current_status = frappe.db.get_value("Applicant", existing_name, "application_status")
-        if current_status and current_status != "Draft":
-            return {"error": _("Only draft applications can be edited. This application's status is '{0}'.").format(current_status or "unknown")}
+        applicant = frappe.get_doc("Applicant", existing_name, ignore_permissions=True)
+        if not is_application_editable(applicant):
+            return {"error": _("This application is currently not editable as per its admission stage ('{0}').").format(applicant.application_status or "unknown")}
     try:
         meta = frappe.get_meta("Applicant")
     except Exception:
@@ -599,25 +600,32 @@ def save_form(data):
         frappe.log_error(frappe.get_traceback(), "save_form — get/new doc")
         return {"error": _("Could not load application record: {0}").format(str(e))}
 
-    # ── Apply scalar fields (when submitted, do not update read-only fields) ──
-    READONLY_AFTER_SUBMIT = {
-        "email", "candidate_name", "mobile_number",
+    # ── Apply scalar fields (respecting restricted editing rules) ──
+    # Fields that can NEVER be edited after first save (even in Draft)
+    RESTRICTED_ALWAYS = {"email", "mobile_number", "alternate_contact"}
+
+    # Fields allowed in partial editing mode (only for submitted/non-draft)
+    PARENT_FIELDS = {
         "father_name", "father_email", "father_mobile", "father_occupation",
         "mother_name", "mother_email", "mother_mobile", "mother_occupation",
-        "guardian_name", "guardian_mobile", "guardian_email",
-        "correspondence_address", "city", "state", "pincode",
-        "class_x_school", "class_x_board", "class_x_year_of_completion", "class_x_percentage", "class_x_cgpa",
-        "class_xii_name_of_examination", "class_xii_school", "class_xii_board", "class_xii_year_of_completion", "hsc_group", "hsc_percentage",
-        "national_test_name", "percentage", "ug_degree_completion",
-        "first_preference", "second_preference", "third_preference",
-        "whether_scstobc_ncl", "ews", "pwd", "karnataka_category",
-        "caste_certificate", "ews_certificate", "pwd_certificate",
-        "ka_study_7yrs", "ka_defence_child", "ka_govt_child", "ka_ais_child", "ka_capf_child",
+        "guardian_required", "guardian_name", "guardian_mobile", "guardian_email"
     }
+
     scalar_data = {k: v for k, v in sanitized.items() if k not in child_table_fields}
-    if doc.application_status == "Submitted":
-        for key in READONLY_AFTER_SUBMIT:
-            scalar_data.pop(key, None)
+    
+    # If not a new application, enforce restrictions
+    if doc.name and not doc.is_new():
+        current_status = doc.application_status or "Draft"
+        
+        if current_status == "Draft":
+            # In Draft: Strip fields that are restricted after first save
+            for key in RESTRICTED_ALWAYS:
+                scalar_data.pop(key, None)
+        else:
+            # In Partial Editing / Submitted: Strip everything EXCEPT parent fields
+            for key in list(scalar_data.keys()):
+                if key not in PARENT_FIELDS:
+                    scalar_data.pop(key, None)
 
     # On submit, never overwrite fee status/amount from form (set by payment flow)
     if is_submit:
@@ -630,26 +638,29 @@ def save_form(data):
         frappe.log_error(frappe.get_traceback(), "save_form — doc.update")
         return {"error": _("Error setting fields: {0}").format(str(e))}
 
-    # ── Apply child tables ───────────────────────────────────────────
-    # Strip internal Frappe row-keys so append() doesn't try to match existing rows
-    _INTERNAL_KEYS = {"name", "idx", "doctype", "parent", "parentfield", "parenttype",
-                      "owner", "creation", "modified", "modified_by", "docstatus"}
+    # ── Apply child tables (Draft only) ─────────────────────────────
+    if not doc.name or doc.is_new() or (doc.application_status or "Draft") == "Draft":
+        # Strip internal Frappe row-keys so append() doesn't try to match existing rows
+        _INTERNAL_KEYS = {"name", "idx", "doctype", "parent", "parentfield", "parenttype",
+                          "owner", "creation", "modified", "modified_by", "docstatus"}
 
-    for ct_field in child_table_fields:
-        if ct_field in sanitized:
-            doc.set(ct_field, [])
-            rows = sanitized[ct_field]
-            if isinstance(rows, list):
-                for row in rows:
-                    if isinstance(row, dict):
-                        clean_row = {
-                            k: v for k, v in row.items()
-                            if k not in _INTERNAL_KEYS and not k.startswith("__")
-                        }
-                        try:
-                            doc.append(ct_field, clean_row)
-                        except Exception:
-                            pass  # Skip malformed rows silently
+        for ct_field in child_table_fields:
+            if ct_field in sanitized:
+                # Categories are a bit different, might be handled by scalar_data pop logic if needed
+                # but usually categories are set once. Let's keep them draft-only too.
+                doc.set(ct_field, [])
+                rows = sanitized[ct_field]
+                if isinstance(rows, list):
+                    for row in rows:
+                        if isinstance(row, dict):
+                            clean_row = {
+                                k: v for k, v in row.items()
+                                if k not in _INTERNAL_KEYS and not k.startswith("__")
+                            }
+                            try:
+                                doc.append(ct_field, clean_row)
+                            except Exception:
+                                pass  # Skip malformed rows silently
 
     # Always stamp the authenticated email — do not trust form input
     doc.email = email

@@ -13,7 +13,7 @@ doc_events = {
 	"Student Master": {"before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"}
 }
 
-
+required_apps = ["payments"]
 
 app_publisher = "TFSS"
 app_description = "Student Life Cycle Management"
