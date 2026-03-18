@@ -2085,7 +2085,7 @@
                                 <span class="field-error" id="err_candidate_photo">Student photo is required</span>
                             </div>
                             <div class="photo-label-buttons">
-                                <div class="photo-caption">Student photo (max 1 MB — supported formats: png, jpeg, jpg)
+                                <div class="photo-caption">Student photo (Max 1 MB — supported formats: png, jpeg, jpg)
                                     <span class="req">*</span>
                                 </div>
                                 <div class="photo-btn-row">
@@ -2172,7 +2172,9 @@
                                     <option value="Jain">Jain</option>
                                     <option value="Other">Other</option>
                                 </select>
-                            </div>
+                                <span class="field-error" id="err_religion">Religion is required</span>
+                                </div>
+
                             <div class="fg">
                                 <label>Nationality <span class="req">*</span></label>
                                 <select class="fc" name="nationality" id="nationality" required>
@@ -4189,14 +4191,22 @@ I hereby undertake that the information and documents furnished by me are true t
             errEl.classList.add('show');
         }
         let input = document.querySelector(`[name="${fieldName}"]`);
+        if (!input && fieldName.endsWith('_number') || fieldName.endsWith('_mobile') || fieldName.endsWith('_contact')) {
+            input = document.querySelector(`[name="${fieldName}_num"]`);
+        }
         if (!input && fieldName === 'date_of_birth') input = document.getElementById('date_of_birth');
+        
         if (input) {
-            if (input.classList.contains('phone-num')) {
+            if (input.classList.contains('phone-num') || input.name.endsWith('_num')) {
                 input.closest('.phone-wrap')?.classList.add('is-error');
             } else {
                 input.classList.add('is-error');
                 if (fieldName === 'date_of_birth') input.closest('.fg')?.classList.add('is-error');
-                if (input.type === 'file') input.closest('.file-zone')?.classList.add('is-error');
+                if (input.type === 'file') {
+                    input.closest('.file-zone')?.classList.add('is-error');
+                    input.closest('.id-proof-upload-row')?.classList.add('is-error');
+                    if (fieldName === 'candidate_photo') document.getElementById('photoUploadArea')?.classList.add('is-error');
+                }
             }
         }
         // Field-level message is shown above; only the generic toast is shown once by validateCurrentStep
@@ -4262,16 +4272,27 @@ I hereby undertake that the information and documents furnished by me are true t
         let v = true;
         const f = name => document.querySelector(`[name="${name}"]`)?.value?.trim();
 
+        const isVis = name => {
+            const el = document.querySelector(`[name="${name}"]`);
+            if (!el) return false;
+            return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+        };
+
         if (!f('candidate_name')) { showError('candidate_name'); v = false; }
         const hasPhoto = document.getElementById('candidatePhoto')?.files?.length > 0 || (formData.candidate_photo && String(formData.candidate_photo).trim());
         if (!hasPhoto) { showError('candidate_photo'); v = false; }
         /* email is from session (hidden), not validated here */
         if (!f('gender')) { showError('gender'); v = false; }
+        if (!f('religion')) { showError('religion'); v = false; }
         if (!f('nationality')) { showError('nationality'); v = false; }
-        if (!f('program')) { showError('program'); v = false; }
-        if (!f('campus')) { showError('campus'); v = false; }
-        if (!f('admission_cycle')) { showError('admission_cycle'); v = false; }
-        if (!f('academic_year')) { showError('academic_year'); v = false; }
+        
+        // Hidden fields should not block user if hidden, but should be logged if empty
+        ['program', 'campus', 'admission_cycle', 'academic_year'].forEach(fn => {
+            if (!f(fn)) {
+                if (isVis(fn)) { showError(fn); v = false; }
+                else { console.warn(`Missing hidden field: ${fn}`); }
+            }
+        });
         if (!f('annual_house_hold_income')) { showError('annual_house_hold_income'); v = false; }
 
         // ID proof (mandatory): either file selected for upload or already uploaded URL in formData
@@ -5327,36 +5348,40 @@ I hereby undertake that the information and documents furnished by me are true t
     // ═══════════════════════════════════════════════════════
     function collectFormData() {
         const form = document.getElementById('appForm');
-        const fields = ['candidate_name', 'email', 'gender', 'date_of_birth', 'nationality', 'religion',
+        const fields = [
+            'candidate_name', 'email', 'gender', 'date_of_birth', 'nationality', 'religion',
             'annual_house_hold_income', 'program', 'program_level', 'campus', 'admission_cycle',
             'academic_year', 'application_type', 'father_name', 'father_email', 'father_occupation',
             'mother_name', 'mother_email', 'mother_occupation', 'guardian_name', 'guardian_email',
             'correspondence_address', 'city', 'state', 'pincode', 'class_x_school', 'class_x_board',
             'class_x_year_of_completion', 'class_x_percentage', 'class_x_cgpa', 'class_xii_name_of_examination',
             'class_xii_school', 'class_xii_board', 'class_xii_year_of_completion', 'class_xii_cgpa',
-            'hsc_group', 'hsc_percentage', 'national_test_name', 'percentage',
+            'hsc_group', 'national_test_name', 'percentage',
             'other_degree_details', 'phd_program_type', 'proposed_phd_topic', 'ug_degree_completion',
             'post_degree_work_experience', 'years_of_work_experience', 'ews', 'pwd', 'pwd_required_test',
             'scribe_allotment', 'karnataka_category', 'source_of_information', 'please_mention',
-            'first_preference', 'second_preference', 'third_preference'];
+            'first_preference', 'second_preference', 'third_preference'
+        ];
 
         fields.forEach(f => {
             const el = form.elements[f];
             if (!el) return;
-            if (el.type === 'file') return; // do not overwrite file URLs (input.value is empty for security)
+            if (el.type === 'file') return;
             const val = el.value;
             formData[f] = (typeof val === 'string') ? val.trim() : val;
         });
+
+        // Special handling for HSC percentage (frontend Class XII percentage field)
         var classXiiPct = form.elements['class_xii_percentage'] ? (form.elements['class_xii_percentage'].value || '').trim() : '';
         formData.hsc_percentage = classXiiPct === '' ? '' : (isNaN(parseFloat(classXiiPct)) ? classXiiPct : parseFloat(classXiiPct));
-        // Ensure program is set when locked (hidden input may not be in form.elements in some cases)
+
+        // Ensure program is set when locked
         if (typeof PREFILL_PROGRAM !== 'undefined' && PREFILL_PROGRAM && !formData.program) {
             const programHidden = document.getElementById('program_hidden');
             formData.program = (programHidden && programHidden.value) ? programHidden.value : PREFILL_PROGRAM;
         }
 
-        // Phone fields: combine country code + number for Frappe Phone field (e.g. +919876543210).
-        // Only send a value when there are digits (Frappe rejects country-code-only like "+91").
+        // Phone fields
         const phoneFields = ['mobile_number', 'alternate_contact', 'father_mobile', 'mother_mobile', 'guardian_mobile'];
         phoneFields.forEach(f => {
             const ccEl = form.elements[f + '_cc'];
@@ -5364,16 +5389,15 @@ I hereby undertake that the information and documents furnished by me are true t
             const cc = (ccEl && ccEl.value) ? String(ccEl.value).trim() : '+91';
             const num = (numEl && numEl.value) ? String(numEl.value).replace(/\D/g, '') : '';
             const code = (cc.replace(/^\+/, '') ? (cc.startsWith('+') ? cc : '+' + cc) : '+91');
-            const combined = num ? (code + '-' + num) : '';
-            formData[f] = combined;
+            formData[f] = num ? (code + '-' + num) : '';
         });
 
-        // Guardian: Yes/No select (backend expects "Yes" or "No", not 1/0)
-        formData.guardian_required = document.getElementById('guardian_required')?.value === 'Yes' ? 'Yes' : 'No';
+        // Guardian and Undertaking
+        formData.guardian_required = document.getElementById('guardian_required')?.value || 'No';
         formData.declaration_undertaking = document.getElementById('declaration_undertaking')?.checked ? 1 : 0;
         formData.consent_third_party = document.getElementById('consent_third_party')?.checked ? 1 : 0;
 
-        // Karnataka checkboxes
+        // Karnataka checkboxes and certificates
         ['ka_study_7yrs', 'ka_defence_child', 'ka_govt_child', 'ka_ais_child', 'ka_capf_child'].forEach(f => {
             formData[f] = document.getElementById(f)?.checked ? 1 : 0;
         });
@@ -5385,11 +5409,10 @@ I hereby undertake that the information and documents furnished by me are true t
         formData.reservation_category = normalizedResCat;
         formData.categories = (normalizedResCat && normalizedResCat !== 'NA') ? [{ category: normalizedResCat }] : [];
 
-        // Sync UG/PG degree tables from DOM so text inputs and file URLs are both sent to backend
+        // Sync degree tables
         syncDegreeTablesFromDOM();
     }
 
-    /** Read UG/PG table rows from DOM and merge into formData (preserves existing file URLs). */
     function syncDegreeTablesFromDOM() {
         const ugBody = document.getElementById('ugTableBody');
         if (ugBody && ugBody.rows.length) {
@@ -5405,7 +5428,7 @@ I hereby undertake that the information and documents furnished by me are true t
                 const prev = existingRows[idx] || {};
                 formData.ug_degree_details.push({
                     ug_program: ugProgram,
-                    college,
+                    college: college,
                     year_of_completion: year,
                     ug_cgpa: cgpa,
                     degree_certificate: prev.degree_certificate || '',

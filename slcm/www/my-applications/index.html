@@ -449,6 +449,20 @@
     color: var(--text-1);
   }
 
+  .exemption-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+
   /* ── Quick Status Grid ───────────────────────────────────── */
   .quick-status-grid {
     display: grid;
@@ -1721,6 +1735,9 @@ or _app.current_stage)) or _status %}
               {% endif %}
             </div>
             <span class="stage-label {{ _sstate }}">{{ _slabel }}</span>
+            {% if s.is_exempted %}
+              <span class="exemption-badge">Exempted</span>
+            {% endif %}
           </div>
           {% endfor %}
 
@@ -3222,6 +3239,12 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
       label.textContent = s.stage_name;
       node.appendChild(circle);
       node.appendChild(label);
+      if (s.is_exempted) {
+        var badge = document.createElement('div');
+        badge.className = 'exemption-badge';
+        badge.textContent = 'Exempted';
+        node.appendChild(badge);
+      }
       wrap.appendChild(node);
     });
   }

@@ -230,6 +230,13 @@ def get_context(context):
         context.selected_app = applicant
         context.is_editable = is_application_editable(applicant)
 
+        # ── Fetch Eligibility Evaluation for exemptions ─────────────
+        evaluation = frappe.db.get_value("Eligibility Evaluation", 
+            {"applicant_name": applicant.name}, 
+            ["exempts_entrance_test", "exempts_interview"], 
+            as_dict=True) or {}
+        context.evaluation_exemption = evaluation
+
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
         try:
@@ -285,9 +292,16 @@ def get_context(context):
                             else:
                                 state = "active"
                     
+                    is_exempted = False
+                    if s.stage_type == "Exam" and evaluation.get("exempts_entrance_test"):
+                        is_exempted = True
+                    elif s.stage_type == "Interview" and evaluation.get("exempts_interview"):
+                        is_exempted = True
+
                     stages_with_state.append({
                         "name": s.stage_name or s.stage_type,
-                        "state": state
+                        "state": state,
+                        "is_exempted": is_exempted
                     })
         except Exception as e:
             frappe.log_error(f"Stage tracker context error: {e}")
