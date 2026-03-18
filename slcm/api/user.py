@@ -60,6 +60,10 @@ def register_fle_user(email, mobile_number):
 
     # Generate the password reset link silently (without emailing)
     frappe_link = user.reset_password(send_email=False)
+
+    # Disable expiration for "Complete Registration" link by setting generation date 10 years in the future
+    from frappe.utils import add_days, now_datetime
+    user.db_set("last_reset_password_key_generated_on", add_days(now_datetime(), 3650))
     
     # Extract the path + query (e.g., /update-password?key=XYZ)
     import urllib.parse
