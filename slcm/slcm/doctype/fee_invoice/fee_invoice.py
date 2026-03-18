@@ -27,6 +27,7 @@ class FeeInvoice(Document):
 			total += flt(row.total_amount)
 		
 		self.total_amount = total
+		self.final_payable_amount = flt(self.total_amount) - flt(self.scholarship_amount)
 
 		# Calculate paid amount from payments
 		paid = 0
@@ -34,7 +35,7 @@ class FeeInvoice(Document):
 			paid += flt(payment.amount)
 		self.paid_amount = paid
 
-		self.outstanding_amount = flt(self.total_amount) - flt(self.paid_amount)
+		self.outstanding_amount = flt(self.final_payable_amount) - flt(self.paid_amount)
 
 	def update_status(self):
 		if self.outstanding_amount <= 0:

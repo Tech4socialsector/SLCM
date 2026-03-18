@@ -30,7 +30,6 @@
         margin: 0;
         font-size: 22px;
         color: #333;
-        text-transform: uppercase;
         letter-spacing: 1px;
     }
 
@@ -52,11 +51,11 @@
 
     .info-label {
         font-size: 11px;
-        text-transform: uppercase;
         color: #888;
         font-weight: 600;
         margin-bottom: 4px;
         display: block;
+        /* REMOVED text-transform: uppercase */
     }
 
     .info-value {
@@ -80,11 +79,11 @@
         background: #f4f7f9;
         color: #444;
         font-size: 12px;
-        text-transform: uppercase;
         font-weight: 700;
         padding: 12px 15px;
         text-align: left;
         border-bottom: 2px solid #ddd;
+        /* REMOVED text-transform: uppercase */
     }
 
     .fee-table td {
@@ -131,7 +130,6 @@
         padding: 5px 15px;
         border-radius: 4px;
         font-weight: 900;
-        text-transform: uppercase;
         transform: rotate(-5deg);
         opacity: 0.8;
         font-size: 20px;
@@ -152,7 +150,7 @@
     <!-- Header -->
     <div class="receipt-header">
         <div class="company-logo">
-            {{ _(doc.campus) }}
+            {{ _(doc.campus or "") }}
         </div>
         <div class="receipt-title">
             <h1>Payment Receipt</h1>
@@ -163,11 +161,11 @@
     <!-- Details Grid -->
     <div class="info-grid">
         <div class="info-block">
-            <span class="info-label">Candidate Information</span>
+            <span class="info-label">Applicant Information</span>
             <div class="info-value">
                 <strong>{{ doc.applicant_name }}</strong><br>
-                Applicant ID: {{ doc.applicant }}<br>
-                {{ doc.program }}
+                Applicant No: {{ doc.applicant }}<br>
+                Program: {{ doc.program }}
             </div>
 
             <span class="info-label">Academic Year</span>
@@ -182,7 +180,7 @@
                 <strong>Reference:</strong> {{ doc.transaction_id }}
             </div>
 
-            <div class="status-stamp">PAID</div>
+            <div class="status-stamp">Paid</div>
         </div>
     </div>
 

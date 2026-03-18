@@ -118,14 +118,17 @@ def generate_merit_for_level(cycle, campus, program_level):
     if existing:
         existing_doc = frappe.get_doc("Merit List", existing.get("name"))
 
-        if existing_doc.docstatus == 1 and existing_doc.get("merit_applicants"):
+        # If already published, do not allow automatic re-generation via this service
+        if existing_doc.status == "Published":
             return existing_doc
 
-        if existing_doc.docstatus == 0:
+        # If status is "Generated" or "Draft", we allow re-generation
+        # To do this, we must clear the old document
+        if existing_doc.docstatus == 1:
+            existing_doc.cancel()
             frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
             frappe.db.commit()
-        elif existing_doc.docstatus == 1 and not existing_doc.get("merit_applicants"):
-            existing_doc.cancel()
+        elif existing_doc.docstatus == 0:
             frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
             frappe.db.commit()
 
