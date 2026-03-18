@@ -18,40 +18,40 @@
    "fieldname": "year_of_completion",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Year of Completion"
+   "label": "Year of completion (UG degree)"
   },
   {
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "degree_certificate",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "UG Degree Certificate/Bonafide Certificate to be uploaded"
+   "label": "UG degree certificate / Bonafide"
   },
   {
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "marksheets",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "Transcripts/Marksheets to be uploaded"
+   "label": "Transcripts / Marksheets"
   },
   {
    "fieldname": "college",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "College/University"
+   "label": "College / University (UG degree)"
   },
   {
    "fieldname": "ug_program",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Name of Degree",
+   "label": "Name of degree (UG)",
    "options": "Program"
   },
   {
    "fieldname": "ug_cgpa",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "CGPA obtained",
+   "label": "Percentage/CGPA obtained (UG degree)",
    "precision": "1"
   }
  ],

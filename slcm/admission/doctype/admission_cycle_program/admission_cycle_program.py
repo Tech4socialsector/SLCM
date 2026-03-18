@@ -8,7 +8,7 @@ class AdmissionCycleProgram(Document):
     pass
 
 @frappe.whitelist()
-def save_categories(admission_cycle, program, total_seats, status, policy_document, reservation_rows, existing_policy=None):
+def save_categories(admission_cycle, program, total_seats, status, policy_document, reservation_rows, existing_policy=None, payment_gateway=None, payment_receipt_template=None):
     if isinstance(reservation_rows, str):
         reservation_rows = json.loads(reservation_rows)
 
@@ -35,6 +35,8 @@ def save_categories(admission_cycle, program, total_seats, status, policy_docume
     doc.total_seats = total_seats
     doc.status = status
     doc.policy_document = policy_document or ""
+    doc.payment_gateway = payment_gateway
+    doc.payment_receipt_template = payment_receipt_template
 
     # Clear and re-add category rows
     doc.set("categories", [])

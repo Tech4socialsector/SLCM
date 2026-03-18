@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import getdate
 
@@ -161,16 +162,31 @@ class InterviewConfiguration(Document):
                 "result_status":    "Pass"
             })
 
-            frappe.throw(
-                f"No eligible applicants found for the selected criteria.<br><br>"
-                f"<b>Year:</b> {self.academic_year}<br>"
-                f"<b>Campus:</b> {self.campus}<br>"
-                f"<b>Cycle:</b> {self.admission_cycle}<br>"
-                f"<b>Level:</b> {self.program_level}<br><br>"
-                f"DIAGNOSTIC: Found {count_total} total applicants for this criteria, "
-                f"{count_et_pass} Entrance Test passers. "
-                "None qualify for interview (check exempts_interview flags and result_status)."
-            )
+            msg = f"""
+                <div style="font-size: 14px;">
+                    <p><b>{_("No eligible applicants were found matching the selected criteria.")}</b></p>
+                    <hr>
+                    <p><b>{_("Applied Filters:")}</b></p>
+                    <ul>
+                        <li><b>{_("Year")}:</b> {self.academic_year}</li>
+                        <li><b>{_("Campus")}:</b> {self.campus}</li>
+                        <li><b>{_("Cycle")}:</b> {self.admission_cycle}</li>
+                        <li><b>{_("Level")}:</b> {self.program_level}</li>
+                    </ul>
+                    <p><b>{_("System Diagnostic:")}</b></p>
+                    <ul>
+                        <li>{_("Total applicants matching filters")}: <b>{count_total}</b></li>
+                        <li>{_("Applicants who passed the Entrance Test")}: <b>{count_et_pass}</b></li>
+                    </ul>
+                    <p><b>{_("Possible Reasons:")}</b></p>
+                    <ol>
+                        <li>{_("Applicants may be flagged as 'Exempt from Interview' in Eligibility Evaluation or Entrance Test results.")}</li>
+                        <li>{_("Applicants might have an 'Application Status' of 'Rejected'.")}</li>
+                        <li>{_("Entrance Test results for this cycle might not have been processed yet.")}</li>
+                    </ol>
+                </div>
+            """
+            frappe.throw(msg, title=_("Generation Failed"))
 
         # ─── Create Interview List ────────────────────────────────────────────
         interview_list = frappe.get_doc({

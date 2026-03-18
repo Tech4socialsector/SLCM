@@ -296,6 +296,23 @@
     #pd-sidebar { position: relative !important; top: auto !important; }
   }
 
+  /* Responsive Grid */
+  .programs-grid {
+    display: grid;
+    gap: 2rem;
+  }
+  @media (min-width: 1536px) { .programs-grid { grid-template-columns: repeat(5, 1fr); } }
+  @media (min-width: 1024px) and (max-width: 1535px) { .programs-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 640px) and (max-width: 1023px) { .programs-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 639px) { .programs-grid { grid-template-columns: repeat(1, 1fr); } }
+
+  .line-clamp-4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   @keyframes pdFadeUp {
     from { opacity:0; transform:translateY(14px); }
     to   { opacity:1; transform:translateY(0); }
@@ -868,7 +885,7 @@
   <div class="mb-8 p-4 rounded-xl border border-amber-200 bg-amber-50 flex items-center gap-3 fade-card">
     <span class="material-symbols-outlined text-amber-600">info</span>
     <p class="text-sm font-semibold text-amber-800">
-      Note: Applications for the current cycle will close on {{ frappe.utils.formatdate(active_cycle.cycle_end_date, "dd MMM yyyy") }}.
+      Note: applications for the current cycle will close on {{ frappe.utils.formatdate(active_cycle.cycle_end_date, "dd MMM yyyy") }}.
     </p>
   </div>
   {% endif %}
@@ -882,7 +899,7 @@
     </div>
   </div>
 
-  <div class="grid gap-8" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
+  <div class="programs-grid gap-8">
     {% for p in programs %}
     {% set _slug  = p.get('program_slug') if p.get else (p.program_slug or '') %}
     {% set _img   = p.get('program_image') if p.get else (p.program_image or '') %}
@@ -890,15 +907,7 @@
     {% set _abbr  = p.get('program_abbreviation') if p.get else (p.program_abbreviation or '') %}
     
     {% set _desc_raw = p.get('program_description') if p.get else (p.program_description or '') %}
-    {% set _desc_display = '' %}
-    {% if _desc_raw and _desc_raw|string != 'None' %}
-        {% set _desc_plain = _desc_raw | striptags %}
-        {% if _desc_plain and _desc_plain|string != 'None' %}
-            {% set _words = _desc_plain.split() %}
-            {% set _desc_display = _words[:20]|join(' ') %}
-            {% if _words|length > 20 %}{% set _desc_display = _desc_display ~ '...' %}{% endif %}
-        {% endif %}
-    {% endif %}
+    {% set _desc_plain = _desc_raw | striptags if _desc_raw and _desc_raw|string != 'None' else '' %}
 
     {% set _seats = (p.get('seats') or p.get('total_seats') or 0) if p.get else (p.seats or p.total_seats or 0) %}
     {% set _dur   = p.get('duration') or '' if p.get else (p.duration or '') %}
@@ -942,13 +951,13 @@
       <!-- Body -->
       <div class="flex flex-1 flex-col p-6">
         <h4 class="text-xl font-bold text-slate-900">{{ _name }}</h4>
-        {% if _desc_display %}
-        <p class="mt-2 flex-grow text-sm leading-relaxed text-slate-500">
-            {{ _desc_display }}
-            {% if _words|length > 20 %}
-            <a href="/admission/{{ _slug }}" class="text-blue-600 font-bold hover:underline" onclick="event.stopPropagation()">View More</a>
-            {% endif %}
-        </p>
+        {% if _desc_plain %}
+        <div class="mt-2 flex-grow text-sm leading-relaxed text-slate-500 line-clamp-4">
+            {{ _desc_plain }}
+        </div>
+        {% if _desc_plain|length > 150 %}
+        <a href="/admission/{{ _slug }}" class="mt-1 inline-block text-blue-600 font-bold hover:underline text-sm" onclick="event.stopPropagation()">View more</a>
+        {% endif %}
         {% endif %}
 
         <!-- Meta -->
@@ -973,7 +982,7 @@
                {% endif %}
                onclick="event.stopPropagation()">
               <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span>
-              {{ 'Apply Now' if _is_cycle_active or _ua.status != 'Draft' else 'Closed' }}
+              {{ 'Apply now' if _is_cycle_active or _ua.status != 'Draft' else 'Closed' }}
             </a>
           {% elif frappe.session.user != "Guest" %}
             <a href="{{ '/application_form?program=' ~ _pid ~ '&admission_cycle=' ~ (p.admission_cycle or (active_cycle.name if active_cycle else '')) ~ '&campus=' ~ (p.campus or '') ~ '&program_level=' ~ (p.program_level or '') ~ '&intake_type=' ~ (p.intake_type or '') if _is_cycle_active else 'javascript:void(0)' }}"
@@ -988,7 +997,7 @@
                {% endif %}
                onclick="event.stopPropagation()">
               <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span>
-              {{ 'Apply Now' if _is_cycle_active else 'Closed' }}
+              {{ 'Apply now' if _is_cycle_active else 'Closed' }}
             </a>
           {% else %}
             <a href="{{ '/login?redirect-to=/application_form' if _is_cycle_active else 'javascript:void(0)' }}"
@@ -1003,7 +1012,7 @@
                {% endif %}
                onclick="event.stopPropagation()">
               <span class="material-symbols-outlined" style="font-size:16px;">login</span>
-              {{ 'Apply Now' if _is_cycle_active else 'Closed' }}
+              {{ 'Apply now' if _is_cycle_active else 'Closed' }}
             </a>
           {% endif %}
           <a href="/admission/{{ _slug }}"
@@ -1019,9 +1028,9 @@
           <a href="{{ _bro }}" target="_blank"
              class="flex items-center gap-1 text-xs text-slate-400 hover:underline transition-colors"
              style="color:var(--muted,#94a3b8)" onclick="event.stopPropagation()"
-             title="Download Brochure">
+             title="Download brochure">
             <span class="material-symbols-outlined" style="font-size:14px">download</span>
-            Download Brochure
+            Download brochure
           </a>
         </div>
         {% endif %}
@@ -1034,6 +1043,15 @@
       No programmes available for this cycle.
     </div>
     {% endfor %}
+  </div>
+
+  <!-- Pagination Button -->
+  <div class="mt-12 flex justify-center">
+    <button id="load-more-programs" 
+            class="rounded-full px-10 py-3 font-bold text-white transition-all hover:scale-105"
+            style="background:var(--primary); display:none;">
+      View more
+    </button>
   </div>
 </section>
 <!-- END PROGRAMS -->
@@ -1380,6 +1398,69 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.addEventListener('click', function() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+  }
+
+  // ── Pagination logic ────────────────────────────────────────────────
+  const programsGrid = document.querySelector('.programs-grid');
+  if (programsGrid) {
+    const cards = Array.from(programsGrid.children);
+    const loadMoreBtn = document.getElementById('load-more-programs');
+    
+    function getBatchSize() {
+      const w = window.innerWidth;
+      if (w >= 1536) return 10; // 5 per row * 2 rows
+      if (w >= 1024) return 12; // 4 per row * 3 rows
+      if (w >= 640)  return 8;  // 2 per row * 4 rows
+      return 5;                 // 1 per row * 5 rows
+    }
+
+    let batchSize = getBatchSize();
+    let visibleCount = batchSize;
+
+    function updateCardVisibility() {
+      cards.forEach((card, idx) => {
+        if (idx < visibleCount) {
+          card.style.display = 'flex';
+          // Trigger intersection observer manually for newly visible cards
+          if (typeof obs !== 'undefined') obs.observe(card);
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      if (loadMoreBtn) {
+        if (visibleCount >= cards.length) {
+          loadMoreBtn.style.display = 'none';
+        } else {
+          loadMoreBtn.style.display = 'inline-block';
+        }
+      }
+    }
+
+    if (loadMoreBtn) {
+      loadMoreBtn.onclick = function() {
+        visibleCount += batchSize;
+        updateCardVisibility();
+      };
+    }
+
+    // Initial run
+    updateCardVisibility();
+
+    // Re-check on resize (optional, but good for responsiveness)
+    let resizeTimer;
+    window.onresize = function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const newBatch = getBatchSize();
+        if (newBatch !== batchSize) {
+          batchSize = newBatch;
+          // If we haven't loaded more manually, keep the initial view consistent
+          if (visibleCount <= batchSize) visibleCount = batchSize;
+          updateCardVisibility();
+        }
+      }, 250);
+    };
   }
 });
 {% endif %}

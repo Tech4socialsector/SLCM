@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import getdate, now
 
@@ -272,6 +273,31 @@ class EligibilityResultConfiguration(Document):
             )
         else:
             self.db_set("status", "Failed")
-            frappe.throw("No eligible applicants found for the given criteria.")
+            msg = f"""
+                <div style="font-size: 14px;">
+                    <p><b>{_("No eligible applicants were found matching the selected criteria.")}</b></p>
+                    <hr>
+                    <p><b>{_("Applied Filters:")}</b></p>
+                    <ul>
+                        <li><b>{_("Year")}:</b> {self.academic_year}</li>
+                        <li><b>{_("Campus")}:</b> {self.campus}</li>
+                        <li><b>{_("Cycle")}:</b> {self.admission_cycle}</li>
+                        <li><b>{_("Level")}:</b> {self.program_level}</li>
+                    </ul>
+                    <p><b>{_("System Diagnostic:")}</b></p>
+                    <ul>
+                        <li>{_("Interview Passers")}: <b>{len(passed_interviewees)}</b></li>
+                        <li>{_("ET Pass (Interview Exempt)")}: <b>{len(et_pass_interview_exempt)}</b></li>
+                        <li>{_("Dual Exempted (National Test + Interview)")}: <b>{len(exempted_applicants)}</b></li>
+                    </ul>
+                    <p><b>{_("Possible Reasons:")}</b></p>
+                    <ol>
+                        <li>{_("Applicants might not have passed their respective Interview or Entrance Test stages.")}</li>
+                        <li>{_("Exemption flags in Eligibility Evaluation might not be correctly configured.")}</li>
+                        <li>{_("Applicants might have an 'Application Status' of 'Rejected'.")}</li>
+                    </ol>
+                </div>
+            """
+            frappe.throw(msg, title=_("Generation Failed"))
 
         return count

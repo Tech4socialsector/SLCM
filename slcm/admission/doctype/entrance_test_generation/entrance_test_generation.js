@@ -11,6 +11,7 @@ frappe.ui.form.on("Entrance Test Generation", {
         // 3. Required fields are filled (basic validation)
 
         if (
+            !frm.is_new() &&                                    // Check if document is saved
             frm.doc.docstatus === 0 &&                          // still draft / not submitted
             ["Draft", "In Progress"].includes(frm.doc.status || "Draft") &&
             frm.doc.academic_year &&
