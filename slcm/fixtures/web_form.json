@@ -1338,7 +1338,7 @@
   "accept_payment": 1,
   "allow_comments": 0,
   "allow_delete": 0,
-  "allow_edit": 0,
+  "allow_edit": 1,
   "allow_incomplete": 0,
   "allow_multiple": 0,
   "allow_print": 0,
