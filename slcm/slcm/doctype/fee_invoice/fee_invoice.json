@@ -20,11 +20,13 @@
   "applicant_fee_assignment",
   "invoice_date",
   "due_date",
+  "status",
   "column_break_2",
   "total_amount",
+  "scholarship_amount",
+  "final_payable_amount",
   "paid_amount",
   "outstanding_amount",
-  "status",
   "section_components",
   "fee_components",
   "section_payments",
@@ -130,6 +132,20 @@
    "read_only": 1
   },
   {
+   "fieldname": "scholarship_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Scholarship Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "final_payable_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Final Payable Amount",
+   "read_only": 1
+  },
+  {
    "fieldname": "paid_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -176,9 +192,9 @@
   }
  ],
  "links": [],
- "modified": "2026-03-05 18:34:54.919949",
+ "modified": "2026-03-18 12:38:43.232222",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "Fee Invoice",
  "naming_rule": "Expression",
  "owner": "Administrator",
