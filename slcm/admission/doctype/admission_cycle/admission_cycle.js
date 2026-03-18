@@ -33,6 +33,22 @@ frappe.ui.form.on("Admission Cycle", {
             minDate: frm.doc.cycle_start_date || frappe.datetime.get_today()
         });
 
+        // Set queries for Admission Cycle Stage child table
+        const stage_status_fields = ["activate_status", "completed_status", "closed_status"];
+        stage_status_fields.forEach(field => {
+            frm.set_query(field, "stages", function(doc, cdt, cdn) {
+                let row = locals[cdt][cdn];
+                if (!row.stage_type) {
+                    return {};
+                }
+                return {
+                    filters: {
+                        "stage_type": row.stage_type
+                    }
+                };
+            });
+        });
+
         // Quick actions
         if (!frm.is_new()) {
             if (frm.doc.status === "Draft") {
@@ -148,6 +164,11 @@ frappe.ui.form.on("Admission Cycle Program", {
 });
 
 frappe.ui.form.on("Admission Cycle Stage", {
+    stage_type: function(frm, cdt, cdn) {
+        frappe.model.set_value(cdt, cdn, "activate_status", null);
+        frappe.model.set_value(cdt, cdn, "completed_status", null);
+        frappe.model.set_value(cdt, cdn, "closed_status", null);
+    },
     stage_name: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
 
