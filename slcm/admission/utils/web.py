@@ -1,5 +1,40 @@
 import frappe
 
+@frappe.whitelist(allow_guest=True)
+def get_base64_image(url):
+    """Returns base64 data URI for a given file URL by reading from local disk."""
+    if not url or url in ('None', ''):
+        return ''
+    
+    path = url.strip('/')
+    possible_paths = [
+        frappe.get_site_path('public', path),
+        frappe.get_site_path(path),
+        frappe.get_site_path('private', path)
+    ]
+    
+    found_path = None
+    import os
+    for p in possible_paths:
+        if os.path.exists(p):
+            found_path = p
+            break
+            
+    if not found_path:
+        return frappe.utils.get_url(url)
+        
+    ext = path.split('.')[-1].lower()
+    mime = 'image/png' if ext == 'png' else 'image/jpeg'
+    
+    try:
+        with open(found_path, 'rb') as f:
+            content = f.read()
+            import base64
+            encoded = base64.b64encode(content).decode('utf-8')
+            return f"data:{mime};base64,{encoded}"
+    except Exception:
+        return frappe.utils.get_url(url)
+
 @frappe.whitelist(methods=["POST", "GET"])
 def check_existing_application(admission_cycle=None):
     """
@@ -318,8 +353,6 @@ def get_edit_permission(applicant_name):
       Layer 1: Portal Config master switch (allow_edit_after_submit)
       Layer 2: Current stage is_editable flag
     """
-    import frappe
-
     # Load applicant
     applicant = frappe.get_doc("Applicant", applicant_name)
 
@@ -511,9 +544,19 @@ def download_application(applicant_name):
     pdf_content = None
     last_error = None
 
-    # Prefer Chrome to avoid wkhtmltopdf "unpatched qt" and "network error: InternalServerError"
-    for generator in ("chrome", "wkhtmltopdf"):
+    # Prefer wkhtmltopdf as it is more stable in web context for this environment.
+    # Fallback to Chrome if wkhtmltopdf fails.
+    for generator in ("wkhtmltopdf", "chrome"):
         try:
+            # For Chrome, we can try to pass options if the frappe version supports it
+            pdf_generator_options = {}
+            if generator == "chrome":
+                pdf_generator_options = {
+                    "no-sandbox": "",
+                    "disable-setuid-sandbox": "",
+                    "disable-dev-shm-usage": ""
+                }
+
             pdf_content = frappe.get_print(
                 "Applicant",
                 applicant_name,
@@ -521,24 +564,32 @@ def download_application(applicant_name):
                 as_pdf=True,
                 doc=applicant,
                 pdf_generator=generator,
+                pdf_options=pdf_generator_options if generator == "wkhtmltopdf" else None
             )
             if pdf_content:
                 break
         except Exception as e:
             last_error = e
             # Log error for each attempt to help debugging
+            error_details = {
+                "applicant": applicant_name,
+                "generator": generator,
+                "error": str(e),
+                "site": frappe.local.site,
+                "url": frappe.utils.get_url()
+            }
             frappe.log_error(
                 title=f"Application Download failed with {generator}",
-                message=f"Applicant: {applicant_name}\nError: {str(e)}\n{frappe.get_traceback()}"
+                message=frappe.as_json(error_details) + "\n" + frappe.get_traceback()
             )
-            if generator == "chrome":
+            if generator == "wkhtmltopdf":
                 continue
             # Do not raise here, let it reach the throw below if both fail
             break
 
     if not pdf_content:
         error_msg = f"PDF generation failed. Try: Print Format 'Applicant Application Form' → PDF generator = Chrome, or run: bench setup chromium. Error: {str(last_error)}"
-        frappe.throw(_(error_msg))
+        frappe.throw(frappe._(error_msg))
 
     frappe.local.response.filename = f"Application_{applicant_name}.pdf"
     frappe.local.response.filecontent = pdf_content
@@ -608,13 +659,49 @@ def download_receipt(receipt_name):
         pass
 
     frappe.flags.ignore_print_permissions = True
-    pdf_content = frappe.get_print(
-        "Applicant Payment Receipt",
-        receipt_name,
-        print_format,
-        as_pdf=True,
-        doc=receipt,
-    )
+    pdf_content = None
+    last_error = None
+
+    for generator in ("wkhtmltopdf", "chrome"):
+        try:
+            pdf_generator_options = {}
+            if generator == "chrome":
+                pdf_generator_options = {
+                    "no-sandbox": "",
+                    "disable-setuid-sandbox": "",
+                    "disable-dev-shm-usage": ""
+                }
+
+            pdf_content = frappe.get_print(
+                "Applicant Payment Receipt",
+                receipt_name,
+                print_format,
+                as_pdf=True,
+                doc=receipt,
+                pdf_generator=generator,
+                pdf_options=pdf_generator_options if generator == "wkhtmltopdf" else None
+            )
+            if pdf_content:
+                break
+        except Exception as e:
+            last_error = e
+            error_details = {
+                "receipt": receipt_name,
+                "generator": generator,
+                "error": str(e),
+                "site": frappe.local.site,
+                "url": frappe.utils.get_url()
+            }
+            frappe.log_error(
+                title=f"Receipt Download failed with {generator}",
+                message=frappe.as_json(error_details) + "\n" + frappe.get_traceback()
+            )
+            if generator == "wkhtmltopdf":
+                continue
+            break
+
+    if not pdf_content:
+        frappe.throw(frappe._("PDF generation failed for receipt. Error: {0}").format(str(last_error)))
 
     frappe.local.response.filename = f"Receipt_{receipt_name}.pdf"
     frappe.local.response.filecontent = pdf_content
@@ -680,9 +767,49 @@ def download_offer_letter(offer_letter):
 
     # Generate PDF
     frappe.flags.ignore_print_permissions = True
-    pdf_content = frappe.get_print("Offer Letter", offer_letter, as_pdf=True, doc=ol)
-    
+    pdf_content = None
+    last_error = None
+
+    for generator in ("wkhtmltopdf", "chrome"):
+        try:
+            pdf_generator_options = {}
+            if generator == "chrome":
+                pdf_generator_options = {
+                    "no-sandbox": "",
+                    "disable-setuid-sandbox": "",
+                    "disable-dev-shm-usage": ""
+                }
+
+            pdf_content = frappe.get_print(
+                "Offer Letter",
+                offer_letter,
+                as_pdf=True,
+                doc=ol,
+                pdf_generator=generator,
+                pdf_options=pdf_generator_options if generator == "wkhtmltopdf" else None
+            )
+            if pdf_content:
+                break
+        except Exception as e:
+            last_error = e
+            error_details = {
+                "offer_letter": offer_letter,
+                "generator": generator,
+                "error": str(e),
+                "site": frappe.local.site,
+                "url": frappe.utils.get_url()
+            }
+            frappe.log_error(
+                title=f"Offer Letter Download failed with {generator}",
+                message=frappe.as_json(error_details) + "\n" + frappe.get_traceback()
+            )
+            if generator == "wkhtmltopdf":
+                continue
+            break
+
+    if not pdf_content:
+        frappe.throw(frappe._("PDF generation failed for offer letter. Error: {0}").format(str(last_error)))
+
     frappe.local.response.filename = f"Offer_Letter_{applicant_name}.pdf"
     frappe.local.response.filecontent = pdf_content
     frappe.local.response.type = "download"
-
