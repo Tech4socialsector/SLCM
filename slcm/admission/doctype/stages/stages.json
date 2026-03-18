@@ -28,13 +28,14 @@
    "fieldname": "stage_type",
    "fieldtype": "Select",
    "label": "Stage Type",
-   "options": "\nApplication\nScreening\nExam\nInterview\nEvaluation\nMerit\nDocument\nOffer\nFee\nEnrollment"
+   "options": "\nApplication\nScreening\nExam\nInterview\nEvaluation\nMerit\nDocument\nOffer\nFee\nEnrollment",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 14:13:11.618596",
+ "modified": "2026-03-18 15:35:10.039245",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Stages",
