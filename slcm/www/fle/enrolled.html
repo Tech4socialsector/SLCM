@@ -1,0 +1,198 @@
+{% extends "templates/web.html" %}
+
+{% block title %}FLE — Registration Confirmed{% endblock %}
+
+{% block style %}
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap"
+    rel="stylesheet">
+<link rel="stylesheet" href="/fle/css/login.css?v=6">
+<style>
+    .navbar,
+    .web-footer,
+    header.navbar,
+    .navbar-expand,
+    #navbar,
+    .container>.navbar {
+        display: none !important;
+    }
+
+    .enrolled-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+        padding: 40px 36px 36px 36px;
+        max-width: 560px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .success-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #e8f5e9;
+        margin: 0 auto 20px auto;
+    }
+
+    .success-icon svg {
+        width: 32px;
+        height: 32px;
+        stroke: #2e7d32;
+        fill: none;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .enrolled-card h4 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        text-align: center;
+        margin-bottom: 24px;
+        line-height: 1.5;
+    }
+
+    .enrolled-links {
+        list-style: disc;
+        padding-left: 22px;
+        margin-bottom: 22px;
+    }
+
+    .enrolled-links li {
+        margin-bottom: 10px;
+        font-size: 0.93rem;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .enrolled-links a {
+        color: #8b0000;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .enrolled-links a:hover {
+        text-decoration: underline;
+    }
+
+    .enrolled-note {
+        font-size: 0.88rem;
+        color: #555;
+        line-height: 1.7;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 18px;
+        margin-top: 4px;
+    }
+
+    .enrolled-note a {
+        color: #8b0000;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .enrolled-note a:hover {
+        text-decoration: underline;
+    }
+
+    .logout-link {
+        display: block;
+        text-align: center;
+        margin-top: 22px;
+        font-size: 0.82rem;
+        color: #6c757d;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .logout-link:hover {
+        color: #8b0000;
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <!-- ═══ HEADER ═══ -->
+    <header class="sticky-header">
+        <div class="header-top">
+            <div class="logo-container">
+                <a href="https://pace.nls.ac.in/" target="_blank" rel="noopener noreferrer" title="Visit NLS PACE">
+                    <img src="/files/nlsiu-logo.jpg" alt="NLSIU Logo" class="logo-img"
+                        onerror="this.onerror=null; this.closest('.logo-container').style.visibility='hidden';">
+                </a>
+            </div>
+            <div class="brand-text">
+                <h1 class="university-name">National Law School of India University, Bengaluru</h1>
+                <h1 class="department-name">Foundations for a Legal Education Certificate Course (FLE)</h1>
+            </div>
+            <div class="header-spacer" aria-hidden="true"></div>
+        </div>
+        <nav class="navbar-navy" aria-label="Main navigation">
+            <p></p><br>
+            <p></p>
+        </nav>
+    </header>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="main-content">
+        <div class="enrolled-card">
+
+            <!-- Success icon -->
+            <div class="success-icon">
+                <svg viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+
+            <h4>You have successfully registered for the FLE programme.</h4>
+
+            <ul class="enrolled-links">
+                <li>
+                    <a href="/api/method/slcm.api.user.download_fle_application_pdf?docname={{ docname }}" target="_blank">
+                        View your application details here
+                    </a>.
+                </li>
+                <li>
+                    <a href="/api/method/slcm.api.user.download_fle_receipt?docname={{ docname }}" target="_blank">
+                        Payment receipt
+                    </a>.
+                </li>
+            </ul>
+
+            <p class="enrolled-note">
+                The class schedule will be shared closer to the start of the course.
+                If you have any questions or concerns please write to us at
+                <a href="mailto:fle@nls.ac.in">fle@nls.ac.in</a>
+            </p>
+
+            <a class="logout-link" onclick="logout_user()">Sign out</a>
+
+        </div>
+    </main>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="sticky-footer">
+        &copy; 2026 National Law School of India University, Bengaluru
+    </footer>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    function logout_user() {
+        frappe.call({
+            method: "logout",
+            callback: function () {
+                window.location.replace("/fle/login");
+            }
+        });
+    }
+</script>
+{% endblock %}

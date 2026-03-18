@@ -82,11 +82,20 @@ def update_password_fle(new_password, key, confirm_password=None):
     # Store prefill data server-side so the URL stays clean
     frappe.cache().hset("fle_prefill", user, {"email": email, "mobile": mobile})
 
-    # If the user already has a non-paid FLE document, redirect to edit it
+    # If the user has a paid FLE application, send them to the enrolled dashboard
+    paid_doc = frappe.db.get_value(
+        "Foundations for a Legal Education",
+        {"email_address": email, "payment_status": ["in", ["Authorized", "Paid", "Captured"]]},
+        "name",
+    )
+    if paid_doc:
+        return "/fle/enrolled"
+
+    # If the user has an unpaid/incomplete document, redirect to continue it
     existing_doc = frappe.db.get_value(
         "Foundations for a Legal Education",
-        {"email_address": email, "payment_status": ["not in", ["Authorized", "Paid"]]},
-        "name"
+        {"email_address": email, "payment_status": ["not in", ["Authorized", "Paid", "Captured"]]},
+        "name",
     )
     if existing_doc:
         return f"/foundations-for-a-legal-education/{existing_doc}"
@@ -169,12 +178,21 @@ def login_fle_user(usr, pwd):
     # Store prefill data server-side so the URL stays clean
     frappe.cache().hset("fle_prefill", frappe.session.user, {"email": email, "mobile": mobile})
 
-    # If the user already has a non-paid FLE document (e.g. payment was cancelled/failed),
-    # redirect them to edit that existing document instead of starting a new one.
+    # If the user has a paid FLE application, send them to the enrolled dashboard
+    paid_doc = frappe.db.get_value(
+        "Foundations for a Legal Education",
+        {"email_address": email, "payment_status": ["in", ["Authorized", "Paid", "Captured"]]},
+        "name",
+    )
+    if paid_doc:
+        frappe.local.response["home_page"] = "/fle/enrolled"
+        return
+
+    # If the user has an unpaid/incomplete document, redirect them to continue it
     existing_doc = frappe.db.get_value(
         "Foundations for a Legal Education",
-        {"email_address": email, "payment_status": ["not in", ["Authorized", "Paid"]]},
-        "name"
+        {"email_address": email, "payment_status": ["not in", ["Authorized", "Paid", "Captured"]]},
+        "name",
     )
     if existing_doc:
         frappe.local.response["home_page"] = f"/foundations-for-a-legal-education/{existing_doc}"
@@ -208,22 +226,208 @@ def download_fle_receipt(docname):
         if "System Manager" not in frappe.get_roles(frappe.session.user):
             frappe.throw(_("Not permitted"), frappe.PermissionError)
 
-    # Generate PDF bypassing standard print permission check
-    frappe.flags.ignore_print_permissions = True
-    try:
-        html = frappe.get_print(
-            "Foundations for a Legal Education",
-            docname,
-            print_format=None,
-            no_letterhead=0
-        )
-    finally:
-        frappe.flags.ignore_print_permissions = False
-
+    from payments.templates.pages.payment_success import _get_photo_src
     from frappe.utils.pdf import get_pdf
-    pdf_content = get_pdf(html)
+    from frappe.utils import flt, fmt_money
 
-    frappe.local.response.filename = f"FLE_Receipt_{docname}.pdf"
+    def esc(v):
+        return frappe.utils.escape_html(str(v or ""))
+
+    logo_url = frappe.utils.get_url("/files/nlsiu-logo.jpg")
+    photo_src = _get_photo_src(doc.candidate_photo)
+    if photo_src:
+        photo_td = f'<td style="width: 100px; text-align: right; vertical-align: middle;"><img src="{photo_src}" style="width: 90px; height: 110px; border: 1px solid #E5E7EB;" /></td>'
+    else:
+        photo_td = '<td style="width: 100px;"></td>'
+
+    amount_formatted = fmt_money(flt(doc.paid_amount), currency="INR") if doc.paid_amount else str(doc.paid_amount or "")
+
+    html = f"""
+        <html>
+        <head>
+            <meta charset="utf-8" />
+            <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet" />
+            <style>
+                body {{ font-family: "Merriweather", serif; font-size: 12px; color: #111827; }}
+                .h1 {{ font-size: 18px; font-weight: 700; margin: 12px 0 12px 0; }}
+                .sub {{ color: #4b5563; margin: 0 0 12px 0; }}
+                table {{ width: 100%; border-collapse: collapse; }}
+                td {{ padding: 10px 12px; border: 1px solid #E5E7EB; vertical-align: top; }}
+                td.k {{ width: 35%; background: #F9FAFB; font-weight: 600; }}
+                table.header-table {{ border: none; margin-bottom: 20px; border-bottom: 2px solid #a81119; padding-bottom: 10px; }}
+                table.header-table td {{ border: none; padding: 0; vertical-align: middle; }}
+                .header-title-container {{ text-align: center; color: #a81119; font-family: "Merriweather", serif; }}
+                .university-name {{ font-size: 16px; font-weight: bold; margin: 0; }}
+                .department-name {{ font-size: 14px; font-weight: bold; margin: 5px 0 0 0; }}
+            </style>
+        </head>
+        <body>
+            <table class="header-table">
+                <tr>
+                    <td style="width: 80px;"><img src="{esc(logo_url)}" style="width: 60px; height: auto;" /></td>
+                    <td class="header-title-container">
+                        <div class="university-name">National Law School of India University, Bengaluru</div>
+                        <div class="department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
+                    </td>
+                    {photo_td}
+                </tr>
+            </table>
+            <div class="h1">Payment receipt</div>
+            <p class="sub">Reference: {esc(docname)}</p>
+            <table>
+                <tr><td class="k">Name</td><td>{esc(doc.candidate_name)}</td></tr>
+                <tr><td class="k">Email</td><td>{esc(doc.email_address)}</td></tr>
+                <tr><td class="k">Payment status</td><td>{esc(doc.payment_status)}</td></tr>
+                <tr><td class="k">Amount</td><td>{esc(amount_formatted)}</td></tr>
+                <tr><td class="k">Transaction ID</td><td>{esc(doc.payment_id)}</td></tr>
+                <tr><td class="k">Reference</td><td>{esc(docname)}</td></tr>
+                <tr><td class="k">Date</td><td>{esc(doc.modified)}</td></tr>
+            </table>
+        </body>
+        </html>
+    """
+
+    pdf_content = get_pdf(html)
+    frappe.local.response.filename = f"Receipt-{docname}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
+
+
+@frappe.whitelist()
+def download_fle_application_pdf(docname):
+    if not docname:
+        frappe.throw(_("Document name required"))
+
+    if not frappe.db.exists("Foundations for a Legal Education", docname):
+        frappe.throw(_("Document not found"), frappe.DoesNotExistError)
+
+    doc = frappe.get_doc("Foundations for a Legal Education", docname)
+
+    # Only allow owner or System Manager
+    if frappe.session.user != doc.owner:
+        if "System Manager" not in frappe.get_roles(frappe.session.user):
+            frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    from payments.templates.pages.payment_success import _get_photo_src
+    from frappe.utils.pdf import get_pdf
+
+    def esc(v):
+        return frappe.utils.escape_html(str(v or ""))
+
+    def row(label, value):
+        return f'<tr><td class="k">{esc(label)}</td><td>{esc(value)}</td></tr>'
+
+    def sec(title):
+        return f'<tr><td colspan="2" class="sec-head">{esc(title)}</td></tr>'
+
+    logo_url = frappe.utils.get_url("/files/nlsiu-logo.jpg")
+    photo_src = _get_photo_src(doc.candidate_photo)
+    if photo_src:
+        photo_td = f'<td style="width: 110px; text-align: right; vertical-align: middle;"><img src="{photo_src}" style="width: 100px; height: 125px; border: 1px solid #E5E7EB;" /></td>'
+    else:
+        photo_td = '<td style="width: 110px;"></td>'
+
+    year_of_passing = doc.year_of_passing or ""
+    if year_of_passing == "Prior to 2016" and doc.please_specify_the_year_of_passing:
+        year_of_passing = f"Prior to 2016 ({doc.please_specify_the_year_of_passing})"
+
+    occupation = doc.candidate_current_occupation or ""
+    if occupation == "Other" and doc.if_other4:
+        occupation = f"Other ({doc.if_other4})"
+
+    state = doc.candidates_state or ""
+    if state == "Other" and doc.if_other3:
+        state = f"Other ({doc.if_other3})"
+
+    board = doc.latest_board_attended or ""
+    if board == "Other" and doc.if_others2:
+        board = f"Other ({doc.if_others2})"
+
+    exam = doc.last_class_attended or ""
+    if exam == "Other" and doc.if_others1:
+        exam = f"Other ({doc.if_others1})"
+
+    where_heard = doc.where_did_you_hear or ""
+    if where_heard == "Other" and doc.if_others_mention_here:
+        where_heard = f"Other ({doc.if_others_mention_here})"
+
+    html = f"""
+        <html>
+        <head>
+            <meta charset="utf-8" />
+            <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet" />
+            <style>
+                body {{ font-family: "Merriweather", serif; font-size: 11px; color: #111827; }}
+                table.header-table {{ border: none; margin-bottom: 16px; border-bottom: 2px solid #a81119; padding-bottom: 8px; width: 100%; border-collapse: collapse; }}
+                table.header-table td {{ border: none; padding: 0; vertical-align: middle; }}
+                .header-title-container {{ text-align: center; color: #a81119; }}
+                .university-name {{ font-size: 15px; font-weight: bold; margin: 0; }}
+                .department-name {{ font-size: 12px; font-weight: bold; margin: 4px 0 0 0; }}
+                .app-ref {{ font-size: 11px; margin: 4px 0 0 0; color: #374151; }}
+                table.main {{ width: 100%; border-collapse: collapse; margin-bottom: 0; }}
+                table.main td {{ padding: 7px 10px; border: 1px solid #E5E7EB; vertical-align: top; }}
+                table.main td.k {{ width: 38%; background: #F9FAFB; font-weight: 600; }}
+                table.main td.sec-head {{ background: #a81119; color: #fff; font-weight: 700; font-size: 11px; padding: 5px 10px; }}
+            </style>
+        </head>
+        <body>
+            <table class="header-table">
+                <tr>
+                    <td style="width: 75px;"><img src="{esc(logo_url)}" style="width: 55px; height: auto;" /></td>
+                    <td class="header-title-container">
+                        <div class="university-name">National Law School of India University, Bengaluru</div>
+                        <div class="department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
+                        <div class="app-ref">Application form — {esc(doc.name)}</div>
+                    </td>
+                    {photo_td}
+                </tr>
+            </table>
+            <table class="main">
+                {sec("Candidate details")}
+                {row("Application number", doc.name)}
+                {row("Submission date", doc.timestamp)}
+                {row("Name on certificate", doc.candidate_name)}
+                {row("Email address", doc.email_address)}
+                {row("Current occupation", occupation)}
+                {row("Gender", doc.candidate_gender)}
+                {row("Date of birth", doc.candidate_dob)}
+                {row("Nationality", doc.candidate_nationality)}
+                {row("Country of residence", doc.country_of_residence)}
+                {row("State", state)}
+                {row("City", doc.city)}
+                {row("Address line 1", doc.address_line_1)}
+                {row("Pincode", doc.pincode)}
+                {row("Contact number", doc.candidate_contact_number)}
+                {row("Where did you hear about FLE?", where_heard)}
+
+                {sec("Educational background")}
+                {row("Last examination attended", exam)}
+                {row("Latest board", board)}
+                {row("Year of passing", year_of_passing)}
+                {row("Last institution attended", doc.last_institution_attended)}
+
+                {sec("Parent / guardian details")}
+                {row("Relationship with candidate", doc.relationship_with_candidate)}
+                {row("Parent's name", doc.parent_name)}
+                {row("Parent's contact number", doc.parent_contact_number)}
+                {row("Parent's email address", doc.parent_email_address)}
+                {row("Parent's occupation", doc.parent_occupation)}
+
+                {sec("Payment details")}
+                {row("Payment status", doc.payment_status)}
+                {row("Amount paid", doc.paid_amount)}
+                {row("Payment ID", doc.payment_id)}
+
+                {sec("Application status")}
+                {row("Enrollment status", doc.enrollment_status)}
+                {row("Declaration consent", "Yes" if doc.declaration_consent else "No")}
+            </table>
+        </body>
+        </html>
+    """
+
+    pdf_content = get_pdf(html)
+    frappe.local.response.filename = f"FLE-Application-{docname}.pdf"
     frappe.local.response.filecontent = pdf_content
     frappe.local.response.type = "download"
 
