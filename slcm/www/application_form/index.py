@@ -5,6 +5,7 @@ from frappe import _
 from frappe.utils import flt, now, nowdate, strip_html
 
 from slcm.utils.phone_utils import sanitize_phone_for_frappe
+from slcm.admission.utils.portal import is_application_editable
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -149,7 +150,7 @@ def get_context(context):
             doc = frappe.get_doc("Applicant", existing.name)
             context.applicant_data = frappe.parse_json(frappe.as_json(doc))
             context.application_submitted = (doc.application_status == "Submitted")
-            context.application_editable = (doc.application_status == "Draft")
+            context.application_editable = is_application_editable(doc)
     except frappe.Redirect:
         raise
     except Exception:
@@ -533,12 +534,12 @@ def save_form(data):
     email = frappe.db.get_value("User", user, "email") or user
     is_submit = bool(data.get("__submit"))
 
-    # ── Allow edits only when application status is Draft ─────────────
+    # ── Allow edits based on Admission Cycle Stage ─────────────
     existing_name = data.get("name")
     if existing_name:
-        current_status = frappe.db.get_value("Applicant", existing_name, "application_status")
-        if current_status and current_status != "Draft":
-            return {"error": _("Only draft applications can be edited. This application's status is '{0}'.").format(current_status or "unknown")}
+        applicant = frappe.get_doc("Applicant", existing_name, ignore_permissions=True)
+        if not is_application_editable(applicant):
+            return {"error": _("This application is currently not editable as per its admission stage ('{0}').").format(applicant.application_status or "unknown")}
     try:
         meta = frappe.get_meta("Applicant")
     except Exception:

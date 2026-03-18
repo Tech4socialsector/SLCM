@@ -1,5 +1,5 @@
 import frappe
-from slcm.admission.utils.portal import get_portal_config
+from slcm.admission.utils.portal import get_portal_config, is_application_editable
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 
 login_required = True
@@ -228,6 +228,7 @@ def get_context(context):
             return
 
         context.selected_app = applicant
+        context.is_editable = is_application_editable(applicant)
 
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
@@ -570,6 +571,7 @@ def get_context(context):
 
         summary = {
             "name": app_doc.name,
+            "is_editable": is_application_editable(app_doc),
             "header": {
                 "program_name": program_name,
                 "applicant_id": app_doc.name,

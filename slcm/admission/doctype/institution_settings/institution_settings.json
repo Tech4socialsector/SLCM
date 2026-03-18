@@ -10,12 +10,12 @@
   "logo",
   "portal_theme_color",
   "section_break_campus",
+  "allow_self_configuration",
   "enable_multi_campus",
   "max_campus_preferences",
   "section_break_compliance",
   "compliance_mode",
   "col_break_2",
-  "allow_self_configuration",
   "onboarding_complete",
   "section_break_payment",
   "payment_gateway",
@@ -64,6 +64,7 @@
   {
    "fieldname": "section_break_campus",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Campus Configuration"
   },
   {
@@ -187,7 +188,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-03-17 10:17:58.754958",
+ "modified": "2026-03-18 09:48:25.865969",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Institution Settings",

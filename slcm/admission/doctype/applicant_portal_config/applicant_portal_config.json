@@ -164,9 +164,9 @@
    "label": "Maintenance message"
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_programs",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Program Display"
   },
   {
@@ -189,7 +189,6 @@
    "label": "Show Eligibility Summary on Cards"
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_edit_rules",
    "fieldtype": "Section Break",
    "hidden": 1,
@@ -225,9 +224,9 @@
    "label": "Allow Document Upload After Submission"
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_stage",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Stage Progress Display"
   },
   {
@@ -245,9 +244,9 @@
    "options": "Steps\nTimeline"
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_downloads",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Downloads"
   },
   {
@@ -268,9 +267,9 @@
    "options": "Print Format"
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_notifications",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Notification Settings"
   },
   {
@@ -286,9 +285,9 @@
    "label": "Show Portal Bell Notifications"
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_messages",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Applicant Messages"
   },
   {
@@ -426,7 +425,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-03-16 10:55:55.294942",
+ "modified": "2026-03-18 09:52:58.536535",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",
