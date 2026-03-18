@@ -79,8 +79,8 @@ def update_password_fle(new_password, key, confirm_password=None):
     email = user_doc.email or ""
     mobile = user_doc.mobile_no or ""
 
-    # Store prefill data server-side so the URL stays clean
-    frappe.cache().hset("fle_prefill", user, {"email": email, "mobile": mobile})
+    # Store prefill data server-side so the URL stays clean (email only)
+    frappe.cache().hset("fle_prefill", user, {"email": email})
 
     # If the user has a paid FLE application, send them to the enrolled dashboard
     paid_doc = frappe.db.get_value(
@@ -175,8 +175,8 @@ def login_fle_user(usr, pwd):
     email = user_doc.email or ""
     mobile = user_doc.mobile_no or ""
 
-    # Store prefill data server-side so the URL stays clean
-    frappe.cache().hset("fle_prefill", frappe.session.user, {"email": email, "mobile": mobile})
+    # Store prefill data server-side so the URL stays clean (email only)
+    frappe.cache().hset("fle_prefill", frappe.session.user, {"email": email})
 
     # If the user has a paid FLE application, send them to the enrolled dashboard
     paid_doc = frappe.db.get_value(
