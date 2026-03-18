@@ -120,7 +120,7 @@
    "icon": "\u27a1\ufe0f",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Update Result ",
+   "label": "Result Export",
    "link_to": "Data Export",
    "link_type": "DocType",
    "show_arrow": 0,
@@ -132,7 +132,7 @@
    "icon": "\u27a1\ufe0f",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Export Result ",
+   "label": "Update Result ",
    "link_to": "Data Import",
    "link_type": "DocType",
    "show_arrow": 0,
@@ -187,7 +187,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-18 12:38:19.866978",
+ "modified": "2026-03-18 15:04:43.061897",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Test",

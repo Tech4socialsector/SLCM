@@ -2048,9 +2048,15 @@
         <!-- MAIN FORM -->
         <main>
             <form id="appForm" class="{% if application_submitted %}application-submitted{% endif %}" novalidate>
-                {% if not application_editable %}
+                {% if not application_editable or applicant_data.name %}
                 <div id="formViewOnlyBanner" style="display:block; margin-bottom:14px; padding:12px 16px; background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; font-size:13px; color:#92400e;">
-                    <strong>View Only Mode.</strong> You can view your application but cannot edit it in the current stage (<strong>{{ applicant_data.application_status or '—' }}</strong>).
+                    {% if applicant_data.application_status == 'Draft' or not applicant_data.application_status %}
+                        <strong>Draft Mode.</strong> You can edit your application details except for your <strong>Email and Phone Number</strong>.
+                    {% elif application_editable %}
+                        <strong>Partial Editing Mode.</strong> Most fields are read-only after submission, but you can still update <strong>Parent/Guardian details</strong> in the current stage (<strong>{{ applicant_data.application_status or '—' }}</strong>).
+                    {% else %}
+                        <strong>View Only Mode.</strong> You can view your application but cannot edit it in the current stage (<strong>{{ applicant_data.application_status or '—' }}</strong>).
+                    {% endif %}
                 </div>
                 {% else %}
                 <div id="formViewOnlyBanner" style="display:none;"></div>
@@ -4132,18 +4138,20 @@ I hereby undertake that the information and documents furnished by me are true t
         const nextBtn = document.getElementById('nextBtn');
         if (prevBtn) prevBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
         if (nextBtn) {
-            if (APPLICATION_SUBMITTED && currentStep === TOTAL_STEPS) {
-                nextBtn.textContent = 'Save';
-                nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg> Save';
-            } else if (currentStep === TOTAL_STEPS) {
-                nextBtn.textContent = 'Submit application';
-                nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Submit application';
-            } else {
+            const isDraft = formData.application_status === 'Draft' || !formData.name;
+
+            if (currentStep < TOTAL_STEPS) {
                 nextBtn.innerHTML = 'Next <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
+            } else {
+                if (isDraft) {
+                    nextBtn.innerHTML = 'Submit application <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+                } else {
+                    nextBtn.innerHTML = 'Save <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+                }
             }
 
-            // Ensure Submit/Save is hidden on last step if not editable
-            if (!APPLICATION_EDITABLE && currentStep === TOTAL_STEPS) {
+            // Ensure Submit/Save is hidden on last step if not editable (and not draft)
+            if (!isDraft && !APPLICATION_EDITABLE && currentStep === TOTAL_STEPS) {
                 nextBtn.style.display = 'none';
             } else {
                 nextBtn.style.display = '';
@@ -4156,12 +4164,20 @@ I hereby undertake that the information and documents furnished by me are true t
     // ═══════════════════════════════════════════════════════
     function handleNext() {
         collectFormData();
-        if (APPLICATION_EDITABLE && !validateCurrentStep()) return;
+        
+        // Validation check
+        const isDraft = formData.application_status === 'Draft' || !formData.name;
+        if ((isDraft || APPLICATION_EDITABLE) && !validateCurrentStep()) return;
+        
         completedSteps.add(currentStep);
         if (currentStep < TOTAL_STEPS) {
             showStep(currentStep + 1);
         } else {
-            if (APPLICATION_EDITABLE) submitForm();
+            if (isDraft) {
+                submitForm();
+            } else if (APPLICATION_EDITABLE) {
+                saveDraft();
+            }
         }
     }
 
@@ -5527,13 +5543,6 @@ I hereby undertake that the information and documents furnished by me are true t
                 if (['class_x_percentage', 'class_x_cgpa', 'class_x_year_of_completion', 'class_xii_year_of_completion', 'class_xii_percentage', 'class_xii_cgpa', 'percentage', 'hsc_percentage'].indexOf(key) >= 0 && (val === 0 || val === '0')) displayVal = '';
                 el.value = displayVal;
             }
-
-            if (isSubmitted) {
-                el.disabled = true;
-                if (el.classList.contains('select2-hidden-accessible')) {
-                    $(el).prop('disabled', true).trigger('change');
-                }
-            }
         });
 
         // Program level
@@ -5544,7 +5553,7 @@ I hereby undertake that the information and documents furnished by me are true t
             setGuardianRequiredFromValue(formData.guardian_required);
         }
 
-        if (isSubmitted) {
+        if (formData.name) {
             applyReadonlyState();
         }
         // Default nationality to India for new applications
@@ -5723,7 +5732,12 @@ I hereby undertake that the information and documents furnished by me are true t
     //  FORM SUBMISSION (eligibility check, then application fee modal if needed)
     // ═══════════════════════════════════════════════════════
     async function submitForm() {
-        if (!APPLICATION_EDITABLE) { showToast('This application is currently not editable as per its admission stage.', 'error'); return; }
+        if (!APPLICATION_EDITABLE && formData.application_status !== 'Draft') { showToast('This application is currently not editable as per its admission stage.', 'error'); return; }
+        if (formData.application_status === 'Draft') {
+            // draft is fully editable except phone/email - handled by applyReadonlyState
+        } else if (APPLICATION_EDITABLE) {
+            showToast('In this stage, only parent/guardian details can be updated.', 'info');
+        }
         // 1. Declaration is validated (handled within Step 6 validation, but checked explicitly for immediate feedback)
         if (!document.getElementById('declaration_undertaking')?.checked) {
             showToast('Please accept the declaration before submitting.', 'error');
@@ -6072,7 +6086,12 @@ I hereby undertake that the information and documents furnished by me are true t
     //  SAVE DRAFT (no auto-save)
     // ═══════════════════════════════════════════════════════
     async function saveDraft() {
-        if (!APPLICATION_EDITABLE) { showToast('This application is currently not editable as per its admission stage.', 'error'); return; }
+        if (!APPLICATION_EDITABLE && formData.application_status !== 'Draft') { showToast('This application is currently not editable as per its admission stage.', 'error'); return; }
+        if (formData.application_status === 'Draft') {
+            // draft is fully editable except phone/email - handled by applyReadonlyState
+        } else if (APPLICATION_EDITABLE) {
+            showToast('In this stage, only parent/guardian details can be updated.', 'info');
+        }
         collectFormData();
         const saveText = document.getElementById('saveText');
         const btn = document.getElementById('saveDraftBtn');
@@ -6128,20 +6147,65 @@ I hereby undertake that the information and documents furnished by me are true t
     //  TOAST & ELIGIBILITY ERROR DISPLAY
     // ═══════════════════════════════════════════════════════
     function applyReadonlyState() {
-        // Disable all standard inputs; keep file download buttons enabled so user can download attachments when status is submitted
         const form = document.getElementById('appForm');
         if (!form) return;
 
+        const isDraft = formData.application_status === 'Draft' || !formData.name;
+
+        // Parent/Guardian fields allowed in partial editing mode
+        const parentFields = [
+            'father_name', 'father_email', 'father_mobile', 'father_occupation', 'father_mobile_cc', 'father_mobile_num',
+            'mother_name', 'mother_email', 'mother_mobile', 'mother_occupation', 'mother_mobile_cc', 'mother_mobile_num',
+            'guardian_required', 'guardian_name', 'guardian_mobile', 'guardian_email', 'guardian_mobile_cc', 'guardian_mobile_num'
+        ];
+
+        // Fields NEVER editable after first save (even in Draft)
+        const restrictedInDraft = [
+            'email', 'mobile_number', 'mobile_number_cc', 'mobile_number_num',
+            'alternate_contact', 'alternate_contact_cc', 'alternate_contact_num'
+        ];
+
         const inputs = form.querySelectorAll('input, select, textarea, button:not(.btn-next):not(.btn-prev):not(.step-circle):not(#downloadReceiptBtn):not(.btn-download-file):not(.btn-download-image):not(.btn-attach-download)');
+        
         inputs.forEach(el => {
-            el.disabled = true;
-            el.style.pointerEvents = 'none';
-            el.style.opacity = '0.7';
+            const fieldName = el.getAttribute('name') || el.id;
+            let shouldDisable = false;
+
+            if (isDraft) {
+                // In Draft: Everything editable EXCEPT restricted fields
+                if (restrictedInDraft.includes(fieldName)) {
+                    shouldDisable = true;
+                }
+            } else if (APPLICATION_EDITABLE) {
+                // In partial editing: ONLY parent fields are editable
+                if (!parentFields.includes(fieldName)) {
+                    shouldDisable = true;
+                }
+            } else {
+                // Not editable at all
+                shouldDisable = true;
+            }
+
+            if (shouldDisable) {
+                el.disabled = true;
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0.7';
+                if (el.classList.contains('select2-hidden-accessible')) {
+                    $(el).prop('disabled', true).trigger('change');
+                }
+            } else {
+                el.disabled = false;
+                el.style.pointerEvents = 'auto';
+                el.style.opacity = '1';
+                if (el.classList.contains('select2-hidden-accessible')) {
+                    $(el).prop('disabled', false).trigger('change');
+                }
+            }
         });
+
         ensureDownloadButtonsEnabled();
 
-
-        // When a file is uploaded, mark file-zone so we hide native "No file chosen" text in read-only
+        // File zones logic
         var fileFieldNames = ['id_proof', 'class_x_marksheet', 'class_xii_marksheet', 'national_test_certificate', 'caste_certificate', 'ews_certificate', 'pwd_certificate', 'cv', 'phd_proposal', 'ka_study_7yrs_certificate', 'ka_defence_child_certificate', 'ka_govt_child_certificate', 'ka_ais_child_certificate', 'ka_capf_child_certificate'];
         fileFieldNames.forEach(function (fname) {
             if (formData[fname] && String(formData[fname]).trim()) {
@@ -6153,23 +6217,33 @@ I hereby undertake that the information and documents furnished by me are true t
             }
         });
 
-        // Specific handling for custom file upload buttons or delete buttons
-        document.querySelectorAll('.btn-del-row, .btn-add-row, .upload-btn, .remove-btn').forEach(el => {
-            el.style.display = 'none';
-        });
-
-        // Hide Save Draft button
-        const saveBtn = document.getElementById('saveDraftBtn');
-        if (saveBtn) saveBtn.style.display = 'none';
-
-        // Hide Submit button on review step
-        const nextBtn = document.getElementById('nextBtn');
-        if (nextBtn && currentStep === TOTAL_STEPS) {
-            nextBtn.style.display = 'none';
+        // Hide add/remove buttons if not in Draft
+        if (!isDraft) {
+            document.querySelectorAll('.btn-del-row, .btn-add-row, .upload-btn, .remove-btn').forEach(el => {
+                el.style.display = 'none';
+            });
         }
 
-        // Add a Banner
-        // showValidationBanner("This application has been submitted and is now read-only.", "info");
+        // Save Draft button visibility
+        const saveBtn = document.getElementById('saveDraftBtn');
+        if (saveBtn) {
+            if (isDraft || APPLICATION_EDITABLE) {
+                saveBtn.style.display = 'inline-flex';
+            } else {
+                saveBtn.style.display = 'none';
+            }
+        }
+
+        // Submit button visibility
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn && currentStep === TOTAL_STEPS) {
+            if (!isDraft && !APPLICATION_EDITABLE) {
+                nextBtn.style.display = 'none';
+            } else if (!isDraft && APPLICATION_EDITABLE) {
+                // In partial editing mode, nextBtn is "Save" (already handled by updateNavButtons)
+                nextBtn.style.display = 'inline-flex';
+            }
+        }
     }
 
     function decodeHtmlEntities(str) {
