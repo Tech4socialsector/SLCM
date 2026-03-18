@@ -59,18 +59,18 @@ frappe.ui.form.on("Applicant", {
         );
 
         // Custom buttons for submitted docs
-        if (frm.doc.application_status && frm.doc.application_status !== "Draft") {
-            frm.add_custom_button(__("View Campus Status"), function () {
-                frappe.set_route("List", "Applicant Campus Preference", {
-                    applicant: frm.doc.name
-                });
-            });
-            frm.add_custom_button(__("View Documents"), function () {
-                frappe.set_route("List", "Applicant Document", {
-                    applicant: frm.doc.name
-                });
-            });
-        }
+        // if (frm.doc.application_status && frm.doc.application_status !== "Draft") {
+        //     frm.add_custom_button(__("View Campus Status"), function () {
+        //         frappe.set_route("List", "Applicant Campus Preference", {
+        //             applicant: frm.doc.name
+        //         });
+        //     });
+        //     frm.add_custom_button(__("View Documents"), function () {
+        //         frappe.set_route("List", "Applicant Document", {
+        //             applicant: frm.doc.name
+        //         });
+        //     });
+        // }
 
         // Record Application Fee Payment (offline)
         const feeStatus = (frm.doc.application_fee_status || "").trim();
