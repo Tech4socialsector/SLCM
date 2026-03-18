@@ -257,7 +257,7 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                         frm.reload_doc();
                         frappe.show_alert({
                             message: __(
-                                "Successfully allocated interview slots for {0} applicant(s).",
+                                "Successfully allocated slots for {0} applicant(s). Status updated to 'Interview Scheduled'.",
                                 [r.message]
                             ),
                             indicator: "green"

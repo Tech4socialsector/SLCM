@@ -21,16 +21,18 @@ class InterviewSeatAllocation(Document):
                 if self.interview_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
 
-        # Update Applicant's application_status in DB when admin chooses Scheduled or Absent (same as Entrance Test Seat Allocation).
-        if self.applicant and self.interview_status in ("Scheduled", "Absent"):
-            status_actually_changed = (
-                self.is_new()
-                or (doc_before and doc_before.interview_status != self.interview_status)
-            )
-            if status_actually_changed:
-                _update_applicant_status_for_interview_status(
-                    self.applicant, self.interview_status
-                )
+        # Update Applicant's application_status when relevant fields change
+        if self.applicant:
+            status_changed = False
+            if self.is_new():
+                status_changed = True
+            elif doc_before:
+                if (self.interview_status != doc_before.interview_status or 
+                    self.interview_result_status != doc_before.interview_result_status):
+                    status_changed = True
+            
+            if status_changed:
+                self._sync_applicant_status()
 
         # Fetch categories from Applicant if newly set or empty
         # Priority: Seat Allocation category (if already filled) vs Applicant's categories
@@ -43,33 +45,72 @@ class InterviewSeatAllocation(Document):
                 for cat in app_categories:
                     self.append("category", {"category": cat})
 
+    def _sync_applicant_status(self):
+        """
+        Determine and set the Applicant's application_status based on Interview and Result statuses.
+        - Result Pass → "Interview Completed"
+        - Result Fail → "Interview Rejected"
+        - Status Absent → "Interview Rejected"
+        - Status Scheduled → "Interview Scheduled"
+        """
+        new_status = None
+        
+        # 1. Result Status takes precedence
+        if self.interview_result_status == "Pass":
+            new_status = "Interview Completed"
+        elif self.interview_result_status == "Fail":
+            new_status = "Interview Rejected"
+        
+        # 2. Then Interview Status (only if no result status)
+        if not new_status:
+            if self.interview_status == "Absent":
+                new_status = "Interview Rejected"
+            elif self.interview_status == "Scheduled":
+                new_status = "Interview Scheduled"
+        
+        if not new_status:
+            return
 
-def _update_applicant_status_for_interview_status(applicant_name, interview_status):
-    """
-    Update Applicant's application_status (Applicant Status doctype) when
-    Interview Seat Allocation's interview_status is Scheduled or Absent.
-    - Scheduled → "Interview Scheduled"
-    - Absent → "Rejected"
-    """
-    status_map = {
-        "Scheduled": "Interview Scheduled",
-        "Absent": "Rejected",
-    }
-    new_status = status_map.get(interview_status)
-    if not new_status:
-        return
+        # Use helper to perform update
+        _update_applicant_status(self.applicant, new_status)
+
+
+def _update_applicant_status(applicant_name, new_status):
+    """Update Applicant's application_status and notify clients."""
     if not frappe.db.exists("Applicant Status", new_status):
         frappe.log_error(
             message=f"Applicant Status '{new_status}' does not exist. Create it in Applicant Status doctype.",
             title="Applicant Status Sync Skipped (Interview)",
         )
         return
+
     frappe.db.set_value("Applicant", applicant_name, "application_status", new_status)
+    frappe.db.commit()
     frappe.clear_document_cache("Applicant", applicant_name)
+    
+    # Notify clients
     frappe.publish_realtime(
         "applicant_application_status_updated",
         {"docname": applicant_name, "application_status": new_status},
     )
+
+
+def _update_applicant_status_for_interview_status(applicant_name, interview_status):
+    """Backward compatibility helper (deprecated but kept if called elsewhere)."""
+    status_map = {
+        "Scheduled": "Interview Scheduled",
+        "Absent": "Interview Rejected",
+    }
+    new_status = status_map.get(interview_status)
+    if new_status:
+        _update_applicant_status(applicant_name, new_status)
+
+def _update_applicant_status_for_interview_result_status(applicant_name, interview_result_status):
+    """Backward compatibility helper (deprecated but kept if called elsewhere)."""
+    if interview_result_status == "Pass":
+        _update_applicant_status(applicant_name, "Interview Completed")
+    elif interview_result_status == "Fail":
+        _update_applicant_status(applicant_name, "Interview Rejected")
 
 
 @frappe.whitelist()
@@ -339,7 +380,6 @@ def _send_reschedule_email(doc, email):
                     <tr><td style="padding:5px 0; color:#666;">Date:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_date or 'To be communicated'}</td></tr>
                     <tr><td style="padding:5px 0; color:#666;">Time:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_time or 'To be communicated'}</td></tr>
                     <tr><td style="padding:5px 0; color:#666;">Venue / Address:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_address or 'To be communicated'}</td></tr>
-                    <tr><td style="padding:5px 0; color:#666;">Interviewer:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_staff_name or doc.re_interview_staff_member or ''}</td></tr>
                 </table>
             </div>
 
