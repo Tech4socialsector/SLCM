@@ -317,7 +317,7 @@
    "fieldname": "result_status",
    "fieldtype": "Select",
    "label": "Result Status",
-   "options": "\nPass\nFail\nAbsent\nWithheld\nDisqualified"
+   "options": "\nPass\nFail\nWithheld\nDisqualified"
   },
   {
    "default": "0",
@@ -503,7 +503,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-13 15:07:44.656381",
+ "modified": "2026-03-18 11:21:50.490019",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

@@ -5,6 +5,7 @@ import frappe
 import json
 import re
 from frappe.model.document import Document
+from frappe.utils import now
 
 
 class InterviewList(Document):
@@ -137,24 +138,6 @@ class InterviewList(Document):
 
             allocation.save(ignore_permissions=True)
 
-            # Send notification email
-            email = row.email or ""
-            if not email and row.applicant_id:
-                try:
-                    email = frappe.db.get_value("Applicant", row.applicant_id, "email") or ""
-                except Exception:
-                    pass
-
-            if email:
-                try:
-                    _send_interview_slot_email(allocation, email, staff)
-                except Exception:
-                    import traceback
-                    frappe.log_error(
-                        message=traceback.format_exc(),
-                        title=f"Interview Slot Email Failed: {allocation.name}"
-                    )
-
             # Mark child row as Scheduled
             row.interview_status = "Scheduled"
             created_count += 1
@@ -162,6 +145,40 @@ class InterviewList(Document):
         self.save(ignore_permissions=True)
         frappe.db.commit()
 
+        # MASTER PIECE: Absolute direct status enforcement
+        for row_name in selected_applicants:
+            row = applicant_map.get(row_name)
+            if row and row.applicant_id:
+                # Direct SQL bypasses ALL potential locks or controller logic that might revert status
+                frappe.db.sql("""
+                    UPDATE `tabApplicant` 
+                    SET application_status = 'Interview Scheduled', modified = %(now)s 
+                    WHERE name = %(name)s
+                """, {"now": now(), "name": row.applicant_id})
+                
+                frappe.clear_document_cache("Applicant", row.applicant_id)
+                
+                # Notify UI with a small delay simulation via sequential calls
+                frappe.publish_realtime(
+                    "applicant_application_status_updated",
+                    {"docname": row.applicant_id, "application_status": "Interview Scheduled"},
+                )
+
+                # Send notification email
+                alloc_name = frappe.db.get_value("Interview Seat Allocation", {
+                    "interview_list": self.name,
+                    "applicant":      row.applicant_id
+                })
+                if alloc_name:
+                    allocation = frappe.get_doc("Interview Seat Allocation", alloc_name)
+                    email = row.email or frappe.db.get_value("Applicant", row.applicant_id, "email")
+                    if email:
+                        try:
+                            _send_interview_slot_email(allocation, email, staff)
+                        except Exception:
+                            frappe.log_error(title=f"Interview Slot Email Failed: {allocation.name}")
+        
+        frappe.db.commit()
         return created_count
 
 
@@ -182,8 +199,6 @@ def _send_interview_slot_email(allocation, email, staff):
                 <tr><td style="padding:5px 0; color:#666;">Date:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_date or 'To be communicated'}</td></tr>
                 <tr><td style="padding:5px 0; color:#666;">Time:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_time or 'To be communicated'}</td></tr>
                 <tr><td style="padding:5px 0; color:#666;">Venue / Address:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_address or 'To be communicated'}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Interviewer:</td><td style="padding:5px 0; font-weight:bold;">{staff.staff_name or ''}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Staff Contact:</td><td style="padding:5px 0; font-weight:bold;">{staff.contact_number or ''}</td></tr>
             </table>
         </div>
 
