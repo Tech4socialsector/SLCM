@@ -79,10 +79,22 @@ frappe.ready(function () {
                     }
                 }
                 if (data.mobile) {
-                    frappe.web_form.set_value('candidate_contact_number', data.mobile);
-                    if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['candidate_contact_number']) {
-                        frappe.web_form.fields_dict['candidate_contact_number'].df.read_only = 1;
-                        frappe.web_form.fields_dict['candidate_contact_number'].refresh();
+                    const phone_fld = frappe.web_form.fields_dict &&
+                        frappe.web_form.fields_dict['candidate_contact_number'];
+                    let mobile = data.mobile.trim();
+                    // Pre-format with country code so the phone control uses the simple
+                    // branch-1 path (value.includes("-")) instead of the async else-if
+                    // branch, which can cause the number to appear doubled.
+                    if (!mobile.startsWith('+') && phone_fld && phone_fld.$isd) {
+                        const isd = phone_fld.$isd.text().trim();
+                        if (isd) {
+                            mobile = isd + '-' + mobile;
+                        }
+                    }
+                    frappe.web_form.set_value('candidate_contact_number', mobile);
+                    if (phone_fld) {
+                        phone_fld.df.read_only = 1;
+                        phone_fld.refresh();
                     }
                 }
             }, 500);
