@@ -92,7 +92,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-17 10:17:40.130930",
+ "modified": "2026-03-16 12:07:10.597206",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Waitlist Rule",
@@ -112,15 +112,13 @@
    "write": 1
   },
   {
-   "create": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Admission Officer",
-   "share": 1,
-   "write": 1
+   "share": 1
   },
   {
    "create": 1,
@@ -143,18 +141,6 @@
    "read": 1,
    "report": 1,
    "role": "Merit Admin",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Admission Admin",
    "share": 1,
    "write": 1
   }
