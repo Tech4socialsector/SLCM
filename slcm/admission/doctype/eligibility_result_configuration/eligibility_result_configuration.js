@@ -11,7 +11,23 @@ frappe.ui.form.on("Eligibility Result Configuration", {
                         freeze: true,
                         freeze_message: __("Generating Results..."),
                         callback: function (r) {
-                            if (r.message) {
+                            if (r.message && typeof r.message === 'object') {
+                                let m = r.message;
+                                let msg = `
+                                    <p>Successfully generated <b>${m.total}</b> Eligibility Result records.</p>
+                                    <hr>
+                                    <ul>
+                                        <li>Interview Pass: <b>${m.interview_pass}</b></li>
+                                        <li>ET Pass (Interview Exempt): <b>${m.et_pass_exempt}</b></li>
+                                        <li>Dual Exempted (Entrance Test & Interview): <b>${m.dual_exempt}</b></li>
+                                    </ul>
+                                `;
+                                frappe.msgprint({
+                                    title: __("Generation Complete"),
+                                    indicator: "green",
+                                    message: msg,
+                                    wide: true
+                                });
                                 frm.reload_doc();
                             }
                         }
