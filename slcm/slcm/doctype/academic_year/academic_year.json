@@ -51,9 +51,9 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 14:57:58.085228",
+ "modified": "2026-03-18 15:40:02.366157",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "Academic Year",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
@@ -126,6 +126,30 @@
    "report": 1,
    "role": "Offer Letter Admin",
    "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Staff Member",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Admin",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

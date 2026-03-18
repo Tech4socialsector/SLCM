@@ -436,8 +436,7 @@
         <label class="lp-label" for="reg-email">Email address<span class="mandatory">*</span></label>
         <div class="lp-input-wrap">
           <input class="lp-input" type="email" id="reg-email"
-                 placeholder="your @email.com" autocomplete="email"
-                 onblur="verifyEmailInput()" oninput="handleEmailInput()">
+                 placeholder="your @email.com" autocomplete="email">
           <div id="email-status"></div>
         </div>
         <div class="lp-field-hint">We'll send a verification email to help you set your password.</div>
@@ -809,12 +808,12 @@ async function doRegister() {
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
   ], 'register')) return;
 
-  // Signup Restriction: Allow only if domain is valid
+  /* Signup Restriction: Skip for now
   if (EMAIL_VERIFICATION_STATUS !== 'domain_valid') {
     lpNotify('Please enter a valid email address.', 'error', 'register');
     lpFieldError('reg-email', 'Please provide a valid email with a working mail server.');
     return;
-  }
+  } */
 
   var btn   = document.getElementById('lp-reg-btn');
   var spin  = document.getElementById('lp-reg-spin');
