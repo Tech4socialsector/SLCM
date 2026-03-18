@@ -140,6 +140,16 @@ def reset_password_fle(user: str):
 @frappe.whitelist(allow_guest=True)
 def login_fle_user(usr, pwd):
     from frappe.auth import LoginManager
+
+    # Check if the user exists before attempting authentication
+    if not frappe.db.exists("User", usr):
+        frappe.clear_messages()
+        frappe.local.response["message"] = (
+            "No account found for this email. "
+            "Please register to create an account."
+        )
+        return
+
     try:
         login_manager = LoginManager()
         login_manager.authenticate(user=usr, pwd=pwd)
