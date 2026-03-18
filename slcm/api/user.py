@@ -82,6 +82,14 @@ def update_password_fle(new_password, key, confirm_password=None):
     # Store prefill data server-side so the URL stays clean
     frappe.cache().hset("fle_prefill", user, {"email": email, "mobile": mobile})
 
+    # If the user already has a non-paid FLE document, redirect to edit it
+    existing_doc = frappe.db.get_value(
+        "Foundations for a Legal Education",
+        {"email_address": email, "payment_status": ["not in", ["Authorized", "Paid"]]},
+        "name"
+    )
+    if existing_doc:
+        return f"/foundations-for-a-legal-education/{existing_doc}"
     return "/foundations-for-a-legal-education/new"
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -151,7 +159,17 @@ def login_fle_user(usr, pwd):
     # Store prefill data server-side so the URL stays clean
     frappe.cache().hset("fle_prefill", frappe.session.user, {"email": email, "mobile": mobile})
 
-    frappe.local.response["home_page"] = "/foundations-for-a-legal-education/new"
+    # If the user already has a non-paid FLE document (e.g. payment was cancelled/failed),
+    # redirect them to edit that existing document instead of starting a new one.
+    existing_doc = frappe.db.get_value(
+        "Foundations for a Legal Education",
+        {"email_address": email, "payment_status": ["not in", ["Authorized", "Paid"]]},
+        "name"
+    )
+    if existing_doc:
+        frappe.local.response["home_page"] = f"/foundations-for-a-legal-education/{existing_doc}"
+    else:
+        frappe.local.response["home_page"] = "/foundations-for-a-legal-education/new"
 
 @frappe.whitelist()
 def get_fle_prefill_data():

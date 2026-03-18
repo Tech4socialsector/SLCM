@@ -1265,6 +1265,11 @@ window.check_payment_status_buttons = function () {
     // Immediately remove any persisted title-hide CSS from /new page visits
     $('#fle-new-form-title-hide').remove();
 
+    // Always hide the Edit button — page defaults to edit mode until payment is authorized
+    if ($('#fle-hide-edit-btn-style').length === 0) {
+        $('head').append('<style id="fle-hide-edit-btn-style">.edit-button { display: none !important; visibility: hidden !important; }</style>');
+    }
+
     var checks = 0;
     var maxChecks = 40; // Max 20 seconds
 
@@ -1305,6 +1310,18 @@ window.check_payment_status_buttons = function () {
                     callback: function (r) {
                         if (r && r.message) {
                             const status = r.message.payment_status;
+                            if (status !== 'Authorized' && status !== 'Captured') {
+                                // Payment not yet done: auto-enter edit mode
+                                function triggerEditMode() {
+                                    var editBtn = $('.edit-button');
+                                    if (editBtn.length > 0) {
+                                        editBtn[0].click();
+                                    }
+                                }
+                                triggerEditMode();
+                                setTimeout(triggerEditMode, 500);
+                                setTimeout(triggerEditMode, 1500);
+                            }
                             if (status === 'Authorized' || status === 'Captured') {
                                 // Inject CSS to forcefully hide standard frappe action buttons
                                 if ($('#fle-hide-btn-style').length === 0) {
