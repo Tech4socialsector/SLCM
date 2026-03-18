@@ -382,7 +382,7 @@ html, body {
     <tr><td colspan="5" class="pf-sec">2. Family Information</td></tr>
 
     {# ── A. Father's Details (always shown) ── #}
-    <tr><td colspan="5" class="pf-subsec-parent">Father's Details</td></tr>
+    <tr><td colspan="5" class="pf-subsec">Father's Details</td></tr>
     <tr>
       <td class="pf-lbl">Father's Name</td>
       <td class="pf-val">{{ f(doc.father_name) }}</td>
@@ -397,7 +397,7 @@ html, body {
     </tr>
 
     {# ── B. Mother's Details (always shown) ── #}
-    <tr><td colspan="5" class="pf-subsec-parent">Mother's Details</td></tr>
+    <tr><td colspan="5" class="pf-subsec">Mother's Details</td></tr>
     <tr>
       <td class="pf-lbl">Mother's Name</td>
       <td class="pf-val">{{ f(doc.mother_name) }}</td>
@@ -413,7 +413,7 @@ html, body {
 
     {# ── C. Guardian Details (ONLY when guardian_required = "Yes" / 1) ── #}
     {%- if show_guardian -%}
-    <tr><td colspan="5" class="pf-subsec-guardian">Guardian Details</td></tr>
+    <tr><td colspan="5" class="pf-subsec">Guardian Details</td></tr>
     <tr>
       <td class="pf-lbl">Guardian's Name</td>
       <td class="pf-val">{{ f(doc.guardian_name) }}</td>
