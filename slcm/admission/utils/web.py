@@ -511,9 +511,8 @@ def download_application(applicant_name):
     pdf_content = None
     last_error = None
 
-    # Prefer wkhtmltopdf as it is more stable in web context for this environment.
-    # Fallback to Chrome if wkhtmltopdf fails.
-    for generator in ("wkhtmltopdf", "chrome"):
+    # Prefer Chrome to avoid wkhtmltopdf "unpatched qt" and "network error: InternalServerError"
+    for generator in ("chrome", "wkhtmltopdf"):
         try:
             pdf_content = frappe.get_print(
                 "Applicant",
@@ -527,11 +526,15 @@ def download_application(applicant_name):
                 break
         except Exception as e:
             last_error = e
+            # Log error for each attempt to help debugging
             frappe.log_error(
                 title=f"Application Download failed with {generator}",
                 message=f"Applicant: {applicant_name}\nError: {str(e)}\n{frappe.get_traceback()}"
             )
-            continue
+            if generator == "chrome":
+                continue
+            # Do not raise here, let it reach the throw below if both fail
+            break
 
     if not pdf_content:
         error_msg = f"PDF generation failed. Try: Print Format 'Applicant Application Form' → PDF generator = Chrome, or run: bench setup chromium. Error: {str(last_error)}"

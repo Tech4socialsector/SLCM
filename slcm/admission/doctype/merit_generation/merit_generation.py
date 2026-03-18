@@ -7,6 +7,7 @@ from slcm.admission.doctype.merit_rule.merit_service import generate_merit_for_l
 class MeritGeneration(Document):
 
     def autoname(self):
+        from frappe.model.naming import make_autoname
         if not self.admission_cycle or not self.campus:
             frappe.throw("Admission Cycle and Campus are required for naming.")
 
@@ -14,7 +15,8 @@ class MeritGeneration(Document):
         campus = self.campus.replace(" ", "").upper()
         level = (self.generation_type or "ALL").replace(" ", "").upper()
 
-        self.name = f"MG-{cycle}-{campus}-{level}"
+        # Use a sequence so multiple attempts are recorded separately
+        self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.#####")
 
     @frappe.whitelist()
     def trigger_generation(self):
@@ -64,7 +66,7 @@ class MeritGeneration(Document):
                 title="No Applicants Found"
             )
 
-        # 3. Check if a Merit List already exists for this program level
+        # 3. Check if a Published Merit List already exists
         existing = frappe.db.get_value(
             "Merit List",
             {
@@ -72,22 +74,27 @@ class MeritGeneration(Document):
                 "campus": self.campus,
                 "program_level": program_level
             },
-            ["name", "docstatus"],
+            ["name", "status", "docstatus"],
             as_dict=True
         )
         if existing:
-            merit = frappe.get_doc("Merit List", existing.get("name"))
-            if merit.docstatus == 1 and merit.get("merit_applicants"):
+            if existing.get("status") == "Published":
+                merit = frappe.get_doc("Merit List", existing.get("name"))
                 self.status = "Completed"
                 self.generated_on = merit.generated_on
                 self.save()
                 frappe.msgprint(
-                    f"Merit List '{merit.name}' already exists for {program_level}. "
-                    f"<a href='/app/merit-list/{merit.name}'>Click here to view it</a>.",
-                    title="Merit List Already Exists",
-                    indicator="blue"
+                    f"Merit List '{merit.name}' is already PUBLISHED. "
+                    f"Unpublish it first if you need to fix or regenerate. "
+                    f"<a href='/app/merit-list/{merit.name}'>View List</a>.",
+                    title="Merit List Published",
+                    indicator="orange"
                 )
                 return
+            else:
+                # If existing list is Generated/Draft, let it fall through to enqueue/sync generation
+                # which will now handle the cancellation/re-creation in merit_service.py
+                pass
 
         # 4. All validations passed — enqueue background job
         self.status = "In Progress"

@@ -189,6 +189,7 @@ def create_invoice(docname):
 	invoice.invoice_date = nowdate()
 	invoice.due_date = add_days(nowdate(), 15)
 	invoice.applicant_fee_assignment = doc.name
+	invoice.scholarship_amount = doc.scholarship_amount
 
 	for row in doc.fee_components:
 		invoice.append("fee_components", {

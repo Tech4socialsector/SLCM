@@ -198,7 +198,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-17 10:28:52.813249",
+ "modified": "2026-03-16 11:02:40.347500",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",
@@ -256,17 +256,6 @@
    "read": 1,
    "report": 1,
    "role": "Campus Admin",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Scholarship Admin",
    "share": 1,
    "write": 1
   }

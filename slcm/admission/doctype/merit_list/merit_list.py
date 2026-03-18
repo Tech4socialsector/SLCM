@@ -126,11 +126,11 @@ def unpublish_merit_list(merit_list_name):
     # Audit log
     frappe.get_doc({
         "doctype": "Admission Audit Log",
-        "action": "Modified",
+        "action": "Unpublished",
         "reference_doctype": "Merit List",
         "reference_name": merit_list_name,
         "performed_by": frappe.session.user,
-        "reason": f"Merit List {merit_list_name} unpublished by {frappe.session.user}"
+        "reason": f"Merit List {merit_list_name} unpublished by {frappe.session.user}. It is now open for corrections or regeneration."
     }).insert(ignore_permissions=True)
 
     frappe.db.commit()

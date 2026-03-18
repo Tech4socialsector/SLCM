@@ -41,7 +41,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Draft\nIn Progress\nCompleted\nFailed"
+   "options": "Draft\nIn Progress\nCompleted\nFailed",
+   "read_only": 1
   },
   {
    "fieldname": "generated_on",
@@ -52,7 +53,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 10:17:04.243654",
+ "modified": "2026-03-18 14:19:24.340714",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit Generation",
@@ -96,16 +97,13 @@
    "write": 1
   },
   {
-   "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Admission Admin",
-   "share": 1,
-   "write": 1
+   "share": 1
   }
  ],
  "row_format": "Dynamic",
