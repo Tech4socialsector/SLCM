@@ -12,6 +12,7 @@
   "email",
   "contact_number",
   "interview_address",
+  "interview_location",
   "column_break_ism1",
   "designation",
   "is_active",
@@ -113,12 +114,17 @@
    "fieldtype": "Small Text",
    "label": "Interview Address",
    "reqd": 1
+  },
+  {
+   "fieldname": "interview_location",
+   "fieldtype": "Geolocation",
+   "label": "Interview Location"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-13 17:57:44.154275",
+ "modified": "2026-03-18 18:46:55.164589",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Staff Member",
