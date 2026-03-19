@@ -1,14 +1,10 @@
 {#- ================================================================
-    NLSIU — Applicant Application Form — Print Format  v13
-    ----------------------------------------------------------------
-    CHANGES FROM v12:
-    • Annual Income removed from Father, Mother, Guardian rows
-    • Father row layout fixed: Name+Occupation on row1,
-      Mobile+Email on row2 (proper 5-col colspan, no overflow)
-    • Mother row layout same clean 2-row structure
-    • Guardian row: Name+Relationship row1, Mobile+Email row2
-      (Annual Income removed, Address conditional)
-    • guardian_required string fix retained from v12
+    NLSIU — Applicant Application Form — Print Format  v8
+    FIXES:
+      1. Candidate photo: uses get_encoded_file() / data-URI so
+         wkhtmltopdf renders it correctly (no HTTP fetch needed).
+      2. Responsive paper sizes: CSS custom properties drive all
+         widths/heights. Change --paper-* vars for A4/Letter/Legal.
     ================================================================ -#}
 
 {%- set _site = frappe.utils.get_url() -%}
@@ -45,25 +41,85 @@
 {%- endif -%}
 {%- set _addr_str = _addr_parts | join(', ') -%}
 {%- if doc.pincode and doc.pincode not in ['None',''] -%}
-  {%- set _addr_str = _addr_str ~ (' \u2013 ' if _addr_str else '') ~ doc.pincode -%}
+  {%- set _addr_str = _addr_str ~ (' – ' if _addr_str else '') ~ doc.pincode -%}
+{%- endif -%}
+
+{#- ── Photo: encode to data-URI so wkhtmltopdf renders it ──────
+    get_file_b64(path) returns base64 string.
+    Falls back gracefully if file not found.                     -#}
+{%- set _photo_src = '' -%}
+{%- if doc.candidate_photo -%}
+  {%- set _photo_b64 = get_file_b64(doc.candidate_photo) -%}
+  {%- if _photo_b64 -%}
+    {%- set _photo_ext = (doc.candidate_photo.split('.')[-1] | lower) -%}
+    {%- set _photo_mime = 'image/jpeg' if _photo_ext in ['jpg','jpeg'] else ('image/png' if _photo_ext == 'png' else 'image/webp') -%}
+    {%- set _photo_src = 'data:' ~ _photo_mime ~ ';base64,' ~ _photo_b64 -%}
+  {%- else -%}
+    {# Fallback: absolute URL (works when Frappe server is accessible) #}
+    {%- set _photo_src = _site ~ doc.candidate_photo -%}
+  {%- endif -%}
+{%- endif -%}
+
+{#- Logo similarly -#}
+{%- set _logo_src = '' -%}
+{%- set _logo_path = frappe.db.get_single_value('Institution Settings','logo') -%}
+{%- if _logo_path -%}
+  {%- set _logo_b64 = get_file_b64(_logo_path) -%}
+  {%- if _logo_b64 -%}
+    {%- set _logo_ext = (_logo_path.split('.')[-1] | lower) -%}
+    {%- set _logo_mime = 'image/jpeg' if _logo_ext in ['jpg','jpeg'] else ('image/png' if _logo_ext == 'png' else 'image/svg+xml') -%}
+    {%- set _logo_src = 'data:' ~ _logo_mime ~ ';base64,' ~ _logo_b64 -%}
+  {%- else -%}
+    {%- set _logo_src = _site ~ _logo_path -%}
+  {%- endif -%}
 {%- endif -%}
 
 <meta name="viewport" content="width=794, initial-scale=1.0">
 
 <style>
-/* ══ RESET — strip Frappe wrapper padding ═══════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ══════════════════════════════════════════════════════════════
+   PAPER-SIZE RESPONSIVE SYSTEM
+   Change the three --paper-* custom properties below to target
+   any paper size. The rest of the layout scales automatically.
 
-html, body,
-#page-body, .print-format-gutter, .print-format, .page-break,
-.letter-head, .letter-head-content, .frappe-card,
-.layout-main, .layout-main-section, form[data-doctype] {
-  margin: 0 !important; padding: 0 !important;
-  border: none !important; background: transparent !important;
-  box-shadow: none !important; width: auto !important; max-width: none !important;
+   A4  Portrait : --paper-w: 210mm; --paper-h: 297mm; --paper-margin: 8mm
+   A4  Landscape: --paper-w: 297mm; --paper-h: 210mm; --paper-margin: 8mm
+   Letter       : --paper-w: 215.9mm; --paper-h: 279.4mm; --paper-margin: 10mm
+   Legal        : --paper-w: 215.9mm; --paper-h: 355.6mm; --paper-margin: 10mm
+   A3  Portrait : --paper-w: 297mm; --paper-h: 420mm; --paper-margin: 10mm
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --paper-w      : 210mm;
+  --paper-h      : 297mm;
+  --paper-margin : 8mm;
+  --brand        : #7b1a1a;
+  --brand-dark   : #5a0e0e;
+  --brand-light  : #f4e4e4;
+  --border       : #d0d0d0;
+  --lbl-bg       : #f9f6f6;
+  --content-w    : calc(var(--paper-w) - 2 * var(--paper-margin));
+  --content-h    : calc(var(--paper-h) - 2 * var(--paper-margin));
+  /* Photo column fixed at ~27mm; everything else fluid */
+  --photo-col    : 27mm;
 }
 
-@page { size: A4 portrait; margin: 0; }
+@page {
+  size: var(--paper-w) var(--paper-h);
+  margin: var(--paper-margin);
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Frappe wrapper resets */
+html, body,
+#page-body, .print-format-gutter, .print-format,
+.page-break, .letter-head, .letter-head-content,
+form[data-doctype], .layout-main,
+.layout-main-section, .frappe-card {
+  margin: 0 !important; padding: 0 !important;
+  border: none !important; background: transparent !important;
+  width: auto !important; max-width: none !important;
+}
 
 html, body {
   width: 794px; min-width: 794px; max-width: 794px;
@@ -72,140 +128,158 @@ html, body {
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 
-/* ── Page wrapper: 794×1123px = A4@96dpi, 20px/22px padding ─── */
+/* ── Page wrapper ──────────────────────────────────────────── */
 .pf-page, .pf-doc-page {
-  width: 794px; min-width: 794px; max-width: 794px;
-  min-height: 1123px; margin: 0; padding: 20px 22px;
-  background: #fff; overflow: hidden; display: block; position: relative;
+  width: var(--content-w);
+  max-width: var(--content-w);
+  min-height: var(--content-h);
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border: 1.5px solid var(--brand);
+  overflow: hidden;
+  display: block;
 }
 
 @media screen {
-  html, body { background: #7a7a7a; }
+  html, body { background: #909090; padding: 0; }
   .pf-page, .pf-doc-page {
-    border: 2px solid #7b1a1a;
-    box-shadow: 0 4px 22px rgba(0,0,0,.4);
-    margin: 14px auto !important;
+    box-shadow: 0 3px 18px rgba(0,0,0,.35);
+    margin: 12px auto !important;
   }
 }
 
 @media print {
-  html, body { width: 794px; max-width: 794px; margin: 0; padding: 0; background: #fff; }
+  html, body {
+    width: var(--content-w);
+    max-width: var(--content-w);
+    margin: 0; padding: 0; background: #fff;
+  }
   .pf-page, .pf-doc-page {
-    width: 794px; max-width: 794px;
-    margin: 0 !important; padding: 20px 22px !important;
-    border: none !important; page-break-after: always; overflow: hidden;
+    width: var(--content-w);
+    max-width: var(--content-w);
+    margin: 0 !important; padding: 0 !important;
+    border: 1.5px solid var(--brand);
+    page-break-after: always;
+    overflow: hidden;
   }
   .pf-page:last-child, .pf-doc-page:last-child { page-break-after: auto; }
   .no-print { display: none !important; }
   tr { page-break-inside: avoid; }
-  .deg-table tr { page-break-inside: avoid; }
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
 .pf-header {
-  background: #7b1a1a; display: flex; align-items: center;
-  padding: 7px 10px; gap: 10px;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 5px 8px;
+  gap: 8px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 .pf-logo {
-  width: 46px; height: 46px; flex-shrink: 0;
-  background: #fff; border-radius: 3px;
-  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: #fff; border-radius: 2px;
+  display: flex; align-items: center;
+  justify-content: center; overflow: hidden;
 }
-.pf-logo img  { width: 42px; height: 42px; object-fit: contain; }
-.pf-logo-text { font-size: 7px; color: #7b1a1a; font-weight: bold; text-align: center; line-height: 1.2; }
-.pf-hdr-body  { flex: 1; text-align: center; }
-.pf-hdr-inst  { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: .6px; line-height: 1.2; color: #fff; }
-.pf-hdr-sub   { font-size: 7.5px; letter-spacing: 1.2px; text-transform: uppercase; margin-top: 2px; color: #ffcccc; }
+.pf-logo img       { width: 32px; height: 32px; object-fit: contain; }
+.pf-logo-text      { font-size: 5.5pt; color: var(--brand); font-weight: bold; text-align: center; line-height: 1.2; }
+.pf-hdr-body       { flex: 1; text-align: center; }
+.pf-hdr-inst       { font-size: 10pt; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; line-height: 1.2; color: #fff; }
+.pf-hdr-sub        { font-size: 5.5pt; letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; color: #ffcccc; }
 
 /* ── Title bar ──────────────────────────────────────────────── */
-.pf-title-bar { text-align: center; padding: 5px 8px 4px; background: #fff; border-bottom: 1.5px solid #e8dede; }
-.pf-title    { font-size: 11.5px; font-weight: bold; color: #111; }
-.pf-subtitle { font-size: 8.5px; color: #666; margin-top: 2px; }
-.sep         { margin: 0 5px; color: #ccc; }
+.pf-title-bar      { text-align: center; padding: 3px 6px; background: #fff; border-bottom: 1px solid #ddd; }
+.pf-title          { font-size: 8.5pt; font-weight: bold; color: #111; }
+.pf-subtitle       { font-size: 6.5pt; color: #555; margin-top: 1px; }
+.sep               { margin: 0 3px; color: #bbb; }
 
 /* ── Main table ─────────────────────────────────────────────── */
-/*
-  5-col fixed layout:
-    col1  label  22%
-    col2  value  26%
-    col3  label  21%
-    col4  value  auto
-    col5  photo  102px
-
-  INSIDE photo rowspan (rows 1-9):
-    full-width  → colspan="4"
-    wide value  → label + colspan="3"
-    two pairs   → 1+1+1+1
-
-  OUTSIDE rowspan (all 5 free):
-    full-width   → label + colspan="4"
-    two-pair row → 1+1+1 + last val colspan="2"
-*/
 .pf-table {
   width: 100%; border-collapse: collapse;
   table-layout: fixed; border: 1px solid #ccc; margin-top: 0;
 }
 .pf-table td {
-  border: 1px solid #d0d0d0; padding: 3px 6px;
-  vertical-align: middle; font-size: 8.5px;
-  line-height: 1.45; word-wrap: break-word; overflow-wrap: break-word;
+  border: 1px solid var(--border);
+  padding: 2px 5px;
+  vertical-align: middle;
+  font-size: 6.8pt;
+  line-height: 1.35;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
+
+/* Column widths using % so they scale with paper */
+.pf-table colgroup col:nth-child(1) { width: 22%; }
+.pf-table colgroup col:nth-child(2) { width: 26%; }
+.pf-table colgroup col:nth-child(3) { width: 22%; }
+.pf-table colgroup col:nth-child(4) { width: auto; }
+.pf-table colgroup col:nth-child(5) { width: var(--photo-col); }
 
 /* Section header */
 .pf-sec {
-  background: #7b1a1a !important; color: #fff !important;
-  font-weight: bold; font-size: 8.5px; text-transform: uppercase;
-  letter-spacing: .35px; padding: 4px 8px;
+  background: var(--brand) !important;
+  color: #fff !important;
+  font-weight: bold;
+  font-size: 7pt;
+  letter-spacing: .25px;
+  text-transform: uppercase;
+  padding: 2px 8px;
   border: none !important;
-  border-top: 1px solid #5e1010 !important;
-  border-bottom: 1px solid #5e1010 !important;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  border-top: 1px solid var(--brand-dark) !important;
+  border-bottom: 1px solid var(--brand-dark) !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
-
-/* Sub-section — academic (light pink) */
 .pf-subsec {
-  background: #f5e8e8 !important; color: #7b1a1a !important;
-  font-weight: bold; font-size: 8px; padding: 2px 8px;
-  border-color: #ddd !important;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  background: var(--brand-light) !important;
+  color: var(--brand) !important;
+  font-weight: bold;
+  font-size: 6.8pt;
+  padding: 1px 8px;
+  border-color: #ccc !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
-/* Sub-section — parent/family (light blue) */
-.pf-subsec-parent {
-  background: #eef0f8 !important; color: #1a3a7b !important;
-  font-weight: bold; font-size: 8px; padding: 2px 8px;
-  border-color: #ddd !important;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
-}
-
-/* Sub-section — guardian (light green) */
-.pf-subsec-guardian {
-  background: #e8f5e8 !important; color: #1a5c1a !important;
-  font-weight: bold; font-size: 8px; padding: 2px 8px;
-  border-color: #ddd !important;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
-}
-
-/* Label / Value */
-.pf-lbl { font-weight: normal; color: #444; background: #faf6f6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pf-lbl { font-weight: normal; color: #444; background: var(--lbl-bg); }
 .pf-val { color: #111; background: #fff; }
 
 /* ── Photo cell ─────────────────────────────────────────────── */
 .pf-photo {
-  width: 102px !important; max-width: 102px !important;
-  text-align: center; vertical-align: top; padding: 5px 4px 3px;
-  background: #fff; border: 1px solid #d0d0d0 !important;
+  width: var(--photo-col) !important;
+  max-width: var(--photo-col) !important;
+  text-align: center;
+  vertical-align: top;
+  padding: 3px;
+  background: #fff;
+  border: 1px solid var(--border) !important;
 }
 .pf-photo img {
-  width: 88px; height: 112px; object-fit: cover; object-position: center top;
-  display: block; margin: 0 auto 4px; border: 1px solid #ccc;
+  /*
+   * PHOTO FIX:
+   * - Use width/height in px (wkhtmltopdf sometimes ignores mm on inline imgs)
+   * - object-fit: cover ensures no distortion
+   * - The src is now a data-URI so wkhtmltopdf needs no network call
+   */
+  width: 87px;          /* ≈ 23mm at 96dpi */
+  height: 113px;        /* ≈ 30mm at 96dpi */
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 2px;
+  border: 1px solid #ccc;
 }
-.pf-photo-cap { font-size: 7px; color: #888; text-align: center; line-height: 1.4; }
+.pf-photo-cap   { font-size: 5.5pt; color: #888; text-align: center; line-height: 1.3; }
 .pf-photo-empty {
-  width: 88px; height: 112px; background: #f3f3f3;
-  border: 1px dashed #bbb; display: flex; align-items: center; justify-content: center;
-  font-size: 7px; color: #aaa; text-align: center; margin: 0 auto 4px; line-height: 1.4;
+  width: 87px; height: 113px;
+  background: #f2f2f2;
+  border: 1px dashed #bbb;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 5.5pt; color: #aaa; text-align: center;
+  margin: 0 auto 2px;
 }
 
 /* ── Badges ─────────────────────────────────────────────────── */
@@ -215,20 +289,16 @@ html, body {
 .badge-grey   { background:#383838; color:#fff; font-weight:bold; padding:2px 7px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
 /* ── Degree inner table ─────────────────────────────────────── */
-.deg-table { width:100%; border-collapse:collapse; font-size:8px; }
-.deg-table th {
-  background: #f5e8e8 !important; color: #7b1a1a; font-weight: bold;
-  padding: 2px 6px; border: 1px solid #ccc; text-align: left; font-size: 7.5px;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
-}
-.deg-table td { padding:2px 6px; border:1px solid #ccc; vertical-align:middle; }
+.deg-table { width:100%; border-collapse:collapse; font-size:6.5pt; }
+.deg-table th { background:var(--brand-light) !important; color:var(--brand); font-weight:bold; padding:1px 5px; border:1px solid #ccc; text-align:left; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.deg-table td { padding:1px 5px; border:1px solid #ccc; vertical-align:middle; }
 .deg-table tr:nth-child(even) td { background:#fafafa; }
 
 /* ── Declaration ────────────────────────────────────────────── */
 .pf-decl { padding:5px 10px; font-size:8px; line-height:1.55; color:#111; background:#fff; border-top:1px solid #ddd; }
 .pf-decl-item { display:flex; align-items:flex-start; gap:6px; margin-bottom:3px; }
 .pf-decl-item:last-child { margin-bottom:0; }
-.pf-chk  { font-size:12px; line-height:1; flex-shrink:0; margin-top:0; }
+.pf-chk  { font-size:9pt; line-height:1; flex-shrink:0; }
 .pf-decl-text { flex:1; }
 
 /* ── Invigilator ────────────────────────────────────────────── */
@@ -236,19 +306,19 @@ html, body {
 
 /* ── Signature ──────────────────────────────────────────────── */
 .pf-sig-table { width:100%; border-collapse:collapse; border-top:1px solid #ddd; }
-.pf-sig-table td { border:1px solid #ccc; padding:3px 14px 16px; text-align:center; font-size:8px; vertical-align:bottom; width:50%; }
-.pf-sig-head  { font-weight:bold; background:#fafafa; }
-.pf-sig-space { height:32px; display:block; }
+.pf-sig-table td { border:1px solid var(--border); padding:2px 10px 12px; text-align:center; font-size:6.5pt; vertical-align:bottom; width:50%; }
+.pf-sig-head  { font-weight:bold; font-size:6.5pt; background:#f9f9f9; }
+.pf-sig-space { height:26px; display:block; }
 
 /* ── Footer ─────────────────────────────────────────────────── */
 .pf-footer { border-top:1px dashed #ccc; text-align:center; font-size:7px; color:#999; padding:3px 8px; background:#fff; }
 
-/* ── Doc pages ──────────────────────────────────────────────── */
-.pf-doc-body  { padding-top:10px; }
-.pf-doc-label { font-weight:bold; font-size:8.5px; color:#fff; background:#7b1a1a; padding:3px 8px; margin-bottom:3px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.pf-doc-image { text-align:center; border:1px solid #ccc; padding:4px; }
-.pf-doc-image img { max-width:100%; max-height:640px; display:block; margin:0 auto; }
-.pf-doc-pdf { padding:10px; background:#fafafa; border:1px solid #ccc; text-align:center; color:#555; font-size:8.5px; }
+/* ── Document page ──────────────────────────────────────────── */
+.pf-doc-body  { padding: 5mm 6mm; }
+.pf-doc-label { font-weight:bold; font-size:6.8pt; color:#fff; background:var(--brand); padding:2px 7px; margin-bottom:2px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.pf-doc-image { text-align:center; border:1px solid #ccc; padding:3px; }
+.pf-doc-image img { max-width:100%; max-height:160mm; }
+.pf-doc-pdf   { padding:8px; background:#fafafa; border:1px solid #ccc; text-align:center; color:#555; font-size:6.8pt; }
 </style>
 
 
@@ -259,9 +329,11 @@ html, body {
 
   <div class="pf-header">
     <div class="pf-logo">
-      {%- set _logo = frappe.db.get_single_value('Institution Settings','logo') -%}
-      {%- if _logo -%}<img src="{{ get_img(_logo) }}" alt="NLSIU">
-      {%- else -%}<span class="pf-logo-text">NLSIU</span>{%- endif -%}
+      {%- if _logo_src -%}
+        <img src="{{ _logo_src }}" alt="NLSIU">
+      {%- else -%}
+        <span class="pf-logo-text">NLSIU</span>
+      {%- endif -%}
     </div>
     <div class="pf-hdr-body">
       <div class="pf-hdr-inst">National Law School of India University</div>
@@ -280,11 +352,7 @@ html, body {
 
   <table class="pf-table">
     <colgroup>
-      <col style="width:22%">
-      <col style="width:26%">
-      <col style="width:21%">
-      <col><!-- auto -->
-      <col style="width:102px">
+      <col><col><col><col><col>
     </colgroup>
 
     {# ══ 1. PERSONAL INFORMATION ══ #}
@@ -302,9 +370,16 @@ html, body {
         {%- elif _st in ['Rejected','Cancelled'] -%}<span class="badge-red">{{ _st }}</span>
         {%- else -%}<span class="badge-grey">{{ _st }}</span>{%- endif -%}
       </td>
+
+      {# ── PHOTO CELL with rowspan ── #}
       <td class="pf-photo" rowspan="9">
-        {%- if doc.candidate_photo -%}
-          <img src="{{ get_img(doc.candidate_photo) }}" alt="Candidate Photo">
+        {%- if _photo_src -%}
+          {#
+            KEY FIX: src is now a data-URI (base64).
+            wkhtmltopdf renders data-URIs natively without any
+            HTTP request, so no auth / CORS / localhost issues.
+          #}
+          <img src="{{ _photo_src }}" alt="Candidate Photo">
         {%- else -%}
           <div class="pf-photo-empty">Photo<br>Not<br>Uploaded</div>
         {%- endif -%}
@@ -354,7 +429,6 @@ html, body {
       <td class="pf-val" colspan="3">{{ f(doc.annual_house_hold_income) }}</td>
     </tr>
 
-    {# Outside rowspan — all 5 cols free #}
     <tr>
       <td class="pf-lbl">Correspondence Address</td>
       <td class="pf-val" colspan="4">
@@ -381,8 +455,9 @@ html, body {
     #}
     <tr><td colspan="5" class="pf-sec">2. Family Information</td></tr>
 
-    {# ── A. Father's Details (always shown) ── #}
-    <tr><td colspan="5" class="pf-subsec">Father's Details</td></tr>
+    <tr>
+      <td class="pf-lbl" colspan="5" class="pf-subsec">Father's Details</td>
+    </tr>
     <tr>
       <td class="pf-lbl">Father's Name</td>
       <td class="pf-val">{{ f(doc.father_name) }}</td>
@@ -395,9 +470,9 @@ html, body {
       <td class="pf-lbl">Father's Email</td>
       <td class="pf-val" colspan="2">{{ f(doc.father_email) }}</td>
     </tr>
-
-    {# ── B. Mother's Details (always shown) ── #}
-    <tr><td colspan="5" class="pf-subsec">Mother's Details</td></tr>
+    <tr>
+      <td class="pf-lbl" colspan="5" class="pf-subsec">Mother's Details</td>
+    </tr>
     <tr>
       <td class="pf-lbl">Mother's Name</td>
       <td class="pf-val">{{ f(doc.mother_name) }}</td>
@@ -411,31 +486,20 @@ html, body {
       <td class="pf-val" colspan="2">{{ f(doc.mother_email) }}</td>
     </tr>
 
-    {# ── C. Guardian Details (ONLY when guardian_required = "Yes" / 1) ── #}
-    {%- if show_guardian -%}
-    <tr><td colspan="5" class="pf-subsec">Guardian Details</td></tr>
+    {%- if doc.guardian_required == "Yes" or doc.guardian_required == 1 -%}
+    <tr>
+      <td class="pf-lbl" colspan="5" class="pf-subsec">Guardian's Details</td>
+    </tr>
     <tr>
       <td class="pf-lbl">Guardian's Name</td>
       <td class="pf-val">{{ f(doc.guardian_name) }}</td>
-      <td class="pf-lbl">Relationship</td>
-      <td class="pf-val" colspan="2">{{ f(doc.guardian_relationship) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Occupation</td>
-      <td class="pf-val">{{ f(doc.guardian_occupation) }}</td>
-      <td class="pf-lbl">Guardian's Email</td>
-      <td class="pf-val" colspan="2">{{ f(doc.guardian_email) }}</td>
-    </tr>
-    <tr>
       <td class="pf-lbl">Guardian's Mobile</td>
-      <td class="pf-val" colspan="4">{{ f(doc.guardian_mobile) }}</td>
+      <td class="pf-val" colspan="2">{{ f(doc.guardian_mobile) }}</td>
     </tr>
-    {%- if doc.guardian_address and doc.guardian_address not in ['None',''] -%}
     <tr>
-      <td class="pf-lbl">Guardian's Address</td>
-      <td class="pf-val" colspan="4">{{ f(doc.guardian_address) }}</td>
+      <td class="pf-lbl">Guardian's Email</td>
+      <td class="pf-val" colspan="4">{{ f(doc.guardian_email) }}</td>
     </tr>
-    {%- endif -%}
     {%- endif -%}
 
     {# ══ 3. ACADEMIC DETAILS ══ #}
@@ -770,9 +834,11 @@ html, body {
 
   <div class="pf-header">
     <div class="pf-logo">
-      {%- set _logo = frappe.db.get_single_value('Institution Settings','logo') -%}
-      {%- if _logo -%}<img src="{{ get_img(_logo) }}" alt="NLSIU">
-      {%- else -%}<span class="pf-logo-text">NLSIU</span>{%- endif -%}
+      {%- if _logo_src -%}
+        <img src="{{ _logo_src }}" alt="NLSIU">
+      {%- else -%}
+        <span class="pf-logo-text">NLSIU</span>
+      {%- endif -%}
     </div>
     <div class="pf-hdr-body">
       <div class="pf-hdr-inst">National Law School of India University</div>
@@ -791,16 +857,25 @@ html, body {
     {%- for item in _docs -%}
       {%- set _ext = (item.url or '').split('.')[-1] | lower -%}
       {%- set _is_img = _ext in ['jpg','jpeg','png','gif','webp','bmp'] -%}
-      <div style="margin-bottom:12px; page-break-inside:avoid;">
+      {%- set _doc_b64 = get_file_b64(item.url) if _is_img else '' -%}
+      <div style="margin-bottom:9px; page-break-inside:avoid;">
         <div class="pf-doc-label">{{ loop.index }}. {{ item.label }}</div>
-        {%- if _is_img -%}
-        <div class="pf-doc-image"><img src="{{ get_img(item.url) }}" alt="{{ item.label }}"></div>
+        {%- if _is_img and _doc_b64 -%}
+          {%- set _doc_mime = 'image/jpeg' if _ext in ['jpg','jpeg'] else ('image/png' if _ext == 'png' else 'image/webp') -%}
+          <div class="pf-doc-image">
+            <img src="data:{{ _doc_mime }};base64,{{ _doc_b64 }}" alt="{{ item.label }}">
+          </div>
+        {%- elif _is_img -%}
+          {# fallback absolute URL #}
+          <div class="pf-doc-image">
+            <img src="{{ _site }}{{ item.url }}" alt="{{ item.label }}">
+          </div>
         {%- else -%}
-        <div class="pf-doc-pdf">
-          <strong>{{ item.label }}</strong><br>
-          <span style="font-size:7.5px;">{{ item.url.split('/')[-1] }}</span><br>
-          <span style="font-size:7px;color:#999;">(Open the portal to view this document)</span>
-        </div>
+          <div class="pf-doc-pdf">
+            <strong>{{ item.label }}</strong><br>
+            <span style="font-size:6pt;">{{ item.url.split('/')[-1] }}</span><br>
+            <span style="font-size:5.8pt;color:#999;">(Open the portal to view this document)</span>
+          </div>
         {%- endif -%}
       </div>
       {%- if loop.index % 2 == 0 and not loop.last -%}

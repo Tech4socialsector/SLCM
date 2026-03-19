@@ -240,9 +240,10 @@
 
   .app-header-right {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-end;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .app-program-name {
@@ -1538,9 +1539,17 @@
   /* ── Tab bar ─────────────────────────────────────────────── */
   .ma-tabs {
     display: flex;
+    flex-wrap: nowrap;
     gap: 0;
     border-bottom: 2px solid var(--border);
     margin-bottom: 18px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ma-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .ma-tab {
@@ -1556,6 +1565,7 @@
     margin-bottom: -2px;
     transition: color .15s, border-color .15s;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .ma-tab:hover {
@@ -1569,6 +1579,196 @@
 
   .ma-tab .material-symbols-outlined {
     font-size: 17px;
+  }
+
+  /* ── Responsive Enhancements ────────────────────────────── */
+  @media (max-width: 992px) {
+    .ma-inner {
+      max-width: 100%;
+      padding: 0 10px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .prof-field-grid {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .prof-field {
+      border-right: none !important;
+    }
+
+    .ma-page {
+      padding: 20px 12px 40px;
+      margin: 0;
+    }
+
+    .app-top-row {
+      flex-direction: column;
+      align-items: stretch !important;
+      gap: 20px;
+    }
+
+    .app-header-left {
+      width: 100%;
+    }
+
+    .app-header-right {
+      width: 100%;
+      flex-direction: row !important;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 8px !important;
+    }
+
+    .app-header-right .btn-edit-application,
+    .app-header-right .btn-download,
+    .app-header-right .btn-view-application {
+      flex: 1;
+      justify-content: center;
+      min-width: 120px;
+    }
+
+    .app-program-name {
+      font-size: 20px !important;
+    }
+
+    .quick-status-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .qs-item {
+      border-right: 1px solid var(--border) !important;
+    }
+
+    .qs-item:nth-child(2n) {
+      border-right: none !important;
+    }
+
+    .merit-seat-card .ma-card-body {
+      grid-template-columns: 1fr;
+    }
+
+    .merit-panel {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-grid-2 {
+      grid-template-columns: 1fr;
+    }
+
+    .result-score-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .pef-row {
+      grid-template-columns: 1fr !important;
+    }
+
+    .stage-track-wrap {
+      padding: 30px 20px;
+    }
+
+    .stage-track {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 30px;
+      padding-left: 15px;
+    }
+
+    .stage-track::before {
+      left: 34px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      height: 100%;
+    }
+
+    .stage-track-fill {
+      left: 34px;
+      top: 0;
+      width: 3px !important;
+      height: var(--pct, 0%);
+    }
+
+    .stage-item {
+      flex-direction: row;
+      width: 100%;
+      gap: 20px;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .stage-circle {
+      margin: 0;
+    }
+
+    .stage-label {
+      text-align: left;
+      max-width: none;
+      font-size: 13px;
+    }
+
+    .stage-arrow {
+      display: none;
+    }
+
+    .result-score-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .app-header-right a {
+      flex: 1 1 calc(50% - 8px) !important;
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .quick-status-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .qs-item {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+      text-align: left;
+      padding: 12px 18px;
+    }
+
+    .qs-item:last-child {
+      border-bottom: none;
+    }
+
+    .app-program-name {
+      font-size: 18px !important;
+    }
+
+    .app-id-chip {
+      width: 100%;
+      text-align: center;
+    }
+
+    .app-id-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .prof-modal {
+      margin: 0;
+      border-radius: 0;
+      max-height: 100vh;
+      height: 100vh;
+    }
+    
+    .prof-modal-head, .prof-modal-foot {
+      border-radius: 0;
+    }
   }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1648,7 +1848,7 @@ or _app.current_stage)) or _status %}
 
       <!-- Header -->
       <div class="app-summary-head">
-        <div class="app-top-row" style="align-items: center;">
+        <div class="app-top-row">
           <div class="app-header-left">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
               <h1 class="app-program-name" style="margin:0; font-size:24px;">{{ _prog }}</h1>
@@ -1665,7 +1865,7 @@ or _app.current_stage)) or _status %}
             </div>
           </div>
 
-          <div class="app-header-right" style="flex-direction:row; align-items:center; gap:10px;">
+          <div class="app-header-right">
             <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
               title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
               <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
@@ -1713,7 +1913,7 @@ or _app.current_stage)) or _status %}
         {% endif %}
 
         <div class="stage-track" style="--num-stages: {{ _num_stages }};">
-          <div class="stage-track-fill" style="width:{{ _pct }}%"></div>
+          <div class="stage-track-fill" style="width:{{ _pct }}%; --pct: {{ _pct }}%;"></div>
 
           {% for s in _stages %}
           {% set _sstate = s.state if s is mapping else s['state'] %}

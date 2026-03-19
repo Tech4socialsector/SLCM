@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 
 @frappe.whitelist(allow_guest=True)
 def get_base64_image(url):
