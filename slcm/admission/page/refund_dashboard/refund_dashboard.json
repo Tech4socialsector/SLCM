@@ -1,0 +1,25 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "creation": "2026-03-19 15:00:00",
+ "doctype": "Page",
+ "engine": "InnoDB",
+ "idx": 0,
+ "modified": "2026-03-19 15:00:00",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "refund_dashboard",
+ "owner": "Administrator",
+ "page_name": "refund_dashboard",
+ "roles": [
+  {
+   "role": "Admission Manager"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": "Yes",
+ "title": "Refund Dashboard"
+}
