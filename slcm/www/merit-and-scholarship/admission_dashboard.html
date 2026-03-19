@@ -654,9 +654,11 @@ else 'Admissions Open') %}
       position: static !important;
       padding: 12px !important;
       margin-bottom: 20px !important;
+      overflow: hidden !important;
     }
     .sidebar-card nav {
       flex-direction: row !important;
+      flex-wrap: nowrap !important;
       overflow-x: auto !important;
       gap: 8px !important;
       padding-bottom: 4px !important;
@@ -672,6 +674,7 @@ else 'Admissions Open') %}
       white-space: nowrap !important;
       border-left: none !important;
       border-bottom: 3px solid transparent !important;
+      flex-shrink: 0 !important;
     }
     .adm-menu-item.active {
       border-bottom-color: var(--primary) !important;
