@@ -23,7 +23,8 @@
   "provider_room",
   "total_capacity",
   "reserved_seats",
-  "available_capacity"
+  "available_capacity",
+  "location"
  ],
  "fields": [
   {
@@ -137,12 +138,17 @@
    "label": "User",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Geolocation",
+   "label": "Location"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 14:41:58.150322",
+ "modified": "2026-03-18 18:48:18.623834",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",

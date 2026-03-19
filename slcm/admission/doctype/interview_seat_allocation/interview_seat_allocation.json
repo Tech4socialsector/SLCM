@@ -369,13 +369,14 @@
   {
    "fieldname": "feedback",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Feedback"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 15:14:43.582770",
+ "modified": "2026-03-19 10:09:35.403019",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
