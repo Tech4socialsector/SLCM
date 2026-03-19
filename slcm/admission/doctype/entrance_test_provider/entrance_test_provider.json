@@ -19,12 +19,12 @@
   "user",
   "section_break_infra",
   "center_name",
-  "center_address",
   "provider_room",
   "total_capacity",
   "reserved_seats",
   "available_capacity",
-  "location"
+  "location",
+  "center_address"
  ],
  "fields": [
   {
@@ -148,7 +148,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 18:48:18.623834",
+ "modified": "2026-03-19 17:27:17.221442",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",
