@@ -217,21 +217,18 @@
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of birth",
-   "reqd": 1
+   "label": "Date of birth"
   },
   {
    "fieldname": "gender",
    "fieldtype": "Select",
    "label": "Gender",
-   "options": "\nMale\nFemale\nOthers",
-   "reqd": 1
+   "options": "\nMale\nFemale\nOthers"
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile number",
-   "reqd": 1
+   "label": "Mobile number"
   },
   {
    "fieldname": "alternate_contact",
@@ -243,8 +240,7 @@
    "fieldname": "religion",
    "fieldtype": "Select",
    "label": "Religion",
-   "options": "\nHindu\nMuslim\nChristian\nSikh\nBuddhist\nJain\nOther",
-   "reqd": 1
+   "options": "\nHindu\nMuslim\nChristian\nSikh\nBuddhist\nJain\nOther"
   },
   {
    "fieldname": "nationality",
@@ -268,52 +264,44 @@
   {
    "fieldname": "father_name",
    "fieldtype": "Data",
-   "label": "Father's name",
-   "reqd": 1
+   "label": "Father's name"
   },
   {
    "fieldname": "father_mobile",
    "fieldtype": "Phone",
-   "label": "Father's mobile number",
-   "reqd": 1
+   "label": "Father's mobile number"
   },
   {
    "fieldname": "father_email",
    "fieldtype": "Data",
    "label": "Father's email",
-   "options": "Email",
-   "reqd": 1
+   "options": "Email"
   },
   {
    "fieldname": "father_occupation",
    "fieldtype": "Data",
-   "label": "Father's occupation",
-   "reqd": 1
+   "label": "Father's occupation"
   },
   {
    "fieldname": "mother_name",
    "fieldtype": "Data",
-   "label": "Mother's name",
-   "reqd": 1
+   "label": "Mother's name"
   },
   {
    "fieldname": "mother_mobile",
    "fieldtype": "Phone",
-   "label": "Mother's mobile number",
-   "reqd": 1
+   "label": "Mother's mobile number"
   },
   {
    "fieldname": "mother_email",
    "fieldtype": "Data",
    "label": "Mother's email",
-   "options": "Email",
-   "reqd": 1
+   "options": "Email"
   },
   {
    "fieldname": "mother_occupation",
    "fieldtype": "Data",
-   "label": "Mother's occupation",
-   "reqd": 1
+   "label": "Mother's occupation"
   },
   {
    "default": "No",
@@ -348,28 +336,24 @@
   {
    "fieldname": "correspondence_address",
    "fieldtype": "Small Text",
-   "label": "Address",
-   "reqd": 1
+   "label": "Address"
   },
   {
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City",
-   "reqd": 1
+   "label": "City"
   },
   {
    "fieldname": "state",
    "fieldtype": "Link",
    "label": "State",
-   "options": "State",
-   "reqd": 1
+   "options": "State"
   },
   {
    "fieldname": "pincode",
    "fieldtype": "Int",
    "label": "Pincode",
-   "non_negative": 1,
-   "reqd": 1
+   "non_negative": 1
   },
   {
    "fieldname": "academic_qualification_tab",
@@ -379,20 +363,17 @@
   {
    "fieldname": "class_x_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of completion (Class X)",
-   "reqd": 1
+   "label": "Year of completion (Class X)"
   },
   {
    "fieldname": "class_x_school",
    "fieldtype": "Data",
-   "label": "School",
-   "reqd": 1
+   "label": "School"
   },
   {
    "fieldname": "class_x_board",
    "fieldtype": "Data",
-   "label": "Board",
-   "reqd": 1
+   "label": "Board"
   },
   {
    "fieldname": "class_x_percentage",
@@ -418,33 +399,28 @@
   {
    "fieldname": "class_xii_name_of_examination",
    "fieldtype": "Data",
-   "label": "Name of examination (Class XII/Equivalent \u2014 as per marksheet)",
-   "reqd": 1
+   "label": "Name of examination (Class XII/Equivalent \u2014 as per marksheet)"
   },
   {
    "fieldname": "class_xii_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of completion (Class XII/Equivalent)",
-   "reqd": 1
+   "label": "Year of completion (Class XII/Equivalent)"
   },
   {
    "fieldname": "class_xii_school",
    "fieldtype": "Data",
-   "label": "School/College/University (Class XII/Equivalent)",
-   "reqd": 1
+   "label": "School/College/University (Class XII/Equivalent)"
   },
   {
    "fieldname": "class_xii_board",
    "fieldtype": "Data",
-   "label": "Board (Class XII/Equivalent)",
-   "reqd": 1
+   "label": "Board (Class XII/Equivalent)"
   },
   {
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
-   "label": "Class XII marksheet",
-   "reqd": 1
+   "label": "Class XII marksheet"
   },
   {
    "fieldname": "employment_history_tab",
@@ -455,8 +431,7 @@
    "fieldname": "post_degree_work_experience",
    "fieldtype": "Select",
    "label": "Do you have any post-degree work experience?",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "options": "\nYes\nNo"
   },
   {
    "depends_on": "eval:doc.post_degree_work_experience === \"Yes\"",
@@ -499,8 +474,7 @@
    "fieldname": "pwd",
    "fieldtype": "Select",
    "label": "Whether Person with Disability (PWD)",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "options": "\nYes\nNo"
   },
   {
    "depends_on": "eval:doc.pwd === \"Yes\"",
@@ -530,8 +504,7 @@
    "fieldname": "karnataka_category",
    "fieldtype": "Select",
    "label": "Whether Karnataka category",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "options": "\nYes\nNo"
   },
   {
    "default": "0",
@@ -607,23 +580,20 @@
    "fieldname": "first_preference",
    "fieldtype": "Link",
    "label": "First preference",
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "options": "Entrance Test Provider"
   },
   {
    "fieldname": "second_preference",
    "fieldtype": "Link",
    "label": "Second preference",
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "options": "Entrance Test Provider"
   },
   {
    "fieldname": "third_preference",
    "fieldtype": "Link",
    "label": "Third preference",
    "not_nullable": 1,
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "options": "Entrance Test Provider"
   },
   {
    "fieldname": "other_information_tab",
@@ -634,16 +604,14 @@
    "fieldname": "source_of_information",
    "fieldtype": "Select",
    "label": "Where did you hear about the programme?",
-   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers",
-   "reqd": 1
+   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers"
   },
   {
    "description": "Curriculum Vitae (Max 5MB - Supported formats doc, docx pdf) Declaration.",
    "fieldname": "cv",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages",
-   "reqd": 1
+   "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages"
   },
   {
    "default": "0",
@@ -801,8 +769,7 @@
    "description": "Max 1MB - Supported formats png, jpeg, jpg",
    "fieldname": "candidate_photo",
    "fieldtype": "Attach Image",
-   "label": "Candidate Photo",
-   "reqd": 1
+   "label": "Candidate Photo"
   },
   {
    "fieldname": "email",
@@ -855,8 +822,7 @@
    "fieldtype": "Select",
    "label": "Annual house hold income (in INR)",
    "options": "\n0 - 3,00,000\n3,00,001 - 8,00,000\n8,00,001 - 15,00,000\n15,00,001 - 25,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
-   "precision": "2",
-   "reqd": 1
+   "precision": "2"
   },
   {
    "fieldname": "section_break_rnvz",
@@ -891,15 +857,13 @@
    "fieldtype": "Percent",
    "label": "Percentage/CGPA obtained (Class XII/Equivalent)",
    "non_negative": 1,
-   "precision": "2",
-   "reqd": 1
+   "precision": "2"
   },
   {
    "fieldname": "hsc_group",
    "fieldtype": "Link",
    "label": "XII group",
-   "options": "HSC Groups",
-   "reqd": 1
+   "options": "HSC Groups"
   },
   {
    "fieldname": "ug_degree_details_column",
@@ -1076,8 +1040,7 @@
    "fieldname": "whether_scstobc_ncl",
    "fieldtype": "Select",
    "label": "Whether SC/ST/OBC-NCL",
-   "options": "NA\nOBC-NCL\nST\nSC",
-   "reqd": 1
+   "options": "NA\nOBC-NCL\nST\nSC"
   },
   {
    "fieldname": "class_xii_cgpa",
@@ -1106,7 +1069,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-18 12:48:08.008284",
+ "modified": "2026-03-19 12:12:41.553540",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

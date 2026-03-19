@@ -4,6 +4,22 @@ from frappe.model.document import Document
 from frappe.utils import now_datetime, flt
 
 class RefundRequest(Document):
+	def on_update(self):
+		if self.admission_cancellation:
+			self.sync_cancellation_status()
+
+	def sync_cancellation_status(self):
+		# Map Refund Request status to Admission Cancellation status
+		status_map = {
+			"Approved": "Approved",
+			"Processing": "Approved",
+			"Processed": "Completed"
+		}
+		
+		new_status = status_map.get(self.status)
+		if new_status:
+			frappe.db.set_value("Admission Cancellation", self.admission_cancellation, "status", new_status)
+
 	def validate(self):
 		self.fetch_payment_details()
 		self.apply_refund_policy()
@@ -63,7 +79,7 @@ class RefundRequest(Document):
 			if not self.approved_by:
 				self.approved_by = frappe.session.user
 				self.approval_date = now_datetime()
-		else:
+		elif self.status not in ["Processed", "Failed"]:
 			self.approved_by = None
 			self.approval_date = None
 
@@ -80,6 +96,7 @@ def create_refund_request(cancellation):
 	refund = frappe.new_doc("Refund Request")
 	refund.applicant = cancellation.applicant
 	refund.payment_request = cancellation.payment_request
+	refund.admission_cancellation = cancellation.name
 	refund.razorpay_payment_id = payment.reference_number
 	refund.amount_paid = flt(payment.amount)
 	refund.refund_amount = flt(payment.amount)

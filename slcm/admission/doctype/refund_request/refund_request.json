@@ -11,14 +11,18 @@
   "applicant",
   "payment_request",
   "razorpay_payment_id",
+  "razorpay_refund_id",
+  "admission_cancellation",
   "column_break_1",
   "request_date",
+  "refund_date",
   "status",
   "section_refund_details",
   "refund_type",
   "refund_policy",
   "amount_paid",
   "refund_amount",
+  "failure_message",
   "column_break_2",
   "refund_reason",
   "section_approval",
@@ -55,6 +59,19 @@
    "reqd": 1
   },
   {
+   "fieldname": "razorpay_refund_id",
+   "fieldtype": "Data",
+   "label": "Razorpay Refund ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "admission_cancellation",
+   "fieldtype": "Link",
+   "label": "Admission Cancellation",
+   "options": "Admission Cancellation",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_1",
    "fieldtype": "Column Break"
   },
@@ -66,12 +83,18 @@
    "read_only": 1
   },
   {
+   "fieldname": "refund_date",
+   "fieldtype": "Datetime",
+   "label": "Refund Date",
+   "read_only": 1
+  },
+  {
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Draft\nUnder Review\nApproved\nRejected\nProcessing\nProcessed",
+   "options": "Draft\nUnder Review\nApproved\nRejected\nProcessing\nProcessed\nFailed",
    "reqd": 1
   },
   {
@@ -104,7 +127,13 @@
    "fieldname": "refund_amount",
    "fieldtype": "Currency",
    "label": "Refund Amount",
-   "reqd": 1
+   "read_only": 1
+  },
+  {
+   "fieldname": "failure_message",
+   "fieldtype": "Small Text",
+   "label": "Failure Message",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_2",
@@ -137,7 +166,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 20:55:41.208299",
+ "modified": "2026-03-19 11:55:00",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Refund Request",

@@ -441,6 +441,21 @@ def get_offer_list(limit_start=0, limit_page_length=10):
             offer.scholarship_amount = 0
             offer.final_payable_amount = offer.payable_amount
 
+        # Fetch cancellation info
+        cancellation = frappe.get_all("Admission Cancellation", 
+            filters={"offer": offer.name}, 
+            fields=["name", "status"], 
+            limit=1
+        )
+        if cancellation:
+            offer.has_cancellation = True
+            offer.cancellation_name = cancellation[0].name
+            offer.cancellation_status = cancellation[0].status
+        else:
+            offer.has_cancellation = False
+            offer.cancellation_name = ""
+            offer.cancellation_status = ""
+
     return {
         "offers": offers,
         "total_count": total_count,

@@ -13,17 +13,25 @@ frappe.ui.form.on('Refund Request', {
 						method: 'slcm.admission_cancel_api.process_refund',
 						args: { name: frm.doc.name },
 						callback: function(r) {
-							if (r.message === 'Success') {
+							if (r.message && r.message.status === 'Success') {
 								frappe.msgprint({
 									title: __('Success'),
 									message: __('Refund Processed successfully'),
 									indicator: 'green'
 								});
-								frm.reload_doc();
 							}
+							// Always reload to show new status or failure message
+							frm.reload_doc();
 						}
 					});
 				});
+			});
+		}
+
+		if (frm.doc.status === 'Failed') {
+			frm.add_custom_button(__('Retry Refund'), function() {
+				frm.set_value('status', 'Approved');
+				frm.save();
 			});
 		}
 	},

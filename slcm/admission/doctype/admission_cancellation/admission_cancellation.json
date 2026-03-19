@@ -10,23 +10,28 @@
   "section_application",
   "applicant",
   "offer",
-  "payment_request",
-  "column_break_1",
   "campus",
   "program",
+  "column_break_app_1",
+  "payment_request",
+  "amount_paid",
+  "razorpay_id",
   "section_cancellation",
   "cancellation_type",
   "status",
-  "column_break_2",
+  "column_break_canc_1",
   "requested_by",
   "requested_on",
-  "section_approval",
-  "cancelled_by",
-  "cancelled_on",
   "section_reason",
   "cancellation_reason_type",
   "cancellation_reason",
-  "additional_comments"
+  "column_break_reason_1",
+  "additional_comments",
+  "section_approval",
+  "cancelled_by",
+  "cancelled_on",
+  "amended_from",
+  "refund_request"
  ],
  "fields": [
   {
@@ -51,9 +56,27 @@
    "read_only": 1
   },
   {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_app_1",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "payment_request",
    "fieldtype": "Link",
-   "label": "Payment Request",
+   "label": "Fee Payment",
    "options": "Fee Payment",
    "read_only": 1
   },
@@ -67,24 +90,6 @@
    "fieldname": "razorpay_id",
    "fieldtype": "Data",
    "label": "Razorpay Payment ID",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "label": "Campus",
-   "options": "Campus",
-   "read_only": 1
-  },
-  {
-   "fieldname": "program",
-   "fieldtype": "Link",
-   "label": "Program",
-   "options": "Program",
    "read_only": 1
   },
   {
@@ -109,7 +114,14 @@
    "reqd": 1
   },
   {
-   "fieldname": "column_break_2",
+   "fieldname": "refund_request",
+   "fieldtype": "Link",
+   "label": "Refund Request",
+   "options": "Refund Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_canc_1",
    "fieldtype": "Column Break"
   },
   {
@@ -126,24 +138,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_approval",
-   "fieldtype": "Section Break",
-   "label": "Approval"
-  },
-  {
-   "fieldname": "cancelled_by",
-   "fieldtype": "Link",
-   "label": "Cancelled By",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "cancelled_on",
-   "fieldtype": "Datetime",
-   "label": "Cancelled On",
-   "read_only": 1
-  },
-  {
    "fieldname": "section_reason",
    "fieldtype": "Section Break",
    "label": "Reason"
@@ -151,7 +145,7 @@
   {
    "fieldname": "cancellation_reason_type",
    "fieldtype": "Select",
-   "label": "Cancellation Reason Type",
+   "label": "Cancellation Reason",
    "options": "Financial Issues\nMedical Reasons\nPersonal Reasons\nBetter Offer Elsewhere\nProgram Change\nOther",
    "reqd": 1
   },
@@ -162,14 +156,45 @@
    "reqd": 1
   },
   {
+   "fieldname": "column_break_reason_1",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "additional_comments",
    "fieldtype": "Text",
    "label": "Additional Comments"
+  },
+  {
+   "fieldname": "section_approval",
+   "fieldtype": "Section Break",
+   "label": "Approval & Finalization"
+  },
+  {
+   "fieldname": "cancelled_by",
+   "fieldtype": "Link",
+   "label": "Processed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cancelled_on",
+   "fieldtype": "Datetime",
+   "label": "Processed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Admission Cancellation",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 18:45:15.311001",
+ "modified": "2026-03-19 11:02:25.760922",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cancellation",
