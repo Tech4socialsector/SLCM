@@ -15,15 +15,23 @@ class EligibilityResult(Document):
         """
         Fetch the Applicant's multi-category child table and populate
         the local `category` table if it is currently empty.
-        This mirrors the same pattern used in Entrance Test Seat Allocation
-        and Interview Seat Allocation.
+        Also populate basic profile fields from Applicant.
         """
-        if self.applicant_id and not self.category:
+        if self.applicant_id:
             from slcm.admission.doctype.applicant.applicant import Applicant
             app_doc = frappe.get_doc("Applicant", self.applicant_id)
-            app_categories = app_doc._get_applicant_categories()
-            for cat in app_categories:
-                self.append("category", {"category": cat})
+            
+            # Populate basic info if missing
+            if not self.candidate_name: self.candidate_name = app_doc.candidate_name
+            if not self.email: self.email = app_doc.email
+            if not self.gender: self.gender = app_doc.gender
+            if not self.mobile_number: self.mobile_number = app_doc.mobile_number
+            if not self.date_of_birth: self.date_of_birth = app_doc.date_of_birth
+
+            if not self.category:
+                app_categories = app_doc._get_applicant_categories()
+                for cat in app_categories:
+                    self.append("category", {"category": cat})
 
     def on_update(self):
         """
@@ -65,6 +73,7 @@ class EligibilityResult(Document):
                 _file.save(ignore_permissions=True)
                 file_url = _file.file_url
             
+            # Set the URL in the doctype and save only that field to avoid re-triggering on_update
             self.db_set("eligibility_result_card", file_url)
         finally:
             self.flags.in_card_generation = False
