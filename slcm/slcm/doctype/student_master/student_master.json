@@ -121,6 +121,14 @@
   "ug_college",
   "ug_percentage",
   "ug_max_cgpa",
+  "section_break_cbev",
+  "ug_degree_details",
+  "phd_details_section",
+  "phd_proposal",
+  "phd_programme",
+  "proposed_phd_topic",
+  "pg_degree_details_section",
+  "pg_degree_details",
   "tab_finance",
   "finance_section",
   "applying_scholarship",
@@ -1211,10 +1219,52 @@
    "fieldname": "passport_expiry_date",
    "fieldtype": "Date",
    "label": "Passport Expiry Date"
+  },
+  {
+   "fieldname": "section_break_cbev",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "ug_degree_details",
+   "fieldtype": "Table",
+   "label": "UG Degree Details",
+   "options": "UG Degree Detail"
+  },
+  {
+   "fieldname": "pg_degree_details_section",
+   "fieldtype": "Section Break",
+   "label": "PG Degree Details"
+  },
+  {
+   "fieldname": "pg_degree_details",
+   "fieldtype": "Table",
+   "label": "PG Degree Details",
+   "options": "PG Degree Details"
+  },
+  {
+   "fieldname": "phd_details_section",
+   "fieldtype": "Section Break",
+   "label": "PHD Details"
+  },
+  {
+   "fieldname": "phd_proposal",
+   "fieldtype": "Attach",
+   "label": "PhD proposal"
+  },
+  {
+   "fieldname": "phd_programme",
+   "fieldtype": "Select",
+   "label": "PhD programme",
+   "options": "\nLaw\nInterdisciplinary"
+  },
+  {
+   "fieldname": "proposed_phd_topic",
+   "fieldtype": "Small Text",
+   "label": "Proposed phd topic "
   }
  ],
  "links": [],
- "modified": "2026-02-11 12:10:13.144318",
+ "modified": "2026-03-19 12:22:30.135255",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
