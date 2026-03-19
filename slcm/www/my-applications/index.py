@@ -458,7 +458,24 @@ def get_context(context):
                 context.et_doc = et_doc
                 context.et_is_rescheduled = (et_doc.is_rescheduled == 1 or et_doc.entrance_test_status == "Rescheduled")
                 context.et_show_result = (et_doc.entrance_test_status in ["Attended", "Absent"] and et_doc.result_published == 1)
-                context.et_preferences = [{"provider": p.provider, "center_name": p.center_name, "center_address": p.center_address} for p in (et_doc.re_assigned_preferences if context.et_is_rescheduled else et_doc.assigned_preferences)]
+                
+                # Fetch location for assigned preferences
+                context.et_preferences = []
+                prefs = et_doc.re_assigned_preferences if context.et_is_rescheduled else et_doc.assigned_preferences
+                for p in prefs:
+                    loc = frappe.db.get_value("Entrance Test Provider", p.provider, "location")
+                    context.et_preferences.append({
+                        "provider": p.provider,
+                        "center_name": p.center_name,
+                        "center_address": p.center_address,
+                        "location": loc
+                    })
+                
+                # Fetch location for the currently allocated center
+                current_provider = et_doc.re_entrance_test_provider if context.et_is_rescheduled else et_doc.entrance_test_provider
+                if current_provider:
+                    context.et_location = frappe.db.get_value("Entrance Test Provider", current_provider, "location")
+                
                 context.et_doc_json = frappe.as_json(et_doc.as_dict())
                 
                 # Add branding and reporting time
@@ -510,6 +527,7 @@ def get_context(context):
                 is_re = context.interview_is_rescheduled
                 f_date = i_doc.re_interview_date if is_re else i_doc.interview_date
                 f_time = i_doc.re_interview_time if is_re else i_doc.interview_time
+                staff_name = i_doc.re_staff_name if is_re else i_doc.staff_name
                 
                 # Format time for display
                 formatted_time = "—"
@@ -530,8 +548,13 @@ def get_context(context):
                         reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
                     except: pass
 
+                interview_location = None
+                if staff_name:
+                    interview_location = frappe.db.get_value("Interview Staff Member", staff_name, "interview_location")
+
                 context.interview_current_slot = {
-                    "staff_name": i_doc.re_staff_name if is_re else i_doc.staff_name,
+                    "staff_name": staff_name,
+                    "interview_location": interview_location,
                     "interview_date": frappe.utils.format_date(f_date, "d MMM yyyy") if f_date else "—",
                     "interview_time": formatted_time,
                     "reporting_time": reporting_time,
