@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "prompt",
  "creation": "2026-03-03 13:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -26,7 +27,8 @@
    "fieldname": "configuration_code",
    "fieldtype": "Data",
    "label": "Configuration Code",
-   "read_only": 1
+   "read_only": 1,
+   "unique": 1
   },
   {
    "fieldname": "academic_year",
@@ -94,10 +96,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 10:10:24.449926",
+ "modified": "2026-03-18 17:23:21.654286",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result Configuration",
+ "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {

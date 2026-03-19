@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:APP-{YYYY}-{#####}",
  "creation": "2026-01-07 12:15:38.115590",
@@ -1069,7 +1070,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-19 12:12:41.553540",
+ "modified": "2026-03-18 19:21:48.713005",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
