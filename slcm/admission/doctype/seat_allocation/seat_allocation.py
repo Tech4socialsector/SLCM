@@ -404,6 +404,7 @@ class SeatAllocation(Document):
             for row in selected_open:
                 row.selection_status = "Selected"
                 row.allocation_type = "Open"
+                row.allocated_category = "General"
                 total_selected += 1
 
             # -----------------------------------
@@ -453,6 +454,7 @@ class SeatAllocation(Document):
             for row in gen_waitlist_pool:
                 row.selection_status = "Waitlisted"
                 row.allocation_type = "Open"
+                row.allocated_category = "General"
                 total_waitlisted += 1
                 
             # 2. Waitlist Reserved (from category specific pools)

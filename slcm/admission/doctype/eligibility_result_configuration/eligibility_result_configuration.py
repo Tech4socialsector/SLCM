@@ -119,6 +119,11 @@ class EligibilityResultConfiguration(Document):
         # information is now taken directly from the source records.
 
         count = 0
+        source_counts = {
+            "Interview Pass": 0,
+            "ET Pass (Interview Exempt)": 0,
+            "Exempted": 0
+        }
 
         def get_applicant_education(applicant_id, program_level):
             """Fetch education-related fields from the Applicant doc.
@@ -175,6 +180,7 @@ class EligibilityResultConfiguration(Document):
             return edu
         def upsert_result(data, source_type):
             nonlocal count
+            source_counts[source_type] += 1
             existing = frappe.db.get_value("Eligibility Result", {"applicant_id": data.applicant_id}, "name")
             if existing:
                 res = frappe.get_doc("Eligibility Result", existing)
@@ -237,6 +243,27 @@ class EligibilityResultConfiguration(Document):
 
             res.flags.ignore_mandatory = True
             res.save(ignore_permissions=True)
+            
+            # Send eligibility result notification email
+            if res.email:
+                try:
+                    _send_eligibility_result_email(res)
+                except Exception:
+                    frappe.log_error(title=f"Eligibility Result Email Failed: {res.name}")
+
+            # MASTER PIECE: Update Applicant Status to "Interview Completed"
+            # Using direct SQL for maximum reliability and bypassing potentially stale caches
+            frappe.db.sql("""
+                UPDATE `tabApplicant` 
+                SET application_status = 'Interview Completed', modified = %(now)s 
+                WHERE name = %(name)s
+            """, {"now": now(), "name": data.applicant_id})
+            frappe.clear_document_cache("Applicant", data.applicant_id)
+            frappe.publish_realtime(
+                "applicant_application_status_updated",
+                {"docname": data.applicant_id, "application_status": "Interview Completed"},
+            )
+
             count += 1
 
         # Track applicant IDs to avoid duplicates via a set
@@ -266,11 +293,14 @@ class EligibilityResultConfiguration(Document):
                 "generated_on": now(),
                 "generated_by": frappe.session.user
             })
-            frappe.msgprint(
-                f"Successfully generated <b>{count}</b> Eligibility Result records.",
-                title="Generation Complete",
-                indicator="green"
-            )
+            
+            # Return detailed counts for the UI popup
+            return {
+                "total": count,
+                "interview_pass": source_counts["Interview Pass"],
+                "et_pass_exempt": source_counts["ET Pass (Interview Exempt)"],
+                "dual_exempt": source_counts["Exempted"]
+            }
         else:
             self.db_set("status", "Failed")
             msg = f"""
@@ -301,3 +331,48 @@ class EligibilityResultConfiguration(Document):
             frappe.throw(msg, title=_("Generation Failed"))
 
         return count
+
+
+def _send_eligibility_result_email(res):
+    """Send eligibility result notification to the applicant."""
+    from frappe.utils import get_url
+    url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
+
+    msg = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
+        <h2 style="color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; margin-top: 0;">Eligibility Result</h2>
+        <p>Dear {res.candidate_name or res.applicant_id},</p>
+        <p>Congratulations! Your eligibility result has been generated successfully. Please find the details below:</p>
+        
+        <div style="background: #e8f5e9; border-radius: 8px; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>Result Details:</strong></p>
+            <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+                <tr><td style="padding:5px 0; color:#666;">Program:</td><td style="padding:5px 0; font-weight:bold;">{res.program or '—'}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Academic Year:</td><td style="padding:5px 0; font-weight:bold;">{res.academic_year or '—'}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Admission Cycle:</td><td style="padding:5px 0; font-weight:bold;">{res.admission_cycle or '—'}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Campus:</td><td style="padding:5px 0; font-weight:bold;">{res.campus or '—'}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Entrance Test Score:</td><td style="padding:5px 0; font-weight:bold;">{res.entrance_test_score or 0}</td></tr>
+                <tr><td style="padding:5px 0; color:#666;">Interview Score:</td><td style="padding:5px 0; font-weight:bold;">{res.interview_score or 0}</td></tr>
+            </table>
+        </div>
+
+        <p>Please click the button below to view your full results and application status in the portal:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{url}" style="display:inline-block; padding:12px 28px; background:#2e7d32; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">View Result in Portal</a>
+        </div>
+        
+        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
+            Record Reference: {res.name}<br>
+            If the button doesn't work, copy this link: {url}
+        </p>
+    </div>
+    """
+
+    frappe.sendmail(
+        recipients=[res.email],
+        subject=f"Eligibility Result  — {res.candidate_name or res.applicant_id}",
+        message=msg,
+        reference_doctype="Eligibility Result",
+        reference_name=res.name
+    )

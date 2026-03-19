@@ -148,7 +148,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-17 14:58:54.276631",
+ "modified": "2026-03-18 15:40:52.145106",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
@@ -249,6 +249,30 @@
    "report": 1,
    "role": "Offer Letter Admin",
    "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Staff Member",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

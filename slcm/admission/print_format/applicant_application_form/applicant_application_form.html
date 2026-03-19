@@ -9,20 +9,36 @@
 
 {%- set _site = frappe.utils.get_url() -%}
 
+{#- base64 image helper — makes images load in wkhtmltopdf PDF -#}
+{%- macro get_img(url) -%}
+  {%- if url and url not in ['None',''] -%}
+    {{ frappe.call('slcm.admission.utils.web.get_base64_image', url=url) }}
+  {%- endif -%}
+{%- endmacro -%}
+
 {%- macro f(v) -%}{%- if v and v != 'None' -%}{{ v }}{%- else -%}&mdash;{%- endif -%}{%- endmacro -%}
 {%- macro fd(v) -%}{%- if v -%}{{ frappe.utils.formatdate(v,'dd-MM-yyyy') }}{%- else -%}&mdash;{%- endif -%}{%- endmacro -%}
 
-{%- set is_phd        = (doc.program_level or '') | lower in ['phd', 'research course'] -%}
-{%- set show_guardian = doc.guardian_required -%}
-{%- set _ews_val      = (doc.ews or '') | lower -%}
-{%- set _pwd_val      = (doc.pwd or '') | lower -%}
-{%- set _ka_any       = doc.ka_study_7yrs or doc.ka_defence_child or doc.ka_govt_child or doc.ka_ais_child or doc.ka_capf_child -%}
+{%- set is_phd   = (doc.program_level or '') | lower in ['phd', 'research course'] -%}
+{%- set _ews_val = (doc.ews or '') | lower -%}
+{%- set _pwd_val = (doc.pwd or '') | lower -%}
+{%- set _ka_any  = doc.ka_study_7yrs or doc.ka_defence_child or doc.ka_govt_child or doc.ka_ais_child or doc.ka_capf_child -%}
+
+{#- guardian_required: explicit whitelist so "No" string is NOT truthy -#}
+{%- set _gr_raw      = (doc.guardian_required or '') | string | lower | trim -%}
+{%- set show_guardian = _gr_raw in ['yes', '1', 'true'] -%}
 
 {#- Smart address builder -#}
 {%- set _addr_parts = [] -%}
-{%- if doc.correspondence_address and doc.correspondence_address not in ['None',''] -%}{%- set _ = _addr_parts.append(doc.correspondence_address) -%}{%- endif -%}
-{%- if doc.city and doc.city not in ['None',''] -%}{%- set _ = _addr_parts.append(doc.city) -%}{%- endif -%}
-{%- if doc.state and doc.state not in ['None',''] -%}{%- set _ = _addr_parts.append(doc.state) -%}{%- endif -%}
+{%- if doc.correspondence_address and doc.correspondence_address not in ['None',''] -%}
+  {%- set _ = _addr_parts.append(doc.correspondence_address) -%}
+{%- endif -%}
+{%- if doc.city and doc.city not in ['None',''] -%}
+  {%- set _ = _addr_parts.append(doc.city) -%}
+{%- endif -%}
+{%- if doc.state and doc.state not in ['None',''] -%}
+  {%- set _ = _addr_parts.append(doc.state) -%}
+{%- endif -%}
 {%- set _addr_str = _addr_parts | join(', ') -%}
 {%- if doc.pincode and doc.pincode not in ['None',''] -%}
   {%- set _addr_str = _addr_str ~ (' – ' if _addr_str else '') ~ doc.pincode -%}
@@ -57,6 +73,8 @@
     {%- set _logo_src = _site ~ _logo_path -%}
   {%- endif -%}
 {%- endif -%}
+
+<meta name="viewport" content="width=794, initial-scale=1.0">
 
 <style>
 /* ══════════════════════════════════════════════════════════════
@@ -104,12 +122,10 @@ form[data-doctype], .layout-main,
 }
 
 html, body {
+  width: 794px; min-width: 794px; max-width: 794px;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 7pt;
-  color: #111;
-  background: #fff;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
+  font-size: 9px; color: #111; background: #fff;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 
 /* ── Page wrapper ──────────────────────────────────────────── */
@@ -183,9 +199,8 @@ html, body {
 
 /* ── Main table ─────────────────────────────────────────────── */
 .pf-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+  width: 100%; border-collapse: collapse;
+  table-layout: fixed; border: 1px solid #ccc; margin-top: 0;
 }
 .pf-table td {
   border: 1px solid var(--border);
@@ -267,11 +282,11 @@ html, body {
   margin: 0 auto 2px;
 }
 
-/* ── Status badges ──────────────────────────────────────────── */
-.badge-green  { background:#276726; color:#fff; font-weight:bold; padding:1px 5px; border-radius:2px; font-size:6.2pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-yellow { background:#a34d00; color:#fff; font-weight:bold; padding:1px 5px; border-radius:2px; font-size:6.2pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-red    { background:#a81616; color:#fff; font-weight:bold; padding:1px 5px; border-radius:2px; font-size:6.2pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.badge-grey   { background:#3d3d3d; color:#fff; font-weight:bold; padding:1px 5px; border-radius:2px; font-size:6.2pt; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+/* ── Badges ─────────────────────────────────────────────────── */
+.badge-green  { background:#1e6b1e; color:#fff; font-weight:bold; padding:2px 7px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-yellow { background:#9a4500; color:#fff; font-weight:bold; padding:2px 7px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-red    { background:#a01212; color:#fff; font-weight:bold; padding:2px 7px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.badge-grey   { background:#383838; color:#fff; font-weight:bold; padding:2px 7px; border-radius:2px; font-size:7.5px; display:inline-flex; align-items:center; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
 /* ── Degree inner table ─────────────────────────────────────── */
 .deg-table { width:100%; border-collapse:collapse; font-size:6.5pt; }
@@ -280,30 +295,23 @@ html, body {
 .deg-table tr:nth-child(even) td { background:#fafafa; }
 
 /* ── Declaration ────────────────────────────────────────────── */
-.pf-decl { padding:3px 8px; font-size:6.5pt; line-height:1.45; color:#111; background:#fff; border-top:1px solid #ddd; }
-.pf-decl-item { display:flex; align-items:flex-start; gap:4px; margin-bottom:2px; }
+.pf-decl { padding:5px 10px; font-size:8px; line-height:1.55; color:#111; background:#fff; border-top:1px solid #ddd; }
+.pf-decl-item { display:flex; align-items:flex-start; gap:6px; margin-bottom:3px; }
 .pf-decl-item:last-child { margin-bottom:0; }
 .pf-chk  { font-size:9pt; line-height:1; flex-shrink:0; }
 .pf-decl-text { flex:1; }
 
-/* ── Invigilator note ───────────────────────────────────────── */
-.pf-invig { text-align:center; font-size:6pt; font-style:italic; color:#666; padding:2px 8px; background:#f9f9f9; border-top:1px solid #ddd; }
+/* ── Invigilator ────────────────────────────────────────────── */
+.pf-invig { text-align:center; font-size:7.5px; font-style:italic; color:#666; padding:3px 10px; background:#fafafa; border-top:1px solid #ddd; }
 
-/* ── Signature table ────────────────────────────────────────── */
+/* ── Signature ──────────────────────────────────────────────── */
 .pf-sig-table { width:100%; border-collapse:collapse; border-top:1px solid #ddd; }
 .pf-sig-table td { border:1px solid var(--border); padding:2px 10px 12px; text-align:center; font-size:6.5pt; vertical-align:bottom; width:50%; }
 .pf-sig-head  { font-weight:bold; font-size:6.5pt; background:#f9f9f9; }
 .pf-sig-space { height:26px; display:block; }
 
 /* ── Footer ─────────────────────────────────────────────────── */
-.pf-footer {
-  border-top:1px dashed #ccc;
-  text-align:center;
-  font-size:5.8pt;
-  color:#888;
-  padding:2px 6px;
-  background:#fff;
-}
+.pf-footer { border-top:1px dashed #ccc; text-align:center; font-size:7px; color:#999; padding:3px 8px; background:#fff; }
 
 /* ── Document page ──────────────────────────────────────────── */
 .pf-doc-body  { padding: 5mm 6mm; }
@@ -350,6 +358,7 @@ html, body {
     {# ══ 1. PERSONAL INFORMATION ══ #}
     <tr><td colspan="5" class="pf-sec">1. Personal Information</td></tr>
 
+    {# Row 1 — App ID + Status + Photo (rowspan=9) #}
     <tr>
       <td class="pf-lbl">Application ID</td>
       <td class="pf-val">{{ doc.name }}</td>
@@ -378,6 +387,7 @@ html, body {
       </td>
     </tr>
 
+    {# Rows 2–9: inside rowspan → wide values colspan="3" #}
     <tr>
       <td class="pf-lbl">Candidate's Name</td>
       <td class="pf-val" colspan="3">
@@ -426,7 +436,23 @@ html, body {
       </td>
     </tr>
 
-    {# ══ 2. FAMILY INFORMATION ══ #}
+    {# ══ 2. FAMILY INFORMATION ══
+       All rows are OUTSIDE the photo rowspan (5 cols free).
+       Two-pair rows: last val uses colspan="2"
+
+       Father layout (2 rows):
+         Row 1: Father's Name | val | Occupation | val colspan="2"
+         Row 2: Mobile        | val | Father's Email | val colspan="2"
+
+       Mother layout (2 rows — same pattern):
+         Row 1: Mother's Name | val | Occupation | val colspan="2"
+         Row 2: Mobile        | val | Mother's Email | val colspan="2"
+
+       Guardian layout (2 rows, conditional):
+         Row 1: Guardian's Name | val | Relationship | val colspan="2"
+         Row 2: Guardian's Mobile | val | Guardian's Email | val colspan="2"
+         Row 3 (conditional): Guardian's Address | val colspan="4"
+    #}
     <tr><td colspan="5" class="pf-sec">2. Family Information</td></tr>
 
     <tr>
@@ -537,14 +563,25 @@ html, body {
     </tr>
     {%- endif -%}
 
+    {# UG Degrees — non-PhD #}
     {%- if not is_phd and doc.ug_degree_details -%}
     <tr><td colspan="5" class="pf-subsec">Undergraduate Degree(s)</td></tr>
     <tr>
-      <td colspan="5" style="padding:3px 5px;">
+      <td colspan="5" style="padding:4px 6px;">
         <table class="deg-table">
-          <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
+          <tr>
+            <th style="width:30%">Programme</th>
+            <th style="width:40%">College / University</th>
+            <th style="width:15%">Year</th>
+            <th style="width:15%">% / CGPA</th>
+          </tr>
           {%- for d in doc.ug_degree_details -%}
-          <tr><td>{{ f(d.ug_program) }}</td><td>{{ f(d.college) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.ug_cgpa or d.percentage_cgpa_obtained) }}</td></tr>
+          <tr>
+            <td>{{ f(d.ug_program) }}</td>
+            <td>{{ f(d.college) }}</td>
+            <td>{{ f(d.year_of_completion) }}</td>
+            <td>{{ f(d.ug_cgpa or d.percentage_cgpa_obtained) }}</td>
+          </tr>
           {%- else -%}
           <tr><td colspan="4" style="color:#999;text-align:center;">&mdash;</td></tr>
           {%- endfor -%}
@@ -559,26 +596,51 @@ html, body {
     {%- endif -%}
     {%- endif -%}
 
+    {# PhD — UG + PG + details #}
     {%- if is_phd -%}
     <tr><td colspan="5" class="pf-subsec">Undergraduate Degree(s)</td></tr>
     <tr>
-      <td colspan="5" style="padding:3px 5px;">
+      <td colspan="5" style="padding:4px 6px;">
         <table class="deg-table">
-          <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
+          <tr>
+            <th style="width:30%">Programme</th>
+            <th style="width:40%">College / University</th>
+            <th style="width:15%">Year</th>
+            <th style="width:15%">% / CGPA</th>
+          </tr>
           {%- for d in (doc.ug_degree_details or []) -%}
-          <tr><td>{{ f(d.ug_program) }}</td><td>{{ f(d.college) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.ug_cgpa or d.percentage_cgpa_obtained) }}</td></tr>
-          {%- else -%}<tr><td colspan="4" style="color:#999;text-align:center;">&mdash;</td></tr>{%- endfor -%}
+          <tr>
+            <td>{{ f(d.ug_program) }}</td>
+            <td>{{ f(d.college) }}</td>
+            <td>{{ f(d.year_of_completion) }}</td>
+            <td>{{ f(d.ug_cgpa or d.percentage_cgpa_obtained) }}</td>
+          </tr>
+          {%- else -%}
+          <tr><td colspan="4" style="color:#999;text-align:center;">&mdash;</td></tr>
+          {%- endfor -%}
         </table>
       </td>
     </tr>
     <tr><td colspan="5" class="pf-subsec">Postgraduate Degree(s)</td></tr>
     <tr>
-      <td colspan="5" style="padding:3px 5px;">
+      <td colspan="5" style="padding:4px 6px;">
         <table class="deg-table">
-          <tr><th style="width:30%">Programme</th><th style="width:40%">College / University</th><th style="width:15%">Year</th><th style="width:15%">% / CGPA</th></tr>
+          <tr>
+            <th style="width:30%">Programme</th>
+            <th style="width:40%">College / University</th>
+            <th style="width:15%">Year</th>
+            <th style="width:15%">% / CGPA</th>
+          </tr>
           {%- for d in (doc.pg_degree_details or []) -%}
-          <tr><td>{{ f(d.pg_program) }}</td><td>{{ f(d.collegeuniversity) }}</td><td>{{ f(d.year_of_completion) }}</td><td>{{ f(d.pg_cgpa or d.percentagecgpa_obtained) }}</td></tr>
-          {%- else -%}<tr><td colspan="4" style="color:#999;text-align:center;">&mdash;</td></tr>{%- endfor -%}
+          <tr>
+            <td>{{ f(d.pg_program) }}</td>
+            <td>{{ f(d.collegeuniversity) }}</td>
+            <td>{{ f(d.year_of_completion) }}</td>
+            <td>{{ f(d.pg_cgpa or d.percentagecgpa_obtained) }}</td>
+          </tr>
+          {%- else -%}
+          <tr><td colspan="4" style="color:#999;text-align:center;">&mdash;</td></tr>
+          {%- endfor -%}
         </table>
       </td>
     </tr>
@@ -823,8 +885,9 @@ html, body {
   </div>
 
   <div class="pf-footer">
-    End of Uploaded Documents &nbsp;|&nbsp; Application ID: {{ doc.name }}
-    &nbsp;|&nbsp; Printed: {{ frappe.utils.formatdate(frappe.utils.nowdate(),'dd-MM-yyyy') }}
+    End of Uploaded Documents &nbsp;|&nbsp;
+    Application ID: {{ doc.name }} &nbsp;|&nbsp;
+    Printed: {{ frappe.utils.formatdate(frappe.utils.nowdate(),'dd-MM-yyyy') }}
   </div>
 
 </div>

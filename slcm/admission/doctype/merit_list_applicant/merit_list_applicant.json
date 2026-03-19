@@ -49,8 +49,7 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "label": "Program Level",
-   "options": "UG\nPG\nResearch Cource"
-  },
+   "options": "UG\nPG\nResearch Course"  },
   {
    "fieldname": "hsc_percentage",
    "fieldtype": "Float",
