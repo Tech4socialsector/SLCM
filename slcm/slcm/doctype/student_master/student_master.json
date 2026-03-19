@@ -818,7 +818,7 @@
    "fieldname": "ug_degree_completed",
    "fieldtype": "Select",
    "label": "Have you completed your UG degree",
-   "options": "\nYes\nNo",
+   "options": "\nYes\nNo\nFinal Year of UG Degree\nUG Degree completed",
    "reqd": 1
   },
   {
@@ -1264,7 +1264,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-19 12:22:30.135255",
+ "modified": "2026-03-19 15:28:43.138044",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

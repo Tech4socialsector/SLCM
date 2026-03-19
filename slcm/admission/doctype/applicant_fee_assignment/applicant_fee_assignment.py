@@ -130,7 +130,7 @@ def _get_academic_year_from_cycle(admission_cycle):
 	return None
 
 
-def _map_applicant_to_student(student, applicant, program, admission_cycle):
+def _map_applicant_to_student(student, applicant, program, admission_cycle, offer_letter_name=None):
 	"""
 	Central mapping function: Applicant fields → Student Master fields.
 	All field assignments and error-safe lookups are handled here.
@@ -144,10 +144,13 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle):
 	# ── Programme ────────────────────────────────────────────────────────────
 	student.programme = program
 
-	# ── Academic Year (derived from Admission Cycle) ──────────────────────────
-	derived_year = _get_academic_year_from_cycle(admission_cycle)
-	if derived_year:
-		student.academic_year = derived_year
+	# ── Academic Year ────────────────────────────────────────────────────────
+	# Priority: 1. Applicant's academic_year field, 2. Derived from Admission Cycle
+	student.academic_year = applicant.get("academic_year")
+	if not student.academic_year:
+		derived_year = _get_academic_year_from_cycle(admission_cycle)
+		if derived_year:
+			student.academic_year = derived_year
 
 	# ── Name: store full candidate_name in first_name only (no split) ─────────
 	full_name = (applicant.get("candidate_name") or "").strip()
@@ -158,6 +161,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle):
 	# ── Personal Details ──────────────────────────────────────────────────────
 	student.dob             = applicant.date_of_birth or nowdate()
 	student.email           = applicant.email or ""
+	student.personal_email  = applicant.email or ""
 	student.phone           = applicant.mobile_number or applicant.get("alternate_contact") or ""
 	student.alternate_phone = applicant.get("alternate_contact") if (
 		applicant.get("alternate_contact") and applicant.mobile_number
@@ -187,6 +191,20 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle):
 
 	# ── Admission / Quota ─────────────────────────────────────────────────────
 	# admission_type intentionally left blank per spec (leave as-is)
+	# Map Quota based on reservation fields
+	if str(applicant.get("ews")).strip() == "Yes":
+		student.quota = "EWS"
+	else:
+		sc_st_obc = (applicant.get("whether_scstobc_ncl") or "").strip()
+		if sc_st_obc == "OBC-NCL":
+			student.quota = "OBC"
+		elif sc_st_obc and sc_st_obc != "NA":
+			student.quota = sc_st_obc
+		else:
+			student.quota = "General"
+
+	# Set registration date
+	student.date_of_registration = nowdate()
 
 	# ── Class X ───────────────────────────────────────────────────────────────
 	student.class_x_school          = applicant.get("class_x_school") or None
@@ -203,16 +221,29 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle):
 	student.class_xii_max_cgpa        = applicant.get("class_xii_cgpa") or None
 	student.class_xii_exam_name       = applicant.get("class_xii_name_of_examination") or None
 
+	# ── Documents (Attachments) ───────────────────────────────────────────────
+	student.passport_size_photo           = applicant.get("candidate_photo") or None
+	student.aadhaar_card                  = applicant.get("id_proof") or None
+	student.std_x_marksheet               = applicant.get("class_x_marksheet") or None
+	student.class_xii_marksheet           = applicant.get("class_xii_marksheet") or None
+	student.pwd_certificate               = applicant.get("pwd_certificate") or None
+	student.entrance_exam_score_marksheet = applicant.get("national_test_certificate") or None
+
+	if offer_letter_name:
+		offer_pdf = frappe.db.get_value("Offer Letter", offer_letter_name, "offer_letter_pdf")
+		if offer_pdf:
+			student.offer_letter = offer_pdf
+
 	# ── UG Degree (child table: ug_degree_details) ────────────────────────────
 	student.ug_degree_completed = applicant.get("ug_degree_completion") or None
 	if applicant.get("ug_degree_details"):
 		for row in applicant.ug_degree_details:
 			student.append("ug_degree_details", {
-				"ug_program":    row.get("ug_degree_name") or row.get("degree_name") or None,
-				"college":        row.get("ug_college") or row.get("college") or None,
-				"year_of_completion":row.get("ug_completion_year") or row.get("completion_year") or None,
-				"ug_cgpa":     row.get("ug_percentage") or row.get("percentage") or None,
-				"ug_max_cgpa":       row.get("ug_max_cgpa") or row.get("cgpa") or None,
+				"ug_program":    row.get("ug_program") or None,
+				"college":        row.get("college") or None,
+				"year_of_completion":row.get("year_of_completion") or None,
+				"ug_cgpa":     row.get("ug_cgpa") or None,
+				"ug_max_cgpa":       row.get("ug_max_cgpa") or None,
 				"degree_certificate": row.get("degree_certificate") or None,
 				"marksheets": row.get("marksheets") or None
 			})
@@ -221,13 +252,13 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle):
 	if applicant.get("pg_degree_details"):
 		for row in applicant.pg_degree_details:
 			student.append("pg_degree_details", {
-				"pg_program":    row.get("pg_degree_name") or row.get("degree_name") or None,
-				"collegeuniversity":        row.get("pg_college") or row.get("college") or None,
-				"year_of_completion":row.get("pg_completion_year") or row.get("completion_year") or None,
-				"pg_cgpa":     row.get("pg_percentage") or row.get("percentage") or None,
-				"pg_max_cgpa":       row.get("pg_max_cgpa") or row.get("cgpa") or None,
-				"pg_degree_certificatebonafide_certificate_to_be_uploaded": row.get("pg_degree_certificate") or None,
-				"transcriptsmarksheets_to_be_uploaded": row.get("pg_marksheets") or None
+				"pg_program":    row.get("pg_program") or None,
+				"collegeuniversity":        row.get("collegeuniversity") or None,
+				"year_of_completion":row.get("year_of_completion") or None,
+				"pg_cgpa":     row.get("pg_cgpa") or None,
+				"pg_max_cgpa":       row.get("pg_max_cgpa") or None,
+				"pg_degree_certificatebonafide_certificate_to_be_uploaded": row.get("pg_degree_certificatebonafide_certificate_to_be_uploaded") or None,
+				"transcriptsmarksheets_to_be_uploaded": row.get("transcriptsmarksheets_to_be_uploaded") or None
 			})
 
 	# ── PhD ───────────────────────────────────────────────────────────────────
@@ -303,7 +334,7 @@ def create_invoice(docname):
 			student = frappe.new_doc("Student Master")
 
 			# Map all Applicant fields → Student Master via central mapping function
-			student = _map_applicant_to_student(student, applicant, doc.program, doc.admission_cycle)
+			student = _map_applicant_to_student(student, applicant, doc.program, doc.admission_cycle, doc.offer_letter)
 
 			student.insert(
 				ignore_permissions=True,
