@@ -7,7 +7,7 @@ class RefundTransaction(Document):
 		self.fetch_request_details()
 
 	def fetch_request_details(self):
-		if self.refund_request:
+		if self.refund_request and not self.razorpay_payment_id:
 			request = frappe.get_doc("Refund Request", self.refund_request)
 			self.payment_request = request.payment_request
 			self.razorpay_payment_id = request.razorpay_payment_id

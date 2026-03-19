@@ -19,6 +19,35 @@ class RefundRequest(Document):
 		new_status = status_map.get(self.status)
 		if new_status:
 			frappe.db.set_value("Admission Cancellation", self.admission_cancellation, "status", new_status)
+		
+		if self.status == "Processed":
+			self.sync_linked_docs()
+
+	def sync_linked_docs(self):
+		"""
+		Update linked Offer Letter and Student Master statuses after successful refund.
+		"""
+		if not self.admission_cancellation:
+			return
+
+		# Fetch Admission Cancellation details
+		cancellation = frappe.get_doc("Admission Cancellation", self.admission_cancellation)
+		
+		# 1. Update Offer Letter Status to Withdrawn
+		if cancellation.offer:
+			frappe.db.set_value("Offer Letter", cancellation.offer, "offer_status", "Withdrawn")
+			
+		# 2. Update Student Master Status (if linked)
+		student_name = frappe.db.get_value("Student Master", {"application_number": self.applicant}, "name")
+		if student_name:
+			frappe.db.set_value("Student Master", student_name, {
+				"academic_status": "Inactive",
+				"student_status": "Dormant",
+				"status_remark": _("Admission withdrawn and refund processed: {0}").format(self.name)
+			})
+		
+		# 3. Update Applicant Status
+		frappe.db.set_value("Applicant", self.applicant, "application_status", "Cancelled")
 
 	def validate(self):
 		self.fetch_payment_details()
@@ -28,7 +57,7 @@ class RefundRequest(Document):
 		self.set_approval_details()
 
 	def fetch_payment_details(self):
-		if self.payment_request:
+		if self.payment_request and not self.razorpay_payment_id:
 			payment = frappe.get_doc("Fee Payment", self.payment_request)
 			self.amount_paid = flt(payment.amount)
 			self.razorpay_payment_id = payment.reference_number

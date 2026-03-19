@@ -68,8 +68,7 @@
    "fieldname": "admission_cancellation",
    "fieldtype": "Link",
    "label": "Admission Cancellation",
-   "options": "Admission Cancellation",
-   "read_only": 1
+   "options": "Admission Cancellation"
   },
   {
    "fieldname": "column_break_1",
@@ -166,7 +165,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-19 11:55:00",
+ "modified": "2026-03-19 14:43:44.301610",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Refund Request",

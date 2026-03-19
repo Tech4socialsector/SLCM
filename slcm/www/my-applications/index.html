@@ -1825,11 +1825,12 @@ or _app.current_stage)) or _status %}
             Seat allocation result</div>
           {% if all_results and all_results|length > 0 %}
           {% set r = all_results[0] %}
-
+          
+          {% if r.selection_status in ['Selected','Offered','Accepted','Fee Paid'] %}
           <div class="seat-info-box">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
               <span class="seat-prog-name">{{ _prog }}</span>
-              <span class="merit-chip" style="position: static;">{{ r.selection_status }}</span>
+              <span class="merit-chip" style="position: static;">Selected</span>
             </div>
             <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
               <div
@@ -1849,15 +1850,16 @@ or _app.current_stage)) or _status %}
 
           {% if r.selection_status in ['Selected','Offered'] %}
           <!-- Accept/Decline buttons commented out intentionally -->
-          {% elif r.selection_status == 'Accepted' %}
+          {% elif r.selection_status in ['Accepted','Fee Paid'] %}
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
             <span class="material-symbols-outlined"
               style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
-            <span style="font-size:13px;font-weight:600;color:#166534">Seat Accepted</span>
+            <span style="font-size:13px;font-weight:600;color:#166534">Seat Selected</span>
           </div>
+          {% endif %}
           {% else %}
-          <div style="padding:12px 0;text-align:center">
-            <span style="font-size:13px;font-weight:500;color:var(--text-3)">Status: {{ r.selection_status }}</span>
+          <div style="padding:12px 0">
+            <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
           </div>
           {% endif %}
           {% else %}

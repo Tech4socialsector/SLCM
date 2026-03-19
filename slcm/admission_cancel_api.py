@@ -23,27 +23,48 @@ def get_refund_policies():
 def process_refund(name):
 	refund = frappe.get_doc("Refund Request", name)
 	
+	if refund.status == "Processed":
+		frappe.throw(_("Refund Request has already been processed."))
+
 	if refund.status != "Approved":
 		frappe.throw(_("Refund Request must be Approved before processing."))
 	
-	# Set status to Processing immediately
-	refund.status = "Processing"
-	refund.save(ignore_permissions=True)
+	# Set status to Processing immediately to prevent concurrent calls
+	refund.db_set("status", "Processing")
 	frappe.db.commit()
 	
 	if not razorpay:
+		refund.db_set("status", "Failed")
 		frappe.throw(_("Razorpay library is not installed."))
 		
 	# Razorpay Integration
 	settings = frappe.get_single("Razorpay Settings")
 	if not settings.api_key or not settings.api_secret:
+		refund.db_set("status", "Failed")
 		frappe.throw(_("Razorpay API Key or Secret not configured."))
 		
 	client = razorpay.Client(auth=(settings.api_key, settings.get_password("api_secret")))
 	
 	try:
+		# Double-check if already refunded in Razorpay to prevent "Already refunded" errors
+		try:
+			rzp_payment = client.payment.fetch(refund.razorpay_payment_id)
+			amount_to_refund_paise = int(flt(refund.refund_amount) * 100)
+			
+			available_paise = int(rzp_payment.get("amount", 0)) - int(rzp_payment.get("amount_refunded", 0))
+			
+			if available_paise < amount_to_refund_paise:
+				error_msg = _("Insufficient balance in Razorpay payment. Available: {0}, Requested: {1}").format(
+					available_paise / 100.0, refund.refund_amount
+				)
+				refund.db_set("status", "Failed")
+				refund.db_set("failure_message", error_msg)
+				return {"status": "Error", "message": error_msg}
+		except Exception as e:
+			# If fetch fails, we proceed but log it.
+			frappe.log_error(f"Razorpay Fetch Error before refund: {str(e)}", "Refund Process")
+
 		# Initiate refund via Razorpay API
-		# Note: razorpay_payment_id should be stored in the Refund Request
 		refund_data = {
 			"amount": int(refund.refund_amount * 100), # Amount in paise
 			"speed": "normal",

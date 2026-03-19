@@ -1,4 +1,11 @@
 frappe.ui.form.on('Admission Cancellation', {
+	refresh: function(frm) {
+		if (frm.doc.refund_request) {
+			frm.add_custom_button(__('View Refund Request'), function() {
+				frappe.set_route('Form', 'Refund Request', frm.doc.refund_request);
+			}, __('Actions'));
+		}
+	},
 	applicant: function(frm) {
 		if (frm.doc.applicant) {
 			frappe.db.get_value('Applicant', frm.doc.applicant, ['program', 'campus'], (r) => {
