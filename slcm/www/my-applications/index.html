@@ -2452,8 +2452,16 @@ or _app.current_stage)) or _status %}
           <span class="ico"><span class="material-symbols-outlined">assignment_turned_in</span></span>
           Eligibility Result
         </div>
-      </div>
-      <div class="ma-card-body" style="padding: 0;">
+        {% if eligibility_result.eligibility_result_card %}
+        <div class="ma-card-actions">
+          <a href="{{ eligibility_result.eligibility_result_card }}" target="_blank" class="btn-download" title="Download Eligibility Result Mark Sheet" 
+             style="padding: 0 16px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; margin: 0; background: var(--primary); color: white; border-color: var(--primary);">
+            <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+            Download Result
+          </a>
+        </div>
+        {% endif %}
+      </div>      <div class="ma-card-body" style="padding: 0;">
         <!-- Scores Section -->
         <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: none; letter-spacing: .06em;">
           Scores

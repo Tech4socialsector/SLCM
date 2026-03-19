@@ -145,6 +145,12 @@
    "options": "Qualified\nSelected"
   },
   {
+   "fieldname": "eligibility_result_card",
+   "fieldtype": "Attach",
+   "label": "Eligibility Result Card",
+   "read_only": 1
+  },
+  {
    "fieldname": "configuration_reference",
    "fieldtype": "Link",
    "label": "Configuration reference",
