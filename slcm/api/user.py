@@ -281,8 +281,8 @@ def download_fle_receipt(docname):
             <meta charset="utf-8" />
             <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet" />
             <style>
-                body {{ font-family: "Merriweather", serif; font-size: 12px; color: #111827; }}
-                .h1 {{ font-size: 18px; font-weight: 700; margin: 12px 0 12px 0; }}
+                body {{ font-family: "Merriweather", serif; font-size: 11px; color: #111827; }}
+                .h1 {{ font-size: 12px; font-weight: 700; margin: 12px 0 12px 0; }}
                 .sub {{ color: #4b5563; margin: 0 0 12px 0; }}
                 table {{ width: 100%; border-collapse: collapse; }}
                 td {{ padding: 10px 12px; border: 1px solid #E5E7EB; vertical-align: top; }}
@@ -290,7 +290,7 @@ def download_fle_receipt(docname):
                 table.header-table {{ border: none; margin-bottom: 20px; border-bottom: 2px solid #a81119; padding-bottom: 10px; }}
                 table.header-table td {{ border: none; padding: 0; vertical-align: middle; }}
                 .header-title-container {{ text-align: center; color: #a81119; font-family: "Merriweather", serif; }}
-                .university-name {{ font-size: 16px; font-weight: bold; margin: 0; }}
+                .university-name {{ font-size: 18px; font-weight: bold; margin: 0; }}
                 .department-name {{ font-size: 14px; font-weight: bold; margin: 5px 0 0 0; }}
             </style>
         </head>
@@ -366,8 +366,8 @@ def get_fle_receipt_pdf_base64(docname):
             <meta charset="utf-8" />
             <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet" />
             <style>
-                body {{ font-family: "Merriweather", serif; font-size: 12px; color: #111827; }}
-                .h1 {{ font-size: 18px; font-weight: 700; margin: 12px 0 12px 0; }}
+                body {{ font-family: "Merriweather", serif; font-size: 11px; color: #111827; }}
+                .h1 {{ font-size: 12px; font-weight: 700; margin: 12px 0 12px 0; }}
                 .sub {{ color: #4b5563; margin: 0 0 12px 0; }}
                 table {{ width: 100%; border-collapse: collapse; }}
                 td {{ padding: 10px 12px; border: 1px solid #E5E7EB; vertical-align: top; }}
@@ -375,7 +375,7 @@ def get_fle_receipt_pdf_base64(docname):
                 table.header-table {{ border: none; margin-bottom: 20px; border-bottom: 2px solid #a81119; padding-bottom: 10px; }}
                 table.header-table td {{ border: none; padding: 0; vertical-align: middle; }}
                 .header-title-container {{ text-align: center; color: #a81119; font-family: "Merriweather", serif; }}
-                .university-name {{ font-size: 16px; font-weight: bold; margin: 0; }}
+                .university-name {{ font-size: 18px; font-weight: bold; margin: 0; }}
                 .department-name {{ font-size: 14px; font-weight: bold; margin: 5px 0 0 0; }}
             </style>
         </head>
@@ -482,13 +482,13 @@ def download_fle_application_pdf(docname):
                 table.header-table {{ border: none; margin-bottom: 16px; border-bottom: 2px solid #a81119; padding-bottom: 8px; width: 100%; border-collapse: collapse; }}
                 table.header-table td {{ border: none; padding: 0; vertical-align: middle; }}
                 .header-title-container {{ text-align: center; color: #a81119; }}
-                .university-name {{ font-size: 15px; font-weight: bold; margin: 0; }}
-                .department-name {{ font-size: 12px; font-weight: bold; margin: 4px 0 0 0; }}
-                .app-ref {{ font-size: 11px; margin: 4px 0 0 0; color: #374151; }}
+                .university-name {{ font-size: 18px; font-weight: bold; margin: 0; }}
+                .department-name {{ font-size: 14px; font-weight: bold; margin: 4px 0 0 0; }}
+                .app-ref {{ font-size: 12px; margin: 4px 0 0 0; color: #374151; }}
                 table.main {{ width: 100%; border-collapse: collapse; margin-bottom: 0; }}
                 table.main td {{ padding: 7px 10px; border: 1px solid #E5E7EB; vertical-align: top; }}
                 table.main td.k {{ width: 38%; background: #F9FAFB; font-weight: 600; }}
-                table.main td.sec-head {{ background: #a81119; color: #fff; font-weight: 700; font-size: 11px; padding: 5px 10px; }}
+                table.main td.sec-head {{ background: #a81119; color: #fff; font-weight: 700; font-size: 14px; padding: 5px 10px; }}
             </style>
         </head>
         <body>
@@ -498,7 +498,6 @@ def download_fle_application_pdf(docname):
                     <td class="header-title-container">
                         <div class="university-name">National Law School of India University, Bengaluru</div>
                         <div class="department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
-                        <div class="app-ref">Application form — {esc(doc.name)}</div>
                     </td>
                     {photo_td}
                 </tr>
@@ -624,13 +623,13 @@ def get_fle_application_pdf_base64(docname):
                 table.header-table {{ border: none; margin-bottom: 16px; border-bottom: 2px solid #a81119; padding-bottom: 8px; width: 100%; border-collapse: collapse; }}
                 table.header-table td {{ border: none; padding: 0; vertical-align: middle; }}
                 .header-title-container {{ text-align: center; color: #a81119; }}
-                .university-name {{ font-size: 15px; font-weight: bold; margin: 0; }}
-                .department-name {{ font-size: 12px; font-weight: bold; margin: 4px 0 0 0; }}
-                .app-ref {{ font-size: 11px; margin: 4px 0 0 0; color: #374151; }}
+                .university-name {{ font-size: 18px; font-weight: bold; margin: 0; }}
+                .department-name {{ font-size: 14px; font-weight: bold; margin: 4px 0 0 0; }}
+                .app-ref {{ font-size: 12px; margin: 4px 0 0 0; color: #374151; }}
                 table.main {{ width: 100%; border-collapse: collapse; margin-bottom: 0; }}
                 table.main td {{ padding: 7px 10px; border: 1px solid #E5E7EB; vertical-align: top; }}
                 table.main td.k {{ width: 38%; background: #F9FAFB; font-weight: 600; }}
-                table.main td.sec-head {{ background: #a81119; color: #fff; font-weight: 700; font-size: 11px; padding: 5px 10px; }}
+                table.main td.sec-head {{ background: #a81119; color: #fff; font-weight: 700; font-size: 14px; padding: 5px 10px; }}
             </style>
         </head>
         <body>
@@ -640,12 +639,12 @@ def get_fle_application_pdf_base64(docname):
                     <td class="header-title-container">
                         <div class="university-name">National Law School of India University, Bengaluru</div>
                         <div class="department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
-                        <div class="app-ref">Application form — {esc(doc.name)}</div>
                     </td>
                     {photo_td}
                 </tr>
             </table>
             <table class="main">
+
                 {sec("Candidate details")}
                 {row("Application number", doc.name)}
                 {row("Submission date", doc.timestamp)}
