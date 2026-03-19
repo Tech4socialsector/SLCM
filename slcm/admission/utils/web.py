@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 
 @frappe.whitelist(methods=["POST", "GET"])
 def check_existing_application(admission_cycle=None):

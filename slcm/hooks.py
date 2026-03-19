@@ -117,10 +117,12 @@ add_to_apps_screen = [
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "slcm.utils.jinja_methods",
+jinja = {
+	"methods": [
+		"slcm.admission.utils.jinja.get_file_b64"
+	],
 # 	"filters": "slcm.utils.jinja_filters"
-# }
+}
 
 # Installation
 # ------------

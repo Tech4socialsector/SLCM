@@ -615,6 +615,88 @@ else 'Admissions Open') %}
     transform: rotate(90deg);
   }
 
+  /* ── Responsive Enhancements ────────────────────────────── */
+  @media (max-width: 1024px) {
+    .page-title { font-size: 28px; }
+  }
+
+  @media (max-width: 768px) {
+    .profile-identity-card {
+      flex-direction: column !important;
+      gap: 16px !important;
+      text-align: center !important;
+      padding: 24px 20px !important;
+    }
+    .profile-identity-card .btn-primary {
+      position: static !important;
+      margin-top: 10px !important;
+      width: 100% !important;
+      justify-content: center !important;
+    }
+    .avatar-wrap {
+      margin: 0 auto !important;
+    }
+    .profile-fields-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+    .completion-row {
+      flex-direction: column !important;
+      gap: 8px !important;
+      align-items: center !important;
+    }
+    .progress-bar-track {
+      max-width: 100% !important;
+      width: 100% !important;
+    }
+    
+    .sidebar-card {
+      position: static !important;
+      padding: 12px !important;
+      margin-bottom: 20px !important;
+    }
+    .sidebar-card nav {
+      flex-direction: row !important;
+      overflow-x: auto !important;
+      gap: 8px !important;
+      padding-bottom: 4px !important;
+      -webkit-overflow-scrolling: touch !important;
+      scrollbar-width: none !important;
+    }
+    .sidebar-card nav::-webkit-scrollbar {
+      display: none !important;
+    }
+    .adm-menu-item {
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+      white-space: nowrap !important;
+      border-left: none !important;
+      border-bottom: 3px solid transparent !important;
+    }
+    .adm-menu-item.active {
+      border-bottom-color: var(--primary) !important;
+    }
+    
+    .modal-box {
+      padding: 20px !important;
+      max-width: 95% !important;
+      margin: 10px !important;
+    }
+    .modal-grid-2col {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .profile-identity-card div[style*="padding-left:10px"] {
+      padding-left: 0 !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .page-title { font-size: 24px !important; line-height: 1.2 !important; }
+    .profile-name { font-size: 18px !important; }
+    .sidebar-section-label { display: none !important; }
+  }
+
   /* ── Application Cards ──────────────────────────────── */
   .badge-draft {
     background: #f1f5f9;
@@ -1207,7 +1289,7 @@ else 'Admissions Open') %}
       <span class="ms-icon" style="font-size:20px;color:#94a3b8;">close</span>
     </button>
     <h3 style="font-size:18px;font-weight:600;color:#1e293b;margin:0 0 22px;">Edit Profile</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div style="grid-column:1/-1;">
         <label class="modal-label">Mobile Number</label>
         <input id="edit-mobile" type="tel" class="modal-input" placeholder="e.g. 9876543210" />
