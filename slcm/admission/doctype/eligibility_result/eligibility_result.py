@@ -106,7 +106,6 @@ class EligibilityResult(Document):
                 return f"data:{mtype};base64,{b64}"
             except Exception: return None
 
-        profile_image_url = get_base64_img(app_doc.candidate_photo)
         campus_display_name = self.campus or "Institution of Legal Education"
         campus_logo_url = None
         try:
@@ -187,49 +186,114 @@ img {{ max-width: none !important; }}
 .title-row {{ text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }}
 .title-row .t1 {{ font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }}
 .title-row .t2 {{ font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }}
-.info-wrap {{ border: 1.5px solid #888; margin: 12px 14px; display: flex; }}
-.info-tbl {{ flex: 1; border-collapse: collapse; }}
-.info-tbl tr {{ border-bottom: 1px solid #ccc; }}
+
+/* Info section */
+.info-wrap {{
+  border: 1.5px solid #bbb;
+  margin: 12px 14px;
+  border-radius: 2px;
+}}
+
+/* Info table — full width, clean two-column layout */
+.info-tbl {{
+  width: 100%;
+  border-collapse: collapse;
+}}
+.info-tbl tr {{ border-bottom: 1px solid #e0e0e0; }}
 .info-tbl tr:last-child {{ border-bottom: none; }}
-.info-tbl td {{ padding: 5.5px 8px; font-size: 12.5px; vertical-align: middle; line-height: 1.5; }}
-.info-tbl td.lb {{ font-weight: bold; font-family: Arial, sans-serif; width: 36%; white-space: nowrap; color: #000; }}
-.info-tbl td.sp {{ width: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; text-align: center; padding: 0; }}
-.info-tbl td.vl {{ font-family: "Times New Roman", Times, serif; font-size: 13px; color: #000; }}
+.info-tbl tr:nth-child(even) {{ background: #fafafa; }}
+.info-tbl td {{
+  padding: 6px 12px;
+  font-size: 12.5px;
+  vertical-align: middle;
+  line-height: 1.6;
+}}
+.info-tbl td.lb {{
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  width: 32%;
+  white-space: nowrap;
+  color: #2c2c2c;
+  padding-left: 14px;
+}}
+.info-tbl td.sp {{
+  width: 20px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  color: #555;
+  text-align: center;
+  padding: 0;
+}}
+.info-tbl td.vl {{
+  font-family: "Times New Roman", Times, serif;
+  font-size: 13px;
+  color: #111;
+  padding-right: 14px;
+}}
+
+/* Score pill */
 .score-pill {{
-  display: inline-block; background: #e8f0fe; color: #1a73e8; font-weight: bold;
-  font-family: Arial, sans-serif; font-size: 13px; padding: 2px 10px; border-radius: 4px; border: 1px solid #1a73e8;
+  display: inline-block;
+  background: #e8f0fe;
+  color: #1a73e8;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  padding: 2px 12px;
+  border-radius: 4px;
+  border: 1px solid #1a73e8;
+  min-width: 50px;
+  text-align: center;
 }}
-.photo-col {{ 
-  width: 140px; 
-  flex-shrink: 0; 
-  border-left: 1.5px solid #888; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: flex-start; 
-  padding: 10px 8px; 
-  min-height: 200px; 
+
+/* Result status badge */
+.status-qualified {{
+  display: inline-block;
+  background: #e6f4ea;
+  color: #1e7e34;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  font-size: 12.5px;
+  padding: 3px 14px;
+  border-radius: 4px;
+  border: 1px solid #1e7e34;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }}
-.photo-frame {{ 
-  width: 120px; 
-  height: 150px; 
-  border: 1.5px solid #555; 
-  overflow: hidden; 
-  background: #eee; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
+.status-notqualified {{
+  display: inline-block;
+  background: #fce8e6;
+  color: #c62828;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  font-size: 12.5px;
+  padding: 3px 14px;
+  border-radius: 4px;
+  border: 1px solid #c62828;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }}
-.photo-frame img {{ 
-  width: 100%; 
-  height: 100%; 
-  object-fit: cover; 
+
+/* Disclaimer text */
+.disclaimer {{
+  padding: 8px 14px 12px;
+  font-size: 11.5px;
+  font-family: Arial, sans-serif;
+  line-height: 1.65;
+  color: #333;
+  border-top: 1px solid #ddd;
 }}
-.photo-ph {{ font-size: 36px; color: #aaa; text-align: center; line-height: 150px; }}
-.photo-cap {{
-  font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3; margin-top: 8px;
+.disclaimer strong {{ color: #7b1c1c; }}
+
+/* Footer */
+.pg-footer {{
+  padding: 5px 14px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #ccc;
+  background: #fafafa;
 }}
-.pg-footer {{ padding: 6px 14px 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; margin-top: 20px; }}
 .pg-footer span {{ font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }}
 @media print {{ body {{ background: #fff; margin: 0; }} .card-page {{ width: 100%; margin: 0; border: 1.5px solid #555; }} }}
 </style>
@@ -251,20 +315,15 @@ img {{ max-width: none !important; }}
         <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">{val(self.gender)}</td></tr>
         <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">{val(self.program)}</td></tr>
         <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(self.applicant_id)}</td></tr>
-        <tr><td class="lb">Entrance score</td><td class="sp">:</td><td class="vl"><span class="score-pill">{val(self.entrance_test_score)}</span></td></tr>
-        <tr><td class="lb">Interview score</td><td class="sp">:</td><td class="vl"><span class="score-pill">{val(self.interview_score)}</span></td></tr>
-        <tr><td class="lb">Result Status</td><td class="sp">:</td><td class="vl"><strong>{val(self.result_status)}</strong></td></tr>
+        <tr><td class="lb">Entrance Score</td><td class="sp">:</td><td class="vl"><span class="score-pill">{val(self.entrance_test_score)}</span></td></tr>
+        <tr><td class="lb">Interview Score</td><td class="sp">:</td><td class="vl"><span class="score-pill">{val(self.interview_score)}</span></td></tr>
+        <tr><td class="lb">Result Status</td><td class="sp">:</td><td class="vl">{f'<span class="status-qualified">{val(self.result_status)}</span>' if str(self.result_status or "").strip().lower() == "qualified" else f'<span class="status-notqualified">{val(self.result_status)}</span>' if self.result_status else '—'}</td></tr>
       </tbody>
     </table>
-    <div class="photo-col">
-        <div class="photo-frame">
-          {f'<img src="{profile_image_url}" alt="Candidate Photo">' if profile_image_url else '<div class="photo-ph">👤</div>'}
-        </div>
-        <div class="photo-cap">Candidate's Photograph</div>
-    </div>
   </div>
-  <div style="padding: 20px 14px; font-size: 12px; line-height: 1.6;">
-    <p>This is a system-generated Eligibility Result Mark Sheet. It indicates the scores obtained by the candidate in the Entrance Test and Interview (if applicable) for the specified admission cycle.</p>
+  <div class="disclaimer">
+    <strong>Note:</strong> This is a system-generated Eligibility Result Mark Sheet. It indicates the scores obtained by the
+    candidate in the Entrance Test and Interview (if applicable) for the specified admission cycle.
   </div>
   <div class="pg-footer">
     <span>Doc: <strong>{val(self.name)}</strong> &nbsp;·&nbsp; Generated: <strong>{val(issue_date)}</strong> &nbsp;·&nbsp; System-generated.</span>
