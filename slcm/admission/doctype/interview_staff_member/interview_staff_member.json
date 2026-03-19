@@ -10,16 +10,18 @@
   "staff_name",
   "user",
   "email",
-  "contact_number",
-  "interview_address",
-  "interview_location",
   "column_break_ism1",
   "designation",
+  "contact_number",
   "is_active",
   "assignment_section",
   "campus",
+  "admission_cycle",
+  "column_break_qpun",
   "academic_year",
-  "admission_cycle"
+  "address_details_section",
+  "interview_address",
+  "interview_location"
  ],
  "fields": [
   {
@@ -119,12 +121,21 @@
    "fieldname": "interview_location",
    "fieldtype": "Geolocation",
    "label": "Interview Location"
+  },
+  {
+   "fieldname": "address_details_section",
+   "fieldtype": "Section Break",
+   "label": "Address Details "
+  },
+  {
+   "fieldname": "column_break_qpun",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 18:46:55.164589",
+ "modified": "2026-03-19 17:33:03.259711",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Staff Member",
