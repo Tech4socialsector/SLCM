@@ -1,0 +1,455 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:applicant",
+ "creation": "2026-03-03 00:24:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "tab_reference",
+  "interview_list",
+  "academic_year",
+  "admission_cycle",
+  "campus",
+  "program_level",
+  "category",
+  "tab_applicant_info",
+  "applicant",
+  "candidate_name",
+  "program",
+  "email",
+  "gender",
+  "section_break_isa_src",
+  "source_type",
+  "entrance_test_score",
+  "tab_slot",
+  "interview_staff_member",
+  "staff_name",
+  "staff_email",
+  "staff_contact",
+  "interview_date",
+  "interview_time",
+  "interview_address",
+  "interview_slot_status",
+  "slot_assigned_by",
+  "is_rescheduled",
+  "interview_attendance_confirmation",
+  "tab_9_tab",
+  "reschedule_section",
+  "re_interview_staff_member",
+  "re_staff_name",
+  "re_staff_email",
+  "re_staff_contact",
+  "re_interview_date",
+  "re_interview_time",
+  "re_interview_address",
+  "re_interview_slot_status",
+  "re_slot_assigned_by",
+  "reschedule_reason",
+  "re_interview_attendance_confirmation",
+  "tab_result",
+  "interview_status",
+  "attendance_marked_on",
+  "interview_score",
+  "interview_result_status",
+  "rank",
+  "result_published",
+  "feedback"
+ ],
+ "fields": [
+  {
+   "fieldname": "tab_reference",
+   "fieldtype": "Tab Break",
+   "label": "Interview Reference"
+  },
+  {
+   "fieldname": "interview_list",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Interview List",
+   "options": "Interview List",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Program Level",
+   "options": "UG\nPG\nResearch Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "tab_applicant_info",
+   "fieldtype": "Tab Break",
+   "label": "Applicant Information"
+  },
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Applicant",
+   "options": "Applicant",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Candidate Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "Gender",
+   "options": "Male\nFemale\nOthers"
+  },
+  {
+   "fieldname": "section_break_isa_src",
+   "fieldtype": "Section Break",
+   "label": "Source Information"
+  },
+  {
+   "fieldname": "source_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Source",
+   "options": "National Test (Direct)\nEntrance Test\nAcademic Eligibility",
+   "read_only": 1
+  },
+  {
+   "fieldname": "entrance_test_score",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Entrance Test Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tab_slot",
+   "fieldtype": "Tab Break",
+   "label": "Interview Slot"
+  },
+  {
+   "fieldname": "interview_staff_member",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Interview Staff Member",
+   "options": "Interview Staff Member"
+  },
+  {
+   "fetch_from": "interview_staff_member.staff_name",
+   "fieldname": "staff_name",
+   "fieldtype": "Data",
+   "label": "Staff Name"
+  },
+  {
+   "fetch_from": "interview_staff_member.email",
+   "fieldname": "staff_email",
+   "fieldtype": "Data",
+   "label": "Staff Email"
+  },
+  {
+   "fetch_from": "interview_staff_member.contact_number",
+   "fieldname": "staff_contact",
+   "fieldtype": "Data",
+   "label": "Staff Contact"
+  },
+  {
+   "fieldname": "interview_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Interview Date"
+  },
+  {
+   "fieldname": "interview_time",
+   "fieldtype": "Time",
+   "label": "Interview Time"
+  },
+  {
+   "default": "Slot Assigned",
+   "fieldname": "interview_slot_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Slot Status",
+   "options": "Slot Assigned\nConfirmed\nCancelled\nRescheduled"
+  },
+  {
+   "fieldname": "slot_assigned_by",
+   "fieldtype": "Link",
+   "label": "Slot Assigned By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_rescheduled",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Rescheduled"
+  },
+  {
+   "fieldname": "tab_9_tab",
+   "fieldtype": "Tab Break",
+   "label": "Reschedule Interview"
+  },
+  {
+   "fieldname": "reschedule_section",
+   "fieldtype": "Section Break",
+   "label": "Reschedule Interview"
+  },
+  {
+   "fieldname": "re_interview_staff_member",
+   "fieldtype": "Link",
+   "label": "Interview Staff Member",
+   "options": "Interview Staff Member"
+  },
+  {
+   "fetch_from": "re_interview_staff_member.staff_name",
+   "fieldname": "re_staff_name",
+   "fieldtype": "Data",
+   "label": "Staff Name"
+  },
+  {
+   "fetch_from": "re_interview_staff_member.email",
+   "fieldname": "re_staff_email",
+   "fieldtype": "Data",
+   "label": "Staff Email"
+  },
+  {
+   "fetch_from": "re_interview_staff_member.contact_number",
+   "fieldname": "re_staff_contact",
+   "fieldtype": "Data",
+   "label": "Staff Contact"
+  },
+  {
+   "fieldname": "re_interview_date",
+   "fieldtype": "Date",
+   "label": "Interview Date"
+  },
+  {
+   "fieldname": "re_interview_time",
+   "fieldtype": "Time",
+   "label": "Interview Time"
+  },
+  {
+   "default": "Slot Assigned",
+   "fieldname": "re_interview_slot_status",
+   "fieldtype": "Select",
+   "label": "Slot Status",
+   "options": "Slot Assigned\nConfirmed\nCancelled\nRescheduled"
+  },
+  {
+   "fieldname": "re_slot_assigned_by",
+   "fieldtype": "Link",
+   "label": "Slot Assigned By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reschedule_reason",
+   "fieldtype": "Small Text",
+   "label": "Reason for Reschedule"
+  },
+  {
+   "fieldname": "tab_result",
+   "fieldtype": "Tab Break",
+   "label": "Interview Result"
+  },
+  {
+   "default": "Scheduled",
+   "fieldname": "interview_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Interview Status",
+   "options": "\nScheduled\nAttended\nAbsent"
+  },
+  {
+   "fieldname": "attendance_marked_on",
+   "fieldtype": "Datetime",
+   "label": "Attendance Marked On"
+  },
+  {
+   "fieldname": "interview_score",
+   "fieldtype": "Int",
+   "label": "Interview Score"
+  },
+  {
+   "fieldname": "interview_result_status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Result Status",
+   "options": "\nPass\nFail"
+  },
+  {
+   "default": "0",
+   "fieldname": "result_published",
+   "fieldtype": "Check",
+   "label": "Result Published"
+  },
+  {
+   "fieldname": "rank",
+   "fieldtype": "Int",
+   "label": "Rank"
+  },
+  {
+   "fetch_from": "interview_staff_member.interview_address",
+   "fieldname": "interview_address",
+   "fieldtype": "Small Text",
+   "label": "Interview Address"
+  },
+  {
+   "fetch_from": "re_interview_staff_member.interview_address",
+   "fieldname": "re_interview_address",
+   "fieldtype": "Small Text",
+   "label": "Interview Address"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Table",
+   "label": "Category",
+   "options": "Applicant Category"
+  },
+  {
+   "fieldname": "interview_attendance_confirmation",
+   "fieldtype": "Select",
+   "label": "Interview Attendance Confirmation",
+   "options": "\nWill Attend\nWill Not Attend\nNeed Reschedule"
+  },
+  {
+   "fieldname": "re_interview_attendance_confirmation",
+   "fieldtype": "Select",
+   "label": "Interview Attendance Confirmation",
+   "options": "\nWill Attend\nWill Not Attend\nNeed Reschedule"
+  },
+  {
+   "fieldname": "feedback",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Feedback"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-19 10:09:35.403019",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Interview Seat Allocation",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Staff Member",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Admin",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
