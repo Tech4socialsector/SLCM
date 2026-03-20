@@ -72,9 +72,10 @@ class FoundationsforaLegalEducation(Document):
 		if status in ["Completed", "Authorized"]:
 			self.payment_status = exact_status
 			self.enrollment_status = "Enrolled"
-			
+
 			self.create_user_on_enrollment()
 			self.save(ignore_permissions=True)
+			self.send_payment_success_email()
 			
 			# Read payment_id and amount from the Integration Request
 			try:
@@ -187,9 +188,45 @@ class FoundationsforaLegalEducation(Document):
 			# Do NOT reset the password for existing users — they registered via the FLE
 			# login flow and already have a password they set themselves.
 			# update_password(self.email_address, password)  # commented out: was resetting password on every payment
-			
+
 			# self.generated_password_temp = password
 			self.lms_account_created = 1
 			frappe.db.commit() # Ensure role update is committed
 			frappe.msgprint("User already exists. Roles verified.")
+
+	def send_payment_success_email(self):
+		try:
+			import os, base64
+			from frappe.utils import get_url
+
+			# Embed logo as base64
+			try:
+				logo_path = os.path.abspath(frappe.get_site_path("public", "files", "nlsiu-logo.jpg"))
+				with open(logo_path, "rb") as f:
+					logo_b64 = base64.b64encode(f.read()).decode("utf-8")
+				logo_src = f"data:image/jpeg;base64,{logo_b64}"
+			except Exception:
+				logo_src = ""
+
+			first_name = (self.candidate_name or "").split()[0]
+			last_name = " ".join((self.candidate_name or "").split()[1:]) or None
+
+			application_link = get_url(f"/fle/view-application?docname={self.name}")
+			receipt_link = get_url(f"/fle/view-receipt?docname={self.name}")
+
+			frappe.sendmail(
+				recipients=[self.email_address],
+				subject="Registration Confirmed – FLE 2026",
+				template="fle_payment_success",
+				args={
+					"first_name": first_name,
+					"last_name": last_name,
+					"application_link": application_link,
+					"receipt_link": receipt_link,
+					"logo_src": logo_src,
+				},
+				now=True,
+			)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "FLE: Failed to send payment success email")
 

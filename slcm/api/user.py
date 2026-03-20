@@ -159,16 +159,19 @@ def reset_password_fle(user: str):
         base_url = frappe.request.host_url if hasattr(frappe, "request") and frappe.request else get_url()
         correct_link = f"{base_url}/fle/update_password.html?{parsed.query}"
         
-        reset_password_template = frappe.db.get_system_setting("reset_password_template")
+        try:
+            logo_path = os.path.abspath(frappe.get_site_path("public", "files", "nlsiu-logo.jpg"))
+            with open(logo_path, "rb") as f:
+                logo_b64 = base64.b64encode(f.read()).decode("utf-8")
+            logo_src = f"data:image/jpeg;base64,{logo_b64}"
+        except Exception:
+            logo_src = ""
 
-        # The default reset_password_template in frappe uses `{{ link }}`
-        # user_doc.send_login_mail passes `dict(link=link)`
         user_doc.send_login_mail(
             _("Password Reset"),
-            "password_reset",
-            {"link": correct_link, "site_url": base_url},
+            "fle_password_reset",
+            {"link": correct_link, "site_url": base_url, "logo_src": logo_src},
             now=True,
-            custom_template=reset_password_template,
         )
 
         return frappe.msgprint(
