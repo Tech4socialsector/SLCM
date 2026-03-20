@@ -211,8 +211,8 @@ class FoundationsforaLegalEducation(Document):
 			first_name = (self.candidate_name or "").split()[0]
 			last_name = " ".join((self.candidate_name or "").split()[1:]) or None
 
-			application_link = get_url(f"/fle/view-application?name={self.name}")
-			receipt_link = get_url(f"/fle/view-receipt?name={self.name}")
+			application_link = get_url(f"/fle/view-application?docname={self.name}")
+			receipt_link = get_url(f"/fle/view-receipt?docname={self.name}")
 
 			frappe.sendmail(
 				recipients=[self.email_address],
