@@ -14,13 +14,21 @@ frappe.ui.form.on("Eligibility Result Configuration", {
                             if (r.message && typeof r.message === 'object') {
                                 let m = r.message;
                                 let msg = `
-                                    <p>Successfully generated <b>${m.total}</b> Eligibility Result records.</p>
-                                    <hr>
-                                    <ul>
-                                        <li>Interview Pass: <b>${m.interview_pass}</b></li>
-                                        <li>ET Pass (Interview Exempt): <b>${m.et_pass_exempt}</b></li>
-                                        <li>Dual Exempted (Entrance Test & Interview): <b>${m.dual_exempt}</b></li>
-                                    </ul>
+                                    <div style="padding: 10px;">
+                                        <div style="font-size: 16px; font-weight: 600; color: #16a34a; margin-bottom: 12px;">
+                                            <i class="fa fa-check-circle"></i> Successfully generated ${m.total} records
+                                        </div>
+                                        <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 15px;">
+                                            <table style="width: 100%; font-size: 13px;">
+                                                <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 6px 0; color: #64748b;">Interview Pass</td><td style="padding: 6px 0; font-weight: 700; text-align: right;">${m.interview_pass}</td></tr>
+                                                <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 6px 0; color: #64748b;">ET Pass (Interview Exempt)</td><td style="padding: 6px 0; font-weight: 700; text-align: right;">${m.et_pass_exempt}</td></tr>
+                                                <tr><td style="padding: 6px 0; color: #64748b;">Dual Exempted</td><td style="padding: 6px 0; font-weight: 700; text-align: right;">${m.dual_exempt}</td></tr>
+                                            </table>
+                                        </div>
+                                        <p style="margin-top: 15px; font-size: 12px; color: #94a3b8;">
+                                            Eligibility Results are now available in the portal and for download.
+                                        </p>
+                                    </div>
                                 `;
                                 frappe.msgprint({
                                     title: __("Generation Complete"),

@@ -117,221 +117,274 @@ class EligibilityResult(Document):
         header_html = f"""
             <div class="header">
               <div class="logo-box">
-                {f'<img src="{campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">' if campus_logo_url else '<div class="logo-inner"><span class="logo-icon">⚖</span><span class="logo-text">LAW<br>SCHOOL</span></div>'}
+                {f'<img src="{campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">' if campus_logo_url else '<div class="logo-inner"><span class="logo-icon">⚖</span><span class="logo-text">Law<br>School</span></div>'}
               </div>
               <div class="hdr-center">
                 <div class="univ-name">{esc(campus_display_name)}</div>
-                <div class="univ-sub">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; ELIGIBILITY CELL</div>
+                <div class="univ-sub">Office of Admissions &nbsp;&middot;&nbsp; Eligibility Cell</div>
               </div>
             </div>"""
 
         html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<title>Eligibility Result - {esc(self.applicant_id)}</title>
-<style>
-*, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
-body {{
-  font-family: "Times New Roman", Times, serif;
-  font-size: 13px;
-  background: #fff;
-  color: #000;
-  print-color-adjust: exact;
-  -webkit-print-color-adjust: exact;
-}}
-img {{ max-width: none !important; }}
-.card-page {{
-  width: 710px;
-  margin: 0 auto;
-  background: #fff;
-  border: 1.5px solid #555;
-  page-break-after: always;
-}}
-.header {{
-  background: #7b1c1c;
-  display: flex;
-  align-items: center;
-  padding: 10px 18px;
-  gap: 16px;
-  border-bottom: 3px solid #5a0e0e;
-}}
-.logo-box {{
-  width: 74px;
-  height: 74px;
-  background: #fff;
-  border: 2px solid rgba(255,255,255,0.6);
-  border-radius: 3px;
-  display: flex;
-  align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
-}}
-.logo-box img {{ width: 70px; height: 70px; object-fit: contain; }}
-.logo-inner {{
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-}}
-.logo-icon {{ font-size: 28px; line-height: 1; color: #7b1c1c; }}
-.logo-text {{
-  font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
-  text-align: center; letter-spacing: 0.5px; line-height: 1.2;
-}}
-.hdr-center {{ flex: 1; text-align: center; }}
-.univ-name {{
-  font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
-  text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;
-}}
-.univ-sub {{
-  font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80);
-  letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;
-}}
-.title-row {{ text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }}
-.title-row .t1 {{ font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }}
-.title-row .t2 {{ font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }}
+        <html lang="en">
+        <head>
+        <meta charset="UTF-8"/>
+        <title>Eligibility Result - {esc(self.applicant_id)}</title>
+        <style>
+        *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+        font-family: "Times New Roman", Times, serif;
+        font-size: 13px;
+        background: #fff;
+        color: #000;
+        line-height: 1.4;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+        }}
+        .card-page {{
+        width: 710px;
+        margin: 0 auto;
+        background: #fff;
+        border: 1.5px solid #555;
+        padding: 0;
+        position: relative;
+        overflow: hidden;
+        page-break-after: always;
+        }}
+        .header {{
+        background: #7b1c1c;
+        display: flex;
+        align-items: center;
+        padding: 10px 18px;
+        gap: 16px;
+        border-bottom: 3px solid #5a0e0e;
+        }}
+        .logo-box {{
+        width: 74px;
+        height: 74px;
+        background: #fff;
+        border: 2px solid rgba(255,255,255,0.6);
+        border-radius: 3px;
+        display: flex;
+        align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+        }}
+        .logo-box img {{ max-width: 100%; max-height: 100%; object-fit: contain; }}
+        .logo-inner {{
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+        }}
+        .logo-icon {{ font-size: 28px; line-height: 1; color: #7b1c1c; }}
+        .logo-text {{
+        font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
+        text-align: center; letter-spacing: 0.5px; line-height: 1.2;
+        }}
+        .hdr-center {{ flex: 1; text-align: center; min-width: 0; }}
+        .univ-name {{
+        font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
+        text-transform: none; letter-spacing: 1.5px; line-height: 1.2; margin-bottom: 0;
+        word-wrap: break-word;
+        }}
+        .univ-sub {{
+        font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80);
+        letter-spacing: 2.5px; text-transform: none; margin-top: 3px;
+        }}
+        .title-banner {{
+        background: #f8f8f8;
+        text-align: center;
+        padding: 12px;
+        border-bottom: 1.5px solid #bbb;
+        }}
+        .title-banner .t1 {{ font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-transform: none; letter-spacing: 0.5px; }}
+        .title-banner .t2 {{ font-size: 13px; font-family: Arial, sans-serif; color: #444; margin-top: 4px; font-weight: bold; }}
 
-/* Info section */
-.info-wrap {{
-  border: 1.5px solid #bbb;
-  margin: 12px 14px;
-  border-radius: 2px;
-}}
+        .content-wrap {{ padding: 15px 20px; }}
 
-/* Info table — full width, clean two-column layout */
-.info-tbl {{
-  width: 100%;
-  border-collapse: collapse;
-}}
-.info-tbl tr {{ border-bottom: 1px solid #e0e0e0; }}
-.info-tbl tr:last-child {{ border-bottom: none; }}
-.info-tbl tr:nth-child(even) {{ background: #fafafa; }}
-.info-tbl td {{
-  padding: 6px 12px;
-  font-size: 12.5px;
-  vertical-align: middle;
-  line-height: 1.6;
-}}
-.info-tbl td.lb {{
-  font-weight: bold;
-  font-family: Arial, sans-serif;
-  width: 32%;
-  white-space: nowrap;
-  color: #2c2c2c;
-  padding-left: 14px;
-}}
-.info-tbl td.sp {{
-  width: 20px;
-  font-weight: bold;
-  font-family: Arial, sans-serif;
-  color: #555;
-  text-align: center;
-  padding: 0;
-}}
-.info-tbl td.vl {{
-  font-family: "Times New Roman", Times, serif;
-  font-size: 13px;
-  color: #111;
-  padding-right: 14px;
-}}
+        .section-head {{
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        font-weight: bold;
+        color: #7b1c1c;
+        text-transform: none;
+        border-bottom: 1.5px solid #7b1c1c;
+        padding-bottom: 4px;
+        margin-bottom: 10px;
+        margin-top: 10px;
+        }}
 
-/* Score pill */
-.score-pill {{
-  display: inline-block;
-  background: #e8f0fe;
-  color: #1a73e8;
-  font-weight: bold;
-  font-family: Arial, sans-serif;
-  font-size: 13px;
-  padding: 2px 12px;
-  border-radius: 4px;
-  border: 1px solid #1a73e8;
-  min-width: 50px;
-  text-align: center;
-}}
+        .info-wrap {{
+        border: 1.5px solid #bbb;
+        margin-bottom: 15px;
+        border-radius: 2px;
+        }}
+        .info-tbl {{
+        width: 100%;
+        border-collapse: collapse;
+        }}
+        .info-tbl tr {{ border-bottom: 1px solid #ddd; }}
+        .info-tbl tr:last-child {{ border-bottom: none; }}
+        .info-tbl td {{
+        padding: 6px 10px;
+        font-size: 13px;
+        vertical-align: middle;
+        line-height: 1.5;
+        }}
+        .info-tbl td.lb {{
+        font-weight: bold;
+        font-family: Arial, sans-serif;
+        width: 35%;
+        color: #000;
+        }}
+        .info-tbl td.sp {{
+        width: 15px;
+        font-weight: bold;
+        text-align: center;
+        padding: 0;
+        }}
+        .info-tbl td.vl {{
+        font-family: "Times New Roman", Times, serif;
+        font-weight: bold;
+        }}
 
-/* Result status badge */
-.status-qualified {{
-  display: inline-block;
-  background: #e6f4ea;
-  color: #1e7e34;
-  font-weight: bold;
-  font-family: Arial, sans-serif;
-  font-size: 12.5px;
-  padding: 3px 14px;
-  border-radius: 4px;
-  border: 1px solid #1e7e34;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}}
-.status-notqualified {{
-  display: inline-block;
-  background: #fce8e6;
-  color: #c62828;
-  font-weight: bold;
-  font-family: Arial, sans-serif;
-  font-size: 12.5px;
-  padding: 3px 14px;
-  border-radius: 4px;
-  border: 1px solid #c62828;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}}
+        .results-table {{
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        border: 1.5px solid #bbb;
+        }}
+        .results-table th {{
+        background: #f4f4f4;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        font-weight: bold;
+        text-align: left;
+        padding: 8px 12px;
+        border: 1px solid #bbb;
+        text-transform: none;
+        color: #000;
+        }}
+        .results-table td {{
+        padding: 10px 12px;
+        font-size: 13px;
+        border: 1px solid #bbb;
+        vertical-align: middle;
+        }}
+        .score-cell {{ font-weight: bold; font-size: 14px; }}
+        
+        .status-text {{
+        font-weight: bold;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        color: #000;
+        }}
 
-/* Disclaimer text */
-.disclaimer {{
-  padding: 8px 14px 12px;
-  font-size: 11.5px;
-  font-family: Arial, sans-serif;
-  line-height: 1.65;
-  color: #333;
-  border-top: 1px solid #ddd;
-}}
-.disclaimer strong {{ color: #7b1c1c; }}
+        .disclaimer {{
+        margin-top: 20px;
+        padding: 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 2px;
+        font-family: Arial, sans-serif;
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: #333;
+        }}
 
-/* Footer */
-.pg-footer {{
-  padding: 5px 14px 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid #ccc;
-  background: #fafafa;
-}}
-.pg-footer span {{ font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }}
-@media print {{ body {{ background: #fff; margin: 0; }} .card-page {{ width: 100%; margin: 0; border: 1.5px solid #555; }} }}
-</style>
-</head>
-<body>
-<div class="card-page">
-  {header_html}
-  <div class="title-row">
-    <div class="t1">Eligibility Result Mark Sheet</div>
-    <div class="t2">{val(self.academic_year)} &nbsp;|&nbsp; {val(self.admission_cycle)}</div>
-  </div>
-  <div class="info-wrap">
-    <table class="info-tbl">
-      <tbody>
-        <tr><td class="lb">Candidate's Name</td><td class="sp">:</td><td class="vl">{val(self.candidate_name)}</td></tr>
-        <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">{val(dob)}</td></tr>
-        <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">{val(app_doc.father_name)}</td></tr>
-        <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">{val(app_doc.mother_name)}</td></tr>
-        <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">{val(self.gender)}</td></tr>
-        <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">{val(self.program)}</td></tr>
-        <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(self.applicant_id)}</td></tr>
-        <tr><td class="lb">Entrance Score</td><td class="sp">:</td><td class="vl"><span class="score-pill">{val(self.entrance_test_score)}</span></td></tr>
-        <tr><td class="lb">Interview Score</td><td class="sp">:</td><td class="vl"><span class="score-pill">{val(self.interview_score)}</span></td></tr>
-        <tr><td class="lb">Result Status</td><td class="sp">:</td><td class="vl">{f'<span class="status-qualified">{val(self.result_status)}</span>' if str(self.result_status or "").strip().lower() == "qualified" else f'<span class="status-notqualified">{val(self.result_status)}</span>' if self.result_status else '—'}</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="disclaimer">
-    <strong>Note:</strong> This is a system-generated Eligibility Result Mark Sheet. It indicates the scores obtained by the
-    candidate in the Entrance Test and Interview (if applicable) for the specified admission cycle.
-  </div>
-  <div class="pg-footer">
-    <span>Doc: <strong>{val(self.name)}</strong> &nbsp;·&nbsp; Generated: <strong>{val(issue_date)}</strong> &nbsp;·&nbsp; System-generated.</span>
-    <span>{val(self.applicant_id)}</span>
-  </div>
-</div>
-</body>
-</html>"""
+        .footer {{
+        margin-top: 25px;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        font-family: Arial, sans-serif;
+        font-size: 9.5px;
+        color: #555;
+        }}
+        </style>
+        </head>
+        <body>
+        <div class="card-page">
+        {header_html}
+        <div class="title-banner">
+        <div class="t1">Eligibility Result Mark Sheet</div>
+        <div class="t2">Academic Year: {val(self.academic_year)} &nbsp;&middot;&nbsp; Admission Cycle: {val(self.admission_cycle)}</div>
+        </div>
+
+        <div class="content-wrap">
+        <div class="section-head">Candidate Details</div>
+        <div class="info-wrap">
+          <table class="info-tbl">
+            <tbody>
+              <tr><td class="lb">Candidate Name</td><td class="sp">:</td><td class="vl">{val(self.candidate_name)}</td></tr>
+              <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(self.applicant_id)}</td></tr>
+              <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">{val(dob)}</td></tr>
+              <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">{val(self.gender)}</td></tr>
+              <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">{val(app_doc.father_name)}</td></tr>
+              <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">{val(app_doc.mother_name)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section-head">Programme Details</div>
+        <div class="info-wrap">
+          <table class="info-tbl">
+            <tbody>
+              <tr><td class="lb">Programme</td><td class="sp">:</td><td class="vl">{val(self.program)}</td></tr>
+              <tr><td class="lb">Campus</td><td class="sp">:</td><td class="vl">{val(self.campus)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section-head">Assessment Result</div>
+        <table class="results-table">
+        <thead>
+        <tr>
+          <th>Assessment Component</th>
+          <th>Maximum Marks</th>
+          <th>Marks Obtained</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>Entrance Test Score</td>
+          <td>100</td>
+          <td class="score-cell">{val(self.entrance_test_score)}</td>
+        </tr>
+        <tr>
+          <td>Interview Assessment Score</td>
+          <td>100</td>
+          <td class="score-cell">{val(self.interview_score)}</td>
+        </tr>
+        <tr style="background: #f9f9f9;">
+          <td colspan="2" style="text-align: right; font-weight: bold; font-family: Arial, sans-serif; font-size: 12px;">Result Status</td>
+          <td>
+            <span class="status-text">{val(self.result_status)}</span>
+          </td>
+        </tr>
+        </tbody>
+        </table>
+
+        <div class="disclaimer">
+        <strong>Important:</strong> This document is a system-generated mark sheet. 
+        It reflects the eligibility assessment based on the scores obtained by the candidate. 
+        Final admission is subject to verification of original documents and fulfillment of all criteria. 
+        Errors and omissions are excepted.
+        </div>
+
+        <div class="footer">
+        <div>
+        Reference: <strong>{val(self.name)}</strong><br>
+        Generated on: <strong>{val(issue_date)}</strong><br>
+        Source Type: {val(self.source_type)}
+        </div>
+        <div style="text-align: right;">
+        Authorized Signatory<br>
+        (Digitally Verified Document)
+        </div>
+        </div>
+        </div>
+        </div>
+        </body>
+        </html>"""
+
         return html
 
 @frappe.whitelist()
