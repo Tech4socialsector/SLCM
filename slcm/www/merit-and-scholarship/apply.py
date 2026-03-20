@@ -41,19 +41,6 @@ def get_context(context):
             return context
             
         context.applicant = applicant
-
-        # Check if Fee is paid (to block direct access)
-        is_fee_paid = frappe.db.exists("Applicant Fee Assignment", {
-            "applicant": applicant.name,
-            "admission_cycle": applicant.admission_cycle,
-            "status": ["in", ["Paid", "Converted"]],
-            "docstatus": ["!=", 2]
-        }) or (frappe.db.get_value("Applicant", applicant.name, "application_status") == "Fee Paid")
-
-        if is_fee_paid:
-            context.error = _("Scholarship applications are not permitted once the admission fee has been paid. "
-                              "Scholarships must be applied for and approved before final payment is made.")
-            return context
         
         # Add portal config for contact details
         from slcm.admission.utils.portal import get_portal_config

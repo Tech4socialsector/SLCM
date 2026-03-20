@@ -139,18 +139,6 @@ def get_offer_details(offer_name=None):
     applicant_data = frappe.get_all("Applicant", filters={"name": target_applicant}, fields=["*"], limit=1, ignore_permissions=True)
     applicant_dict = applicant_data[0] if applicant_data else {}
 
-    # Fetch cancellation info
-    cancellation = frappe.get_all("Admission Cancellation", 
-        filters={"offer": offer_id}, 
-        fields=["name", "status"], 
-        limit=1
-    )
-    cancellation_info = {
-        "has_cancellation": True if cancellation else False,
-        "cancellation_name": cancellation[0].name if cancellation else "",
-        "cancellation_status": cancellation[0].status if cancellation else ""
-    }
-
     return {
         "offer": offer_dict,
         "applicant": applicant_dict,
@@ -159,8 +147,7 @@ def get_offer_details(offer_name=None):
         "is_admin": is_admin,
         "is_fee_paid": True if fee_paid else False,
         "online_payment_enabled": online_payment_enabled,
-        "currency": frappe.defaults.get_global_default("currency") or "INR",
-        "cancellation": cancellation_info
+        "currency": frappe.defaults.get_global_default("currency") or "INR"
     }
 
 

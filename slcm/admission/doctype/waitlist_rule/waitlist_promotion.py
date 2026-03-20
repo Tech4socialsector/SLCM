@@ -189,7 +189,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
         if vacancies["GEN"] > 0:
             assigned = True
             new_type = "Open"
-            new_cat = "General"
+            new_cat = None
             vacancies["GEN"] -= 1
         else:
             # B. Try Reserved Categories in priority order
@@ -244,7 +244,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
                     admission_cycle=seat_alloc.admission_cycle,
                     applicant=row.applicant_id,
                     program=program,
-                    action_type="Seat Allocated",
+                    action_type="Seat Upgraded",
                     old_value=f"{old_type} ({old_cat or 'GEN'})",
                     new_value=f"{new_type} ({new_cat or 'GEN'})",
                     remarks="Slided to a higher priority category seat."
@@ -301,32 +301,3 @@ def run_scheduled_waitlist():
         except Exception as e:
             frappe.db.rollback()
             frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")
-
-
-def process_waitlist_background(admission_cycle: str, campus: str, now: bool = False):
-    """
-    Background worker to run waitlist promotion for all active automatic rules 
-    for a specific cycle and campus.
-    """
-    rule_names = frappe.get_all(
-        "Waitlist Rule",
-        filters={
-            "status": "Active",
-            "admission_cycle": admission_cycle,
-            "campus": campus,
-            "upgrade_frequency": "Automatic"
-        },
-        pluck="name",
-    )
-
-    for rule_name in rule_names:
-        frappe.flags.slcm_waitlist_promotion_in_progress = True
-        try:
-            # Manual triggers (from on_update) should ignore the cutoff date
-            process_waitlist(frappe.get_doc("Waitlist Rule", rule_name), ignore_cutoff=True)
-            frappe.db.commit()
-        except Exception as e:
-            frappe.db.rollback()
-            frappe.log_error(f"Background Waitlist Promotion Failed for {rule_name}: {str(e)}", "Waitlist Promotion")
-        finally:
-            frappe.flags.slcm_waitlist_promotion_in_progress = False
