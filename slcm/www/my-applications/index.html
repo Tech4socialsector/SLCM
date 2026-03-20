@@ -240,9 +240,10 @@
 
   .app-header-right {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-end;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .app-program-name {
@@ -1538,9 +1539,17 @@
   /* ── Tab bar ─────────────────────────────────────────────── */
   .ma-tabs {
     display: flex;
+    flex-wrap: nowrap;
     gap: 0;
     border-bottom: 2px solid var(--border);
     margin-bottom: 18px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ma-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .ma-tab {
@@ -1556,6 +1565,7 @@
     margin-bottom: -2px;
     transition: color .15s, border-color .15s;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .ma-tab:hover {
@@ -1569,6 +1579,196 @@
 
   .ma-tab .material-symbols-outlined {
     font-size: 17px;
+  }
+
+  /* ── Responsive Enhancements ────────────────────────────── */
+  @media (max-width: 992px) {
+    .ma-inner {
+      max-width: 100%;
+      padding: 0 10px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .prof-field-grid {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .prof-field {
+      border-right: none !important;
+    }
+
+    .ma-page {
+      padding: 20px 12px 40px;
+      margin: 0;
+    }
+
+    .app-top-row {
+      flex-direction: column;
+      align-items: stretch !important;
+      gap: 20px;
+    }
+
+    .app-header-left {
+      width: 100%;
+    }
+
+    .app-header-right {
+      width: 100%;
+      flex-direction: row !important;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 8px !important;
+    }
+
+    .app-header-right .btn-edit-application,
+    .app-header-right .btn-download,
+    .app-header-right .btn-view-application {
+      flex: 1;
+      justify-content: center;
+      min-width: 120px;
+    }
+
+    .app-program-name {
+      font-size: 20px !important;
+    }
+
+    .quick-status-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .qs-item {
+      border-right: 1px solid var(--border) !important;
+    }
+
+    .qs-item:nth-child(2n) {
+      border-right: none !important;
+    }
+
+    .merit-seat-card .ma-card-body {
+      grid-template-columns: 1fr;
+    }
+
+    .merit-panel {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-grid-2 {
+      grid-template-columns: 1fr;
+    }
+
+    .result-score-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .pef-row {
+      grid-template-columns: 1fr !important;
+    }
+
+    .stage-track-wrap {
+      padding: 30px 20px;
+    }
+
+    .stage-track {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 30px;
+      padding-left: 15px;
+    }
+
+    .stage-track::before {
+      left: 34px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      height: 100%;
+    }
+
+    .stage-track-fill {
+      left: 34px;
+      top: 0;
+      width: 3px !important;
+      height: var(--pct, 0%);
+    }
+
+    .stage-item {
+      flex-direction: row;
+      width: 100%;
+      gap: 20px;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .stage-circle {
+      margin: 0;
+    }
+
+    .stage-label {
+      text-align: left;
+      max-width: none;
+      font-size: 13px;
+    }
+
+    .stage-arrow {
+      display: none;
+    }
+
+    .result-score-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .app-header-right a {
+      flex: 1 1 calc(50% - 8px) !important;
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .quick-status-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .qs-item {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+      text-align: left;
+      padding: 12px 18px;
+    }
+
+    .qs-item:last-child {
+      border-bottom: none;
+    }
+
+    .app-program-name {
+      font-size: 18px !important;
+    }
+
+    .app-id-chip {
+      width: 100%;
+      text-align: center;
+    }
+
+    .app-id-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .prof-modal {
+      margin: 0;
+      border-radius: 0;
+      max-height: 100vh;
+      height: 100vh;
+    }
+    
+    .prof-modal-head, .prof-modal-foot {
+      border-radius: 0;
+    }
   }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1648,7 +1848,7 @@ or _app.current_stage)) or _status %}
 
       <!-- Header -->
       <div class="app-summary-head">
-        <div class="app-top-row" style="align-items: center;">
+        <div class="app-top-row">
           <div class="app-header-left">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
               <h1 class="app-program-name" style="margin:0; font-size:24px;">{{ _prog }}</h1>
@@ -1730,7 +1930,7 @@ or _app.current_stage)) or _status %}
         {% endif %}
 
         <div class="stage-track" style="--num-stages: {{ _num_stages }};">
-          <div class="stage-track-fill" style="width:{{ _pct }}%"></div>
+          <div class="stage-track-fill" style="width:{{ _pct }}%; --pct: {{ _pct }}%;"></div>
 
           {% for s in _stages %}
           {% set _sstate = s.state if s is mapping else s['state'] %}
@@ -2265,46 +2465,89 @@ or _app.current_stage)) or _status %}
          ║  ELIGIBILITY RESULT CARD                     ║
          ╚══════════════════════════════════════════════╝ -->
     {% if eligibility_result %}
-    <div class="ma-card fade-up" style="animation-delay:.28s;margin-top:12px">
-      <div class="ma-card-head">
+    <div class="ma-card fade-up" style="animation-delay:.28s; margin-top:12px; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4);">
+      <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5);">
         <div class="ma-card-title">
-          <span class="ico"><span class="material-symbols-outlined">assignment_turned_in</span></span>
+          <span class="ico" style="background: #dcfce7; color: #16a34a;">
+            <span class="material-symbols-outlined">assignment_turned_in</span>
+          </span>
           Eligibility Result
         </div>
-      </div>
-      <div class="ma-card-body" style="padding: 0;">
-        <!-- Scores Section -->
-        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: none; letter-spacing: .06em;">
-          Scores
+        {% if eligibility_result.eligibility_result_card %}
+        <div class="ma-card-actions">
+          <a href="{{ eligibility_result.eligibility_result_card }}" target="_blank" class="btn-download" 
+             style="padding: 0 16px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; background: #16a34a; color: white; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); transition: all 0.2s;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+            Download Mark Sheet
+          </a>
         </div>
-        <div class="info-grid-2" style="padding: 20px 22px; border-bottom: 1px solid var(--border);">
-          <div class="info-tile">
-            <div class="info-tile-label">Entrance score</div>
-            <div class="info-tile-value">{{ eligibility_result.entrance_test_score or '0' }}</div>
+        {% endif %}
+      </div>
+      
+      <div class="ma-card-body" style="padding: 24px;">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- Column 1: Scores -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">analytics</span>
+              Assessment Scores
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Entrance Test</div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.entrance_test_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
+              </div>
+              
+              <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Interview</div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.interview_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
+              </div>
+            </div>
           </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Interview score</div>
-            <div class="info-tile-value">{{ eligibility_result.interview_score or '0' }}</div>
+          
+          <!-- Column 2: Status -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">verified_user</span>
+              Qualification Status
+            </div>
+            
+            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Result Status</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #16a34a; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">check_circle</span>
+                    {{ eligibility_result.result_status or 'Qualified' }}
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Source</div>
+                  <div style="font-size: 12px; font-weight: 600; color: #475569;">{{ eligibility_result.source_type or 'Assessment' }}</div>
+                </div>
+              </div>
+            </div>
           </div>
+          
         </div>
 
-        <!-- Status Section -->
-        <div style="padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--primary); text-transform: none; letter-spacing: .06em;">
-          Status
-        </div>
-        <div class="info-grid-2" style="padding: 20px 22px;">
-          <div class="info-tile">
-            <div class="info-tile-label">Source</div>
-            <div class="info-tile-value">{{ eligibility_result.source_type or '—' }}</div>
+        <!-- Meta Info Footer -->
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #bbf7d0; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #64748b;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">sync</span>
+            Cycle: <span style="font-weight: 600; color: #334155;">{{ eligibility_result.admission_cycle }}</span>
           </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Result status</div>
-            <div class="info-tile-value blue">{{ eligibility_result.result_status or '—' }}</div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">corporate_fare</span>
+            Campus: <span style="font-weight: 600; color: #334155;">{{ eligibility_result.campus }}</span>
           </div>
         </div>
       </div>
     </div>
     {% endif %}
+
 
     <!-- ╔══════════════════════════════════════════════╗
          ║  DOWNLOAD APPLICATION ROW                    ║

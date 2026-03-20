@@ -190,6 +190,89 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* ── Responsive Enhancements ────────────────────────────── */
+  @media (max-width: 1024px) {
+    .sidebar-card {
+      position: static !important;
+      margin-bottom: 24px;
+      overflow: hidden !important;
+    }
+    .sidebar-card nav {
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      gap: 8px !important;
+      padding-bottom: 4px !important;
+      -webkit-overflow-scrolling: touch !important;
+      scrollbar-width: none !important;
+    }
+    .sidebar-card nav::-webkit-scrollbar {
+      display: none !important;
+    }
+    .adm-menu-item {
+      padding: 8px 14px !important;
+      font-size: 13px !important;
+      white-space: nowrap !important;
+      border-left: none !important;
+      border-bottom: 3px solid transparent !important;
+      margin-bottom: 0 !important;
+      flex-shrink: 0 !important;
+    }
+    .adm-menu-item.active {
+      border-bottom-color: var(--primary) !important;
+      background: transparent !important;
+    }
+    .sidebar-section-label {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    div[style*="padding:32px 20px 40px"] {
+      padding: 20px 12px 40px !important;
+    }
+    
+    .text-3xl {
+      font-size: 24px !important;
+    }
+    
+    .text-base {
+      font-size: 14px !important;
+    }
+
+    .kpi-card .text-2xl {
+      font-size: 20px !important;
+    }
+    
+    .kpi-card p {
+      font-size: 11px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .grid-cols-2 {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .tab-btn {
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+      font-size: 11px !important;
+    }
+    
+    header {
+      text-align: center;
+    }
+    
+    header div {
+      width: 100%;
+    }
+    
+    .flex-col.md\:flex-row {
+      align-items: stretch !important;
+    }
+  }
 </style>
 {% endblock %}
 

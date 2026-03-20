@@ -162,7 +162,7 @@
   },
   {
    "fieldname": "entrance_test_score",
-   "fieldtype": "Float",
+   "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Entrance Test Score",
    "read_only": 1
@@ -376,7 +376,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-19 10:09:35.403019",
+ "modified": "2026-03-20 10:16:23.354517",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",

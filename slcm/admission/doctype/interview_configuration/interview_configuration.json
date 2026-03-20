@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "prompt",
  "creation": "2026-03-02 21:51:00",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -95,10 +96,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 10:09:13.637390",
+ "modified": "2026-03-20 10:49:51.822500",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Configuration",
+ "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {
