@@ -117,25 +117,6 @@ frappe.ui.form.on("Offer Letter", {
                 d.show();
             }, __('Actions'));
         }
-
-        if (frm.doc.offer_status === "Payment Completed") {
-            frm.add_custom_button(__('Cancel Admission'), function () {
-                frappe.model.with_doctype('Admission Cancellation', () => {
-                    let new_doc = frappe.model.get_new_doc('Admission Cancellation');
-                    new_doc.applicant = frm.doc.applicant;
-                    new_doc.offer = frm.doc.name;
-                    new_doc.campus = frm.doc.campus;
-                    new_doc.program = frm.doc.program;
-                    // Fetch payment request linked to this offer
-                    frappe.db.get_value('Fee Payment', { fee_invoice: frm.doc.fee_invoice, status: 'Submitted' }, 'name', (p) => {
-                        if (p && p.name) {
-                            new_doc.payment_request = p.name;
-                        }
-                        frappe.set_route('Form', 'Admission Cancellation', new_doc.name);
-                    });
-                });
-            }, __('Actions'));
-        }
     },
     onload: function (frm) {
         // Disable past dates in the payment_deadline datepicker

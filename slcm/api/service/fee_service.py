@@ -98,20 +98,7 @@ class FeeService:
         if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "status": ["!=", "Cancelled"]}):
             return
 
-        snapshot_name = frappe.db.get_value("Offer Fee Snapshot", {"offer_id": offer.name})
-        if not snapshot_name:
-            # Fallback: Try to recreate snapshot from current Fee Structure if missing
-            # This handles offers generated before snapshotting was introduced or failed snapshots.
-            if offer.fee_structure:
-                from slcm.api.service.offer_service import OfferService
-                fee_data = FeeService._calculate_and_freeze_fees(offer.fee_structure)
-                OfferService._create_snapshot_record(offer.name, fee_data)
-                snapshot_name = frappe.db.get_value("Offer Fee Snapshot", {"offer_id": offer.name})
-            
-            if not snapshot_name:
-                throw(_("Fee Snapshot not found for Offer {0}. Cannot create Fee Assignment.").format(offer.name))
-
-        snapshot = frappe.get_doc("Offer Fee Snapshot", snapshot_name)
+        snapshot = frappe.get_doc("Offer Fee Snapshot", {"offer_id": offer.name})
 
         admission_cycle = offer.admission_cycle or frappe.db.get_value("Applicant", offer.applicant, "admission_cycle")
 
