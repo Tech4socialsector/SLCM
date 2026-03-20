@@ -18,7 +18,7 @@ class MeritList(Document):
         campus = campus_code.replace(" ", "").upper()
         level = (self.program_level or "ALL").upper()
 
-        self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.####")
+        self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.#####")
 
     def validate(self):
         self.validate_uniqueness()

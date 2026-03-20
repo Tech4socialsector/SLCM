@@ -80,7 +80,7 @@ class SeatAllocation(Document):
         campus = campus_code.replace(" ", "").upper()
         level = (self.program_level or "ALL").replace(" ", "").upper()
 
-        self.name = make_autoname(f"SA-{cycle}-{campus}-{level}-.####")
+        self.name = make_autoname(f"SA-{cycle}-{campus}-{level}-.#####")
 
     def before_save(self):
         if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
