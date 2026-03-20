@@ -80,3 +80,56 @@ def auto_update_cycle_status():
 			title="Auto-Update Admission Cycle Status",
 			message="Automatically updated status for {0} Admission Cycle(s)".format(updated_count)
 		)
+
+def setup_admission_workflows():
+	setup_refund_request_workflow()
+	setup_admission_cancellation_workflow()
+	frappe.db.commit()
+
+def setup_refund_request_workflow():
+	if not frappe.db.exists("Workflow", "Refund Request Workflow"):
+		workflow = frappe.new_doc("Workflow")
+		workflow.workflow_name = "Refund Request Workflow"
+		workflow.document_type = "Refund Request"
+		workflow.workflow_state_field = "status"
+		workflow.is_active = 1
+		
+		# States
+		workflow.append("states", {"state": "Draft", "doc_status": 0, "allow_edit": "System Manager"})
+		workflow.append("states", {"state": "Under Review", "doc_status": 0, "allow_edit": "Admission Manager"})
+		workflow.append("states", {"state": "Approved", "doc_status": 0, "allow_edit": "Admission Manager"})
+		workflow.append("states", {"state": "Rejected", "doc_status": 0, "allow_edit": "Admission Manager"})
+		workflow.append("states", {"state": "Processed", "doc_status": 1, "allow_edit": "Admission Manager"})
+		
+		# Transitions
+		workflow.append("transitions", {"state": "Draft", "action": "Submit for Review", "next_state": "Under Review", "allowed": "System Manager"})
+		workflow.append("transitions", {"state": "Under Review", "action": "Approve", "next_state": "Approved", "allowed": "Admission Manager"})
+		workflow.append("transitions", {"state": "Under Review", "action": "Reject", "next_state": "Rejected", "allowed": "Admission Manager"})
+		workflow.append("transitions", {"state": "Approved", "action": "Process", "next_state": "Processed", "allowed": "Admission Manager"})
+		
+		workflow.insert()
+		print("Refund Request Workflow created")
+	else:
+		print("Refund Request Workflow already exists")
+
+def setup_admission_cancellation_workflow():
+	if not frappe.db.exists("Workflow", "Admission Cancellation Workflow"):
+		workflow = frappe.new_doc("Workflow")
+		workflow.workflow_name = "Admission Cancellation Workflow"
+		workflow.document_type = "Admission Cancellation"
+		workflow.workflow_state_field = "status"
+		workflow.is_active = 1
+		
+		# States
+		workflow.append("states", {"state": "Initiated", "doc_status": 0, "allow_edit": "System Manager"})
+		workflow.append("states", {"state": "Approved", "doc_status": 0, "allow_edit": "Admission Manager"})
+		workflow.append("states", {"state": "Completed", "doc_status": 1, "allow_edit": "Admission Manager"})
+		
+		# Transitions
+		workflow.append("transitions", {"state": "Initiated", "action": "Approve", "next_state": "Approved", "allowed": "Admission Manager"})
+		workflow.append("transitions", {"state": "Approved", "action": "Complete", "next_state": "Completed", "allowed": "Admission Manager"})
+		
+		workflow.insert()
+		print("Admission Cancellation Workflow created")
+	else:
+		print("Admission Cancellation Workflow already exists")

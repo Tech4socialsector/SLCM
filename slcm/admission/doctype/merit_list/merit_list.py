@@ -6,17 +6,49 @@ from frappe.model.document import Document
 class MeritList(Document):
 
     def autoname(self):
+        from frappe.model.naming import make_autoname
         if not self.admission_cycle or not self.campus:
             frappe.throw("Admission Cycle and Campus are required for naming.")
 
-        cycle = self.admission_cycle.replace(" ", "").upper()
-        campus = self.campus.replace(" ", "").upper()
+        # Use codes instead of names to keep it short
+        cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code") or self.admission_cycle
+        campus_code = frappe.db.get_value("Campus", self.campus, "campus_code") or self.campus
+        
+        cycle = cycle_code.replace(" ", "").upper()
+        campus = campus_code.replace(" ", "").upper()
+        level = (self.program_level or "ALL").upper()
 
-        if self.program_level:
-            level = self.program_level.upper()
-            self.name = f"ML-{cycle}-{campus}-{level}"
-        else:
-            self.name = f"ML-{cycle}-{campus}"
+        self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.#####")
+
+    def validate(self):
+        self.validate_uniqueness()
+
+    def validate_uniqueness(self):
+        """
+        Ensures only one PUBLISHED Merit List exists per Campus, Admission Cycle, and Program Level.
+        """
+        if self.status != "Published":
+            return
+
+        filters = {
+            "campus": self.campus,
+            "admission_cycle": self.admission_cycle,
+            "program_level": self.program_level,
+            "status": "Published",
+            "name": ["!=", self.name]
+        }
+
+        existing = frappe.db.exists("Merit List", filters)
+        if existing:
+            from frappe.utils import get_link_to_form
+            link = get_link_to_form("Merit List", existing)
+            frappe.throw(
+                f"A Merit List is already PUBLISHED for Campus '{self.campus}', "
+                f"Admission Cycle '{self.admission_cycle}' and Program Level '{self.program_level or 'All'}'. "
+                f"Unpublish it first if you need to publish this one. "
+                f"<br><br>Existing Published Merit List: {link}",
+                title="Duplicate Published Merit List"
+            )
 
 
 @frappe.whitelist()
@@ -61,6 +93,10 @@ def create_seat_allocation(merit_list_name, selected_applicants):
 
     alloc.total_selected = len(selected_applicants)
     alloc.insert()
+    
+    # Run automatic allocation logic immediately
+    alloc.allocate_seats()
+    
     frappe.db.commit()
 
     return alloc.name
@@ -77,12 +113,13 @@ def publish_merit_list(merit_list_name):
     doc = frappe.get_doc("Merit List", merit_list_name)
 
     if doc.status == "Published":
-        frappe.throw("Merit List is already published.")
+        frappe.throw(f"Merit List '{merit_list_name}' is already published.")
 
     if doc.docstatus != 1:
         frappe.throw("Merit List must be submitted before publishing.")
 
-    doc.db_set("status", "Published")
+    doc.status = "Published"
+    doc.save()
 
     # Update Applicant status
     for row in doc.merit_applicants:
@@ -114,7 +151,8 @@ def unpublish_merit_list(merit_list_name):
     if doc.status != "Published":
         frappe.throw("Merit List is not currently published.")
 
-    doc.db_set("status", "Generated")
+    doc.status = "Generated"
+    doc.save()
 
     # Revert Applicant status
     for row in doc.merit_applicants:

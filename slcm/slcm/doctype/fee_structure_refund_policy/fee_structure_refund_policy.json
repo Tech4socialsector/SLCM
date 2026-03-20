@@ -1,0 +1,60 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "creation": "2026-03-20 10:50:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "refund_policy",
+  "days_from_payment",
+  "refund_percentage",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "refund_policy",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Refund Policy",
+   "options": "Refund Policy",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "refund_policy.days_from_payment",
+   "fieldname": "days_from_payment",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Days From Payment",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "refund_policy.refund_percentage",
+   "fieldname": "refund_percentage",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Refund Percentage",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-20 10:50:00.000000",
+ "modified_by": "Administrator",
+ "module": "slcm",
+ "name": "Fee Structure Refund Policy",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

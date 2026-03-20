@@ -22,6 +22,9 @@
   "status",
   "total_amount",
   "receipt_print_format",
+  "section_refund",
+  "is_refund_available",
+  "refund_policies",
   "section_components",
   "components"
  ],
@@ -147,12 +150,30 @@
    "label": "Receipt Print Format",
    "mandatory_depends_on": "eval:doc.online_payment ==1",
    "options": "Print Format"
+  },
+  {
+   "fieldname": "section_refund",
+   "fieldtype": "Section Break",
+   "label": "Refund Policy Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_refund_available",
+   "fieldtype": "Check",
+   "label": "Is Refund Available"
+  },
+  {
+   "depends_on": "eval:doc.is_refund_available == 1",
+   "fieldname": "refund_policies",
+   "fieldtype": "Table",
+   "label": "Refund Policies",
+   "options": "Fee Structure Refund Policy"
   }
  ],
  "links": [],
- "modified": "2026-03-02 18:39:03.596454",
+ "modified": "2026-03-20 14:10:51.901284",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "Fee Structure",
  "naming_rule": "Expression",
  "owner": "Administrator",
