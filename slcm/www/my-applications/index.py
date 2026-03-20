@@ -360,57 +360,6 @@ def get_context(context):
         context.submission_date = frappe.utils.format_date(applicant.creation, "MMMM d, yyyy")
         context.app_name_param = _app_name
 
-        # --- Fetch Payment Details for Cancellation Button ---
-        context.payment_details = None
-        context.cancellation_details = frappe.get_all("Admission Cancellation", 
-            filters={"applicant": applicant.name, "status": ["not in", ["Rejected"]]},
-            fields=["name", "status", "requested_on", "cancellation_reason"],
-            order_by="creation desc",
-            limit=1
-        )
-        if context.cancellation_details:
-             context.cancellation_details = context.cancellation_details[0]
-             context.has_cancellation = True
-        else:
-             context.cancellation_details = None
-             context.has_cancellation = False
-        
-        # Show withdraw button ONLY if Enrolled and no existing cancellation
-        if not context.has_cancellation and applicant.application_status == "Enrolled":
-            # We fetch the latest active Offer Letter. If someone has paid, it should be 'Payment Completed' or 'Accepted'. 
-            # But we also include 'Issued' just in case the status sync is pending.
-            _off_name = frappe.db.get_value("Offer Letter", 
-                {"applicant": applicant.name, "offer_status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
-                "name", order_by="creation desc")
-            context.offer_name = _off_name or ""
-            
-            # Withdrawal depends on an active Offer Letter
-            if context.offer_name:
-                # 1. Try finding Student-linked Fee Payment
-                student_name = frappe.db.get_value("Student Master", {"application_number": applicant.name}, "name")
-                if student_name:
-                    payment_name = frappe.db.get_value("Fee Payment", {
-                        "student": student_name, 
-                        "status": "Submitted"
-                    }, "name")
-                    if payment_name:
-                        context.payment_details = frappe.db.get_value("Fee Payment", payment_name, ["name", "amount", "payment_date"], as_dict=True)
-
-                # 2. Fallback to Applicant Payment Receipt
-                if not context.payment_details:
-                    receipt = frappe.get_all("Applicant Payment Receipt",
-                        filters={"offer_letter": context.offer_name, "docstatus": 1},
-                        fields=["name", "total_amount as amount", "payment_date"],
-                        order_by="creation desc", limit=1)
-                    if receipt:
-                        context.payment_details = receipt[0]
-                        context.payment_receipt = receipt[0].name
-            else:
-                context.payment_details = None
-        else:
-            context.offer_name = ""
-            context.payment_details = None
-
         # Combined results
         context.all_results = []
         context.all_merit   = []
@@ -657,24 +606,9 @@ def get_context(context):
         program_name = frappe.db.get_value("Program", app_doc.program, "program_name") or app_doc.program
         program_slug = frappe.db.get_value("Program", app_doc.program, "program_slug") or ""
 
-        # --- Withdrawal Data Logic ---
-        _payment_details = None
-        _offer_name = frappe.db.get_value("Offer Letter", {
-            "applicant": app_doc.name, 
-            "offer_status": ["in", ["Accepted", "Payment Completed"]]
-        }, "name")
-        
-        student_name = frappe.db.get_value("Student Master", {"application_number": app_doc.name}, "name")
-        if student_name:
-            payment_name = frappe.db.get_value("Fee Payment", {"student": student_name, "status": "Submitted"}, "name")
-            if payment_name:
-                _payment_details = frappe.db.get_value("Fee Payment", payment_name, ["name", "amount", "payment_date"], as_dict=True)
-
         summary = {
             "name": app_doc.name,
             "is_editable": is_application_editable(app_doc),
-            "offer_name": _offer_name or "",
-            "payment_details": _payment_details,
             "header": {
                 "program_name": program_name,
                 "applicant_id": app_doc.name,

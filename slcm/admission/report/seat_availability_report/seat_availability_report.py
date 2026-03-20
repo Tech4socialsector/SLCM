@@ -185,7 +185,7 @@ def get_data(filters):
             stats = allocations.setdefault(key, {"allocated": 0, "waitlisted": 0})
             
             # Consider all positive selection statuses as allocated
-            allocated_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+            allocated_statuses = ["Selected", "Accepted", "Fee Paid", "Offer Issued", "Offer Accepted"]
             if app.selection_status in allocated_statuses:
                 stats["allocated"] += 1
             elif app.selection_status == "Waitlisted":

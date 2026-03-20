@@ -65,14 +65,6 @@ def get_context(context):
         context.applicant = applicant
         context.all_applicants = applicant_records
 
-        # 1.5 Check if Fee is paid (to disable applications)
-        context.is_fee_paid = frappe.db.exists("Applicant Fee Assignment", {
-            "applicant": applicant.name,
-            "admission_cycle": applicant.admission_cycle,
-            "status": ["in", ["Paid", "Converted"]],
-            "docstatus": ["!=", 2]
-        }) or (applicant.application_status == "Fee Paid")
-
         # 2. Get Categories from Eligibility Result
         applicant_categories = set()
         eligibility_result = frappe.get_all(

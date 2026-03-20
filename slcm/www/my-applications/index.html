@@ -1865,24 +1865,7 @@ or _app.current_stage)) or _status %}
             </div>
           </div>
 
-          <div class="app-header-right" style="flex-direction:row; align-items:center; gap:10px;">
-            {% if cancellation_details %}
-              {% set _cstat = cancellation_details.status %}
-              {% set _bg = '#fee2e2' if _cstat == 'Initiated' else ('#ffedd5' if _cstat == 'Approved' else '#dcfce7') %}
-              {% set _clr = '#991b1b' if _cstat == 'Initiated' else ('#9a3412' if _cstat == 'Approved' else '#166534') %}
-              <div class="cancellation-status-badge" style="display:flex; align-items:center; gap:8px; background:{{ _bg }}; color:{{ _clr }}; padding:6px 14px; border-radius:30px; font-size:12px; font-weight:700; border:1px solid {{ _clr }}40;">
-                <span class="material-symbols-outlined" style="font-size:16px;">cancel_presentation</span>
-                Withdrawal: {{ _cstat }}
-              </div>
-            {% elif payment_details %}
-            <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}')" 
-              class="btn-withdraw-application" title="Withdraw your application and request refund"
-              style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
-              <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
-              Withdraw Application
-            </button>
-            {% endif %}
-
+          <div class="app-header-right">
             <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
               title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
               <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
@@ -2042,12 +2025,11 @@ or _app.current_stage)) or _status %}
             Seat allocation result</div>
           {% if all_results and all_results|length > 0 %}
           {% set r = all_results[0] %}
-          
-          {% if r.selection_status in ['Selected','Offered','Accepted','Fee Paid'] %}
+
           <div class="seat-info-box">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
               <span class="seat-prog-name">{{ _prog }}</span>
-              <span class="merit-chip" style="position: static;">Selected</span>
+              <span class="merit-chip" style="position: static;">{{ r.selection_status }}</span>
             </div>
             <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
               <div
@@ -2067,16 +2049,15 @@ or _app.current_stage)) or _status %}
 
           {% if r.selection_status in ['Selected','Offered'] %}
           <!-- Accept/Decline buttons commented out intentionally -->
-          {% elif r.selection_status in ['Accepted','Fee Paid'] %}
+          {% elif r.selection_status == 'Accepted' %}
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
             <span class="material-symbols-outlined"
               style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
-            <span style="font-size:13px;font-weight:600;color:#166534">Seat Selected</span>
+            <span style="font-size:13px;font-weight:600;color:#166534">Seat Accepted</span>
           </div>
-          {% endif %}
           {% else %}
-          <div style="padding:12px 0">
-            <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
+          <div style="padding:12px 0;text-align:center">
+            <span style="font-size:13px;font-weight:500;color:var(--text-3)">Status: {{ r.selection_status }}</span>
           </div>
           {% endif %}
           {% else %}
@@ -2840,22 +2821,11 @@ LIST / DASHBOARD VIEW
               <span class="app-submitted-date">· {{ h.cycle }}</span>
             </div>
           </div>
-          <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
-            {% if app.payment_details %}
-            <button onclick="show_cancellation_dialog('{{ app.offer_name }}', '{{ app.name }}', '{{ app.campus }}', '{{ app.program }}')" 
-              class="btn-withdraw-application" title="Withdraw your application and request refund"
-              style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:8px 14px; border-radius:9px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:12px; height:38px;">
-              <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
-              Withdraw
-            </button>
-            {% endif %}
-
-            <a href="/my-applications?app={{ app.name }}"
-              style="display:inline-flex;align-items:center;gap:6px;padding:0 18px;border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;text-decoration:none;color:white;background:var(--primary);height:38px;">
-              View details
-              <span class="material-symbols-outlined" style="font-size:17px">arrow_forward</span>
-            </a>
-          </div>
+          <a href="/my-applications?app={{ app.name }}"
+            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;text-decoration:none;color:white;background:var(--primary);flex-shrink:0">
+            View details
+            <span class="material-symbols-outlined" style="font-size:17px">arrow_forward</span>
+          </a>
         </div>
       </div>
 
@@ -3695,241 +3665,7 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
     } catch (e) {
       citySelect.innerHTML = '<option value="">Error loading cities</option>';
     }
-    };
-
-    })();
-
-    // --- Withdrawal Logic (Matching Offer Letter Implementation) ---
-    document.addEventListener('DOMContentLoaded', function() {
-    const modalEl = document.getElementById('cancellationModal');
-    if (!modalEl) return;
-
-    const cancellationModal = new bootstrap.Modal(modalEl);
-
-    window.show_cancellation_dialog = async function(offer_name, applicant, campus, program, payment_request) {
-        document.getElementById('modal_offer_name').value = offer_name;
-        document.getElementById('modal_applicant').value = applicant;
-        document.getElementById('modal_campus').value = campus;
-        document.getElementById('modal_program').value = program;
-        document.getElementById('modal_payment_request').value = payment_request || '';
-
-        // Reset form
-        document.getElementById('cancellationForm').reset();
-        document.getElementById('modal_submit_btn').disabled = false;
-
-        // Fetch and show refund policies
-        try {
-            const api_args = {
-                applicant: applicant,
-                program: program,
-                campus: campus
-            };
-            const res = await apiFetch('slcm.admission_cancel_api.get_refund_policies', api_args) || {};
-            
-            const policies = res.policies || [];
-            const daysElapsed = res.days_since_payment || 0;
-
-            const policyTableBody = document.getElementById('refundPolicyTableBody');
-            const policyContainer = document.getElementById('refundPolicyContainer');
-            const policySection = document.getElementById('refundPolicySection');
-            const nonRefundableMsg = document.getElementById('nonRefundableMsg');
-
-            if (policies && policies.length > 0) {
-                let rows = '';
-                let highlighted = false;
-                
-                // Sort policies by days just in case
-                policies.sort((a, b) => a.days_from_payment - b.days_from_payment);
-
-                policies.forEach(p => {
-                    let isCurrent = false;
-                    if (!highlighted && daysElapsed <= p.days_from_payment) {
-                        isCurrent = true;
-                        highlighted = true;
-                    }
-                    
-                    const rowBg = isCurrent ? 'background-color: #f0fdf4 !important;' : '';
-                    const rowBorder = isCurrent ? 'border-left: 4px solid #22c55e !important;' : 'border-bottom: 1px solid #f8fafc;';
-                    const badgeHtml = isCurrent ? `<span class="badge bg-success ms-2" style="font-size: 9px; vertical-align: middle;">Current</span>` : '';
-
-                    rows += `
-                        <tr style="${rowBg} ${rowBorder}">
-                            <td class="px-3 py-2 fw-600 text-dark">${p.policy_name}${badgeHtml}</td>
-                            <td class="px-3 py-2 text-center text-muted">${p.days_from_payment}</td>
-                            <td class="px-3 py-2 text-end fw-bold text-primary">${p.refund_percentage}%</td>
-                        </tr>
-                    `;
-                });
-                policyTableBody.innerHTML = rows;
-                if (policySection) policySection.style.display = 'block';
-                if (nonRefundableMsg) nonRefundableMsg.style.display = 'none';
-                if (policyContainer) policyContainer.style.display = 'block';
-            } else {
-                if (policySection) policySection.style.display = 'none';
-                if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
-                if (policyContainer) policyContainer.style.display = 'block';
-            }
-        } catch (e) {
-            console.error("Failed to fetch refund policies:", e);
-            const policyContainer = document.getElementById('refundPolicyContainer');
-            const policySection = document.getElementById('refundPolicySection');
-            const nonRefundableMsg = document.getElementById('nonRefundableMsg');
-            
-            if (policyContainer) {
-                if (policySection) policySection.style.display = 'none';
-                if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
-                policyContainer.style.display = 'block';
-            }
-        }
-
-        cancellationModal.show();
-    };
-
-    const cForm = document.getElementById('cancellationForm');
-    if (cForm) {
-        cForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            showConfirm("{{ _('Are you sure you want to cancel your admission? This action is final and irreversible.') }}", async function() {
-                const btn = document.getElementById('modal_submit_btn');
-                const data = {
-                    offer: document.getElementById('modal_offer_name').value,
-                    applicant: document.getElementById('modal_applicant').value,
-                    campus: document.getElementById('modal_campus').value,
-                    program: document.getElementById('modal_program').value,
-                    payment_request: document.getElementById('modal_payment_request').value,
-                    cancellation_reason_type: document.getElementById('modal_reason_type').value,
-                    cancellation_reason: document.getElementById('modal_reason').value
-                };
-
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> Processing...';
-
-                try {
-                    const response = await apiFetch('slcm.admission_cancel_api.submit_admission_cancellation', data);
-
-                    if (response && response.status === 'Success') {
-                        cancellationModal.hide();
-                        showToast("{{ _('Cancellation request submitted successfully') }}", 'success');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    } else {
-                        btn.disabled = false;
-                        btn.innerHTML = "{{ _('Withdraw Application') }}";
-                    }
-                } catch (error) {
-                    btn.disabled = false;
-                    btn.innerHTML = "{{ _('Withdraw Application') }}";
-                    showToast(error.message || "{{ _('Error submitting request') }}", 'error');
-                }
-            });
-        });
-    }
-    });
-    </script>
-
-    <!-- Admission Cancellation Modal (Exact implementation from Offer Letter) -->
-    <div class="modal fade" id="cancellationModal" tabindex="-1" aria-labelledby="cancellationModalLabel" aria-hidden="true" style="z-index: 9999;">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="border-radius: 24px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
-                <div class="modal-header border-bottom-0 pt-4 px-4 pb-0">
-                    <h5 class="modal-title fw-800 text-dark" id="cancellationModalLabel" style="font-size: 1.5rem; letter-spacing: -0.02em;">{{ _('Withdraw Admission') }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="background-color: #f1f5f9; border-radius: 50%; padding: 10px;"></button>
-                </div>
-                <div class="modal-body px-4 pb-4 pt-3">
-                    <!-- Info Section -->
-                    <div class="d-flex align-items-center p-3 mb-4" style="background: #f0f9ff; border-radius: 16px; border: 1px solid #e0f2fe;">
-                        <div class="me-3" style="background: #bae6fd; color: #0369a1; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                            <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
-                        </div>
-                        <div>
-                            <div class="text-dark fw-bold" style="font-size: 14px;">{{ _('Withdrawal Process') }}</div>
-                            <div class="text-muted small" style="line-height: 1.4;">{{ _('Processing takes 5–7 working days after approval.') }}</div>
-                        </div>
-                    </div>
-
-                    <!-- Refund Policy Section -->
-                    <div id="refundPolicyContainer" class="mb-4" style="display: none;">
-                        <div id="refundPolicySection">
-                            <label class="form-label small fw-700 text-muted mb-3" style="letter-spacing: -0.01em;">{{ _('Refund Policy Summary') }}</label>
-                            <div class="table-responsive" style="border-radius: 16px; border: 1px solid #f1f5f9; background: #fafafa;">
-                                <table class="table table-sm table-borderless mb-0" style="font-size: 13px;">
-                                    <thead style="background: #f8fafc; border-bottom: 1px solid #f1f5f9;">
-                                        <tr>
-                                            <th class="px-3 py-3 text-muted fw-700">{{ _('Policy Phase') }}</th>
-                                            <th class="px-3 py-3 text-muted fw-700 text-center">{{ _('Payment Days') }}</th>
-                                            <th class="px-3 py-3 text-muted fw-700 text-end">{{ _('Refund %') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="refundPolicyTableBody">
-                                        <!-- Policies injected here -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div id="nonRefundableMsg" class="p-3 mb-2" style="display: none; background: #fff1f2; border-radius: 16px; border: 1px solid #ffe4e6; color: #e11d48; font-size: 13px; font-weight: 600;">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="material-symbols-outlined" style="font-size: 18px;">warning</span> 
-                                {{ _('Note: The admission fee for this program is non-refundable.') }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="p-3 mb-4" style="background: #fff7ed; border-radius: 16px; border: 1px solid #ffedd5; display: flex; gap: 12px;">
-                        <div class="text-warning-emphasis fw-600" style="line-height: 1.5; color: #9a3412; font-size: 14px;">
-                            {{ _('⚠️ Please confirm your decision. Cancelling your admission will release your seat to other candidates. This step cannot be undone once completed.') }}
-                        </div>
-                    </div>
-
-                    <form id="cancellationForm" style="background: #fff; border: 1px solid #f1f5f9; padding: 20px; border-radius: 20px;">
-                        <input type="hidden" id="modal_offer_name">
-                        <input type="hidden" id="modal_applicant">
-                        <input type="hidden" id="modal_campus">
-                        <input type="hidden" id="modal_program">
-                        <input type="hidden" id="modal_payment_request">
-
-                        <div class="mb-3">
-                            <label class="form-label small fw-700 text-muted mb-2" style="letter-spacing: -0.01em;">
-                                {{ _('Reason for withdrawal') }} <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select border-0 bg-light" id="modal_reason_type" required style="border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500;">
-                                <option value="">{{ _('Choose a category...') }}</option>
-                                <option value="Financial Issues">{{ _('Financial Issues') }}</option>
-                                <option value="Medical Reasons">{{ _('Medical Reasons') }}</option>
-                                <option value="Personal Reasons">{{ _('Personal Reasons') }}</option>
-                                <option value="Better Offer Elsewhere">{{ _('Better Offer Elsewhere') }}</option>
-                                <option value="Program Change">{{ _('Program Change') }}</option>
-                                <option value="Other">{{ _('Other') }}</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label small fw-700 text-muted mb-2" style="letter-spacing: -0.01em;">
-                                {{ _('Detailed explanation') }} <span class="text-danger">*</span>
-                            </label>
-                            <textarea class="form-control border-0 bg-light" id="modal_reason" rows="3" required style="border-radius: 12px; padding: 12px 16px; font-size: 14px;" placeholder="{{ _('Tell us why you are withdrawing...') }}"></textarea>
-                        </div>
-
-                        <div class="mb-4 p-3" style="background: #f8fafc; border-radius: 12px;">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="modal_declaration" required style="cursor: pointer; width: 1.2rem; height: 1.2rem; margin-top: 0.1rem;">
-                                <label class="form-check-label small fw-500 text-muted ps-2" for="modal_declaration" style="cursor: pointer; line-height: 1.5;">
-                                    {{ _('I hereby declare that I wish to withdraw my admission. I understand that this request, once processed, is final and irreversible.') }}
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="text-center">
-                            <button type="submit" class="btn w-100 py-3 fw-800 text-white" id="modal_submit_btn" 
-                                style="border-radius: 14px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3); font-size: 16px; transition: all 0.2s;">
-                                {{ _('Confirm Withdrawal') }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {% endblock %}
+  };
+})();
+</script>
+{% endblock %}
