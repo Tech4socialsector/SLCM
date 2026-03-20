@@ -10,6 +10,7 @@
   "section_request_info",
   "applicant",
   "payment_request",
+  "applicant_payment_receipt",
   "razorpay_payment_id",
   "razorpay_refund_id",
   "admission_cancellation",
@@ -48,15 +49,19 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Fee Payment",
-   "options": "Fee Payment",
-   "reqd": 1
+   "options": "Fee Payment"
+  },
+  {
+   "fieldname": "applicant_payment_receipt",
+   "fieldtype": "Link",
+   "label": "Payment Receipt",
+   "options": "Applicant Payment Receipt"
   },
   {
    "fieldname": "razorpay_payment_id",
    "fieldtype": "Data",
    "label": "Razorpay Payment ID",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "razorpay_refund_id",

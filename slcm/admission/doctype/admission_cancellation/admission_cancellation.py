@@ -52,7 +52,7 @@ class AdmissionCancellation(Document):
 							self.amount_paid = flt(payment[0].amount)
 						self.razorpay_id = payment[0].reference_number
 					else:
-						# Look for Payment Request
+						# Fallback for amount if no Fee Payment but core Payment Request found
 						pr = frappe.get_all("Payment Request",
 							filters={"reference_doctype": "Offer Letter", "reference_name": offer_name, "status": "Paid"},
 							fields=["name", "amount", "transaction_id"],
@@ -61,6 +61,19 @@ class AdmissionCancellation(Document):
 						if pr:
 							self.amount_paid = flt(pr[0].amount)
 							self.razorpay_id = pr[0].transaction_id
+
+					# Always search for Applicant Payment Receipt for visibility/Audit Trail
+					receipt = frappe.get_all("Applicant Payment Receipt",
+						filters={"offer_letter": offer_name, "docstatus": 1},
+						fields=["name", "total_amount", "transaction_id"],
+						limit=1
+					)
+					if receipt:
+						self.applicant_payment_receipt = receipt[0].name
+						if not self.amount_paid:
+							self.amount_paid = flt(receipt[0].total_amount)
+						if not self.razorpay_id:
+							self.razorpay_id = receipt[0].transaction_id
 
 	def set_cancellation_metadata(self):
 		if self.is_new():

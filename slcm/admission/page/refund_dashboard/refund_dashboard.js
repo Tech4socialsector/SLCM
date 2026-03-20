@@ -19,11 +19,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		.icon-red    { background: #fee2e2 !important; color: #dc2626 !important; }
 
 		.stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-		.stat-value { font-size: 22px; font-weight: 800; color: #1e293b; line-height: 1.2; }
-		
-		.status-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; transition: all 0.2s; }
-		.status-label { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
-		.status-number { font-size: 28px; font-weight: 800; }
+		.stat-value { font-size: 18px; font-weight: 800; color: #1e293b; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 		
 		.section-title-container { border-left: 3px solid #2563eb; padding-left: 12px; margin: 30px 15px 24px 15px; }
 		.section-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
@@ -132,7 +128,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		kpi_section_1.empty();
 		kpi_section_2.empty();
 
-		// Row 1: Stronger backgrounds
+		// Row 1: Primary Metrics
 		const row1 = [
 			{ label: __('Total Refunded'), value: format_currency(kpis.total_refund_amount), icon: 'payments', cls: 'icon-blue' },
 			{ label: __('Refunded Today'), value: format_currency(kpis.refunded_today), icon: 'calendar_today', cls: 'icon-green' },
@@ -140,11 +136,12 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 			{ label: __('Total Cancellations'), value: kpis.total_cancellations, icon: 'cancel', cls: 'icon-red' }
 		];
 
+		// Row 2: Status Breakdown (Unified with Row 1 design)
 		const row2 = [
-			{ label: __('Pending Review'), value: kpis.review, color: '#f59e0b', cls: 'pending-card' },
-			{ label: __('Approved (Queue)'), value: kpis.approved, color: '#2563eb', cls: 'approved-card' },
-			{ label: __('Processed'), value: kpis.processed, color: '#16a34a', cls: 'processed-card' },
-			{ label: __('Failed'), value: kpis.failed, color: '#dc2626', cls: 'failed-card' }
+			{ label: __('Pending Review'), value: kpis.review, icon: 'pending', cls: 'icon-orange' },
+			{ label: __('Approved (Queue)'), value: kpis.approved, icon: 'verified', cls: 'icon-blue' },
+			{ label: __('Processed'), value: kpis.processed, icon: 'task_alt', cls: 'icon-green' },
+			{ label: __('Failed'), value: kpis.failed, icon: 'error', cls: 'icon-red' }
 		];
 
 		row1.forEach(item => {
@@ -160,9 +157,14 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		});
 
 		row2.forEach(item => {
-			$(`<div class="status-card shadow-sm ${item.cls}">
-				<div class="status-label">${item.label}</div>
-				<div class="status-number" style="color: ${item.color}">${item.value}</div>
+			$(`<div class="stat-card shadow-sm">
+				<div class="icon-box ${item.cls}">
+					<span class="material-symbols-outlined">${item.icon}</span>
+				</div>
+				<div>
+					<div class="stat-label">${item.label}</div>
+					<div class="stat-value" style="color: inherit;">${item.value}</div>
+				</div>
 			</div>`).appendTo(kpi_section_2);
 		});
 	}

@@ -117,19 +117,38 @@ def submit_admission_cancellation(**kwargs):
 	Portal-safe method to submit admission cancellation.
 	Maps fields from the web form to Admission Cancellation DocType.
 	"""
+	applicant = kwargs.get("applicant")
+	offer = kwargs.get("offer")
+
+	# Clean up 'None' passed from template/JS
+	if offer in ("None", "", None):
+		offer = frappe.db.get_value("Offer Letter", 
+			{"applicant": applicant, "offer_status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
+			"name", order_by="creation desc")
+	
+	if not offer:
+		frappe.throw(_("Could not find an active Offer Letter associated with your application."))
+
 	# Check for existing cancellation
 	existing_cancellation = frappe.db.exists("Admission Cancellation", {
-		"applicant": kwargs.get("applicant"),
-		"offer": kwargs.get("offer")
+		"applicant": applicant,
+		"offer": offer
 	})
 	
 	if existing_cancellation:
 		frappe.throw(_("A cancellation request for this offer has already been submitted."))
 	
 	doc = frappe.new_doc("Admission Cancellation")
-	doc.applicant = kwargs.get("applicant")
-	doc.offer = kwargs.get("offer")
-	doc.payment_request = kwargs.get("payment_request")
+	doc.applicant = applicant
+	doc.offer = offer
+	
+	pay_ref = kwargs.get("payment_request")
+	if pay_ref:
+		if frappe.db.exists("Fee Payment", pay_ref):
+			doc.payment_request = pay_ref
+		elif frappe.db.exists("Applicant Payment Receipt", pay_ref):
+			doc.applicant_payment_receipt = pay_ref
+
 	doc.campus = kwargs.get("campus")
 	doc.program = kwargs.get("program")
 	doc.cancellation_reason_type = kwargs.get("cancellation_reason_type")
