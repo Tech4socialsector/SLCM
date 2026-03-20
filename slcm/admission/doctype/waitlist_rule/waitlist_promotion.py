@@ -189,7 +189,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
         if vacancies["GEN"] > 0:
             assigned = True
             new_type = "Open"
-            new_cat = None
+            new_cat = "General"
             vacancies["GEN"] -= 1
         else:
             # B. Try Reserved Categories in priority order
@@ -244,7 +244,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
                     admission_cycle=seat_alloc.admission_cycle,
                     applicant=row.applicant_id,
                     program=program,
-                    action_type="Seat Upgraded",
+                    action_type="Seat Allocated",
                     old_value=f"{old_type} ({old_cat or 'GEN'})",
                     new_value=f"{new_type} ({new_cat or 'GEN'})",
                     remarks="Slided to a higher priority category seat."

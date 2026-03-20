@@ -11,12 +11,16 @@ class MeritGeneration(Document):
         if not self.admission_cycle or not self.campus:
             frappe.throw("Admission Cycle and Campus are required for naming.")
 
-        cycle = self.admission_cycle.replace(" ", "").upper()
-        campus = self.campus.replace(" ", "").upper()
+        # Use codes instead of names to keep it short
+        cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code") or self.admission_cycle
+        campus_code = frappe.db.get_value("Campus", self.campus, "campus_code") or self.campus
+        
+        cycle = cycle_code.replace(" ", "").upper()
+        campus = campus_code.replace(" ", "").upper()
         level = (self.generation_type or "ALL").replace(" ", "").upper()
 
         # Use a sequence so multiple attempts are recorded separately
-        self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.#####")
+        self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.####")
 
     @frappe.whitelist()
     def trigger_generation(self):
@@ -84,9 +88,10 @@ class MeritGeneration(Document):
                 self.generated_on = merit.generated_on
                 self.save()
                 frappe.msgprint(
-                    f"Merit List '{merit.name}' is already PUBLISHED. "
-                    f"Unpublish it first if you need to fix or regenerate. "
-                    f"<a href='/app/merit-list/{merit.name}'>View List</a>.",
+                    f"The Merit List '{merit.name}' is already published. "
+                    f"Generation skipped. "
+                    f"To make changes or regenerate the list, you must first unpublish it. "
+                    f"<a href='/app/merit-list/{merit.name}'><b>View Merit List</b></a>.",
                     title="Merit List Published",
                     indicator="orange"
                 )

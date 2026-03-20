@@ -68,14 +68,19 @@ class SeatAllocation(Document):
             frappe.throw("Published On date cannot be in the future.")
 
     def autoname(self):
+        from frappe.model.naming import make_autoname
         if not self.admission_cycle or not self.campus:
             frappe.throw("Admission Cycle and Campus are required for naming.")
 
-        cycle = self.admission_cycle.replace(" ", "").upper()
-        campus = self.campus.replace(" ", "").upper()
+        # Use codes instead of names to keep it short
+        cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code") or self.admission_cycle
+        campus_code = frappe.db.get_value("Campus", self.campus, "campus_code") or self.campus
+        
+        cycle = cycle_code.replace(" ", "").upper()
+        campus = campus_code.replace(" ", "").upper()
         level = (self.program_level or "ALL").replace(" ", "").upper()
 
-        self.name = f"SA-{campus}-{cycle}-{level}"
+        self.name = make_autoname(f"SA-{cycle}-{campus}-{level}-.####")
 
     def before_save(self):
         if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
@@ -86,10 +91,11 @@ class SeatAllocation(Document):
         self.total_waitlisted = 0
         self.total_rejected = 0
         
-        rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired"]
+        rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
         
         for row in (self.selection_applicant or []):
-            if row.selection_status in ["Selected", "Offer Accepted"]:
+            if row.selection_status in selection_statuses:
                 self.total_selected += 1
             elif row.selection_status == "Waitlisted":
                 self.total_waitlisted += 1
@@ -153,8 +159,8 @@ class SeatAllocation(Document):
                         admission_cycle=self.admission_cycle
                     )
 
-            # Trigger promotion if a Selected/Offer Accepted/Offer Issued applicant moves to any rejected status
-            if old_status in ["Selected", "Offer Accepted", "Offer Issued"] and new_status in rejection_statuses:
+            # Trigger promotion if a seat-occupying applicant moves to any released status
+            if old_status in selection_statuses and new_status in rejection_statuses:
                 affected_programs.add(row.program)
 
         if not affected_programs:
@@ -165,12 +171,16 @@ class SeatAllocation(Document):
 
     def validate_uniqueness(self):
         """
-        Ensures only one Seat Allocation exists per Campus, Admission Cycle, and Program Level.
+        Ensures only one PUBLISHED Seat Allocation exists per Campus, Admission Cycle, and Program Level.
         """
+        if self.status != "Published":
+            return
+
         filters = {
             "campus": self.campus,
             "admission_cycle": self.admission_cycle,
             "program_level": self.program_level,
+            "status": "Published",
             "name": ["!=", self.name]
         }
         
@@ -178,10 +188,11 @@ class SeatAllocation(Document):
         if existing:
             link = get_link_to_form("Seat Allocation", existing)
             frappe.throw(
-                f"A Seat Allocation already exists for Campus '{self.campus}', "
+                f"A Seat Allocation is already PUBLISHED for Campus '{self.campus}', "
                 f"Admission Cycle '{self.admission_cycle}' and Program Level '{self.program_level or 'All'}'. "
-                f"<br><br>Existing Allocation: {link}",
-                title="Duplicate Seat Allocation"
+                f"Unpublish it first if you need to publish this one. "
+                f"<br><br>Existing Published Allocation: {link}",
+                title="Duplicate Published Allocation"
             )
 
     def on_update(self):
@@ -541,3 +552,38 @@ class SeatAllocation(Document):
         notify_published_allocation(self.name)
 
         frappe.msgprint("Allocation Published and notifications queued.")
+
+    @frappe.whitelist()
+    def unpublish_allocation(self):
+        """
+        Reverts the Seat Allocation status to 'Allocated', hiding results from students.
+        Also reverts the Application Status of all applicants in the list to 'Merit Published'.
+        """
+        if self.status != "Published":
+            frappe.throw("Seat Allocation is not currently published.")
+
+        self.status = "Allocated"
+        self.published_on = None
+        self.published_by = None
+        self.save()
+
+        # Revert Applicant status
+        selection_statuses = ["Selected", "Waitlisted", "Rejected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+        for row in self.selection_applicant:
+            if row.applicant_id:
+                current_status = frappe.db.get_value("Applicant", row.applicant_id, "application_status")
+                if current_status in selection_statuses:
+                    from slcm.api.service.offer_service import OfferService
+                    OfferService.update_applicant_status(row.applicant_id, application_status="Merit Published")
+
+        # Audit log
+        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
+        log_seat_allocation_action(
+            seat_allocation=self.name,
+            admission_cycle=self.admission_cycle,
+            action_type="Unpublished",
+            remarks=f"Seat Allocation {self.name} unpublished by {frappe.session.user}. It is now hidden from applicants."
+        )
+
+        frappe.db.commit()
+        return {"status": "Allocated"}

@@ -34,6 +34,7 @@ class ScholarshipApplication(Document):
 		self.calculate_benefit()
 		self.validate_rejection_reason()
 		self.validate_conflicts()
+		self.validate_payment_status()
 
 	def set_applicant_metadata(self):
 		if not self.applicant_id:
@@ -247,6 +248,29 @@ class ScholarshipApplication(Document):
 			
 			if approved_count >= limit:
 				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
+
+	def validate_payment_status(self):
+		"""
+		Prevents application if the admission fee has already been paid.
+		Scholarships must be applied for and approved BEFORE fee payment.
+		"""
+		if not self.applicant_id:
+			return
+
+		# Check for Paid or Converted Fee Assignments
+		paid_afa = frappe.db.exists("Applicant Fee Assignment", {
+			"applicant": self.applicant_id,
+			"admission_cycle": self.admission_cycle,
+			"status": ["in", ["Paid", "Converted"]],
+			"docstatus": ["!=", 2]
+		})
+
+		if paid_afa:
+			frappe.throw(
+				frappe._("Scholarship applications are not permitted once the admission fee has been paid. "
+						 "Scholarships must be granted before the final fee payment is processed."),
+				title=frappe._("Payment Already Completed")
+			)
 
 	def create_audit_log(self):
 		"""

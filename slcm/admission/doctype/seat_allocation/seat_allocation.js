@@ -64,7 +64,7 @@ frappe.ui.form.on("Seat Allocation", {
             });
         }
 
-        if (frm.doc.status === "Draft" || frm.doc.status === "Allocated") {
+        if (frm.doc.status === "Draft") {
             frm.add_custom_button(__("Allocate Seats"), () => {
                 frm.call({
                     method: "allocate_seats",
@@ -333,6 +333,29 @@ frappe.ui.form.on("Seat Allocation", {
                     }
                 }, 300);
             });
+        }
+
+        if (frm.doc.status === "Published") {
+            frm.add_custom_button(__("Unpublish"), () => {
+                frappe.confirm(
+                    __("This will hide results from students. Continue?"),
+                    () => {
+                        frm.call({
+                            method: "unpublish_allocation",
+                            doc: frm.doc,
+                            callback(r) {
+                                if (!r.exc) {
+                                    frm.reload_doc();
+                                    frappe.show_alert({
+                                        message: __("Allocation unpublished."),
+                                        indicator: "orange"
+                                    });
+                                }
+                            }
+                        });
+                    }
+                );
+            }, __("Actions"));
         }
     }
 });

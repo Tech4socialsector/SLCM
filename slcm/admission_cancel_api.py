@@ -9,15 +9,76 @@ except ImportError:
 	razorpay = None
 
 @frappe.whitelist()
-def get_refund_policies():
+def get_refund_policies(applicant=None, program=None, campus=None, offer=None):
 	"""
-	Fetches active refund policies.
+	Fetches refund policies mapped to the applicant's Fee Structure.
+	If is_refund_available is unchecked or table is empty, returns empty list.
 	"""
-	return frappe.get_all("Refund Policy", 
-		filters={"is_active": 1}, 
-		fields=["policy_name", "days_from_payment", "refund_percentage"],
-		order_by="days_from_payment asc"
+	if not applicant:
+		user_email = frappe.session.user
+		applicant = frappe.db.get_value("Applicant", {"email": user_email}, "name")
+	
+	if not applicant:
+		return {"policies": [], "days_since_payment": 0}
+
+	# 1. Resolve basic details
+	details = frappe.db.get_value("Applicant", applicant, ["program", "campus", "admission_cycle"], as_dict=1)
+	if not details:
+		return {"policies": [], "days_since_payment": 0}
+	
+	program = program or details.program
+	campus = campus or details.campus
+	cycle = details.admission_cycle
+
+	# 2. Find Fee Structure via Offer Configuration
+	fee_structure = None
+	config_names = frappe.get_all("Offer Configuration", 
+		filters={"admission_cycle": cycle, "campus": campus, "is_active": 1},
+		pluck="name"
 	)
+
+	for cn in config_names:
+		config_doc = frappe.get_doc("Offer Configuration", cn)
+		for row in config_doc.fee_structure:
+			fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
+			if fs_program == program:
+				fee_structure = row.fee_structure
+				break
+		if fee_structure:
+			break
+	
+	if not fee_structure:
+		return {"policies": [], "days_since_payment": 0}
+
+	# 3. Get policies from Fee Structure
+	fs_doc = frappe.get_doc("Fee Structure", fee_structure)
+	
+	if not fs_doc.is_refund_available:
+		return {"policies": [], "days_since_payment": 0}
+
+	policies = []
+	for row in fs_doc.get("refund_policies", []):
+		if row.is_active:
+			policies.append({
+				"policy_name": row.refund_policy,
+				"days_from_payment": row.days_from_payment,
+				"refund_percentage": row.refund_percentage
+			})
+	
+	# 4. Calculate days since payment
+	from frappe.utils import date_diff, nowdate
+	days_since_payment = 0
+	last_payment = frappe.db.get_value("Applicant Payment Receipt", 
+		{"applicant": applicant, "docstatus": 1}, 
+		"payment_date", order_by="payment_date desc")
+	
+	if last_payment:
+		days_since_payment = date_diff(nowdate(), last_payment)
+
+	return {
+		"policies": policies,
+		"days_since_payment": days_since_payment
+	}
 
 @frappe.whitelist()
 def process_refund(name):

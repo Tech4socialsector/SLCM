@@ -58,12 +58,12 @@
 
   .form-header {
     background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary), black 20%) 100%);
-    padding: 40px 48px;
+    padding: 32px 40px;
     color: white;
   }
 
   .form-body {
-    padding: 40px 48px;
+    padding: 32px 40px;
   }
 
   .info-grid {
@@ -95,11 +95,15 @@
   .file-upload-box {
     border: 2px dashed #e2e8f0;
     border-radius: 16px;
-    padding: 24px;
+    padding: 16px;
     text-align: center;
     background: #fcfdfe;
     cursor: pointer;
     transition: all 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .file-upload-box:hover {
@@ -145,7 +149,7 @@
   }
 
   @media (max-width: 640px) {
-    .form-header, .form-body { padding: 24px; }
+    .form-header, .form-body { padding: 20px; }
     .info-grid { grid-template-columns: 1fr; }
   }
 </style>
@@ -153,7 +157,7 @@
 
 {% block content %}
 <div class="py-10 px-4 flex flex-col items-center">
-    <div class="w-full max-w-3xl">
+    <div class="w-full max-w-4xl">
         
         <a href="/merit-and-scholarship/scholarships" class="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors mb-6 group">
             <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
@@ -178,16 +182,13 @@
 
         <div class="form-container fade-in-up">
             <div class="form-header">
-                <!-- <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 border border-white/10">
-                    {{ scheme.scheme_type or "General Scholarship" }}
-                </span> -->
-                <h1 class="text-3xl font-black mb-2 leading-tight">{{ scheme.scheme_name }}</h1>
-                <p class="text-white/90 text-sm font-bold mb-3">Scheme Type: <span class="text-white/70 font-medium">{{ scheme.scheme_type }}</span></p>
-                <p class="text-white/80 text-sm font-medium">Please fill out the details below to submit your scholarship application.</p>
+                <h1 class="text-2xl font-black mb-1 leading-tight">{{ scheme.scheme_name }}</h1>
+                <p class="text-white/90 text-xs font-bold mb-2">Scheme Type: <span class="text-white/70 font-medium">{{ scheme.scheme_type }}</span></p>
+                <p class="text-white/80 text-xs font-medium">Please fill out the details below to submit your application.</p>
             </div>
 
             <div class="form-body">
-                <form id="fullScholarshipForm" novalidate class="space-y-10">
+                <form id="fullScholarshipForm" novalidate class="space-y-6">
                     <input type="hidden" id="scheme_id" value="{{ scheme.name }}">
 
                     <!-- Section 1: Applicant Details -->
@@ -217,53 +218,55 @@
                     </div>
 
                     <!-- Section 2: Financials -->
-                    <div class="space-y-4">
+                    <div class="space-y-3">
                         <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
                             <span class="material-symbols-outlined text-lg">payments</span>
                             Financial Details
                         </div>
-                        <div class="space-y-2">
-                            <label class="text-sm font-bold text-slate-600" for="family_income">
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 mb-1.5 block" for="family_income">
                                 Annual Family Income (₹) <span class="text-red-500">*</span>
                             </label>
                             <input type="number" id="family_income" class="form-control" placeholder="e.g. 450000" required>
-                            <p class="text-[12px] text-slate-400 italic">Combine the total annual income of all earning family members.</p>
+                            <p class="text-[11px] text-slate-400 italic mt-1.5">Combine the total annual income of all earning family members.</p>
                         </div>
                     </div>
 
                     <!-- Section 3: Documents -->
-                    <div class="space-y-6">
+                    <div class="space-y-4">
                         <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
                             <span class="material-symbols-outlined text-lg">description</span>
                             Required Documents
                         </div>
 
-                        <div class="space-y-2">
-                            <label class="text-sm font-bold text-slate-600">Income Certificate <span class="text-red-500">*</span></label>
-                            <div class="file-upload-box" id="box_income_cert" onclick="document.getElementById('income_certificate').click()">
-                                <input type="file" id="income_certificate" accept=".pdf,.jpg,.jpeg,.png" required style="display:none" onchange="handleFile(this, 'box_income_cert')">
-                                <span class="material-symbols-outlined text-3xl text-slate-300 mb-2">upload_file</span>
-                                <p class="text-sm font-bold text-slate-600">Click to upload Income Certificate</p>
-                                <p class="text-[12px] text-slate-400 mt-1">Accepted: PDF, JPG, PNG (Max 5MB)</p>
-                                <div class="selected-filename text-primary font-bold text-xs mt-3 hidden"></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500">Income Certificate <span class="text-red-500">*</span></label>
+                                <div class="file-upload-box" id="box_income_cert" onclick="document.getElementById('income_certificate').click()">
+                                    <input type="file" id="income_certificate" accept=".pdf,.jpg,.jpeg,.png" required style="display:none" onchange="handleFile(this, 'box_income_cert')">
+                                    <span class="material-symbols-outlined text-2xl text-slate-300 mb-2">upload_file</span>
+                                    <p class="text-[13px] font-bold text-slate-600">Upload Income Certificate</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">PDF, JPG, PNG (Max 5MB)</p>
+                                    <div class="selected-filename text-primary font-bold text-xs mt-2 hidden"></div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="space-y-2">
-                            <label class="text-sm font-bold text-slate-600">Supporting Documents (Optional)</label>
-                            <div class="file-upload-box" id="box_supp_docs" onclick="document.getElementById('supporting_documents').click()">
-                                <input type="file" id="supporting_documents" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFile(this, 'box_supp_docs')">
-                                <span class="material-symbols-outlined text-3xl text-slate-300 mb-2">folder_open</span>
-                                <p class="text-sm font-bold text-slate-600">Click to upload additional documents</p>
-                                <p class="text-[12px] text-slate-400 mt-1">Upload any relevant proof for eligibility.</p>
-                                <div class="selected-filename text-primary font-bold text-xs mt-3 hidden"></div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500">Supporting Documents (Optional)</label>
+                                <div class="file-upload-box" id="box_supp_docs" onclick="document.getElementById('supporting_documents').click()">
+                                    <input type="file" id="supporting_documents" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFile(this, 'box_supp_docs')">
+                                    <span class="material-symbols-outlined text-2xl text-slate-300 mb-2">folder_open</span>
+                                    <p class="text-[13px] font-bold text-slate-600">Upload additional documents</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Any relevant proof for eligibility.</p>
+                                    <div class="selected-filename text-primary font-bold text-xs mt-2 hidden"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
 
-            <div class="bg-slate-50 p-8 flex flex-col-reverse sm:flex-row gap-4 border-t border-slate-100">
+            <div class="bg-slate-50 p-6 flex flex-col-reverse sm:flex-row gap-4 border-t border-slate-100">
                 <button type="button" class="btn-cancel flex-1" onclick="window.location.href='/merit-and-scholarship/scholarships'">Cancel</button>
                 <button type="button" id="submitAppBtn" class="btn-submit flex-[2]">Submit Scholarship Application</button>
             </div>
@@ -307,7 +310,8 @@
         const incomeCertFile = document.getElementById('income_certificate').files[0];
 
         // Validation
-        if (!incomeValue || incomeValue <= 0) {
+        const income = parseFloat(incomeValue);
+        if (isNaN(income) || income < 0) {
             showToast('Please enter a valid Annual Family Income', 'error');
             document.getElementById('family_income').focus();
             return;
