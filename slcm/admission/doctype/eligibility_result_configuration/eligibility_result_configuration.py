@@ -304,28 +304,38 @@ class EligibilityResultConfiguration(Document):
         else:
             self.db_set("status", "Failed")
             msg = f"""
-                <div style="font-size: 14px;">
-                    <p><b>{_("No eligible applicants were found matching the selected criteria.")}</b></p>
-                    <hr>
-                    <p><b>{_("Applied Filters:")}</b></p>
-                    <ul>
-                        <li><b>{_("Year")}:</b> {self.academic_year}</li>
-                        <li><b>{_("Campus")}:</b> {self.campus}</li>
-                        <li><b>{_("Cycle")}:</b> {self.admission_cycle}</li>
-                        <li><b>{_("Level")}:</b> {self.program_level}</li>
-                    </ul>
-                    <p><b>{_("System Diagnostic:")}</b></p>
-                    <ul>
-                        <li>{_("Interview Passers")}: <b>{len(passed_interviewees)}</b></li>
-                        <li>{_("ET Pass (Interview Exempt)")}: <b>{len(et_pass_interview_exempt)}</b></li>
-                        <li>{_("Dual Exempted (National Test + Interview)")}: <b>{len(exempted_applicants)}</b></li>
-                    </ul>
-                    <p><b>{_("Possible Reasons:")}</b></p>
-                    <ol>
-                        <li>{_("Applicants might not have passed their respective Interview or Entrance Test stages.")}</li>
-                        <li>{_("Exemption flags in Eligibility Evaluation might not be correctly configured.")}</li>
-                        <li>{_("Applicants might have an 'Application Status' of 'Rejected'.")}</li>
-                    </ol>
+                <div style="padding: 10px; font-family: sans-serif;">
+                    <div style="font-size: 16px; font-weight: 700; color: #dc2626; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa fa-exclamation-triangle"></i> No eligible applicants found
+                    </div>
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
+                        No applicants matching the selected criteria were found for result generation.
+                    </p>
+                    
+                    <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #991b1b;">Diagnostic Summary</h4>
+                        <table style="width: 100%; font-size: 12px; color: #991b1b;">
+                            <tr><td style="padding: 4px 0;">Interview Passers</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{len(passed_interviewees)}</td></tr>
+                            <tr><td style="padding: 4px 0;">ET Pass (Exempt Interview)</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{len(et_pass_interview_exempt)}</td></tr>
+                            <tr><td style="padding: 4px 0;">Dual Exempted</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{len(exempted_applicants)}</td></tr>
+                        </table>
+                    </div>
+                    
+                    <div style="font-size: 13px; color: #475569;">
+                        <strong>Filters Applied:</strong><br>
+                        <span style="font-size: 12px; color: #64748b;">Year: {self.academic_year} | Campus: {self.campus} | Cycle: {self.admission_cycle} | Level: {self.program_level}</span>
+                    </div>
+                    
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                    
+                    <div style="font-size: 12px; color: #64748b;">
+                        <strong>Potential solutions:</strong>
+                        <ul style="margin: 8px 0; padding-left: 20px;">
+                            <li>Verify if applicants have passed their respective assessment stages.</li>
+                            <li>Check exemption flags in <i>Eligibility Evaluation</i> for relevant applicants.</li>
+                            <li>Ensure applicants are not in 'Rejected' status.</li>
+                        </ul>
+                    </div>
                 </div>
             """
             frappe.throw(msg, title=_("Generation Failed"))
@@ -339,33 +349,45 @@ def _send_eligibility_result_email(res):
     url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
 
     msg = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
-        <h2 style="color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; margin-top: 0;">Eligibility Result</h2>
-        <p>Dear {res.candidate_name or res.applicant_id},</p>
-        <p>Congratulations! Your eligibility result has been generated successfully. Please find the details below:</p>
-        
-        <div style="background: #e8f5e9; border-radius: 8px; padding: 15px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0;"><strong>Result Details:</strong></p>
-            <table style="width:100%; border-collapse: collapse; font-size: 14px;">
-                <tr><td style="padding:5px 0; color:#666;">Program:</td><td style="padding:5px 0; font-weight:bold;">{res.program or '—'}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Academic Year:</td><td style="padding:5px 0; font-weight:bold;">{res.academic_year or '—'}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Admission Cycle:</td><td style="padding:5px 0; font-weight:bold;">{res.admission_cycle or '—'}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Campus:</td><td style="padding:5px 0; font-weight:bold;">{res.campus or '—'}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Entrance Test Score:</td><td style="padding:5px 0; font-weight:bold;">{res.entrance_test_score or 0}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Interview Score:</td><td style="padding:5px 0; font-weight:bold;">{res.interview_score or 0}</td></tr>
-            </table>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); color: #1e293b;">
+        <div style="background: #7b1c1c; padding: 30px 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">Eligibility Result</h1>
+            <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 14px;">Office of Admissions</p>
         </div>
+        
+        <div style="padding: 30px 25px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">Dear <strong>{res.candidate_name or res.applicant_id}</strong>,</p>
+            <p style="font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                Congratulations! We are pleased to inform you that your eligibility assessment for the academic session has been completed. Your result is now available for review.
+            </p>
+            
+            <div style="background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+                <h3 style="margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Assessment Summary</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <tr><td style="padding: 8px 0; color: #64748b;">Programme:</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">{res.program or '—'}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #64748b;">Academic Year:</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">{res.academic_year or '—'}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #64748b;">Campus:</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">{res.campus or '—'}</td></tr>
+                    <tr><td style="padding: 8px 0; color: #64748b;">Entrance Score:</td><td style="padding: 8px 0; font-weight: 700; text-align: right; color: #1a73e8;">{res.entrance_test_score or 0} / 100</td></tr>
+                    <tr><td style="padding: 8px 0; color: #64748b;">Interview Score:</td><td style="padding: 8px 0; font-weight: 700; text-align: right; color: #1a73e8;">{res.interview_score or 0} / 100</td></tr>
+                    <tr><td style="padding: 12px 0 0 0; color: #64748b; font-weight: 700;">Result Status:</td><td style="padding: 12px 0 0 0; font-weight: 800; text-align: right; color: #16a34a; font-size: 16px;">{res.result_status or 'Qualified'}</td></tr>
+                </table>
+            </div>
 
-        <p>Please click the button below to view your full results and application status in the portal:</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display:inline-block; padding:12px 28px; background:#2e7d32; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">View Result in Portal</a>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{url}" style="display: inline-block; padding: 14px 32px; background: #7b1c1c; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px; box-shadow: 0 4px 10px rgba(123, 28, 28, 0.25);">View Full Result & Portal</a>
+            </div>
+            
+            <p style="font-size: 14px; color: #64748b; font-style: italic; text-align: center; margin-top: 20px;">
+                Please log in to the portal to download your official Mark Sheet and view the next steps in your admission process.
+            </p>
         </div>
         
-        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
-            Record Reference: {res.name}<br>
-            If the button doesn't work, copy this link: {url}
-        </p>
+        <div style="background: #f1f5f9; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <p style="margin: 0; font-size: 12px; color: #94a3b8;">
+                Application Ref: {res.applicant_id} &nbsp;|&nbsp; Record: {res.name}<br>
+                This is a system-generated email. Please do not reply.
+            </p>
+        </div>
     </div>
     """
 
