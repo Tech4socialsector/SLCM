@@ -301,3 +301,32 @@ def run_scheduled_waitlist():
         except Exception as e:
             frappe.db.rollback()
             frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")
+
+
+def process_waitlist_background(admission_cycle: str, campus: str, now: bool = False):
+    """
+    Background worker to run waitlist promotion for all active automatic rules 
+    for a specific cycle and campus.
+    """
+    rule_names = frappe.get_all(
+        "Waitlist Rule",
+        filters={
+            "status": "Active",
+            "admission_cycle": admission_cycle,
+            "campus": campus,
+            "upgrade_frequency": "Automatic"
+        },
+        pluck="name",
+    )
+
+    for rule_name in rule_names:
+        frappe.flags.slcm_waitlist_promotion_in_progress = True
+        try:
+            # Manual triggers (from on_update) should ignore the cutoff date
+            process_waitlist(frappe.get_doc("Waitlist Rule", rule_name), ignore_cutoff=True)
+            frappe.db.commit()
+        except Exception as e:
+            frappe.db.rollback()
+            frappe.log_error(f"Background Waitlist Promotion Failed for {rule_name}: {str(e)}", "Waitlist Promotion")
+        finally:
+            frappe.flags.slcm_waitlist_promotion_in_progress = False

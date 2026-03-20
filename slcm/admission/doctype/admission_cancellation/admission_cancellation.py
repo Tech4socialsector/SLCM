@@ -87,3 +87,12 @@ class AdmissionCancellation(Document):
 		else:
 			self.cancelled_by = None
 			self.cancelled_on = None
+
+	def on_trash(self):
+		"""
+		Breaks the circular link with Refund Request to allow deletion.
+		"""
+		if self.refund_request:
+			# Unset the link in the child refund record
+			frappe.db.set_value("Refund Request", self.refund_request, "admission_cancellation", None)
+			frappe.db.commit()

@@ -70,36 +70,31 @@ class MeritGeneration(Document):
                 title="No Applicants Found"
             )
 
-        # 3. Check if a Published Merit List already exists
-        existing = frappe.db.get_value(
+        # 3. Check if ANY Published Merit List already exists
+        existing_published = frappe.db.get_value(
             "Merit List",
             {
                 "admission_cycle": self.admission_cycle,
                 "campus": self.campus,
-                "program_level": program_level
+                "program_level": program_level,
+                "status": "Published"
             },
-            ["name", "status", "docstatus"],
+            ["name", "generated_on"],
             as_dict=True
         )
-        if existing:
-            if existing.get("status") == "Published":
-                merit = frappe.get_doc("Merit List", existing.get("name"))
-                self.status = "Completed"
-                self.generated_on = merit.generated_on
-                self.save()
-                frappe.msgprint(
-                    f"The Merit List '{merit.name}' is already published. "
-                    f"Generation skipped. "
-                    f"To make changes or regenerate the list, you must first unpublish it. "
-                    f"<a href='/app/merit-list/{merit.name}'><b>View Merit List</b></a>.",
-                    title="Merit List Published",
-                    indicator="orange"
-                )
-                return
-            else:
-                # If existing list is Generated/Draft, let it fall through to enqueue/sync generation
-                # which will now handle the cancellation/re-creation in merit_service.py
-                pass
+        if existing_published:
+            self.status = "Completed"
+            self.generated_on = existing_published.generated_on
+            self.save()
+            frappe.msgprint(
+                f"The Merit List '{existing_published.name}' is already published. "
+                f"Generation skipped. "
+                f"To make changes or regenerate the list, you must first unpublish it. "
+                f"<a href='/app/merit-list/{existing_published.name}'><b>View Merit List</b></a>.",
+                title="Merit List Published",
+                indicator="orange"
+            )
+            return
 
         # 4. All validations passed — enqueue background job
         self.status = "In Progress"

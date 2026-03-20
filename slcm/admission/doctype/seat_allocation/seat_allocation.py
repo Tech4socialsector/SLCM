@@ -205,27 +205,14 @@ class SeatAllocation(Document):
         if not programs:
             return
 
-        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import process_waitlist
-
-        # Find the active automatic rule for this campus/cycle
-        rule_names = frappe.get_all(
-            "Waitlist Rule",
-            filters={
-                "status": "Active",
-                "admission_cycle": self.admission_cycle,
-                "campus": self.campus,
-                "upgrade_frequency": "Automatic"
-            },
-            pluck="name",
+        # Background the promotion to prevent UI lag
+        frappe.enqueue(
+            "slcm.admission.doctype.waitlist_rule.waitlist_promotion.process_waitlist_background",
+            admission_cycle=self.admission_cycle,
+            campus=self.campus,
+            now=frappe.flags.in_test,
+            enqueue_after_commit=True
         )
-
-        for rule_name in rule_names:
-            frappe.flags.slcm_waitlist_promotion_in_progress = True
-            try:
-                # Manual triggers (from on_update) should ignore the cutoff date
-                process_waitlist(frappe.get_doc("Waitlist Rule", rule_name), ignore_cutoff=True)
-            finally:
-                frappe.flags.slcm_waitlist_promotion_in_progress = False
 
     def on_trash(self):
         """

@@ -90,6 +90,12 @@ def process_refund(name):
 	if refund.status != "Approved":
 		frappe.throw(_("Refund Request must be Approved before processing."))
 	
+	if not refund.razorpay_payment_id:
+		frappe.throw(_("Cannot process refund: No Razorpay Payment ID found on this request."))
+
+	if refund.razorpay_refund_id:
+		frappe.throw(_("Refund Request already has a Razorpay Refund ID: {0}").format(refund.razorpay_refund_id))
+	
 	# Set status to Processing immediately to prevent concurrent calls
 	refund.db_set("status", "Processing")
 	frappe.db.commit()
@@ -157,6 +163,13 @@ def process_refund(name):
 			
 			# Trigger sync
 			refund.sync_cancellation_status()
+
+			# Notify applicant
+			try:
+				from slcm.admission.notification_service import notify_refund_processed
+				notify_refund_processed(refund.name)
+			except Exception as e:
+				frappe.log_error(f"Refund Notification Failed: {str(e)}", "Refund Process")
 			
 			return {"status": "Success", "message": _("Refund processed successfully.")}
 		else:
@@ -170,6 +183,62 @@ def process_refund(name):
 		refund.db_set("failure_message", str(e))
 		frappe.log_error(frappe.get_traceback(), _("Razorpay Refund Error"))
 		frappe.msgprint(_("Razorpay Error: {0}").format(str(e)))
+		return {"status": "Error", "message": str(e)}
+
+@frappe.whitelist()
+def update_razorpay_refund_status(name):
+	"""
+	Fetches the latest status of a refund from Razorpay API 
+	and updates the Refund Request accordingly.
+	"""
+	refund = frappe.get_doc("Refund Request", name)
+	
+	if not refund.razorpay_refund_id:
+		frappe.throw(_("No Razorpay Refund ID found to check status."))
+
+	if not razorpay:
+		frappe.throw(_("Razorpay library is not installed."))
+		
+	settings = frappe.get_single("Razorpay Settings")
+	client = razorpay.Client(auth=(settings.api_key, settings.get_password("api_secret")))
+	
+	try:
+		# Fetch status from Razorpay
+		rzp_refund = client.refund.fetch(refund.razorpay_refund_id)
+		rzp_status = rzp_refund.get("status") # e.g., 'processed', 'pending', 'failed'
+		
+		if rzp_status == "processed":
+			# If it was previously Processing or Failed, mark as Processed
+			if refund.status != "Processed":
+				refund.db_set("status", "Processed")
+				if not refund.refund_date:
+					refund.db_set("refund_date", now_datetime())
+				refund.db_set("failure_message", "")
+				refund.sync_cancellation_status()
+				return {"status": "Success", "message": _("Refund is officially PROCESSED at Razorpay.")}
+			else:
+				# Even if already processed, provide a more reassuring confirmation message
+				from frappe.utils import format_datetime
+				date_str = format_datetime(refund.refund_date) if refund.refund_date else "recently"
+				return {
+					"status": "Success", 
+					"message": _("Verified: Razorpay confirms this refund was successfully processed on {0}. (Refund ID: {1})").format(date_str, refund.razorpay_refund_id)
+				}
+				
+		elif rzp_status == "failed":
+			error_code = rzp_refund.get("error_code", "Unknown")
+			error_desc = rzp_refund.get("error_description", "No description provided")
+			
+			refund.db_set("status", "Failed")
+			refund.db_set("failure_message", f"Razorpay Failure: {error_code} - {error_desc}")
+			return {"status": "Error", "message": _("Refund has FAILED at Razorpay: {0}").format(error_desc)}
+			
+		else:
+			# Status like 'pending'
+			return {"status": "Info", "message": _("Refund status at Razorpay is: {0}").format(rzp_status.upper())}
+			
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), _("Razorpay Refund Status Check Error"))
 		return {"status": "Error", "message": str(e)}
 
 @frappe.whitelist()

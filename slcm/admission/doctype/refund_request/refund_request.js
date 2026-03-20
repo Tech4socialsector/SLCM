@@ -112,6 +112,24 @@ frappe.ui.form.on('Refund Request', {
 			frm.change_custom_button_type(__('Process Refund'), null, 'primary');
 		}
 
+		if (['Processing', 'Processed', 'Failed'].includes(frm.doc.status) && frm.doc.razorpay_refund_id) {
+			frm.add_custom_button(__('Check Status'), function() {
+				frappe.call({
+					method: 'slcm.admission_cancel_api.update_razorpay_refund_status',
+					args: { name: frm.doc.name },
+					callback: function(r) {
+						if (r.message) {
+							frappe.show_alert({
+								message: r.message.message,
+								indicator: r.message.status === 'Success' ? 'green' : 'blue'
+							});
+							frm.reload_doc();
+						}
+					}
+				});
+			}, __('Actions'));
+		}
+
 		// ── Auto-refresh if form is stuck in Processing ──
 		// This handles edge case where user opens form mid-processing
 		if (frm.doc.status === 'Processing') {
