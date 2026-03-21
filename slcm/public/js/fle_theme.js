@@ -1011,9 +1011,8 @@ window.inject_fle_header_footer = function () {
 
     // ── 5b. Inject FLE subtitle below the sticky-header ──────────────────────
     if ($('.fle-page-title').length === 0) {
-        var subtitle_html = '<div class="fle-page-title" style="text-align:center;padding:14px 16px 10px;background:#ffffff;width:100%;box-sizing:border-box;">' +
-            '<h2 style="font-family:\'Merriweather\',Georgia,serif;font-size:20px;font-weight:700;color:#8B0000;margin:0;letter-spacing:0.2px;">' +
-            'Foundations for a Legal Education Certificate Course (FLE)</h2></div>';
+        var subtitle_html = '<div class="department-name page-department-name fle-page-title">' +
+            'Foundations for a Legal Education Certificate Course (FLE)</div>';
         $('.sticky-header').after(subtitle_html);
     }
 

@@ -176,6 +176,7 @@ body {
     width: 100%;
     max-width: 440px;
     border-top: 3px solid #8B0000;
+    margin-top: 48px;
 }
 
 .auth-card h3 {
