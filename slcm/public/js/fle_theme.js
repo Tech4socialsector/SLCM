@@ -635,6 +635,8 @@ window.inject_fle_header_footer = function () {
     if ($('#fle-global-refinements').length === 0) {
         $('head').append(`
         <style id="fle-global-refinements">
+            /* Ensure web form content is not hidden behind the fixed header */
+            .web-form-container { padding-top: 0 !important; margin-top: 0 !important; }
             /* Hide Home button in FLE status pages */
             body[data-path*="payment-failed"] a:contains("Home"),
             body[data-path*="payment-cancel"] a:contains("Home"),
@@ -739,6 +741,10 @@ window.inject_fle_header_footer = function () {
                 color: #444444 !important;
                 font-family: 'Merriweather', Georgia, serif !important;
             }
+
+            .web-form-header {
+  margin-top: 155px;
+}
 
             .section-head, .web-form-page .section-head,
             .web-form-wrapper .section-head, .form-section .section-head {
@@ -997,6 +1003,7 @@ window.inject_fle_header_footer = function () {
             </div>
         </div>
         <nav class="navbar-navy" aria-label="Main navigation"></nav>
+        <div class="department-name page-department-name fle-page-title">Foundations for a Legal Education Certificate Course (FLE)</div>
     </header>`;
 
     // ── 5. Inject Footer HTML ─────────────────────────────────────────────────
@@ -1008,13 +1015,6 @@ window.inject_fle_header_footer = function () {
     if ($('body').length === 0) return;
     $('body').prepend(header_html);
     $('body').append(footer_html);
-
-    // ── 5b. Inject FLE subtitle below the sticky-header ──────────────────────
-    if ($('.fle-page-title').length === 0) {
-        var subtitle_html = '<div class="department-name page-department-name fle-page-title">' +
-            'Foundations for a Legal Education Certificate Course (FLE)</div>';
-        $('.sticky-header').after(subtitle_html);
-    }
 
     // ── 6. Inject Logout Modal ────────────────────────────────────────────────
     if ($('#fle-logout-modal-overlay').length === 0) {
@@ -1084,8 +1084,9 @@ window.inject_fle_header_footer = function () {
     }
     updateBodyPaddingTop();
     $(window).on('resize', updateBodyPaddingTop);
-    setTimeout(updateBodyPaddingTop, 300);
-    setTimeout(updateBodyPaddingTop, 800);
+    [100, 300, 600, 800, 1200, 1800, 2500].forEach(function(ms) {
+        setTimeout(updateBodyPaddingTop, ms);
+    });
     $('.sticky-footer').css({ 'margin-top': 'auto', 'width': '100%' });
 
     // ── 9. Force visibility + fonts after a short delay ───────────────────────

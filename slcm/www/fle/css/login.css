@@ -136,12 +136,20 @@ body {
     background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* ── Department name — shown in main content area above the card ── */
+/* ── Department name — shown below red ribbon ── */
 .page-department-name {
     text-align: center !important;
-    margin: 18px auto 18px auto !important;
-    padding: 0 16px !important;
+    margin: 0 !important;
+    padding: 18px 16px !important;
     width: 100% !important;
+    box-sizing: border-box !important;
+    background-color: #f4f4f4 !important;
+}
+
+/* Inside fixed header (web form) — white background */
+.sticky-header .page-department-name {
+    background-color: #ffffff !important;
+    padding: 12px 16px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
