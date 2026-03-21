@@ -80,10 +80,8 @@ body {
 
 .university-name {
     font-family: 'Merriweather', Georgia, serif !important;
-    font-size: 28px !important;
+    font-size: 32px !important;
     font-weight: 600 !important;
-    letter-spacing: 0.5px !important;
-    /* text-transform: uppercase !important; */
     color: #8B0000 !important;
     margin: 0 0 4px 0 !important;
     line-height: 1.4 !important;
@@ -369,7 +367,6 @@ body {
 
     .university-name {
         font-size: 13px !important;
-        letter-spacing: 1px !important;
     }
 
     .auth-card {
