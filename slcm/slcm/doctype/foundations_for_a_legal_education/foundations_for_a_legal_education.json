@@ -360,7 +360,7 @@
   {
    "fieldname": "address_line_1",
    "fieldtype": "Data",
-   "label": "Address line 1"
+   "label": "Address"
   },
   {
    "fieldname": "pincode",

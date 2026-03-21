@@ -293,8 +293,9 @@ def download_fle_receipt(docname):
                 table.header-table {{ border: none; margin-bottom: 20px; border-bottom: 2px solid #a81119; padding-bottom: 10px; }}
                 table.header-table td {{ border: none; padding: 0; vertical-align: middle; }}
                 .header-title-container {{ text-align: center; color: #a81119; font-family: "Merriweather", serif; }}
-                .university-name {{ font-size: 18px; font-weight: bold; margin: 0; }}
-                .department-name {{ font-size: 14px; font-weight: bold; margin: 5px 0 0 0; }}
+                .university-name {{ font-size: 18px; font-weight: bold; margin: 0 0 6px 0; }}
+                .red-ribbon {{ background-color: #8B0000; height: 6px; margin: 4px 0; width: 100%; }}
+                .department-name {{ font-size: 14px; font-weight: bold; margin: 6px 0 0 0; }}
             </style>
         </head>
         <body>
@@ -303,6 +304,7 @@ def download_fle_receipt(docname):
                     <td style="width: 80px;"><img src="{esc(logo_url)}" style="width: 60px; height: auto;" /></td>
                     <td class="header-title-container">
                         <div class="university-name">National Law School of India University, Bengaluru</div>
+                        <div class="red-ribbon"></div>
                         <div class="department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
                     </td>
                     {photo_td}
@@ -378,8 +380,9 @@ def get_fle_receipt_pdf_base64(docname):
                 table.header-table {{ border: none; margin-bottom: 20px; border-bottom: 2px solid #a81119; padding-bottom: 10px; }}
                 table.header-table td {{ border: none; padding: 0; vertical-align: middle; }}
                 .header-title-container {{ text-align: center; color: #a81119; font-family: "Merriweather", serif; }}
-                .university-name {{ font-size: 18px; font-weight: bold; margin: 0; }}
-                .department-name {{ font-size: 14px; font-weight: bold; margin: 5px 0 0 0; }}
+                .university-name {{ font-size: 18px; font-weight: bold; margin: 0 0 6px 0; }}
+                .red-ribbon {{ background-color: #8B0000; height: 6px; margin: 4px 0; width: 100%; }}
+                .department-name {{ font-size: 14px; font-weight: bold; margin: 6px 0 0 0; }}
             </style>
         </head>
         <body>
@@ -388,6 +391,7 @@ def get_fle_receipt_pdf_base64(docname):
                     <td style="width: 80px;"><img src="{esc(logo_url)}" style="width: 60px; height: auto;" /></td>
                     <td class="header-title-container">
                         <div class="university-name">National Law School of India University, Bengaluru</div>
+                        <div class="red-ribbon"></div>
                         <div class="department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
                     </td>
                     {photo_td}
@@ -500,6 +504,7 @@ def download_fle_application_pdf(docname):
                     <td style="width: 75px;"><img src="{esc(logo_url)}" style="width: 55px; height: auto;" /></td>
                     <td class="header-title-container">
                         <div class="university-name">National Law School of India University, Bengaluru</div>
+                        <div class="red-ribbon"></div>
                         <div class="department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
                     </td>
                     {photo_td}
@@ -518,7 +523,7 @@ def download_fle_application_pdf(docname):
                 {row("Country of residence", doc.country_of_residence)}
                 {row("State", state)}
                 {row("City", doc.city)}
-                {row("Address line 1", doc.address_line_1)}
+                {row("Address", doc.address_line_1)}
                 {row("Pincode", doc.pincode)}
                 {row("Contact number", doc.candidate_contact_number)}
                 {row("Where did you hear about FLE?", where_heard)}
@@ -641,6 +646,7 @@ def get_fle_application_pdf_base64(docname):
                     <td style="width: 75px;"><img src="{esc(logo_url)}" style="width: 55px; height: auto;" /></td>
                     <td class="header-title-container">
                         <div class="university-name">National Law School of India University, Bengaluru</div>
+                        <div class="red-ribbon"></div>
                         <div class="department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
                     </td>
                     {photo_td}
@@ -660,7 +666,7 @@ def get_fle_application_pdf_base64(docname):
                 {row("Country of residence", doc.country_of_residence)}
                 {row("State", state)}
                 {row("City", doc.city)}
-                {row("Address line 1", doc.address_line_1)}
+                {row("Address", doc.address_line_1)}
                 {row("Pincode", doc.pincode)}
                 {row("Contact number", doc.candidate_contact_number)}
                 {row("Where did you hear about FLE?", where_heard)}

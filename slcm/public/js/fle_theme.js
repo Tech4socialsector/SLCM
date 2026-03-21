@@ -635,6 +635,8 @@ window.inject_fle_header_footer = function () {
     if ($('#fle-global-refinements').length === 0) {
         $('head').append(`
         <style id="fle-global-refinements">
+            /* Ensure web form content is not hidden behind the fixed header */
+            .web-form-container { padding-top: 0 !important; margin-top: 0 !important; }
             /* Hide Home button in FLE status pages */
             body[data-path*="payment-failed"] a:contains("Home"),
             body[data-path*="payment-cancel"] a:contains("Home"),
@@ -740,6 +742,10 @@ window.inject_fle_header_footer = function () {
                 font-family: 'Merriweather', Georgia, serif !important;
             }
 
+            .web-form-header {
+  margin-top: 155px;
+}
+
             .section-head, .web-form-page .section-head,
             .web-form-wrapper .section-head, .form-section .section-head {
                 text-transform: none !important;
@@ -796,6 +802,13 @@ window.inject_fle_header_footer = function () {
                 font-family:'Merriweather', Georgia, serif !important;
                 font-size:21px !important; font-weight:700 !important; color:#8B0000 !important;
                 margin:0 !important; letter-spacing:0.2px !important;
+            }
+            .department-name-bar {
+                background-color:#ffffff !important; text-align:center !important;
+                padding:10px 16px !important; width:100% !important;
+            }
+            .department-name-bar .department-name {
+                color:#8B0000 !important;
             }
             .breadcrumb, .page-breadcrumbs, .breadcrumb-container,
             .page-head .breadcrumb-container, .page-head .page-breadcrumbs,
@@ -866,7 +879,7 @@ window.inject_fle_header_footer = function () {
             .navbar-navy {
                 background-color:#8B0000!important; display:flex!important; flex-wrap:wrap!important;
                 justify-content:center!important; gap:0!important; padding:0!important;
-                font-family:'Merriweather',Georgia,serif!important;
+                font-family:'Merriweather',Georgia,serif!important; min-height:14px!important;
             }
             .navbar-navy .nav-item {
                 color:#ffffff!important; text-decoration:none!important; padding:12px 20px!important;
@@ -976,7 +989,6 @@ window.inject_fle_header_footer = function () {
             </div>
             <div class="brand-text">
                 <h1 class="university-name">National Law School of India University, Bengaluru</h1>
-                <h2 class="department-name">Foundations for a Legal Education Certificate Course (FLE)</h2>
             </div>
             <div class="header-logout-area">
                 <button class="fle-logout-btn" id="fle-logout-btn" type="button">
@@ -990,11 +1002,8 @@ window.inject_fle_header_footer = function () {
                 </button>
             </div>
         </div>
-             <nav class="navbar-navy" aria-label="Main navigation">
-            <p></p>
-            <br>
-            <p></p>
-            </nav>
+        <nav class="navbar-navy" aria-label="Main navigation"></nav>
+        <div class="department-name page-department-name fle-page-title">Foundations for a Legal Education Certificate Course (FLE)</div>
     </header>`;
 
     // ── 5. Inject Footer HTML ─────────────────────────────────────────────────
@@ -1075,8 +1084,9 @@ window.inject_fle_header_footer = function () {
     }
     updateBodyPaddingTop();
     $(window).on('resize', updateBodyPaddingTop);
-    setTimeout(updateBodyPaddingTop, 300);
-    setTimeout(updateBodyPaddingTop, 800);
+    [100, 300, 600, 800, 1200, 1800, 2500].forEach(function(ms) {
+        setTimeout(updateBodyPaddingTop, ms);
+    });
     $('.sticky-footer').css({ 'margin-top': 'auto', 'width': '100%' });
 
     // ── 9. Force visibility + fonts after a short delay ───────────────────────
