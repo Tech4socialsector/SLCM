@@ -797,6 +797,13 @@ window.inject_fle_header_footer = function () {
                 font-size:21px !important; font-weight:700 !important; color:#8B0000 !important;
                 margin:0 !important; letter-spacing:0.2px !important;
             }
+            .department-name-bar {
+                background-color:#ffffff !important; text-align:center !important;
+                padding:10px 16px !important; width:100% !important;
+            }
+            .department-name-bar .department-name {
+                color:#8B0000 !important;
+            }
             .breadcrumb, .page-breadcrumbs, .breadcrumb-container,
             .page-head .breadcrumb-container, .page-head .page-breadcrumbs,
             .navbar-user-icon, .avatar { display:none!important; visibility:hidden!important; }
@@ -866,7 +873,7 @@ window.inject_fle_header_footer = function () {
             .navbar-navy {
                 background-color:#8B0000!important; display:flex!important; flex-wrap:wrap!important;
                 justify-content:center!important; gap:0!important; padding:0!important;
-                font-family:'Merriweather',Georgia,serif!important;
+                font-family:'Merriweather',Georgia,serif!important; min-height:14px!important;
             }
             .navbar-navy .nav-item {
                 color:#ffffff!important; text-decoration:none!important; padding:12px 20px!important;
@@ -976,7 +983,6 @@ window.inject_fle_header_footer = function () {
             </div>
             <div class="brand-text">
                 <h1 class="university-name">National Law School of India University, Bengaluru</h1>
-                <h2 class="department-name">Foundations for a Legal Education Certificate Course (FLE)</h2>
             </div>
             <div class="header-logout-area">
                 <button class="fle-logout-btn" id="fle-logout-btn" type="button">
@@ -990,11 +996,7 @@ window.inject_fle_header_footer = function () {
                 </button>
             </div>
         </div>
-             <nav class="navbar-navy" aria-label="Main navigation">
-            <p></p>
-            <br>
-            <p></p>
-            </nav>
+        <nav class="navbar-navy" aria-label="Main navigation"></nav>
     </header>`;
 
     // ── 5. Inject Footer HTML ─────────────────────────────────────────────────
@@ -1006,6 +1008,14 @@ window.inject_fle_header_footer = function () {
     if ($('body').length === 0) return;
     $('body').prepend(header_html);
     $('body').append(footer_html);
+
+    // ── 5b. Inject FLE subtitle below the sticky-header ──────────────────────
+    if ($('.fle-page-title').length === 0) {
+        var subtitle_html = '<div class="fle-page-title" style="text-align:center;padding:14px 16px 10px;background:#ffffff;width:100%;box-sizing:border-box;">' +
+            '<h2 style="font-family:\'Merriweather\',Georgia,serif;font-size:20px;font-weight:700;color:#8B0000;margin:0;letter-spacing:0.2px;">' +
+            'Foundations for a Legal Education Certificate Course (FLE)</h2></div>';
+        $('.sticky-header').after(subtitle_html);
+    }
 
     // ── 6. Inject Logout Modal ────────────────────────────────────────────────
     if ($('#fle-logout-modal-overlay').length === 0) {

@@ -1554,7 +1554,7 @@
     "fieldname": "address_line_1",
     "fieldtype": "Data",
     "hidden": 0,
-    "label": "Address line 1",
+    "label": "Address",
     "mandatory_depends_on": null,
     "max_length": 0,
     "max_value": 0,

@@ -80,9 +80,9 @@ body {
 
 .university-name {
     font-family: 'Merriweather', Georgia, serif !important;
-    font-size: 23px !important;
+    font-size: 28px !important;
     font-weight: 600 !important;
-    letter-spacing: 1.8px !important;
+    letter-spacing: 0.5px !important;
     /* text-transform: uppercase !important; */
     color: #8B0000 !important;
     margin: 0 0 4px 0 !important;
@@ -116,6 +116,7 @@ body {
     padding: 0 !important;
     width: 100% !important;
     flex-wrap: wrap;
+    min-height: 14px !important;
 }
 
 .navbar-navy .nav-item {
@@ -135,6 +136,14 @@ body {
     background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
+/* ── Department name — shown in main content area above the card ── */
+.page-department-name {
+    text-align: center !important;
+    margin: 18px auto 18px auto !important;
+    padding: 0 16px !important;
+    width: 100% !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    PAGE LAYOUT
    ═══════════════════════════════════════════════════════════════════ */
@@ -149,8 +158,10 @@ body {
 .main-content {
     flex: 1 0 auto;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    padding-top: 0;
     padding: 48px 16px;
 }
 
@@ -348,7 +359,7 @@ body {
     }
 
     .university-name {
-        font-size: 10px !important;
+        font-size: 13px !important;
         letter-spacing: 1px !important;
     }
 
