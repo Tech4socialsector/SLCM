@@ -795,8 +795,8 @@ window.inject_fle_header_footer = function () {
             }
             .sticky-header .brand-text .university-name {
                 font-family:'Merriweather', Georgia, serif !important;
-                font-size:23px !important; font-weight:700 !important; color:#8B0000 !important;
-                margin:0 0 4px !important; letter-spacing:0.5px !important;
+                font-size:27px !important; font-weight:700 !important; color:#8B0000 !important;
+                margin:0 0 4px !important;
             }
             .sticky-header .brand-text .department-name {
                 font-family:'Merriweather', Georgia, serif !important;
@@ -988,7 +988,7 @@ window.inject_fle_header_footer = function () {
                 </a>
             </div>
             <div class="brand-text">
-                <h1 class="university-name">National Law School of India University, Bengaluru</h1>
+                <h1 class="university-name">NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU</h1>
             </div>
             <div class="header-logout-area">
                 <button class="fle-logout-btn" id="fle-logout-btn" type="button">
