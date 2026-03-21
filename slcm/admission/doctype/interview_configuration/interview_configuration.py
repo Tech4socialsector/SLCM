@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import getdate
+from frappe.utils import getdate, now
 
 
 class InterviewConfiguration(Document):
@@ -40,9 +40,9 @@ class InterviewConfiguration(Document):
                 "Document must be in Draft, In Progress, or Failed to generate interview list"
             )
 
-        # Force schema sync
-        frappe.db.updatedb("Interview List")
-        frappe.db.updatedb("Interview Applicant")
+        # Ensure schema is synced (updatedb is not a standard Frappe method)
+        # frappe.db.updatedb("Interview List")
+        # frappe.db.updatedb("Interview Applicant")
 
         # ─── SOURCE 1: National Test (Direct) ────────────────────────────────
         # Applicants who cleared a national test that exempts them from the
@@ -68,6 +68,7 @@ class InterviewConfiguration(Document):
                 AND app.admission_cycle = %(admission_cycle)s
                 AND app.program_level   = %(program_level)s
                 AND app.application_status != 'Rejected'
+                AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND ee.exempts_entrance_test = 1
                 AND (ee.exempts_interview IS NULL OR ee.exempts_interview = 0)
         """, {
@@ -102,6 +103,7 @@ class InterviewConfiguration(Document):
                 AND etsa.program_level   = %(program_level)s
                 AND etsa.result_status   = 'Pass'
                 AND app.application_status != 'Rejected'
+                AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND COALESCE(etsa.exempts_interview, 0) = 0
         """, {
             "academic_year":   self.academic_year,
@@ -163,27 +165,39 @@ class InterviewConfiguration(Document):
             })
 
             msg = f"""
-                <div style="font-size: 14px;">
-                    <p><b>{_("No eligible applicants were found matching the selected criteria.")}</b></p>
-                    <hr>
-                    <p><b>{_("Applied Filters:")}</b></p>
-                    <ul>
-                        <li><b>{_("Year")}:</b> {self.academic_year}</li>
-                        <li><b>{_("Campus")}:</b> {self.campus}</li>
-                        <li><b>{_("Cycle")}:</b> {self.admission_cycle}</li>
-                        <li><b>{_("Level")}:</b> {self.program_level}</li>
-                    </ul>
-                    <p><b>{_("System Diagnostic:")}</b></p>
-                    <ul>
-                        <li>{_("Total applicants matching filters")}: <b>{count_total}</b></li>
-                        <li>{_("Applicants who passed the Entrance Test")}: <b>{count_et_pass}</b></li>
-                    </ul>
-                    <p><b>{_("Possible Reasons:")}</b></p>
-                    <ol>
-                        <li>{_("Applicants may be flagged as 'Exempt from Interview' in Eligibility Evaluation or Entrance Test results.")}</li>
-                        <li>{_("Applicants might have an 'Application Status' of 'Rejected'.")}</li>
-                        <li>{_("Entrance Test results for this cycle might not have been processed yet.")}</li>
-                    </ol>
+                <div style="font-family: inherit; padding: 15px; background: #fff; border-radius: 12px; border: 1px solid #ffccd5; border-left: 6px solid #dc3545;">
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div style="background: #dc3545; color: #fff; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 24px;">
+                            <i class="fa fa-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #dc3545; font-weight: 700; font-size: 18px;">Generation Incomplete</h4>
+                            <p style="margin: 0; color: #6c757d; font-size: 13px;">No eligible candidates were found</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 20px; font-size: 14px;">
+                        <p style="margin: 0 0 10px 0; color: #495057; font-weight: 600;">System Breakdown:</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; text-align: center;">
+                                <span style="display: block; font-size: 9px; color: #adb5bd; text-transform: uppercase;">Total Applicants</span>
+                                <span style="font-size: 16px; font-weight: 700;">{count_total}</span>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; text-align: center;">
+                                <span style="display: block; font-size: 9px; color: #adb5bd; text-transform: uppercase;">ET Passers</span>
+                                <span style="font-size: 16px; font-weight: 700;">{count_et_pass}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff5f5; border-radius: 10px; padding: 15px; border: 1px solid #ffe3e3;">
+                         <p style="margin: 0 0 10px 0; color: #dc3545; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Potential Blockers:</p>
+                         <ul style="margin: 0; padding-left: 18px; color: #495057; font-size: 13px; line-height: 1.6;">
+                            <li>Already Generated? <b>{_("Validated")}</b></li>
+                            <li>Rejected Status? <b>{_("Validated")}</b></li>
+                            <li>Exempted from Interview? <b>{_("Validated")}</b></li>
+                         </ul>
+                    </div>
                 </div>
             """
             frappe.throw(msg, title=_("Generation Failed"))
@@ -195,7 +209,7 @@ class InterviewConfiguration(Document):
             "campus":               self.campus,
             "admission_cycle":      self.admission_cycle,
             "program_level":        self.program_level,
-            "generated_on":         frappe.utils.now(),
+            "generated_on":         now(),
             "status":               "Generated",
             "interview_applicant":  []
         })
@@ -216,25 +230,52 @@ class InterviewConfiguration(Document):
 
         interview_list.insert(ignore_permissions=True)
 
-        self.db_set({
-            "status":       "Completed",
-            "generated_on": frappe.utils.now(),
-            "generated_by": frappe.session.user
-        })
+        self.db_set("status", "Completed")
+        self.db_set("generated_on", now())
+        self.db_set("generated_by", frappe.session.user)
 
         # Count per source for the success message
         cnt_national = sum(1 for a in all_applicants if a["source_type"] == "National Test (Direct)")
         cnt_et       = sum(1 for a in all_applicants if a["source_type"] == "Entrance Test")
 
-        frappe.msgprint(
-            f"<b>Success!</b> Created Interview List with {len(all_applicants)} applicants.<br>"
-            f"<ul>"
-            f"<li>National Test (Direct): <b>{cnt_national}</b></li>"
-            f"<li>Entrance Test Passers: <b>{cnt_et}</b></li>"
-            f"</ul>"
-            f"<a href='/app/interview-list/{interview_list.name}'>{interview_list.name}</a>",
-            title="Interview List Generated",
-            indicator="green"
-        )
+        # Masterpiece Success Message
+        msg = f"""
+            <div style="font-family: inherit; padding: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 12px; border: 1px solid #e9ecef; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+                <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                    <div style="background: #28a745; color: #fff; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 24px; box-shadow: 0 4px 12px rgba(40,167,69,0.2);">
+                        <i class="fa fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; color: #212529; font-weight: 800; font-size: 20px; line-height: 1.2;">Interview List Generated Successfully</h4>
+                        <p style="margin: 0; color: #6c757d; font-size: 13px; font-weight: 500;">Details Below</p>
+                    </div>
+                </div>
+
+                <div style="background: #f8f9fa; border-radius: 12px; padding: 18px; border: 1px solid #f1f3f5; margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1.5px solid #dee2e6; padding-bottom: 12px;">
+                        <span style="font-size: 14px; font-weight: 700; color: #495057; text-transform: uppercase; letter-spacing: 0.5px;">Eligible Candidates</span>
+                        <span style="background: #28a745; color: #fff; font-weight: 800; font-size: 16px; padding: 4px 16px; border-radius: 20px; box-shadow: 0 2px 6px rgba(40,167,69,0.15);">{len(all_applicants)}</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="background: #fff; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #adb5bd; margin-bottom: 6px;">National Test</div>
+                            <div style="font-size: 20px; font-weight: 900; color: #007bff;">{cnt_national}</div>
+                        </div>
+                        <div style="background: #fff; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #adb5bd; margin-bottom: 6px;">Entrance Pass</div>
+                            <div style="font-size: 20px; font-weight: 900; color: #007bff;">{cnt_et}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <a href='/app/interview-list/{interview_list.name}' style="display: inline-block; background: #212529; color: #fff !important; text-decoration: none !important; font-weight: 700; font-size: 14px; padding: 12px 32px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease;">
+                         <i class="fa fa-eye"></i> &nbsp; View Interview List
+                    </a>
+                </div>
+            </div>
+        """
+        frappe.msgprint(msg, title="", indicator="green")
 
         return interview_list.name

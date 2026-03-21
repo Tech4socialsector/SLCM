@@ -3,8 +3,9 @@
 
 import frappe
 import json
+import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, get_datetime
+from frappe.utils import now_datetime, get_url, get_datetime, format_date, format_time
 from datetime import datetime
 
 
@@ -28,7 +29,7 @@ class InterviewSeatAllocation(Document):
                 status_changed = True
             elif doc_before:
                 if (self.interview_status != doc_before.interview_status or 
-                    self.interview_result_status != doc_before.interview_result_status):
+                    getattr(self, "interview_result_status", None) != getattr(doc_before, "interview_result_status", None)):
                     status_changed = True
             
             if status_changed:
@@ -56,9 +57,10 @@ class InterviewSeatAllocation(Document):
         new_status = None
         
         # 1. Result Status takes precedence
-        if self.interview_result_status == "Pass":
+        result_status = getattr(self, "interview_result_status", None)
+        if result_status == "Pass":
             new_status = "Interview Completed"
-        elif self.interview_result_status == "Fail":
+        elif result_status == "Fail":
             new_status = "Interview Rejected"
         
         # 2. Then Interview Status (only if no result status)
@@ -190,56 +192,77 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
 
 
 def _send_result_notification_email(doc, email):
-    """Send a result/rank notification email to the applicant for Interview."""
-    from frappe.utils import get_url
-    url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
-
-    status_color = "#2e7d32" if doc.interview_status == "Attended" else "#c62828"
+    """Send a premium masterpiece result/rank notification email to the applicant for Interview."""
+    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
     
-    score_html = ""
-    if doc.interview_status == "Attended":
-        score_html = f"""
-        <div style="background:#e3f2fd; border:1px solid #bbdefb; padding:15px; border-radius:8px; margin:20px 0;">
-            <p style="margin:5px 0;"><strong>Interview Score:</strong> {doc.interview_score or 0}</p>
-            <p style="margin:5px 0;"><strong>Final Rank:</strong> <span style="font-size:18px; color:#1565c0; font-weight:bold;">{doc.rank or '—'}</span></p>
+    # Determine Status and Accents
+    is_absent = (doc.interview_status == "Absent")
+    accent_color = "#d73a49" if is_absent else "#0366d6"
+    
+    # Resolve Result Status
+    result_status = getattr(doc, "interview_result_status", None)
+    status_text = "Absent" if is_absent else (result_status or doc.interview_status or "Processed")
+    
+    # Performance Section HTML
+    if is_absent:
+        performance_html = f"""
+        <div style="background-color: #fff5f5; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #ffe3e3;">
+            <p style="margin: 0; color: #d73a49; font-weight: 600; font-size: 14px;">Notice: Interview Absence</p>
+            <p style="margin: 5px 0 0 0; color: #586069; font-size: 13px;">Our records indicate that you were marked as absent for this interview session. As no evaluation was recorded, a final score and rank have not been assigned.</p>
         </div>
         """
     else:
-        score_html = f"""
-        <div style="background:#ffebee; border:1px solid #ffcdd2; padding:15px; border-radius:8px; margin:20px 0;">
-            <p style="margin:5px 0; color:#c62828;"><strong>Status:</strong> Absent</p>
-            <p style="margin:5px 0; font-size:12px; color:#666;">You were marked as absent for the interview. No score or rank has been assigned.</p>
+        interview_score = doc.interview_score or 0
+        rank = doc.rank or "—"
+        
+        performance_html = f"""
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Performance Summary:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Interview Score:</td><td style="padding: 4px 0; font-weight: 700;">{interview_score}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Final Rank:</td><td style="padding: 4px 0; font-weight: 700; color: #28a745; font-size: 16px;">{rank}</td></tr>
+            </table>
         </div>
         """
 
+    subject = "Admission Interview Result Notification"
+    
     msg = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6;">
-        <h2 style="color: #0277bd; border-bottom: 2px solid #0277bd; padding-bottom: 10px; margin-top: 0;">Interview Result</h2>
-        <p>Dear {doc.candidate_name or doc.applicant},</p>
-        <p>The results for your interview have been processed. Below are your details:</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
+        <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
         
-        <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Applicant ID:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">{doc.applicant}</td></tr>
-            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Interview Session:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">{doc.interview_list or '—'}</td></tr>
-            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Status:</strong></td><td style="padding:8px; border-bottom:1px solid #eee; color:{status_color}; font-weight:bold;">{doc.interview_status}</td></tr>
-        </table>
+        <p>Greetings from the Admissions Office.</p>
+        
+        <p>We would like to inform you that the results of your admission interview have been officially processed. Your performance details are provided below for your reference.</p>
+        
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Applicant Details:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{doc.applicant}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Interview Session:</td><td style="padding: 4px 0; font-weight: 700;">{doc.interview_list or '—'}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Status:</td><td style="padding: 4px 0; font-weight: 700; color: {accent_color};">{status_text}</td></tr>
+            </table>
+        </div>
 
-        {score_html}
-
-        <p>You can view your detailed interview feedback and score by clicking the button below:</p>
+        {performance_html}
+        
+        <p>You may access your detailed interview evaluation, including feedback and scoring breakdown, by logging into the admission portal using the link provided below.</p>
+        
         <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display:inline-block; padding:12px 24px; background:#0277bd; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold;">View My Result in Portal</a>
+            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Interview Result</a>
         </div>
         
-        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
-            Record Reference: {doc.name}. If the button doesn't work, copy this link: {url}
-        </p>
+        <p>Please note that further updates regarding your admission status or next steps will be communicated to you in due course.</p>
+        
+        <p>If you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
+        
+        <p>We appreciate your participation in the interview process and wish you the very best.</p>
     </div>
     """
 
     frappe.sendmail(
         recipients=[email],
-        subject=f"Interview Result — {doc.candidate_name or doc.applicant}",
+        subject=subject,
         message=msg,
         reference_doctype="Interview Seat Allocation",
         reference_name=doc.name
@@ -336,7 +359,6 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
             try:
                 _send_reschedule_email(doc, email)
             except Exception:
-                import traceback
                 frappe.log_error(
                     message=traceback.format_exc(),
                     title=f"Interview Reschedule Email Failed: {doc.name}"
@@ -353,57 +375,70 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
 
 
 def _send_reschedule_email(doc, email):
-    """Email notification for interview reschedule."""
-    try:
-        from frappe.utils import get_url
-        url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
-
-        reason_section = ""
-        if doc.reschedule_reason:
-            reason_section = f"""
-            <div style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <p style="margin: 0;"><strong>Reason for Reschedule:</strong><br>{doc.reschedule_reason}</p>
-            </div>
-            """
-
-        msg = f"""
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
-            <h2 style="color: #0277bd; border-bottom: 2px solid #0277bd; padding-bottom: 10px; margin-top: 0;">Admission Interview Rescheduled</h2>
-            <p>Dear {doc.candidate_name or doc.applicant},</p>
-            <p>Your admission interview has been rescheduled. Please find the new session details below:</p>
+    """Send a premium masterpiece interview reschedule notification email to the applicant."""
+    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+    
+    # Format Date and Time
+    formatted_date = "To be communicated"
+    formatted_time = "To be communicated"
+    if doc.re_interview_date:
+        try:
+            formatted_date = format_date(doc.re_interview_date)
+        except:
+            formatted_date = str(doc.re_interview_date)
             
-            {reason_section}
+    if doc.re_interview_time:
+        try:
+            formatted_time = format_time(doc.re_interview_time)
+        except:
+            formatted_time = str(doc.re_interview_time)
 
-            <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0 0 10px 0;"><strong>New Interview Details:</strong></p>
-                <table style="width:100%; border-collapse: collapse; font-size: 14px;">
-                    <tr><td style="padding:5px 0; color:#666;">Date:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_date or 'To be communicated'}</td></tr>
-                    <tr><td style="padding:5px 0; color:#666;">Time:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_time or 'To be communicated'}</td></tr>
-                    <tr><td style="padding:5px 0; color:#666;">Venue / Address:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_interview_address or 'To be communicated'}</td></tr>
-                </table>
-            </div>
-
-            <p>Please click the button below to view your updated interview details in the portal:</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{url}" style="display:inline-block; padding:12px 28px; background:#0277bd; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">View Interview Details</a>
-            </div>
-            
-            <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
-                Record Reference: {doc.name}<br>
-                If the button doesn't work, copy this link: {url}
-            </p>
+    reason_html = ""
+    if doc.reschedule_reason:
+        reason_html = f"""
+        <div style="background-color: #fffbdd; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #f9eda5;">
+            <p style="margin: 0; color: #735c0f; font-weight: 600; font-size: 14px;">Reason for Rescheduling:</p>
+            <p style="margin: 5px 0 0 0; color: #586069; font-size: 13px;">{doc.reschedule_reason}</p>
         </div>
         """
 
-        frappe.sendmail(
-            recipients=[email],
-            subject=f"Interview Rescheduled — {doc.candidate_name or doc.applicant}",
-            message=msg,
-            reference_doctype="Interview Seat Allocation",
-            reference_name=doc.name
-        )
-    except Exception:
-        import traceback
-        frappe.log_error(message=traceback.format_exc(), title="Interview Reschedule Email Error")
-        raise
+    subject = "Admission Interview Rescheduled – Action Required"
+    
+    msg = f"""
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
+        <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
+        
+        <p>Greetings from the Admissions Office.</p>
+        
+        <p>We are writing to inform you that your admission interview has been successfully rescheduled. The details of your new interview session are provided below.</p>
+        
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">New Interview Details:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Date:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_date}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Time:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_time}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Venue / Address:</td><td style="padding: 4px 0; font-weight: 700;">{doc.re_interview_address or 'To be communicated'}</td></tr>
+            </table>
+        </div>
+
+        {reason_html}
+
+        <p>Please log in to the admission portal to view your updated interview details and confirm your attendance.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Interview Details</a>
+        </div>
+        
+        <p>If you require any assistance or have queries regarding your rescheduled interview, please contact the Admissions Office.</p>
+        
+        <p>We wish you the very best for your interview.</p>
+    </div>
+    """
+
+    frappe.sendmail(
+        recipients=[email],
+        subject=subject,
+        message=msg,
+        reference_doctype="Interview Seat Allocation",
+        reference_name=doc.name
+    )

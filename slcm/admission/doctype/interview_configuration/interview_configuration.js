@@ -24,12 +24,23 @@ frappe.ui.form.on("Interview Configuration", {
 
                 frappe.confirm(
                     __(
-                        "Generate Interview List for this configuration?<br><br>"
-                        + "<b>Filters:</b><br>"
-                        + "Academic Year: {0}<br>"
-                        + "Campus: {1}<br>"
-                        + "Cycle: {2}<br>"
-                        + "Level: {3}",
+                        `<div style="text-align: center; padding: 10px;">
+                            <div style="background: #eef2f7; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                                <i class="fa fa-info-circle fa-2x" style="color: #007bff;"></i>
+                            </div>
+                            <h4 style="font-weight: 800; color: #212529; margin-bottom: 10px;">Confirm Generation</h4>
+                            <p style="color: #6c757d; font-size: 14px; line-height: 1.5;">Are you sure you want to generate the Interview list with the following configuration?</p>
+                            
+                            <div style="background: #fff; border: 1.5px solid #f1f3f5; border-radius: 12px; padding: 16px; margin: 24px 0; text-align: left;">
+                                <table style="width: 100%; font-size: 13px; border-collapse: separate; border-spacing: 0 8px;">
+                                    <tr><td style="color: #adb5bd; font-weight: 500;">Academic Year</td><td style="font-weight: 700; text-align: right; color: #495057;">{0}</td></tr>
+                                    <tr><td style="color: #adb5bd; font-weight: 500;">Campus</td><td style="font-weight: 700; text-align: right; color: #495057;">{1}</td></tr>
+                                    <tr><td style="color: #adb5bd; font-weight: 500;">Admission Cycle</td><td style="font-weight: 700; text-align: right; color: #495057;">{2}</td></tr>
+                                    <tr><td style="color: #adb5bd; font-weight: 500;">Program Level</td><td style="font-weight: 700; text-align: right; color: #495057;">{3}</td></tr>
+                                </table>
+                            </div>
+                            <p style="font-size: 12px; color: #adb5bd; font-style: italic;">This process will only fetch new eligible candidates.</p>
+                        </div>`,
                         [
                             frm.doc.academic_year,
                             frm.doc.campus,

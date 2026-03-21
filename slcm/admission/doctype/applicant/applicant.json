@@ -179,6 +179,7 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Program",
    "options": "Program"
   },
@@ -193,6 +194,7 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Academic year",
    "options": "Academic Year"
   },
@@ -884,6 +886,7 @@
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Admission cycle",
    "options": "Admission Cycle"
   },
@@ -918,6 +921,7 @@
   {
    "fieldname": "national_test_name",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "National test name",
    "options": "National Test"
   },
@@ -943,12 +947,14 @@
   {
    "fieldname": "program_level",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Program Level",
    "options": "\nUG\nPG\nResearch Course"
   },
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Admission year",
    "options": "Admission Year"
   },
@@ -1107,7 +1113,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-18 19:21:48.713005",
+ "modified": "2026-03-21 11:42:22.620186",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
