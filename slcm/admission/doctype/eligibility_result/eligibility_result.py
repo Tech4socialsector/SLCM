@@ -123,6 +123,7 @@ class EligibilityResult(Document):
                 <div class="univ-name">{esc(campus_display_name)}</div>
                 <div class="univ-sub">Office of Admissions &nbsp;&middot;&nbsp; Eligibility Cell</div>
               </div>
+              <div class="logo-box" style="visibility:hidden; border:none; background:transparent;"></div>
             </div>"""
 
         html = f"""<!DOCTYPE html>
@@ -155,8 +156,8 @@ class EligibilityResult(Document):
         background: #7b1c1c;
         display: flex;
         align-items: center;
+        justify-content: space-between;
         padding: 10px 18px;
-        gap: 16px;
         border-bottom: 3px solid #5a0e0e;
         }}
         .logo-box {{
@@ -177,11 +178,11 @@ class EligibilityResult(Document):
         font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
         text-align: center; letter-spacing: 0.5px; line-height: 1.2;
         }}
-        .hdr-center {{ flex: 1; text-align: center; min-width: 0; }}
+        .hdr-center {{ flex: 1; text-align: center; min-width: 0; padding: 0 15px; }}
         .univ-name {{
         font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
-        text-transform: none; letter-spacing: 1.5px; line-height: 1.2; margin-bottom: 0;
-        word-wrap: break-word;
+        text-transform: none; letter-spacing: 1.2px; line-height: 1.2; margin-bottom: 0;
+        word-wrap: break-word; overflow-wrap: break-word;
         }}
         .univ-sub {{
         font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80);

@@ -310,7 +310,7 @@ class Applicant(Document):
 
     def _get_selected_program_level(self):
         """
-        Returns the level_of_study ('UG', 'PG', 'Research Course') of the
+        Returns the level_of_study ('Undergraduate', 'Postgraduate', 'Research Course') of the
         currently selected program by querying the Program doctype.
 
         NOTE: The correct DB column is `level_of_study`.
@@ -1053,8 +1053,8 @@ class Applicant(Document):
                 return False
 
             for row in child_rows:
-                program_field = "ug_program" if qualification_level == "UG" else "pg_program"
-                cgpa_field    = "ug_cgpa"    if qualification_level == "UG" else "pg_cgpa"
+                program_field = "ug_program" if qualification_level == "Undergraduate" else "pg_program"
+                cgpa_field    = "ug_cgpa"    if qualification_level == "Undergraduate" else "pg_cgpa"
 
                 row_program = getattr(row, program_field, None)
                 row_cgpa    = flt(getattr(row, cgpa_field, None) or 0)
