@@ -5303,6 +5303,12 @@
             const res = await apiFetch('slcm.www.application_form.index.check_portal_eligibility', { applicant_data: JSON.stringify(formData) });
 
             if (res) {
+                // Store globally for toast access
+                if (res.programs) {
+                    if (typeof SERVER_DATA === 'undefined') window.SERVER_DATA = {};
+                    SERVER_DATA.eligibility_programs = res.programs;
+                }
+                
                 if (res.eligible === false) {
                     showEligibilityModal(res);
                 } else {
@@ -5344,7 +5350,7 @@
                                         <span class="elig-dot" style="background:${p.eligible ? 'var(--emerald)' : 'var(--red)'}"></span>
                                         <span class="elig-badge ${p.eligible ? 'eligible-b' : 'ineligible-b'}">${p.eligible ? 'Eligible' : 'Not Eligible'}</span>
                                     </td>
-                                    <td style="font-size:.78rem;color:var(--slate-600);">${p.reason || '—'}</td>
+                                    <td style="font-size:.78rem;color:var(--slate-600);">${(p.reason || '').split('|').map(s => escapeHtml(s)).join('<br>') || '—'}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -5354,7 +5360,29 @@
         }
 
         const headerText = isEligible ? 'Eligibility check passed' : 'You are not eligible for the selected programme';
-        const messageText = (result.message || '').trim() || (isEligible ? 'You meet the eligibility criteria.' : 'Please review the reason below and contact admissions if you have questions.');
+        let messageText = (result.message || '').trim() || (isEligible ? 'You meet the eligibility criteria.' : 'Please review the reason below and contact admissions if you have questions.');
+        
+        // Handle '|' in message
+        if (messageText.includes('|')) {
+            const parts = messageText.split('|');
+            messageText = `<span>${escapeHtml(parts[0].trim())}</span><div style="font-size:0.85rem;font-weight:400;color:var(--slate-600);margin-top:4px;">${escapeHtml(parts.slice(1).join(' ').trim())}</div>`;
+        } else {
+            messageText = escapeHtml(messageText);
+        }
+
+        const eligibleProgs = (result.programs || []).filter(p => p.eligible).map(p => p.program);
+        let switchBtnHTML = '';
+        if (!isEligible && eligibleProgs.length > 0) {
+            switchBtnHTML = `
+            <div style="margin: 12px 0; display:flex;">
+                <button type="button" class="btn-next" style="padding:10px 20px; font-size:13px; font-weight:700; border-radius:10px; box-shadow:0 4px 6px rgba(15,27,76,0.15);"
+                    onclick="window.handleToastProgramSwitch(${JSON.stringify(eligibleProgs).replace(/"/g, '&quot;')})">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="margin-right:8px; vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    Switch to an Eligible Programme
+                </button>
+            </div>`;
+        }
+
         resultDiv.innerHTML = `
         <div class="elig-panel ${cls}">
             <div class="elig-panel-header">
@@ -5362,7 +5390,8 @@
                 ${headerText}
             </div>
             <div class="elig-panel-body">
-                <p style="margin:0 0 .5rem;font-size:.9rem;font-weight:600;">${(messageText || '').replace(/</g, '&lt;')}</p>
+                <p style="margin:0 0 .5rem;font-size:.9rem;font-weight:600;">${messageText}</p>
+                ${switchBtnHTML}
                 ${programTableHTML}
             </div>
         </div>`;
@@ -6138,7 +6167,7 @@
                     const payLinkBtn = document.querySelector('#applicationFeePayLink button');
                     if (payLinkBtn) payLinkBtn.click();
                 } else {
-                    showToast(message.error, 'error');
+                    showToast(message, 'error', message.is_eligibility_error);
                     showValidationBanner(message.error, 'error');
                 }
 
@@ -6351,7 +6380,7 @@
             const message = res || {};
             if (message.error) {
                 if (saveText) saveText.textContent = 'Save failed';
-                showToast(message.error, 'error');
+                showToast(message, 'error', message.is_eligibility_error);
             } else {
                 if (message.docstatus !== undefined) formData.docstatus = message.docstatus;
                 if (message.application_status) formData.application_status = message.application_status;
@@ -6520,23 +6549,114 @@
     }
 
     function formatEligibilityForToast(eligRes) {
-        let mainMsg = (eligRes.message || 'You are not eligible for the selected program.').trim();
+        let mainMsg = (eligRes.message || eligRes.error || 'You are not eligible for the selected program.').trim();
         mainMsg = decodeHtmlEntities(mainMsg);
-        mainMsg = mainMsg.split(/\n/).map(s => escapeHtml(s)).join('<br>');
+        
+        let header = '';
+        let sub = '';
+        if (mainMsg.includes('|')) {
+            const parts = mainMsg.split('|');
+            header = parts[0].trim();
+            sub = parts.slice(1).join(' ').trim();
+        } else {
+            header = mainMsg;
+        }
+
         const programs = eligRes.programs || [];
-        let html = `<div class="toast-title">${mainMsg}</div>`;
+        const eligibleProgs = programs.filter(p => p.eligible).map(p => p.program);
+        
+        let html = `<div class="toast-title">${escapeHtml(header)}</div>`;
+        if (sub) {
+            html += `<div style="font-size:0.82rem;color:var(--slate-600);margin-bottom:8px;line-height:1.4;">${escapeHtml(sub)}</div>`;
+        }
+
+        if (eligibleProgs.length > 0) {
+            html += `<div style="margin-top:10px;display:flex;justify-content:flex-end;">
+                <button type="button" class="btn-switch-program-toast" 
+                    style="background:var(--navy);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;box-shadow:0 2px 4px rgba(0,0,0,0.1);"
+                    onclick="event.stopPropagation(); window.handleToastProgramSwitch(${JSON.stringify(eligibleProgs).replace(/"/g, '&quot;')})">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    Switch Program
+                </button>
+            </div>`;
+        }
+
         if (programs.length > 0) {
-            html += '<div class="toast-programs"><strong>Programmes at this campus</strong>';
+            html += '<div class="toast-programs" style="margin-top:12px;border-top:1px solid var(--slate-200);padding-top:8px;"><strong>Programmes at this campus</strong>';
             programs.forEach(p => {
                 const name = escapeHtml(p.program || '');
                 const status = p.eligible ? '<span class="eligible-yes">Eligible</span>' : '<span class="eligible-no">Not Eligible</span>';
-                const reason = escapeHtml((p.reason || '').trim());
-                html += `<div><strong>${name}</strong> — ${status}${reason ? `<br><span style="font-size:.78rem;color:var(--slate-600);">${reason}</span>` : ''}</div>`;
+                const reasonParts = (p.reason || '').split('|');
+                const reason = escapeHtml(reasonParts[0].trim());
+                const subReason = reasonParts.length > 1 ? escapeHtml(reasonParts.slice(1).join(' ').trim()) : '';
+
+                html += `<div style="padding:4px 0;border-bottom:1px solid var(--slate-50);"><strong>${name}</strong> — ${status}${reason ? `<br><span style="font-size:.78rem;color:var(--slate-600);">${reason}</span>` : ''}${subReason ? `<br><span style="font-size:.72rem;color:var(--slate-500);">${subReason}</span>` : ''}</div>`;
             });
             html += '</div>';
         }
         return html;
     }
+
+    // Global helper for the Switch Program button in toast
+    window.handleToastProgramSwitch = function(eligibleProgs) {
+        if (!eligibleProgs || !eligibleProgs.length) return;
+        
+        let optionsHtml = eligibleProgs.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+        
+        const overlay = document.createElement('div');
+        overlay.id = 'switchProgramOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+        
+        overlay.innerHTML = `
+            <div style="background:#fff;border-radius:20px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalSlideUp 0.3s ease-out;">
+                <h3 style="margin:0 0 12px;font-size:1.25rem;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    Switch Programme
+                </h3>
+                <p style="margin:0 0 20px;font-size:0.95rem;color:var(--slate-600);line-height:1.5;">Select an eligible programme to instantly update your choice. All your entered data will be preserved.</p>
+                
+                <div style="margin-bottom:24px;">
+                    <label style="display:block;font-size:0.75rem;font-weight:800;color:var(--slate-400);text-transform:uppercase;margin-bottom:8px;">Available Eligible Options</label>
+                    <select id="toastSwitchProgramSelect" class="fc" style="width:100%;height:48px;font-weight:600;">
+                        ${optionsHtml}
+                    </select>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <button type="button" onclick="document.getElementById('switchProgramOverlay').remove()" style="height:48px;border-radius:12px;border:2px solid var(--slate-200);background:#fff;font-weight:700;color:var(--slate-600);cursor:pointer;">Cancel</button>
+                    <button type="button" id="confirmSwitchBtn" style="height:48px;border-radius:12px;border:none;background:var(--navy);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(15,27,76,0.2);">Confirm Switch</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        document.getElementById('confirmSwitchBtn').onclick = function() {
+            const newProg = document.getElementById('toastSwitchProgramSelect').value;
+            if (!newProg) return;
+            
+            showConfirm('Are you sure you want to switch your programme to ' + newProg + '?', function() {
+                const programSelect = document.getElementById('program');
+                if (programSelect) {
+                    programSelect.value = newProg;
+                    // Trigger change event to sync with formData and other listeners
+                    programSelect.dispatchEvent(new Event('change'));
+                    
+                    // Clear toast and overlay
+                    const toastContainer = document.getElementById('toastContainer');
+                    if (toastContainer) toastContainer.innerHTML = '';
+                    overlay.remove();
+                    
+                    showToast('Programme switched to ' + newProg + ' successfully.', 'success');
+                    
+                    // Trigger fresh eligibility check
+                    if (typeof runEligibilityCheck === 'function') {
+                        runEligibilityCheck();
+                    }
+                }
+            });
+        };
+    };
 
     function showEligibilityModal(eligRes) {
         let existing = document.getElementById('eligibilityModalOverlay');
@@ -6569,11 +6689,19 @@
             const progDisplay = `<strong style="color:#2c3e50;">${escapeHtml(p.program)}</strong>${badge}`;
             const statusDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px;background:${isElig ? '#27ae60' : '#e74c3c'};"></span>`;
             const statusLabel = `<span style="font-size:13px;font-weight:600;color:${isElig ? '#27ae60' : '#e74c3c'};">${isElig ? 'Eligible' : 'Not Eligible'}</span>`;
-            const reasonText = (!isElig && p.reason) ? `<div style="font-size:11px;color:#888;margin-top:3px;font-style:italic;">${escapeHtml(p.reason)}</div>` : '';
+            
+            let reasonHtml = '';
+            if (!isElig && p.reason) {
+                const reasonParts = p.reason.split('|');
+                const mainReason = reasonParts[0].trim();
+                const subReason = reasonParts.length > 1 ? reasonParts.slice(1).join(' ').trim() : '';
+                reasonHtml = `<div style="font-size:11px;color:#888;margin-top:3px;font-style:italic;line-height:1.4;">${escapeHtml(mainReason)}${subReason ? `<br><span style="font-size:10px;color:#aaa;font-style:normal;">${escapeHtml(subReason)}</span>` : ''}</div>`;
+            }
+
             rowsHtml += `
                 <tr style="background:${rowBg};">
                     <td style="padding:10px 12px;vertical-align:middle;border-bottom:1px solid #eee;">
-                        ${progDisplay}${reasonText}
+                        ${progDisplay}${reasonHtml}
                     </td>
                     <td style="padding:10px 12px;vertical-align:middle;text-align:center;white-space:nowrap;border-bottom:1px solid #eee;">
                         ${statusDot}${statusLabel}
@@ -6756,22 +6884,42 @@
     }
 
 
-    function showToast(msg, type = 'info') {
+    function showToast(msg, type = 'info', isEligibility = false) {
         const container = document.getElementById('toastContainer');
         if (!container) return;
         const toast = document.createElement('div');
-        toast.className = 'toast-item ' + (type || 'info');
+        toast.className = 'toast-item ' + (isEligibility ? 'eligibility-error ' : '') + (type || 'info');
 
         const icons = {
-            success: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--emerald)"><path d="M5 13l4 4L19 7"/></svg>',
-            error: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--red)"><path d="M6 18L18 6M6 6l12 12"/></svg>',
-            info: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--navy)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
+            success: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--emerald);flex-shrink:0;"><path d="M5 13l4 4L19 7"/></svg>',
+            error: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--red);flex-shrink:0;"><path d="M6 18L18 6M6 6l12 12"/></svg>',
+            info: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--navy);flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
         };
 
-        const displayMsg = type === 'error' ? humanizeError((msg || '').toString()) : (msg || '').toString();
-        toast.innerHTML = `${icons[type] || icons.info} <span>${displayMsg.replace(/</g, '&lt;')}</span>`;
+        let content = '';
+        if (isEligibility) {
+            // msg can be a string (from save_form) or an object (if we ever pass it)
+            // If it's a string, we might need to wrap it into an object that formatEligibilityForToast expects
+            let eligRes = (typeof msg === 'object') ? msg : { message: msg, programs: SERVER_DATA.eligibility_programs || [] };
+            
+            // If SERVER_DATA doesn't have it, and msg is from save_form, we might have programs in the response
+            // In doActualSubmit, we should pass the full response object to showToast
+            content = `<div class="toast-body">${formatEligibilityForToast(eligRes)}</div>`;
+        } else {
+            const displayMsg = type === 'error' ? humanizeError((msg || '').toString()) : (msg || '').toString();
+            content = `<span style="flex:1;">${escapeHtml(displayMsg)}</span>`;
+        }
+
+        toast.innerHTML = `${icons[type] || icons.info} ${content}`;
         container.appendChild(toast);
-        setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 4000);
+        
+        // Auto-remove after 6 seconds for eligibility errors as they are long, else 4s
+        const duration = isEligibility ? 7000 : 4000;
+        setTimeout(() => { 
+            toast.style.opacity = '0'; 
+            toast.style.transition = 'opacity .3s'; 
+            setTimeout(() => toast.remove(), 300); 
+        }, duration);
     }
 
 

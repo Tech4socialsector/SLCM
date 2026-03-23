@@ -480,7 +480,18 @@ class Applicant(Document):
         Builds the full ineligibility HTML message using explicit inline styles
         for consistent rendering across local and production Frappe environments.
         """
-        escaped_reason = frappe.utils.escape_html(failure_message)
+        # Split combined message if it contains '|'
+        if "|" in failure_message:
+            parts = failure_message.split("|")
+            main_reason = parts[0].strip()
+            sub_reasons = " ".join(parts[1:]).strip()
+            reason_html = (
+                f"{frappe.utils.escape_html(main_reason)}"
+                f"<div style='font-weight: 400; font-size: 12px; color: #666; margin-top: 4px;'>"
+                f"{frappe.utils.escape_html(sub_reasons)}</div>"
+            )
+        else:
+            reason_html = frappe.utils.escape_html(failure_message)
 
         return (
             '<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
@@ -498,7 +509,7 @@ class Applicant(Document):
             '{table}'
             '</div>'
         ).format(
-            reason=escaped_reason,
+            reason=reason_html,
             note=_("The applicant does not meet the eligibility criteria for the selected program."),
             table=program_table_html,
         )
@@ -506,6 +517,30 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
     # PROGRAM ELIGIBILITY TABLE (rendered inside throw)
     # ──────────────────────────────────────────────
+
+    def _build_program_eligibility_data(self):
+        """
+        Returns a list of dicts for EVERY program of the SAME LEVEL as the
+        applicant's selected program (UG / PG / Research Course).
+        Used by the portal 'Switch Program' feature.
+        """
+        selected_program_level = self._get_selected_program_level()
+        if not selected_program_level:
+            return []
+
+        all_programs = self._get_all_programs_for_level(selected_program_level)
+        if not all_programs:
+            return []
+
+        data = []
+        for prog_name in all_programs:
+            is_eligible, reason = self._check_eligibility_for_program(prog_name)
+            data.append({
+                "program": prog_name,
+                "eligible": is_eligible,
+                "reason": reason
+            })
+        return data
 
     def _build_program_eligibility_html(self):
         """
@@ -877,6 +912,9 @@ class Applicant(Document):
         # evaluation_paths = [MatchedCategoryRow1, MatchedCategoryRow2, ..., None (for General)]
         evaluation_paths = matched_categories + [None]
 
+        # Collect rule-specific ineligible messages to show if ALL paths fail
+        ineligible_messages = []
+
         # 4. Nested OR Evaluation: Success if ANY (Path, Rule) combination passes
         for cat_row in evaluation_paths:
             for r_row in rules_in_mapping:
@@ -905,9 +943,21 @@ class Applicant(Document):
                         minimum=required_val
                     )
                     return True, ""
+                else:
+                    # If this specific rule failed, collect its custom message
+                    rule_msg = (base_rule.get("ineligible_message") or "").strip()
+                    if rule_msg and rule_msg not in ineligible_messages:
+                        ineligible_messages.append(rule_msg)
 
-        # If all paths and all rules failed
-        return False, failure_msg
+        # If all paths and all rules failed, combine the mapping-level failure_message
+        # with the specific ineligible_message(s) from the rules.
+        final_message = failure_msg
+        if ineligible_messages:
+            # If mapping-level message exists, append rule messages. 
+            # Use a clear separator that we can handle in the UI.
+            final_message = f"{failure_msg} | {' '.join(ineligible_messages)}"
+
+        return False, final_message
 
 
 

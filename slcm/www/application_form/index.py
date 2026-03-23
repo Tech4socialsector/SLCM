@@ -789,7 +789,13 @@ def save_form(data):
 
     except frappe.ValidationError as e:
         frappe.db.rollback()
-        raw_msg = str(e) or ""
+        # Ensure e is converted to string safely
+        try:
+            raw_msg = str(e.args[0]) if e.args else str(e)
+        except Exception:
+            raw_msg = str(e)
+        
+        raw_msg = raw_msg or ""
 
         # Special handling for rich ineligibility HTML coming from Applicant._build_ineligibility_message
         lower_msg = raw_msg.lower()
@@ -807,7 +813,25 @@ def save_form(data):
             if not cleaned:
                 cleaned = _("You are not eligible for the selected program. Please review the eligibility criteria.")
 
-            return {"error": cleaned}
+            # Try to get programs for the 'Switch Program' feature
+            programs = []
+            try:
+                if doc:
+                    programs = doc._build_program_eligibility_data() if hasattr(doc, '_build_program_eligibility_data') else []
+            except Exception:
+                pass
+
+            return {"error": cleaned, "is_eligibility_error": True, "programs": programs}
+
+        # Handle the combined message with '|'
+        if "|" in raw_msg:
+            programs = []
+            try:
+                if doc:
+                    programs = doc._build_program_eligibility_data() if hasattr(doc, '_build_program_eligibility_data') else []
+            except Exception:
+                pass
+            return {"error": raw_msg, "is_eligibility_error": True, "programs": programs}
 
         # Fallback for all other validation errors
         return {"error": raw_msg}
