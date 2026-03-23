@@ -730,7 +730,7 @@
   {% set _show_ann = portal_config.get('show_announcement') or 0 %}
   {% set _ann_text = portal_config.get('header_announcement') or '' %}
   {% set _login_req= portal_config.get('login_required_for_application') %}
-  {% set _cta1     = portal_config.get('hero_cta_label')  or 'Explore Programs' %}
+  {% set _cta1     = portal_config.get('hero_cta_label')  or 'Explore Programmes' %}
   {% set _cta2     = portal_config.get('hero_cta2_label') or 'Virtual Tour' %}
   {% set _f_addr   = portal_config.get('footer_address')  or '' %}
   {% set _f_phone  = portal_config.get('footer_phone')    or '' %}
@@ -744,7 +744,7 @@
   {% set _show_ann = portal_config.show_announcement or 0 %}
   {% set _ann_text = portal_config.header_announcement or '' %}
   {% set _login_req= portal_config.login_required_for_application %}
-  {% set _cta1     = portal_config.hero_cta_label  or 'Explore Programs' %}
+  {% set _cta1     = portal_config.hero_cta_label  or 'Explore Programmes' %}
   {% set _cta2     = portal_config.hero_cta2_label or 'Virtual Tour' %}
   {% set _f_addr   = portal_config.footer_address  or '' %}
   {% set _f_phone  = portal_config.footer_phone    or '' %}
@@ -753,7 +753,7 @@
   {% set _title='Admissions' %} {% set _tagline='' %} {% set _since='' %}
   {% set _slides=[] %} {% set _hero_img='' %}
   {% set _show_ann=0 %} {% set _ann_text='' %} {% set _login_req=1 %}
-  {% set _cta1='Explore Programs' %} {% set _cta2='Virtual Tour' %}
+  {% set _cta1='Explore Programmes' %} {% set _cta2='Virtual Tour' %}
   {% set _f_addr='' %} {% set _f_phone='' %} {% set _f_email='' %}
 {% endif %}
 
@@ -773,7 +773,7 @@
       {% if _tagline %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</p>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs" class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform" style="background:var(--primary)">{{ _cta1 }}</a>
-        <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button>
+        <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
     </div>
   </div>
@@ -794,7 +794,7 @@
       {% if _ssub %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _ssub }}</p>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs" class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform" style="background:var(--primary)">{{ _cta1 }}</a>
-        <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button>
+        <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
     </div>
   </div>
@@ -813,7 +813,7 @@
       {% if _tagline %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</p>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs" class="rounded-xl bg-white px-8 py-4 text-lg font-bold hover:scale-105 transition-transform" style="color:var(--primary)">{{ _cta1 }}</a>
-        <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button>
+        <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
     </div>
   </div>
@@ -837,11 +837,11 @@
             {% if _show_ann and _ann_text %}{{ _ann_text | safe }}
             {% else %}Admissions {{ active_cycle.name }} Now Open!{% endif %}
           </h3>
-          {% if active_cycle and active_cycle.application_end %}
+          <!-- {% if active_cycle and active_cycle.application_end %}
           <p class="text-slate-500 text-sm">
             Applications closing on <strong>{{ frappe.utils.formatdate(active_cycle.application_end, "dd MMM yyyy") }}</strong>
           </p>
-          {% endif %}
+          {% endif %} -->
         </div>
       </div>
       <a href="{{ '#programs' if _is_cycle_active else 'javascript:void(0)' }}"
