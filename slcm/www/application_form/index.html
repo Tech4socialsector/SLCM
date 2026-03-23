@@ -6568,7 +6568,8 @@
         
         const overlay = document.createElement('div');
         overlay.id = 'switchProgramOverlay';
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+        // Set z-index to 200000 to be ABOVE the confirm-overlay-premium (100000)
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
         
         overlay.innerHTML = `
             <div style="background:#fff;border-radius:20px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalSlideUp 0.3s ease-out;">
@@ -6598,16 +6599,42 @@
             const newProg = document.getElementById('toastSwitchProgramSelect').value;
             if (!newProg) return;
             
+            // Temporary lower z-index of overlay so confirm dialog is visible on top
+            overlay.style.zIndex = '99999';
+
             showConfirm('Are you sure you want to switch your programme to ' + newProg + '?', function() {
-                const programSelect = document.getElementById('program');
+                // Restore z-index for safety or cleanup
+                overlay.style.zIndex = '200000';
+
+                const programSelect = document.getElementById('program') || document.getElementsByName('program')[0];
                 if (programSelect) {
                     programSelect.value = newProg;
-                    // Trigger change event to sync with formData and other listeners
-                    programSelect.dispatchEvent(new Event('change'));
                     
-                    // Clear toast and overlay
+                    // Update formData object directly
+                    if (typeof formData !== 'undefined') {
+                        formData.program = newProg;
+                    }
+
+                    // Update the "Applying for:" display banner label if it exists
+                    const programBannerName = document.querySelector('.application-program-name');
+                    if (programBannerName) {
+                        programBannerName.textContent = newProg;
+                    }
+
+                    // For Select2 integration
+                    if (window.jQuery && jQuery.fn.select2 && jQuery(programSelect).data('select2')) {
+                        jQuery(programSelect).val(newProg).trigger('change');
+                    } else {
+                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    
+                    // Clear toast, modal and overlay
                     const toastContainer = document.getElementById('toastContainer');
                     if (toastContainer) toastContainer.innerHTML = '';
+                    
+                    const eligModal = document.getElementById('eligibilityModalOverlay');
+                    if (eligModal) eligModal.remove();
+
                     overlay.remove();
                     
                     showToast('Programme switched to ' + newProg + ' successfully.', 'success');
@@ -6616,8 +6643,22 @@
                     if (typeof runEligibilityCheck === 'function') {
                         runEligibilityCheck();
                     }
+                } else {
+                    overlay.style.zIndex = '200000';
+                    showToast('Could not find program field to update.', 'error');
                 }
             });
+            
+            // If user cancels the confirm dialog, we need to restore the overlay z-index
+            // We can do this by observing the confirm overlay close
+            const confirmCancel = document.getElementById('confirm-cancel');
+            if (confirmCancel) {
+                const oldCancel = confirmCancel.onclick;
+                confirmCancel.onclick = function() {
+                    if (oldCancel) oldCancel();
+                    overlay.style.zIndex = '200000';
+                };
+            }
         };
     };
 
@@ -6851,12 +6892,14 @@
 
         let content = '';
         if (isEligibility) {
-            // msg can be a string (from save_form) or an object (if we ever pass it)
-            // If it's a string, we might need to wrap it into an object that formatEligibilityForToast expects
-            let eligRes = (typeof msg === 'object') ? msg : { message: msg, programs: SERVER_DATA.eligibility_programs || [] };
-            
-            // If SERVER_DATA doesn't have it, and msg is from save_form, we might have programs in the response
-            // In doActualSubmit, we should pass the full response object to showToast
+            // Priority 1: Use the programs directly from the message object (from save_form)
+            // Priority 2: Use cached SERVER_DATA from real-time runEligibilityCheck
+            let eligRes = (typeof msg === 'object') ? msg : { message: msg };
+            if (!eligRes.programs || !eligRes.programs.length) {
+                if (typeof SERVER_DATA !== 'undefined' && SERVER_DATA.eligibility_programs) {
+                    eligRes.programs = SERVER_DATA.eligibility_programs;
+                }
+            }
             content = `<div class="toast-body">${formatEligibilityForToast(eligRes)}</div>`;
         } else {
             const displayMsg = type === 'error' ? humanizeError((msg || '').toString()) : (msg || '').toString();
