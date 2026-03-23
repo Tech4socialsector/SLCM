@@ -84,14 +84,14 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 
 	// Charts Row 1
 	let chart_row_1 = $(`<div class="row mb-4" style="padding: 0 15px;">
-		<div class="col-md-8 d-flex"><div id="refund_trend" class="card shadow-sm p-3 w-100 chart-container" style="min-height: 350px; border-radius: 12px; border: 1px solid #e2e8f0;"></div></div>
-		<div class="col-md-4 d-flex"><div id="status_dist" class="card shadow-sm p-3 w-100 chart-container" style="min-height: 350px; border-radius: 12px; border: 1px solid #e2e8f0;"></div></div>
+		<div class="col-md-6 d-flex"><div id="refund_trend" class="card shadow-sm p-3 w-100 chart-container" style="min-height: 400px; border-radius: 12px; border: 1px solid #e2e8f0;"></div></div>
+		<div class="col-md-6 d-flex"><div id="status_dist" class="card shadow-sm p-3 w-100 chart-container" style="min-height: 400px; border-radius: 12px; border: 1px solid #e2e8f0;"></div></div>
 	</div>`).appendTo(page.body);
 	
 	// Charts Row 2
 	let chart_row_2 = $(`<div class="row mb-4" style="padding: 0 15px;">
-		<div class="col-md-6 d-flex"><div id="reasons_dist" class="card shadow-sm p-3 w-100 chart-container" style="min-height: 350px; border-radius: 12px; border: 1px solid #e2e8f0;"></div></div>
-		<div class="col-md-6 d-flex"><div id="program_dist" class="card shadow-sm p-3 w-100 chart-container" style="min-height: 350px; border-radius: 12px; border: 1px solid #e2e8f0;"></div></div>
+		<div class="col-md-6 d-flex"><div id="reasons_dist" class="card shadow-sm p-3 w-100 chart-container" style="min-height: 400px; border-radius: 12px; border: 1px solid #e2e8f0;"></div></div>
+		<div class="col-md-6 d-flex"><div id="program_dist" class="card shadow-sm p-3 w-100 chart-container" style="min-height: 400px; border-radius: 12px; border: 1px solid #e2e8f0;"></div></div>
 	</div>`).appendTo(page.body);
 
 	// Table Section
@@ -178,6 +178,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 			'Failed': '#dc2626',    // Red
 			'Approved': '#2563eb',  // Blue
 			'Under Review': '#f59e0b', // Orange
+			'Rejected': '#4b5563',  // Slate
 			'Draft': '#94a3b8'      // Grey
 		};
 		
@@ -191,21 +192,46 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 				datasets: [{ name: __("Amount"), values: charts.trend.map(d => d.amount) }]
 			},
 			type: 'line',
-			height: 300,
+			height: 320,
 			colors: ['#2563eb']
 		});
 
 		// 2. Status Pie Chart
-		new frappe.Chart("#status_dist", {
+		$('#status_dist').empty();
+		let chart_id = 'status_pie_svg';
+		$(`<div id="${chart_id}" style="height: 260px;"></div>`).appendTo('#status_dist');
+
+		new frappe.Chart(`#${chart_id}`, {
 			title: __("Status Distribution"),
 			data: {
 				labels: charts.status_dist.map(d => d.label),
 				datasets: [{ values: charts.status_dist.map(d => d.value) }]
 			},
 			type: 'pie',
-			height: 300,
-			colors: pie_colors
+			height: 250,
+			colors: pie_colors,
+			legendOptions: { show: 0 }
 		});
+
+		// Render Dynamic Custom Legend for all statuses
+		let legend_html = '<div class="status-legend-container d-flex flex-wrap justify-content-center gap-4 mt-4" style="border-top: 1px solid #f1f5f9; padding-top: 15px;">';
+		
+		charts.status_dist.forEach(d => {
+			let status = d.label;
+			let color = status_colors_map[status] || '#94a3b8';
+			let display_label = status === 'Under Review' ? __('Pending Review') : __(status);
+			
+			legend_html += `
+				<div class="d-flex flex-column align-items-center" style="min-width: 70px;">
+					<div class="d-flex align-items-center gap-2 mb-1">
+						<div style="width: 10px; height: 10px; border-radius: 50%; background: ${color};"></div>
+						<span style="font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap;">${display_label}</span>
+					</div>
+					<div style="font-size: 18px; font-weight: 800; color: #1e293b;">${d.value}</div>
+				</div>`;
+		});
+		legend_html += '</div>';
+		$('#status_dist').append(legend_html);
 
 		// 3. Reasons Bar Chart
 		new frappe.Chart("#reasons_dist", {
@@ -233,9 +259,18 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 	}
 
 	function render_table(refunds) {
-		let html = `<table class="table refund-table mt-2" style="font-size: 13px;">
+		let html = `<div class="d-flex gap-2 mb-3 align-items-center" id="bulk_actions_container" style="display: none !important;">
+			<span class="text-muted small" id="selected_count">0 selected</span>
+			<button class="btn btn-sm btn-primary" onclick="process_selected_refunds()" style="font-weight: 700; border-radius: 6px;">
+				<span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px; vertical-align: middle;">auto_mode</span>
+				Bulk Process Refunds
+			</button>
+		</div>`;
+		
+		html += `<table class="table refund-table mt-2" style="font-size: 13px;">
 			<thead class="custom-table-header">
 				<tr>
+					<th style="width: 40px;"><input type="checkbox" id="select_all_refunds" onclick="toggle_all_refunds(this)"></th>
 					<th>${__('Refund ID')}</th>
 					<th>${__('Applicant')}</th>
 					<th>${__('Program')}</th>
@@ -245,12 +280,14 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 					<th>${__('Request Date')}</th>
 				</tr>
 			</thead>
-			<tbody>`;
+			<tbody id="refund_table_body">`;
 
 		refunds.forEach(r => {
 			let status_color = get_status_color(r.status);
-			html += `<tr onclick="frappe.set_route('Form', 'Refund Request', '${r.name}')">
-				<td><a class="clickable-id">${r.name}</a></td>
+			let checkbox_disabled = r.status !== 'Approved' ? 'disabled' : '';
+			html += `<tr data-name="${r.name}" onclick="handle_row_click(event, '${r.name}')">
+				<td><input type="checkbox" class="refund-checkbox" value="${r.name}" ${checkbox_disabled} onclick="event.stopPropagation(); update_bulk_actions();"></td>
+				<td><a class="clickable-id" onclick="event.stopPropagation(); frappe.set_route('Form', 'Refund Request', '${r.name}')">${r.name}</a></td>
 				<td>${r.applicant}</td>
 				<td>${r.program}</td>
 				<td class="font-weight-bold">${format_currency(r.amount_paid)}</td>
@@ -261,11 +298,101 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		});
 
 		if (refunds.length === 0) {
-			html += `<tr><td colspan="7" class="text-center text-muted p-4">${__('No recent refund requests found')}</td></tr>`;
+			html += `<tr><td colspan="8" class="text-center text-muted p-4">${__('No recent refund requests found')}</td></tr>`;
 		}
 
 		html += `</tbody></table>`;
 		$('#refund_table_container').html(html);
+	}
+
+	window.toggle_all_refunds = function(source) {
+		$('.refund-checkbox:not(:disabled)').prop('checked', source.checked);
+		update_bulk_actions();
+	};
+
+	window.handle_row_click = function(event, name) {
+		// If clicking a link or checkbox, let it be
+		if (event.target.tagName === 'A' || event.target.tagName === 'INPUT') return;
+		
+		frappe.set_route('Form', 'Refund Request', name);
+	};
+
+	window.update_bulk_actions = function() {
+		let selected = $('.refund-checkbox:checked').length;
+		if (selected > 0) {
+			$('#bulk_actions_container').attr('style', 'display: flex !important;');
+			$('#selected_count').text(`${selected} selected`);
+		} else {
+			$('#bulk_actions_container').attr('style', 'display: none !important;');
+			$('#select_all_refunds').prop('checked', false);
+		}
+	};
+
+	window.process_selected_refunds = function() {
+		let selected_refunds = [];
+		$('.refund-checkbox:checked').each(function() {
+			selected_refunds.push($(this).val());
+		});
+
+		if (selected_refunds.length === 0) return;
+
+		frappe.confirm(
+			__('Are you sure you want to process {0} refunds via Razorpay?', [selected_refunds.length]),
+			function() {
+				frappe.show_alert({ message: __('Initiating bulk refund process...'), indicator: 'blue' });
+				
+				frappe.call({
+					method: 'slcm.admission_cancel_api.process_bulk_refunds',
+					args: { names: selected_refunds },
+					callback: function(r) {
+						if (r.message) {
+							show_bulk_results(r.message);
+							refresh_dashboard();
+						}
+					}
+				});
+			}
+		);
+	};
+
+	function show_bulk_results(results) {
+		let success = results.filter(res => res.status === 'Success').length;
+		let failed = results.filter(res => res.status === 'Error').length;
+		
+		let detail_html = `<div style="max-height: 300px; overflow-y: auto; margin-top: 15px;">
+			<table class="table table-bordered table-sm" style="font-size: 12px;">
+				<thead><tr><th>ID</th><th>Status</th><th>Result</th></tr></thead>
+				<tbody>`;
+		
+		results.forEach(res => {
+			let icon = res.status === 'Success' ? '🟢' : '🔴';
+			detail_html += `<tr>
+				<td><strong>${res.name}</strong></td>
+				<td>${icon} ${res.status}</td>
+				<td class="text-muted"><small>${res.message || ''}</small></td>
+			</tr>`;
+		});
+		
+		detail_html += `</tbody></table></div>`;
+
+		frappe.msgprint({
+			title: __('Bulk Refund Summary'),
+			message: `
+				<div class="text-center mb-3">
+					<div class="d-inline-block p-3 rounded" style="background: #f0fdf4; margin-right: 15px;">
+						<div style="font-size: 24px; font-weight: 800; color: #16a34a;">${success}</div>
+						<div style="font-size: 11px; font-weight: 700; color: #15803d; text-transform: uppercase;">Success</div>
+					</div>
+					<div class="d-inline-block p-3 rounded" style="background: #fef2f2;">
+						<div style="font-size: 24px; font-weight: 800; color: #dc2626;">${failed}</div>
+						<div style="font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase;">Failed</div>
+					</div>
+				</div>
+				${detail_html}
+			`,
+			indicator: failed > 0 ? 'orange' : 'green',
+			wide: true
+		});
 	}
 
 	function format_currency(v) {

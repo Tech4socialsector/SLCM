@@ -186,6 +186,29 @@ def process_refund(name):
 		return {"status": "Error", "message": str(e)}
 
 @frappe.whitelist()
+def process_bulk_refunds(names):
+	if isinstance(names, str):
+		names = json.loads(names)
+	
+	results = []
+	for name in names:
+		try:
+			res = process_refund(name)
+			results.append({
+				"name": name,
+				"status": res.get("status"),
+				"message": res.get("message")
+			})
+		except Exception as e:
+			results.append({
+				"name": name,
+				"status": "Error",
+				"message": str(e)
+			})
+	
+	return results
+
+@frappe.whitelist()
 def update_razorpay_refund_status(name):
 	"""
 	Fetches the latest status of a refund from Razorpay API 
