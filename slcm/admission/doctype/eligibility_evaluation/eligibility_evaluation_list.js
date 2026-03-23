@@ -30,7 +30,7 @@ frappe.listview_settings["Eligibility Evaluation"] = {
                             label: __("Program Level"),
                             fieldname: "program_level",
                             fieldtype: "Select",
-                            options: "UG\nPG\nResearch Course",
+                            options: "Undergraduate\nPostgraduate\nResearch Course",
                             reqd: 1,
                         },
                     ],

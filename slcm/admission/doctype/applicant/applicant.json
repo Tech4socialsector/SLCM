@@ -949,7 +949,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Program Level",
-   "options": "\nUG\nPG\nResearch Course"
+   "options": "\nUndergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "admission_year",
@@ -1113,7 +1113,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-21 11:42:22.620186",
+ "modified": "2026-03-23 10:25:56.729579",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

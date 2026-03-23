@@ -125,7 +125,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Program Level",
-   "options": "UG\nPG\nResearch Course",
+   "options": "Undergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
   },
   {
@@ -504,7 +504,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-21 15:31:55.215546",
+ "modified": "2026-03-23 10:36:59.037654",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
