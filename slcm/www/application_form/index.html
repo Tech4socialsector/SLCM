@@ -3642,7 +3642,7 @@
     };
 
     // Program from URL (e.g. /admission Apply Now) — pre-fill and lock
-    const PREFILL_PROGRAM = {{ (prefill_program or '') | tojson }};
+    let PREFILL_PROGRAM = {{ (prefill_program or '') | tojson }};
     const PROGRAM_READONLY = {{ 'true' if program_readonly else 'false' }};
 
     // Application already submitted for this cycle — show read-only, block save/submit
@@ -6601,100 +6601,107 @@
     window.handleToastProgramSwitch = function(eligibleProgs) {
         if (!eligibleProgs || !eligibleProgs.length) return;
         
-        let optionsHtml = eligibleProgs.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+        // 1. Immediately Clear UI clutter — professional clean slate
+        const eligModal = document.getElementById('eligibilityModalOverlay');
+        if (eligModal) eligModal.remove();
+        const toastContainer = document.getElementById('toastContainer');
+        if (toastContainer) toastContainer.innerHTML = '';
+        const validationBanner = document.getElementById('formValidationBanner');
+        if (validationBanner) validationBanner.style.display = 'none';
+
+        // 2. Build the Premium Selection Modal 
+        let optionsHtml = eligibleProgs.map(p => `
+            <div class="switch-opt" data-value="${escapeHtml(p)}" style="padding:14px 18px;border:1px solid var(--slate-200);border-radius:12px;cursor:pointer;margin-bottom:10px;transition:all 0.2s;display:flex;align-items:center;gap:12px;background:#fff;" onclick="selectSwitchOpt(this)">
+                <div class="radio-dot" style="width:18px;height:18px;border:2px solid var(--slate-300);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                    <div style="width:8px;height:8px;background:var(--primary);border-radius:50%;display:none;"></div>
+                </div>
+                <span style="font-weight:600;color:var(--slate-700);">${escapeHtml(p)}</span>
+            </div>
+        `).join('');
         
         const overlay = document.createElement('div');
         overlay.id = 'switchProgramOverlay';
-        // Set z-index to 200000 to be ABOVE the confirm-overlay-premium (100000)
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;';
         
         overlay.innerHTML = `
-            <div style="background:#fff;border-radius:20px;width:100%;max-width:440px;padding:24px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalSlideUp 0.3s ease-out;">
-                <h3 style="margin:0 0 12px;font-size:1.25rem;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:10px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                    Switch Programme
-                </h3>
-                <p style="margin:0 0 20px;font-size:0.95rem;color:var(--slate-600);line-height:1.5;">Select an eligible programme to instantly update your choice. All your entered data will be preserved.</p>
+            <div style="background:#fff;border-radius:24px;width:100%;max-width:440px;padding:32px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);animation:modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+                <div style="width:56px;height:56px;background:#f0fdf4;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:#15803d;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                </div>
+                <h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:800;color:var(--navy);">Switch Programme</h3>
+                <p style="margin:0 0 24px;font-size:0.95rem;color:var(--slate-500);line-height:1.6;">Please select your new eligible programme. Your current data will be automatically successfully synced.</p>
                 
-                <div style="margin-bottom:24px;">
-                    <label style="display:block;font-size:0.75rem;font-weight:800;color:var(--slate-400);text-transform:uppercase;margin-bottom:8px;">Available Eligible Options</label>
-                    <select id="toastSwitchProgramSelect" class="fc" style="width:100%;height:48px;font-weight:600;">
-                        ${optionsHtml}
-                    </select>
+                <div id="switchOptsContainer" style="margin-bottom:28px;max-height:280px;overflow-y:auto;padding-right:4px;">
+                    ${optionsHtml}
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <button type="button" onclick="document.getElementById('switchProgramOverlay').remove()" style="height:48px;border-radius:12px;border:2px solid var(--slate-200);background:#fff;font-weight:700;color:var(--slate-600);cursor:pointer;">Cancel</button>
-                    <button type="button" id="confirmSwitchBtn" style="height:48px;border-radius:12px;border:none;background:var(--navy);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(15,27,76,0.2);">Confirm Switch</button>
+                <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:12px;">
+                    <button type="button" onclick="document.getElementById('switchProgramOverlay').remove()" style="height:52px;border-radius:14px;border:none;background:var(--slate-100);font-weight:700;color:var(--slate-600);cursor:pointer;transition:all 0.2s;">Cancel</button>
+                    <button type="button" id="confirmSwitchBtn" style="height:52px;border-radius:14px;border:none;background:var(--navy);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:all 0.2s;">Update Programme</button>
                 </div>
             </div>
+            <style>
+                .switch-opt:hover { border-color: var(--primary); background: #f8fafc; }
+                .switch-opt.selected { border-color: var(--primary); background: #eff6ff; box-shadow: 0 0 0 1px var(--primary); }
+                .switch-opt.selected .radio-dot { border-color: var(--primary); }
+                .switch-opt.selected .radio-dot div { display: block; }
+                #switchOptsContainer::-webkit-scrollbar { width: 4px; }
+                #switchOptsContainer::-webkit-scrollbar-thumb { background: var(--slate-200); border-radius: 4px; }
+            </style>
         `;
         
+        window.selectSwitchOpt = function(el) {
+            document.querySelectorAll('.switch-opt').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+        };
+
         document.body.appendChild(overlay);
+        const firstOpt = overlay.querySelector('.switch-opt');
+        if (firstOpt) selectSwitchOpt(firstOpt);
         
-        document.getElementById('confirmSwitchBtn').onclick = function() {
-            const newProg = document.getElementById('toastSwitchProgramSelect').value;
-            if (!newProg) return;
+        document.getElementById('confirmSwitchBtn').onclick = async function() {
+            const selectedOpt = document.querySelector('.switch-opt.selected');
+            const newProg = selectedOpt ? selectedOpt.getAttribute('data-value') : null;
+            if (!newProg) { showToast('Please select a programme.', 'error'); return; }
             
-            // Temporary lower z-index of overlay so confirm dialog is visible on top
-            overlay.style.zIndex = '99999';
+            this.disabled = true;
+            this.innerHTML = '<span style="animation:spin 1s linear infinite">⏳</span> Processing…';
 
-            showConfirm('Are you sure you want to switch your programme to ' + newProg + '?', function() {
-                // Restore z-index for safety or cleanup
-                overlay.style.zIndex = '200000';
-
-                const programSelect = document.getElementById('program') || document.getElementsByName('program')[0];
-                if (programSelect) {
-                    programSelect.value = newProg;
-                    
-                    // Update formData object directly
-                    if (typeof formData !== 'undefined') {
-                        formData.program = newProg;
-                    }
-
-                    // Update the "Applying for:" display banner label if it exists
-                    const programBannerName = document.querySelector('.application-program-name');
-                    if (programBannerName) {
-                        programBannerName.textContent = newProg;
-                    }
-
-                    // For Select2 integration
-                    if (window.jQuery && jQuery.fn.select2 && jQuery(programSelect).data('select2')) {
-                        jQuery(programSelect).val(newProg).trigger('change');
-                    } else {
-                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                    
-                    // Clear toast, modal and overlay
-                    const toastContainer = document.getElementById('toastContainer');
-                    if (toastContainer) toastContainer.innerHTML = '';
-                    
-                    const eligModal = document.getElementById('eligibilityModalOverlay');
-                    if (eligModal) eligModal.remove();
-
-                    overlay.remove();
-                    
-                    showToast('Programme switched to ' + newProg + ' successfully.', 'success');
-                    
-                    // Trigger fresh eligibility check
-                    if (typeof runEligibilityCheck === 'function') {
-                        runEligibilityCheck();
-                    }
-                } else {
-                    overlay.style.zIndex = '200000';
-                    showToast('Could not find program field to update.', 'error');
+            const programSelect = document.getElementById('program') || document.getElementsByName('program')[0];
+            if (programSelect) {
+                let option = Array.from(programSelect.options).find(o => o.value === newProg);
+                if (!option) {
+                    option = document.createElement('option'); option.value = newProg;
+                    option.textContent = newProg; programSelect.appendChild(option);
                 }
-            });
-            
-            // If user cancels the confirm dialog, we need to restore the overlay z-index
-            // We can do this by observing the confirm overlay close
-            const confirmCancel = document.getElementById('confirm-cancel');
-            if (confirmCancel) {
-                const oldCancel = confirmCancel.onclick;
-                confirmCancel.onclick = function() {
-                    if (oldCancel) oldCancel();
-                    overlay.style.zIndex = '200000';
-                };
+                programSelect.value = newProg;
+                
+                if (typeof formData !== 'undefined') formData.program = newProg;
+                if (typeof PREFILL_PROGRAM !== 'undefined') PREFILL_PROGRAM = newProg;
+                const programHidden = document.getElementById('program_hidden');
+                if (programHidden) programHidden.value = newProg;
+
+                const programBannerName = document.querySelector('.application-program-name');
+                if (programBannerName) {
+                    programBannerName.textContent = newProg;
+                    programBannerName.style.animation = 'pulse-green 1s ease-out';
+                }
+
+                if (window.jQuery && jQuery.fn.select2 && jQuery(programSelect).data('select2')) {
+                    jQuery(programSelect).val(newProg).trigger('change');
+                } else {
+                    programSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                
+                overlay.remove();
+                showToast('Successfully updated to ' + newProg + '.', 'success');
+                
+                if (typeof saveDraft === 'function') await saveDraft(); 
+                if (typeof runEligibilityCheck === 'function') runEligibilityCheck();
+            } else {
+                this.disabled = false;
+                this.textContent = 'Update Programme';
+                showToast('Could not find program field to update.', 'error');
             }
         };
     };
