@@ -137,22 +137,22 @@
     }
 
     .status-stamp {
-        border: 5px solid #dc2626;
+        border: 4px solid #dc2626;
         color: #dc2626;
-        display: inline-block;
-        padding: 10px 30px;
+        display: block;
+        padding: 12px 40px;
         border-radius: 12px;
         font-weight: 900;
-        transform: rotate(-12deg);
-        opacity: 0.4; /* Increased visibility from 0.15 */
-        font-size: 42px;
-        position: absolute;
-        top: 180px;
-        right: 60px;
+        transform: rotate(-3deg);
+        opacity: 0.3;
+        font-size: 36px;
+        text-align: center;
+        margin: 40px auto;
+        width: fit-content;
         pointer-events: none;
-        letter-spacing: 4px;
+        letter-spacing: 3px;
         background: transparent;
-        z-index: 100;
+        text-transform: none; /* Already removed caps in previous turn, keep it that way */
     }
 
     .footer-note {
@@ -167,10 +167,6 @@
 </style>
 
 <div class="receipt-wrapper">
-    {% if doc.status == 'Processed' %}
-        <div class="status-stamp">Refunded</div>
-    {% endif %}
-
     <!-- Header -->
     <div class="receipt-header">
         <div class="company-logo">
@@ -190,7 +186,7 @@
             <div class="info-value">
                 {% set applicant_name = frappe.db.get_value("Applicant", doc.applicant, "candidate_name") %}
                 {% set program = frappe.db.get_value("Admission Cancellation", doc.admission_cancellation, "program") if doc.admission_cancellation else "" %}
-                <strong>{{ applicant_name or doc.applicant }}</strong><br>
+                Applicant Name: <strong>{{ applicant_name or doc.applicant }}</strong><br>
                 Applicant No: {{ doc.applicant }}<br>
                 Program: {{ program or "" }}
             </div>
@@ -202,8 +198,8 @@
         <div class="info-block" style="text-align: right;">
             <span class="info-label">Refund Journey</span>
             <div class="info-value">
-                <strong>Withdrawal Request Date:</strong> {{ frappe.utils.formatdate(doc.request_date) }}<br>
-                <strong>Refund Processed Date:</strong> {{ frappe.utils.formatdate(doc.refund_date) if doc.refund_date else "Pending" }}<br>
+                <strong>Withdrawal Request Date:</strong> {{ frappe.format(doc.request_date, "Datetime") }}<br>
+                <strong>Refund Processed Date:</strong> {{ frappe.format(doc.refund_date, "Datetime") if doc.refund_date else "Pending" }}<br>
                 <strong>Transaction Reference:</strong> <span style="font-family: monospace; font-size: 13px;">{{ doc.razorpay_refund_id or "N/A" }}</span>
             </div>
             
@@ -274,6 +270,10 @@
             </div>
         </div>
     </div>
+
+    {% if doc.status == 'Processed' %}
+        <div class="status-stamp">Refunded</div>
+    {% endif %}
 
     <!-- Footer -->
     <div class="footer-note">

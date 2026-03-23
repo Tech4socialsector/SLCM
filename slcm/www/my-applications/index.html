@@ -2069,7 +2069,7 @@ or _app.current_stage)) or _status %}
                 </div>
                 <div style="text-align: right;">
                   <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
-                  <div style="font-size: 12px; font-weight: 600; color: #475569;">{{ frappe.utils.format_date(cancellation_details.requested_on, "d MMM yyyy") }}</div>
+                  <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.format(cancellation_details.requested_on, "Datetime") }}</div>
                 </div>
               </div>
 
@@ -2082,7 +2082,7 @@ or _app.current_stage)) or _status %}
                 {% if cancellation_details.refund_date and r_status in ['Processed', 'Completed'] %}
                 <div style="text-align: right;">
                   <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refunded On</div>
-                  <div style="font-size: 12px; font-weight: 700; color: #16a34a;">{{ frappe.utils.format_date(cancellation_details.refund_date, "d MMM yyyy") }}</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #16a34a;">{{ frappe.format(cancellation_details.refund_date, "Datetime") }}</div>
                 </div>
                 {% endif %}
               </div>
