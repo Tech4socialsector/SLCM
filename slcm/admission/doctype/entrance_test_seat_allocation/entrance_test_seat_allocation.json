@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:applicant",
- "creation": "2026-03-10 12:50:27.489396",
+ "creation": "2026-03-21 09:36:40.906106",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -250,7 +250,7 @@
   {
    "fieldname": "allocation_date",
    "fieldtype": "Datetime",
-   "label": "Allocation Date"
+   "label": "Entrance Test Date"
   },
   {
    "fieldname": "allocated_by",
@@ -311,12 +311,13 @@
   {
    "fieldname": "attendance_marked_on",
    "fieldtype": "Datetime",
-   "label": "Attendance Marked On"
+   "label": "Attendance Date"
   },
   {
    "fieldname": "result_status",
    "fieldtype": "Select",
-   "label": "Result Status",
+   "in_standard_filter": 1,
+   "label": "Status",
    "options": "\nPass\nFail\nWithheld\nDisqualified"
   },
   {
@@ -431,7 +432,7 @@
   {
    "fieldname": "re_allocation_date",
    "fieldtype": "Datetime",
-   "label": "Allocation Date"
+   "label": "Entrance Test Date"
   },
   {
    "fieldname": "re_allocated_by",
@@ -472,13 +473,13 @@
   {
    "fieldname": "score_obtained",
    "fieldtype": "Int",
-   "label": "Score Obtained",
+   "label": "Score",
    "non_negative": 1
   },
   {
    "fieldname": "entrance_test_rank",
    "fieldtype": "Int",
-   "label": "Entrance Test Rank",
+   "label": "Rank",
    "non_negative": 1
   },
   {
@@ -503,7 +504,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 15:14:02.752088",
+ "modified": "2026-03-21 15:31:55.215546",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

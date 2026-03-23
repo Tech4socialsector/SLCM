@@ -628,7 +628,7 @@ def get_context(context):
                     "interview_address": i_doc.re_interview_address if is_re else i_doc.interview_address,
                     "attendance_confirmation": i_doc.re_interview_attendance_confirmation if is_re else i_doc.interview_attendance_confirmation
                 }
-                context.interview_attendance_options = ["Will Attend", "Will Not Attend", "Need Reschedule"]
+                context.interview_attendance_options = ["Confirm Attendance", "Decline Interview Invitation", "Request Rescheduling"]
         except Exception: pass
 
         context.show_detail = True

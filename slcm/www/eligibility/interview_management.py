@@ -115,7 +115,7 @@ def get_context(context):
     context.feedback_submitted = bool(doc.feedback)
 
     # Attendance options
-    context.attendance_options = ["Will Attend", "Will Not Attend", "Need Reschedule"]
+    context.attendance_options = ["Confirm Attendance", "Decline Interview Invitation", "Request Rescheduling"]
 
     return context
 
@@ -124,9 +124,9 @@ def get_context(context):
 def save_attendance_confirmation(allocation_name, confirmation, is_rescheduled=False):
     """
     Saves the applicant's attendance confirmation for the interview.
-    Allowed options: Will Attend, Will Not Attend, Need Reschedule
+    Allowed options: Confirm Attendance, Decline Interview Invitation, Request Rescheduling
     """
-    allowed = ["Will Attend", "Will Not Attend", "Need Reschedule"]
+    allowed = ["Confirm Attendance", "Decline Interview Invitation", "Request Rescheduling"]
     if confirmation not in allowed:
         frappe.throw(_("Invalid confirmation option."))
 

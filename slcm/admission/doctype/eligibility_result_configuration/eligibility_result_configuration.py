@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import getdate, now
+from frappe.utils import getdate, now, get_url
 
 
 class EligibilityResultConfiguration(Document):
@@ -83,7 +83,6 @@ class EligibilityResultConfiguration(Document):
             "program_level": self.program_level
         }, as_dict=True)
 
-        # ─── Source 3: ET Pass + Interview Exempted ───────────────────────────
         et_pass_interview_exempt = frappe.db.sql("""
             SELECT
                 etsa.applicant AS applicant_id,
@@ -111,13 +110,6 @@ class EligibilityResultConfiguration(Document):
             "program_level": self.program_level
         }, as_dict=True)
 
-        # Previously we gathered academic marks (HSC, UG/PG CGPA) from
-        # the Applicant document and its child tables.  The current
-        # Eligibility Result doctype no longer contains any of those
-        # fields, so there's no need to fetch them; attempting to read
-        # non‑existent columns was causing SQL errors.  All scoring
-        # information is now taken directly from the source records.
-
         count = 0
         source_counts = {
             "Interview Pass": 0,
@@ -126,12 +118,6 @@ class EligibilityResultConfiguration(Document):
         }
 
         def get_applicant_education(applicant_id, program_level):
-            """Fetch education-related fields from the Applicant doc.
-            Rules:
-            - UG: only return `hsc_group` and `hsc_percentage`.
-            - PG / Research Course: return `hsc_group`, `hsc_percentage`
-              and copy `pg_degree_details` rows (if any).
-            """
             edu = {
                 "hsc_group": None,
                 "hsc_percentage": None,
@@ -139,7 +125,6 @@ class EligibilityResultConfiguration(Document):
                 "pg_degree_details": [],
                 "categories": ""
             }
-
             try:
                 app = frappe.get_doc("Applicant", applicant_id)
             except Exception:
@@ -147,13 +132,9 @@ class EligibilityResultConfiguration(Document):
 
             edu["hsc_group"] = getattr(app, "hsc_group", None)
             edu["hsc_percentage"] = getattr(app, "hsc_percentage", None)
-
-            # Collect raw category rows from the Applicant's categories child table
-            cats = [row.category for row in getattr(app, "categories", []) if row.category]
-            edu["categories"] = cats  # kept as a list for child-table population
+            edu["categories"] = [row.category for row in getattr(app, "categories", []) if row.category]
 
             if (program_level or "").strip() in ("PG", "Research Course"):
-                # copy UG degree rows if present (PG applicants need their UG transcript)
                 for row in getattr(app, "ug_degree_details", []) or []:
                     edu["ug_degree_details"].append({
                         "ug_program": getattr(row, "ug_program", None),
@@ -164,8 +145,6 @@ class EligibilityResultConfiguration(Document):
                         "degree_certificate": getattr(row, "degree_certificate", None),
                         "marksheets": getattr(row, "marksheets", None)
                     })
-
-                # also copy any PG degree details they may have entered (rare)
                 for row in getattr(app, "pg_degree_details", []) or []:
                     edu["pg_degree_details"].append({
                         "pg_program": getattr(row, "pg_program", None),
@@ -176,29 +155,24 @@ class EligibilityResultConfiguration(Document):
                         "pg_degree_certificatebonafide_certificate_to_be_uploaded": getattr(row, "pg_degree_certificatebonafide_certificate_to_be_uploaded", None),
                         "transcriptsmarksheets_to_be_uploaded": getattr(row, "transcriptsmarksheets_to_be_uploaded", None)
                     })
-
             return edu
+
         def upsert_result(data, source_type):
             nonlocal count
-            source_counts[source_type] += 1
             existing = frappe.db.get_value("Eligibility Result", {"applicant_id": data.applicant_id}, "name")
             if existing:
-                res = frappe.get_doc("Eligibility Result", existing)
-            else:
-                res = frappe.new_doc("Eligibility Result")
-                res.applicant_id = data.applicant_id
+                # Do not update existing results as per user request
+                return
 
-            # Populate only the fields that actually exist on the
-            # Eligibility Result doctype.  Marks and percentages were
-            # removed from the schema earlier, so we no longer store them.
+            source_counts[source_type] += 1
+
+            res = frappe.new_doc("Eligibility Result")
+            res.applicant_id = data.applicant_id
             res.candidate_name = data.candidate_name
             res.email = data.email
             res.gender = data.gender
 
-            # Fetch and populate education details from Applicant
             edu = get_applicant_education(data.applicant_id, data.program_level)
-
-            # Populate the `category` child table from Applicant's categories
             res.set("category", [])
             for cat_name in (edu.get("categories") or []):
                 res.append("category", {"category": cat_name})
@@ -208,7 +182,6 @@ class EligibilityResultConfiguration(Document):
             res.admission_cycle = data.admission_cycle
             res.campus = data.campus
 
-            # Populate scores. For exempted stages, assign 100 as per user request.
             if source_type == "Exempted":
                 res.entrance_test_score = 100
                 res.interview_score = 100
@@ -219,18 +192,9 @@ class EligibilityResultConfiguration(Document):
                 res.entrance_test_score = data.get("entrance_test_score") or 0
                 res.interview_score = data.get("interview_score") or 0
 
-            # res.hsc_group already set via 'edu' above
-            # res.hsc_percentage already set via 'edu' above
             res.hsc_group = edu.get("hsc_group")
             res.hsc_percentage = edu.get("hsc_percentage")
 
-            # clear existing child tables first
-            if getattr(res, "ug_degree_details", None):
-                res.set("ug_degree_details", [])
-            if getattr(res, "pg_degree_details", None):
-                res.set("pg_degree_details", [])
-
-            # populate both UG and PG rows for PG/Research applicants
             if (data.program_level or "").strip() in ("PG", "Research Course"):
                 for row in edu.get("ug_degree_details", []) or []:
                     res.append("ug_degree_details", row)
@@ -240,19 +204,15 @@ class EligibilityResultConfiguration(Document):
             res.source_type = source_type
             res.result_status = "Qualified"
             res.configuration_reference = self.name
-
             res.flags.ignore_mandatory = True
             res.save(ignore_permissions=True)
             
-            # Send eligibility result notification email
             if res.email:
                 try:
                     _send_eligibility_result_email(res)
                 except Exception:
                     frappe.log_error(title=f"Eligibility Result Email Failed: {res.name}")
 
-            # MASTER PIECE: Update Applicant Status to "Interview Completed"
-            # Using direct SQL for maximum reliability and bypassing potentially stale caches
             frappe.db.sql("""
                 UPDATE `tabApplicant` 
                 SET application_status = 'Interview Completed', modified = %(now)s 
@@ -263,24 +223,16 @@ class EligibilityResultConfiguration(Document):
                 "applicant_application_status_updated",
                 {"docname": data.applicant_id, "application_status": "Interview Completed"},
             )
-
             count += 1
 
-        # Track applicant IDs to avoid duplicates via a set
         finalized_applicant_ids = set()
-
-        # Priority 1: Interview Passers
         for app in passed_interviewees:
             upsert_result(app, "Interview Pass")
             finalized_applicant_ids.add(app.applicant_id)
-
-        # Priority 2: ET Pass + Interview Exempt (Source 3)
         for app in et_pass_interview_exempt:
             if app.applicant_id not in finalized_applicant_ids:
                 upsert_result(app, "ET Pass (Interview Exempt)")
                 finalized_applicant_ids.add(app.applicant_id)
-
-        # Priority 3: Dual Exempted Applicants (Source 2)
         for app in exempted_applicants:
             if app.applicant_id not in finalized_applicant_ids:
                 upsert_result(app, "Exempted")
@@ -293,8 +245,6 @@ class EligibilityResultConfiguration(Document):
                 "generated_on": now(),
                 "generated_by": frappe.session.user
             })
-            
-            # Return detailed counts for the UI popup
             return {
                 "total": count,
                 "interview_pass": source_counts["Interview Pass"],
@@ -311,7 +261,6 @@ class EligibilityResultConfiguration(Document):
                     <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
                         No applicants matching the selected criteria were found for result generation.
                     </p>
-                    
                     <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
                         <h4 style="margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #991b1b;">Diagnostic Summary</h4>
                         <table style="width: 100%; font-size: 12px; color: #991b1b;">
@@ -320,21 +269,9 @@ class EligibilityResultConfiguration(Document):
                             <tr><td style="padding: 4px 0;">Dual Exempted</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{len(exempted_applicants)}</td></tr>
                         </table>
                     </div>
-                    
                     <div style="font-size: 13px; color: #475569;">
                         <strong>Filters Applied:</strong><br>
                         <span style="font-size: 12px; color: #64748b;">Year: {self.academic_year} | Campus: {self.campus} | Cycle: {self.admission_cycle} | Level: {self.program_level}</span>
-                    </div>
-                    
-                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-                    
-                    <div style="font-size: 12px; color: #64748b;">
-                        <strong>Potential solutions:</strong>
-                        <ul style="margin: 8px 0; padding-left: 20px;">
-                            <li>Verify if applicants have passed their respective assessment stages.</li>
-                            <li>Check exemption flags in <i>Eligibility Evaluation</i> for relevant applicants.</li>
-                            <li>Ensure applicants are not in 'Rejected' status.</li>
-                        </ul>
                     </div>
                 </div>
             """
@@ -344,56 +281,49 @@ class EligibilityResultConfiguration(Document):
 
 
 def _send_eligibility_result_email(res):
-    """Send eligibility result notification to the applicant."""
-    from frappe.utils import get_url
-    url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
+    """Send a premium masterpiece eligibility result notification to the applicant."""
+    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+    
+    performance_html = f"""
+    <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+        <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Assessment Summary:</h4>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+            <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Entrance Score:</td><td style="padding: 4px 0; font-weight: 700;">{res.entrance_test_score or 0} / 100</td></tr>
+            <tr><td style="padding: 4px 0; color: #586069;">Interview Score:</td><td style="padding: 4px 0; font-weight: 700;">{res.interview_score or 0} / 100</td></tr>
+            <tr><td style="padding: 4px 0; color: #586069;">Result Status:</td><td style="padding: 4px 0; font-weight: 700; color: #28a745; font-size: 16px;">{res.result_status or 'Qualified'}</td></tr>
+        </table>
+    </div>
+    """
 
+    subject = f"Eligibility Result Notification – {res.candidate_name or res.applicant_id}"
+    
     msg = f"""
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); color: #1e293b;">
-        <div style="background: #7b1c1c; padding: 30px 20px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">Eligibility Result</h1>
-            <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 14px;">Office of Admissions</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
+        <p style="margin-top: 0;">Dear {res.candidate_name or res.applicant_id},</p>
+        <p>Greetings from the Admissions Office.</p>
+        <p>We are pleased to inform you that your eligibility assessment for the academic session has been completed. Your result is now available for review.</p>
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Programme Details:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{res.applicant_id}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Programme:</td><td style="padding: 4px 0; font-weight: 700;">{res.program or '—'}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{res.campus or '—'}</td></tr>
+            </table>
         </div>
-        
-        <div style="padding: 30px 25px;">
-            <p style="font-size: 16px; margin-bottom: 20px;">Dear <strong>{res.candidate_name or res.applicant_id}</strong>,</p>
-            <p style="font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
-                Congratulations! We are pleased to inform you that your eligibility assessment for the academic session has been completed. Your result is now available for review.
-            </p>
-            
-            <div style="background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-                <h3 style="margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Assessment Summary</h3>
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <tr><td style="padding: 8px 0; color: #64748b;">Programme:</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">{res.program or '—'}</td></tr>
-                    <tr><td style="padding: 8px 0; color: #64748b;">Academic Year:</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">{res.academic_year or '—'}</td></tr>
-                    <tr><td style="padding: 8px 0; color: #64748b;">Campus:</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">{res.campus or '—'}</td></tr>
-                    <tr><td style="padding: 8px 0; color: #64748b;">Entrance Score:</td><td style="padding: 8px 0; font-weight: 700; text-align: right; color: #1a73e8;">{res.entrance_test_score or 0} / 100</td></tr>
-                    <tr><td style="padding: 8px 0; color: #64748b;">Interview Score:</td><td style="padding: 8px 0; font-weight: 700; text-align: right; color: #1a73e8;">{res.interview_score or 0} / 100</td></tr>
-                    <tr><td style="padding: 12px 0 0 0; color: #64748b; font-weight: 700;">Result Status:</td><td style="padding: 12px 0 0 0; font-weight: 800; text-align: right; color: #16a34a; font-size: 16px;">{res.result_status or 'Qualified'}</td></tr>
-                </table>
-            </div>
-
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{url}" style="display: inline-block; padding: 14px 32px; background: #7b1c1c; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px; box-shadow: 0 4px 10px rgba(123, 28, 28, 0.25);">View Full Result & Portal</a>
-            </div>
-            
-            <p style="font-size: 14px; color: #64748b; font-style: italic; text-align: center; margin-top: 20px;">
-                Please log in to the portal to download your official Mark Sheet and view the next steps in your admission process.
-            </p>
+        {performance_html}
+        <p>You may access your detailed result, including section-wise performance and Mark Sheet, by logging into the admission portal using the link provided below.</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Full Result & Portal</a>
         </div>
-        
-        <div style="background: #f1f5f9; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
-            <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-                Application Ref: {res.applicant_id} &nbsp;|&nbsp; Record: {res.name}<br>
-                This is a system-generated email. Please do not reply.
-            </p>
-        </div>
+        <p>Please note that further stages of the admission process, such as merit selection and counseling, will be communicated to you separately.</p>
+        <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
+        <p>We appreciate your participation and wish you the very best for the upcoming stages.</p>
     </div>
     """
 
     frappe.sendmail(
         recipients=[res.email],
-        subject=f"Eligibility Result  — {res.candidate_name or res.applicant_id}",
+        subject=subject,
         message=msg,
         reference_doctype="Eligibility Result",
         reference_name=res.name

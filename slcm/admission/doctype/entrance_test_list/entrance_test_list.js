@@ -50,17 +50,24 @@ function open_allocation_dialog(frm) {
 function _show_allocation_dialog(frm, applicants, providers) {
     // Build provider options for multiselect checkboxes
     const provider_options_html = providers.map(p => `
-        <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; 
-                       border:1px solid #d1d8dd; border-radius:4px; cursor:pointer;
-                       margin-bottom:6px; background:#fff; transition: background 0.15s;">
-            <input type="checkbox" class="provider-checkbox" 
-                   data-name="${p.name}" 
+        <label style="display:flex; align-items:flex-start; gap:10px; padding:10px 14px;
+                       border:1px solid #d1d8dd; border-radius:6px; cursor:pointer;
+                       margin-bottom:8px; background:#fafbfc; transition: background 0.15s;
+                       hover:background:#f0f9f3;">
+            <input type="checkbox" class="provider-checkbox"
+                   data-name="${p.name}"
                    data-center="${p.center_name || ''}"
-                   style="width:16px; height:16px; cursor:pointer;">
-            <span>
-                <b>${p.center_name || p.name}</b>
-                <span style="color:#6c757d; font-size:11px; margin-left:6px;">(${p.name})</span>
-                ${p.center_address ? `<br><small style="color:#888;">${p.center_address}</small>` : ""}
+                   style="width:16px; height:16px; cursor:pointer; margin-top:3px; flex-shrink:0;">
+            <span style="line-height:1.5;">
+                <span style="display:block; font-weight:700; font-size:13.5px; color:#1a1a1a;">
+                    ${p.center_name || p.name}
+                </span>
+                ${p.center_address
+            ? `<span style="display:block; font-size:11.5px; color:#6c757d; margin-top:2px;">
+                           📍 ${p.center_address}
+                       </span>`
+            : `<span style="display:block; font-size:11px; color:#aaa; margin-top:2px; font-style:italic;">No address provided</span>`
+        }
             </span>
         </label>
     `).join("");
@@ -86,7 +93,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 fieldtype: "HTML",
                 fieldname: "provider_section_label",
                 options: `<div style="font-weight:600; font-size:13px; margin-bottom:8px; color:#333;">
-                            ${__("Select Entrance Test Providers (Preferences)")}
+                            ${__("Select Entrance Test Centers")}
                             <span style="font-weight:400; font-size:11px; color:#888; margin-left:8px;">
                                 — Select one or more centers as preferences for applicants
                             </span>
@@ -116,7 +123,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 reqd: 1
             },
             {
-                label: __("Allocation Date"),
+                label: __("Entrance Test Date"),
                 fieldname: "allocation_date",
                 fieldtype: "Datetime",
                 description: __("Enter the date and time to be recorded as Allocation Date for created records"),
@@ -181,6 +188,17 @@ function _show_allocation_dialog(frm, applicants, providers) {
             const selected_applicants = checked_applicant_els.map(el => $(el).attr("data-name"));
             const allocation_date = d.get_value("allocation_date");
 
+            // Final date validation before call
+            if (!allocation_date) {
+                frappe.msgprint(__("Please select a valid Entrance Test Date."));
+                return;
+            }
+            if (new Date(allocation_date).getTime() <= new Date().getTime()) {
+                // Trigger the toast warning again if they somehow bypassed the change listener
+                d.fields_dict.allocation_date.$input.trigger("change");
+                return;
+            }
+
             frappe.call({
                 method: "allocate_seats",
                 doc: frm.doc,
@@ -194,15 +212,77 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 freeze_message: __("Allocating Seats..."),
                 callback: function (r) {
                     if (!r.exc) {
+                        // Inject keyframe styles once
+                        if (!document.getElementById("etg-toast-style")) {
+                            const style = document.createElement("style");
+                            style.id = "etg-toast-style";
+                            style.innerHTML = `
+                                @keyframes etgSlideDown {
+                                    from { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                                    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+                                }
+                                @keyframes etgSlideUp {
+                                    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+                                    to   { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+
+                        // Remove any existing success toast
+                        const existingToast = document.getElementById("etl-success-toast");
+                        if (existingToast) existingToast.remove();
+
+                        const count = r.message || 0;
+                        const toast = document.createElement("div");
+                        toast.id = "etl-success-toast";
+                        toast.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            left: 50%;
+                            z-index: 999999;
+                            background: #ffffff;
+                            border: 1.5px solid #2da44e;
+                            border-left: 5px solid #2da44e;
+                            border-radius: 10px;
+                            padding: 14px 20px;
+                            min-width: 360px;
+                            max-width: 500px;
+                            box-shadow: 0 8px 30px rgba(45,164,78,0.18), 0 2px 8px rgba(0,0,0,0.10);
+                            display: flex;
+                            align-items: flex-start;
+                            gap: 12px;
+                            font-family: inherit;
+                            animation: etgSlideDown 0.35s cubic-bezier(.4,0,.2,1) forwards;
+                        `;
+                        toast.innerHTML = `
+                            <div style="flex-shrink:0; width:36px; height:36px; background:#eafbee;
+                                        border-radius:50%; display:flex; align-items:center;
+                                        justify-content:center; font-size:18px;">✅</div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700; font-size:14px; color:#1a7f37; margin-bottom:3px;">
+                                    Allocation Successfully Completed.
+                                </div>
+                                <div style="font-size:13px; color:#333;">
+                                    The entrance test allocation process has been completed successfully for ${count} applicants.
+                                </div>
+                            </div>
+                            <span id="etl-success-toast-close"
+                                  style="cursor:pointer; color:#aaa; font-size:18px; line-height:1;
+                                         padding:0 4px; align-self:flex-start; flex-shrink:0;"
+                                  title="Dismiss">✕</span>
+                        `;
+                        document.body.appendChild(toast);
+
+                        const dismissSuccessToast = () => {
+                            toast.style.animation = "etgSlideUp 0.35s cubic-bezier(.4,0,.2,1) forwards";
+                            setTimeout(() => toast.remove(), 350);
+                        };
+                        document.getElementById("etl-success-toast-close").addEventListener("click", dismissSuccessToast);
+                        setTimeout(dismissSuccessToast, 6000);
+
                         d.hide();
                         frm.reload_doc();
-                        frappe.show_alert({
-                            message: __(
-                                "Successfully created seat allocation records for {0} applicants across {1} provider(s).",
-                                [r.message, selected_providers.length]
-                            ),
-                            indicator: "green"
-                        });
                     }
                 }
             });
@@ -257,6 +337,89 @@ function _show_allocation_dialog(frm, applicants, providers) {
         const n = $wrapper.find(".applicant-checkbox:checked").length;
         $wrapper.find("#select-all-chk").prop("checked", total === n && total > 0);
         update_sel_count(d, applicants.length);
+    });
+
+    // ── Past-date validation on Entrance Test Date ──────────────────────────
+    d.fields_dict.allocation_date.$input.on("change blur", function () {
+        const entered = d.get_value("allocation_date");
+        if (!entered) return;
+
+        const enteredMs = new Date(entered).getTime();
+        const nowMs = new Date().getTime();
+
+        if (enteredMs <= nowMs) {
+            // Clear the field
+            d.set_value("allocation_date", "");
+
+            // Inject keyframe styles once (shared with etg toast)
+            if (!document.getElementById("etg-toast-style")) {
+                const style = document.createElement("style");
+                style.id = "etg-toast-style";
+                style.innerHTML = `
+                    @keyframes etgSlideDown {
+                        from { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+                    }
+                    @keyframes etgSlideUp {
+                        from { opacity: 1; transform: translateX(-50%) translateY(0); }
+                        to   { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Remove any existing toast
+            const existingToast = document.getElementById("etl-date-toast");
+            if (existingToast) existingToast.remove();
+
+            // Build warning toast
+            const toast = document.createElement("div");
+            toast.id = "etl-date-toast";
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                z-index: 999999;
+                background: #fff8e1;
+                border: 1.5px solid #f0a500;
+                border-left: 5px solid #f0a500;
+                border-radius: 10px;
+                padding: 14px 20px;
+                min-width: 360px;
+                max-width: 500px;
+                box-shadow: 0 8px 30px rgba(240,165,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                font-family: inherit;
+                animation: etgSlideDown 0.35s cubic-bezier(.4,0,.2,1) forwards;
+            `;
+            toast.innerHTML = `
+                <div style="flex-shrink:0; width:36px; height:36px; background:#fff3cd;
+                            border-radius:50%; display:flex; align-items:center;
+                            justify-content:center; font-size:18px;">⚠️</div>
+                <div style="flex:1;">
+                    <div style="font-weight:700; font-size:14px; color:#856404; margin-bottom:3px;">
+                        Invalid Entrance Test Date
+                    </div>
+                    <div style="font-size:12.5px; color:#555;">
+                        choose the Entrance Test Should not Be past date choose future date
+                    </div>
+                </div>
+                <span id="etl-date-toast-close"
+                      style="cursor:pointer; color:#aaa; font-size:18px; line-height:1;
+                             padding:0 4px; align-self:flex-start; flex-shrink:0;"
+                      title="Dismiss">✕</span>
+            `;
+            document.body.appendChild(toast);
+
+            const dismissDateToast = () => {
+                toast.style.animation = "etgSlideUp 0.35s cubic-bezier(.4,0,.2,1) forwards";
+                setTimeout(() => toast.remove(), 350);
+            };
+            document.getElementById("etl-date-toast-close").addEventListener("click", dismissDateToast);
+            setTimeout(dismissDateToast, 5000);
+        }
     });
 }
 

@@ -1,7 +1,8 @@
 import frappe
 import json
+import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, get_datetime
+from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date
 
 
 class EntranceTestSeatAllocation(Document):
@@ -174,56 +175,76 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
 
 
 def _send_result_notification_email(doc, email):
-    """Send a result/rank notification email to the applicant."""
-    from frappe.utils import get_url
-    url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
-
-    status_color = "#2e7d32" if doc.entrance_test_status == "Attended" else "#c62828"
+    """Send a premium masterpiece result/rank notification email to the applicant."""
+    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
     
-    score_html = ""
-    if doc.entrance_test_status == "Attended":
-        score_html = f"""
-        <div style="background:#f1f8e9; border:1px solid #c5e1a5; padding:15px; border-radius:8px; margin:20px 0;">
-            <p style="margin:5px 0;"><strong>Score Obtained:</strong> {doc.score_obtained or 0} / {doc.total_score or 0}</p>
-            <p style="margin:5px 0;"><strong>Final Rank:</strong> <span style="font-size:18px; color:#2e7d32; font-weight:bold;">{doc.entrance_test_rank or '—'}</span></p>
+    # Determine Status and Accents
+    is_absent = (doc.entrance_test_status == "Absent")
+    accent_color = "#d73a49" if is_absent else "#28a745"
+    status_text = "Absent" if is_absent else (doc.result_status or doc.entrance_test_status or "Processed")
+    
+    # Performance Section HTML
+    if is_absent:
+        performance_html = f"""
+        <div style="background-color: #fff5f5; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #ffe3e3;">
+            <p style="margin: 0; color: #d73a49; font-weight: 600; font-size: 14px;">Notice: Examination Absence</p>
+            <p style="margin: 5px 0 0 0; color: #586069; font-size: 13px;">Our records indicate that you were marked as absent for this examination. As no performance data was recorded, a final score and rank have not been assigned.</p>
         </div>
         """
     else:
-        score_html = f"""
-        <div style="background:#ffebee; border:1px solid #ffcdd2; padding:15px; border-radius:8px; margin:20px 0;">
-            <p style="margin:5px 0; color:#c62828;"><strong>Status:</strong> Absent</p>
-            <p style="margin:5px 0; font-size:12px; color:#666;">You were marked as absent for this test. Since no score was recorded, no rank has been assigned.</p>
+        score_obtained = doc.score_obtained or 0
+        total_score = doc.total_score or 100
+        rank = doc.entrance_test_rank or "—"
+        
+        performance_html = f"""
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Performance Summary:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Score Obtained:</td><td style="padding: 4px 0; font-weight: 700;">{score_obtained}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Maximum Score:</td><td style="padding: 4px 0; font-weight: 700;">{total_score}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Final Rank:</td><td style="padding: 4px 0; font-weight: 700; color: #28a745; font-size: 16px;">{rank}</td></tr>
+            </table>
         </div>
         """
 
+    subject = f"Entrance Test Results – {doc.applicant}"
+    
     msg = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6;">
-        <h2 style="color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; margin-top: 0;">Entrance Test Result</h2>
-        <p>Dear {doc.candidate_name or doc.applicant},</p>
-        <p>The results for your entrance test have been processed. Below are your details:</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
+        <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
         
-        <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Applicant ID:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">{doc.applicant}</td></tr>
-            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Test Name:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">{doc.entrance_test_list}</td></tr>
-            <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Status:</strong></td><td style="padding:8px; border-bottom:1px solid #eee; color:{status_color}; font-weight:bold;">{doc.entrance_test_status}</td></tr>
-        </table>
+        <p>Greetings from the Admissions Office.</p>
+        
+        <p>We would like to inform you that the results of your Entrance Test have been officially processed. Your performance details are provided below for your reference.</p>
+        
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Applicant Details:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{doc.applicant}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Test Name:</td><td style="padding: 4px 0; font-weight: 700;">{doc.entrance_test_name or doc.entrance_test_list}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Status:</td><td style="padding: 4px 0; font-weight: 700; color: {accent_color};">{status_text}</td></tr>
+            </table>
+        </div>
 
-        {score_html}
-
-        <p>You can view your detailed record and breakdown by clicking the button below:</p>
+        {performance_html}
+        
+        <p>You may access your detailed result, including section-wise performance and additional information, by logging into the admission portal using the link provided below.</p>
+        
         <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display:inline-block; padding:12px 24px; background:#1565c0; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold;">View My Result in Portal</a>
+            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Result</a>
         </div>
         
-        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
-            Record Reference: {doc.name}. If the button doesn't work, copy this link: {url}
-        </p>
+        <p>Please note that further stages of the admission process, if applicable, will be communicated to you separately.</p>
+        
+        <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
+        
+        <p>We appreciate your participation and wish you the very best for the next stages of the admission process.</p>
     </div>
     """
 
     frappe.sendmail(
         recipients=[email],
-        subject=f"Entrance Test Result — {doc.candidate_name or doc.applicant}",
+        subject=subject,
         message=msg,
         reference_doctype="Entrance Test Seat Allocation",
         reference_name=doc.name
@@ -299,7 +320,6 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
             try:
                 _send_reschedule_email(doc, email)
             except Exception:
-                import traceback
                 frappe.log_error(
                     message=traceback.format_exc(),
                     title=f"Reschedule Email Failed: {doc.name}"
@@ -317,65 +337,82 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
 
 
 def _send_reschedule_email(doc, email):
-    """Send a reschedule notification email to the applicant."""
-    try:
-        from frappe.utils import get_url
-        url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
-
-        prefs_html = "<ul>"
+    """Send a premium masterpiece reschedule notification email to the applicant."""
+    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+    
+    # Format Centers List
+    centers_html = ""
+    if getattr(doc, 're_assigned_preferences', None):
         for p in doc.re_assigned_preferences:
-            prefs_html += f"<li>{p.preference_order}. {p.center_name or p.provider} ({p.provider})</li>"
-        prefs_html += "</ul>"
+            center_display = p.center_name or p.provider
+            centers_html += f'<div style="margin-bottom:4px; font-weight:600; color:#24292e;">{center_display}</div>'
 
-        reason_section = ""
-        if doc.reschedule_reason:
-            reason_section = f"""
-            <div style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <p style="margin: 0;"><strong>Reason for Reschedule:</strong><br>{doc.reschedule_reason}</p>
-            </div>
-            """
+    # Format Date
+    formatted_date = "To be communicated"
+    if doc.re_allocation_date:
+        try:
+            formatted_date = format_date(doc.re_allocation_date)
+        except:
+            formatted_date = str(doc.re_allocation_date)
 
-        msg = f"""
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
-            <h2 style="color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; margin-top: 0;">Entrance Test Rescheduled</h2>
-            <p>Dear {doc.candidate_name or doc.applicant},</p>
-            <p>You were marked as <strong>Absent</strong> for your previous entrance test. We have rescheduled the entrance test for you.</p>
-            
-            {reason_section}
-
-            <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0 0 10px 0;"><strong>Rescheduled Test Details:</strong></p>
-                <table style="width:100%; border-collapse: collapse; font-size: 14px;">
-                    <tr><td style="padding:5px 0; color:#666;">New Test Name:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_entrance_test_name or doc.re_entrance_test_list or ''}</td></tr>
-                    <tr><td style="padding:5px 0; color:#666;">New Allocation Date:</td><td style="padding:5px 0; font-weight:bold;">{doc.re_allocation_date or 'To be communicated'}</td></tr>
-                    <tr><td style="padding:5px 0; color:#666;">Campus:</td><td style="padding:5px 0; font-weight:bold;">{doc.campus or ''}</td></tr>
-                </table>
-            </div>
-
-            <p>Please choose your preferred center from the options below for the rescheduled test:</p>
-            {prefs_html}
-
-            <p>Please click the button below to view your full details and choose your preferred center in the portal:</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{url}" style="display:inline-block; padding:12px 28px; background:#1565c0; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">Choose Your Center</a>
-            </div>
-            
-            <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
-                Record Reference: {doc.name}<br>
-                If the button doesn't work, copy this link: {url}
-            </p>
+    reason_html = ""
+    if doc.reschedule_reason:
+        reason_html = f"""
+        <div style="background-color: #fffbdd; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #f9eda5;">
+            <p style="margin: 0; color: #735c0f; font-weight: 600; font-size: 14px;">Reason for Rescheduling:</p>
+            <p style="margin: 5px 0 0 0; color: #586069; font-size: 13px;">{doc.reschedule_reason}</p>
         </div>
         """
 
-        frappe.sendmail(
-            recipients=[email],
-            subject=f"Entrance Test Rescheduled — {doc.candidate_name or doc.applicant}",
-            message=msg,
-            reference_doctype="Entrance Test Seat Allocation",
-            reference_name=doc.name
-        )
-    except Exception as e:
-        import traceback
-        frappe.log_error(message=traceback.format_exc(), title="Send Reschedule Email Error")
-        raise  # Re-raise so caller can log it with doc name context
+    subject = "Entrance Test Rescheduled – Action Required"
+    
+    msg = f"""
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
+        <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
+        
+        <p>Greetings from the Admissions Office.</p>
+        
+        <p>We are writing to inform you that your Entrance Test has been successfully rescheduled. You are now required to select your preferred test center for the new schedule.</p>
+        
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Rescheduled Test Details:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{doc.applicant}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Test Name:</td><td style="padding: 4px 0; font-weight: 700;">{doc.re_entrance_test_name or doc.re_entrance_test_list or doc.entrance_test_list}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">New Test Date:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_date}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{doc.campus}</td></tr>
+            </table>
+        </div>
+
+        {reason_html}
+
+        <div style="margin: 20px 0;">
+            <h4 style="margin-top: 0; margin-bottom: 8px; color: #1b1f23; font-size: 15px;">Available Test Centers:</h4>
+            <div style="padding-left: 2px;">
+                {centers_html}
+            </div>
+        </div>
+        
+        <p style="font-size: 12.5px; color: #6a737d; font-style: italic; margin-bottom: 25px;">
+            Kindly note that test center allocation is based on availability and will be offered on a first-come, first-served basis. Once a test center is selected, changes will not be permitted.
+        </p>
+
+        <p>You are requested to log in to the admission portal and complete your test center selection at the earliest.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">Select Test Center</a>
+        </div>
+        
+        <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
+        
+        <p>We wish you the very best for your upcoming entrance test.</p>
+    </div>
+    """
+
+    frappe.sendmail(
+        recipients=[email],
+        subject=subject,
+        message=msg,
+        reference_doctype="Entrance Test Seat Allocation",
+        reference_name=doc.name
+    )
