@@ -3,8 +3,10 @@
 
 import frappe
 import json
+import re
+import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, nowdate
+from frappe.utils import now_datetime, get_url, nowdate, get_datetime
 from frappe.utils.pdf import get_pdf
 
 
@@ -46,7 +48,6 @@ class EntranceTestList(Document):
             )
 
             used = set()
-            import re
 
             pattern = re.compile(re.escape(prefix) + r"(\d{1,})$")
             for r in rows:
@@ -185,7 +186,6 @@ class EntranceTestList(Document):
                 try:
                     _send_allocation_email(allocation, email)
                 except Exception:
-                    import traceback
                     frappe.log_error(
                         message=traceback.format_exc(),
                         title=f"Allocation Email Failed: {allocation.name}"
@@ -207,50 +207,72 @@ class EntranceTestList(Document):
 
 
 def _send_allocation_email(allocation, email):
-    """Send a premium result/allocation email to the applicant."""
-    from frappe.utils import get_url
+    """Send a formal Entrance Test Center Selection email to the applicant."""
     url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+    
+    # Format Date and Time
+    formatted_date = "To be communicated"
+    formatted_time = "To be communicated"
+    if allocation.allocation_date:
+        dt = get_datetime(allocation.allocation_date)
+        formatted_date = dt.strftime("%d-%m-%Y")
+        formatted_time = dt.strftime("%I:%M %p")
 
-    prefs_html = ""
+    # Format Centers List (Center Name alone as requested)
+    centers_html = ""
     if getattr(allocation, 'assigned_preferences', None):
-        prefs_html = '<div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"><strong>Assigned Center Options:</strong><ul style="margin:10px 0; padding-left:20px; color:#555;">'
         for p in allocation.assigned_preferences:
-            prefs_html += f"<li>{getattr(p, 'preference_order', '')}. {p.center_name or p.provider} ({p.provider})</li>"
-        prefs_html += "</ul></div>"
+            center_display = p.center_name or p.provider
+            centers_html += f'<div style="margin-bottom:4px; font-weight:600; color:#24292e;">{center_display}</div>'
 
+    subject = "Entrance Test Center Selection – Action Required"
+    
     msg = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
-        <h2 style="color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; margin-top: 0;">Entrance Test — Seat Allocation</h2>
-        <p>Dear {allocation.candidate_name or allocation.applicant},</p>
-        <p>We are pleased to inform you that your registration for the entrance test has been processed. You can now proceed to <strong>choose your preferred test center</strong>.</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
+        <p style="margin-top: 0;">Dear {allocation.candidate_name or allocation.applicant},</p>
         
-        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0;"><strong>Test Details:</strong></p>
-            <table style="width:100%; border-collapse: collapse; font-size: 14px;">
-                <tr><td style="padding:5px 0; color:#666;">Application No:</td><td style="padding:5px 0; font-weight:bold;">{allocation.applicant}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Entrance Test:</td><td style="padding:5px 0; font-weight:bold;">{allocation.entrance_test_name or allocation.entrance_test_list}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Campus:</td><td style="padding:5px 0; font-weight:bold;">{allocation.campus}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Program:</td><td style="padding:5px 0; font-weight:bold;">{allocation.program}</td></tr>
+        <p>Greetings from the Admissions Office.</p>
+        
+        <p>We are pleased to inform you that your application has been successfully processed for the upcoming Entrance Test. You are now eligible to select your preferred test center.</p>
+        
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Application Details:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Application Number:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.applicant}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Entrance Test:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.entrance_test_name or allocation.entrance_test_list}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.campus}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Entrance Test Date:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_date}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Entrance Test Time:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_time}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Program:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.program}</td></tr>
             </table>
-            {prefs_html}
         </div>
 
-        <p>Please click the button below to log in and select your center from the available options. Seats are allocated on a first-come, first-served basis.</p>
+        <div style="margin: 20px 0;">
+            <h4 style="margin-top: 0; margin-bottom: 8px; color: #1b1f23; font-size: 15px;">Available Test Centers:</h4>
+            <div style="padding-left: 2px;">
+                {centers_html}
+            </div>
+        </div>
+        
+        <p style="font-size: 12.5px; color: #6a737d; font-style: italic; margin-bottom: 25px;">
+            Kindly note that test center allocation is based on availability and will be offered on a first-come, first-served basis. Once a test center is selected, changes will not be permitted.
+        </p>
+
+        <p>You are requested to log in to the admission portal and complete your test center selection at the earliest to ensure availability of your preferred option.</p>
         
         <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display:inline-block; padding:12px 28px; background:#1565c0; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">Choose Your Test Center</a>
+            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">Select Test Center</a>
         </div>
         
-        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
-            Record Reference: {allocation.name}<br>
-            If the button doesn't work, copy this link: {url}
-        </p>
+        <p>If you require any assistance or further clarification, please contact the Admissions Office.</p>
+        
+        <p>We wish you success in your preparation and look forward to your participation in the entrance test.</p>
     </div>
     """
 
     frappe.sendmail(
         recipients=[email],
-        subject=f"Entrance Test Seat Allocation — {allocation.candidate_name or allocation.applicant}",
+        subject=subject,
         message=msg,
         reference_doctype="Entrance Test Seat Allocation",
         reference_name=allocation.name
@@ -465,11 +487,8 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     # Generate PDF using the manual template in the eligibility portal
     pdf_content = None
     try:
-        from frappe.utils.pdf import get_pdf
-        
         if html_content:
             # Clean up the HTML from any JS script tags if present
-            import re
             html_content = re.sub(r'<script\b[^>]*>([\s\S]*?)<\/script>', '', html_content)
             html = html_content
         else:

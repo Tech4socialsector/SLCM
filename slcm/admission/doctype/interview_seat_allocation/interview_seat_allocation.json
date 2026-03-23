@@ -311,19 +311,18 @@
   {
    "fieldname": "attendance_marked_on",
    "fieldtype": "Datetime",
-   "label": "Attendance Marked On"
+   "label": "Attendance Date"
   },
   {
    "fieldname": "interview_score",
    "fieldtype": "Int",
-   "label": "Interview Score"
+   "label": "Score"
   },
   {
    "fieldname": "interview_result_status",
    "fieldtype": "Select",
-   "in_standard_filter": 1,
    "label": "Result Status",
-   "options": "\nPass\nFail"
+   "options": "\nPass\nFail\nWithheld\nPending"
   },
   {
    "default": "0",
@@ -358,13 +357,13 @@
    "fieldname": "interview_attendance_confirmation",
    "fieldtype": "Select",
    "label": "Interview Attendance Confirmation",
-   "options": "\nWill Attend\nWill Not Attend\nNeed Reschedule"
+   "options": "\nConfirm Attendance\nDecline Interview Invitation\nRequest Rescheduling"
   },
   {
    "fieldname": "re_interview_attendance_confirmation",
    "fieldtype": "Select",
    "label": "Interview Attendance Confirmation",
-   "options": "\nWill Attend\nWill Not Attend\nNeed Reschedule"
+   "options": "\nConfirm Attendance\nDecline Interview Invitation\nRequest Rescheduling"
   },
   {
    "fieldname": "feedback",
@@ -376,7 +375,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-20 10:16:23.354517",
+ "modified": "2026-03-21 16:31:19.336825",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",

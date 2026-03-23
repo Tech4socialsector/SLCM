@@ -485,9 +485,18 @@
                     <div class="mt-4 border-top pt-4">
                         {% if current_slot.attendance_confirmation %}
                         <div class="p-4 bg-light rounded-3 border text-center">
-                            <h6 class="text-success fw-bold mb-2">Confirmation Received</h6>
-                            <p class="text-secondary small mb-0">You have confirmed your attendance as: <b>{{
-                                    current_slot.attendance_confirmation }}</b></p>
+                            <h6 class="text-success fw-bold mb-0">
+                                {% set conf = current_slot.attendance_confirmation %}
+                                {% if conf == "Confirm Attendance" %}
+                                    Interview Attendance Accepted
+                                {% elif conf == "Decline Interview Invitation" %}
+                                    Interview Invitation Declined
+                                {% elif conf == "Request Rescheduling" %}
+                                    Reschedule Request Submitted
+                                {% else %}
+                                    {{ conf }}
+                                {% endif %}
+                            </h6>
                         </div>
                         {% else %}
                         <div id="attendance-action-section">
