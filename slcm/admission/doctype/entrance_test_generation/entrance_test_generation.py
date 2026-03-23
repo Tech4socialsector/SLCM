@@ -2,6 +2,7 @@
 # But better to put in custom app → doctype/entrance_test_generation/entrance_test_generation.py
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now_datetime, getdate, now
 
@@ -70,15 +71,35 @@ class EntranceTestGeneration(Document):
                 "admission_cycle": self.admission_cycle
             })
             
-            frappe.throw(
-                f"No eligible applicants found for the selected criteria.<br><br>"
-                f"<b>Year:</b> {self.academic_year}<br>"
-                f"<b>Campus:</b> {self.campus}<br>"
-                f"<b>Cycle:</b> {self.admission_cycle}<br>"
-                f"<b>Level:</b> {self.program_level}<br><br>"
-                f"DIAGNOSTIC: Found {count_total} total applicants for this Cycle/Campus/Year, "
-                "but none match the Program Level or they are all exempt/rejected/already generated."
-            )
+            msg = f"""
+                <div style="padding: 15px; background-color: #fffaf0; border-left: 5px solid #ff8c00; border-radius: 8px;">
+                    <h3 style="margin-top: 0; color: #d35400; font-size: 16px;">
+                        ⚠️ No Eligible Applicants Found
+                    </h3>
+                    <p style="font-size: 14px; color: #333; margin-bottom: 12px;">
+                        We couldn't find any applicants matching your selected criteria who are currently eligible for the Entrance Test list generation.
+                    </p>
+                    <div style="background: white; padding: 10px; border: 1px solid #ffe0b2; border-radius: 6px; margin-bottom: 15px;">
+                        <table style="width: 100%; font-size: 13px; color: #555; border-collapse: collapse;">
+                            <tr><td style="padding: 3px 0; font-weight: 600; width: 35%;">Year:</td><td>{self.academic_year}</td></tr>
+                            <tr><td style="padding: 3px 0; font-weight: 600;">Campus:</td><td>{self.campus}</td></tr>
+                            <tr><td style="padding: 3px 0; font-weight: 600;">Cycle:</td><td>{self.admission_cycle}</td></tr>
+                            <tr><td style="padding: 3px 0; font-weight: 600;">Level:</td><td>{self.program_level}</td></tr>
+                        </table>
+                    </div>
+                    <div style="font-size: 12.5px; line-height: 1.5; color: #666;">
+                        <strong style="color: #444;">Diagnostic Summary:</strong><br>
+                        The system identified <b>{count_total} total applicants</b> for this Campus and Cycle. However, none were selected because they may be:
+                        <ul style="margin-top: 5px; padding-left: 18px;">
+                            <li>Assigned to a different Program Level</li>
+                            <li>Already included in an existing Entrance Test List</li>
+                            <li>Marked as 'Exempt' from the Entrance Test</li>
+                            <li>Rejected or in an ineligible application status</li>
+                        </ul>
+                    </div>
+                </div>
+            """
+            frappe.throw(msg, title=_("Generation Failed"))
 
         test_list = frappe.get_doc({
             "doctype": "Entrance Test List",
