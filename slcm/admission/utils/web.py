@@ -864,3 +864,54 @@ def download_offer_letter(offer_letter):
     frappe.local.response.filename = f"Offer_Letter_{applicant_name}.pdf"
     frappe.local.response.filecontent = pdf_content
     frappe.local.response.type = "download"
+    
+
+@frappe.whitelist(methods=["POST", "GET"])
+def download_refund_receipt(refund_request):
+    """
+    Generates and downloads the Refund Request PDF for the owner by rendering the HTML template directly.
+    """
+    user = frappe.session.user
+    try:
+        rr = frappe.get_doc("Refund Request", refund_request, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw("Refund Request not found")
+
+    # Check if this user owns the refund request (via the Applicant record)
+    applicant_email = frappe.db.get_value("Applicant", rr.applicant, "email")
+
+    if rr.owner != user and applicant_email != user:
+        if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
+            frappe.throw("Not permitted", frappe.PermissionError)
+
+    import os
+    template_path = os.path.join(frappe.get_app_path("slcm"), "admission", "print_format", "refund_receipt_format", "refund_receipt_format.html")
+    
+    if not os.path.exists(template_path):
+        # Fallback to standard if template missing (should not happen)
+        pdf_content = frappe.get_print("Refund Request", refund_request, as_pdf=True, doc=rr)
+    else:
+        with open(template_path, "r") as f:
+            template_content = f.read()
+
+        # Render HTML using Jinja
+        html = frappe.render_template(template_content, {
+            "doc": rr,
+            "frappe": frappe,
+            "_": frappe._
+        })
+
+        # Generate PDF
+        try:
+            from frappe.utils.pdf import get_pdf
+            pdf_content = get_pdf(html)
+        except Exception as e:
+            frappe.log_error(f"Refund Receipt PDF generation failed: {str(e)}")
+            # Fallback to standard on failure
+            pdf_content = frappe.get_print("Refund Request", refund_request, as_pdf=True, doc=rr)
+
+    frappe.local.response.filename = f"Refund_Receipt_{refund_request}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
+
+

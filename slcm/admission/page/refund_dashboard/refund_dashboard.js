@@ -18,7 +18,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		.icon-orange { background: #ffedd5 !important; color: #ea580c !important; }
 		.icon-red    { background: #fee2e2 !important; color: #dc2626 !important; }
 
-		.stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+		.stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: none; letter-spacing: 0.08em; margin-bottom: 4px; }
 		.stat-value { font-size: 18px; font-weight: 800; color: #1e293b; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 		
 		.section-title-container { border-left: 3px solid #2563eb; padding-left: 12px; margin: 30px 15px 24px 15px; }
@@ -26,9 +26,11 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		.section-subtitle { font-size: 12px; color: #64748b; }
 
 		.chart-container .title { font-size: 13px !important; font-weight: 700 !important; color: #374151 !important; }
+		.graph-svg-tip .title { text-transform: none !important; }
+		.graph-svg-tip .value { font-weight: 700 !important; }
 
 		.refund-table tbody tr:hover { background: #f8fafc !important; cursor: pointer; }
-		.custom-table-header th { background-color: #f8fafc !important; color: #64748b !important; font-weight: 600 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.05em !important; border-top: none !important; }
+		.custom-table-header th { background-color: #f8fafc !important; color: #64748b !important; font-weight: 600 !important; text-transform: none !important; font-size: 11px !important; letter-spacing: 0.05em !important; border-top: none !important; }
 		.clickable-id { color: #2563eb; font-weight: 700; text-decoration: none; }
 		.clickable-id:hover { text-decoration: underline; }
 		
