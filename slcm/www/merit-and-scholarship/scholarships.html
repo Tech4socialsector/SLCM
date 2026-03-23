@@ -72,21 +72,19 @@
     color: #64748b;
     transition: all 0.15s;
     margin-bottom: 2px;
-    text-decoration: none;
-    border-left: 3px solid transparent;
+    text-decoration: none !important;
   }
   .adm-menu-item:hover:not(.active) {
     background: #f8fafc;
     color: #1e293b;
   }
   .adm-menu-item.active {
-    background: color-mix(in srgb, var(--primary), transparent 92%);
-    border-left-color: var(--primary);
+    background: var(--primary-light, rgba(26,60,110,0.08));
     color: var(--primary) !important;
     font-weight: 600;
   }
   .adm-menu-item.active .ms-icon { color: var(--primary) !important; }
-  .adm-menu-item.danger { color: #ef4444; }
+  .adm-menu-item.danger { color: var(--danger, #ef4444); }
   .adm-menu-item.danger:hover { background: #fff5f5; }
   .ms-icon {
     font-family: 'Material Symbols Outlined';
@@ -203,12 +201,17 @@
       flex-wrap: nowrap !important;
       overflow-x: auto !important;
       gap: 8px !important;
-      padding-bottom: 4px !important;
+      padding-bottom: 8px !important;
       -webkit-overflow-scrolling: touch !important;
-      scrollbar-width: none !important;
+      scrollbar-width: auto !important;
     }
     .sidebar-card nav::-webkit-scrollbar {
-      display: none !important;
+      display: block !important;
+      height: 4px !important;
+    }
+    .sidebar-card nav::-webkit-scrollbar-thumb {
+      background: var(--primary-light, #e2e8f0);
+      border-radius: 10px;
     }
     .adm-menu-item {
       padding: 8px 14px !important;
@@ -277,6 +280,8 @@
 {% endblock %}
 
 {% block content %}
+{% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+{% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
 
 {# Cycle Active Check #}
 {% set _is_cycle_active = False %}
@@ -296,12 +301,9 @@
       <!-- ══ SIDEBAR ═══════════════════════════════════════════════ -->
       <aside class="lg:col-span-3 fade-in-up" style="animation-delay:0.05s">
         <div class="sidebar-card" style="position:sticky;top:80px;">
-          <p class="sidebar-section-label">
-            Main Menu
-          </p>
+          <p class="sidebar-section-label">Main Menu</p>
           <nav style="display:flex;flex-direction:column;gap:2px;">
 
-            <!-- Main Menu Items -->
             <div class="adm-menu-item" data-panel="profile"
                  onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=profile'">
               <span class="ms-icon">account_circle</span>
@@ -331,60 +333,24 @@
               Change Password
             </div>
 
-            <!-- Logout -->
-            <div class="adm-menu-item"
-                 onclick="window.doLogout()"
-                 style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#ef4444;transition:all 0.15s;margin-bottom:4px;"
-                 onmouseover="this.style.background='#fff5f5'"
-                 onmouseout="this.style.background='transparent'">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;color:#ef4444;">logout</span>
+            <div class="adm-menu-item danger" onclick="window.doLogout()">
+              <span class="ms-icon" style="color:var(--danger)">logout</span>
               Logout
             </div>
 
           </nav>
-        </div>
 
-        {% if portal_mission %}
-        <div
-          style="border-radius:16px;padding:20px; background:color-mix(in srgb, var(--primary), transparent 95%); border:1px solid color-mix(in srgb, var(--primary), transparent 88%);">
-          <h3
-            style="font-weight:700;font-size:13px;margin-bottom:8px; display:flex;align-items:center;gap:8px;color:var(--primary)">
-            <span class="material-symbols-outlined" style="font-size:16px">auto_awesome</span>
-            Our Mission
-          </h3>
-          <p style="font-size:12px;color:#475569;line-height:1.6;">{{ portal_mission }}</p>
+          {% if _mission_txt %}
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+              <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:none !important;
+                    color:var(--primary);margin:0 0 8px;display:flex;align-items:center;gap:6px;">
+                  <span class="ms-icon" style="font-size:14px;">auto_awesome</span>Our Mission
+              </p>
+              <p style="font-size:12px;color:#64748b;line-height:1.6;margin:0;">{{ _mission_txt }}</p>
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
       </aside>
-
-      <style>
-        .adm-menu-item.active {
-          background: rgba(26,60,110,0.08) !important;
-          color: var(--primary, #1a3c6e) !important;
-          border-left: 3px solid var(--primary);
-        }
-        .adm-menu-item.active span {
-          color: var(--primary, #1a3c6e) !important;
-        }
-        .adm-menu-item:hover:not(.active) {
-          background: #f8fafc;
-          color: #1e293b;
-        }
-        /* Sidebar container must be flex-column */
-        .adm-sidebar-menu,
-        #adm-sidebar-nav {
-          display: flex !important;
-          flex-direction: column !important;
-        }
-        /* Menu items must be horizontal */
-        .adm-menu-item {
-          display: flex !important;
-          flex-direction: row !important;
-          align-items: center !important;
-        }
-      </style>
 
       <!-- ══ MAIN CONTENT ══════════════════════════════════════════ -->
       <main class="lg:col-span-9 flex flex-col gap-6">

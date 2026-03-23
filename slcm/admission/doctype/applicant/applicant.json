@@ -729,7 +729,7 @@
    "fieldname": "ug_final_year_note",
    "fieldtype": "HTML",
    "label": "UG final year note",
-   "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545;\">\n<b>Note:</b> Applicants who are in the final year of their undergraduate programme can also apply.\nThey must upload:\n<ol>\n  <li>Bonafide Certificate from the University/College/Department</li>\n  <li>Transcripts of previous years</li>\n</ol>\nProof of completion must be submitted no later than <b>December 31, 2026</b>.\n</div>\n"
+   "options": "<div>\n  <b>Note:</b> Applicants who are in the final year of their undergraduate programme can also apply. They will have to upload:\n  <ol>\n    <li>\n      Bonafide Certificate from their University/ College/ Department stating that they are in the final year of the programme\n    </li>\n    <li>\n      Transcripts of the previous years of the programme. Proof of completion of the qualifying degree has to be submitted no later than <b>December 31, 2026</b>. They may enter their current CGPA/Percentage in the CGPA/Percentage column of the UG Degree section of the form\n    </li>\n  </ol>\n</div>"
   },
   {
    "fieldname": "class_x_details_section",
