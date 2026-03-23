@@ -44,7 +44,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Program level",
-   "options": "UG\nPG\nResearch Course"
+   "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "merit_list",
@@ -105,7 +105,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 12:13:41.297353",
+ "modified": "2026-03-23 12:57:09.345134",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Seat Allocation",

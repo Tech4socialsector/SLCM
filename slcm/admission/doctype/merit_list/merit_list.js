@@ -126,7 +126,7 @@ function open_allocation_dialog(frm) {
                 fieldtype: "Select",
                 fieldname: "program_level",
                 label: __("Program Level"),
-                options: "UG\nPG\nResearch Course",
+                options: "Undergraduate\nPostgraduate\nResearch Course",
                 read_only: 1,
                 default: frm.doc.program_level
             },

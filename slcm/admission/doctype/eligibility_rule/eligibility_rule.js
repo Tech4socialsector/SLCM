@@ -71,7 +71,7 @@ function apply_qualification_level_logic(frm) {
         frm.set_df_property('allowed_degrees', 'hidden', 1);
         frm.set_df_property('rule_type', 'hidden', 0);
 
-    } else if (qualification_level === 'UG' || qualification_level === 'PG') {
+    } else if (qualification_level === 'Undergraduate' || qualification_level === 'Postgraduate') {
 
         frm.set_df_property('rule_type', 'options', ['', 'CGPA']);
 
@@ -148,7 +148,7 @@ function apply_unit_type_logic(frm) {
             frm.set_df_property('required_percentage', 'hidden', 1);
         }
 
-    } else if (qualification_level === 'UG' || qualification_level === 'PG') {
+    } else if (qualification_level === 'Undergraduate' || qualification_level === 'Postgraduate') {
 
         frm.set_df_property('required_cgpa', 'hidden', 0);
         frm.set_df_property('required_percentage', 'hidden', 1);

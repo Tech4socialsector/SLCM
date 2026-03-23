@@ -9,17 +9,24 @@ frappe.ui.form.on("Entrance Test List", {
 });
 
 function open_allocation_dialog(frm) {
-    // Filter unallocated applicants
-    const applicants = (frm.doc.entrance_test_applicant || []).filter(
-        a => a.allocation_status !== "Allocated"
-    );
+    const all_applicants = frm.doc.entrance_test_applicant || [];
+    const applicants = all_applicants.filter(a => a.allocation_status !== "Allocated");
 
     if (!applicants.length) {
-        frappe.msgprint({
-            title: __("No Applicants"),
-            message: __("All applicants in this list have already been allocated seats."),
-            indicator: "orange"
-        });
+        const total = all_applicants.length;
+        if (total === 0) {
+            frappe.msgprint({
+                title: __("No Applicants Found"),
+                message: __("This Entrance Test List is empty. Please ensure applicants are added before attempting allocation."),
+                indicator: "orange"
+            });
+        } else {
+            frappe.msgprint({
+                title: __("Allocation Already Completed"),
+                message: __("All <b>{0}</b> applicants in this list have already been successfully allocated seats. <br><br>The system has verified that there are no pending students left for seat allocation in this list. If you need to allocate new students, please add them to this list or generate a new one.", [total]),
+                indicator: "blue"
+            });
+        }
         return;
     }
 

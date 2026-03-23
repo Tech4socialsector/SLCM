@@ -259,7 +259,7 @@ def get_context(context):
                 fields=["name", "level_of_study"],
                 order_by="name asc"
             )
-        # Expose as program_level so the JS filter (p.program_level === 'UG' etc.) works
+        # Expose as program_level so the JS filter (p.program_level === 'Undergraduate' etc.) works
         context.programs = [
             {"name": p.name, "program_level": p.level_of_study or ""}
             for p in raw_programs

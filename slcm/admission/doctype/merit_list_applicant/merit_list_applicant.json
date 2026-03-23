@@ -49,7 +49,8 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "label": "Program Level",
-   "options": "UG\nPG\nResearch Course"  },
+   "options": "Undergraduate\nPostgraduate\nResearch Course"
+  },
   {
    "fieldname": "hsc_percentage",
    "fieldtype": "Float",
@@ -102,7 +103,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-05 14:52:52.841937",
+ "modified": "2026-03-23 12:38:59.834821",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List Applicant",
