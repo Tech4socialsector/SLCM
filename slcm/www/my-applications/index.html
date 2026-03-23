@@ -578,7 +578,7 @@
   }
 
   .merit-stat-label {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-4);
     text-transform: none;
@@ -586,7 +586,7 @@
   }
 
   .merit-stat-value {
-    font-size: clamp(24px, 8vw, 50px);
+    font-size: clamp(20px, 6vw, 36px);
     font-weight: 800;
     line-height: 1;
     color: var(--primary);
@@ -599,9 +599,9 @@
 
   .merit-chip {
     display: inline-block;
-    padding: 4px 14px;
+    padding: 3px 10px;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     background: #dcfce7;
     color: var(--success);
@@ -2124,209 +2124,10 @@ or _app.current_stage)) or _status %}
     {% endif %}
 
     <!-- ╔══════════════════════════════════════════════╗
-         ║  MERIT RESULT & SEAT ALLOCATION              ║
-         ╚══════════════════════════════════════════════╝ -->
-    <div class="ma-card merit-seat-card fade-up" style="animation-delay:.12s">
-      <div class="ma-card-head">
-        <div class="ma-card-title">
-          <span class="ico"><span class="material-symbols-outlined">military_tech</span></span>
-          Merit Result and Seat Allocation
-        </div>
-      </div>
-      <div class="ma-card-body">
-        <!-- Left: Merit -->
-        <div class="merit-panel">
-          {% if all_merit and all_merit|length > 0 and all_merit[0].overall_rank and all_merit[0].total_score %}
-            {% set m = all_merit[0] %}
-            <div class="merit-stat-row">
-              <div class="merit-stat">
-                <span class="merit-stat-label">Overall rank</span>
-                <span class="merit-stat-value">{{ m.overall_rank }}</span>
-                <span class="merit-chip" style="position: static; margin-top: 8px;">{{ m.status or 'Selected' }}</span>
-              </div>
-              <div class="merit-stat">
-                <span class="merit-stat-label">Merit score</span>
-                <span class="merit-stat-value score">{{ m.total_score }}</span>
-              </div>
-            </div>
-          {% else %}
-            <div style="padding:12px 0; text-align: center; display: flex; flex-direction: column; align-items: center;">
-              <span class="merit-stat-label" style="display:block;margin-bottom:8px">Overall rank</span>
-              <span style="font-size:32px;font-weight:700;color:var(--text-4)">—</span>
-              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Merit list not yet published</p>
-            </div>
-          {% endif %}
-        </div>
-
-        <!-- Right: Seat -->
-        <div class="seat-panel">
-          <div
-            style="font-size: 13px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 12px;">
-            Seat allocation result</div>
-          {% if all_results and all_results|length > 0 %}
-          {% set r = all_results[0] %}
-          
-          {% if r.selection_status in ['Selected','Offered','Accepted','Fee Paid'] %}
-          <div class="seat-info-box">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-              <span class="seat-prog-name">{{ _prog }}</span>
-              <span class="merit-chip" style="position: static;">Selected</span>
-            </div>
-            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
-              <div
-                style="font-size: 13px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">
-                Allocated category</div>
-              <div
-                style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
-                {{ r.allocated_category or 'General' }}
-              </div>
-            </div>
-            {% if payment_details and payment_details.payment_date %}
-            <div class="seat-deadline">
-              Accept before: <strong>{{ payment_details.payment_date }}</strong>
-            </div>
-            {% endif %}
-          </div>
-
-          {% if r.selection_status in ['Selected','Offered'] %}
-          <!-- Accept/Decline buttons commented out intentionally -->
-          {% elif r.selection_status in ['Accepted','Fee Paid'] %}
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
-            <span class="material-symbols-outlined"
-              style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
-            <span style="font-size:13px;font-weight:600;color:#166534">Seat Selected</span>
-          </div>
-          {% endif %}
-          {% else %}
-          <div style="padding:12px 0">
-            <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
-          </div>
-          {% endif %}
-          {% else %}
-          <div style="padding:12px 0">
-            <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
-          </div>
-          {% endif %}
-        </div><!-- end seat-panel -->
-      </div><!-- end ma-card-body -->
-    </div><!-- end merit-seat-card -->
-
-    <!-- ╔══════════════════════════════════════════════╗
-         ║  DOCUMENTS + NEXT STEPS                      ║
-         ╚══════════════════════════════════════════════╝ -->
-    <div class="doc-nextsteps-grid fade-up" style="animation-delay:.18s">
-
-      <!-- Documents Checklist -->
-      <div class="ma-card">
-        <div class="ma-card-head">
-          <div class="ma-card-title">
-            <span class="ico"><span class="material-symbols-outlined">folder_open</span></span>
-            Document checklist
-          </div>
-          {% if _docs %}
-          <span style="font-size:12px;font-weight:500;color:var(--text-3)">
-            {{ _docs|length }} document{{ 's' if _docs|length != 1 }}
-          </span>
-          {% endif %}
-        </div>
-
-        <div class="doc-list">
-          {% if app_documents %}
-          {% for doc in app_documents %}
-          {% set _is_done = doc.is_uploaded %}
-          <div class="doc-row"
-            {% if _status == 'Draft' %}
-            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}')"
-            style="cursor:pointer;"
-            {% else %}
-            style="cursor:default;"
-            {% endif %}>
-            <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
-            <span class="doc-name">{{ doc.document_name }}</span>
-            <div style="display:flex; align-items:center; gap:10px;">
-              {% if doc.file_url %}
-              <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
-                onclick="event.stopPropagation()">View</a>
-              {% endif %}
-              
-              {% if _status == 'Draft' %}
-              <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
-                {% if _is_done %}edit_square{% else %}upload{% endif %}
-              </span>
-              {% endif %}
-            </div>
-          </div>
-          {% endfor %}
-          {% else %}
-          <div style="padding: 20px; text-align: center; color: var(--text-4); font-size: 13px;">
-            No documents required.
-          </div>
-          {% endif %}
-        </div>
-      </div><!-- end documents card -->
-
-      <!-- Next Steps -->
-      <div class="ma-card">
-        <div class="ma-card-head">
-          <div class="ma-card-title">
-            <span class="ico"><span class="material-symbols-outlined">task_alt</span></span>
-            Next steps
-          </div>
-        </div>
-
-        <div class="nextsteps-list">
-          {% if _steps %}
-          {% for step in _steps %}
-          {% set _stext = step.text if step is mapping else step['text'] %}
-          {% set _sislink = step.is_link if step is mapping else step['is_link'] %}
-          {% set _slurl = step.link_url if step is mapping else step['link_url'] %}
-          {% set _slabel = step.link_label if step is mapping else step['link_label'] %}
-          <div class="ns-item">
-            <div class="ns-check done">
-              <span class="material-symbols-outlined" style="font-size:14px">check</span>
-            </div>
-            <span class="ns-text">
-              {% if _sislink and _slurl %}
-              <a href="{{ _slurl }}" style="color:var(--primary);font-weight:600">{{ _slabel or _stext }}</a>
-              {% else %}
-              {{ _stext }}
-              {% endif %}
-            </span>
-          </div>
-          {% endfor %}
-          {% else %}
-          <div class="ns-item">
-            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Pay admission fee</span>
-          </div>
-          <div class="ns-item">
-            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Upload original documents</span>
-          </div>
-          <div class="ns-item">
-            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Attend orientation</span>
-          </div>
-          {% endif %}
-        </div>
-
-        {% if _steps %}
-        <div class="ns-deadline-row">
-          <span class="material-symbols-outlined">calendar_today</span>
-          <span class="ns-deadline-text">
-            Complete all steps before <strong>your cycle deadline</strong>
-          </span>
-        </div>
-        {% endif %}
-      </div><!-- end next steps card -->
-
-    </div><!-- end doc-nextsteps-grid -->
-
-    <!-- ╔══════════════════════════════════════════════╗
          ║  ENTRANCE TEST CARD                          ║
          ╚══════════════════════════════════════════════╝ -->
     {% if et_doc %}
-    <div class="ma-card fade-up" style="animation-delay:.22s">
+    <div class="ma-card fade-up" style="animation-delay:.12s">
       <div class="ma-card-head">
         <div class="ma-card-title">
           <span class="ico"><span class="material-symbols-outlined">edit_document</span></span>
@@ -2340,7 +2141,7 @@ or _app.current_stage)) or _status %}
         {% if et_show_result %}
         <div class="result-banner">
           <div class="result-banner-head">
-            <span class="result-banner-title">Entrance Test Result</span>
+            <span class="result-banner-title">Entrance test result</span>
             <span class="result-banner-badge">Published</span>
           </div>
           <div class="result-score-grid">
@@ -2472,8 +2273,7 @@ or _app.current_stage)) or _status %}
          ║  INTERVIEW CARD                              ║
          ╚══════════════════════════════════════════════╝ -->
     {% if interview_doc %}
-    <div class="interview-eligibility-cell">
-    <div class="ma-card">
+    <div class="ma-card fade-up" style="animation-delay:.18s">
       <div class="ma-card-head">
         <div class="ma-card-title">
           <span class="ico"><span class="material-symbols-outlined">groups</span></span>
@@ -2500,7 +2300,7 @@ or _app.current_stage)) or _status %}
         {% if interview_show_result %}
         <div class="result-banner">
           <div class="result-banner-head">
-            <span class="result-banner-title">Assessment outcome</span>
+            <span class="result-banner-title">Assessment score</span>
             <span class="result-banner-badge">Published</span>
           </div>
           <div class="result-score-grid">
@@ -2591,14 +2391,13 @@ or _app.current_stage)) or _status %}
       {% endif %}
       {% endif %}
     </div>
-    </div>
     {% endif %}
 
     <!-- ╔══════════════════════════════════════════════╗
          ║  ELIGIBILITY RESULT CARD                     ║
          ╚══════════════════════════════════════════════╝ -->
     {% if eligibility_result %}
-    <div class="ma-card fade-up" style="animation-delay:.28s; margin-top:12px; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4);">
+    <div class="ma-card fade-up" style="animation-delay:.24s; margin-top:12px; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4);">
       <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5);">
         <div class="ma-card-title">
           <span class="ico" style="background: #dcfce7; color: #16a34a;">
@@ -2682,6 +2481,203 @@ or _app.current_stage)) or _status %}
     {% endif %}
     
 
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  MERIT RESULT & SEAT ALLOCATION              ║
+         ╚══════════════════════════════════════════════╝ -->
+    <div class="ma-card merit-seat-card fade-up" style="animation-delay:.30s">
+      <div class="ma-card-head">
+        <div class="ma-card-title">
+          <span class="ico"><span class="material-symbols-outlined">military_tech</span></span>
+          Merit Result and Seat Allocation
+        </div>
+      </div>
+      <div class="ma-card-body">
+        <!-- Left: Merit -->
+        <div class="merit-panel">
+          {% if all_merit and all_merit|length > 0 and all_merit[0].overall_rank and all_merit[0].total_score %}
+            {% set m = all_merit[0] %}
+            <div class="merit-stat-row">
+              <div class="merit-stat">
+                <span class="merit-stat-label">Overall rank</span>
+                <span class="merit-stat-value">{{ m.overall_rank }}</span>
+                <span class="merit-chip" style="position: static; margin-top: 8px;">{{ m.status or 'Selected' }}</span>
+              </div>
+              <div class="merit-stat">
+                <span class="merit-stat-label">Merit score</span>
+                <span class="merit-stat-value score">{{ m.total_score }}</span>
+              </div>
+            </div>
+          {% else %}
+            <div style="padding:12px 0; text-align: center; display: flex; flex-direction: column; align-items: center;">
+              <span class="merit-stat-label" style="display:block;margin-bottom:8px">Overall rank</span>
+              <span style="font-size:32px;font-weight:700;color:var(--text-4)">—</span>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Merit list not yet published</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Right: Seat -->
+        <div class="seat-panel">
+          <div
+            style="font-size: 13px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 12px;">
+            Seat allocation result</div>
+          {% if all_results and all_results|length > 0 %}
+          {% set r = all_results[0] %}
+
+          <div class="seat-info-box">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span class="seat-prog-name">{{ _prog }}</span>
+              <span class="merit-chip" style="position: static;">{{ r.selection_status }}</span>
+            </div>
+            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
+              <div
+                style="font-size: 13px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">
+                Allocated category</div>
+              <div
+                style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
+                {{ r.allocated_category or 'General' }}
+              </div>
+            </div>
+            {% if payment_details and payment_details.payment_date %}
+            <div class="seat-deadline">
+              Accept before: <strong>{{ payment_details.payment_date }}</strong>
+            </div>
+            {% endif %}
+          </div>
+
+          {% if r.selection_status in ['Selected','Offered'] %}
+          <!-- Accept/Decline buttons commented out intentionally -->
+          {% elif r.selection_status == 'Accepted' %}
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
+            <span class="material-symbols-outlined"
+              style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
+            <span style="font-size:13px;font-weight:600;color:#166534">Seat Accepted</span>
+          </div>
+          {% else %}
+          <div style="padding:12px 0;text-align:center">
+            <span style="font-size:13px;font-weight:500;color:var(--text-3)">Status: {{ r.selection_status }}</span>
+          </div>
+          {% endif %}
+          {% else %}
+          <div style="padding:12px 0">
+            <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
+          </div>
+          {% endif %}
+        </div><!-- end seat-panel -->
+      </div><!-- end ma-card-body -->
+    </div><!-- end merit-seat-card -->
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  DOCUMENTS + NEXT STEPS                      ║
+         ╚══════════════════════════════════════════════╝ -->
+    <div class="doc-nextsteps-grid fade-up" style="animation-delay:.36s">
+
+      <!-- Documents Checklist -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <div class="ma-card-title">
+            <span class="ico"><span class="material-symbols-outlined">folder_open</span></span>
+            Document checklist
+          </div>
+          {% if _docs %}
+          <span style="font-size:12px;font-weight:500;color:var(--text-3)">
+            {{ _docs|length }} document{{ 's' if _docs|length != 1 }}
+          </span>
+          {% endif %}
+        </div>
+
+        <div class="doc-list">
+          {% if app_documents %}
+          {% for doc in app_documents %}
+          {% set _is_done = doc.is_uploaded %}
+          <div class="doc-row"
+            {% if _status == 'Draft' %}
+            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}')"
+            style="cursor:pointer;"
+            {% else %}
+            style="cursor:default;"
+            {% endif %}>
+            <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
+            <span class="doc-name">{{ doc.document_name }}</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              {% if doc.file_url %}
+              <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
+                onclick="event.stopPropagation()">View</a>
+              {% endif %}
+              
+              {% if _status == 'Draft' %}
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
+                {% if _is_done %}edit_square{% else %}upload{% endif %}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div style="padding: 20px; text-align: center; color: var(--text-4); font-size: 13px;">
+            No documents required.
+          </div>
+          {% endif %}
+        </div>
+      </div><!-- end documents card -->
+
+      <!-- Next Steps -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <div class="ma-card-title">
+            <span class="ico"><span class="material-symbols-outlined">task_alt</span></span>
+            Next steps
+          </div>
+        </div>
+
+        <div class="nextsteps-list">
+          {% if _steps %}
+          {% for step in _steps %}
+          {% set _stext = step.text if step is mapping else step['text'] %}
+          {% set _sislink = step.is_link if step is mapping else step['is_link'] %}
+          {% set _slurl = step.link_url if step is mapping else step['link_url'] %}
+          {% set _slabel = step.link_label if step is mapping else step['link_label'] %}
+          <div class="ns-item">
+            <div class="ns-check done">
+              <span class="material-symbols-outlined" style="font-size:14px">check</span>
+            </div>
+            <span class="ns-text">
+              {% if _sislink and _slurl %}
+              <a href="{{ _slurl }}" style="color:var(--primary);font-weight:600">{{ _slabel or _stext }}</a>
+              {% else %}
+              {{ _stext }}
+              {% endif %}
+            </span>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="ns-item">
+            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+            <span class="ns-text">Pay admission fee</span>
+          </div>
+          <div class="ns-item">
+            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+            <span class="ns-text">Upload original documents</span>
+          </div>
+          <div class="ns-item">
+            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+            <span class="ns-text">Attend orientation</span>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if _steps %}
+        <div class="ns-deadline-row">
+          <span class="material-symbols-outlined">calendar_today</span>
+          <span class="ns-deadline-text">
+            Complete all steps before <strong>your cycle deadline</strong>
+          </span>
+        </div>
+        {% endif %}
+      </div><!-- end next steps card -->
+
+    </div><!-- end doc-nextsteps-grid -->
 
 
     <!-- ╔══════════════════════════════════════════════╗

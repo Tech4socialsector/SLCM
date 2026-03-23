@@ -1,14 +1,15 @@
 {#- ================================================================
-    NLSIU — Applicant Application Form — Print Format  v9
-    FIXES for wkhtmltopdf (old WebKit engine):
-      1. Replaced ALL flexbox with table/float layouts — wkhtmltopdf
-         has broken flex support.
-      2. Added -webkit-print-color-adjust: exact on EVERY element
-         that has a background color (section headers, badges, etc).
-      3. Header uses display:table / display:table-cell layout.
-      4. Photo cell rowspan kept; photo encoded as data-URI.
-      5. Badges use inline-block (not inline-flex).
-      6. pf-sec / pf-subsec use !important on background + color.
+    NLSIU — Applicant Application Form — Print Format  v11
+    CHANGES from v10:
+      - Supporting documents pages completely removed.
+      - Only Page 1 (Application Form) is rendered.
+      - All wkhtmltopdf fixes retained:
+          · No flexbox — display:table/table-cell only
+          · px not mm in colgroup col widths
+          · table-layout:fixed on header
+          · -webkit-print-color-adjust:exact on all colored elements
+          · 733px page width for print, 778px for screen
+          · max-width/max-height on photo img
     ================================================================ -#}
 
 {%- set _site = frappe.utils.get_url() -%}
@@ -28,7 +29,7 @@
 {%- set _pwd_val = (doc.pwd or '') | lower -%}
 {%- set _ka_any  = doc.ka_study_7yrs or doc.ka_defence_child or doc.ka_govt_child or doc.ka_ais_child or doc.ka_capf_child -%}
 
-{%- set _gr_raw      = (doc.guardian_required or '') | string | lower | trim -%}
+{%- set _gr_raw       = (doc.guardian_required or '') | string | lower | trim -%}
 {%- set show_guardian = _gr_raw in ['yes', '1', 'true'] -%}
 
 {#- Smart address builder -#}
@@ -52,23 +53,23 @@
 {%- if doc.candidate_photo -%}
   {%- set _photo_b64 = get_file_b64(doc.candidate_photo) -%}
   {%- if _photo_b64 -%}
-    {%- set _photo_ext = (doc.candidate_photo.split('.')[-1] | lower) -%}
+    {%- set _photo_ext  = (doc.candidate_photo.split('.')[-1] | lower) -%}
     {%- set _photo_mime = 'image/jpeg' if _photo_ext in ['jpg','jpeg'] else ('image/png' if _photo_ext == 'png' else 'image/webp') -%}
-    {%- set _photo_src = 'data:' ~ _photo_mime ~ ';base64,' ~ _photo_b64 -%}
+    {%- set _photo_src  = 'data:' ~ _photo_mime ~ ';base64,' ~ _photo_b64 -%}
   {%- else -%}
     {%- set _photo_src = _site ~ doc.candidate_photo -%}
   {%- endif -%}
 {%- endif -%}
 
 {#- Logo -#}
-{%- set _logo_src = '' -%}
+{%- set _logo_src  = '' -%}
 {%- set _logo_path = frappe.db.get_single_value('Institution Settings','logo') -%}
 {%- if _logo_path -%}
   {%- set _logo_b64 = get_file_b64(_logo_path) -%}
   {%- if _logo_b64 -%}
-    {%- set _logo_ext = (_logo_path.split('.')[-1] | lower) -%}
+    {%- set _logo_ext  = (_logo_path.split('.')[-1] | lower) -%}
     {%- set _logo_mime = 'image/jpeg' if _logo_ext in ['jpg','jpeg'] else ('image/png' if _logo_ext == 'png' else 'image/svg+xml') -%}
-    {%- set _logo_src = 'data:' ~ _logo_mime ~ ';base64,' ~ _logo_b64 -%}
+    {%- set _logo_src  = 'data:' ~ _logo_mime ~ ';base64,' ~ _logo_b64 -%}
   {%- else -%}
     {%- set _logo_src = _site ~ _logo_path -%}
   {%- endif -%}
@@ -113,9 +114,9 @@ html, body {
 }
 
 /* ── Page wrapper ──────────────────────────────────────────── */
-.pf-page, .pf-doc-page {
-  width: 778px;   /* 210mm - 2*8mm ≈ 194mm ≈ 733px — use 778 for screen */
-  max-width: 778px;
+.pf-page {
+  width: 733px;
+  max-width: 733px;
   margin: 0;
   padding: 0;
   background: #fff;
@@ -126,7 +127,9 @@ html, body {
 
 @media screen {
   html, body { background: #909090; padding: 0; }
-  .pf-page, .pf-doc-page {
+  .pf-page {
+    width: 778px;
+    max-width: 778px;
     box-shadow: 0 3px 18px rgba(0,0,0,.35);
     margin: 12px auto !important;
   }
@@ -138,7 +141,7 @@ html, body {
     max-width: 194mm;
     margin: 0; padding: 0; background: #fff;
   }
-  .pf-page, .pf-doc-page {
+  .pf-page {
     width: 194mm;
     max-width: 194mm;
     margin: 0 !important; padding: 0 !important;
@@ -146,23 +149,16 @@ html, body {
     page-break-after: always;
     overflow: hidden;
   }
-  .pf-page:last-child, .pf-doc-page:last-child { page-break-after: auto; }
+  .pf-page:last-child { page-break-after: auto; }
   .no-print { display: none !important; }
   tr { page-break-inside: avoid; }
 }
 
 /* ── Header — TABLE layout (wkhtmltopdf-safe) ───────────────── */
-/*
-   wkhtmltopdf does not support flexbox reliably.
-   We use display:table / table-cell instead.
-   Structure:
-     .pf-header  (display:table, width:100%, background:#7b1a1a)
-       .pf-hdr-logo-cell  (display:table-cell, width:46px, vertical-align:middle)
-       .pf-hdr-body-cell  (display:table-cell, vertical-align:middle, text-align:center)
-*/
 .pf-header {
   display: table;
   width: 100%;
+  table-layout: fixed;
   background: #7b1a1a !important;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
@@ -190,11 +186,12 @@ html, body {
   text-align: center;
   line-height: 38px;
 }
-.pf-logo img       { width: 34px; height: 34px; vertical-align: middle; }
-.pf-logo-text      { font-size: 5.5pt; color: #7b1a1a; font-weight: bold; line-height: 1.2; display:inline-block; vertical-align:middle; }
+.pf-logo img    { width: 34px; height: 34px; vertical-align: middle; }
+.pf-logo-text   { font-size: 5.5pt; color: #7b1a1a; font-weight: bold; line-height: 1.2; display: inline-block; vertical-align: middle; }
 
 .pf-hdr-body-cell {
   display: table-cell;
+  width: 100%;
   vertical-align: middle;
   text-align: center;
   padding: 5px 6px;
@@ -243,12 +240,12 @@ html, body {
 }
 
 .pf-table colgroup col:nth-child(1) { width: 22%; }
-.pf-table colgroup col:nth-child(2) { width: 26%; }
-.pf-table colgroup col:nth-child(3) { width: 22%; }
+.pf-table colgroup col:nth-child(2) { width: 24%; }
+.pf-table colgroup col:nth-child(3) { width: 20%; }
 .pf-table colgroup col:nth-child(4) { width: auto; }
-.pf-table colgroup col:nth-child(5) { width: 27mm; }
+.pf-table colgroup col:nth-child(5) { width: 102px; }
 
-/* Section header — explicit background with !important and -webkit- prefix */
+/* Section header */
 .pf-sec {
   background-color: #7b1a1a !important;
   color: #ffffff !important;
@@ -281,8 +278,8 @@ html, body {
 
 /* ── Photo cell ─────────────────────────────────────────────── */
 .pf-photo {
-  width: 27mm !important;
-  max-width: 27mm !important;
+  width: 102px !important;
+  max-width: 102px !important;
   text-align: center;
   vertical-align: top !important;
   padding: 4px 3px 3px 3px;
@@ -292,12 +289,18 @@ html, body {
 .pf-photo img {
   width: 90px;
   height: 115px;
+  max-width: 90px;
+  max-height: 115px;
   display: block;
   margin: 0 auto 3px;
   border: 1px solid #ccc;
-  /* object-fit not supported in old WebKit — use width/height to constrain */
 }
-.pf-photo-cap   { font-size: 5.5pt; color: #888; text-align: center; line-height: 1.3; }
+.pf-photo-cap {
+  font-size: 5.5pt;
+  color: #888;
+  text-align: center;
+  line-height: 1.3;
+}
 .pf-photo-empty {
   width: 90px;
   height: 115px;
@@ -312,7 +315,7 @@ html, body {
   -webkit-print-color-adjust: exact !important;
 }
 
-/* ── Badges — inline-block (not inline-flex) ─────────────────── */
+/* ── Badges ─────────────────────────────────────────────────── */
 .badge-green  { background-color: #1e6b1e !important; color: #fff !important; font-weight: bold; padding: 2px 7px; border-radius: 2px; font-size: 7.5px; display: inline-block; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 .badge-yellow { background-color: #9a4500 !important; color: #fff !important; font-weight: bold; padding: 2px 7px; border-radius: 2px; font-size: 7.5px; display: inline-block; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 .badge-red    { background-color: #a01212 !important; color: #fff !important; font-weight: bold; padding: 2px 7px; border-radius: 2px; font-size: 7.5px; display: inline-block; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -327,13 +330,21 @@ html, body {
 /* ── Declaration ────────────────────────────────────────────── */
 .pf-decl      { padding: 5px 10px; font-size: 8px; line-height: 1.55; color: #111; background: #fff; border-top: 1px solid #ddd; }
 .pf-decl-item { margin-bottom: 3px; }
-/* Table layout for checkbox + text alignment */
 .pf-decl-row  { display: table; width: 100%; }
 .pf-chk-cell  { display: table-cell; width: 14px; vertical-align: top; font-size: 9pt; line-height: 1; }
 .pf-decl-text { display: table-cell; vertical-align: top; }
 
 /* ── Invigilator ────────────────────────────────────────────── */
-.pf-invig { text-align: center; font-size: 7.5px; font-style: italic; color: #666; padding: 3px 10px; background-color: #fafafa !important; border-top: 1px solid #ddd; -webkit-print-color-adjust: exact !important; }
+.pf-invig {
+  text-align: center;
+  font-size: 7.5px;
+  font-style: italic;
+  color: #666;
+  padding: 3px 10px;
+  background-color: #fafafa !important;
+  border-top: 1px solid #ddd;
+  -webkit-print-color-adjust: exact !important;
+}
 
 /* ── Signature ──────────────────────────────────────────────── */
 .pf-sig-table { width: 100%; border-collapse: collapse; border-top: 1px solid #ddd; }
@@ -342,30 +353,23 @@ html, body {
 .pf-sig-space { height: 26px; display: block; }
 
 /* ── Footer ─────────────────────────────────────────────────── */
-.pf-footer { border-top: 1px dashed #ccc; text-align: center; font-size: 7px; color: #999; padding: 3px 8px; background: #fff; }
-
-/* ── Document page ──────────────────────────────────────────── */
-.pf-doc-body  { padding: 5mm 6mm; }
-.pf-doc-label {
-  font-weight: bold; font-size: 6.8pt;
-  color: #fff !important;
-  background-color: #7b1a1a !important;
-  padding: 2px 7px; margin-bottom: 2px;
-  -webkit-print-color-adjust: exact !important;
-  print-color-adjust: exact !important;
+.pf-footer {
+  border-top: 1px dashed #ccc;
+  text-align: center;
+  font-size: 7px;
+  color: #999;
+  padding: 3px 8px;
+  background: #fff;
 }
-.pf-doc-image { text-align: center; border: 1px solid #ccc; padding: 3px; }
-.pf-doc-image img { max-width: 100%; max-height: 160mm; }
-.pf-doc-pdf   { padding: 8px; background-color: #fafafa !important; border: 1px solid #ccc; text-align: center; color: #555; font-size: 6.8pt; -webkit-print-color-adjust: exact !important; }
 </style>
 
 
 {# ═══════════════════════════════════════════
-   PAGE 1 — APPLICATION FORM
+   PAGE 1 — APPLICATION FORM (only page)
    ═══════════════════════════════════════════ #}
 <div class="pf-page">
 
-  {# ── HEADER: table-cell layout, no flexbox ── #}
+  {# ── HEADER ── #}
   <div class="pf-header">
     <div class="pf-hdr-logo-cell">
       <div class="pf-logo">
@@ -399,8 +403,7 @@ html, body {
     {# ══ 1. PERSONAL INFORMATION ══ #}
     <tr><td colspan="5" class="pf-sec">1. Personal Information</td></tr>
 
-    {# Row 1 — App ID + Status + Photo (rowspan=9) #}
-    <tr>
+    <tr style="height:20px;">
       <td class="pf-lbl">Application ID</td>
       <td class="pf-val">{{ doc.name }}</td>
       <td class="pf-lbl">Status</td>
@@ -411,8 +414,6 @@ html, body {
         {%- elif _st in ['Rejected','Cancelled'] -%}<span class="badge-red">{{ _st }}</span>
         {%- else -%}<span class="badge-grey">{{ _st }}</span>{%- endif -%}
       </td>
-
-      {# ── PHOTO CELL with rowspan ── #}
       <td class="pf-photo" rowspan="9">
         {%- if _photo_src -%}
           <img src="{{ _photo_src }}" alt="Candidate Photo">
@@ -825,106 +826,4 @@ html, body {
     &nbsp;|&nbsp; Printed: {{ frappe.utils.formatdate(frappe.utils.nowdate(),'dd-MM-yyyy') }}
   </div>
 
-</div>{# END PAGE 1 #}
-
-
-{# ═══════════════════════════════════════════
-   PAGE 2+ — UPLOADED DOCUMENTS
-   ═══════════════════════════════════════════ #}
-{%- set _docs = [] -%}
-{%- set _flds = [
-  ('ID Proof',                    doc.id_proof),
-  ('Class X Marksheet',           doc.class_x_marksheet),
-  ('Class XII Marksheet',         doc.class_xii_marksheet),
-  ('EWS Certificate',             doc.ews_certificate),
-  ('Caste Certificate',           doc.caste_certificate),
-  ('PwD Certificate',             doc.pwd_certificate),
-  ('Karnataka Study Certificate', doc.ka_study_7yrs_certificate),
-  ('Defence Child Certificate',   doc.ka_defence_child_certificate),
-  ('Govt. Employee Certificate',  doc.ka_govt_child_certificate),
-  ('AIS Officer Certificate',     doc.ka_ais_child_certificate),
-  ('CAPF Certificate',            doc.ka_capf_child_certificate),
-  ('CV / Resume',                 doc.cv),
-  ('PhD Research Proposal',       doc.phd_proposal),
-] -%}
-{%- for lbl, furl in _flds -%}
-  {%- if furl and furl not in ['None',''] -%}{%- set _ = _docs.append({'label': lbl, 'url': furl}) -%}{%- endif -%}
-{%- endfor -%}
-{%- for d in (doc.ug_degree_details or []) -%}
-  {%- if d.degree_certificate -%}{%- set _ = _docs.append({'label': 'UG Degree Certificate (' ~ (d.ug_program or '') ~ ')', 'url': d.degree_certificate}) -%}{%- endif -%}
-  {%- if d.marksheets -%}{%- set _ = _docs.append({'label': 'UG Marksheets (' ~ (d.ug_program or '') ~ ')', 'url': d.marksheets}) -%}{%- endif -%}
-{%- endfor -%}
-{%- for d in (doc.pg_degree_details or []) -%}
-  {%- if d.pg_degree_certificatebonafide_certificate_to_be_uploaded -%}{%- set _ = _docs.append({'label': 'PG Degree Certificate (' ~ (d.pg_program or '') ~ ')', 'url': d.pg_degree_certificatebonafide_certificate_to_be_uploaded}) -%}{%- endif -%}
-  {%- if d.transcriptsmarksheets_to_be_uploaded -%}{%- set _ = _docs.append({'label': 'PG Transcripts (' ~ (d.pg_program or '') ~ ')', 'url': d.transcriptsmarksheets_to_be_uploaded}) -%}{%- endif -%}
-{%- endfor -%}
-{%- if doc.get('documents') -%}
-  {%- for d in doc.documents -%}
-    {%- if d.file -%}{%- set _ = _docs.append({'label': d.document_type or 'Document', 'url': d.file}) -%}{%- endif -%}
-  {%- endfor -%}
-{%- endif -%}
-
-{%- if _docs -%}
-<div class="pf-doc-page">
-
-  <div class="pf-header">
-    <div class="pf-hdr-logo-cell">
-      <div class="pf-logo">
-        {%- if _logo_src -%}
-          <img src="{{ _logo_src }}" alt="NLSIU">
-        {%- else -%}
-          <span class="pf-logo-text">NLSIU</span>
-        {%- endif -%}
-      </div>
-    </div>
-    <div class="pf-hdr-body-cell">
-      <div class="pf-hdr-inst">National Law School of India University</div>
-      <div class="pf-hdr-sub">Uploaded Documents &nbsp;&middot;&nbsp; {{ doc.candidate_name }} &nbsp;&middot;&nbsp; {{ doc.name }}</div>
-    </div>
-  </div>
-
-  <div class="pf-title-bar">
-    <div class="pf-title">Supporting Documents</div>
-    <div class="pf-subtitle">
-      {{ doc.program or '' }}{%- if doc.academic_year %}<span class="sep">|</span>{{ doc.academic_year }}{%- endif -%}
-    </div>
-  </div>
-
-  <div class="pf-doc-body">
-    {%- for item in _docs -%}
-      {%- set _ext = (item.url or '').split('.')[-1] | lower -%}
-      {%- set _is_img = _ext in ['jpg','jpeg','png','gif','webp','bmp'] -%}
-      {%- set _doc_b64 = get_file_b64(item.url) if _is_img else '' -%}
-      <div style="margin-bottom:9px; page-break-inside:avoid;">
-        <div class="pf-doc-label">{{ loop.index }}. {{ item.label }}</div>
-        {%- if _is_img and _doc_b64 -%}
-          {%- set _doc_mime = 'image/jpeg' if _ext in ['jpg','jpeg'] else ('image/png' if _ext == 'png' else 'image/webp') -%}
-          <div class="pf-doc-image">
-            <img src="data:{{ _doc_mime }};base64,{{ _doc_b64 }}" alt="{{ item.label }}">
-          </div>
-        {%- elif _is_img -%}
-          <div class="pf-doc-image">
-            <img src="{{ _site }}{{ item.url }}" alt="{{ item.label }}">
-          </div>
-        {%- else -%}
-          <div class="pf-doc-pdf">
-            <strong>{{ item.label }}</strong><br>
-            <span style="font-size:6pt;">{{ item.url.split('/')[-1] }}</span><br>
-            <span style="font-size:5.8pt;color:#999;">(Open the portal to view this document)</span>
-          </div>
-        {%- endif -%}
-      </div>
-      {%- if loop.index % 2 == 0 and not loop.last -%}
-      <div style="page-break-after:always;"></div>
-      {%- endif -%}
-    {%- endfor -%}
-  </div>
-
-  <div class="pf-footer">
-    End of Uploaded Documents &nbsp;|&nbsp;
-    Application ID: {{ doc.name }} &nbsp;|&nbsp;
-    Printed: {{ frappe.utils.formatdate(frappe.utils.nowdate(),'dd-MM-yyyy') }}
-  </div>
-
-</div>
-{%- endif -%}
+</div>{# END PAGE 1 — only page #}

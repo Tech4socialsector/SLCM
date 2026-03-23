@@ -239,6 +239,8 @@ def get_context(context):
         "whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "reservation_category",
         "caste_certificate", "ews_certificate", "pwd_certificate",
         "ka_study_7yrs", "ka_defence_child", "ka_govt_child", "ka_ais_child", "ka_capf_child",
+        "ka_study_7yrs_certificate", "ka_defence_child_certificate", "ka_govt_child_certificate",
+        "ka_ais_child_certificate", "ka_capf_child_certificate",
     ]
 
     # ── Programs (for UG/PG degree link selects in the form) ─────────────

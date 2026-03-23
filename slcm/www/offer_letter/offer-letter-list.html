@@ -3,7 +3,15 @@
 {% block title %}My Admission Offers{% endblock %}
 
 {% block page_css %}
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+    body,
+    .adm-main,
+    .adm-container {
+        font-family: 'Lexend', system-ui, sans-serif !important;
+        background: #f5f7f8 !important;
+    }
+
     .offer-card {
         background: #ffffff;
         border-radius: 18px;
@@ -149,21 +157,214 @@
         font-size: 0.8rem;
         color: #64748b;
     }
+
+    /* ── Sidebar ────────────────────────────────────────── */
+    .sidebar-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: none;
+        color: #94a3b8;
+        margin: 0 0 12px 4px;
+    }
+
+    .adm-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.15s;
+        margin-bottom: 2px;
+        text-decoration: none !important;
+    }
+
+    .adm-menu-item:hover:not(.active) {
+        background: #f8fafc;
+        color: var(--text-1);
+    }
+
+    .adm-menu-item.active {
+        background: var(--primary-light);
+        color: var(--primary) !important;
+        font-weight: 600;
+    }
+
+    .adm-menu-item.active .ms-icon {
+        color: var(--primary) !important;
+    }
+
+    .adm-menu-item.danger {
+        color: var(--danger);
+    }
+
+    .adm-menu-item.danger:hover {
+        background: #fff5f5;
+    }
+
+    .ms-icon {
+        font-family: 'Material Symbols Outlined';
+        font-size: 20px;
+        color: #94a3b8;
+        flex-shrink: 0;
+    }
+
+    /* ── Responsive Enhancements ────────────────────────────── */
+    @media (max-width: 1024px) {
+        .sidebar-card {
+            position: static !important;
+            margin-bottom: 24px;
+            overflow: hidden !important;
+        }
+
+        .sidebar-card nav {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            gap: 8px !important;
+            padding-bottom: 8px !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: auto !important;
+        }
+
+        .sidebar-card nav::-webkit-scrollbar {
+            display: block !important;
+            height: 4px !important;
+        }
+
+        .sidebar-card nav::-webkit-scrollbar-thumb {
+            background: var(--primary-light, #e2e8f0);
+            border-radius: 10px;
+        }
+
+        .adm-menu-item {
+            padding: 8px 14px !important;
+            font-size: 13px !important;
+            white-space: nowrap !important;
+            border-left: none !important;
+            border-bottom: 3px solid transparent !important;
+            margin-bottom: 0 !important;
+            flex-shrink: 0 !important;
+        }
+
+        .adm-menu-item.active {
+            border-bottom-color: var(--primary) !important;
+            background: transparent !important;
+        }
+
+        .sidebar-section-label {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        div[style*="padding:32px 20px 40px"] {
+            padding: 20px 12px 40px !important;
+        }
+    }
+
+    /* ── Animations ─────────────────────────────────────── */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-up {
+        animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<a href="/merit-and-scholarship/admission_dashboard?panel=profile" class="btn-back">
-    <i class="fa fa-arrow-left"></i>
-    Back
-</a>
+{% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+{% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
 
-<div id="offer-list-wrapper">
-    <div class="text-center p-5 mt-5" id="loader">
-        <div class="spinner-border" style="color: var(--primary);" role="status">
-            <span class="sr-only">{{ _("Loading...") }}</span>
+<div style="min-height:calc(100vh - 60px);background:#f5f7f8; margin:0 -20px 0;padding:32px 20px 40px;">
+    <div style="max-width:1200px;margin:0 auto;">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <aside class="lg:col-span-3 fade-in-up" style="animation-delay:0.05s">
+                <div class="sidebar-card" style="position:sticky;top:80px;">
+                    <p class="sidebar-section-label">Main Menu</p>
+                    <nav style="display:flex;flex-direction:column;gap:2px;">
+
+                        <div class="adm-menu-item" data-panel="profile"
+                            onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=profile'">
+                            <span class="ms-icon">account_circle</span>
+                            Profile
+                        </div>
+
+                        <div class="adm-menu-item" data-panel="applications"
+                            onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=applications'">
+                            <span class="ms-icon">description</span>
+                            Applications
+                        </div>
+
+                        <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
+                            <span class="ms-icon">school</span>
+                            Scholarships
+                        </div>
+                        <div class="adm-menu-item active" data-panel="offer_letters"
+                            onclick="window.location.href='/offer_letter/offer-letter-list'">
+                            <span class="ms-icon">mail</span>
+                            Offer Letter
+                        </div>
+                        <div class="adm-menu-item" onclick="window.location.href='/update-password'">
+                            <span class="ms-icon">lock_reset</span>
+                            Change Password
+                        </div>
+
+                        <div class="adm-menu-item danger" onclick="window.doLogout()">
+                            <span class="ms-icon" style="color:var(--danger)">logout</span>
+                            Logout
+                        </div>
+
+                    </nav>
+
+                    {% if _mission_txt %}
+                    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+                        <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:none !important;
+                      color:var(--primary);margin:0 0 8px;display:flex;align-items:center;gap:6px;">
+                            <span class="ms-icon" style="font-size:14px;">auto_awesome</span>Our Mission
+                        </p>
+                        <p style="font-size:12px;color:#64748b;line-height:1.6;margin:0;">{{ _mission_txt }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </aside>
+
+            <div class="lg:col-span-9">
+                <div id="offer-list-wrapper">
+                    <div class="text-center p-5 mt-5" id="loader">
+                        <div class="spinner-border" style="color: var(--primary);" role="status">
+                            <span class="sr-only">{{ _("Loading...") }}</span>
+                        </div>
+                        <p class="mt-3 text-muted">{{ _("Fetching your admission offers...") }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <p class="mt-3 text-muted">{{ _("Fetching your admission offers...") }}</p>
     </div>
 </div>
 {% endblock %}
@@ -257,7 +458,7 @@ Offer letter no: ${offer.name}
 <div class="card-footer">
 
 <div>
-<div class="price-label">Payable amount</div>
+<div class="price-label">Admission Fee</div>
 <div class="price-value">
 ${format_currency(offer.final_payable_amount || offer.payable_amount, currency)}
 </div>
