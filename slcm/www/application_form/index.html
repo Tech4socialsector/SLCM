@@ -3350,9 +3350,8 @@
                                 <div class="file-zone">
                                     <input type="file" name="cv" id="cv"
                                         accept="image/png,image/jpeg,image/jpg,application/pdf"
-                                        onchange="handleFileUpload('cv', this)"
-                                        style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:1;">
-                                    <div class="file-zone-label" id="cv_upload_btn">Browse or drop <strong>Curriculum vitae (CV)</strong></div>
+                                        onchange="handleFileUpload('cv', this)">
+                                    <label class="file-zone-label" id="cv_upload_btn" for="cv">Browse or drop <strong>Curriculum vitae (CV)</strong></label>
                                     <div class="file-preview" id="fp_cv"><svg xmlns="http://www.w3.org/2000/svg"
                                             width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                             stroke-width="2">
