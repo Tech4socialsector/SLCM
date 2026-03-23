@@ -180,11 +180,11 @@ class InterviewConfiguration(Document):
                         <p style="margin: 0 0 10px 0; color: #495057; font-weight: 600;">System Breakdown:</p>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; text-align: center;">
-                                <span style="display: block; font-size: 9px; color: #adb5bd; text-transform: uppercase;">Total Applicants</span>
+                                <span style="display: block; font-size: 9px; color: #adb5bd;">Total Applicants</span>
                                 <span style="font-size: 16px; font-weight: 700;">{count_total}</span>
                             </div>
                             <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; text-align: center;">
-                                <span style="display: block; font-size: 9px; color: #adb5bd; text-transform: uppercase;">ET Passers</span>
+                                <span style="display: block; font-size: 9px; color: #adb5bd;">Entrance Test Passers</span>
                                 <span style="font-size: 16px; font-weight: 700;">{count_et_pass}</span>
                             </div>
                         </div>

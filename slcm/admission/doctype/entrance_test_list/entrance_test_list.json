@@ -1,109 +1,109 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "creation": "2026-02-22 12:02:18.292702",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "academic_year",
-        "campus",
-        "admission_cycle",
-        "program_level",
-        "generated_on",
-        "status",
-        "entrance_test_applicant"
-    ],
-    "fields": [
-        {
-            "fieldname": "academic_year",
-            "fieldtype": "Link",
-            "label": "Academic Year ",
-            "options": "Academic Year"
-        },
-        {
-            "fieldname": "campus",
-            "fieldtype": "Link",
-            "label": "Campus",
-            "options": "Campus"
-        },
-        {
-            "fieldname": "admission_cycle",
-            "fieldtype": "Link",
-            "label": "Admission Cycle",
-            "options": "Admission Cycle"
-        },
-        {
-            "fieldname": "program_level",
-            "fieldtype": "Select",
-            "label": "Program Level",
-            "options": "UG\nPG\nResearch Course"
-        },
-        {
-            "fieldname": "generated_on",
-            "fieldtype": "Datetime",
-            "label": "Generated On"
-        },
-        {
-            "fieldname": "status",
-            "fieldtype": "Select",
-            "label": "Status",
-            "options": "Draft\nGenerated\nPublished"
-        },
-        {
-            "fieldname": "entrance_test_applicant",
-            "fieldtype": "Table",
-            "label": "Entrance Test Applicant",
-            "options": "Entrance Test Applicant"
-        }
-    ],
-    "grid_page_length": 50,
-    "index_web_pages_for_search": 1,
-    "links": [],
-    "modified": "2026-03-06 12:46:22.802520",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "Entrance Test List",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "write": 1
-        },
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Entrance Test Admin",
-            "select": 1,
-            "share": 1,
-            "write": 1
-        },
-        {
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Entrance Test Provider",
-            "share": 1,
-            "write": 1
-        }
-    ],
-    "row_format": "Dynamic",
-    "rows_threshold_for_grid_search": 20,
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-22 12:02:18.292702",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "academic_year",
+  "campus",
+  "admission_cycle",
+  "program_level",
+  "generated_on",
+  "status",
+  "entrance_test_applicant"
+ ],
+ "fields": [
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year ",
+   "options": "Academic Year"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "label": "Program Level",
+   "options": "Undergraduate\nPostgraduate\nResearch Course"
+  },
+  {
+   "fieldname": "generated_on",
+   "fieldtype": "Datetime",
+   "label": "Generated On"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nGenerated\nPublished"
+  },
+  {
+   "fieldname": "entrance_test_applicant",
+   "fieldtype": "Table",
+   "label": "Entrance Test Applicant",
+   "options": "Entrance Test Applicant"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-23 10:35:49.655874",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Entrance Test List",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Provider",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
 }

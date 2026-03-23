@@ -2288,8 +2288,8 @@
                                 <select class="fc" name="program_level" id="program_level"
                                     onchange="onProgramLevelChange(this.value)">
                                     <option value="">Select Level</option>
-                                    <option value="UG">UG</option>
-                                    <option value="PG">PG</option>
+                                    <option value="Undergraduate">Undergraduate</option>
+                                    <option value="Postgraduate">Postgraduate</option>
                                     <option value="Research Course">Research Course</option>
                                 </select>
                             </div>
@@ -3350,9 +3350,8 @@
                                 <div class="file-zone">
                                     <input type="file" name="cv" id="cv"
                                         accept="image/png,image/jpeg,image/jpg,application/pdf"
-                                        onchange="handleFileUpload('cv', this)"
-                                        style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:1;">
-                                    <div class="file-zone-label" id="cv_upload_btn">Browse or drop <strong>Curriculum vitae (CV)</strong></div>
+                                        onchange="handleFileUpload('cv', this)">
+                                    <label class="file-zone-label" id="cv_upload_btn" for="cv">Browse or drop <strong>Curriculum vitae (CV)</strong></label>
                                     <div class="file-preview" id="fp_cv"><svg xmlns="http://www.w3.org/2000/svg"
                                             width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                             stroke-width="2">
@@ -4540,7 +4539,7 @@
         });
 
         const pgLevel = document.getElementById('program_level')?.value;
-        if (pgLevel === 'PG' || pgLevel === 'Research Course') {
+        if (pgLevel === 'Postgraduate' || pgLevel === 'Research Course') {
             if (!document.getElementById('ug_degree_completion')?.value) {
                 showError('ug_degree_completion'); v = false;
             }
@@ -4788,7 +4787,7 @@
 
     function onProgramLevelChange(level) {
         formData.program_level = level;
-        const isPostGrad = level === 'PG' || level === 'Research Course';
+        const isPostGrad = level === 'Postgraduate' || level === 'Research Course';
         const isResearch = level === 'Research Course';
 
         document.getElementById('ugSection').style.display = isPostGrad ? 'block' : 'none';
@@ -4947,7 +4946,7 @@
     /**
      * Build a program picker using <input> + <datalist> so the suggestion list is not clipped by table overflow.
      * The datalist is attached to document.body so it renders outside the table.
-     * level: 'UG' | 'PG' | '' (all programs)
+     * level: 'Undergraduate' | 'Postgraduate' | '' (all programs)
      */
     function _ensureProgramDatalist(type, level) {
         const dlId = `dl_prog_${type}`;
@@ -5032,10 +5031,30 @@
         if (emptyRow) emptyRow.closest('tr')?.remove();
 
         if (type === 'ug') {
+            row.innerHTML = `
+            <td>${buildProgramSelect('ug', rowIdx, '', 'Undergraduate')}</td>
+            <td><input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" onchange="updateDegreeRow('ug',${rowIdx},'year_of_completion',this.value)"></td>
+            <td><input type="text" class="fc" placeholder="College / University" onchange="updateDegreeRow('ug',${rowIdx},'college',this.value)"></td>
+            <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" oninput="validateUGCGPA(this,${rowIdx})" onchange="updateDegreeRow('ug',${rowIdx},'ug_cgpa',this.value)"></td>
+            <td class="td-attach">${buildAttachCell(cellId_cert, 'ug', rowIdx, 'degree_certificate', '')}</td>
+            <td class="td-attach">${buildAttachCell(cellId_ms, 'ug', rowIdx, 'marksheets', '')}</td>
+            <td class="td-del"><button type="button" class="btn-del-row" onclick="removeRow('ug',this)" title="Remove row">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button></td>`;
             if (!formData.ug_degree_details) formData.ug_degree_details = [];
             formData.ug_degree_details.push({ ug_program: '', college: '', year_of_completion: '', ug_cgpa: '', degree_certificate: '', marksheets: '' });
             renderUgTable();
         } else {
+            row.innerHTML = `
+            <td>${buildProgramSelect('pg', rowIdx, '', 'Postgraduate')}</td>
+            <td><input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" onchange="updateDegreeRow('pg',${rowIdx},'year_of_completion',this.value)"></td>
+            <td><input type="text" class="fc" placeholder="College / University" onchange="updateDegreeRow('pg',${rowIdx},'collegeuniversity',this.value)"></td>
+            <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" oninput="validatePGCGPA(this,${rowIdx})" onchange="updateDegreeRow('pg',${rowIdx},'pg_cgpa',this.value)"></td>
+            <td class="td-attach">${buildAttachCell(cellId_cert, 'pg', rowIdx, 'pg_degree_certificatebonafide_certificate_to_be_uploaded', '')}</td>
+            <td class="td-attach">${buildAttachCell(cellId_ms, 'pg', rowIdx, 'transcriptsmarksheets_to_be_uploaded', '')}</td>
+            <td class="td-del"><button type="button" class="btn-del-row" onclick="removeRow('pg',this)" title="Remove row">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button></td>`;
             if (!formData.pg_degree_details) formData.pg_degree_details = [];
             formData.pg_degree_details.push({ pg_program: '', collegeuniversity: '', year_of_completion: '', pg_cgpa: '', pg_degree_certificatebonafide_certificate_to_be_uploaded: '', transcriptsmarksheets_to_be_uploaded: '' });
             renderPgTable();
@@ -5822,6 +5841,48 @@
         renderUgTable();
         renderPgTable();
 
+        if (Array.isArray(formData.ug_degree_details) && formData.ug_degree_details.length > 0) {
+            const tbody = document.getElementById('ugTableBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                formData.ug_degree_details.forEach((row, idx) => {
+                    const tr = tbody.insertRow();
+                    const cellId_cert = `ug_cert_${idx}`;
+                    const cellId_ms = `ug_ms_${idx}`;
+                    tr.innerHTML = `
+                        <td>${buildProgramSelect('ug', idx, row.ug_program || '', 'Undergraduate')}</td>
+                        <td><input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(row.year_of_completion || '')}" onchange="updateDegreeRow('ug',${idx},'year_of_completion',this.value)"></td>
+                        <td><input type="text" class="fc" placeholder="College / University" value="${escapeAttr(row.college || '')}" onchange="updateDegreeRow('ug',${idx},'college',this.value)"></td>
+                        <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr((row.ug_cgpa != null && row.ug_cgpa !== '' && row.ug_cgpa !== 0 && row.ug_cgpa !== '0') ? row.ug_cgpa : '')}" oninput="validateUGCGPA(this,${idx})" onchange="updateDegreeRow('ug',${idx},'ug_cgpa',this.value)"></td>
+                        <td class="td-attach">${buildAttachCell(cellId_cert, 'ug', idx, 'degree_certificate', row.degree_certificate || '')}</td>
+                        <td class="td-attach">${buildAttachCell(cellId_ms, 'ug', idx, 'marksheets', row.marksheets || '')}</td>
+                        <td class="td-del"><button type="button" class="btn-del-row" onclick="removeRow('ug',this)" title="Remove">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button></td>`;
+                });
+            }
+        }
+        if (Array.isArray(formData.pg_degree_details) && formData.pg_degree_details.length > 0) {
+            const tbody = document.getElementById('pgTableBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                formData.pg_degree_details.forEach((row, idx) => {
+                    const tr = tbody.insertRow();
+                    const cellId_cert = `pg_cert_${idx}`;
+                    const cellId_ms = `pg_ms_${idx}`;
+                    tr.innerHTML = `
+                        <td>${buildProgramSelect('pg', idx, row.pg_program || '', 'Postgraduate')}</td>
+                        <td><input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(row.year_of_completion || '')}" onchange="updateDegreeRow('pg',${idx},'year_of_completion',this.value)"></td>
+                        <td><input type="text" class="fc" placeholder="College / University" value="${escapeAttr(row.collegeuniversity || '')}" onchange="updateDegreeRow('pg',${idx},'collegeuniversity',this.value)"></td>
+                        <td><input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr((row.pg_cgpa != null && row.pg_cgpa !== '' && row.pg_cgpa !== 0 && row.pg_cgpa !== '0') ? row.pg_cgpa : '')}" oninput="validatePGCGPA(this,${idx})" onchange="updateDegreeRow('pg',${idx},'pg_cgpa',this.value)"></td>
+                        <td class="td-attach">${buildAttachCell(cellId_cert, 'pg', idx, 'pg_degree_certificatebonafide_certificate_to_be_uploaded', row.pg_degree_certificatebonafide_certificate_to_be_uploaded || '')}</td>
+                        <td class="td-attach">${buildAttachCell(cellId_ms, 'pg', idx, 'transcriptsmarksheets_to_be_uploaded', row.transcriptsmarksheets_to_be_uploaded || '')}</td>
+                        <td class="td-del"><button type="button" class="btn-del-row" onclick="removeRow('pg',this)" title="Remove">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button></td>`;
+                });
+            }
+        }
         // Apply conditional visibility so fields like work experience years, guardian, reservation sections, etc. show correctly when applicant data is loaded
         applyConditionalVisibility();
         // Ensure work experience years field is shown when loaded data has post_degree_work_experience = Yes

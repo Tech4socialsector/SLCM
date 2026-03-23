@@ -35,7 +35,7 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                                 label: __("Program Level"),
                                 fieldname: "program_level",
                                 fieldtype: "Select",
-                                options: "UG\nPG\nResearch Course",
+                                options: "Undergraduate\nPostgraduate\nResearch Course",
                                 reqd: 1
                             },
                             {
@@ -101,7 +101,7 @@ function open_reschedule_dialog(listview) {
                 label: __('Program Level'),
                 fieldname: 'program_level',
                 fieldtype: 'Select',
-                options: 'UG\nPG\nResearch Course',
+                options: 'Undergraduate\nPostgraduate\nResearch Course',
                 on_change: () => fetch_absent_applicants(d)
             },
             { fieldtype: 'Column Break' },
