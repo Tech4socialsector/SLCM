@@ -174,6 +174,7 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                 label: __("Interview Time"),
                 fieldname: "interview_time",
                 fieldtype: "Time",
+                reqd: 1,
                 description: __("Time slot for the interview (optional)")
             },
             {
@@ -253,15 +254,78 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                 freeze_message: __("Allocating Interview Slots… Please wait"),
                 callback: function (r) {
                     if (!r.exc) {
+                        // Inject keyframe styles once
+                        if (!document.getElementById("ivl-toast-style")) {
+                            const style = document.createElement("style");
+                            style.id = "ivl-toast-style";
+                            style.innerHTML = `
+                                @keyframes ivlSlideDown {
+                                    from { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                                    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+                                }
+                                @keyframes ivlSlideUp {
+                                    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+                                    to   { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+
+                        // Remove existing toast if any
+                        const existingToast = document.getElementById("ivl-success-toast");
+                        if (existingToast) existingToast.remove();
+
+                        const count = r.message || 0;
+                        const toast = document.createElement("div");
+                        toast.id = "ivl-success-toast";
+                        toast.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            left: 50%;
+                            z-index: 999999;
+                            background: #ffffff;
+                            border: 1.5px solid #2da44e;
+                            border-left: 5px solid #2da44e;
+                            border-radius: 10px;
+                            padding: 14px 20px;
+                            min-width: 380px;
+                            max-width: 550px;
+                            box-shadow: 0 10px 40px rgba(45,164,78,0.22), 0 2px 10px rgba(0,0,0,0.12);
+                            display: flex;
+                            align-items: flex-start;
+                            gap: 15px;
+                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                            animation: ivlSlideDown 0.4s cubic-bezier(.4,0,.2,1) forwards;
+                        `;
+                        toast.innerHTML = `
+                            <div style="flex-shrink:0; width:38px; height:38px; background:#eafbee;
+                                        border-radius:50%; display:flex; align-items:center;
+                                        justify-content:center; font-size:20px;">✅</div>
+                            <div style="flex:1;">
+                                <div style="font-weight:800; font-size:15px; color:#1a7f37; margin-bottom:4px; letter-spacing:-0.2px;">
+                                    Interview Scheduled Successfully Updated
+                                </div>
+                                <div style="font-size:13.5px; color:#4a4a4a; line-height:1.4;">
+                                    The interview allocation process has been completed successfully for <span style="font-weight:700; color:#1a7f37;">${count} applicants</span>.
+                                </div>
+                            </div>
+                            <span id="ivl-success-toast-close"
+                                  style="cursor:pointer; color:#adb5bd; font-size:20px; line-height:1;
+                                         padding:4px; align-self:flex-start; flex-shrink:0; transition: color 0.2s;"
+                                  onmouseover="this.style.color='#495057'" onmouseout="this.style.color='#adb5bd'"
+                                  title="Dismiss">✕</span>
+                        `;
+                        document.body.appendChild(toast);
+
+                        const dismissToast = () => {
+                            toast.style.animation = "ivlSlideUp 0.4s cubic-bezier(.4,0,.2,1) forwards";
+                            setTimeout(() => toast.remove(), 400);
+                        };
+                        document.getElementById("ivl-success-toast-close").onclick = dismissToast;
+                        setTimeout(dismissToast, 6500);
+
                         d.hide();
                         frm.reload_doc();
-                        frappe.show_alert({
-                            message: __(
-                                "Successfully allocated slots for {0} applicant(s). Status updated to 'Interview Scheduled'.",
-                                [r.message]
-                            ),
-                            indicator: "green"
-                        });
                     }
                 }
             });
@@ -304,6 +368,88 @@ function _show_slot_dialog(frm, applicants, staff_list) {
     });
     // Highlight default-checked one
     $wrapper.find(".staff-radio:checked").closest(".staff-label").css("background", "#e3f2fd");
+
+    // ── Past-date validation on Interview Date ──────────────────────────
+    d.fields_dict.interview_date.$input.on("change blur", function () {
+        const entered = d.get_value("interview_date");
+        if (!entered) return;
+
+        // Compare based on date only (today or future)
+        const today = frappe.datetime.get_today();
+        if (entered < today) {
+            // Clear the field
+            d.set_value("interview_date", "");
+
+            // Inject keyframe styles once (shared with ivl success toast)
+            if (!document.getElementById("ivl-toast-style")) {
+                const style = document.createElement("style");
+                style.id = "ivl-toast-style";
+                style.innerHTML = `
+                    @keyframes ivlSlideDown {
+                        from { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+                    }
+                    @keyframes ivlSlideUp {
+                        from { opacity: 1; transform: translateX(-50%) translateY(0); }
+                        to   { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Remove any existing warning toast
+            const existingToast = document.getElementById("ivl-date-toast");
+            if (existingToast) existingToast.remove();
+
+            // Build warning toast
+            const toast = document.createElement("div");
+            toast.id = "ivl-date-toast";
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                z-index: 999999;
+                background: #fff8e1;
+                border: 1.5px solid #f0a500;
+                border-left: 5px solid #f0a500;
+                border-radius: 10px;
+                padding: 14px 20px;
+                min-width: 360px;
+                max-width: 500px;
+                box-shadow: 0 8px 30px rgba(240,165,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                font-family: inherit;
+                animation: ivlSlideDown 0.35s cubic-bezier(.4,0,.2,1) forwards;
+            `;
+            toast.innerHTML = `
+                <div style="flex-shrink:0; width:36px; height:36px; background:#fff3cd;
+                            border-radius:50%; display:flex; align-items:center;
+                            justify-content:center; font-size:18px;">⚠️</div>
+                <div style="flex:1;">
+                    <div style="font-weight:700; font-size:14px; color:#856404; margin-bottom:3px;">
+                        Invalid Interview Date
+                    </div>
+                    <div style="font-size:12.5px; color:#555;">
+                        choose the Interview Should not Be past date choose future date
+                    </div>
+                </div>
+                <span id="ivl-date-toast-close"
+                      style="cursor:pointer; color:#aaa; font-size:18px; line-height:1;
+                             padding:0 4px; align-self:flex-start; flex-shrink:0;"
+                      title="Dismiss">✕</span>
+            `;
+            document.body.appendChild(toast);
+
+            const dismissDateToast = () => {
+                toast.style.animation = "ivlSlideUp 0.35s cubic-bezier(.4,0,.2,1) forwards";
+                setTimeout(() => toast.remove(), 350);
+            };
+            document.getElementById("ivl-date-toast-close").addEventListener("click", dismissDateToast);
+            setTimeout(dismissDateToast, 6000);
+        }
+    });
 }
 
 

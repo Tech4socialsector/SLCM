@@ -21,26 +21,34 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Academic Year ",
-   "options": "Academic Year"
+   "options": "Academic Year",
+   "reqd": 1
   },
   {
    "fieldname": "campus",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Campus",
-   "options": "Campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Admission Cycle",
-   "options": "Admission Cycle"
+   "options": "Admission Cycle",
+   "reqd": 1
   },
   {
    "fieldname": "program_level",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Program Level",
-   "options": "UG\nPG\nResearch Course"
+   "options": "UG\nPG\nResearch Course",
+   "reqd": 1
   },
   {
    "default": "Draft",
@@ -83,7 +91,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 10:09:43.805318",
+ "modified": "2026-03-21 11:21:45.046601",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Generation",

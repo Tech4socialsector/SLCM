@@ -3,27 +3,28 @@
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils import now_datetime, getdate, now
 
 class EntranceTestGeneration(Document):
 
     def before_save(self):
         if not self.generation_code:
             # optional: auto generate code like ETG-YY-#### 
-            from frappe.utils import now_datetime, getdate
             yr = getdate().strftime("%y")
             self.generation_code = frappe.generate_hash("EntranceTestGeneration", 8).upper()[:8]
             self.generation_code = f"ETG-{yr}-{self.generation_code}"
 
-   # in entrance_test_generation.py
+
 
     @frappe.whitelist()
     def generate_test_list(self):
         if self.status not in ["Draft", "In Progress", "Failed"]: # Included Failed as well
             frappe.throw("Document must be in Draft, In Progress or Failed to generate test list")
 
-        # Force schema sync for Entrance Test List and child table
-        frappe.db.updatedb("Entrance Test List")
-        frappe.db.updatedb("Entrance Test Applicant")
+
+        # Ensure schema is synced (updatedb is not a standard Frappe method)
+        # frappe.db.updatedb("Entrance Test List")
+        # frappe.db.updatedb("Entrance Test Applicant")
 
         # 1. Fetch Applicants based on Year, Campus, Cycle, and Level
         # 2. Filter out those who are EXEMPT from the entrance test (ee.exempts_entrance_test = 1)
@@ -51,6 +52,7 @@ class EntranceTestGeneration(Document):
                 AND app.admission_cycle = %(admission_cycle)s
                 AND app.program_level = %(program_level)s
                 AND (ee.exempts_entrance_test IS NULL OR ee.exempts_entrance_test = 0)
+                AND app.name NOT IN (SELECT applicant_id FROM `tabEntrance Test Applicant`)
                 AND app.application_status != 'Rejected'
         """, {
             "academic_year": self.academic_year,
@@ -75,7 +77,7 @@ class EntranceTestGeneration(Document):
                 f"<b>Cycle:</b> {self.admission_cycle}<br>"
                 f"<b>Level:</b> {self.program_level}<br><br>"
                 f"DIAGNOSTIC: Found {count_total} total applicants for this Cycle/Campus/Year, "
-                "but none match the Program Level or they are all exempt/rejected."
+                "but none match the Program Level or they are all exempt/rejected/already generated."
             )
 
         test_list = frappe.get_doc({
@@ -84,7 +86,7 @@ class EntranceTestGeneration(Document):
             "campus": self.campus,
             "admission_cycle": self.admission_cycle,
             "program_level": self.program_level,
-            "generated_on": frappe.utils.now(),
+            "generated_on": now(),
             "status": "Generated",
             "entrance_test_applicant": []
         })
@@ -103,17 +105,8 @@ class EntranceTestGeneration(Document):
 
         test_list.insert(ignore_permissions=True)
 
-        self.db_set({
-            "status": "Completed",
-            "generated_on": frappe.utils.now(),
-            "generated_by": frappe.session.user
-        })
-
-        frappe.msgprint(
-            f"<b>Success!</b> Created Entrance Test List with {len(applicants)} applicants.<br>"
-            f"<a href='/app/entrance-test-list/{test_list.name}'>{test_list.name}</a>",
-            title="Test List Generated",
-            indicator="green"
-        )
+        self.db_set("status", "Completed")
+        self.db_set("generated_on", now())
+        self.db_set("generated_by", frappe.session.user)
 
         return test_list.name

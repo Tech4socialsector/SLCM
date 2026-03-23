@@ -1,0 +1,234 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "ADCAN-.#####",
+ "creation": "2026-03-18 18:08:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_application",
+  "applicant",
+  "offer",
+  "campus",
+  "program",
+  "column_break_app_1",
+  "payment_request",
+  "applicant_payment_receipt",
+  "amount_paid",
+  "razorpay_id",
+  "section_cancellation",
+  "cancellation_type",
+  "status",
+  "column_break_canc_1",
+  "requested_by",
+  "requested_on",
+  "section_reason",
+  "cancellation_reason_type",
+  "cancellation_reason",
+  "column_break_reason_1",
+  "additional_comments",
+  "section_approval",
+  "cancelled_by",
+  "cancelled_on",
+  "amended_from",
+  "refund_request"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_application",
+   "fieldtype": "Section Break",
+   "label": "Application Details"
+  },
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Applicant",
+   "options": "Applicant",
+   "reqd": 1
+  },
+  {
+   "fieldname": "offer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Offer Letter",
+   "options": "Offer Letter",
+   "read_only": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_app_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_request",
+   "fieldtype": "Link",
+   "label": "Fee Payment",
+   "options": "Fee Payment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount_paid",
+   "fieldtype": "Currency",
+   "label": "Amount Paid",
+   "read_only": 1
+  },
+  {
+   "fieldname": "razorpay_id",
+   "fieldtype": "Data",
+   "label": "Razorpay Payment ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_cancellation",
+   "fieldtype": "Section Break",
+   "label": "Cancellation Details"
+  },
+  {
+   "fieldname": "cancellation_type",
+   "fieldtype": "Select",
+   "label": "Cancellation Type",
+   "options": "Student\nAdmin",
+   "reqd": 1
+  },
+  {
+   "default": "Initiated",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Initiated\nApproved\nCompleted",
+   "reqd": 1
+  },
+  {
+   "fieldname": "refund_request",
+   "fieldtype": "Link",
+   "label": "Refund Request",
+   "options": "Refund Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_canc_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "requested_on",
+   "fieldtype": "Datetime",
+   "label": "Requested On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_reason",
+   "fieldtype": "Section Break",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "cancellation_reason_type",
+   "fieldtype": "Select",
+   "label": "Cancellation Reason",
+   "options": "Financial Issues\nMedical Reasons\nPersonal Reasons\nBetter Offer Elsewhere\nProgram Change\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cancellation_reason",
+   "fieldtype": "Small Text",
+   "label": "Detailed Explanation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_reason_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "additional_comments",
+   "fieldtype": "Text",
+   "label": "Additional Comments"
+  },
+  {
+   "fieldname": "section_approval",
+   "fieldtype": "Section Break",
+   "label": "Approval & Finalization"
+  },
+  {
+   "fieldname": "cancelled_by",
+   "fieldtype": "Link",
+   "label": "Processed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cancelled_on",
+   "fieldtype": "Datetime",
+   "label": "Processed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Admission Cancellation",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-19 11:02:25.760922",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission Cancellation",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

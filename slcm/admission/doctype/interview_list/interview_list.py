@@ -4,8 +4,9 @@
 import frappe
 import json
 import re
+import traceback
 from frappe.model.document import Document
-from frappe.utils import now
+from frappe.utils import now, get_url, format_date, format_time
 
 
 class InterviewList(Document):
@@ -57,8 +58,8 @@ class InterviewList(Document):
           - Marks child row as 'Scheduled'.
           - Sends email notification to each applicant.
         """
-        # Ensure schema is synced
-        frappe.db.updatedb("Interview Seat Allocation")
+        # Ensure schema is synced (updatedb is not a standard Frappe method)
+        # frappe.db.updatedb("Interview Seat Allocation")
 
         if isinstance(selected_applicants, str):
             selected_applicants = json.loads(selected_applicants)
@@ -183,47 +184,71 @@ class InterviewList(Document):
 
 
 def _send_interview_slot_email(allocation, email, staff):
-    """Send a premium interview slot assignment notification to the applicant."""
-    from frappe.utils import get_url
-    url = get_url(f"/merit-and-scholarship/admission_dashboard?panel=applications")
+    """Send a premium masterpiece interview slot assignment notification to the applicant."""
+    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+    
+    # Format Date and Time
+    formatted_date = "To be communicated"
+    formatted_time = "To be communicated"
+    if allocation.interview_date:
+        try:
+            formatted_date = format_date(allocation.interview_date)
+        except:
+            formatted_date = str(allocation.interview_date)
+            
+    if allocation.interview_time:
+        try:
+            formatted_time = format_time(allocation.interview_time)
+        except:
+            formatted_time = str(allocation.interview_time)
 
+    subject = "Admission Interview Schedule Confirmation"
+    
     msg = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; line-height: 1.6; color: #333;">
-        <h2 style="color: #0277bd; border-bottom: 2px solid #0277bd; padding-bottom: 10px; margin-top: 0;">Admission Interview Scheduled</h2>
-        <p>Dear {allocation.candidate_name or allocation.applicant},</p>
-        <p>Your admission interview has been scheduled. Please find the session details below:</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
+        <p style="margin-top: 0;">Dear {allocation.candidate_name or allocation.applicant},</p>
         
-        <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0;"><strong>Interview Details:</strong></p>
-            <table style="width:100%; border-collapse: collapse; font-size: 14px;">
-                <tr><td style="padding:5px 0; color:#666;">Date:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_date or 'To be communicated'}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Time:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_time or 'To be communicated'}</td></tr>
-                <tr><td style="padding:5px 0; color:#666;">Venue / Address:</td><td style="padding:5px 0; font-weight:bold;">{allocation.interview_address or 'To be communicated'}</td></tr>
+        <p>Greetings from the Admissions Office.</p>
+        
+        <p>We are pleased to inform you that your admission interview has been successfully scheduled. The details of your interview session are provided below.</p>
+        
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Interview Details:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Date:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_date}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Time:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_time}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Venue:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.interview_address or 'To be communicated'}</td></tr>
             </table>
         </div>
 
-        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0; font-size: 13px;">
-            <p style="margin: 0 0 5px 0; color:#666;"><strong>Your Information:</strong></p>
-            <p style="margin: 0;">ID: {allocation.applicant} | {allocation.program} ({allocation.academic_year})</p>
-            <p style="margin: 0;">Campus: {allocation.campus}</p>
+        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Applicant Information:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Application ID:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.applicant}</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Program:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.program} ({allocation.academic_year})</td></tr>
+                <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.campus}</td></tr>
+            </table>
         </div>
+        
+        <p style="font-size: 12.5px; color: #6a737d; margin-bottom: 25px;">
+            You are requested to report to the venue at least 15 minutes prior to the scheduled time. Please ensure that you carry all necessary documents for verification as per the admission guidelines.
+        </p>
 
-        <p>Please click the button below to view your full interview details and status in the portal:</p>
+        <p>To view your complete interview details and current status, please log in to the admission portal using the link below:</p>
         
         <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display:inline-block; padding:12px 28px; background:#0277bd; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; font-size: 16px;">View Interview Details</a>
+            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">Interview Details</a>
         </div>
         
-        <p style="color:#666; font-size:12px; border-top:1px solid #eee; padding-top:15px; margin-bottom: 0;">
-            Record Reference: {allocation.name}<br>
-            If the button doesn't work, copy this link: {url}
-        </p>
+        <p>If you require any assistance or have queries regarding your interview schedule, please contact the Admissions Office.</p>
+        
+        <p>We wish you the very best for your interview.</p>
     </div>
     """
 
     frappe.sendmail(
         recipients=[email],
-        subject=f"Interview Scheduled — {allocation.candidate_name or allocation.applicant}",
+        subject=subject,
         message=msg,
         reference_doctype="Interview Seat Allocation",
         reference_name=allocation.name

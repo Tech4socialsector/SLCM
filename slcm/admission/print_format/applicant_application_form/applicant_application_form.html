@@ -14,6 +14,13 @@
 
 {%- set _site = frappe.utils.get_url() -%}
 
+{#- base64 image helper — makes images load in wkhtmltopdf PDF -#}
+{%- macro get_img(url) -%}
+  {%- if url and url not in ['None',''] -%}
+    {{ frappe.call('slcm.admission.utils.web.get_base64_image', url=url) }}
+  {%- endif -%}
+{%- endmacro -%}
+
 {%- macro f(v) -%}{%- if v and v != 'None' -%}{{ v }}{%- else -%}&mdash;{%- endif -%}{%- endmacro -%}
 {%- macro fd(v) -%}{%- if v -%}{{ frappe.utils.formatdate(v,'dd-MM-yyyy') }}{%- else -%}&mdash;{%- endif -%}{%- endmacro -%}
 
@@ -227,13 +234,9 @@ html, body {
   margin-top: 0;
 }
 .pf-table td {
-  border: 1px solid #d0d0d0;
-  padding: 2px 5px;
-  vertical-align: middle;
-  font-size: 6.8pt;
-  line-height: 1.35;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  border: 1px solid #d0d0d0; padding: 3px 6px;
+  vertical-align: middle; font-size: 8.5px;
+  line-height: 1.45; word-wrap: break-word; overflow-wrap: break-word;
 }
 
 .pf-table colgroup col:nth-child(1) { width: 22%; }
@@ -421,6 +424,7 @@ html, body {
       </td>
     </tr>
 
+    {# Rows 2–9: inside rowspan → wide values colspan="3" #}
     <tr>
       <td class="pf-lbl">Candidate's Name</td>
       <td class="pf-val" colspan="3">
@@ -469,7 +473,23 @@ html, body {
       </td>
     </tr>
 
-    {# ══ 2. FAMILY INFORMATION ══ #}
+    {# ══ 2. FAMILY INFORMATION ══
+       All rows are OUTSIDE the photo rowspan (5 cols free).
+       Two-pair rows: last val uses colspan="2"
+
+       Father layout (2 rows):
+         Row 1: Father's Name | val | Occupation | val colspan="2"
+         Row 2: Mobile        | val | Father's Email | val colspan="2"
+
+       Mother layout (2 rows — same pattern):
+         Row 1: Mother's Name | val | Occupation | val colspan="2"
+         Row 2: Mobile        | val | Mother's Email | val colspan="2"
+
+       Guardian layout (2 rows, conditional):
+         Row 1: Guardian's Name | val | Relationship | val colspan="2"
+         Row 2: Guardian's Mobile | val | Guardian's Email | val colspan="2"
+         Row 3 (conditional): Guardian's Address | val colspan="4"
+    #}
     <tr><td colspan="5" class="pf-sec">2. Family Information</td></tr>
 
     <tr><td colspan="5" class="pf-subsec">Father's Details</td></tr>

@@ -36,6 +36,41 @@ def get_base64_image(url):
     except Exception:
         return frappe.utils.get_url(url)
 
+@frappe.whitelist(allow_guest=True)
+def get_base64_image(url):
+    """Returns base64 data URI for a given file URL by reading from local disk."""
+    if not url or url in ('None', ''):
+        return ''
+    
+    path = url.strip('/')
+    possible_paths = [
+        frappe.get_site_path('public', path),
+        frappe.get_site_path(path),
+        frappe.get_site_path('private', path)
+    ]
+    
+    found_path = None
+    import os
+    for p in possible_paths:
+        if os.path.exists(p):
+            found_path = p
+            break
+            
+    if not found_path:
+        return frappe.utils.get_url(url)
+        
+    ext = path.split('.')[-1].lower()
+    mime = 'image/png' if ext == 'png' else 'image/jpeg'
+    
+    try:
+        with open(found_path, 'rb') as f:
+            content = f.read()
+            import base64
+            encoded = base64.b64encode(content).decode('utf-8')
+            return f"data:{mime};base64,{encoded}"
+    except Exception:
+        return frappe.utils.get_url(url)
+
 @frappe.whitelist(methods=["POST", "GET"])
 def check_existing_application(admission_cycle=None):
     """
@@ -474,6 +509,21 @@ def get_offer_list(limit_start=0, limit_page_length=10):
         else:
             offer.scholarship_amount = 0
             offer.final_payable_amount = offer.payable_amount
+
+        # Fetch cancellation info
+        cancellation = frappe.get_all("Admission Cancellation", 
+            filters={"offer": offer.name}, 
+            fields=["name", "status"], 
+            limit=1
+        )
+        if cancellation:
+            offer.has_cancellation = True
+            offer.cancellation_name = cancellation[0].name
+            offer.cancellation_status = cancellation[0].status
+        else:
+            offer.has_cancellation = False
+            offer.cancellation_name = ""
+            offer.cancellation_status = ""
 
     return {
         "offers": offers,

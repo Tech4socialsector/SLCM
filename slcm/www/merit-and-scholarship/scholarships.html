@@ -405,6 +405,23 @@
           </div>
           {% endif %}
         </header>
+
+        {% if is_fee_paid %}
+        <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-2 rounded-r-2xl shadow-sm fade-in-up" style="animation-delay:0.1s">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <span class="material-symbols-outlined text-amber-500">info</span>
+            </div>
+            <div class="ml-3">
+              <p class="text-xs font-bold text-amber-800 leading-relaxed">
+                Notice: You are not eligible to apply for new scholarships as your admission fee has already been paid. 
+                Scholarships must be approved before the final payment is processed.
+              </p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 fade-in-up" style="animation-delay:0.15s">
           <!-- KPI 1: Eligible -->
           <div class="kpi-card border-t-2 border-t-emerald-500 shadow-sm px-4 py-3">
@@ -510,10 +527,16 @@
                   <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
                     <button onclick="viewDetails('{{ sch.name }}')"
                       class="text-[12px] font-bold text-slate-500 hover:text-slate-900">Details</button>
-                    <a href="{{ '/merit-and-scholarship/apply?scheme=' ~ sch.name if _is_cycle_active else 'javascript:void(0)' }}"
-                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[12px] font-bold shadow-sm transition-opacity {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
-                      style="{{ 'pointer-events: none;' if not _is_cycle_active else '' }}">
-                      {{ 'Apply Now' if _is_cycle_active else 'Closed' }}
+                    <a href="{{ '/merit-and-scholarship/apply?scheme=' ~ sch.name if (_is_cycle_active and not is_fee_paid) else 'javascript:void(0)' }}"
+                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[12px] font-bold shadow-sm transition-opacity {{ 'opacity-60 cursor-not-allowed' if (not _is_cycle_active or is_fee_paid) else 'hover:opacity-90' }}"
+                      style="{{ 'pointer-events: none;' if (not _is_cycle_active or is_fee_paid) else '' }}">
+                      {% if is_fee_paid %}
+                        Paid
+                      {% elif _is_cycle_active %}
+                        Apply Now
+                      {% else %}
+                        Closed
+                      {% endif %}
                     </a>
                   </div>
                 </div>
