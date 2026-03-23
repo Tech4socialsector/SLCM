@@ -213,7 +213,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 11:56:54.659951",
+ "modified": "2026-03-23 15:23:33.370171",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
@@ -261,6 +261,16 @@
    "report": 1,
    "role": "Campus Admin",
    "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

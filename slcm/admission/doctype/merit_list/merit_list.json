@@ -128,6 +128,10 @@
    "report": 1,
    "role": "Admission Admin",
    "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Applicant"
   }
  ],
  "row_format": "Dynamic",

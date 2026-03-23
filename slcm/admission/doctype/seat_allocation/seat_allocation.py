@@ -23,7 +23,8 @@ def get_applicant_categories(applicant_id):
         categories = frappe.db.get_all(
             "Applicant Category",
             filters={"parent": eligibility, "parenttype": "Eligibility Result"},
-            pluck="category"
+            pluck="category",
+            ignore_permissions=True
         )
 
     # 2. Try from Applicant (initial source from web form)
@@ -31,7 +32,8 @@ def get_applicant_categories(applicant_id):
         categories = frappe.db.get_all(
             "Applicant Category",
             filters={"parent": applicant_id, "parenttype": "Applicant"},
-            pluck="category"
+            pluck="category",
+            ignore_permissions=True
         )
 
     return list(set(categories))

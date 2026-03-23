@@ -251,6 +251,10 @@
    "role": "Entrance Test Admin",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Applicant"
   }
  ],
  "row_format": "Dynamic",

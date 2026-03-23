@@ -76,7 +76,7 @@ def get_context(context):
                     "correspondence_address","city","state","pincode",
                     "application_status", "intake_type", "reservation_category",
                     "pwd", "program_level"],
-            limit=1, order_by="creation desc")
+            limit=1, order_by="creation desc", ignore_permissions=True)
         if not _prof_apps:
             _prof_apps = frappe.get_all("Applicant",
                 filters=[["email","=",_user]],
@@ -85,7 +85,7 @@ def get_context(context):
                         "correspondence_address","city","state","pincode",
                         "application_status", "intake_type", "reservation_category",
                         "pwd", "program_level"],
-                limit=1, order_by="creation desc")
+                limit=1, order_by="creation desc", ignore_permissions=True)
         if _prof_apps:
             _prof_app = _prof_apps[0]
     except Exception:
@@ -198,11 +198,11 @@ def get_context(context):
     if context.show_profile:
         # ── States and Districts ─────────────────────────────────────────
         try:
-            context.states = frappe.get_all("State", fields=["name"], order_by="name asc")
+            context.states = frappe.get_all("State", fields=["name"], order_by="name asc", ignore_permissions=True)
             if context.prof_state:
                 context.districts = frappe.get_all("District", 
                     filters={"state": context.prof_state},
-                    fields=["name"], order_by="name asc")
+                    fields=["name"], order_by="name asc", ignore_permissions=True)
             else:
                 context.districts = []
         except Exception:
@@ -229,6 +229,7 @@ def get_context(context):
 
         context.selected_app = applicant
         context.is_editable = is_application_editable(applicant)
+        current = applicant.application_status or "Draft"
 
         # ── Fetch Eligibility Evaluation for exemptions ─────────────
         evaluation = frappe.db.get_value("Eligibility Evaluation", 
@@ -314,7 +315,6 @@ def get_context(context):
                 {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
                 {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
             ]
-            current = applicant.get("application_status") or "Draft"
             stop_found = False
             for st in statuses:
                 state = "pending"
@@ -333,7 +333,10 @@ def get_context(context):
 
         # ── Next steps ─────────────────────────────────────────────
         try:
-            _pc = frappe.get_doc("Applicant Portal Config")
+            # Use the already available portal_config which is a dict returned by get_portal_config()
+            # Note: get_portal_config() must be updated to include 'stage_next_steps' and other fields
+            # or we use ignore_permissions=True here.
+            _pc = frappe.get_doc("Applicant Portal Config", ignore_permissions=True)
             _next_steps = []
             if _pc:
                 all_steps = (_pc.get("stage_next_steps") or [])
@@ -366,7 +369,8 @@ def get_context(context):
             filters={"applicant": applicant.name, "status": ["not in", ["Rejected"]]},
             fields=["name", "status", "requested_on", "cancellation_reason"],
             order_by="creation desc",
-            limit=1
+            limit=1,
+            ignore_permissions=True
         )
         if context.cancellation_details:
              context.cancellation_details = context.cancellation_details[0]
@@ -401,7 +405,7 @@ def get_context(context):
                     receipt = frappe.get_all("Applicant Payment Receipt",
                         filters={"offer_letter": context.offer_name, "docstatus": 1},
                         fields=["name", "total_amount as amount", "payment_date"],
-                        order_by="creation desc", limit=1)
+                        order_by="creation desc", limit=1, ignore_permissions=True)
                     if receipt:
                         context.payment_details = receipt[0]
                         context.payment_receipt = receipt[0].name
@@ -533,7 +537,7 @@ def get_context(context):
                 campus_branding = {"campus_name": et_doc.campus or "Institution of Legal Education", "logo": None}
                 try:
                     if et_doc.campus:
-                        campus = frappe.get_doc("Campus", et_doc.campus)
+                        campus = frappe.get_doc("Campus", et_doc.campus, ignore_permissions=True)
                         campus_branding["campus_name"] = campus.campus_name or et_doc.campus
                         campus_branding["logo"] = campus.logo
                 except: pass
@@ -649,7 +653,7 @@ def get_context(context):
         prof = entry.get("profile", {})
         app_id = prof.get("applicant_id")
         if not app_id: continue
-        app_doc = frappe.get_doc("Applicant", app_id)
+        app_doc = frappe.get_doc("Applicant", app_id, ignore_permissions=True)
         
         status = app_doc.application_status or "Draft"
         style = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])

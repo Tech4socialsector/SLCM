@@ -400,18 +400,20 @@ def get_applicant_data():
     # 1. Fetch the primary Eligibility Result names first to get full docs
     result_names = frappe.get_all("Eligibility Result", 
         filters={"email": user_email},
-        pluck="name"
+        pluck="name",
+        ignore_permissions=True
     )
     
     if not result_names:
         result_names = frappe.get_all("Eligibility Result", 
             filters={"owner": user_email},
-            pluck="name"
+            pluck="name",
+            ignore_permissions=True
         )
 
     results = []
     for name in result_names:
-        doc = frappe.get_doc("Eligibility Result", name)
+        doc = frappe.get_doc("Eligibility Result", name, ignore_permissions=True)
         
         # Calculate averaged UG CGPA
         ug_avg = 0
@@ -466,13 +468,13 @@ def get_applicant_data():
 
 
     # 2. For each result, get the specific selection statuses from Seat Allocation child tables
-    settings = frappe.get_single("Admission Settings")
+    settings = frappe.get_doc("Admission Settings", ignore_permissions=True)
     
     combined_data = []
 
     # If results is empty but we have an app_id, we might want to synthesize a result
     if not results and app_id:
-        app = frappe.get_doc("Applicant", app_id)
+        app = frappe.get_doc("Applicant", app_id, ignore_permissions=True)
         results.append({
             "applicant_id": app_id,
             "candidate_name": app.candidate_name,
@@ -497,7 +499,8 @@ def get_applicant_data():
         if settings.is_merit_list:
             merit_entries = frappe.get_all("Merit List Applicant",
                 filters={"applicant_id": res['applicant_id']},
-                fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
+                fields=["total_score", "overall_rank", "program_rank", "status", "parent"],
+                ignore_permissions=True
             )
             for m in merit_entries:
                 if m.get("parent"):
@@ -506,7 +509,8 @@ def get_applicant_data():
         # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",
             filters={"applicant_id": res['applicant_id']},
-            fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score", "allocated_category"]
+            fields=["selection_status", "overall_rank", "allocation_type", "parent", "total_score", "allocated_category"],
+            ignore_permissions=True
         )
         
         # Inject Seat Allocation details

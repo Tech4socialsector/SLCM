@@ -98,7 +98,8 @@ def get_applied_scholarships_for_dashboard(applicant_id):
         "Scholarship Application",
         filters={"applicant_id": applicant_id},
         fields=["name", "scholarship_scheme", "status", "calculated_benefit", "creation", "family_income", "income_certificate", "supporting_documents"],
-        order_by="creation desc"
+        order_by="creation desc",
+        ignore_permissions=True
     )
 
 def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, program, applicant_statuses):
@@ -114,7 +115,8 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             "admission_cycle": cycle,
             "campus": campus,
         },
-        fields=["scholarship_scheme", "program", "category"]
+        fields=["scholarship_scheme", "program", "category"],
+        ignore_permissions=True
     )
     
     if not mappings:
@@ -153,7 +155,8 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             "application_start", "application_end", "max_beneficiaries", 
             "current_beneficiaries", "total_budget", "utilized_budget", 
             "exclusive_scheme", "max_amount", "eligibility_criteria"
-        ]
+        ],
+        ignore_permissions=True
     )
     
     available = []
@@ -161,7 +164,8 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     # Get schemes already applied for (regardless of status)
     applied_docs = frappe.get_all("Scholarship Application", 
         filters={"applicant_id": applicant_id}, 
-        fields=["scholarship_scheme", "status"]
+        fields=["scholarship_scheme", "status"],
+        ignore_permissions=True
     )
     applied_scheme_names = [d.scholarship_scheme for d in applied_docs]
     approved_scheme_names = [d.scholarship_scheme for d in applied_docs if d.status == "Approved"]
@@ -170,7 +174,7 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     has_exclusive = frappe.db.exists("Scholarship Application", {
         "applicant_id": applicant_id,
         "status": "Approved",
-        "scholarship_scheme": ["in", frappe.get_all("Scholarship Scheme", filters={"exclusive_scheme": 1}, pluck="name")]
+        "scholarship_scheme": ["in", frappe.get_all("Scholarship Scheme", filters={"exclusive_scheme": 1}, pluck="name", ignore_permissions=True)]
     })
 
     # Get Max Schemes limit from Cycle

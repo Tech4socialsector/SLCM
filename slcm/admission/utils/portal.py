@@ -32,9 +32,10 @@ def api_get_my_application():
         
     apps = frappe.get_all(
         "Applicant",
-        filters={"owner": user, "admission_cycle": active_cycle},
+        filters={"owner": user},
         fields=["*"],
-        limit=1
+        limit=1,
+        ignore_permissions=True
     )
     return apps[0] if apps else None
 
@@ -45,7 +46,7 @@ def get_portal_config():
     Falls back to safe defaults if not configured yet.
     """
     try:
-        config = frappe.get_single("Applicant Portal Config")
+        config = frappe.get_doc("Applicant Portal Config", ignore_permissions=True)
         return {
             "portal_title": config.portal_title or "Admissions",
             "portal_subtitle": config.portal_subtitle or "",
@@ -140,7 +141,7 @@ def api_get_hero_slides():
     Returns empty list if neither is set — JS shows text-only hero.
     """
     try:
-        config = frappe.get_single("Applicant Portal Config")
+        config = frappe.get_doc("Applicant Portal Config", ignore_permissions=True)
         slides = []
 
         # Slide 1: hero_image (always first if set)
@@ -202,7 +203,8 @@ def get_active_programs():
                 "program_media", "reservation_policy", "max_applications",
                 "application_count", "program_level", "intake_type", "campus",
             ],
-            order_by="program_name asc"
+            order_by="program_name asc",
+            ignore_permissions=True
         )
 
         import re as _re
@@ -295,7 +297,8 @@ def get_active_events(limit=4):
             },
             fields=fields,
             order_by="event_date asc" if "event_date" in fields_available else "creation desc",
-            limit=limit
+            limit=limit,
+            ignore_permissions=True
         )
     except Exception as e:
         frappe.log_error(f"get_active_events failed: {e}", "Portal")
@@ -345,7 +348,8 @@ def api_get_program_detail(program, cycle):
                 "Media",
                 filters={"parent": cp.program_media, "parentfield": "media_gallery"},
                 fields=["media_type", "file", "caption", "sequence"],
-                order_by="sequence asc"
+                order_by="sequence asc",
+                ignore_permissions=True
             )
             for m in media_list:
                 if m.media_type == "Image":
@@ -359,7 +363,8 @@ def api_get_program_detail(program, cycle):
                 "Program Reservation Category",
                 filters={"parent": cp.reservation_policy},
                 fields=["category_name", "total_seats", "application_fee"],
-                order_by="total_seats desc"
+                order_by="total_seats desc",
+                ignore_permissions=True
             )
             res["categories"] = cats
 
@@ -374,7 +379,7 @@ def api_get_program_detail(program, cycle):
 @frappe.whitelist(allow_guest=True)
 def api_get_campus_options():
     """Returns list of active campuses."""
-    return frappe.get_all("Company", filters={"is_group": 0}, fields=["name", "company_name"])
+    return frappe.get_all("Company", filters={"is_group": 0}, fields=["name", "company_name"], ignore_permissions=True)
 
 @frappe.whitelist()
 def api_get_application_fee(program, cycle, category=None):
@@ -405,7 +410,7 @@ def api_get_portal_stats():
         
         # Sum seats from policy if available, else from program row
         total_seats = 0
-        cycle_progs = frappe.get_all("Admission Cycle Program", filters={"parent": active_cycle_name, "is_active": 1}, fields=["seats", "reservation_policy"])
+        cycle_progs = frappe.get_all("Admission Cycle Program", filters={"parent": active_cycle_name, "is_active": 1}, fields=["seats", "reservation_policy"], ignore_permissions=True)
         for p in cycle_progs:
             if p.reservation_policy:
                 total_seats += frappe.db.get_value("Program Reservation Policy", p.reservation_policy, "total_seats") or 0
@@ -424,7 +429,7 @@ def api_get_announcement_detail(ann_name):
     """Returns full detail for one announcement."""
     if not ann_name or not frappe.db.exists("Portal Announcement", ann_name):
         return None
-    doc = frappe.get_doc("Portal Announcement", ann_name)
+    doc = frappe.get_doc("Portal Announcement", ann_name, ignore_permissions=True)
     if not doc.is_active:
         return None
     return doc.as_dict()
@@ -456,7 +461,8 @@ def get_active_announcements(limit=10):
                     "featured_image", "publish_date", "event_date",
                     "event_venue", "created_by_role", "owner"],
             order_by="publish_date desc",
-            limit=limit
+            limit=limit,
+            ignore_permissions=True
         )
         for a in anns:
             # Enrich with owner full name if created_by_role not set
@@ -480,7 +486,8 @@ def api_get_program_media(program_media=None):
             "Media",
             filters={"parent": program_media},
             fields=["media_type", "file", "caption", "sequence"],
-            order_by="sequence asc"
+            order_by="sequence asc",
+            ignore_permissions=True
         )
     
     # Return all media across all programs for applicant_portal compat
@@ -551,21 +558,14 @@ def is_application_editable(applicant):
     if current_status == "Draft":
         return True
     
-    # Fetch stages for this cycle
-    stages = frappe.get_all(
-        "Admission Cycle Stage",
-        filters={
-            "parent": applicant.admission_cycle,
-            "is_enabled": 1
-        },
-        fields=["activate_status", "completed_status", "closed_status", "is_editable", "applicable_workflow"],
-        order_by="sequence_no asc"
-    )
+    # Fetch stages via parent Admission Cycle to follow permissions
+    cycle_doc = frappe.get_doc("Admission Cycle", applicant.admission_cycle, ignore_permissions=True)
+    stages = cycle_doc.get("stages") or []
     
     intake = applicant.get("intake_type") or "External Test"
     filtered_stages = [
         s for s in stages
-        if s.applicable_workflow == "All" or s.applicable_workflow == intake
+        if (s.applicable_workflow == "All" or s.applicable_workflow == intake) and s.is_enabled
     ]
     
     # Look for the stage that matches current status

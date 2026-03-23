@@ -441,6 +441,10 @@
    "read": 1,
    "role": "Admission Admin",
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Applicant"
   }
  ],
  "row_format": "Dynamic",
