@@ -421,7 +421,8 @@
       <div class="lp-field">
         <label class="lp-label" for="reg-name">Name of applicant<span class="mandatory">*</span></label>
         <input class="lp-input" type="text" id="reg-name"
-               placeholder="Your full name" autocomplete="name">
+               placeholder="Your full name" autocomplete="name"
+               oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '');">
         <div class="lp-field-error" id="err-reg-name"></div>
       </div>
       <div class="lp-field">
@@ -647,6 +648,8 @@ function lpValidate(fields, panel) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { lpFieldError(f.id, 'Please enter a valid email address.'); ok = false; }
     } else if (f.type === 'mobile') {
       if (!/^\d{10}$/.test(val)) { lpFieldError(f.id, 'Please enter a valid 10-digit mobile number.'); ok = false; }
+    } else if (f.type === 'name') {
+      if (/[^a-zA-Z\s]/.test(val)) { lpFieldError(f.id, 'Name should only contain letters.'); ok = false; }
     }
   });
   return ok;
@@ -803,7 +806,7 @@ function applyVerificationResult(status) {
 
 async function doRegister() {
   if (!lpValidate([
-    { id: 'reg-name',   type: 'text',   msg: 'Please enter your full name.' },
+    { id: 'reg-name',   type: 'name',   msg: 'Please enter your full name.' },
     { id: 'reg-mobile', type: 'mobile', msg: 'Please enter your mobile number.' },
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
   ], 'register')) return;

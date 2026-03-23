@@ -336,18 +336,108 @@
     .gap-3 { gap: 1rem; }
 
     .flex-grow-1 { flex-grow: 1; }
+
+    /* ── Sidebar ────────────────────────────────────────── */
+    .sidebar-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: none;
+        color: #94a3b8;
+        margin: 0 0 12px 4px;
+    }
+
+    .adm-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.15s;
+        margin-bottom: 2px;
+        text-decoration: none !important;
+    }
+
+    .adm-menu-item:hover:not(.active) {
+        background: #f8fafc;
+        color: var(--text-1);
+    }
+
+    .adm-menu-item.active {
+        background: var(--primary-light);
+        color: var(--primary) !important;
+        font-weight: 600;
+    }
+
+    .adm-menu-item.active .ms-icon {
+        color: var(--primary) !important;
+    }
+
+    .adm-menu-item.danger {
+        color: var(--danger);
+    }
+
+    .adm-menu-item.danger:hover {
+        background: #fff5f5;
+    }
+
+    .ms-icon {
+        font-family: 'Material Symbols Outlined';
+        font-size: 20px;
+        color: #94a3b8;
+        flex-shrink: 0;
+    }
+
+    /* ── Animations ─────────────────────────────────────── */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-up {
+        animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<a href="/offer_letter/offer-letter-list" class="btn-back">
-    <i class="fa fa-arrow-left"></i>
-    Back to Offer Letters
-</a>
-<div id="offer-detail-wrapper">
-    <div class="text-center p-5 mt-5" id="loader">
-        <div class="spinner-border" style="color: var(--primary);" role="status">
-            <span class="sr-only">{{ _("Loading...") }}</span>
+{% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+{% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 py-8">
+    <div class="lg:col-span-12">
+        <a href="/offer_letter/offer-letter-list" class="btn-back">
+            <i class="fa fa-arrow-left"></i>
+            Back to Offer Letters
+        </a>
+        <div id="offer-detail-wrapper">
+            <div class="text-center p-5 mt-5" id="loader">
+                <div class="spinner-border" style="color: var(--primary);" role="status">
+                    <span class="sr-only">{{ _("Loading...") }}</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -539,7 +629,7 @@
                         <div class="value">${offer.campus}</div>
                     </div>
                     <div class="summary-item">
-                        <span class="label">{{ _("Payable amount") }}</span>
+                        <span class="label">{{ _("Admission Fee") }}</span>
                         <div class="value amount">${format_currency(offer.payable_amount, currency)}</div>
                     </div>
                 </div>
@@ -554,7 +644,7 @@
                     `).join('')}
                     
                     <div class="fee-row total">
-                        <span>{{ _("Payable amount") }}</span>
+                        <span>{{ _("Admission Fee") }}</span>
                         <span>${format_currency(offer.payable_amount, currency)}</span>
                     </div>
 
@@ -708,7 +798,7 @@
         let fee_html = `
             <div class="text-center mb-4">
                 <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">${format_currency(offer.payable_amount, currency)}</div>
-                <div class="text-muted small font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total payable amount") }}</div>
+                <div class="text-muted small font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total Admission Fee") }}</div>
             </div>
             
             <div class="mt-4 pt-2">

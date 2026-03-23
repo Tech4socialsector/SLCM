@@ -661,12 +661,17 @@ else 'Admissions Open') %}
       flex-wrap: nowrap !important;
       overflow-x: auto !important;
       gap: 8px !important;
-      padding-bottom: 4px !important;
+      padding-bottom: 8px !important;
       -webkit-overflow-scrolling: touch !important;
-      scrollbar-width: none !important;
+      scrollbar-width: auto !important;
     }
     .sidebar-card nav::-webkit-scrollbar {
-      display: none !important;
+      display: block !important;
+      height: 4px !important;
+    }
+    .sidebar-card nav::-webkit-scrollbar-thumb {
+      background: var(--primary-light, #e2e8f0);
+      border-radius: 10px;
     }
     .adm-menu-item {
       padding: 8px 12px !important;
@@ -830,11 +835,8 @@ else 'Admissions Open') %}
               <span class="ms-icon">school</span>
               Scholarships
             </div>
-            <div class="adm-menu-item" data-panel="offer_letters"
-              onclick="window.location.href='/offer_letter/offer-letter-list'" style="display:flex;align-items:center;gap:12px;padding:12px 16px;
-                        border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;
-                        color:#64748b;transition:all 0.15s;margin-bottom:4px;">
-              <span style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
+            <div class="adm-menu-item" onclick="window.location.href='/offer_letter/offer-letter-list'">
+              <span class="ms-icon" style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
               Offer Letter
             </div>
             <div class="adm-menu-item" onclick="showChangePassword()">
@@ -1139,7 +1141,8 @@ else 'Admissions Open') %}
                         {{ _pname2 }}
                       </h3>
                       <p style="font-size:12px;color:#94a3b8;margin:6px 0 0;line-height:1.35;">
-                        {{ _cycle }}{% if _stage %} · <span style="color:var(--secondary);font-weight:700;">{{ _stage }}</span>{% endif %}
+                        {{ _cycle }}
+                        <!-- {% if _stage %} · <span style="color:var(--secondary);font-weight:700;">{{ _stage }}</span>{% endif %} -->
                         {% if app.campus %}<br><span style="color:#94a3b8;">Campus:</span> {{ app.campus or " " }}{% endif %}
                       </p>
                     </div>
