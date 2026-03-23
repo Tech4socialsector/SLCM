@@ -186,6 +186,18 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "badge-indian-rupee",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Refund Dashboard",
+   "link_to": "refund_dashboard",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
    "icon": "align-vertical-distribute-center",
    "indent": 0,
    "keep_closed": 0,
@@ -230,21 +242,9 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "badge-indian-rupee",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Refund Dashboard",
-   "link_to": "refund_dashboard",
-   "link_type": "Page",
-   "show_arrow": 0,
-   "type": "Link"
   }
  ],
- "modified": "2026-03-19 17:10:14.994646",
+ "modified": "2026-03-23 17:39:08.175208",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

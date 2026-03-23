@@ -68,9 +68,18 @@ def get_refund_policies(applicant=None, program=None, campus=None, offer=None):
 	# 4. Calculate days since payment
 	from frappe.utils import date_diff, nowdate
 	days_since_payment = 0
-	last_payment = frappe.db.get_value("Applicant Payment Receipt", 
+	
+	# Check Fee Payment (v16)
+	last_fee_payment = frappe.db.get_value("Fee Payment", 
+		{"applicant": applicant, "status": "Submitted"}, 
+		"payment_date", order_by="payment_date desc")
+	
+	# Check legacy Applicant Payment Receipt
+	last_receipt = frappe.db.get_value("Applicant Payment Receipt", 
 		{"applicant": applicant, "docstatus": 1}, 
 		"payment_date", order_by="payment_date desc")
+	
+	last_payment = last_fee_payment or last_receipt
 	
 	if last_payment:
 		days_since_payment = date_diff(nowdate(), last_payment)
@@ -94,7 +103,8 @@ def process_refund(name):
 		frappe.throw(_("Cannot process refund: No Razorpay Payment ID found on this request."))
 
 	if refund.razorpay_refund_id:
-		frappe.throw(_("Refund Request already has a Razorpay Refund ID: {0}").format(refund.razorpay_refund_id))
+		# If ID exists but status is not Processed, try to sync it
+		return update_razorpay_refund_status(name)
 	
 	# Set status to Processing immediately to prevent concurrent calls
 	refund.db_set("status", "Processing")

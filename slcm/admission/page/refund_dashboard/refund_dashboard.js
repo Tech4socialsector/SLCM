@@ -197,41 +197,18 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		});
 
 		// 2. Status Pie Chart
-		$('#status_dist').empty();
-		let chart_id = 'status_pie_svg';
-		$(`<div id="${chart_id}" style="height: 260px;"></div>`).appendTo('#status_dist');
-
-		new frappe.Chart(`#${chart_id}`, {
+		new frappe.Chart("#status_dist", {
 			title: __("Status Distribution"),
 			data: {
 				labels: charts.status_dist.map(d => d.label),
 				datasets: [{ values: charts.status_dist.map(d => d.value) }]
 			},
 			type: 'pie',
-			height: 250,
+			height: 340, // Slightly reduced height
 			colors: pie_colors,
-			legendOptions: { show: 0 }
+			maxSlices: 15,
+			legendOptions: { position: 'bottom' }
 		});
-
-		// Render Dynamic Custom Legend for all statuses
-		let legend_html = '<div class="status-legend-container d-flex flex-wrap justify-content-center gap-4 mt-4" style="border-top: 1px solid #f1f5f9; padding-top: 15px;">';
-		
-		charts.status_dist.forEach(d => {
-			let status = d.label;
-			let color = status_colors_map[status] || '#94a3b8';
-			let display_label = status === 'Under Review' ? __('Pending Review') : __(status);
-			
-			legend_html += `
-				<div class="d-flex flex-column align-items-center" style="min-width: 70px;">
-					<div class="d-flex align-items-center gap-2 mb-1">
-						<div style="width: 10px; height: 10px; border-radius: 50%; background: ${color};"></div>
-						<span style="font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap;">${display_label}</span>
-					</div>
-					<div style="font-size: 18px; font-weight: 800; color: #1e293b;">${d.value}</div>
-				</div>`;
-		});
-		legend_html += '</div>';
-		$('#status_dist').append(legend_html);
 
 		// 3. Reasons Bar Chart
 		new frappe.Chart("#reasons_dist", {
