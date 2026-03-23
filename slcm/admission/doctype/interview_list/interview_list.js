@@ -53,17 +53,24 @@ frappe.ui.form.on("Interview List", {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function open_slot_dialog(frm) {
-    // Filter applicants not yet scheduled
-    const applicants = (frm.doc.interview_applicant || []).filter(
-        a => a.interview_status !== "Scheduled"
-    );
+    const all_applicants = frm.doc.interview_applicant || [];
+    const applicants = all_applicants.filter(a => a.interview_status !== "Scheduled");
 
     if (!applicants.length) {
-        frappe.msgprint({
-            title: __("No Pending Applicants"),
-            message: __("All applicants in this list have already been scheduled for an interview."),
-            indicator: "orange"
-        });
+        const total = all_applicants.length;
+        if (total === 0) {
+            frappe.msgprint({
+                title: __("No Applicants Found"),
+                message: __("This Interview List is empty. Please ensure applicants are added before attempting to allocate slots."),
+                indicator: "orange"
+            });
+        } else {
+            frappe.msgprint({
+                title: __("Scheduling Already Completed"),
+                message: __("All <b>{0}</b> applicants in this list have already been scheduled for an interview. <br><br>The system has verified that there are no pending students left for interview slot allocation in this list.", [total]),
+                indicator: "blue"
+            });
+        }
         return;
     }
 

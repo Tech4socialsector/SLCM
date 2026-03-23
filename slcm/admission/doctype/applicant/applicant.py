@@ -310,7 +310,7 @@ class Applicant(Document):
 
     def _get_selected_program_level(self):
         """
-        Returns the level_of_study ('UG', 'PG', 'Research Course') of the
+        Returns the level_of_study ('Undergraduate', 'Postgraduate', 'Research Course') of the
         currently selected program by querying the Program doctype.
 
         NOTE: The correct DB column is `level_of_study`.
@@ -325,7 +325,7 @@ class Applicant(Document):
     def _get_all_programs_for_level(self, program_level):
         """
         Returns ALL programs from the Program doctype that match the given
-        level_of_study (e.g., 'UG', 'PG', 'Research Course').
+        level_of_study (e.g., 'Undergraduate', 'Postgraduate', 'Research Course').
 
         This ensures the eligibility table shows EVERY program of the same
         level — not just those with eligibility rules configured.
@@ -960,7 +960,7 @@ class Applicant(Document):
         allowed_degree_list = [r.degree_name for r in allowed_degrees if r.degree_name]
 
         if allowed_degree_list:
-            if qualification_level == "PG":
+            if qualification_level == "Postgraduate":
                 applicant_degrees = self._get_pg_programs()
             else:
                 applicant_degrees = self._get_ug_programs()
@@ -1041,10 +1041,10 @@ class Applicant(Document):
             if not self._check_hsc_group_eligibility(rule_name):
                 return False
 
-        if qualification_level in ("UG", "PG"):
+        if qualification_level in ("Undergraduate", "Postgraduate"):
             required_value = self.get_required_academic_value(rule)
 
-            if qualification_level == "UG":
+            if qualification_level == "Undergraduate":
                 child_rows = getattr(self, "ug_degree_details", None) or []
             else:
                 child_rows = getattr(self, "pg_degree_details", None) or []
@@ -1053,8 +1053,8 @@ class Applicant(Document):
                 return False
 
             for row in child_rows:
-                program_field = "ug_program" if qualification_level == "UG" else "pg_program"
-                cgpa_field    = "ug_cgpa"    if qualification_level == "UG" else "pg_cgpa"
+                program_field = "ug_program" if qualification_level == "Undergraduate" else "pg_program"
+                cgpa_field    = "ug_cgpa"    if qualification_level == "Undergraduate" else "pg_cgpa"
 
                 row_program = getattr(row, program_field, None)
                 row_cgpa    = flt(getattr(row, cgpa_field, None) or 0)
@@ -1097,13 +1097,13 @@ class Applicant(Document):
             value = flt(getattr(self, "hsc_percentage", None) or 0)
             return self._compare(value, required_min, operator)
 
-        elif qualification_level == "UG":
+        elif qualification_level == "Undergraduate":
             values = self._get_ug_cgpa_values()
             if not values:
                 return False
             return any(self._compare(v, required_min, operator) for v in values)
 
-        elif qualification_level == "PG":
+        elif qualification_level == "Postgraduate":
             values = self._get_pg_cgpa_values()
             if not values:
                 return False
@@ -1123,10 +1123,10 @@ class Applicant(Document):
 
         if qualification_level == "XII":
             return flt(getattr(self, "hsc_percentage", None) or 0)
-        elif qualification_level == "UG":
+        elif qualification_level == "Undergraduate":
             values = self._get_ug_cgpa_values()
             return max(values) if values else 0.0
-        elif qualification_level == "PG":
+        elif qualification_level == "Postgraduate":
             values = self._get_pg_cgpa_values()
             return max(values) if values else 0.0
 
@@ -1140,10 +1140,10 @@ class Applicant(Document):
     def get_applicant_academic_value(self, qualification_level):
         if qualification_level == "XII":
             return flt(getattr(self, "hsc_percentage", None) or 0)
-        if qualification_level == "UG":
+        if qualification_level == "Undergraduate":
             values = self._get_ug_cgpa_values()
             return max(values) if values else None
-        if qualification_level == "PG":
+        if qualification_level == "Postgraduate":
             values = self._get_pg_cgpa_values()
             return max(values) if values else None
         return None

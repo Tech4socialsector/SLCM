@@ -61,7 +61,7 @@ def update_applicant_status_from_evaluations(campus, academic_year, admission_cy
 	if not all([campus, academic_year, admission_cycle, program_level]):
 		frappe.throw("Campus, Academic Year, Admission Cycle, and Program Level are required.")
 
-	# Programs of this level (UG / PG / Research Course)
+	
 	programs = frappe.get_all(
 		"Program",
 		filters={"program_level": program_level},

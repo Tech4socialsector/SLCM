@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:applicant_id",
- "creation": "2026-03-03 12:59:00",
+ "creation": "2026-03-23 12:49:56.296731",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -99,7 +99,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Program level",
-   "options": "UG\nPG\nResearch Course"
+   "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "academic_year",
@@ -189,7 +189,7 @@
   {
    "fieldname": "ug_degree_details",
    "fieldtype": "Table",
-   "label": "UG degree details",
+   "label": "Undergraduate degree details",
    "options": "UG Degree Detail"
   },
   {
@@ -202,7 +202,7 @@
   {
    "fieldname": "pg_degree_details",
    "fieldtype": "Table",
-   "label": "Pg degree details ",
+   "label": "Postgraduate degree details ",
    "options": "PG Degree Details"
   },
   {
@@ -221,7 +221,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-19 14:36:22.313981",
+ "modified": "2026-03-23 14:12:41.230949",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",
