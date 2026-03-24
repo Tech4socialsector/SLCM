@@ -172,39 +172,43 @@ class Applicant(Document):
             "Entrance Test Exempted",
             "Excempted Entrance Test And Interview",
         })
+
         old_status = self.flags.get("old_application_status")
         just_submitted = (
             old_status == "Draft"
             and self.application_status in _SUBMITTED_STATUSES
             and self.has_value_changed("application_status")
         )
+
         if just_submitted:
             log_audit_trail(
                 self.doctype, self.name,
                 self.application_status, "application_status",
                 "Draft", self.application_status, "General"
             )
-            frappe.sendmail(
-                recipients=[self.email],
-                subject=f"NLSIU Application Submitted - {self.applicant_id}",
-                message=f"""
-                Dear {self.candidate_name},<br><br>
-                Your application <b>{self.applicant_id}</b> has been
-                successfully submitted.<br>
-                Application Type: {self.application_type}<br>
-                Program: {self.program}<br><br>
-                You will be notified of further updates.<br><br>
-                NLSIU Admissions Team
-                """
-            )
+
+            # ── Rich confirmation email with PDF attachment ──────────────
+            try:
+                self.send_submission_confirmation()
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    f"Submission confirmation email failed — {self.applicant_id}"
+                )
+            # ─────────────────────────────────────────────────────────────
 
             from slcm.admission.utils.notifications import log_communication
             log_communication(
                 applicant=self.name,
                 communication_type="Email",
                 category="Admission",
-                subject=f"NLSIU Application Submitted - {self.applicant_id}",
-                content=f"Confirmation email sent for application {self.applicant_id}. Program: {self.program}",
+                subject=f"Application Submitted — {self.applicant_id} | {self.program or 'Admissions'}",
+                content=(
+                    f"Submission confirmation email sent for {self.applicant_id}. "
+                    f"Program: {self.program or '—'}, "
+                    f"Cycle: {self.admission_cycle or '—'}, "
+                    f"Campus: {self.campus or '—'}"
+                ),
                 reference_doctype="Applicant",
                 reference_name=self.name
             )
@@ -214,13 +218,422 @@ class Applicant(Document):
             if self.current_stage and self.admission_cycle:
                 try:
                     from slcm.admission.utils.stage_control import get_cycle_stages
-                    stages = get_cycle_stages(self.admission_cycle, self.intake_type or "All")
+                    stages = get_cycle_stages(
+                        self.admission_cycle,
+                        self.intake_type or "All"
+                    )
                     for s in stages:
                         if s.stage_name == self.current_stage:
                             notify_stage_entry(self, s)
                             break
                 except Exception:
                     pass
+
+
+    def send_submission_confirmation(self):
+        """
+        Sends a formatted confirmation email on application submission.
+        Attaches the 'Applicant Application Form' print format as PDF.
+        Called from on_update() when status transitions Draft → Submitted.
+        """
+
+        # ── Reservation summary ──────────────────────────────────────────
+        reservation_parts = []
+        if self.whether_scstobc_ncl:
+            reservation_parts.append(self.whether_scstobc_ncl)
+        if self.ews == "Yes":
+            reservation_parts.append("EWS")
+        if self.pwd == "Yes":
+            reservation_parts.append("PwD")
+        if self.karnataka_category:
+            reservation_parts.append(f"Karnataka: {self.karnataka_category}")
+        reservation_summary = (
+            ", ".join(reservation_parts) if reservation_parts
+            else "General (Unreserved)"
+        )
+
+        # ── Test center preference summary ───────────────────────────────
+        test_centers = []
+        if self.first_preference:
+            test_centers.append(f"1st: {self.first_preference}")
+        if self.second_preference:
+            test_centers.append(f"2nd: {self.second_preference}")
+        if self.third_preference:
+            test_centers.append(f"3rd: {self.third_preference}")
+        test_center_summary = (
+            " | ".join(test_centers) if test_centers
+            else "Not specified"
+        )
+
+        # ── Program-level academic summary ───────────────────────────────
+        academic_line = ""
+        if self.program_level == "UG":
+            academic_line = (
+                f"Class XII: {self.class_xii_school or '—'} "
+                f"({self.class_xii_year_of_completion or '—'}) "
+                f"— {self.hsc_percentage or '—'}%"
+            )
+        elif self.program_level in ["PG", "LLM"]:
+            academic_line = f"UG Degree completion: {self.ug_degree_completion or '—'}"
+        elif self.program_level == "PhD":
+            academic_line = f"PhD Program Type: {self.phd_program_type or '—'}"
+
+        # ── Institution name (dynamic for multi-university support) ──────
+        institution_name = (
+            frappe.db.get_single_value("Institution Settings", "institution_name")
+            or "Admissions Office"
+        )
+
+        # ── PDF attachment ────────────────────────────────────────────────
+        try:
+            pdf_content = frappe.get_print(
+                doctype="Applicant",
+                name=self.name,
+                print_format="Applicant Application Form",
+                as_pdf=True
+            )
+            attachments = [{
+                "fname": f"Application_Form_{self.applicant_id}.pdf",
+                "fcontent": pdf_content
+            }]
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"PDF generation failed for {self.applicant_id}"
+            )
+            attachments = []
+
+        # ── Email body ────────────────────────────────────────────────────
+        html_body = f"""<!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <style>
+        body {{
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        color: #920c24;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+        background: #f5f5f0;
+        }}
+        .wrapper {{
+        max-width: 620px;
+        margin: 32px auto;
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #d3d1c7;
+        }}
+        .header {{
+        background: #1D9E75;
+        padding: 28px 32px;
+        text-align: center;
+        }}
+        .header h1 {{
+        color: #ffffff;
+        font-size: 20px;
+        margin: 0 0 4px 0;
+        font-weight: 600;
+        }}
+        .header p {{
+        color: #9FE1CB;
+        font-size: 13px;
+        margin: 0;
+        }}
+        .badge {{
+        display: inline-block;
+        background: #ffffff;
+        color: #0F6E56;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 18px;
+        border-radius: 20px;
+        margin-top: 14px;
+        letter-spacing: 0.5px;
+        }}
+        .body {{
+        padding: 28px 32px;
+        }}
+        .greeting {{
+        font-size: 15px;
+        color: #2c2c2a;
+        margin-bottom: 12px;
+        }}
+        .intro {{
+        font-size: 14px;
+        color: #5f5e5a;
+        margin-bottom: 24px;
+        line-height: 1.7;
+        }}
+        .section-title {{
+        font-size: 11px;
+        font-weight: 700;
+        color: #888780;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin: 24px 0 10px 0;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #ebe9e2;
+        }}
+        .detail-table {{
+        width: 100%;
+        border-collapse: collapse;
+        }}
+        .detail-table tr td {{
+        padding: 7px 0;
+        font-size: 13px;
+        border-bottom: 1px solid #f1efe8;
+        vertical-align: top;
+        }}
+        .detail-table tr:last-child td {{
+        border-bottom: none;
+        }}
+        .detail-table td.label {{
+        color: #888780;
+        width: 44%;
+        padding-right: 12px;
+        }}
+        .detail-table td.value {{
+        color: #2c2c2a;
+        font-weight: 500;
+        }}
+        .status-pill {{
+        display: inline-block;
+        background: #E1F5EE;
+        color: #085041;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 12px;
+        border-radius: 20px;
+        }}
+        .next-steps {{
+        background: #f1efe8;
+        border-radius: 6px;
+        padding: 16px 20px;
+        margin: 24px 0;
+        }}
+        .next-steps p {{
+        font-size: 13px;
+        color: #444441;
+        margin: 0 0 8px 0;
+        font-weight: 600;
+        }}
+        .next-steps ul {{
+        margin: 0;
+        padding-left: 18px;
+        }}
+        .next-steps ul li {{
+        font-size: 13px;
+        color: #5f5e5a;
+        margin-bottom: 5px;
+        line-height: 1.6;
+        }}
+        .attachment-note {{
+        background: #E6F1FB;
+        border-left: 3px solid #378ADD;
+        border-radius: 0 6px 6px 0;
+        padding: 12px 16px;
+        font-size: 13px;
+        color: #0C447C;
+        margin: 20px 0;
+        }}
+        .footer {{
+        background: #f1efe8;
+        padding: 20px 32px;
+        text-align: center;
+        border-top: 1px solid #d3d1c7;
+        }}
+        .footer p {{
+        font-size: 12px;
+        color: #888780;
+        margin: 4px 0;
+        }}
+        .footer .university-name {{
+        font-size: 13px;
+        font-weight: 600;
+        color: #444441;
+        margin-bottom: 6px;
+        }}
+    </style>
+    </head>
+    <body>
+    <div class="wrapper">
+
+        <div class="header">
+        <h1>Application Submitted Successfully</h1>
+        <p>Your application has been received</p>
+        <div class="badge">{self.name}</div>
+        </div>
+
+        <div class="body">
+
+        <p class="greeting">Dear {self.candidate_name},</p>
+        <p class="intro">
+            Your application to <strong>{self.program or 'the program'}</strong>
+            has been successfully submitted. Please keep your Application ID
+            <strong>{self.name}</strong> for all future correspondence.
+            A copy of your completed application form is attached to this email.
+        </p>
+
+        <div class="section-title">Application details</div>
+        <table class="detail-table">
+            <tr>
+            <td class="label">Program applied</td>
+            <td class="value">{self.program or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Program level</td>
+            <td class="value">{self.program_level or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Application type</td>
+            <td class="value">{self.application_type or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Admission cycle</td>
+            <td class="value">{self.admission_cycle or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Campus</td>
+            <td class="value">{self.campus or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Current status</td>
+            <td class="value">
+                <span class="status-pill">
+                {self.application_status or 'Submitted'}
+                </span>
+            </td>
+            </tr>
+        </table>
+
+        <div class="section-title">Personal details</div>
+        <table class="detail-table">
+            <tr>
+            <td class="label">Full name</td>
+            <td class="value">{self.candidate_name}</td>
+            </tr>
+            <tr>
+            <td class="label">Date of birth</td>
+            <td class="value">{frappe.utils.formatdate(self.date_of_birth) if self.date_of_birth else '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Gender</td>
+            <td class="value">{self.gender or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Mobile</td>
+            <td class="value">{self.mobile_number or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Nationality</td>
+            <td class="value">{self.nationality or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Correspondence</td>
+            <td class="value">{self.city or '—'}, {self.state or '—'}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">Academic details</div>
+        <table class="detail-table">
+            <tr>
+            <td class="label">Class X school</td>
+            <td class="value">{self.class_x_school or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Class X percentage</td>
+            <td class="value">{f"{self.class_x_percentage}%" if self.class_x_percentage else '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Class XII school</td>
+            <td class="value">{self.class_xii_school or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Class XII percentage</td>
+            <td class="value">{f"{self.hsc_percentage}%" if self.hsc_percentage else '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Academic summary</td>
+            <td class="value">{academic_line or '—'}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">Reservation / category</div>
+        <table class="detail-table">
+            <tr>
+            <td class="label">Category</td>
+            <td class="value">{reservation_summary}</td>
+            </tr>
+            <tr>
+            <td class="label">Annual household income</td>
+            <td class="value">{self.annual_house_hold_income or '—'}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">Test center preferences</div>
+        <table class="detail-table">
+            <tr>
+            <td class="label">Preferences</td>
+            <td class="value">{test_center_summary}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">Application fee</div>
+        <table class="detail-table">
+            <tr>
+            <td class="label">Fee status</td>
+            <td class="value">{self.application_fee_status or '—'}</td>
+            </tr>
+            <tr>
+            <td class="label">Fee amount</td>
+            <td class="value">{"&#8377;" + frappe.utils.fmt_money(self.application_fee_amount, currency="INR") if self.application_fee_amount else '—'}</td>
+            </tr>
+        </table>
+
+        <div class="attachment-note">
+            Your completed <strong>Application Form</strong> is attached to
+            this email as a PDF. Please save it for your records and bring a
+            printed copy if required during document verification.
+        </div>
+
+        <div class="next-steps">
+            <p>What happens next?</p>
+            <ul>
+            <li>Your application will be reviewed for eligibility.</li>
+            <li>Admit card details will be communicated once the
+                test schedule is confirmed.</li>
+            <li>Track your application status by logging in to
+                the applicant portal.</li>
+            <li>Keep all original documents ready for verification.</li>
+            </ul>
+        </div>
+
+        </div>
+
+        <div class="footer">
+        <p class="university-name">{institution_name}</p>
+        <p>This is an auto-generated email. Please do not reply directly.</p>
+        <p>For queries, contact the admissions helpdesk.</p>
+        <p style="margin-top:10px;font-size:11px;color:#b4b2a9;">
+            Application ID: {self.applicant_id} &nbsp;|&nbsp;
+            Generated: {frappe.utils.now_datetime().strftime('%d %b %Y, %I:%M %p')}
+        </p>
+        </div>
+
+    </div>
+    </body>
+    </html>"""
+
+        frappe.sendmail(
+            recipients=[self.email],
+            subject=f"Application Submitted — {self.applicant_id} | {self.program or 'Admissions'}",
+            message=html_body,
+            attachments=attachments,
+            now=True
+        )
 
     # ──────────────────────────────────────────────
     # APPLICANT CATEGORY HELPER
