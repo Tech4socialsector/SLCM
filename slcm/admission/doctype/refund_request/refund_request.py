@@ -119,13 +119,17 @@ class RefundRequest(Document):
 				self.refund_amount = 0
 				return
 
-			for p in policies:
+			# Sort policies by days_from_payment ascending to ensure correct matching
+			sorted_policies = sorted(policies, key=lambda p: p.get("days_from_payment", 0))
+			for p in sorted_policies:
 				if days <= p.get("days_from_payment"):
 					self.refund_policy = p.get("policy_name")
 					break
-			if not self.refund_policy and policies:
-				# Default to the most restrictive policy if over all day limits
-				self.refund_policy = policies[-1].get("policy_name")
+			if not self.refund_policy and sorted_policies:
+				# Exceeded all day windows — no refund applicable
+				self.refund_type = "No Refund"
+				self.refund_amount = 0
+				return
 
 		# Calculate based on selected policy
 		if self.refund_policy:
@@ -152,7 +156,8 @@ class RefundRequest(Document):
 	def validate_refund_amount(self):
 		if flt(self.refund_amount) > flt(self.amount_paid):
 			frappe.throw(_("Refund Amount cannot be greater than Amount Paid ({0})").format(self.amount_paid))
-		if flt(self.refund_amount) <= 0:
+		# Allow 0 for No Refund type; otherwise enforce positive amount
+		if self.refund_type != "No Refund" and flt(self.refund_amount) <= 0:
 			frappe.throw(_("Refund Amount must be greater than 0"))
 
 	def set_approval_details(self):

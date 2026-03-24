@@ -14,79 +14,19 @@ def get_refund_policies(applicant=None, program=None, campus=None, offer=None):
 	Fetches refund policies mapped to the applicant's Fee Structure.
 	If is_refund_available is unchecked or table is empty, returns empty list.
 	"""
+	from slcm.admission.utils.refund import get_applicant_refund_policies
+
 	if not applicant:
 		user_email = frappe.session.user
 		applicant = frappe.db.get_value("Applicant", {"email": user_email}, "name")
-	
+
 	if not applicant:
 		return {"policies": [], "days_since_payment": 0}
 
-	# 1. Resolve basic details
-	details = frappe.db.get_value("Applicant", applicant, ["program", "campus", "admission_cycle"], as_dict=1)
-	if not details:
-		return {"policies": [], "days_since_payment": 0}
-	
-	program = program or details.program
-	campus = campus or details.campus
-	cycle = details.admission_cycle
-
-	# 2. Find Fee Structure via Offer Configuration
-	fee_structure = None
-	config_names = frappe.get_all("Offer Configuration", 
-		filters={"admission_cycle": cycle, "campus": campus, "is_active": 1},
-		pluck="name"
-	)
-
-	for cn in config_names:
-		config_doc = frappe.get_doc("Offer Configuration", cn)
-		for row in config_doc.fee_structure:
-			fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
-			if fs_program == program:
-				fee_structure = row.fee_structure
-				break
-		if fee_structure:
-			break
-	
-	if not fee_structure:
-		return {"policies": [], "days_since_payment": 0}
-
-	# 3. Get policies from Fee Structure
-	fs_doc = frappe.get_doc("Fee Structure", fee_structure)
-	
-	if not fs_doc.is_refund_available:
-		return {"policies": [], "days_since_payment": 0}
-
-	policies = []
-	for row in fs_doc.get("refund_policies", []):
-		if row.is_active:
-			policies.append({
-				"policy_name": row.refund_policy,
-				"days_from_payment": row.days_from_payment,
-				"refund_percentage": row.refund_percentage
-			})
-	
-	# 4. Calculate days since payment
-	from frappe.utils import date_diff, nowdate
-	days_since_payment = 0
-	
-	# Check Fee Payment (v16)
-	last_fee_payment = frappe.db.get_value("Fee Payment", 
-		{"applicant": applicant, "status": "Submitted"}, 
-		"payment_date", order_by="payment_date desc")
-	
-	# Check legacy Applicant Payment Receipt
-	last_receipt = frappe.db.get_value("Applicant Payment Receipt", 
-		{"applicant": applicant, "docstatus": 1}, 
-		"payment_date", order_by="payment_date desc")
-	
-	last_payment = last_fee_payment or last_receipt
-	
-	if last_payment:
-		days_since_payment = date_diff(nowdate(), last_payment)
-
+	res = get_applicant_refund_policies(applicant)
 	return {
-		"policies": policies,
-		"days_since_payment": days_since_payment
+		"policies": res.get("policies", []),
+		"days_since_payment": res.get("days_since_payment", 0)
 	}
 
 @frappe.whitelist()
@@ -98,6 +38,9 @@ def process_refund(name):
 
 	if refund.status != "Approved":
 		frappe.throw(_("Refund Request must be Approved before processing."))
+
+	if refund.refund_type == "No Refund":
+		frappe.throw(_("This Refund Request is marked as 'No Refund'. No payment will be processed."))
 	
 	if not refund.razorpay_payment_id:
 		frappe.throw(_("Cannot process refund: No Razorpay Payment ID found on this request."))
