@@ -3,6 +3,8 @@ import json
 from frappe import _, throw
 from frappe.utils import add_days, getdate, now_datetime, get_datetime, flt
 
+from slcm.api.service.application_fee_service import get_payment_receipt_template_for_policy
+
 class FeeService:
     """
     Fee and Payment Service Layer.
@@ -861,6 +863,11 @@ class FeeService:
             receipt.applicant = applicant_doc.name
             receipt.program = applicant_doc.program
             receipt.academic_year = afa_doc.academic_year
+            tpl = get_payment_receipt_template_for_policy(
+                applicant_doc.program, applicant_doc.admission_cycle
+            )
+            if tpl:
+                receipt.payment_receipt_template = tpl
             receipt.payment_date = frappe.utils.today()
             receipt.transaction_id = transaction_id
             receipt.payment_mode = payment_mode

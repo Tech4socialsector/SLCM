@@ -71,6 +71,26 @@ def get_payment_gateway_for_application_fee(program, admission_cycle):
 	return gateway
 
 
+def get_payment_receipt_template_for_policy(program, admission_cycle):
+	"""
+	Return Print Format name from Program Reservation Policy (same lookup as fee / gateway).
+	"""
+	if not program or not admission_cycle:
+		return None
+	template = frappe.db.get_value(
+		"Program Reservation Policy",
+		{"program": program, "admission_cycle": admission_cycle, "status": "Active"},
+		"payment_receipt_template",
+	)
+	if not template:
+		template = frappe.db.get_value(
+			"Program Reservation Policy",
+			{"program": program, "admission_cycle": admission_cycle},
+			"payment_receipt_template",
+		)
+	return template
+
+
 def get_or_create_application_fee_component():
 	"""Ensures 'Application Fee' Fee Component exists for AFA child rows."""
 	if frappe.db.exists("Fee Component", "Application Fee"):

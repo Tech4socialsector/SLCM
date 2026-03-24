@@ -1,4 +1,8 @@
 import frappe
+from slcm.admission.utils.portal import (
+    build_applicant_form_new_url,
+    build_login_redirect_to_applicant_form_new,
+)
 from slcm.admission.utils.stage_control import can_apply, get_current_stage
 
 login_required = False
@@ -168,6 +172,7 @@ def _load_program_detail(context, slug):
             context.active_cycle = frappe._dict({
                 "name": active_cycle_doc.name,
                 "admission_year": active_cycle_doc.admission_year,
+                "academic_year": getattr(active_cycle_doc, "academic_year", None) or "",
                 "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
                 "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
                 "application_end": active_cycle_doc.application_end
@@ -264,6 +269,45 @@ def _load_program_detail(context, slug):
     except Exception:
         context.support_email = "admissions@nlsiu.ac.in"
 
+    ac_campus = ""
+    ac_intake = ""
+    ac_prog_level = (gf("program_level") or "").strip()
+    if prog_name and context.active_cycle:
+        acp = frappe.db.get_value(
+            "Admission Cycle Program",
+            {"parent": context.active_cycle.name, "program": prog_name, "is_active": 1},
+            ["campus", "intake_type", "program_level"],
+            as_dict=True,
+        )
+        if acp:
+            ac_campus = (acp.get("campus") or "").strip()
+            ac_intake = (acp.get("intake_type") or "").strip()
+            if acp.get("program_level"):
+                ac_prog_level = (acp.get("program_level") or "").strip()
+
+    _cn = context.active_cycle.name if context.active_cycle else ""
+    _ay = (context.active_cycle.get("admission_year") if context.active_cycle else "") or ""
+    _aac = (context.active_cycle.get("academic_year") if context.active_cycle else "") or ""
+
+    context.apply_web_form_url = build_applicant_form_new_url(
+        prog_name or "",
+        _cn,
+        campus=ac_campus,
+        intake_type=ac_intake,
+        admission_year=_ay,
+        academic_year=_aac,
+        program_level=ac_prog_level,
+    )
+    context.apply_web_form_login_url = build_login_redirect_to_applicant_form_new(
+        prog_name or "",
+        _cn,
+        campus=ac_campus,
+        intake_type=ac_intake,
+        admission_year=_ay,
+        academic_year=_aac,
+        program_level=ac_prog_level,
+    )
+
 
 def _pf(obj, field):
     """Safe field accessor for both dicts and Frappe Document rows."""
@@ -292,6 +336,8 @@ def _set_empty_pd_context(context, slug):
     context.admission_cycle  = None
     context.admission_year   = None
     context.support_email    = "admissions@nlsiu.ac.in"
+    context.apply_web_form_url = "/admission"
+    context.apply_web_form_login_url = "/login?redirect-to=/admission"
 
 def get_context(context):
     # ── Route detection: /admission vs /admission/[slug] ─────────────
@@ -349,6 +395,8 @@ def get_context(context):
         active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name, ignore_permissions=True)
         active_cycle = frappe._dict({
             "name": active_cycle_doc.name,
+            "admission_year": active_cycle_doc.admission_year,
+            "academic_year": getattr(active_cycle_doc, "academic_year", None) or "",
             "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
             "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
             "application_end": active_cycle_doc.application_end
@@ -437,6 +485,8 @@ def get_context(context):
     context.app_open     = app_open
     context.no_cache     = 1
     context.title        = portal_config.get("portal_title", "Admissions")
+    context.build_applicant_form_new_url = build_applicant_form_new_url
+    context.build_login_redirect_to_applicant_form_new = build_login_redirect_to_applicant_form_new
 
     # ── 7. New Portal Config Fields ──────────────────────────────────
     context.portal_tagline    = portal_config.get("portal_tagline") or portal_config.get("portal_subtitle") or ""

@@ -328,7 +328,7 @@
           {% endif %}
         </a>
       {% elif frappe.session.user and frappe.session.user != "Guest" %}
-        <a href="/application_form?program={{ program.name }}&admission_cycle={{ active_cycle.name if active_cycle else '' }}"
+        <a href="{{ apply_web_form_url }}"
            style="display:inline-flex;align-items:center;gap:8px;
                   padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
                   text-decoration:none;color:#fff;
@@ -338,7 +338,7 @@
           Apply now
         </a>
         {% else %}
-        <a href="/login?redirect-to=/application_form" style="display:inline-flex;align-items:center;gap:8px;
+        <a href="{{ apply_web_form_login_url }}" style="display:inline-flex;align-items:center;gap:8px;
                   padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
                   text-decoration:none;color:#fff;
                   background:var(--primary,#CB2929);transition:opacity .2s;" onmouseover="this.style.opacity='.85'"
@@ -925,7 +925,7 @@
                 View application
               </a>
               {% elif frappe.session.user and frappe.session.user != "Guest" %}
-              <a href="/application_form?program={{ program.name }}&admission_cycle={{ active_cycle.name if active_cycle else '' }}"
+              <a href="{{ apply_web_form_url }}"
                 style="display:block;width:100%;padding:13px;text-align:center;
                         border-radius:10px;background:var(--primary);color:white;
                         font-weight:700;font-size:14px;text-decoration:none;
@@ -934,7 +934,7 @@
                 Apply now
               </a>
               {% else %}
-              <a href="/login?redirect-to=/application_form" style="display:block;width:100%;padding:13px;text-align:center;
+              <a href="{{ apply_web_form_login_url }}" style="display:block;width:100%;padding:13px;text-align:center;
                         border-radius:10px;background:var(--primary);color:white;
                         font-weight:700;font-size:14px;text-decoration:none;
                         box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);" onmouseover="this.style.opacity='0.88'"

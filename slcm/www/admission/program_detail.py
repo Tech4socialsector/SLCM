@@ -1,5 +1,9 @@
 import frappe
-from slcm.admission.utils.portal import get_portal_config
+from slcm.admission.utils.portal import (
+    build_applicant_form_new_url,
+    build_login_redirect_to_applicant_form_new,
+    get_portal_config,
+)
 
 no_cache = 1
 
@@ -195,10 +199,51 @@ def get_context(context):
         if context.active_cycle:
             context.admission_cycle = context.active_cycle.name
             context.admission_year = context.active_cycle.admission_year
+            context.academic_year = getattr(context.active_cycle, "academic_year", None) or ""
     except Exception:
         context.active_cycle = None
         context.admission_cycle = None
         context.admission_year = None
+        context.academic_year = ""
+
+    ac_campus = ""
+    ac_intake = ""
+    ac_prog_level = (context.prog_level or "").strip()
+    if prog_name and context.active_cycle:
+        acp = frappe.db.get_value(
+            "Admission Cycle Program",
+            {"parent": context.active_cycle.name, "program": prog_name, "is_active": 1},
+            ["campus", "intake_type", "program_level"],
+            as_dict=True,
+        )
+        if acp:
+            ac_campus = (acp.get("campus") or "").strip()
+            ac_intake = (acp.get("intake_type") or "").strip()
+            if acp.get("program_level"):
+                ac_prog_level = (acp.get("program_level") or "").strip()
+
+    _cn = context.active_cycle.name if context.active_cycle else ""
+    _ay = (context.admission_year or "") if context.active_cycle else ""
+    _aac = (getattr(context, "academic_year", None) or "") if context.active_cycle else ""
+
+    context.apply_web_form_url = build_applicant_form_new_url(
+        prog_name or "",
+        _cn,
+        campus=ac_campus,
+        intake_type=ac_intake,
+        admission_year=_ay,
+        academic_year=_aac,
+        program_level=ac_prog_level,
+    )
+    context.apply_web_form_login_url = build_login_redirect_to_applicant_form_new(
+        prog_name or "",
+        _cn,
+        campus=ac_campus,
+        intake_type=ac_intake,
+        admission_year=_ay,
+        academic_year=_aac,
+        program_level=ac_prog_level,
+    )
 
     # ── Eligibility Rules ─────────────────────────────────────────
     try:
@@ -231,6 +276,39 @@ def get_context(context):
     except Exception as ex:
         frappe.log_error(str(ex), "prog_detail:eligibility_rules")
         context.eligibility_rules = []
+
+    # ── User's existing application for this program ────────────
+    context.user_app_name = ""
+    context.user_app_status = ""
+    if frappe.session.user and frappe.session.user != "Guest":
+        try:
+            _recs = frappe.get_all(
+                "Applicant",
+                filters={"email": frappe.session.user, "program": prog_name},
+                fields=["name", "application_status"],
+                order_by="creation desc",
+                limit=1,
+            )
+            if not _recs:
+                _all = frappe.get_all(
+                    "Applicant",
+                    filters={"email": frappe.session.user},
+                    fields=["name", "program", "application_status"],
+                    order_by="creation desc",
+                    limit=30,
+                )
+                for _a in _all:
+                    _p = (_a.get("program") or "").strip().lower()
+                    _t = (prog_name or "").strip().lower()
+                    _s = (slug or "").strip().lower()
+                    if _p == _t or _p == _s:
+                        _recs = [_a]
+                        break
+            if _recs:
+                context.user_app_name = _recs[0].get("name") or ""
+                context.user_app_status = _recs[0].get("application_status") or ""
+        except Exception as _ex:
+            frappe.log_error(title="prog_detail_app_lookup", message=str(_ex))
 
     # ── Support email ─────────────────────────────────────────────
     try:
@@ -271,5 +349,10 @@ def _set_empty_context(context, slug):
     context.active_cycle    = None
     context.admission_cycle = None
     context.admission_year  = None
+    context.academic_year   = ""
     context.support_email   = "admissions@nlsiu.ac.in"
     context.title           = "Program Not Found"
+    context.apply_web_form_url = "/admission"
+    context.apply_web_form_login_url = "/login?redirect-to=/admission"
+    context.user_app_name = ""
+    context.user_app_status = ""

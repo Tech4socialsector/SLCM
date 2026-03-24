@@ -5,7 +5,8 @@
 //    • Save Draft button (always before the Next/Submit primary button)
 //    • Application status badge near the applicant-ID heading
 //    • Toast notifications — top-right
-//    • Submit intercept: mandatory → eligibility → fee/Razorpay → submit
+//    • Submit intercept: mandatory → eligibility (modal if ineligible) → fee/Razorpay → submit
+//    • No live eligibility banner; query-string prefill for /applicant-form/new?...
 // ═══════════════════════════════════════════════════════════════════
 
 // ───────────────────────────────────────────────────────────────────
@@ -35,10 +36,17 @@ function _injectCSS() {
 		'#slcm-toast.slcm-error  {background:#fff2f2;border:1.5px solid #fca5a5;color:#991b1b;}',
 		'#slcm-toast.slcm-info   {background:#eff6ff;border:1.5px solid #93c5fd;color:#1e3a5f;}',
 		'#slcm-toast.slcm-warn   {background:#fffbeb;border:1.5px solid #fcd34d;color:#78350f;}',
+		/* Application ID + status row (inside web-form title h1) */
+		'.slcm-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;' +
+			'line-height:1.25;margin:0;}',
+		'#slcm-app-heading-id{flex:0 1 auto;margin:0;min-width:0;}',
+		'#slcm-app-heading-meta{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px 10px;' +
+			'flex:0 1 auto;margin:0;}',
+		'#slcm-app-status-label{font-size:13px;font-weight:500;color:#334155;line-height:1.2;' +
+			'white-space:nowrap;margin:0;}',
 		/* Application status badge */
-		'.slcm-status-badge{display:inline-block;padding:2px 10px;border-radius:20px;' +
-			'font-size:11px;font-weight:700;letter-spacing:.4px;vertical-align:middle;' +
-			'margin-left:10px;text-transform:uppercase;}',
+		'.slcm-status-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;' +
+			'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
 		'.slcm-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.slcm-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
 		'.slcm-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
@@ -53,10 +61,15 @@ function _injectCSS() {
 		'#slcm-fee-box p{font-size:.85rem;color:#64748b;margin:0 0 22px;}',
 		'.slcm-fee-actions{display:flex;gap:10px;flex-wrap:wrap;}',
 		'#slcm-fee-pay-btn{flex:1;padding:10px 0;border-radius:8px;' +
-			'background:#1a73e8;color:#fff;border:none;font-weight:600;cursor:pointer;font-size:14px;}',
+			'background:#1a73e8;color:#fff;border:none;font-weight:600;cursor:pointer;font-size:14px;' +
+			'display:inline-flex;align-items:center;justify-content:center;gap:8px;}',
 		'#slcm-fee-pay-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		'#slcm-fee-later-btn{flex:1;padding:10px 0;border-radius:8px;' +
 			'background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:600;cursor:pointer;font-size:14px;}',
+		'#slcm-fee-receipt-wrap{margin:10px 0 0;clear:both;}',
+		'#slcm-fee-receipt-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;' +
+			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #1a73e8;background:#fff;color:#1a73e8;cursor:pointer;}',
+		'#slcm-fee-receipt-btn:hover{background:#e8f0fe;}',
 		/* Submit progress overlay */
 		'#slcm-submit-overlay{position:fixed;inset:0;z-index:99997;background:rgba(255,255,255,.8);' +
 			'display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;' +
@@ -64,6 +77,42 @@ function _injectCSS() {
 		'#slcm-submit-overlay.open{display:flex;}',
 		'#slcm-submit-spinner{width:36px;height:36px;border:4px solid #e2e8f0;' +
 			'border-top-color:#1a73e8;border-radius:50%;animation:slcm-spin .8s linear infinite;}',
+		/* Eligibility Evaluation Results (portal submit) */
+		'#slcm-ee-modal{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;}',
+		'#slcm-ee-modal.open{display:flex;}',
+		'#slcm-ee-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);}',
+		'#slcm-ee-panel{position:relative;background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:90vh;' +
+			'overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);}',
+		'#slcm-ee-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px 16px;' +
+			'border-bottom:1px solid #e2e8f0;flex-shrink:0;}',
+		'#slcm-ee-title{margin:0;font-size:1.15rem;font-weight:700;color:#0f172a;line-height:1.35;}',
+		'#slcm-ee-close{border:none;background:#f1f5f9;color:#64748b;width:36px;height:36px;border-radius:10px;' +
+			'cursor:pointer;font-size:1.25rem;line-height:1;flex-shrink:0;}',
+		'#slcm-ee-close:hover{background:#e2e8f0;color:#334155;}',
+		'#slcm-ee-body{padding:18px 22px 22px;overflow-y:auto;flex:1;}',
+		'.slcm-ee-alert{display:flex;gap:12px;padding:14px 16px;background:#fff1f2;border:1px solid #fecdd3;' +
+			'border-left:4px solid #e11d48;border-radius:10px;margin-bottom:18px;}',
+		'.slcm-ee-alert-dot{width:10px;height:10px;background:#e11d48;border-radius:50%;flex-shrink:0;margin-top:4px;}',
+		'.slcm-ee-alert-text{font-size:14px;line-height:1.55;color:#334155;}',
+		'.slcm-ee-subhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:8px;}',
+		'.slcm-ee-subhead strong{font-size:15px;color:#0f172a;}',
+		'.slcm-ee-meta{font-size:12px;color:#64748b;}',
+		'.slcm-ee-summary{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:#475569;}',
+		'.slcm-ee-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;}',
+		'#slcm-ee-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;font-size:13px;}',
+		'#slcm-ee-table th{text-align:left;padding:11px 14px;background:#f8fafc;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;}',
+		'#slcm-ee-table th.slcm-ee-th-actions{text-align:center;width:140px;}',
+		'#slcm-ee-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;color:#1e293b;}',
+		'#slcm-ee-table tr:last-child td{border-bottom:none;}',
+		'.slcm-ee-status{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:#15803d;}',
+		'.slcm-ee-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:#3b82f6;color:#fff;font-weight:700;}',
+		'.slcm-ee-switch{padding:7px 14px;border-radius:8px;border:none;background:#1d4ed8;color:#fff;font-size:12px;font-weight:600;cursor:pointer;}',
+		'.slcm-ee-switch:hover{background:#1e40af;}',
+		'.slcm-ee-switch:disabled{opacity:.55;cursor:not-allowed;}',
+		'#slcm-ee-foot{padding:14px 22px 18px;border-top:1px solid #e2e8f0;flex-shrink:0;}',
+		'#slcm-ee-dismiss{width:100%;padding:11px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;' +
+			'color:#334155;font-weight:600;cursor:pointer;font-size:14px;}',
+		'#slcm-ee-dismiss:hover{background:#f8fafc;}',
 	].join('');
 	document.head.appendChild(s);
 }
@@ -96,6 +145,17 @@ function getDocName() {
 		name = p.get('name') || p.get('doc');
 	}
 	return name || null;
+}
+
+/** Absolute URL for /api/... paths — Web Form runs on website bundle (no frappe.urllib). */
+function slcmPortalAbsUrl(path) {
+	var p = path || '';
+	if (p.charAt(0) !== '/') p = '/' + p;
+	if (typeof frappe !== 'undefined' && frappe.urllib && typeof frappe.urllib.get_full_url === 'function') {
+		return frappe.urllib.get_full_url(p);
+	}
+	var origin = (typeof window !== 'undefined' && window.location && window.location.origin) || '';
+	return origin + p;
 }
 
 /** Read a field value from wf.get_value → wf.doc → frappe.reference_doc */
@@ -133,29 +193,34 @@ function collectDraftData() {
 	return data;
 }
 
-function hasAllKeyFields() {
-	var doc = frappe.web_form && frappe.web_form.doc;
-	if (!doc) return false;
-	return !!(doc.program && doc.campus && doc.admission_cycle && doc.academic_year);
-}
-
 // ───────────────────────────────────────────────────────────────────
 //  APPLICATION STATUS BADGE — injected near the applicant-ID heading
 // ───────────────────────────────────────────────────────────────────
 function _statusBadgeClass(status) {
-	if (!status) return 'slcm-status-other';
+	var baseClass = 'slcm-status-badge ';
+	if (!status) return baseClass + 'slcm-status-other';
 	var s = status.toLowerCase();
-	if (s === 'draft')     return 'slcm-status-draft';
-	if (s === 'submitted') return 'slcm-status-submitted';
-	return 'slcm-status-other';
+	if (s === 'draft')     return baseClass + 'slcm-status-draft';
+	if (s === 'submitted') return baseClass + 'slcm-status-submitted';
+	return baseClass + 'slcm-status-other';
 }
 
 function updateStatusBadge(status) {
 	var badge = document.getElementById('slcm-app-status-badge');
 	if (!badge) return;
-	badge.className = 'slcm-status-badge ' + _statusBadgeClass(status);
+	badge.className = _statusBadgeClass(status);
 	badge.textContent = status || '';
 	badge.style.display = status ? '' : 'none';
+
+	// Make sure the label is present before the badge
+	var label = document.getElementById('slcm-app-status-label');
+	if (badge.parentNode && !label) {
+		label = document.createElement('span');
+		label.id = 'slcm-app-status-label';
+		label.className = 'slcm-app-status-label';
+		label.textContent = 'Application Status: ';
+		badge.parentNode.insertBefore(label, badge);
+	}
 }
 
 function setupStatusBadge() {
@@ -188,13 +253,34 @@ function setupStatusBadge() {
 			clearInterval(t);
 			window._slcm_badge_done = true;
 
+			var titleEl = $title[0];
+			var idText = (titleEl.textContent || '').replace(/\s+/g, ' ').trim();
+			titleEl.textContent = '';
+			titleEl.classList.add('slcm-app-heading-row');
+
+			var idSpan = document.createElement('span');
+			idSpan.id = 'slcm-app-heading-id';
+			idSpan.textContent = idText;
+
+			var label = document.createElement('span');
+			label.id = 'slcm-app-status-label';
+			label.className = 'slcm-app-status-label';
+			label.textContent = 'Application Status: ';
+
 			var badge = document.createElement('span');
 			badge.id = 'slcm-app-status-badge';
 			var initStatus = resolveField('application_status');
-			badge.className = 'slcm-status-badge ' + _statusBadgeClass(initStatus);
+			badge.className = _statusBadgeClass(initStatus);
 			badge.textContent = initStatus || '';
 			badge.style.display = initStatus ? '' : 'none';
-			$title[0].appendChild(badge);
+
+			var meta = document.createElement('span');
+			meta.id = 'slcm-app-heading-meta';
+			meta.appendChild(label);
+			meta.appendChild(badge);
+
+			titleEl.appendChild(idSpan);
+			titleEl.appendChild(meta);
 		}
 		if (attempts > 80) clearInterval(t);
 	}, 100);
@@ -231,16 +317,19 @@ function handleSaveDraft(opts) {
 				var msg = r && r.message;
 				if (msg && msg.status === 'success') {
 					var wf = frappe.web_form;
-					if (wf && wf.doc && !wf.doc.name && msg.name) {
-						wf.doc.name = msg.name;
-						try {
-							var url = new URL(window.location.href);
-							url.searchParams.set('name', msg.name);
-							window.history.replaceState({}, '', url.toString());
-						} catch (e) {}
-					}
-					try { frappe.web_form.set_value('application_status', 'Draft'); } catch (e) {}
-					frappe.form_dirty = false;
+				if (wf && wf.doc && !wf.doc.name && msg.name) {
+					wf.doc.name = msg.name;
+					try {
+						var url = new URL(window.location.href);
+						url.searchParams.set('name', msg.name);
+						window.history.replaceState({}, '', url.toString());
+					} catch (e) {}
+				}
+				// Set directly on doc — avoids triggering a Frappe field-refresh
+				// cascade that would call set_formatted_input on the phone control
+				// before its async make_input() has finished.
+				try { if (wf && wf.doc) wf.doc.application_status = 'Draft'; } catch (e) {}
+				frappe.form_dirty = false;
 					updateStatusBadge('Draft');
 					if (!(opts && opts.silent)) {
 						showToast('\u2713  ' + (msg.message || 'Draft saved successfully.'), 'success');
@@ -292,7 +381,13 @@ function setupSaveDraftButton() {
 				e.preventDefault();
 				handleSaveDraft();
 			});
-			$primary.before($btn);
+			// Frappe order: Discard → Next (after discard) → Submit. Place Save Draft before Discard.
+			var $discard = $('.web-form-footer .right-area .discard-btn').first();
+			if ($discard.length) {
+				$discard.before($btn);
+			} else {
+				$primary.before($btn);
+			}
 		}
 	}, 500);
 }
@@ -325,9 +420,18 @@ function updateFeeForCategory() {
 		callback: function (r) {
 			if (r && r.message !== undefined && r.message !== null) {
 				var fee = parseFloat(r.message) || 0;
-				// Silently update the form field and in-memory doc
-				try { wf.set_value('application_fee_amount', fee); } catch (e) {}
-				try { if (doc) doc.application_fee_amount = fee; } catch (e) {}
+				try {
+					if (wf && wf.doc) wf.doc.application_fee_amount = fee;
+				} catch (e) {}
+				if (doc && doc !== (wf && wf.doc)) {
+					try { doc.application_fee_amount = fee; } catch (e) {}
+				}
+				// Update the visible Currency control (category change must reflect in UI).
+				try {
+					if (wf && typeof wf.set_value === 'function') {
+						wf.set_value('application_fee_amount', fee);
+					}
+				} catch (e) {}
 			}
 		},
 	});
@@ -349,6 +453,124 @@ function bindFeeListener() {
 	}
 }
 
+var _feeReceiptBtnInFlight = false;
+
+/** Paid + server has Applicant Payment Receipt → show download (policy print format on server). */
+function syncApplicationFeeReceiptButton() {
+	var wf = window.frappe && frappe.web_form;
+	if (!wf) return;
+
+	var applicant = getDocName();
+	var wrap = document.getElementById('slcm-fee-receipt-wrap');
+	if (!applicant) {
+		if (wrap) wrap.remove();
+		return;
+	}
+
+	// Do not block on empty fee status (hidden field may not hydrate); server checks DB.
+	var st = (resolveField('application_fee_status') || '').trim();
+	if (st === 'Pending' || st === 'Requested' || st === 'Waived') {
+		if (wrap) wrap.remove();
+		return;
+	}
+
+	if (wrap || _feeReceiptBtnInFlight) return;
+
+	_feeReceiptBtnInFlight = true;
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.portal_application_fee_receipt_ready',
+		args: { applicant_name: applicant },
+		callback: function (r) {
+			_feeReceiptBtnInFlight = false;
+			var m = r && r.message;
+			if (!m || !m.ready || document.getElementById('slcm-fee-receipt-wrap')) return;
+
+			// Mount in the form header so the control stays visible on every step (fee field may sit on another page).
+			var $host = $('.web-form-container .web-form-head').first();
+			if (!$host.length) {
+				$host = $('.web-form-wrapper .title-area').closest('.web-form-head').first();
+			}
+			if (!$host.length) {
+				$host = $('.web-form-head').first();
+			}
+			if (!$host.length) {
+				$host = $('.web-form-container').first();
+			}
+
+			var div = document.createElement('div');
+			div.id = 'slcm-fee-receipt-wrap';
+			var btn = document.createElement('button');
+			btn.type = 'button';
+			btn.id = 'slcm-fee-receipt-btn';
+			btn.textContent = 'Download application fee receipt';
+			btn.onclick = function () {
+				var url =
+					slcmPortalAbsUrl(
+						'/api/method/slcm.admission.web_form.applicant_form.applicant_form.download_portal_application_fee_receipt'
+					) + '?applicant_name=' + encodeURIComponent(applicant);
+				window.open(url, '_blank');
+			};
+			div.appendChild(btn);
+			$host.append(div);
+		},
+		error: function () {
+			_feeReceiptBtnInFlight = false;
+		},
+	});
+}
+
+function setupApplicationFeeReceiptDownload() {
+	setInterval(syncApplicationFeeReceiptButton, 1200);
+}
+
+/** Submitted applications: hide Submit / Save Draft (footer still shows Discard / nav). */
+function setupSubmittedFormUX() {
+	setInterval(function () {
+		if ((resolveField('application_status') || '').trim() !== 'Submitted') return;
+		try {
+			$('#slcm-save-draft-btn').hide();
+			$(
+				'.web-form-footer .right-area .submit-btn, ' +
+					'.web-form-footer .btn-submit-web-form, ' +
+					'form.web-form .submit-btn'
+			).hide();
+		} catch (e) {}
+	}, 700);
+}
+
+var _programDerivTimer = null;
+
+/** When Program or Admission Cycle changes, refresh program_level / intake_type / campus (server). */
+function scheduleProgramPortalDerivatives() {
+	clearTimeout(_programDerivTimer);
+	_programDerivTimer = setTimeout(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (!wf || typeof wf.get_value !== 'function' || typeof wf.set_value !== 'function') {
+			return;
+		}
+		var program = wf.get_value('program');
+		if (!program) return;
+
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.get_program_portal_derivatives',
+			args: {
+				program: program,
+				admission_cycle: wf.get_value('admission_cycle') || '',
+			},
+			callback: function (r) {
+				var d = r && r.message;
+				if (!d) return;
+				try {
+					if (d.program_level) wf.set_value('program_level', d.program_level);
+					if (d.intake_type) wf.set_value('intake_type', d.intake_type);
+					if (d.campus) wf.set_value('campus', d.campus);
+				} catch (e) {}
+				scheduleFeeUpdate();
+			},
+		});
+	}, 320);
+}
+
 // ───────────────────────────────────────────────────────────────────
 //  SUBMIT INTERCEPT + FULL FLOW
 // ───────────────────────────────────────────────────────────────────
@@ -368,6 +590,194 @@ function _showSubmitOverlay(msg) {
 function _hideSubmitOverlay() {
 	var el = document.getElementById('slcm-submit-overlay');
 	if (el) el.classList.remove('open');
+}
+
+function _slcmEscapeHtml(s) {
+	var d = document.createElement('div');
+	d.textContent = s == null ? '' : String(s);
+	return d.innerHTML;
+}
+
+/**
+ * Rich "Eligibility Evaluation Results" dialog (data from check_eligibility API).
+ * Includes suggested programmes with Switch — avoids duplicating Frappe server throw UI.
+ */
+function showEligibilityEvaluationModal(applicantName, res) {
+	_injectCSS();
+	var sug = (res && res.suggestions) || {};
+	var programs = sug.programs || [];
+	var reason =
+		(res && res.failure_reason) ||
+		(res && res.message) ||
+		'You do not meet the eligibility criteria for the selected program.';
+
+	var modal = document.getElementById('slcm-ee-modal');
+	if (!modal) {
+		modal = document.createElement('div');
+		modal.id = 'slcm-ee-modal';
+		modal.setAttribute('role', 'dialog');
+		modal.setAttribute('aria-modal', 'true');
+		modal.innerHTML =
+			'<div id="slcm-ee-backdrop"></div>' +
+			'<div id="slcm-ee-panel">' +
+				'<div id="slcm-ee-head">' +
+					'<h2 id="slcm-ee-title">Eligibility evaluation results</h2>' +
+					'<button type="button" id="slcm-ee-close" aria-label="Close">\u00d7</button>' +
+				'</div>' +
+				'<div id="slcm-ee-body">' +
+					'<div class="slcm-ee-alert">' +
+						'<span class="slcm-ee-alert-dot"></span>' +
+						'<div class="slcm-ee-alert-text" id="slcm-ee-reason"></div>' +
+					'</div>' +
+					'<div id="slcm-ee-programs-wrap"></div>' +
+				'</div>' +
+				'<div id="slcm-ee-foot">' +
+					'<button type="button" id="slcm-ee-dismiss">Close</button>' +
+				'</div>' +
+			'</div>';
+		document.body.appendChild(modal);
+
+		function closeModal() {
+			modal.classList.remove('open');
+		}
+		function onKey(ev) {
+			if (ev.key !== 'Escape') return;
+			var m = document.getElementById('slcm-ee-modal');
+			if (m && m.classList.contains('open')) m._slcmClose && m._slcmClose();
+		}
+
+		document.getElementById('slcm-ee-backdrop').onclick = closeModal;
+		document.getElementById('slcm-ee-close').onclick = closeModal;
+		document.getElementById('slcm-ee-dismiss').onclick = closeModal;
+		modal._slcmClose = closeModal;
+		document.addEventListener('keydown', onKey);
+	}
+
+	var reasonEl = document.getElementById('slcm-ee-reason');
+	if (reasonEl) reasonEl.textContent = reason;
+
+	var wrap = document.getElementById('slcm-ee-programs-wrap');
+	if (!wrap) return;
+
+	if (!programs.length) {
+		wrap.innerHTML =
+			'<p style="margin:0;font-size:13px;color:#64748b;">No alternative programmes were found at the same level.</p>';
+		modal.classList.add('open');
+		return;
+	}
+
+	var metaParts = [];
+	if (sug.campus) metaParts.push(sug.campus);
+	if (sug.cycle) metaParts.push(sug.cycle);
+	if (sug.level) metaParts.push(sug.level);
+	var metaStr = metaParts.join(' \u00b7 ');
+
+	var ec = sug.eligible_count != null ? sug.eligible_count : programs.length;
+	var tc = sug.total_count != null ? sug.total_count : programs.length;
+
+	var rows = programs
+		.map(function (p) {
+			var name = p.program_name || p.program || '';
+			var pid = p.program || '';
+			var sel = !!p.selected;
+			var progCell =
+				'<strong>' +
+				_slcmEscapeHtml(name) +
+				'</strong>' +
+				(sel
+					? ' <span class="slcm-ee-badge">Current</span>'
+					: '');
+			var statusCell =
+				'<span class="slcm-ee-status"><span class="slcm-ee-dot"></span> Eligible</span>';
+			var actionCell = sel
+				? '<span style="color:#94a3b8;font-size:12px;">\u2014</span>'
+				: '<button type="button" class="slcm-ee-switch" data-program="' +
+					_slcmEscapeHtml(pid) +
+					'">Switch</button>';
+			return (
+				'<tr>' +
+				'<td>' +
+				progCell +
+				'</td>' +
+				'<td style="text-align:center;">' +
+				statusCell +
+				'</td>' +
+				'<td style="text-align:center;" class="slcm-ee-td-switch">' +
+				actionCell +
+				'</td>' +
+				'</tr>'
+			);
+		})
+		.join('');
+
+	wrap.innerHTML =
+		'<div class="slcm-ee-subhead">' +
+		'<strong>Suggested eligible programmes</strong>' +
+		(metaStr ? '<span class="slcm-ee-meta">\u2014 ' + _slcmEscapeHtml(metaStr) + '</span>' : '') +
+		'</div>' +
+		'<div class="slcm-ee-summary">' +
+		'<span class="slcm-ee-dot"></span>' +
+		'<span><strong>' +
+		ec +
+		'</strong> eligible programme' +
+		(ec === 1 ? '' : 's') +
+		' found</span>' +
+		'<span style="color:#94a3b8;">(' +
+		tc +
+		' total at this level)</span>' +
+		'</div>' +
+		'<div style="overflow-x:auto;">' +
+		'<table id="slcm-ee-table">' +
+		'<thead><tr>' +
+		'<th>Programme</th>' +
+		'<th style="text-align:center;">Status</th>' +
+		'<th class="slcm-ee-th-actions">Action</th>' +
+		'</tr></thead>' +
+		'<tbody>' +
+		rows +
+		'</tbody></table></div>';
+
+	wrap.querySelectorAll('.slcm-ee-switch').forEach(function (btn) {
+		btn.onclick = function () {
+			var prog = btn.getAttribute('data-program');
+			if (!prog || !applicantName) return;
+			btn.disabled = true;
+			frappe.call({
+				method: 'slcm.admission.web_form.applicant_form.applicant_form.switch_applicant_program',
+				args: { applicant_name: applicantName, program: prog },
+				callback: function (r) {
+					var m = r && r.message;
+					if (m && m.status === 'success') {
+						if (modal._slcmClose) modal._slcmClose();
+						showToast(m.message || 'Programme updated.', 'success');
+						window.location.reload();
+					} else {
+						btn.disabled = false;
+						showToast((m && m.message) || 'Could not switch programme.', 'error');
+					}
+				},
+				error: function () {
+					btn.disabled = false;
+					showToast('Could not switch programme.', 'error');
+				},
+			});
+		};
+	});
+
+	modal.classList.add('open');
+}
+
+function _feePayBtnSetLoading(payBtn, loading, label) {
+	if (!payBtn) return;
+	if (loading) {
+		payBtn.innerHTML =
+			'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+			'style="animation:slcm-spin .8s linear infinite;flex-shrink:0" aria-hidden="true">' +
+			'<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>' +
+			'<span>' + (label || 'Opening\u2026') + '</span>';
+	} else {
+		payBtn.textContent = 'Pay Now';
+	}
 }
 
 /** Fee payment modal */
@@ -393,6 +803,11 @@ function _showFeeModal(feeDetails, onPaid) {
 
 	var amountFormatted = '\u20B9 ' + (feeDetails.fee_amount || 0).toFixed(2);
 	document.getElementById('slcm-fee-amount').textContent = amountFormatted;
+	var payBtnEl = document.getElementById('slcm-fee-pay-btn');
+	if (payBtnEl) {
+		payBtnEl.disabled = false;
+		_feePayBtnSetLoading(payBtnEl, false);
+	}
 	modal.classList.add('open');
 
 	function closeModal() { modal.classList.remove('open'); }
@@ -407,7 +822,7 @@ function _showFeeModal(feeDetails, onPaid) {
 	document.getElementById('slcm-fee-pay-btn').onclick = function () {
 		var payBtn = document.getElementById('slcm-fee-pay-btn');
 		payBtn.disabled = true;
-		payBtn.textContent = 'Opening\u2026';
+		_feePayBtnSetLoading(payBtn, true, 'Creating order\u2026');
 
 		frappe.call({
 			method: 'slcm.api.service.fee_service.create_application_fee_razorpay_order',
@@ -416,29 +831,31 @@ function _showFeeModal(feeDetails, onPaid) {
 				var d = r && r.message;
 				if (!d || !d.order_id) {
 					payBtn.disabled = false;
-					payBtn.textContent = 'Pay Now';
+					_feePayBtnSetLoading(payBtn, false);
 					showToast('Could not create payment order. Please try again.', 'error');
 					return;
 				}
 
 				if (typeof Razorpay === 'undefined') {
+					_feePayBtnSetLoading(payBtn, true, 'Loading checkout\u2026');
 					// Try loading dynamically
 					var sc = document.createElement('script');
 					sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
 					sc.onload = function () { _openRazorpay(d, feeDetails, onPaid, payBtn, closeModal); };
 					sc.onerror = function () {
 						payBtn.disabled = false;
-						payBtn.textContent = 'Pay Now';
+						_feePayBtnSetLoading(payBtn, false);
 						showToast('Payment gateway script failed to load. Please refresh.', 'error');
 					};
 					document.head.appendChild(sc);
 				} else {
+					_feePayBtnSetLoading(payBtn, true, 'Opening checkout\u2026');
 					_openRazorpay(d, feeDetails, onPaid, payBtn, closeModal);
 				}
 			},
 			error: function () {
 				payBtn.disabled = false;
-				payBtn.textContent = 'Pay Now';
+				_feePayBtnSetLoading(payBtn, false);
 				showToast('Network error while creating payment order.', 'error');
 			},
 		});
@@ -465,7 +882,7 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 				},
 				callback: function (vr) {
 					payBtn.disabled = false;
-					payBtn.textContent = 'Pay Now';
+					_feePayBtnSetLoading(payBtn, false);
 					if (vr && vr.message && vr.message.status === 'success') {
 						showToast('Payment successful!', 'success');
 						closeModal();
@@ -478,7 +895,7 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 				error: function () {
 					_hideSubmitOverlay();
 					payBtn.disabled = false;
-					payBtn.textContent = 'Pay Now';
+					_feePayBtnSetLoading(payBtn, false);
 					showToast('Verification failed. Please contact support.', 'error');
 				},
 			});
@@ -497,12 +914,12 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 		});
 		showToast((err && err.error && err.error.description) || 'Payment failed.', 'error');
 		payBtn.disabled = false;
-		payBtn.textContent = 'Pay Now';
+		_feePayBtnSetLoading(payBtn, false);
 	});
 
 	rzp.open();
 	payBtn.disabled = false;
-	payBtn.textContent = 'Pay Now';
+	_feePayBtnSetLoading(payBtn, false);
 }
 
 /** Call backend submit_applicant and update UI */
@@ -516,7 +933,7 @@ function _doFinalSubmit(applicantName) {
 			var msg = r && r.message;
 			if (msg && msg.status === 'success') {
 				updateStatusBadge('Submitted');
-				try { frappe.web_form.set_value('application_status', 'Submitted'); } catch (e) {}
+				try { if (frappe.web_form && frappe.web_form.doc) frappe.web_form.doc.application_status = 'Submitted'; } catch (e) {}
 				showToast('\u2705  Application submitted successfully!', 'success');
 				// Reload after short delay so the form shows submitted state
 				setTimeout(function () { window.location.reload(); }, 1500);
@@ -562,14 +979,12 @@ function runSubmitFlow() {
 					var res = r && r.message;
 					if (!res || res.status === 'Ineligible') {
 						_hideSubmitOverlay();
-						showToast('\u274c Not eligible: ' + ((res && res.message) || 'Unknown reason.'), 'error');
-						// Also show inline eligibility alert
-						showEligibilityAlert('Ineligible', (res && res.message) || '');
+						showEligibilityEvaluationModal(applicantName, res || {});
 						return;
 					}
 					if (res.status === 'Error') {
 						_hideSubmitOverlay();
-						showToast('\u26a0  Eligibility check failed. Please try again.', 'error');
+						showToast('\u26a0  ' + ((res && res.message) || 'Eligibility check failed.'), 'error');
 						return;
 					}
 
@@ -615,115 +1030,107 @@ function runSubmitFlow() {
 
 /** Override Frappe's web_form.save so our flow runs when Submit is clicked. */
 function interceptSubmit() {
-	if (!frappe.web_form) return;
-	var _origSave = frappe.web_form.save.bind(frappe.web_form);
+	var wf = frappe.web_form;
+	if (!wf || wf._slcm_save_patched) return;
+	wf._slcm_save_patched = true;
+	var _origSave = wf.save.bind(wf);
 
-	frappe.web_form.save = function () {
-		// Frappe calls save() for both intermediate "Save" and final "Submit".
-		// Detect submit: form is on the last page OR the web form is not multi-step.
+	/**
+	 * Frappe wires: $(".web-form").on("submit", () => this.save());
+	 * WebForm.save() must return false so jQuery cancels the native form submit;
+	 * otherwise the browser reloads and any modal (e.g. ineligible) disappears.
+	 */
+	wf.save = function () {
+		if ((resolveField('application_status') || '').trim() === 'Submitted') {
+			var $sb = $(
+				'.web-form-footer .right-area .btn-primary, ' +
+					'.web-form-footer .btn-submit-web-form, ' +
+					'form.web-form .submit-btn'
+			).first();
+			var bt = ($sb.text() || '').trim().toLowerCase();
+			if (bt === 'submit' || bt.indexOf('submit') !== -1) {
+				showToast('This application has already been submitted.', 'info');
+				return false;
+			}
+		}
+
 		var isLastPage = false;
 		try {
-			var wf = frappe.web_form;
-			if (wf.is_new && wf.is_new()) {
-				// New record — let Frappe handle initial save normally
+			var me = frappe.web_form;
+			if (me.is_new && me.is_new()) {
 				isLastPage = false;
-			} else if (typeof wf.current_section !== 'undefined') {
-				var sections = $('.web-form-page').length || (wf.pages && wf.pages.length) || 1;
-				isLastPage = (wf.current_section >= sections - 1);
+			} else if (typeof me.current_section !== 'undefined') {
+				var sections = $('.web-form-page').length || (me.pages && me.pages.length) || 1;
+				isLastPage = me.current_section >= sections - 1;
 			} else {
-				// Single-page form or unknown — treat as submit
 				isLastPage = true;
 			}
 		} catch (e) {
 			isLastPage = false;
 		}
 
-		// Check if the visible primary button says "Submit"
-		var $btn = $('.web-form-footer .right-area .btn-primary, .web-form-footer .btn-submit-web-form').first();
+		var $btn = $(
+			'.web-form-footer .right-area .btn-primary, ' +
+				'.web-form-footer .btn-submit-web-form, ' +
+				'form.web-form .submit-btn'
+		).first();
 		var btnText = ($btn.text() || '').trim().toLowerCase();
-		var looksLikeSubmit = (btnText === 'submit' || btnText.indexOf('submit') !== -1);
+		var looksLikeSubmit =
+			btnText === 'submit' ||
+			btnText.indexOf('submit') !== -1 ||
+			($('.submit-btn:visible').length > 0 && !$('.btn-next:visible').length);
 
 		if (isLastPage || looksLikeSubmit) {
 			runSubmitFlow();
-		} else {
-			_origSave();
+			return false;
 		}
+		return _origSave();
 	};
 }
 
 // ───────────────────────────────────────────────────────────────────
-//  ELIGIBILITY — live check
+//  QUERY PREFILL — /applicant-form/new?program=...&admission_cycle=...
 // ───────────────────────────────────────────────────────────────────
-var ELIGIBILITY_FIELDS = ['program', 'campus', 'admission_cycle', 'academic_year'];
-var _eligTimer = null;
-var $alertBox = null;
-
-function ensureAlertBox() {
-	if ($alertBox && $alertBox.length) return;
-	$alertBox = $('<div id="eligibility-alert-box" style="display:none;margin:16px 0;border-radius:8px;padding:14px 18px;font-size:14px;line-height:1.6;"></div>');
-	var $form = $('form.web-form, .web-form-container').first();
-	if ($form.length) $form.prepend($alertBox);
-	else $('body').prepend($alertBox);
+function isNewApplicantWebForm() {
+	var path = (window.location.pathname || '').toLowerCase();
+	if (path.indexOf('/new') !== -1) return true;
+	return !getDocName();
 }
 
-function showEligibilityAlert(status, rawMessage) {
-	ensureAlertBox();
-	if (status === 'Eligible') {
-		$alertBox.css({ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534' })
-			.html('<strong>\u2705 Eligible</strong> \u2014 ' + rawMessage).slideDown(200);
-	} else if (status === 'Ineligible') {
-		$alertBox.css({ background: '#fff2f2', border: '1px solid #fca5a5', color: '#991b1b' })
-			.html('<strong>\u274c Not Eligible</strong><br>' + rawMessage).slideDown(200);
-	} else if (status === 'Incomplete') {
-		$alertBox.slideUp(100);
-	} else {
-		$alertBox.css({ background: '#fef9c3', border: '1px solid #fde047', color: '#854d0e' })
-			.html('<strong>\u26a0\ufe0f </strong>' + rawMessage).slideDown(200);
-	}
-}
+function applyQueryStringPrefill() {
+	var params = new URLSearchParams(window.location.search);
+	if (!params.get('program') && !params.get('admission_cycle')) return;
 
-function hideAlert() { if ($alertBox) $alertBox.slideUp(150); }
-
-function scheduleEligibilityCheck() {
-	clearTimeout(_eligTimer);
-	_eligTimer = setTimeout(runEligibilityCheck, 800);
-}
-
-function runEligibilityCheck() {
-	var docName = getDocName();
-	if (!docName || !hasAllKeyFields()) { hideAlert(); return; }
-
-	ensureAlertBox();
-	$alertBox.css({ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155' })
-		.html('<span class="spinner-border spinner-border-sm me-2"></span> Checking eligibility\u2026')
-		.slideDown(150);
-
-	frappe.call({
-		method: 'slcm.admission.web_form.applicant_form.applicant_form.check_eligibility',
-		args: { applicant_name: docName },
-		callback: function (r) {
-			if (r && r.message) showEligibilityAlert(r.message.status, r.message.message);
-		},
-		error: function () {
-			showEligibilityAlert('error', 'Could not complete eligibility check.');
-		},
-	});
-}
-
-function bindFieldListeners() {
-	ELIGIBILITY_FIELDS.forEach(function (fieldname) {
-		$(document).on('change input',
-			'[data-fieldname="' + fieldname + '"] input, [data-fieldname="' + fieldname + '"] select',
-			scheduleEligibilityCheck
-		);
-		if (frappe.web_form && typeof frappe.web_form.on === 'function') {
-			frappe.web_form.on(fieldname, 'change', scheduleEligibilityCheck);
+	var tries = 0;
+	var t = setInterval(function () {
+		tries++;
+		var wf = window.frappe && frappe.web_form;
+		if (!wf || typeof wf.set_value !== 'function') {
+			if (tries > 120) clearInterval(t);
+			return;
 		}
-	});
-	$(document).on('change',
-		'[data-fieldname="categories"] input, [data-fieldname="categories"] select',
-		scheduleEligibilityCheck
-	);
+		clearInterval(t);
+		if (!isNewApplicantWebForm()) return;
+
+		var pairs = [
+			['program', 'program'],
+			['admission_cycle', 'admission_cycle'],
+			['campus', 'campus'],
+			['intake_type', 'intake_type'],
+			['admission_year', 'admission_year'],
+			['academic_year', 'academic_year'],
+			['program_level', 'program_level'],
+		];
+		pairs.forEach(function (x) {
+			var v = params.get(x[0]);
+			if (v) {
+				try {
+					wf.set_value(x[1], v);
+				} catch (e) {}
+			}
+		});
+		scheduleFeeUpdate();
+	}, 80);
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -732,12 +1139,31 @@ function bindFieldListeners() {
 frappe.ready(function () {
 	_injectCSS();
 
+	try {
+		$('#eligibility-alert-box').remove();
+	} catch (e) {}
+
 	// Fee (silent)
 	bindFeeListener();
 	setTimeout(updateFeeForCategory, 600);
 
-	// Eligibility
-	bindFieldListeners();
+	// Program → program_level (and related) when user edits Program or Admission Cycle
+	var _bindProgN = 0;
+	var _bindProgTimer = setInterval(function () {
+		_bindProgN++;
+		var wf = window.frappe && frappe.web_form;
+		if (wf && typeof wf.on === 'function') {
+			clearInterval(_bindProgTimer);
+			try {
+				wf.on('program', scheduleProgramPortalDerivatives);
+				wf.on('admission_cycle', scheduleProgramPortalDerivatives);
+			} catch (e) {}
+		} else if (_bindProgN > 120) {
+			clearInterval(_bindProgTimer);
+		}
+	}, 80);
+
+	applyQueryStringPrefill();
 
 	// Status badge
 	setupStatusBadge();
@@ -745,23 +1171,16 @@ frappe.ready(function () {
 	// Save Draft button (re-polls on every step change)
 	setupSaveDraftButton();
 
-	// Submit intercept
+	setupApplicationFeeReceiptDownload();
+	setupSubmittedFormUX();
+
+	// Submit intercept (retry: web form may attach after this script's first frappe.ready)
 	interceptSubmit();
-
-	// After web form save hook — show eligibility result
-	if (frappe.web_form) {
-		frappe.web_form.after_save = function (doc) {
-			var status = doc.evaluation_status;
-			if (status === 'Eligible') {
-				showEligibilityAlert('Eligible', __('You meet the eligibility criteria for the selected program.'));
-			} else if (status === 'Ineligible') {
-				showEligibilityAlert('Ineligible', doc.rejected_reason || __('You do not meet the eligibility criteria.'));
-			}
-		};
-	}
-
-	// Initial eligibility check if doc already exists
-	if (getDocName() && hasAllKeyFields()) {
-		runEligibilityCheck();
-	}
+	var _patchAttempts = 0;
+	var _patchTimer = setInterval(function () {
+		interceptSubmit();
+		if ((frappe.web_form && frappe.web_form._slcm_save_patched) || ++_patchAttempts > 60) {
+			clearInterval(_patchTimer);
+		}
+	}, 150);
 });

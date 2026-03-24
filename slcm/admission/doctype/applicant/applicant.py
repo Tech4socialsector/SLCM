@@ -439,6 +439,12 @@ class Applicant(Document):
                     # We must save here explicitly before throwing.
                     self.create_or_update_evaluation(program_details_html=program_table_html)
 
+                    # Portal calls validate_eligibility with flags.skip_eligibility_throw so the
+                    # web form can show its own dialog — frappe.throw also triggers a second
+                    # Frappe msgprint-style modal on the client.
+                    if getattr(self.flags, "skip_eligibility_throw", False):
+                        return
+
                     full_message = self._build_ineligibility_message(failure_message, program_table_html)
 
                     # ONE single frappe.throw() — contains reason box + program table
@@ -502,6 +508,49 @@ class Applicant(Document):
             note=_("The applicant does not meet the eligibility criteria for the selected program."),
             table=program_table_html,
         )
+
+    def get_eligibility_suggestion_payload(self):
+        """
+        Portal / web-form: structured list of same-level programs the applicant can switch to.
+        Only programs passing _check_eligibility_for_program are included.
+        """
+        selected_program_level = self._get_selected_program_level()
+        if not selected_program_level:
+            return {
+                "programs": [],
+                "eligible_count": 0,
+                "total_count": 0,
+                "level": "",
+                "campus": self.campus or "",
+                "cycle": self.admission_cycle or "",
+            }
+
+        all_programs = self._get_all_programs_for_level(selected_program_level)
+        programs_out = []
+        eligible_count = 0
+
+        for prog_name in all_programs:
+            is_ok, _reason = self._check_eligibility_for_program(prog_name)
+            if not is_ok:
+                continue
+            eligible_count += 1
+            display = frappe.db.get_value("Program", prog_name, "program_name") or prog_name
+            programs_out.append(
+                {
+                    "program": prog_name,
+                    "program_name": display,
+                    "selected": prog_name == self.program,
+                }
+            )
+
+        return {
+            "programs": programs_out,
+            "eligible_count": eligible_count,
+            "total_count": len(all_programs),
+            "level": selected_program_level,
+            "campus": self.campus or "",
+            "cycle": self.admission_cycle or "",
+        }
 
     # ──────────────────────────────────────────────
     # PROGRAM ELIGIBILITY TABLE (rendered inside throw)

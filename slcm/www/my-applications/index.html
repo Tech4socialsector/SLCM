@@ -1883,7 +1883,7 @@ or _app.current_stage)) or _status %}
             </button>
             {% endif %}
 
-            <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
+            <a href="/applicant-form/{{ _appid }}" class="btn-edit-application"
               title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
               <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
               {{ 'View' if not is_editable else 'Edit' }}
