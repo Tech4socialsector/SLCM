@@ -98,47 +98,66 @@ class RefundRequest(Document):
 		if self.refund_type == "Full":
 			self.refund_amount = self.amount_paid
 			return
+		
+		if self.refund_type == "No Refund":
+			self.refund_amount = 0
+			return
 
 		# If partial, but no policy selected, try to auto-select
 		amount_paid = flt(self.amount_paid)
-		payment_date = None
 		
-		if self.payment_request:
-			payment_date = frappe.db.get_value("Fee Payment", self.payment_request, "payment_date")
-		elif self.applicant_payment_receipt:
-			payment_date = frappe.db.get_value("Applicant Payment Receipt", self.applicant_payment_receipt, "payment_date")
+		# Use shared utility to get correct policies for this applicant's Fee Structure
+		from slcm.admission.utils.refund import get_applicant_refund_policies
+		res = get_applicant_refund_policies(self.applicant)
+		
+		policies = res.get("policies", [])
+		days = res.get("days_since_payment", 0)
 
-		if not self.refund_policy and payment_date:
-			from frappe.utils import date_diff, nowdate
-			request_date = self.request_date or nowdate()
-			days = date_diff(request_date, payment_date)
-			
-			policies = frappe.get_all("Refund Policy", 
-				filters={"is_active": 1},
-				fields=["name", "refund_percentage", "days_from_payment"],
-				order_by="days_from_payment asc"
-			)
-			
-			for p in policies:
-				if days <= p.days_from_payment:
-					self.refund_policy = p.name
+		if not self.refund_policy:
+			if not policies:
+				self.refund_type = "No Refund"
+				self.refund_amount = 0
+				return
+
+			# Sort policies by days_from_payment ascending to ensure correct matching
+			sorted_policies = sorted(policies, key=lambda p: p.get("days_from_payment", 0))
+			for p in sorted_policies:
+				if days <= p.get("days_from_payment"):
+					self.refund_policy = p.get("policy_name")
 					break
-			if not self.refund_policy and policies:
-				self.refund_policy = policies[-1].name
+			if not self.refund_policy and sorted_policies:
+				# Exceeded all day windows — no refund applicable
+				self.refund_type = "No Refund"
+				self.refund_amount = 0
+				return
 
 		# Calculate based on selected policy
 		if self.refund_policy:
-			policy = frappe.get_doc("Refund Policy", self.refund_policy)
-			self.refund_amount = amount_paid * (flt(policy.refund_percentage) / 100.0)
+			# Find the percentage from the resolved policies list
+			percentage = 0
+			for p in policies:
+				if p.get("policy_name") == self.refund_policy:
+					percentage = flt(p.get("refund_percentage"))
+					break
+			
+			if not percentage:
+				# Fallback to direct DocType fetch if not in the Fee Structure list 
+				# (e.g. if manually selected a global policy)
+				percentage = flt(frappe.db.get_value("Refund Policy", self.refund_policy, "refund_percentage"))
+
+			self.refund_amount = amount_paid * (percentage / 100.0)
 
 	def handle_refund_type(self):
 		if self.refund_type == "Full":
 			self.refund_amount = self.amount_paid
+		elif self.refund_type == "No Refund":
+			self.refund_amount = 0
 
 	def validate_refund_amount(self):
 		if flt(self.refund_amount) > flt(self.amount_paid):
 			frappe.throw(_("Refund Amount cannot be greater than Amount Paid ({0})").format(self.amount_paid))
-		if flt(self.refund_amount) <= 0:
+		# Allow 0 for No Refund type; otherwise enforce positive amount
+		if self.refund_type != "No Refund" and flt(self.refund_amount) <= 0:
 			frappe.throw(_("Refund Amount must be greater than 0"))
 
 	def set_approval_details(self):

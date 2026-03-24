@@ -364,13 +364,29 @@ def get_context(context):
         context.payment_details = None
         context.cancellation_details = frappe.get_all("Admission Cancellation", 
             filters={"applicant": applicant.name, "status": ["not in", ["Rejected"]]},
-            fields=["name", "status", "requested_on", "cancellation_reason"],
+            fields=["name", "status", "requested_on", "cancellation_reason", "refund_request"],
             order_by="creation desc",
             limit=1
         )
         if context.cancellation_details:
              context.cancellation_details = context.cancellation_details[0]
              context.has_cancellation = True
+             
+             # Fetch detailed refund info if available
+             if context.cancellation_details.get("refund_request"):
+                 refund = frappe.db.get_value("Refund Request", 
+                     context.cancellation_details.refund_request, 
+                     ["refund_amount", "refund_date", "status", "applicant_payment_receipt"], 
+                     as_dict=True
+                 )
+                 if refund:
+                     if refund.get("applicant_payment_receipt"):
+                         refund["currency"] = frappe.db.get_value("Applicant Payment Receipt", 
+                             refund.applicant_payment_receipt, "currency")
+                     
+                     # Rename refund status to avoid confusion with cancellation status
+                     refund["refund_status"] = refund.pop("status")
+                     context.cancellation_details.update(refund)
         else:
              context.cancellation_details = None
              context.has_cancellation = False

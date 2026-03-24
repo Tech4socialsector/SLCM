@@ -123,12 +123,17 @@ def get_status_distribution(conditions):
     """, as_dict=1)
 
 def get_cancellation_reasons(conditions):
-    return frappe.db.sql(f"""
+    data = frappe.db.sql(f"""
         SELECT ac.cancellation_reason_type as label, COUNT(ac.name) as value
         FROM `tabAdmission Cancellation` ac
         WHERE {conditions}
         GROUP BY ac.cancellation_reason_type
     """, as_dict=1)
+    
+    for d in data:
+        if d.label:
+            d.label = d.label.title()
+    return data
 
 def get_program_distribution(conditions):
     return frappe.db.sql(f"""

@@ -617,8 +617,11 @@ def save_form(data):
                 scalar_data.pop(key, None)
         else:
             # In Partial Editing / Submitted: Strip everything EXCEPT parent fields
+            # Also allow program-related fields so the 'Switch Programme' feature can update the record
+            # even after a failed (Rejected) submission attempt.
+            ALLOWED_ALONG_WITH_PARENTS = PARENT_FIELDS | {"program", "program_level", "campus", "admission_cycle", "application_type"}
             for key in list(scalar_data.keys()):
-                if key not in PARENT_FIELDS:
+                if key not in ALLOWED_ALONG_WITH_PARENTS:
                     scalar_data.pop(key, None)
 
     # On submit, never overwrite fee status/amount from form (set by payment flow)
@@ -628,6 +631,29 @@ def save_form(data):
 
     try:
         doc.update(scalar_data)
+
+        # ── SYNC SESSION: Update session selection if program changed ──
+        # This ensures that browser refreshes or reloads show the newly selected program.
+        if scalar_data.get("program"):
+            # ── RESET REJECTED STATUS ──
+            # If switching program, reset the failure state so it can be re-evaluated.
+            # This also ensures the child table block below (line ~660) runs by setting status back to 'Draft'.
+            if doc.application_status == "Rejected":
+                doc.application_status = "Draft"
+                doc.evaluation_status = "Not Evaluated"
+                doc.rejected_reason = ""
+                # Clear child table cache to avoid merge conflicts
+                for ct in ["ug_degree_details", "pg_degree_details", "categories"]:
+                    doc.set(ct, [])
+
+            sel = frappe.session.get("application_form_selection") or {}
+            sel["program"] = (scalar_data.get("program") or "").strip()
+            if scalar_data.get("admission_cycle"):
+                sel["admission_cycle"] = (scalar_data.get("admission_cycle") or "").strip()
+            if scalar_data.get("campus"):
+                sel["campus"] = (scalar_data.get("campus") or "").strip()
+            frappe.session["application_form_selection"] = sel
+
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "save_form — doc.update")
         return {"error": _("Error setting fields: {0}").format(str(e))}
@@ -776,7 +802,22 @@ def save_form(data):
 
     except frappe.ValidationError as e:
         frappe.db.rollback()
-        raw_msg = str(e) or ""
+        # Ensure e is converted to string safely
+        try:
+            raw_msg = str(e.args[0]) if (e.args and len(e.args) > 0) else str(e)
+        except Exception:
+            raw_msg = str(e)
+        
+        raw_msg = raw_msg or ""
+
+        # Ensure we always try to get programs for the 'Switch Program' feature
+        programs = []
+        try:
+            # We already have doc from earlier in the function
+            if doc:
+                programs = doc._build_program_eligibility_data() if hasattr(doc, '_build_program_eligibility_data') else []
+        except Exception:
+            pass
 
         # Special handling for rich ineligibility HTML
         lower_msg = raw_msg.lower()
@@ -792,7 +833,11 @@ def save_form(data):
             if not cleaned:
                 cleaned = _("You are not eligible for the selected program. Please review the eligibility criteria.")
 
-            return {"error": cleaned}
+            return {"error": cleaned, "is_eligibility_error": True, "programs": programs}
+
+        # Handle the combined message with '|'
+        if "|" in raw_msg:
+            return {"error": raw_msg, "is_eligibility_error": True, "programs": programs}
 
         return {"error": raw_msg}
 
