@@ -41,8 +41,28 @@ def process_refund(name):
 		frappe.throw(_("Refund Request must be Approved before processing."))
 
 	if refund.refund_type == "No Refund":
-		frappe.throw(_("This Refund Request is marked as 'No Refund'. No payment will be processed."))
-	
+		# No payment needed, just close the cycle
+		refund.db_set("status", "Processed")
+		refund.db_set("refund_date", now_datetime())
+		refund.db_set("failure_message", "")
+		
+		# Create a 0-amount transaction for audit trail
+		rt = frappe.new_doc("Refund Transaction")
+		rt.refund_request = refund.name
+		rt.payment_request = refund.payment_request
+		rt.razorpay_payment_id = refund.razorpay_payment_id
+		rt.razorpay_refund_id = "INTERNAL_NO_REFUND"
+		rt.refund_amount = 0
+		rt.status = "Processed"
+		rt.processed_at = now_datetime()
+		rt.gateway_response = json.dumps({"note": "Refund skipped: Processed as 'No Refund' in system."})
+		rt.insert(ignore_permissions=True)
+		
+		# Sync statuses (closes the Admission Cancellation)
+		refund.sync_cancellation_status()
+		
+		return {"status": "Success", "message": _("Refund Request (No Refund) has been closed successfully.")}
+
 	if not refund.razorpay_payment_id:
 		frappe.throw(_("Cannot process refund: No Razorpay Payment ID found on this request."))
 
