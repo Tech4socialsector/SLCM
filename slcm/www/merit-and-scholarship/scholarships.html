@@ -527,7 +527,7 @@
                     <button onclick="viewDetails('{{ sch.name }}')"
                       class="text-[12px] font-bold text-slate-500 hover:text-slate-900">Details</button>
                     <a href="{{ '/merit-and-scholarship/apply?scheme=' ~ sch.name if (_is_cycle_active and not is_fee_paid) else 'javascript:void(0)' }}"
-                      class="bg-secondary text-white px-4 py-1.5 rounded-lg text-[12px] font-bold shadow-sm transition-opacity {{ 'opacity-60 cursor-not-allowed' if (not _is_cycle_active or is_fee_paid) else 'hover:opacity-90' }}"
+                      class="px-4 py-1.5 rounded-lg text-[12px] font-bold shadow-sm transition-all {{ 'bg-emerald-600 text-white hover:bg-emerald-700' if (_is_cycle_active and not is_fee_paid) else 'bg-slate-200 text-slate-500 cursor-not-allowed' }}"
                       style="{{ 'pointer-events: none;' if (not _is_cycle_active or is_fee_paid) else '' }}">
                       {% if is_fee_paid %}
                         Apply Now
