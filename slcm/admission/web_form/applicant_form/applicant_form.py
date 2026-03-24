@@ -472,7 +472,7 @@ def _latest_application_fee_receipt_for_portal(applicant_name):
     return rows[0][0] if rows else None
 
 
-@frappe.whitelist(allow_guest=False)
+@frappe.whitelist(allow_guest=True)
 def portal_application_fee_receipt_ready(applicant_name):
     """Whether the portal may show “Download fee receipt” for this application."""
     applicant_name = (applicant_name or "").strip()
@@ -508,10 +508,11 @@ def download_portal_application_fee_receipt(applicant_name):
     )
     fmt = (receipt.payment_receipt_template or "").strip() or None
 
-    # Portal users usually have no Print permission on Applicant Payment Receipt;
-    # access is already enforced above via applicant ownership + Paid status.
-    prev_ignore = frappe.flags.get("ignore_print_permissions")
-    frappe.flags.ignore_print_permissions = True
+    # Portal users don't have DocType-level print permission; we've already verified
+    # ownership above via _portal_can_access_applicant.  Set the flag that
+    # get_rendered_template() checks (printview.py:145) — this is the same pattern
+    # used by frappe's own attach_print() in print_utils.py:134.
+    frappe.local.flags.ignore_print_permissions = True
     try:
         if fmt:
             pdf = frappe.get_print(
@@ -523,10 +524,7 @@ def download_portal_application_fee_receipt(applicant_name):
         else:
             pdf = frappe.get_print("Applicant Payment Receipt", receipt.name, as_pdf=True)
     finally:
-        if prev_ignore is None:
-            frappe.flags.pop("ignore_print_permissions", None)
-        else:
-            frappe.flags.ignore_print_permissions = prev_ignore
+        frappe.local.flags.ignore_print_permissions = False
 
     safe = (receipt.name or "receipt").replace(" ", "-").replace("/", "-")
     frappe.local.response.filename = f"{safe}.pdf"

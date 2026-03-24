@@ -66,10 +66,19 @@ function _injectCSS() {
 		'#slcm-fee-pay-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		'#slcm-fee-later-btn{flex:1;padding:10px 0;border-radius:8px;' +
 			'background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:600;cursor:pointer;font-size:14px;}',
-		'#slcm-fee-receipt-wrap{margin:10px 0 0;clear:both;}',
-		'#slcm-fee-receipt-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;' +
-			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #1a73e8;background:#fff;color:#1a73e8;cursor:pointer;}',
-		'#slcm-fee-receipt-btn:hover{background:#e8f0fe;}',
+		/* Top-bar: Back (left) + Receipt icon-btn (right) */
+		'#slcm-form-topbar{display:flex;align-items:center;justify-content:space-between;' +
+			'padding:8px 4px 4px;margin-bottom:4px;}',
+		'#slcm-back-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
+			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #cbd5e1;' +
+			'background:#f8fafc;color:#334155;cursor:pointer;text-decoration:none;' +
+			'transition:background .15s,border-color .15s;}',
+		'#slcm-back-btn:hover{background:#f1f5f9;border-color:#94a3b8;color:#1e293b;}',
+		'#slcm-fee-receipt-wrap{display:flex;align-items:center;}',
+		'#slcm-fee-receipt-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
+			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #1a73e8;' +
+			'background:#fff;color:#1a73e8;cursor:pointer;transition:background .15s;}',
+		'#slcm-fee-receipt-btn:hover{background:#e8f0fe;border-color:#1558b0;}',
 		/* Submit progress overlay */
 		'#slcm-submit-overlay{position:fixed;inset:0;z-index:99997;background:rgba(255,255,255,.8);' +
 			'display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;' +
@@ -455,26 +464,63 @@ function bindFeeListener() {
 
 var _feeReceiptBtnInFlight = false;
 
-/** Paid + server has Applicant Payment Receipt → show download (policy print format on server). */
+/** SVG icons for the top-bar buttons */
+var _SVG_BACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>';
+var _SVG_DOWNLOAD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+/** Ensure the top-bar strip (Back left, Receipt right) exists above the web-form head. */
+function _ensureTopBar() {
+	if (document.getElementById('slcm-form-topbar')) return null;
+
+	// Find the web-form head to prepend before it
+	var $head = $('.web-form-container .web-form-head, .web-form-head').first();
+	if (!$head.length) return null;
+
+	var bar = document.createElement('div');
+	bar.id = 'slcm-form-topbar';
+
+	// ── Back button (left) ──────────────────────────────────────────
+	var backBtn = document.createElement('a');
+	backBtn.id = 'slcm-back-btn';
+	backBtn.href = '/admission';
+	backBtn.title = 'Back to My Applications';
+	backBtn.innerHTML = _SVG_BACK + '<span>Back</span>';
+
+	// ── Receipt placeholder (right) — filled later when receipt is ready ──
+	var receiptWrap = document.createElement('div');
+	receiptWrap.id = 'slcm-fee-receipt-wrap';
+	receiptWrap.style.display = 'none'; // hidden until receipt is confirmed
+
+	bar.appendChild(backBtn);
+	bar.appendChild(receiptWrap);
+	$head.before(bar);
+	return receiptWrap;
+}
+
+/** Paid + server has Applicant Payment Receipt → show download icon-btn (top-right). */
 function syncApplicationFeeReceiptButton() {
 	var wf = window.frappe && frappe.web_form;
 	if (!wf) return;
 
 	var applicant = getDocName();
-	var wrap = document.getElementById('slcm-fee-receipt-wrap');
-	if (!applicant) {
-		if (wrap) wrap.remove();
-		return;
-	}
+
+	// Always ensure the top-bar (with Back button) is present
+	_ensureTopBar();
+
+	if (!applicant) return;
 
 	// Do not block on empty fee status (hidden field may not hydrate); server checks DB.
 	var st = (resolveField('application_fee_status') || '').trim();
+	var receiptWrap = document.getElementById('slcm-fee-receipt-wrap');
+
 	if (st === 'Pending' || st === 'Requested' || st === 'Waived') {
-		if (wrap) wrap.remove();
+		if (receiptWrap) receiptWrap.style.display = 'none';
 		return;
 	}
 
-	if (wrap || _feeReceiptBtnInFlight) return;
+	// If receipt button already rendered, nothing more to do
+	if (document.getElementById('slcm-fee-receipt-btn')) return;
+	if (_feeReceiptBtnInFlight) return;
 
 	_feeReceiptBtnInFlight = true;
 	frappe.call({
@@ -483,35 +529,35 @@ function syncApplicationFeeReceiptButton() {
 		callback: function (r) {
 			_feeReceiptBtnInFlight = false;
 			var m = r && r.message;
-			if (!m || !m.ready || document.getElementById('slcm-fee-receipt-wrap')) return;
+			if (!m || !m.ready) return;
 
-			// Mount in the form header so the control stays visible on every step (fee field may sit on another page).
-			var $host = $('.web-form-container .web-form-head').first();
-			if (!$host.length) {
-				$host = $('.web-form-wrapper .title-area').closest('.web-form-head').first();
-			}
-			if (!$host.length) {
-				$host = $('.web-form-head').first();
-			}
-			if (!$host.length) {
-				$host = $('.web-form-container').first();
-			}
+			// Ensure top-bar exists and get the receipt slot
+			_ensureTopBar();
+			var wrap = document.getElementById('slcm-fee-receipt-wrap');
+			if (!wrap || document.getElementById('slcm-fee-receipt-btn')) return;
 
-			var div = document.createElement('div');
-			div.id = 'slcm-fee-receipt-wrap';
+			// Build compact icon + label button
 			var btn = document.createElement('button');
 			btn.type = 'button';
 			btn.id = 'slcm-fee-receipt-btn';
-			btn.textContent = 'Download application fee receipt';
+			btn.title = 'Download application fee receipt';
+			btn.innerHTML = _SVG_DOWNLOAD + '<span>Receipt</span>';
 			btn.onclick = function () {
 				var url =
 					slcmPortalAbsUrl(
 						'/api/method/slcm.admission.web_form.applicant_form.applicant_form.download_portal_application_fee_receipt'
 					) + '?applicant_name=' + encodeURIComponent(applicant);
-				window.open(url, '_blank');
+				var a = document.createElement('a');
+				a.href = url;
+				a.download = '';
+				a.style.display = 'none';
+				document.body.appendChild(a);
+				a.click();
+				setTimeout(function () { document.body.removeChild(a); }, 1000);
 			};
-			div.appendChild(btn);
-			$host.append(div);
+
+			wrap.appendChild(btn);
+			wrap.style.display = 'flex';
 		},
 		error: function () {
 			_feeReceiptBtnInFlight = false;
@@ -520,6 +566,12 @@ function syncApplicationFeeReceiptButton() {
 }
 
 function setupApplicationFeeReceiptDownload() {
+	// Inject Back button immediately on load (doesn't need receipt check)
+	var t = setInterval(function () {
+		if (_ensureTopBar() !== null || document.getElementById('slcm-form-topbar')) {
+			clearInterval(t);
+		}
+	}, 400);
 	setInterval(syncApplicationFeeReceiptButton, 1200);
 }
 
