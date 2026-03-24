@@ -20,9 +20,9 @@ function _injectCSS() {
 		/* Save Draft button */
 		'#slcm-save-draft-btn{display:inline-flex;align-items:center;gap:7px;' +
 			'padding:7px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
-			'border:1.5px solid #1a73e8;background:#fff;color:#1a73e8;' +
+			'border:1.5px solid var(--slcm-primary,#1a73e8);background:#fff;color:var(--slcm-primary,#1a73e8);' +
 			'transition:background .15s,color .15s;white-space:nowrap;margin-right:10px;}',
-		'#slcm-save-draft-btn:hover:not(:disabled){background:#e8f0fe;border-color:#1558b0;}',
+		'#slcm-save-draft-btn:hover:not(:disabled){background:color-mix(in srgb,var(--slcm-primary,#1a73e8) 8%,#fff);border-color:var(--slcm-primary,#1a73e8);}',
 		'#slcm-save-draft-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		/* spinner keyframes */
 		'@keyframes slcm-spin{to{transform:rotate(360deg)}}',
@@ -57,12 +57,13 @@ function _injectCSS() {
 		'#slcm-fee-box{position:relative;background:#fff;border-radius:14px;' +
 			'padding:32px 28px;width:100%;max-width:420px;box-shadow:0 16px 48px rgba(0,0,0,.2);}',
 		'#slcm-fee-box h3{margin:0 0 6px;font-size:1.15rem;color:#1e293b;}',
-		'#slcm-fee-amount{font-size:2rem;font-weight:700;color:#1a73e8;margin:10px 0 6px;}',
+		'#slcm-fee-amount{font-size:2rem;font-weight:700;color:var(--slcm-primary,#1a73e8);margin:10px 0 6px;}',
 		'#slcm-fee-box p{font-size:.85rem;color:#64748b;margin:0 0 22px;}',
 		'.slcm-fee-actions{display:flex;gap:10px;flex-wrap:wrap;}',
 		'#slcm-fee-pay-btn{flex:1;padding:10px 0;border-radius:8px;' +
-			'background:#1a73e8;color:#fff;border:none;font-weight:600;cursor:pointer;font-size:14px;' +
+			'background:var(--slcm-primary,#1a73e8);color:#fff;border:none;font-weight:600;cursor:pointer;font-size:14px;' +
 			'display:inline-flex;align-items:center;justify-content:center;gap:8px;}',
+		'#slcm-fee-pay-btn:hover:not(:disabled){filter:brightness(1.08);}',
 		'#slcm-fee-pay-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		'#slcm-fee-later-btn{flex:1;padding:10px 0;border-radius:8px;' +
 			'background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:600;cursor:pointer;font-size:14px;}',
@@ -76,16 +77,16 @@ function _injectCSS() {
 		'#slcm-back-btn:hover{background:#f1f5f9;border-color:#94a3b8;color:#1e293b;}',
 		'#slcm-fee-receipt-wrap{display:flex;align-items:center;}',
 		'#slcm-fee-receipt-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
-			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #1a73e8;' +
-			'background:#fff;color:#1a73e8;cursor:pointer;transition:background .15s;}',
-		'#slcm-fee-receipt-btn:hover{background:#e8f0fe;border-color:#1558b0;}',
+			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--slcm-primary,#1a73e8);' +
+			'background:#fff;color:var(--slcm-primary,#1a73e8);cursor:pointer;transition:background .15s;}',
+		'#slcm-fee-receipt-btn:hover{background:color-mix(in srgb,var(--slcm-primary,#1a73e8) 8%,#fff);}',
 		/* Submit progress overlay */
 		'#slcm-submit-overlay{position:fixed;inset:0;z-index:99997;background:rgba(255,255,255,.8);' +
 			'display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;' +
 			'font-size:1rem;color:#334155;font-weight:500;}',
 		'#slcm-submit-overlay.open{display:flex;}',
 		'#slcm-submit-spinner{width:36px;height:36px;border:4px solid #e2e8f0;' +
-			'border-top-color:#1a73e8;border-radius:50%;animation:slcm-spin .8s linear infinite;}',
+			'border-top-color:var(--slcm-primary,#1a73e8);border-radius:50%;animation:slcm-spin .8s linear infinite;}',
 		/* Eligibility Evaluation Results (portal submit) */
 		'#slcm-ee-modal{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;}',
 		'#slcm-ee-modal.open{display:flex;}',
@@ -114,16 +115,252 @@ function _injectCSS() {
 		'#slcm-ee-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;color:#1e293b;}',
 		'#slcm-ee-table tr:last-child td{border-bottom:none;}',
 		'.slcm-ee-status{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:#15803d;}',
-		'.slcm-ee-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:#3b82f6;color:#fff;font-weight:700;}',
-		'.slcm-ee-switch{padding:7px 14px;border-radius:8px;border:none;background:#1d4ed8;color:#fff;font-size:12px;font-weight:600;cursor:pointer;}',
-		'.slcm-ee-switch:hover{background:#1e40af;}',
+		'.slcm-ee-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:var(--slcm-primary,#3b82f6);color:#fff;font-weight:700;}',
+		'.slcm-ee-switch{padding:7px 14px;border-radius:8px;border:none;background:var(--slcm-primary,#1d4ed8);color:#fff;font-size:12px;font-weight:600;cursor:pointer;}',
+		'.slcm-ee-switch:hover{filter:brightness(1.1);}',
 		'.slcm-ee-switch:disabled{opacity:.55;cursor:not-allowed;}',
 		'#slcm-ee-foot{padding:14px 22px 18px;border-top:1px solid #e2e8f0;flex-shrink:0;}',
 		'#slcm-ee-dismiss{width:100%;padding:11px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;' +
 			'color:#334155;font-weight:600;cursor:pointer;font-size:14px;}',
 		'#slcm-ee-dismiss:hover{background:#f8fafc;}',
+		/* ── Hide Frappe default nav/footer ──────────────────────── */
+		'header.navbar,nav.navbar,.web-header,.web-navbar,#navbar-main,' +
+		'header[class*="navbar"],.website-header,.website-footer,footer.footer,#footer-main{display:none!important;}',
+		'.page-content{margin-top:0!important;padding-top:0!important;}',
+		'.main-section{padding-top:0!important;}',
+		/* ── Admission nav bar ────────────────────────────────────── */
+		'.adm-nav{background:var(--slcm-primary,#1a3c6e);padding:10px 24px;display:flex;align-items:center;' +
+			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:9000;' +
+			'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
+		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
+			'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
+		'.adm-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
+		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
+		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
+		'.adm-nav-links a:hover{color:#fff;}',
+		'#adm-avatar-btn{user-select:none;-webkit-user-select:none;transition:all .2s;overflow:hidden;padding:0;}',
+		'#adm-avatar-btn:hover{border-color:rgba(255,255,255,.7)!important;box-shadow:0 0 0 3px rgba(255,255,255,.2)!important;}',
+		'#adm-avatar-menu a:hover{background:#f8fafc!important;}',
+		/* ── Admission footer ─────────────────────────────────────── */
+		'.adm-wf-footer{background:#0f172a;color:#94a3b8;padding:40px 24px 20px;margin-top:48px;' +
+			'font-family:inherit;}',
+		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
+			'justify-content:space-between;}',
+		'.adm-wf-footer-brand{flex:1 1 240px;}',
+		'.adm-wf-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
+		'.adm-wf-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
+		'.adm-wf-footer-links{flex:1 1 200px;}',
+		'.adm-wf-footer-links h4{color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 12px;}',
+		'.adm-wf-footer-links ul{list-style:none;padding:0;margin:0;}',
+		'.adm-wf-footer-links li{margin-bottom:7px;}',
+		'.adm-wf-footer-links a{color:#94a3b8;text-decoration:none;font-size:13px;transition:color .2s;}',
+		'.adm-wf-footer-links a:hover{color:#fff;}',
+		'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
+			'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
 	].join('');
 	document.head.appendChild(s);
+}
+
+// ───────────────────────────────────────────────────────────────────
+//  ADMISSION NAV + FOOTER SHELL
+//  Mirrors admission_base.html's <nav class="adm-nav"> and <footer>
+// ───────────────────────────────────────────────────────────────────
+function _injectAdmissionShell() {
+	if (document.getElementById('slcm-adm-nav')) return;
+
+	// Single call — server handles all permission-elevated data fetching
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.get_portal_shell_data',
+		callback: function (r) {
+			var d = (r && r.message) || {};
+			_buildShell(
+				{ banner_image: d.banner_image, title: d.site_title },
+				{
+					portal_title:    d.portal_title,
+					primary_color:   d.primary_color,
+					secondary_color: d.secondary_color,
+					footer_address:  d.footer_address,
+					footer_phone:    d.footer_phone,
+					contact_email:   d.contact_email,
+					programmes:      d.programmes || [],
+				},
+				d.user || 'Guest',
+				{ full_name: d.full_name, user_image: d.user_image }
+			);
+		},
+		error: function () {
+			// Fallback: build shell with defaults if the call fails
+			_buildShell({ banner_image: '', title: 'SLCM' },
+				{ portal_title: 'Admissions', primary_color: '#1a3c6e', secondary_color: '#c8a14b', programmes: [] },
+				'Guest', {});
+		},
+	});
+}
+
+function _buildShell(ws, cfg, user, uinfo) {
+	if (document.getElementById('slcm-adm-nav')) return;
+
+	var primary    = cfg.primary_color   || '#1a3c6e';
+	var secondary  = cfg.secondary_color || '#c8a14b';
+	var title      = cfg.portal_title    || ws.title || 'Admissions';
+	var logo       = ws.banner_image     || '';
+	var isGuest    = (!user || user === 'Guest');
+	var fullName   = uinfo.full_name     || user || '';
+	var userImg    = uinfo.user_image    || '';
+	var initLetter = fullName ? fullName[0].toUpperCase() : 'U';
+	var programmes = cfg.programmes      || [];
+
+	// Apply CSS variables immediately so ALL var(--slcm-primary) references update at once
+	var varStyle = document.createElement('style');
+	varStyle.id = 'slcm-theme-vars';
+	varStyle.textContent =
+		':root{--slcm-primary:' + primary + ';--slcm-secondary:' + secondary + ';}' +
+		// Frappe built-in web form elements — Next/Submit/Section heading
+		'.btn-next,.submit-btn,.btn-submit-web-form{background:' + primary + '!important;border-color:' + primary + '!important;color:#fff!important;}' +
+		'.btn-next:hover,.submit-btn:hover{filter:brightness(1.08)!important;}' +
+		'.section-head{color:' + primary + '!important;}' +
+		// Section heading colour in web form
+		'.web-form-container .section-head,.web-form .section-head{color:' + primary + '!important;}';
+
+	document.head.appendChild(varStyle);
+
+	// ── NAV ────────────────────────────────────────────────────────
+	var nav = document.createElement('nav');
+	nav.id        = 'slcm-adm-nav';
+	nav.className = 'adm-nav';
+	nav.innerHTML =
+		'<a href="/admission" class="adm-nav-brand">' +
+			(logo ? '<img src="' + logo + '" alt="Logo">' : '') +
+			_esc(title) +
+		'</a>' +
+		'<div class="adm-nav-links">' +
+			'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
+			'<button id="slcm-bell-btn" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;">' +
+				'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+					'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
+				'</svg>' +
+			'</button>' +
+			(isGuest
+				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
+				: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
+					'<button id="adm-avatar-btn" onclick="_slcmAvatarToggle(event)"' +
+						' style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;' +
+						'border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:15px;cursor:pointer;' +
+						'display:flex;align-items:center;justify-content:center;">' +
+						(userImg ? '<img src="' + _esc(userImg) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : _esc(initLetter)) +
+					'</button>' +
+					'<span style="color:#fff;font-size:13px;font-weight:600;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_slcmAvatarToggle(event)">' + _esc(fullName) + '</span>' +
+					'<div id="adm-avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
+						'min-width:180px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.14);' +
+						'border:1px solid rgba(0,0,0,.07);overflow:hidden;z-index:9999;">' +
+						'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">' +
+							'<div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.05em;">Signed in as</div>' +
+							'<div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' + _esc(user) + '</div>' +
+						'</div>' +
+						'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:600;">' +
+							'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' + primary + '">account_circle</span>Profile</a>' +
+						'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
+						'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:600;">' +
+							'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
+					'</div>' +
+				'</div>'
+			) +
+		'</div>';
+
+	document.body.insertBefore(nav, document.body.firstChild);
+
+	// avatar toggle + logout
+	window._slcmAvatarToggle = function (e) {
+		e.stopPropagation();
+		var m = document.getElementById('adm-avatar-menu');
+		if (!m) return;
+		m.style.display = m.style.display === 'block' ? 'none' : 'block';
+	};
+	document.addEventListener('click', function (e) {
+		var m = document.getElementById('adm-avatar-menu');
+		var b = document.getElementById('adm-avatar-btn');
+		if (m && !m.contains(e.target) && e.target !== b) m.style.display = 'none';
+	});
+	var logoutLink = document.getElementById('slcm-nav-logout');
+	if (logoutLink) {
+		logoutLink.addEventListener('click', function () {
+			frappe.call({ method: 'logout', callback: function () { window.location.href = '/login'; } });
+		});
+	}
+
+	// ── FOOTER — mirrors admission_base.html exactly ────────────────
+	var yr = new Date().getFullYear();
+
+	// Programme list rows
+	var progRows = programmes.map(function (p) {
+		return '<li><a href="/admission/' + _esc(p.slug || p.name) + '">' + _esc(p.name) + '</a></li>';
+	}).join('');
+	progRows += '<li><a href="/admission">Browse all</a></li>';
+
+	// Contact column
+	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
+	var contactCol =
+		'<div class="adm-wf-footer-links">' +
+			'<h4 class="footer-title">CONTACT</h4>' +
+			'<div style="display:flex;flex-direction:column;gap:4px;">' +
+			(cfg.footer_address
+				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">location_on</span><span>' + _esc(cfg.footer_address) + '</span></div>' : '') +
+			(cfg.footer_phone
+				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">call</span><span>' + _esc(cfg.footer_phone) + '</span></div>' : '') +
+			(cfg.contact_email
+				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">mail</span><a href="mailto:' + _esc(cfg.contact_email) + '">' + _esc(cfg.contact_email) + '</a></div>' : '') +
+			(!hasContact
+				? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>' : '') +
+			'</div>' +
+		'</div>';
+
+	var footer = document.createElement('footer');
+	footer.id        = 'slcm-adm-footer';
+	footer.className = 'adm-wf-footer';
+	footer.innerHTML =
+		'<div class="adm-wf-footer-inner">' +
+			// Brand column — school icon + title + tagline
+			'<div class="adm-wf-footer-brand">' +
+				'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
+					'<div style="width:32px;height:32px;background:' + primary + ';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
+						'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
+					'</div>' +
+					'<h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">' + _esc(title) + '</h2>' +
+				'</div>' +
+				'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
+			'</div>' +
+			// Links column — Programme + Admissions side by side
+			'<div class="adm-wf-footer-links">' +
+				'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
+					'<div>' +
+						'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
+						'<ul style="list-style:none;padding:0;margin:0;">' + progRows + '</ul>' +
+					'</div>' +
+					'<div>' +
+						'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
+						'<ul style="list-style:none;padding:0;margin:0;">' +
+							'<li><a href="/admission">Apply now</a></li>' +
+							'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
+							'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
+						'</ul>' +
+					'</div>' +
+				'</div>' +
+			'</div>' +
+			// Contact column
+			contactCol +
+		'</div>' +
+		// Bottom bar
+		'<div class="adm-wf-footer-bottom">' +
+			'<span>© ' + yr + ' ' + _esc(title) + '. All rights reserved.</span>' +
+			'<span>Powered by <strong style="color:#fff;font-weight:700;">SLCM</strong></span>' +
+		'</div>';
+	document.body.appendChild(footer);
+}
+
+function _esc(s) {
+	var d = document.createElement('div');
+	d.textContent = s == null ? '' : String(s);
+	return d.innerHTML;
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -1190,6 +1427,7 @@ function applyQueryStringPrefill() {
 // ───────────────────────────────────────────────────────────────────
 frappe.ready(function () {
 	_injectCSS();
+	_injectAdmissionShell();
 
 	try {
 		$('#eligibility-alert-box').remove();

@@ -11,6 +11,77 @@ def get_context(context):
 
 
 # ───────────────────────────────────────────────────────────────────
+#  PORTAL SHELL BRANDING — nav + footer data for the web form JS
+# ───────────────────────────────────────────────────────────────────
+
+@frappe.whitelist(allow_guest=False)
+def get_portal_shell_data():
+    """
+    Return branding + current-user info needed to render the admission nav/footer
+    inside the web form.  Uses ignore_permissions so portal users (who can't read
+    Website Settings or Applicant Portal Config directly) still get the data.
+    """
+    # ── Website Settings ──────────────────────────────────────────
+    ws = frappe.db.get_singles_dict("Website Settings", cast=True) or {}
+
+    # ── Applicant Portal Config ───────────────────────────────────
+    try:
+        pc = frappe.get_doc("Applicant Portal Config", "Applicant Portal Config",
+                            ignore_permissions=True).as_dict()
+    except Exception:
+        pc = {}
+
+    # ── Current user info ─────────────────────────────────────────
+    user = frappe.session.user or "Guest"
+    full_name = ""
+    user_image = ""
+    if user and user != "Guest":
+        uinfo = frappe.db.get_value(
+            "User", user, ["full_name", "user_image"], as_dict=True
+        ) or {}
+        full_name  = uinfo.get("full_name") or user
+        user_image = uinfo.get("user_image") or ""
+
+    # ── Active programmes (same query as admission_base.html) ─────
+    programmes = frappe.db.sql("""
+        SELECT
+            COALESCE(cp.program_name, p.program_name, cp.program) AS name,
+            COALESCE(p.program_slug, cp.program) AS slug
+        FROM `tabAdmission Cycle Program` cp
+        LEFT JOIN `tabProgram` p ON p.name = cp.program
+        WHERE cp.parent = (
+            SELECT name FROM `tabAdmission Cycle`
+            WHERE status = 'Active' LIMIT 1
+        )
+        LIMIT 5
+    """, as_dict=True)
+
+    if not programmes:
+        programmes = frappe.db.sql("""
+            SELECT program_name AS name, COALESCE(program_slug, name) AS slug
+            FROM `tabProgram`
+            WHERE program_status = 'Active' OR program_status IS NULL
+            LIMIT 5
+        """, as_dict=True)
+
+    return {
+        "banner_image":    ws.get("banner_image") or "",
+        "site_title":      ws.get("title") or "SLCM",
+        "portal_title":    pc.get("portal_title") or ws.get("title") or "Admissions",
+        "primary_color":   pc.get("primary_color") or "#1a3c6e",
+        "secondary_color": pc.get("secondary_color") or "#c8a14b",
+        "footer_address":  pc.get("footer_address") or "",
+        "footer_phone":    pc.get("footer_phone") or "",
+        "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
+        "programmes":      [{"name": p.get("name",""), "slug": p.get("slug","")} for p in (programmes or [])],
+        "user":            user,
+        "full_name":       full_name,
+        "user_image":      user_image,
+        "is_guest":        user == "Guest",
+    }
+
+
+# ───────────────────────────────────────────────────────────────────
 #  FEE AMOUNT — lookup from Program Reservation Policy
 # ───────────────────────────────────────────────────────────────────
 
