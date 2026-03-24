@@ -82,6 +82,7 @@ def get_portal_config():
             "footer_address": config.get("footer_address") or "",
             "footer_phone": config.get("footer_phone") or "",
             "footer_email": config.get("footer_email") or config.get("contact_email") or "",
+            "powerd_by": config.get("powerd_by") or "boscosoft",
             "social_links": [
                 {
                     "platform": row.platform,
@@ -122,6 +123,7 @@ def get_portal_config():
             "footer_address": "",
             "footer_phone": "",
             "footer_email": "",
+            "powerd_by": "boscosoft",
             "social_links": [],
         }
 
