@@ -24,9 +24,10 @@ def get_refund_policies(applicant=None, program=None, campus=None, offer=None):
 		return {"policies": [], "days_since_payment": 0}
 
 	res = get_applicant_refund_policies(applicant)
+	
 	return {
-		"policies": res.get("policies", []),
-		"days_since_payment": res.get("days_since_payment", 0)
+		"policies": res.get("policies") or [],
+		"days_since_payment": res.get("days_since_payment") or 0
 	}
 
 @frappe.whitelist()

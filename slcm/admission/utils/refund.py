@@ -13,54 +13,108 @@ def get_applicant_refund_policies(applicant):
 	# 1. Resolve basic details
 	details = frappe.db.get_value(
 		"Applicant", applicant,
-		["program", "campus", "admission_cycle"],
+		["program", "campus", "admission_cycle", "academic_year"],
 		as_dict=1
 	)
 	if not details:
+		frappe.log_error(f"Refund Utility: No details found for applicant {applicant}", "Refund Error")
 		return {"policies": [], "days_since_payment": 0, "fee_structure": None}
 
 	program = details.program
 	campus = details.campus
 	cycle = details.admission_cycle
+	year = details.academic_year
 
-	# 2. Find Fee Structure via Offer Configuration
+	# 2. Find Fee Structure
 	fee_structure = None
+	
+	# Priority 1: Via Offer Configuration (Cycle + Campus)
 	config_names = frappe.get_all(
 		"Offer Configuration",
 		filters={"admission_cycle": cycle, "campus": campus, "is_active": 1},
 		pluck="name"
 	)
 
+	matched_fs_names = []
 	for cn in config_names:
 		config_doc = frappe.get_doc("Offer Configuration", cn)
 		for row in config_doc.fee_structure:
-			fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
-			if fs_program == program:
-				fee_structure = row.fee_structure
-				break
+			fs_name = row.fee_structure
+			fs_meta = frappe.db.get_value("Fee Structure", fs_name, ["program", "is_refund_available"], as_dict=1)
+			if fs_meta and fs_meta.program == program:
+				matched_fs_names.append(fs_name)
+				if fs_meta.is_refund_available:
+					# Check for any active policy rows
+					if frappe.db.exists("Fee Structure Refund Policy", {"parent": fs_name, "is_active": 1}):
+						fee_structure = fs_name
+						break
 		if fee_structure:
 			break
+	
+	# Priority 2: Direct lookup by Program + Cycle/Year (Fallback)
+	if not fee_structure:
+		# Try by Cycle first
+		fee_structure = frappe.db.get_value("Fee Structure", 
+			{"admission_cycle": cycle, "program": program, "status": "Active", "is_refund_available": 1}, 
+			"name"
+		)
+		if not fee_structure:
+			# Try by Academic Year
+			fee_structure = frappe.db.get_value("Fee Structure", 
+				{"academic_year": year, "program": program, "status": "Active", "is_refund_available": 1}, 
+				"name"
+			)
+			
+	# Priority 3: Broadest Fallback - Any Active FS for this Program with refunds enabled
+	if not fee_structure:
+		fee_structure = frappe.db.get_value("Fee Structure", 
+			{"program": program, "status": "Active", "is_refund_available": 1}, 
+			"name", order_by="creation desc"
+		)
+	
+	# Ultimate Fallback: Just take the first one we matched in Priority 1 even if no policies found yet
+	if not fee_structure and matched_fs_names:
+		fee_structure = matched_fs_names[0]
 
 	if not fee_structure:
+		frappe.log_error(f"Refund Utility: No Fee Structure found for {applicant} (Prog: {program}, Campus: {campus}, Cycle: {cycle})", "Refund Error")
+		return {"policies": [], "days_since_payment": 0, "fee_structure": None}
+
+	if not fee_structure:
+		frappe.log_error(f"Refund Utility: No Fee Structure found for {applicant} (Cycle: {cycle}, Campus: {campus}, Program: {program}).", "Refund Error")
 		return {"policies": [], "days_since_payment": 0, "fee_structure": None}
 
 	# 3. Get policies from Fee Structure
 	fs_doc = frappe.get_doc("Fee Structure", fee_structure)
 
 	if not fs_doc.is_refund_available:
+		frappe.log_error(f"Refund Utility: Refund NOT enabled on FS {fee_structure}", "Refund Info")
 		return {"policies": [], "days_since_payment": 0, "fee_structure": fee_structure}
 
-	# Collect and sort policies by days_from_payment ascending
+	# Collect policies
 	policies = []
 	for row in fs_doc.get("refund_policies", []):
 		if row.is_active:
+			# Ensure we have values (they might be in the linked Refund Policy)
+			days = row.days_from_payment
+			perc = row.refund_percentage
+			
+			if (days is None or perc is None) and row.refund_policy:
+				linked = frappe.db.get_value("Refund Policy", row.refund_policy, ["days_from_payment", "refund_percentage"], as_dict=1)
+				if linked:
+					days = days if days is not None else linked.days_from_payment
+					perc = perc if perc is not None else linked.refund_percentage
+
 			policies.append({
 				"policy_name": row.refund_policy,
-				"days_from_payment": row.days_from_payment,
-				"refund_percentage": row.refund_percentage
+				"days_from_payment": days,
+				"refund_percentage": perc
 			})
+	
+	if not policies:
+		frappe.log_error(f"Refund Utility: No active policies in FS {fee_structure}", "Refund Info")
 
-	policies = sorted(policies, key=lambda p: p.get("days_from_payment", 0))
+	policies = sorted(policies, key=lambda p: (p.get("days_from_payment") or 0))
 
 	# 4. Calculate days since last payment
 	days_since_payment = 0
@@ -82,7 +136,7 @@ def get_last_payment_date(applicant):
 	"""
 	last_fee_payment = frappe.db.get_value(
 		"Fee Payment",
-		{"applicant": applicant, "status": "Submitted"},
+		{"student": applicant, "status": "Submitted"},
 		"payment_date",
 		order_by="payment_date desc"
 	)
