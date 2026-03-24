@@ -2000,6 +2000,129 @@ or _app.current_stage)) or _status %}
 
     </div><!-- end app-summary-card -->
 
+
+    {% if cancellation_details %}
+    {% set r_status = cancellation_details.refund_status or cancellation_details.status %}
+    {% set card_border = '#fecaca' %}
+    {% set card_bg = 'linear-gradient(to bottom, #ffffff, #fff1f2)' %}
+    {% set status_color = '#dc2626' %}
+    {% set status_icon = 'info' %}
+    {% set display_status = r_status %}
+    
+    {% if r_status in ['Processed', 'Completed'] %}
+        {% set card_border = '#bbf7d0' %}
+        {% set card_bg = 'linear-gradient(to bottom, #ffffff, #f0fdf4)' %}
+        {% set status_color = '#16a34a' %}
+        {% set status_icon = 'check_circle' %}
+        {% set display_status = 'Refund Processed' %}
+    {% elif r_status in ['Processing', 'Approved', 'Initiated'] %}
+        {% set card_border = '#fef08a' %}
+        {% set card_bg = 'linear-gradient(to bottom, #ffffff, #fefce8)' %}
+        {% set status_color = '#ca8a04' %}
+        {% set status_icon = 'hourglass_empty' %}
+        {% set display_status = 'Refund Processing' if r_status != 'Initiated' else 'Withdrawal Initiated' %}
+    {% elif r_status in ['Error', 'Failed', 'Rejected'] %}
+        {% set card_border = '#fecaca' %}
+        {% set card_bg = 'linear-gradient(to bottom, #ffffff, #fff1f2)' %}
+        {% set status_color = '#dc2626' %}
+        {% set status_icon = 'error' %}
+        {% set display_status = 'Refund Error' if r_status != 'Rejected' else 'Request Rejected' %}
+    {% endif %}
+
+    <div class="ma-card fade-up" style="animation-delay:.35s; margin-top:24px; border: 1px solid {{ card_border }}; background: {{ card_bg }};">
+      <div class="ma-card-head" style="border-bottom: 1px solid {{ card_border }}; background: rgba(255, 255, 255, 0.4);">
+        <div class="ma-card-title">
+          <span class="ico" style="background: {{ card_border }}; color: {{ status_color }};">
+            <span class="material-symbols-outlined">cancel_presentation</span>
+          </span>
+          Withdrawal Status
+        </div>
+        {% if cancellation_details.status == 'Completed' and cancellation_details.refund_request %}
+        <div class="ma-card-actions">
+          <a href="/api/method/slcm.admission.utils.web.download_refund_receipt?refund_request={{ cancellation_details.refund_request }}" target="_blank" class="btn-download" 
+             style="padding: 0 16px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; background: {{ status_color }}; color: white; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+            Download Receipt
+          </a>
+        </div>
+        {% endif %}
+      </div>
+      
+      <div class="ma-card-body" style="padding: 24px;">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+          
+          <!-- Column 1: Status -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: {{ status_color }}; font-weight: 700; font-size: 12px; text-transform: none; letter-spacing: 0.05em;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">track_changes</span>
+              Request Status
+            </div>
+            
+            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid {{ card_border }}; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Process Status</div>
+                  <div style="font-size: 18px; font-weight: 800; color: {{ status_color }}; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">{{ status_icon }}</span>
+                    {{ display_status }}
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
+                  <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.format(cancellation_details.requested_on, "Datetime") }}</div>
+                </div>
+              </div>
+
+              {% if cancellation_details.refund_amount %}
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed {{ card_border }}; display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refund Amount</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #334155;">{{ frappe.format(cancellation_details.refund_amount, "Currency", cancellation_details.currency or "INR") }}</div>
+                </div>
+                {% if cancellation_details.refund_date and r_status in ['Processed', 'Completed'] %}
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refunded On</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #16a34a;">{{ frappe.format(cancellation_details.refund_date, "Datetime") }}</div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+
+          <!-- Column 2: Reason -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #991b1b; font-weight: 700; font-size: 12px; text-transform: none; letter-spacing: 0.05em;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">description</span>
+              Withdrawal Details
+            </div>
+            
+            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #fecaca; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                 <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Reason</div>
+                 <div style="font-size: 13px; font-weight: 500; color: #475569; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                   {{ cancellation_details.cancellation_reason or '—' }}
+                 </div>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Meta Info Footer -->
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #fecaca; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #64748b;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">id_card</span>
+            Request ID: <span style="font-weight: 600; color: #334155;">{{ cancellation_details.name }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+                 <span class="material-symbols-outlined" style="font-size: 16px;">contact_support</span>
+                 Need help? Contact Admissions Office
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- ╔══════════════════════════════════════════════╗
          ║  INTERVIEW CARD                              ║
          ╚══════════════════════════════════════════════╝ -->
@@ -2298,19 +2421,19 @@ or _app.current_stage)) or _status %}
           
           <!-- Column 1: Scores -->
           <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 12px; letter-spacing: 0.05em;">
               <span class="material-symbols-outlined" style="font-size: 18px;">analytics</span>
               Assessment Scores
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Entrance Test</div>
+                <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Entrance Test</div>
                 <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.entrance_test_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
               </div>
               
               <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Interview</div>
+                <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Interview</div>
                 <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.interview_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
               </div>
             </div>
@@ -2318,7 +2441,7 @@ or _app.current_stage)) or _status %}
           
           <!-- Column 2: Status -->
           <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 12px; letter-spacing: 0.05em;">
               <span class="material-symbols-outlined" style="font-size: 18px;">verified_user</span>
               Qualification Status
             </div>
@@ -2326,14 +2449,14 @@ or _app.current_stage)) or _status %}
             <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
               <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Result Status</div>
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 2px;">Result Status</div>
                   <div style="font-size: 18px; font-weight: 800; color: #16a34a; display: flex; align-items: center; gap: 6px;">
                     <span class="material-symbols-outlined" style="font-size: 20px;">check_circle</span>
                     {{ eligibility_result.result_status or 'Qualified' }}
                   </div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Source</div>
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 2px;">Source</div>
                   <div style="font-size: 12px; font-weight: 600; color: #475569;">{{ eligibility_result.source_type or 'Assessment' }}</div>
                 </div>
               </div>
@@ -2356,6 +2479,8 @@ or _app.current_stage)) or _status %}
       </div>
     </div>
     {% endif %}
+    
+
 
     <!-- ╔══════════════════════════════════════════════╗
          ║  MERIT RESULT & SEAT ALLOCATION              ║

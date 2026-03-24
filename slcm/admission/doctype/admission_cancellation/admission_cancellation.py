@@ -10,7 +10,9 @@ class AdmissionCancellation(Document):
 			self.db_set("refund_request", refund_name)
 
 	def validate(self):
-		self.fetch_applicant_details()
+		# Only auto-fetch on first creation to avoid overwriting manually set values
+		if self.is_new():
+			self.fetch_applicant_details()
 		self.set_cancellation_metadata()
 
 	def fetch_applicant_details(self):

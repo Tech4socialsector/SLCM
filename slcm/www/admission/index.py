@@ -496,4 +496,5 @@ def get_context(context):
     context.footer_address    = portal_config.get("footer_address") or ""
     context.footer_phone      = portal_config.get("footer_phone") or ""
     context.footer_email      = portal_config.get("footer_email") or portal_config.get("contact_email") or ""
+    context.powerd_by         = portal_config.get("powerd_by") or "boscosoft"
     context.social_links      = portal_config.get("social_links") or []

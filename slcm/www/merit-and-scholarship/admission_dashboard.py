@@ -254,21 +254,33 @@ def get_context(context):
     except Exception:
         context.dashboard_hero_image = ""
 
-    # ── Profile data ─────────────────────────────────────────────────
+    # ── Profile data (Sourced from User doctype) ────────────────────
     try:
         _user = frappe.session.user
         if _user and _user != 'Guest':
+            user_doc = frappe.get_doc("User", _user)
+            context.profile_data = {
+                "candidate_name": user_doc.full_name,
+                "email": user_doc.email,
+                "mobile_number": getattr(user_doc, "mobile_no", ""),
+                "date_of_birth": getattr(user_doc, "date_of_birth", ""),
+                "gender": user_doc.gender,
+                "nationality": getattr(user_doc, "nationality", ""),
+                "correspondence_address": getattr(user_doc, "address", ""),
+                "city": getattr(user_doc, "city", ""),
+                "state": getattr(user_doc, "state", ""),
+                "pincode": getattr(user_doc, "pincode", ""),
+                "candidate_photo": user_doc.user_image, # This is the profile photo
+            }
+            # For backward compatibility in template and other logic that expects Applicant name
+            # if Applicant record exists, we still want its name for reference in other parts?
+            # No, requirement says: Source of Truth Change - Load ONLY from "User"
+            
+            # Fetch application-specific info from Applicant for the progress calculation/documents
             _ap = frappe.get_all(
                 'Applicant',
                 filters={'email': _user},
-                fields=[
-                    'name', 'candidate_name', 'email', 'mobile_number',
-                    'date_of_birth', 'gender', 'nationality', 'religion',
-                    'father_name', 'mother_name',
-                    'correspondence_address', 'city', 'state', 'pincode',
-                    'application_status', 'candidate_photo',
-                    'reservation_category', 'pwd',
-                ],
+                fields=['name', 'application_status', 'candidate_photo', 'reservation_category', 'pwd', 'program_level', 'ka_study_7yrs'],
                 limit=1,
                 order_by='creation desc'
             )
@@ -276,23 +288,24 @@ def get_context(context):
                 _ap = frappe.get_all(
                     'Applicant',
                     filters={'owner': _user},
-                    fields=[
-                        'name', 'candidate_name', 'email', 'mobile_number',
-                        'date_of_birth', 'gender', 'nationality', 'religion',
-                        'father_name', 'mother_name',
-                        'correspondence_address', 'city', 'state', 'pincode',
-                        'application_status', 'candidate_photo',
-                        'reservation_category', 'pwd',
-                    ],
+                    fields=['name', 'application_status', 'candidate_photo', 'reservation_category', 'pwd', 'program_level', 'ka_study_7yrs'],
                     limit=1,
                     order_by='creation desc'
                 )
-            context.profile_data = _ap[0] if _ap else {}
+            
+            if _ap:
+                context.profile_data["name"] = _ap[0].name
+                context.profile_data["application_status"] = _ap[0].application_status
+                # DO NOT overwrite candidate_photo from Applicant to User
+                # Requirement 3: Profile image (User.user_image) and Application form image (Applicant.candidate_photo) are separate.
+                context.applicant_record = _ap[0]
+
             context.profile_data_json = frappe.as_json(context.profile_data)
         else:
             context.profile_data = {}
             context.profile_data_json = "{}"
-    except Exception:
+    except Exception as e:
+        frappe.log_error(f"Dashboard profile fetch failed: {e}", "Dashboard Fix")
         context.profile_data = {}
         context.profile_data_json = "{}"
 
