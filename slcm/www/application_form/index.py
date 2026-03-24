@@ -35,16 +35,18 @@ def start_application(program=None, admission_cycle=None, campus=None, program_l
     if not exists:
         frappe.local.flags.redirect_location = "/admission"
         raise frappe.Redirect
-    # Store in session (Frappe session is server-side)
-    if not hasattr(frappe.session, "application_form_selection"):
-        frappe.session.setdefault("application_form_selection", {})
-    sel = frappe.session.get("application_form_selection") or {}
-    sel["program"] = program
-    sel["admission_cycle"] = admission_cycle
-    sel["campus"] = (campus or "").strip() or None
-    sel["program_level"] = (program_level or "").strip() or None
-    sel["intake_type"] = (intake_type or "").strip() or None
-    frappe.session["application_form_selection"] = sel
+    # Store in session (Frappe session data is server-side)
+    # We use frappe.local.session.data for persistent custom fields in some versions,
+    # but for widest compatibility with standard Website Users, we can use frappe.cache().hset
+    sel = {
+        "program": program,
+        "admission_cycle": admission_cycle,
+        "campus": (campus or "").strip() or None,
+        "program_level": (program_level or "").strip() or None,
+        "intake_type": (intake_type or "").strip() or None,
+    }
+    frappe.cache().hset("application_form_selection", frappe.session.sid, sel)
+    
     frappe.local.flags.redirect_location = "/application_form"
     raise frappe.Redirect
 
@@ -56,16 +58,6 @@ def start_application(program=None, admission_cycle=None, campus=None, program_l
 def get_context(context):
     """
     Builds the Jinja context for the application form web page.
-
-    Fixes from original:
-    ────────────────────
-    1. Renamed to index.py (Frappe web page convention: folder = route, index.py inside).
-    2. Removed usage of non-existent 'Applicant Portal Config' single doctype (caused 500 error).
-    3. Added error handling on all get_all() calls so page still loads on misconfigured sites.
-    4. Added guest-redirect guard — unauthenticated users are redirected to login.
-    5. Properly serializes doc to dict so Jinja |tojson works cleanly.
-    6. Added `program_status` filter check with fallback to avoid filter-column errors.
-    7. All dropdowns have a safe fallback to [] so Jinja loops never crash.
     """
 
     # Guard — portal requires login
@@ -85,11 +77,11 @@ def get_context(context):
                 raise frappe.Redirect
             doc = frappe.get_doc("Applicant", applicant_name)
             user = frappe.session.user
-            email = frappe.db.get_value("User", user, "email") or user
-            if doc.owner != user and doc.email != email:
+            user_email = frappe.db.get_value("User", user, "email") or user
+            if doc.owner != user and doc.email != user_email:
                 frappe.local.flags.redirect_location = "/my-applications"
                 raise frappe.Redirect
-            # Set session so rest of context uses this program/cycle
+            # Set session selection
             sel = {
                 "program": doc.program or "",
                 "admission_cycle": doc.admission_cycle or "",
@@ -97,7 +89,7 @@ def get_context(context):
                 "program_level": doc.program_level or None,
                 "intake_type": doc.application_type or None,
             }
-            frappe.session["application_form_selection"] = sel
+            frappe.cache().hset("application_form_selection", frappe.session.sid, sel)
         except frappe.Redirect:
             raise
         except Exception:
@@ -105,8 +97,7 @@ def get_context(context):
             applicant_name = ""
 
     # ── Program / Cycle / Campus: from URL (Apply Now link) or session ──
-    # Resolve admission_cycle first so we can look up Applicant by email + cycle (one application per cycle).
-    session_sel = (frappe.session.get("application_form_selection") or {}) if hasattr(frappe.session, "get") else {}
+    session_sel = frappe.cache().hget("application_form_selection", frappe.session.sid) or {}
     url_program = (frappe.form_dict.get("program") or "").strip()
     url_cycle = (frappe.form_dict.get("admission_cycle") or "").strip()
     if url_program and url_cycle:
@@ -121,7 +112,7 @@ def get_context(context):
             sel["campus"] = (frappe.form_dict.get("campus") or "").strip() or None
             sel["program_level"] = (frappe.form_dict.get("program_level") or "").strip() or None
             sel["intake_type"] = (frappe.form_dict.get("intake_type") or "").strip() or None
-            frappe.session["application_form_selection"] = sel
+            frappe.cache().hset("application_form_selection", frappe.session.sid, sel)
             session_sel = sel
 
     prefill_cycle = session_sel.get("admission_cycle") or url_cycle
@@ -132,16 +123,24 @@ def get_context(context):
 
     # ── One application per applicant per admission_cycle ──
     user = frappe.session.user
-    email = frappe.db.get_value("User", user, "email") or user
+    user_email = frappe.db.get_value("User", user, "email") or user
     context.applicant_data = {}
     context.application_submitted = False
     try:
         existing = frappe.db.get_value(
             "Applicant",
-            {"email": email, "admission_cycle": prefill_cycle},
+            {"email": user_email, "admission_cycle": prefill_cycle},
             ["name", "docstatus", "application_status"],
             as_dict=True,
         )
+        if not existing:
+            existing = frappe.db.get_value(
+                "Applicant",
+                {"owner": user, "admission_cycle": prefill_cycle},
+                ["name", "docstatus", "application_status"],
+                as_dict=True,
+            )
+
         if existing:
             # If user came from Apply Now (no ?applicant=), redirect to existing application in My Applications
             if not applicant_name:
@@ -509,19 +508,6 @@ def get_form_config_for_cycles():
 def save_form(data):
     """
     Save (draft) or submit (final) an Applicant document.
-
-    KEY FIX NOTES
-    ─────────────
-    - Never use frappe.local.response.http_status_code + return to signal errors.
-      frappe.call() on the JS side treats any non-200 as a thrown exception, and the
-      error message ends up inside e.responseJSON._server_messages (a JSON-encoded
-      string), NOT e.responseJSON.message. This is what caused the generic
-      "Submission failed" message.
-    - Instead we always return a plain dict with a top-level "error" key for failures
-      and a "name" key for successes. The JS checks these keys on res.message.
-    - doc.submit() must also use ignore_permissions=True; without it, the Applicant
-      role raises a PermissionError that was being silently swallowed.
-    - frappe.parse_json() safely handles both str and dict inputs.
     """
     # Frappe may pass data as a JSON string or already-parsed dict
     if isinstance(data, str):
@@ -533,7 +519,7 @@ def save_form(data):
     if user == "Guest":
         return {"error": _("You must be logged in to save an application.")}
 
-    email = frappe.db.get_value("User", user, "email") or user
+    user_email = frappe.db.get_value("User", user, "email") or user
     is_submit = bool(data.get("__submit"))
 
     # ── Allow edits based on Admission Cycle Stage ─────────────
@@ -585,9 +571,15 @@ def save_form(data):
     try:
         existing_name = frappe.db.get_value(
             "Applicant",
-            {"email": email, "admission_cycle": admission_cycle},
+            {"email": user_email, "admission_cycle": admission_cycle},
             "name",
         )
+        if not existing_name:
+            existing_name = frappe.db.get_value(
+                "Applicant",
+                {"owner": user, "admission_cycle": admission_cycle},
+                "name",
+            )
     except Exception:
         existing_name = None
 
@@ -596,7 +588,7 @@ def save_form(data):
             doc = frappe.get_doc("Applicant", existing_name)
         else:
             doc = frappe.new_doc("Applicant")
-            doc.email = email
+            doc.email = user_email
             doc.admission_cycle = admission_cycle
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "save_form — get/new doc")
@@ -665,7 +657,7 @@ def save_form(data):
                                 pass  # Skip malformed rows silently
 
     # Always stamp the authenticated email — do not trust form input
-    doc.email = email
+    doc.email = user_email
 
     # ── Normalise academic metadata and program mapping ────────────────
     # Admission / Academic Year from Admission Cycle
@@ -725,10 +717,6 @@ def save_form(data):
             }
 
     # ── Save or Submit ───────────────────────────────────────────────
-    # Draft save (user clicked "Save Draft"): do not check mandatory or eligibility.
-    # Submit (user clicked "Submit Application"): we set application_status = "Submitted"
-    # *before* save(), so when Applicant.validate() runs it sees Submitted and runs
-    # eligibility + mandatory checks in the same request (status is not "after" submit — it's set for this submit).
     if not is_submit:
         doc.flags.ignore_mandatory = True
 
@@ -736,7 +724,6 @@ def save_form(data):
         doc.flags.ignore_permissions = True
 
         if is_submit:
-            # Set before save() so Applicant.validate() runs eligibility and mandatory on this submit.
             doc.application_status = "Submitted"
             # Save the record
             if not doc.name or doc.is_new():
@@ -791,17 +778,15 @@ def save_form(data):
         frappe.db.rollback()
         raw_msg = str(e) or ""
 
-        # Special handling for rich ineligibility HTML coming from Applicant._build_ineligibility_message
+        # Special handling for rich ineligibility HTML
         lower_msg = raw_msg.lower()
         if "ineligibility alert" in lower_msg or "program options" in lower_msg:
             try:
-                # First unescape any HTML entities, then strip tags to get a clean sentence
                 unescaped = html.unescape(raw_msg)
             except Exception:
                 unescaped = raw_msg
 
             cleaned = strip_html(unescaped or "") if unescaped else ""
-            # Remove the label itself if present, to keep the message short
             cleaned = cleaned.replace("Ineligibility Alert", "").strip()
 
             if not cleaned:
@@ -809,7 +794,6 @@ def save_form(data):
 
             return {"error": cleaned}
 
-        # Fallback for all other validation errors
         return {"error": raw_msg}
 
     except frappe.MandatoryError as e:
@@ -827,8 +811,6 @@ def save_form(data):
     except Exception as e:
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Application Form — save_form")
-        # Return the raw exception message so we can see it during development.
-        # In production you'd replace str(e) with a generic message.
         return {"error": _("Submission error: {0}").format(str(e))}
 
 
@@ -840,17 +822,6 @@ def save_form(data):
 def check_portal_eligibility(applicant_data):
     """
     Runs a lightweight eligibility check for the portal without saving the doc.
-
-    This mirrors the validate_eligibility() logic from applicant.py but:
-    - Does NOT persist anything
-    - Returns a structured JSON result the JS can render
-
-    Returns:
-    {
-        "eligible": bool,
-        "message":  str,
-        "programs": [{"program": str, "eligible": bool, "reason": str}, ...]
-    }
     """
     if isinstance(applicant_data, str):
         applicant_data = frappe.parse_json(applicant_data)
@@ -868,7 +839,6 @@ def check_portal_eligibility(applicant_data):
         }
 
     try:
-        # Create a temporary in-memory Applicant doc for the eligibility engine
         doc = frappe.new_doc("Applicant")
         meta = frappe.get_meta("Applicant")
         valid_fields = {f.fieldname for f in meta.fields}
@@ -891,7 +861,6 @@ def check_portal_eligibility(applicant_data):
 
         doc.flags.ignore_permissions = True
 
-        # Get program level to find peer programs (use level_of_study — program_level is null for PG/Research)
         program_level = doc._get_selected_program_level() if hasattr(doc, '_get_selected_program_level') else frappe.db.get_value("Program", program, "level_of_study")
         all_programs  = doc._get_all_programs_for_level(program_level) if hasattr(doc, '_get_all_programs_for_level') else [program]
 
@@ -899,7 +868,7 @@ def check_portal_eligibility(applicant_data):
         main_eligible   = True
         main_message    = "You meet the eligibility criteria for the selected program."
 
-        for prog_name in all_programs[:10]:  # Cap at 10 for performance
+        for prog_name in all_programs[:10]:
             is_elig, reason = doc._check_eligibility_for_program(prog_name) if hasattr(doc, '_check_eligibility_for_program') else (True, "")
             programs_result.append({
                 "program":  prog_name,
@@ -910,7 +879,6 @@ def check_portal_eligibility(applicant_data):
                 main_eligible = False
                 main_message  = reason or "You do not meet the eligibility criteria for this program."
 
-        # Check for exemptions on the main program
         nt_result = doc._evaluate_national_test_exemption() if hasattr(doc, '_evaluate_national_test_exemption') else {}
 
         return {
@@ -934,7 +902,7 @@ def check_portal_eligibility(applicant_data):
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  FILE UPLOAD API  (multipart/form-data; attach to Applicant)
+#  FILE UPLOAD API
 # ═══════════════════════════════════════════════════════════════════
 
 ALLOWED_FILE_EXTENSIONS = {"pdf", "jpg", "jpeg", "png"}
@@ -950,38 +918,10 @@ ALLOWED_CONTENT_TYPES = {
 def upload_applicant_file(doctype="Applicant", docname=None, is_private=0, fieldname=None):
     """
     Secure file upload for Applicant document.
-    Accepts multipart/form-data with: file, doctype, docname, is_private (optional: fieldname).
-    Validates: Applicant exists, user has access, file type (pdf, jpg, jpeg, png).
-    Uses frappe.utils.file_manager.save_file to store in public/files or private/files.
-    Returns: file_name, file_url, attached_doctype, attached_document_name.
-
-    Example CURL:
-        curl -X POST "http://yoursite/api/method/slcm.www.application_form.index.upload_applicant_file" \\
-          -H "Cookie: sid=YOUR_SESSION_ID" \\
-          -H "X-Frappe-CSRF-Token: YOUR_CSRF_TOKEN" \\
-          -F "file=@/path/to/photo.jpg" \\
-          -F "doctype=Applicant" \\
-          -F "docname=APP-2026-00001" \\
-          -F "is_private=0"
-
-    Example frontend (fetch + FormData):
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        formData.append('doctype', 'Applicant');
-        formData.append('docname', 'APP-2026-00001');
-        formData.append('is_private', '0');
-        const r = await fetch('/api/method/slcm.www.application_form.index.upload_applicant_file', {
-            method: 'POST',
-            headers: { 'X-Frappe-CSRF-Token': window.csrf_token },
-            body: formData
-        });
-        const d = await r.json();
-        const result = d.message; // { file_name, file_url, attached_doctype, attached_document_name }
     """
     if frappe.session.user == "Guest":
         return {"error": _("Login required to upload files.")}
 
-    # Get form/JSON params (Frappe may pass docname as keyword)
     docname = docname or frappe.form_dict.get("docname") or frappe.form_dict.get("doc_name")
     doctype = (doctype or frappe.form_dict.get("doctype") or "Applicant").strip()
     is_private = int(frappe.form_dict.get("is_private", is_private) or 0)
@@ -993,14 +933,14 @@ def upload_applicant_file(doctype="Applicant", docname=None, is_private=0, field
     if not frappe.db.exists("Applicant", docname):
         return {"error": _("Applicant not found.")}
 
-    # Permission: user must own the applicant or be the applicant's email
+    # Permission check
     doc = frappe.get_doc("Applicant", docname)
     user = frappe.session.user
     user_email = frappe.db.get_value("User", user, "email") or user
     if doc.owner != user and doc.email != user_email:
         return {"error": _("You do not have permission to upload files for this application.")}
 
-    # Get file from request (multipart/form-data)
+    # Get file from request
     file = None
     if hasattr(frappe, "request") and frappe.request.files:
         file = frappe.request.files.get("file") or frappe.request.files.get("file[]")
@@ -1050,25 +990,29 @@ def upload_applicant_file(doctype="Applicant", docname=None, is_private=0, field
 # ═══════════════════════════════════════════════════════════════════
 #  APPLICATION FEE RECEIPT — GET RECEIPT FOR APPLICANT
 # ═══════════════════════════════════════════════════════════════════
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def get_application_fee_receipt(applicant_name):
     """
     Returns the latest Applicant Payment Receipt name and print URL for
     the given applicant's application fee, verifying the caller owns it.
-
-    Returns:
-      { "receipt_name": str, "print_url": str }   — if a receipt exists
-      { "receipt_name": None }                     — if no receipt found
     """
     import urllib.parse
 
-    if not frappe.session.user or frappe.session.user == "Guest":
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
-
-    # Verify the caller owns this applicant record
-    email = frappe.session.user
-    owner_email = frappe.db.get_value("Applicant", applicant_name, "email")
-    if not owner_email or owner_email.lower() != email.lower():
+    # Verify ownership
+    user = frappe.session.user
+    user_email = frappe.db.get_value("User", user, "email") or user
+    
+    applicant_owner, applicant_email = frappe.db.get_value(
+        "Applicant", applicant_name, ["owner", "email"]
+    ) or (None, None)
+    
+    is_owner = (user != "Guest") and (
+        user == "Administrator" or 
+        applicant_owner == user or 
+        (applicant_email and applicant_email.lower() == user_email.lower())
+    )
+    
+    if not is_owner:
         frappe.throw(_("Not permitted"), frappe.PermissionError)
 
     # Confirm fee is actually Paid or Waived
@@ -1076,20 +1020,16 @@ def get_application_fee_receipt(applicant_name):
     if fee_status not in ("Paid", "Waived"):
         return {"receipt_name": None, "fee_status": fee_status}
 
-    # Fetch the latest receipt for this applicant (application fee — no offer_letter)
+    # Fetch receipt
     receipts = frappe.get_all(
         "Applicant Payment Receipt",
-        filters={
-            "applicant": applicant_name,
-            "offer_letter": ["in", ["", None]],   # application fee receipts have no offer letter
-        },
+        filters={"applicant": applicant_name, "offer_letter": ["in", ["", None]]},
         fields=["name"],
         order_by="creation desc",
         limit=1,
         ignore_permissions=True,
     )
 
-    # Fallback: fetch ANY receipt for this applicant
     if not receipts:
         receipts = frappe.get_all(
             "Applicant Payment Receipt",
@@ -1117,82 +1057,58 @@ def get_application_fee_receipt(applicant_name):
     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def download_applicant_receipt(applicant_name, receipt_name):
     """
     Whitelisted method to download the PDF of a receipt.
-    Validates ownership before generating and serving the PDF.
     """
-    if not frappe.session.user or frappe.session.user == "Guest":
+    user = frappe.session.user
+    user_email = frappe.db.get_value("User", user, "email") or user
+    
+    applicant_owner, applicant_email = frappe.db.get_value(
+        "Applicant", applicant_name, ["owner", "email"]
+    ) or (None, None)
+    
+    is_owner = (user != "Guest") and (
+        user == "Administrator" or 
+        applicant_owner == user or 
+        (applicant_email and applicant_email.lower() == user_email.lower())
+    )
+    
+    if not is_owner:
         frappe.throw(_("Not permitted"), frappe.PermissionError)
 
-    # Verify ownership
-    email = frappe.session.user
-    owner_email = frappe.db.get_value("Applicant", applicant_name, "email")
-    if not owner_email or owner_email.lower() != email.lower():
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
-
-    # Verify the receipt belongs to this applicant
     receipt_applicant = frappe.db.get_value("Applicant Payment Receipt", receipt_name, "applicant")
     if receipt_applicant != applicant_name:
         frappe.throw(_("Receipt does not belong to this applicant"), frappe.PermissionError)
 
-    # Resolve print format from Program Reservation Policy (Payment Receipt Template)
-    print_format = "Applicant Payment Receipt Format"  # fallback
+    # Resolve print format
+    print_format = "Applicant Payment Receipt Format"
     try:
         app = frappe.get_doc("Applicant", applicant_name)
+        policy_name = None
         if app.admission_cycle and app.program:
-            policy_name = None
             if app.campus:
-                policy_name = frappe.db.get_value(
-                    "Admission Cycle Program",
-                    {
-                        "parent": app.admission_cycle,
-                        "program": app.program,
-                        "campus": app.campus,
-                        "is_active": 1,
-                    },
-                    "reservation_policy",
-                )
+                policy_name = frappe.db.get_value("Admission Cycle Program",
+                    {"parent": app.admission_cycle, "program": app.program, "campus": app.campus, "is_active": 1},
+                    "reservation_policy")
             if not policy_name:
-                policy_name = frappe.db.get_value(
-                    "Admission Cycle Program",
-                    {
-                        "parent": app.admission_cycle,
-                        "program": app.program,
-                        "is_active": 1,
-                    },
-                    "reservation_policy",
-                )
+                policy_name = frappe.db.get_value("Admission Cycle Program",
+                    {"parent": app.admission_cycle, "program": app.program, "is_active": 1},
+                    "reservation_policy")
             if policy_name:
-                template = frappe.db.get_value(
-                    "Program Reservation Policy",
-                    policy_name,
-                    "payment_receipt_template",
-                )
-                if template:
-                    print_format = template
+                template = frappe.db.get_value("Program Reservation Policy", policy_name, "payment_receipt_template")
+                if template: print_format = template
     except Exception:
         pass
 
-    # Generate PDF using the template from Program Reservation Policy
-    current_user = frappe.session.user
     try:
-        frappe.set_user("Administrator")
-        doc = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+        doc = frappe.get_doc("Applicant Payment Receipt", receipt_name, ignore_permissions=True)
         frappe.flags.ignore_print_permissions = True
-        pdf_content = frappe.get_print(
-            "Applicant Payment Receipt",
-            receipt_name,
-            print_format,
-            as_pdf=True,
-            doc=doc,
-        )
+        pdf_content = frappe.get_print("Applicant Payment Receipt", receipt_name, print_format, as_pdf=True, doc=doc)
         frappe.local.response.filename = f"Receipt_{receipt_name}.pdf"
         frappe.local.response.filecontent = pdf_content
         frappe.local.response.type = "download"
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Receipt PDF Generation Failed")
-        frappe.throw(_("Failed to generate PDF receipt. Please contact support: {0}").format(str(e)))
-    finally:
-        frappe.set_user(current_user)
+        frappe.throw(_("Failed to generate PDF receipt: {0}").format(str(e)))

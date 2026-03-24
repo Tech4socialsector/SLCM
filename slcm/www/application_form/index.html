@@ -6704,54 +6704,35 @@
         let receiptOpened = false;
 
         try {
-            const csrfToken = window.csrf_token || '';
-            const resp = await fetch('/api/method/slcm.www.application_form.index.get_application_fee_receipt', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Frappe-CSRF-Token': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ applicant_name: applicantName })
-            });
+            const msg = await apiFetch('slcm.www.application_form.index.get_application_fee_receipt', { applicant_name: applicantName });
+            console.log('[Receipt] API response:', msg);
 
-            const data = await resp.json();
-            console.log('[Receipt] API response:', data);
-
-            if (data && data.message) {
-                const msg = data.message;
-                if (msg.receipt_name) {
-                    // print_url from backend uses Program Reservation Policy Payment Receipt Template
-                    const printUrl = msg.print_url ||
-                        `/api/method/slcm.www.application_form.index.download_applicant_receipt?applicant_name=${encodeURIComponent(applicantName)}&receipt_name=${encodeURIComponent(msg.receipt_name)}`;
-                    console.log('[Receipt] Opening:', printUrl);
-                    window.open(printUrl, '_blank');
-                    receiptOpened = true;
-                } else {
-                    // No receipt doc yet — fallback: open Applicant Fee Assignment printview
-                    console.warn('[Receipt] No receipt doc, falling back to AFA printview');
-                    showToast('No receipt found yet. Showing fee assignment details instead.', 'info');
-                    // Try to open the Applicant Fee Assignment (AFA) in a new tab
-                    const afaUrl = `/api/method/slcm.api.service.application_fee_service.get_application_fee_details?applicant_name=${encodeURIComponent(applicantName)}`;
-                    // Open an alternative: the applicant record in Frappe's printview
-                    const fallbackUrl = `/printview?doctype=Applicant&name=${encodeURIComponent(applicantName)}&format=Standard&no_letterhead=0`;
-                    window.open(fallbackUrl, '_blank');
-                    receiptOpened = true;
-                }
-            } else if (data && data.exc) {
-                console.error('[Receipt] Server exception:', data.exc);
-                showToast('Could not fetch receipt: ' + (data._server_messages
-                    ? JSON.parse(JSON.parse(data._server_messages)[0]).message
-                    : 'Server error'), 'error');
-            } else {
-                console.error('[Receipt] Unexpected response:', data);
-                showToast('Unexpected server response. Please try again.', 'error');
+            if (msg && msg.receipt_name) {
+                // print_url from backend uses Program Reservation Policy Payment Receipt Template
+                const printUrl = msg.print_url ||
+                    `/api/method/slcm.www.application_form.index.download_applicant_receipt?applicant_name=${encodeURIComponent(applicantName)}&receipt_name=${encodeURIComponent(msg.receipt_name)}`;
+                console.log('[Receipt] Opening:', printUrl);
+                window.open(printUrl, '_blank');
+                receiptOpened = true;
+            } else if (msg) {
+                // No receipt doc yet — fallback: open Applicant Fee Assignment printview
+                console.warn('[Receipt] No receipt doc, falling back to AFA printview');
+                showToast('No receipt found yet. Showing fee assignment details instead.', 'info');
+                // Try to open the Applicant Fee Assignment (AFA) in a new tab
+                const afaUrl = `/api/method/slcm.api.service.application_fee_service.get_application_fee_details?applicant_name=${encodeURIComponent(applicantName)}`;
+                // Open an alternative: the applicant record in Frappe's printview
+                const fallbackUrl = `/printview?doctype=Applicant&name=${encodeURIComponent(applicantName)}&format=Standard&no_letterhead=0`;
+                window.open(fallbackUrl, '_blank');
+                receiptOpened = true;
             }
         } catch (e) {
-            console.error('[Receipt] Network error:', e);
-            showToast('Network error. Please check your connection and try again.', 'error');
+            console.error('[Receipt] API error:', e);
+            showToast('Could not fetch receipt: ' + e.message, 'error');
         } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = origInner; }
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origInner;
+            }
         }
     }
 
