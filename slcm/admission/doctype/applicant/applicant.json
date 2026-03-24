@@ -203,6 +203,7 @@
    "default": "Submitted",
    "fieldname": "application_status",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Application status",
    "options": "Applicant Status"
   },
@@ -1113,7 +1114,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-23 10:25:56.729579",
+ "modified": "2026-03-24 10:07:21.798272",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
