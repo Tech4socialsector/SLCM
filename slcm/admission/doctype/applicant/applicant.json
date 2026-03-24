@@ -837,7 +837,7 @@
    "fieldtype": "Select",
    "label": "Have you completed your Undergraduate degree",
    "mandatory_depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
-   "options": "\nFinal Year of Undergraduate Degree\nUndergraduate Degree completed"
+   "options": "\nFinal Year of UG\nUG Degree completed"
   },
   {
    "depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
@@ -1113,7 +1113,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-23 10:25:56.729579",
+ "modified": "2026-03-24 15:50:49.652523",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

@@ -29,8 +29,9 @@
  "list_columns": [],
  "login_required": 1,
  "max_attachment_size": 5,
+ "meta_image": "",
  "meta_title": "Application Form",
- "modified": "2026-03-24 12:57:37.101095",
+ "modified": "2026-03-24 15:50:53.062250",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "applicant-form",
@@ -42,6 +43,9 @@
  "show_attachments": 0,
  "show_list": 0,
  "show_sidebar": 0,
+ "success_message": "Thank you for your interest! Your application has been submitted successfully and is now in our system. Our team will carefully review your details to see if they align with our current needs. We appreciate the time you took to apply and will reach out via email if we decide to move forward with the next steps.",
+ "success_title": "Application Submitted Successfully",
+ "success_url": "merit-and-scholarship/admission_dashboard?panel=applications",
  "title": "Application Form",
  "web_form_fields": [
   {

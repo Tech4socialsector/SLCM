@@ -14,6 +14,16 @@
 // ───────────────────────────────────────────────────────────────────
 function _injectCSS() {
 	if (document.getElementById('slcm-wf-css')) return;
+
+	// ── Material Symbols Outlined (needed for nav + footer icons) ──
+	if (!document.getElementById('slcm-material-icons')) {
+		var iconLink = document.createElement('link');
+		iconLink.id   = 'slcm-material-icons';
+		iconLink.rel  = 'stylesheet';
+		iconLink.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block';
+		document.head.appendChild(iconLink);
+	}
+
 	var s = document.createElement('style');
 	s.id = 'slcm-wf-css';
 	s.textContent = [
@@ -1222,20 +1232,82 @@ function _doFinalSubmit(applicantName) {
 			var msg = r && r.message;
 			if (msg && msg.status === 'success') {
 				updateStatusBadge('Submitted');
-				try { if (frappe.web_form && frappe.web_form.doc) frappe.web_form.doc.application_status = 'Submitted'; } catch (e) {}
-				showToast('\u2705  Application submitted successfully!', 'success');
-				// Reload after short delay so the form shows submitted state
-				setTimeout(function () { window.location.reload(); }, 1500);
+				try {
+					if (frappe.web_form && frappe.web_form.doc) {
+						frappe.web_form.doc.application_status = 'Submitted';
+					}
+				} catch (e) {}
+
+				// ── Use "After Submission" settings ──────────────────────
+				var wf = frappe.web_form || {};
+				var title = wf.success_title || 'Application Submitted Successfully';
+				var message = wf.success_message || 'Your application has been submitted successfully.';
+				var nextUrl = wf.success_url || '';
+
+				_showSuccessModal(title, message, nextUrl);
 			} else {
-				showToast('\u26a0  ' + ((msg && msg.message) || 'Submission failed.'), 'error');
+				_showToast('\u26a0  ' + ((msg && msg.message) || 'Submission failed.'), 'error');
 			}
 		},
 		error: function () {
 			_hideSubmitOverlay();
-			showToast('\u26a0  Network error during submission.', 'error');
+			_showToast('\u26a0  Network error during submission.', 'error');
 		},
 	});
 }
+
+/** Premium Success Modal */
+function _showSuccessModal(title, message, nextUrl) {
+	var modalId = 'slcm-success-modal';
+	var modal = document.getElementById(modalId);
+	if (!modal) {
+		modal = document.createElement('div');
+		modal.id = modalId;
+		// Re-use overlay styles or handle here
+		modal.style.cssText =
+			'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;';
+		modal.innerHTML =
+			'<div style="position:absolute;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);"></div>' +
+			'<div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:500px;' +
+			'padding:40px;text-align:center;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);' +
+			'animation:slcm-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);">' +
+				'<div style="width:80px;height:80px;background:#f0fdf4;border-radius:50%;margin:0 auto 24px;' +
+				'display:flex;align-items:center;justify-content:center;color:#22c55e;border:4px solid #dcfce7;">' +
+					'<span style="font-family:Material Symbols Outlined;font-size:48px;font-weight:bold;">check_circle</span>' +
+				'</div>' +
+				'<h2 style="margin:0 0 12px;font-size:24px;font-weight:800;color:#0f172a;line-height:1.2;">' + _slcmEscapeHtml(title) + '</h2>' +
+				'<div style="font-size:15px;line-height:1.6;color:#475569;margin-bottom:32px;">' + message.replace(/\n/g, '<br>') + '</div>' +
+				'<div style="display:flex;flex-direction:column;gap:12px;">' +
+					(nextUrl
+						? '<a href="' + nextUrl + '" style="display:flex;align-items:center;justify-content:center;gap:8px;' +
+						  'background:var(--slcm-primary,#1a3c6e);color:#fff;padding:14px;border-radius:12px;' +
+						  'font-weight:700;text-decoration:none;font-size:16px;transition:all 0.2s;">' +
+						  '<span>Go to Dashboard</span><span style="font-family:Material Symbols Outlined;font-size:20px;">arrow_forward</span></a>'
+						: '') +
+					'<button id="slcm-success-close" style="background:#f1f5f9;color:#475569;border:none;' +
+					'padding:14px;border-radius:12px;font-weight:600;cursor:pointer;font-size:15px;">' +
+					(nextUrl ? 'Stay on Page' : 'Close and Refresh') + '</button>' +
+				'</div>' +
+			'</div>';
+		document.body.appendChild(modal);
+	}
+
+	// Internal slide-up animation
+	if (!document.getElementById('slcm-anim-success')) {
+		var s = document.createElement('style');
+		s.id = 'slcm-anim-success';
+		s.textContent = '@keyframes slcm-slide-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}';
+		document.head.appendChild(s);
+	}
+
+	document.getElementById('slcm-success-close').onclick = function() {
+		modal.remove();
+		if (!nextUrl) {
+			window.location.reload();
+		}
+	};
+}
+
 
 /**
  * Full submit flow:
@@ -1378,6 +1450,105 @@ function interceptSubmit() {
 }
 
 // ───────────────────────────────────────────────────────────────────
+//  ATTACH FIELD VALIDATION
+//  Max 5 MB, allowed extensions: png, jpeg, jpg, pdf
+//  Applied to every Attach (and Attach Image) field in the web form.
+// ───────────────────────────────────────────────────────────────────
+var _ATTACH_MAX_BYTES = 5 * 1024 * 1024;  // 5 MB
+var _ATTACH_ALLOWED   = ['png', 'jpeg', 'jpg', 'pdf'];
+
+function _validateAttachFile(file, fieldtype) {
+	if (!file) return true;
+	var ext = (file.name || '').split('.').pop().toLowerCase();
+
+	// Attach Image: only images
+	var allowed = (fieldtype === 'Attach Image')
+		? ['png', 'jpeg', 'jpg']
+		: _ATTACH_ALLOWED;
+
+	if (allowed.indexOf(ext) === -1) {
+		_showToast(
+			'Invalid file type “.' + ext + '”.  ' +
+			'Allowed: ' + allowed.join(', ').toUpperCase() + '.',
+			'error'
+		);
+		return false;
+	}
+	if (file.size > _ATTACH_MAX_BYTES) {
+		_showToast(
+			'File “' + file.name + '” exceeds the 5 MB limit ' +
+			'(' + (file.size / (1024 * 1024)).toFixed(1) + ' MB).',
+			'error'
+		);
+		return false;
+	}
+	return true;
+}
+
+function setupAttachFieldValidation() {
+	// ── 1. Native <input type="file"> change — event delegation ────────
+	// Frappe renders the hidden file input inside .frappe-control wrappers.
+	document.addEventListener('change', function (e) {
+		var input = e.target;
+		if (!input || input.type !== 'file') return;
+
+		// Restrict to inputs inside the web-form container only
+		var inForm = input.closest(
+			'.web-form-container, form.web-form, .web-form-wrapper'
+		);
+		if (!inForm) return;
+
+		var file = input.files && input.files[0];
+		if (!file) return;
+
+		// Detect field type from the wrapper
+		var ctrl = input.closest('[data-fieldtype]');
+		var ft   = ctrl ? ctrl.getAttribute('data-fieldtype') : 'Attach';
+
+		if (!_validateAttachFile(file, ft)) {
+			e.preventDefault();
+			input.value = '';   // clear the selection
+		}
+	}, true);  // capture phase so we can preventDefault reliably
+
+	// ── 2. Frappe upload dialog interception ─────────────────────────
+	// Frappe's uploader sometimes opens its own dialog and reads the
+	// file through a FileReader rather than a regular file input.
+	// We patch frappe.ui.FileUploader by wrapping the upload trigger.
+	var _patchUploader = function () {
+		if (!window.frappe || !frappe.ui || !frappe.ui.FileUploader) return;
+		if (frappe.ui.FileUploader._slcm_patched) return;
+		frappe.ui.FileUploader._slcm_patched = true;
+
+		var _orig = frappe.ui.FileUploader.prototype.upload_file ||
+		            frappe.ui.FileUploader.prototype.upload;
+		if (!_orig) return;
+
+		var _key = frappe.ui.FileUploader.prototype.upload_file
+			? 'upload_file' : 'upload';
+
+		frappe.ui.FileUploader.prototype[_key] = function (file) {
+			var f = file && (file.file_obj || file);
+			if (f && f.name) {
+				if (!_validateAttachFile(f, 'Attach')) return;
+			}
+			return _orig.apply(this, arguments);
+		};
+	};
+
+	// Retry patching until FileUploader is available
+	var _upN = 0;
+	var _upTimer = setInterval(function () {
+		_patchUploader();
+		if (++_upN > 60 ||
+			(window.frappe && frappe.ui && frappe.ui.FileUploader &&
+			 frappe.ui.FileUploader._slcm_patched)) {
+			clearInterval(_upTimer);
+		}
+	}, 200);
+}
+
+// ───────────────────────────────────────────────────────────────────
 //  QUERY PREFILL — /applicant-form/new?program=...&admission_cycle=...
 // ───────────────────────────────────────────────────────────────────
 function isNewApplicantWebForm() {
@@ -1463,6 +1634,7 @@ frappe.ready(function () {
 
 	setupApplicationFeeReceiptDownload();
 	setupSubmittedFormUX();
+	setupAttachFieldValidation();
 
 	// Submit intercept (retry: web form may attach after this script's first frappe.ready)
 	interceptSubmit();
