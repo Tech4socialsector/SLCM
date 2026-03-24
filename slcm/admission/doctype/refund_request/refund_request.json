@@ -119,7 +119,7 @@
    "fieldname": "refund_type",
    "fieldtype": "Select",
    "label": "Refund Type",
-   "options": "Full\nPartial",
+   "options": "Full\nPartial\nNo Refund",
    "reqd": 1
   },
   {
