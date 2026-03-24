@@ -10,6 +10,7 @@
   "admission_cycle",
   "campus",
   "column_core_2",
+  "program_level",
   "program",
   "category",
   "is_active",
@@ -47,6 +48,13 @@
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Program Level",
+   "options": "\nUndergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "program",

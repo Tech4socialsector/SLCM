@@ -14,70 +14,20 @@ def get_refund_policies(applicant=None, program=None, campus=None, offer=None):
 	Fetches refund policies mapped to the applicant's Fee Structure.
 	If is_refund_available is unchecked or table is empty, returns empty list.
 	"""
+	from slcm.admission.utils.refund import get_applicant_refund_policies
+
 	if not applicant:
 		user_email = frappe.session.user
 		applicant = frappe.db.get_value("Applicant", {"email": user_email}, "name")
-	
+
 	if not applicant:
 		return {"policies": [], "days_since_payment": 0}
 
-	# 1. Resolve basic details
-	details = frappe.db.get_value("Applicant", applicant, ["program", "campus", "admission_cycle"], as_dict=1)
-	if not details:
-		return {"policies": [], "days_since_payment": 0}
+	res = get_applicant_refund_policies(applicant)
 	
-	program = program or details.program
-	campus = campus or details.campus
-	cycle = details.admission_cycle
-
-	# 2. Find Fee Structure via Offer Configuration
-	fee_structure = None
-	config_names = frappe.get_all("Offer Configuration", 
-		filters={"admission_cycle": cycle, "campus": campus, "is_active": 1},
-		pluck="name"
-	)
-
-	for cn in config_names:
-		config_doc = frappe.get_doc("Offer Configuration", cn)
-		for row in config_doc.fee_structure:
-			fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
-			if fs_program == program:
-				fee_structure = row.fee_structure
-				break
-		if fee_structure:
-			break
-	
-	if not fee_structure:
-		return {"policies": [], "days_since_payment": 0}
-
-	# 3. Get policies from Fee Structure
-	fs_doc = frappe.get_doc("Fee Structure", fee_structure)
-	
-	if not fs_doc.is_refund_available:
-		return {"policies": [], "days_since_payment": 0}
-
-	policies = []
-	for row in fs_doc.get("refund_policies", []):
-		if row.is_active:
-			policies.append({
-				"policy_name": row.refund_policy,
-				"days_from_payment": row.days_from_payment,
-				"refund_percentage": row.refund_percentage
-			})
-	
-	# 4. Calculate days since payment
-	from frappe.utils import date_diff, nowdate
-	days_since_payment = 0
-	last_payment = frappe.db.get_value("Applicant Payment Receipt", 
-		{"applicant": applicant, "docstatus": 1}, 
-		"payment_date", order_by="payment_date desc")
-	
-	if last_payment:
-		days_since_payment = date_diff(nowdate(), last_payment)
-
 	return {
-		"policies": policies,
-		"days_since_payment": days_since_payment
+		"policies": res.get("policies") or [],
+		"days_since_payment": res.get("days_since_payment") or 0
 	}
 
 @frappe.whitelist()
@@ -89,12 +39,36 @@ def process_refund(name):
 
 	if refund.status != "Approved":
 		frappe.throw(_("Refund Request must be Approved before processing."))
-	
+
+	if refund.refund_type == "No Refund":
+		# No payment needed, just close the cycle
+		refund.db_set("status", "Processed")
+		refund.db_set("refund_date", now_datetime())
+		refund.db_set("failure_message", "")
+		
+		# Create a 0-amount transaction for audit trail
+		rt = frappe.new_doc("Refund Transaction")
+		rt.refund_request = refund.name
+		rt.payment_request = refund.payment_request
+		rt.razorpay_payment_id = refund.razorpay_payment_id
+		rt.razorpay_refund_id = "INTERNAL_NO_REFUND"
+		rt.refund_amount = 0
+		rt.status = "Processed"
+		rt.processed_at = now_datetime()
+		rt.gateway_response = json.dumps({"note": "Refund skipped: Processed as 'No Refund' in system."})
+		rt.insert(ignore_permissions=True)
+		
+		# Sync statuses (closes the Admission Cancellation)
+		refund.sync_cancellation_status()
+		
+		return {"status": "Success", "message": _("Refund Request (No Refund) has been closed successfully.")}
+
 	if not refund.razorpay_payment_id:
 		frappe.throw(_("Cannot process refund: No Razorpay Payment ID found on this request."))
 
 	if refund.razorpay_refund_id:
-		frappe.throw(_("Refund Request already has a Razorpay Refund ID: {0}").format(refund.razorpay_refund_id))
+		# If ID exists but status is not Processed, try to sync it
+		return update_razorpay_refund_status(name)
 	
 	# Set status to Processing immediately to prevent concurrent calls
 	refund.db_set("status", "Processing")
@@ -184,6 +158,29 @@ def process_refund(name):
 		frappe.log_error(frappe.get_traceback(), _("Razorpay Refund Error"))
 		frappe.msgprint(_("Razorpay Error: {0}").format(str(e)))
 		return {"status": "Error", "message": str(e)}
+
+@frappe.whitelist()
+def process_bulk_refunds(names):
+	if isinstance(names, str):
+		names = json.loads(names)
+	
+	results = []
+	for name in names:
+		try:
+			res = process_refund(name)
+			results.append({
+				"name": name,
+				"status": res.get("status"),
+				"message": res.get("message")
+			})
+		except Exception as e:
+			results.append({
+				"name": name,
+				"status": "Error",
+				"message": str(e)
+			})
+	
+	return results
 
 @frappe.whitelist()
 def update_razorpay_refund_status(name):

@@ -208,6 +208,9 @@ frappe.ui.form.on('Refund Request', {
 			frm.trigger('calculate_refund_amount');
 		} else if (frm.doc.refund_type === 'Partial') {
 			frm.trigger('select_policy_by_days');
+		} else if (frm.doc.refund_type === 'No Refund') {
+			frm.set_value('refund_policy', '');
+			frm.set_value('refund_amount', 0);
 		}
 	},
 
@@ -258,6 +261,8 @@ frappe.ui.form.on('Refund Request', {
 	calculate_refund_amount: function(frm) {
 		if (frm.doc.refund_type === 'Full') {
 			frm.set_value('refund_amount', frm.doc.amount_paid);
+		} else if (frm.doc.refund_type === 'No Refund') {
+			frm.set_value('refund_amount', 0);
 		} else if (frm.doc.refund_policy) {
 			frappe.db.get_value('Refund Policy', frm.doc.refund_policy, 'refund_percentage', (r) => {
 				if (r && r.refund_percentage !== undefined) {

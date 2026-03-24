@@ -508,6 +508,9 @@ class ScholarshipApplication(Document):
 		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
 		applicant_categories = get_applicant_categories(self.applicant_id)
 		
+		# Get applicant program level
+		applicant_program_level = frappe.db.get_value("Applicant", self.applicant_id, "program_level")
+		
 		mappings = frappe.get_all(
 			"Scholarship Scheme Mapping",
 			filters={
@@ -516,14 +519,15 @@ class ScholarshipApplication(Document):
 				"campus": self.campus,
 				"is_active": 1
 			},
-			fields=["name", "program", "category"],
-			order_by="program desc, category desc" 
+			fields=["name", "program", "program_level", "category"],
+			order_by="program desc, program_level desc, category desc" 
 		)
 		
 		for m in mappings:
 			program_match = not m.program or m.program == self.program
+			level_match = not m.program_level or m.program_level == applicant_program_level
 			category_match = not m.category or m.category in applicant_categories
-			if program_match and category_match:
+			if program_match and level_match and category_match:
 				return m.name
 		return None
 
