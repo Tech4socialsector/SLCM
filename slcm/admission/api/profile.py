@@ -1,88 +1,203 @@
 import frappe
+from slcm.utils.phone_utils import sanitize_phone_for_frappe
 
+# Strict mapping of fields for synchronization between User and Applicant
+# Mapping: User field name -> Applicant field name
+PROFILE_FIELD_MAP = {
+    "full_name": "candidate_name",
+    "email": "email",
+    "mobile_no": "mobile_number",
+    "date_of_birth": "date_of_birth",
+    "gender": "gender",
+    "nationality": "nationality",
+    "address": "correspondence_address",
+    "city": "city",
+    "state": "state",
+    "pincode": "pincode"
+}
 
-@frappe.whitelist(allow_guest=True, methods=["POST", "GET"])
-def update_profile(**kwargs):
+@frappe.whitelist()
+def get_user_profile_data():
     """
-    Update personal details on the Applicant record for the logged-in user.
+    Returns User fields for profile rendering.
+    Source of Truth: User doctype.
     """
-    # Applicants are usually Website Users, not Guest. 
-    # But we whitelist guest to avoid desk-access redirects, then check manually.
+    user = frappe.session.user
+    if not user or user == "Guest":
+        return {"success": False, "error": "Authentication required."}
+    
+    user_doc = frappe.get_doc("User", user)
+    
+    data = {
+        "full_name": user_doc.full_name,
+        "email": user_doc.email,
+        "mobile_no": getattr(user_doc, "mobile_no", ""),
+        "date_of_birth": getattr(user_doc, "date_of_birth", ""),
+        "gender": user_doc.gender,
+        "nationality": getattr(user_doc, "nationality", ""),
+        "address": getattr(user_doc, "address", ""),
+        "city": getattr(user_doc, "city", ""),
+        "state": getattr(user_doc, "state", ""),
+        "pincode": getattr(user_doc, "pincode", ""),
+        "user_image": user_doc.user_image
+    }
+    
+    return {"success": True, "data": data}
+
+@frappe.whitelist(methods=["POST"])
+def update_user_profile(**kwargs):
+    """
+    Updates User doctype.
+    SYNC LOGIC (Requirement 2b): DON'T sync from User to Applicant.
+    """
     user = frappe.session.user
     if not user or user == "Guest":
         return {"success": False, "error": "Authentication required."}
 
-    # Find the applicant record related to this user
-    app_name = kwargs.get("applicant")
+    # Extract relevant fields for User update
+    user_update_dict = {}
     
-    if app_name:
-        # Verify ownership if app_name is provided
-        if not frappe.db.exists("Applicant", {"name": app_name, "owner": user}) and \
-           not frappe.db.exists("Applicant", {"name": app_name, "email": user}) and \
-           "Admission Admin" not in frappe.get_roles():
-            return {"success": False, "error": "Access denied for this application."}
-    else:
-        # Priority 1: Email match (official contact)
-        # Priority 2: Owner match (creator)
-        apps = frappe.get_all("Applicant",
-            filters={"email": user},
-            fields=["name"], limit=1, order_by="creation desc")
-        
-        if not apps:
-            apps = frappe.get_all("Applicant",
-                filters={"owner": user},
-                fields=["name"], limit=1, order_by="creation desc")
+    # Profile image (User doctype only - Requirement 3)
+    if "user_image" in kwargs:
+        user_update_dict["user_image"] = kwargs["user_image"]
+    
+    # Handle mapped fields from User names
+    for user_field in PROFILE_FIELD_MAP.keys():
+        if user_field in kwargs:
+            val = kwargs[user_field]
+            if user_field == "mobile_no" and val:
+                val = sanitize_phone_for_frappe(val)
+            user_update_dict[user_field] = val
+            
+    # Also handle alternate names for fields (if coming from older template using Applicant names)
+    INV_MAP = {v: k for k, v in PROFILE_FIELD_MAP.items()}
+    for k, v in kwargs.items():
+        if k in INV_MAP and INV_MAP[k] not in user_update_dict:
+            val = v
+            if INV_MAP[k] == "mobile_no" and val:
+                val = sanitize_phone_for_frappe(val)
+            user_update_dict[INV_MAP[k]] = val
 
-        if not apps:
-            return {"success": False, "error": "No application found for your account."}
-        
-        app_name = apps[0].name
+    if not user_update_dict:
+        return {"success": False, "error": "No valid fields provided for profile update."}
 
-    # Allowed fields to update via this endpoint
-    allowed = {
-        "candidate_name", "date_of_birth", "gender", "nationality",
-        "mobile_number", "alternate_contact", "id_proof",
-        "correspondence_address", "city", "state", "pincode", "candidate_photo",
+    try:
+        # Update User
+        frappe.db.set_value("User", user, user_update_dict)
+        
+        # COMMIT Requirement 2b: "don't Sync those same fields back to Applicant doctype"
+        # We only update User.
+        
+        frappe.db.commit()
+        return {"success": True, "status": "ok"}
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "User profile update failed")
+        return {"success": False, "error": str(e)}
+
+@frappe.whitelist(methods=["POST"])
+def update_applicant_from_form(**kwargs):
+    """
+    Updates Applicant doctype and syncs allowed fields to User (Requirement 2a).
+    Triggered when applicant updates their application form.
+    """
+    user = frappe.session.user
+    if not user or user == "Guest":
+        return {"success": False, "error": "Authentication required."}
+
+    app_name = kwargs.get("name") or kwargs.get("applicant")
+    if not app_name:
+        # Fallback to latest applicant for user
+        app_name = frappe.db.get_value("Applicant", {"email": user}, "name", order_by="creation desc")
+        if not app_name:
+            app_name = frappe.db.get_value("Applicant", {"owner": user}, "name", order_by="creation desc")
+            
+    if not app_name:
+        return {"success": False, "error": "Applicant record not found."}
+
+    # Verify ownership
+    if not frappe.db.exists("Applicant", {"name": app_name, "owner": user}) and \
+       not frappe.db.exists("Applicant", {"name": app_name, "email": user}) and \
+       "Admission Admin" not in frappe.get_roles():
+        return {"success": False, "error": "Access denied for this applicant record."}
+
+    applicant_update_dict = {}
+    
+    # Allowed fields for Applicant (including separate image)
+    allowed_fields = {
+        "candidate_photo", "alternate_contact", "id_proof",
         "class_x_marksheet", "class_xii_marksheet", "caste_certificate",
         "pwd_certificate", "phd_proposal", "cv", "ka_study_7yrs_certificate"
     }
-
-    from slcm.utils.phone_utils import sanitize_phone_for_frappe
-
-    update_dict = {}
+    
     for k, v in kwargs.items():
-        if k in allowed:
-            val = v if (v is not None and str(v).strip() != "") else None
-            if k in ["mobile_number", "alternate_contact"] and val:
-                val = sanitize_phone_for_frappe(val)
-            update_dict[k] = val
+        if k in allowed_fields:
+            applicant_update_dict[k] = v
+        elif k in PROFILE_FIELD_MAP.values():
+            applicant_update_dict[k] = v
+        # Support User field names as input for Applicant update too
+        elif k in PROFILE_FIELD_MAP:
+            applicant_update_dict[PROFILE_FIELD_MAP[k]] = v
 
-    if not update_dict:
-        return {"success": False, "error": "No valid fields provided for update."}
+    if not applicant_update_dict:
+        return {"success": False, "error": "No valid fields provided for applicant update."}
 
     try:
-        # Load doc name and verify ownership
-        # apps[0].name was already verified to belong to 'user' above.
+        # Update Applicant
+        frappe.db.set_value("Applicant", app_name, applicant_update_dict)
         
-        # Perform the update using db.set_value to bypass unrelated LinkValidationErrors
-        # (e.g. if 'current_stage' contains a stale/invalid link)
-        frappe.db.set_value("Applicant", app_name, update_dict)
+        # Sync to User (Requirement 2a)
+        sync_applicant_to_user(frappe.get_doc("Applicant", app_name))
         
-        # Sync updates to the User doctype
-        user_updates = {}
-        if "candidate_name" in update_dict:
-            user_updates["full_name"] = update_dict["candidate_name"]
-        if "mobile_number" in update_dict:
-            user_updates["mobile_no"] = update_dict["mobile_number"]
-        if "candidate_photo" in update_dict:
-            user_updates["user_image"] = update_dict["candidate_photo"]
-            
-        if user_updates:
-            frappe.db.set_value("User", user, user_updates)
-            
         frappe.db.commit()
-        
         return {"success": True, "status": "ok"}
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Profile update failed")
+        frappe.log_error(frappe.get_traceback(), "Applicant sync update failed")
         return {"success": False, "error": str(e)}
+
+def sync_applicant_to_user(doc, method=None):
+    """
+    Hook function for Applicant on_update.
+    Syncs allowed fields from Applicant to User.
+    Requirement 2a: Sync relevant fields to User doctype.
+    """
+    # 1. Map Applicant fields to User fields
+    INV_MAP = {v: k for k, v in PROFILE_FIELD_MAP.items()}
+    user_data = {}
+    
+    for app_f, user_f in INV_MAP.items():
+        val = doc.get(app_f)
+        if val is not None:
+            user_data[user_f] = val
+            
+    if not user_data:
+        return
+
+    # 2. Find associated User (using email)
+    user_email = doc.email or doc.owner
+    if not user_email or user_email == "Guest":
+        return
+
+    if frappe.db.exists("User", user_email):
+        try:
+            # We use db.set_value to avoid triggering validation loops if User also has hooks
+            frappe.db.set_value("User", user_email, user_data)
+        except Exception as e:
+            frappe.log_error(f"Failed to sync Applicant {doc.name} to User {user_email}: {e}")
+
+@frappe.whitelist(allow_guest=True, methods=["POST", "GET"])
+def update_profile(**kwargs):
+    """
+    Legacy wrapper for existing dashboard functionality.
+    Routes to either User profile update or Applicant form update.
+    """
+    # Fields that specifically belong to Applicant doctype
+    applicant_only_fields = {
+        "applicant", "name", "candidate_photo", "id_proof",
+        "class_x_marksheet", "class_xii_marksheet", "caste_certificate",
+        "pwd_certificate", "phd_proposal", "cv", "ka_study_7yrs_certificate"
+    }
+    
+    if any(k in applicant_only_fields for k in kwargs.keys()):
+        return update_applicant_from_form(**kwargs)
+    else:
+        return update_user_profile(**kwargs)

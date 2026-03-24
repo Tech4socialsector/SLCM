@@ -338,6 +338,7 @@ doc_events = {
         "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
     },
     "Applicant": {
+        "on_update": "slcm.admission.api.profile.sync_applicant_to_user",
         "on_submit": "slcm.admission.events.on_applicant_submit",
         "on_cancel": "slcm.admission.events.on_applicant_cancel"
     },
