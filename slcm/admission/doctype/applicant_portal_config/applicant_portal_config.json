@@ -49,6 +49,7 @@
   "footer_address",
   "footer_phone",
   "footer_email",
+  "powerd_by",
   "social_links",
   "value_cards",
   "portal_mission",
@@ -367,6 +368,7 @@
   {
    "fieldname": "hero_cta2_label",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Hero secondary CTA label"
   },
   {
@@ -393,6 +395,7 @@
   {
    "fieldname": "value_cards",
    "fieldtype": "Table",
+   "hidden": 1,
    "label": "Dashboard value cards",
    "options": "Portal Value Card"
   },
@@ -421,11 +424,16 @@
    "fieldtype": "Table",
    "label": "Stage-wise next steps",
    "options": "Admission Stage Next Step"
+  },
+  {
+   "fieldname": "powerd_by",
+   "fieldtype": "Data",
+   "label": "Powerd By"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-03-18 09:52:58.536535",
+ "modified": "2026-03-23 21:01:07.628899",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",
