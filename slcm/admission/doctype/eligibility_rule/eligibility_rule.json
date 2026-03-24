@@ -22,8 +22,8 @@
   "allowed_degrees",
   "effective_from",
   "effective_to",
-  "description",
-  "is_active"
+  "is_active",
+  "ineligible_message"
  ],
  "fields": [
   {
@@ -87,12 +87,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Description",
-   "options": "Admin explanation"
-  },
-  {
    "fieldname": "allowed_degrees",
    "fieldtype": "Table",
    "label": "Allowed degrees",
@@ -139,12 +133,17 @@
   {
    "fieldname": "column_break_kdop",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ineligible_message",
+   "fieldtype": "Small Text",
+   "label": "Ineligible Message "
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 10:20:13.710889",
+ "modified": "2026-03-23 20:45:53.562556",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",
