@@ -475,9 +475,9 @@
           <!-- ELIGIBLE TAB -->
           <div id="tab-eligible" class="tab-content">
             {% if eligible_scholarships %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="eligible-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {% for sch in eligible_scholarships %}
-              <div
+              <div class="eligible-card hover-card bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col shadow-sm"
                 class="hover-card bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col shadow-sm">
                 <div class="p-5 flex flex-col flex-1">
                   <div class="flex justify-between items-start mb-1">
@@ -543,6 +543,19 @@
               </div>
               {% endfor %}
             </div>
+
+            <!-- Pagination Controls -->
+            <div id="eligible-pagination" class="flex items-center justify-between mt-5">
+              <button id="elig-prev" onclick="eligPage(-1)"
+                class="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50">
+                <span class="material-symbols-outlined text-base">chevron_left</span> Prev
+              </button>
+              <span id="elig-page-info" class="text-xs font-bold text-slate-500"></span>
+              <button id="elig-next" onclick="eligPage(1)"
+                class="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50">
+                Next <span class="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
             {% else %}
             <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
               <span class="material-symbols-outlined text-3xl text-slate-200 mb-3">sentiment_neutral</span>
@@ -554,10 +567,9 @@
           <!-- APPLIED TAB -->
           <div id="tab-applied" class="tab-content hidden">
             {% if applied_scholarships %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="applied-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {% for app in applied_scholarships %}
-              <div
-                class="hover-card bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col shadow-sm">
+              <div class="applied-card hover-card bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col shadow-sm">
                 <div class="p-5 flex flex-col flex-1">
                   <div class="flex justify-between items-start mb-1">
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ app.scheme_name }}</h4>
@@ -646,10 +658,9 @@
           <!-- APPROVED TAB -->
           <div id="tab-approved" class="tab-content hidden">
             {% if approved_scholarships %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="approved-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {% for app in approved_scholarships %}
-              <div
-                class="hover-card bg-white rounded-2xl border border-emerald-100 overflow-hidden flex flex-col shadow-sm bg-gradient-to-tr from-emerald-50/20 to-transparent">
+              <div class="approved-card hover-card bg-white rounded-2xl border border-emerald-100 overflow-hidden flex flex-col shadow-sm bg-gradient-to-tr from-emerald-50/20 to-transparent">
                 <div class="p-5 flex flex-col flex-1">
                   <div class="flex justify-between items-start mb-1">
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ app.scheme_name }}</h4>
@@ -710,10 +721,9 @@
           <!-- REJECTED TAB -->
           <div id="tab-rejected" class="tab-content hidden">
             {% if rejected_scholarships %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="rejected-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {% for app in rejected_scholarships %}
-              <div
-                class="hover-card bg-white rounded-2xl border border-red-50 overflow-hidden flex flex-col shadow-sm opacity-90">
+              <div class="rejected-card hover-card bg-white rounded-2xl border border-red-50 overflow-hidden flex flex-col shadow-sm opacity-90">
                 <div class="p-5 flex flex-col flex-1">
                   <div class="flex justify-between items-start mb-1">
                     <h4 class="text-sm font-extrabold text-slate-900 leading-snug">{{ app.scheme_name }}</h4>
@@ -802,7 +812,107 @@
     });
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
     document.getElementById('tab-' + tabId).classList.remove('hidden');
+    
+    // Trigger render for the active tab to ensure correct pagination view
+    if (tabId === 'eligible') renderEligPage();
+    if (tabId === 'applied') renderAppliedPage();
+    if (tabId === 'approved') renderApprovedPage();
+    if (tabId === 'rejected') renderRejectedPage();
   }
+
+  // ── Pagination Logic ────────────────────────────────────────────
+  const PER_PAGE = 10;
+  
+  // Eligible
+  let eligCurrentPage = 1;
+  function renderEligPage() {
+    const cards = document.querySelectorAll('.eligible-card');
+    const total = cards.length;
+    if (total === 0) return;
+    const totalPages = Math.ceil(total / PER_PAGE);
+    const start = (eligCurrentPage - 1) * PER_PAGE;
+    const end = start + PER_PAGE;
+    cards.forEach((card, i) => { card.style.display = (i >= start && i < end) ? '' : 'none'; });
+    document.getElementById('elig-page-info').textContent = `Page ${eligCurrentPage} of ${totalPages}`;
+    document.getElementById('elig-prev').disabled = eligCurrentPage === 1;
+    document.getElementById('elig-next').disabled = eligCurrentPage === totalPages;
+    document.getElementById('eligible-pagination').style.display = totalPages <= 1 ? 'none' : 'flex';
+  }
+  function eligPage(dir) {
+    const totalPages = Math.ceil(document.querySelectorAll('.eligible-card').length / PER_PAGE);
+    eligCurrentPage = Math.max(1, Math.min(totalPages, eligCurrentPage + dir));
+    renderEligPage();
+  }
+
+  // Applied
+  let appliedCurrentPage = 1;
+  function renderAppliedPage() {
+    const cards = document.querySelectorAll('.applied-card');
+    const total = cards.length;
+    if (total === 0) return;
+    const totalPages = Math.ceil(total / PER_PAGE);
+    const start = (appliedCurrentPage - 1) * PER_PAGE;
+    const end = start + PER_PAGE;
+    cards.forEach((card, i) => { card.style.display = (i >= start && i < end) ? '' : 'none'; });
+    document.getElementById('applied-page-info').textContent = `Page ${appliedCurrentPage} of ${totalPages}`;
+    document.getElementById('applied-prev').disabled = appliedCurrentPage === 1;
+    document.getElementById('applied-next').disabled = appliedCurrentPage === totalPages;
+    document.getElementById('applied-pagination').style.display = totalPages <= 1 ? 'none' : 'flex';
+  }
+  function appliedPage(dir) {
+    const totalPages = Math.ceil(document.querySelectorAll('.applied-card').length / PER_PAGE);
+    appliedCurrentPage = Math.max(1, Math.min(totalPages, appliedCurrentPage + dir));
+    renderAppliedPage();
+  }
+
+  // Approved
+  let approvedCurrentPage = 1;
+  function renderApprovedPage() {
+    const cards = document.querySelectorAll('.approved-card');
+    const total = cards.length;
+    if (total === 0) return;
+    const totalPages = Math.ceil(total / PER_PAGE);
+    const start = (approvedCurrentPage - 1) * PER_PAGE;
+    const end = start + PER_PAGE;
+    cards.forEach((card, i) => { card.style.display = (i >= start && i < end) ? '' : 'none'; });
+    document.getElementById('approved-page-info').textContent = `Page ${approvedCurrentPage} of ${totalPages}`;
+    document.getElementById('approved-prev').disabled = approvedCurrentPage === 1;
+    document.getElementById('approved-next').disabled = approvedCurrentPage === totalPages;
+    document.getElementById('approved-pagination').style.display = totalPages <= 1 ? 'none' : 'flex';
+  }
+  function approvedPage(dir) {
+    const totalPages = Math.ceil(document.querySelectorAll('.approved-card').length / PER_PAGE);
+    approvedCurrentPage = Math.max(1, Math.min(totalPages, approvedCurrentPage + dir));
+    renderApprovedPage();
+  }
+
+  // Rejected
+  let rejectedCurrentPage = 1;
+  function renderRejectedPage() {
+    const cards = document.querySelectorAll('.rejected-card');
+    const total = cards.length;
+    if (total === 0) return;
+    const totalPages = Math.ceil(total / PER_PAGE);
+    const start = (rejectedCurrentPage - 1) * PER_PAGE;
+    const end = start + PER_PAGE;
+    cards.forEach((card, i) => { card.style.display = (i >= start && i < end) ? '' : 'none'; });
+    document.getElementById('rejected-page-info').textContent = `Page ${rejectedCurrentPage} of ${totalPages}`;
+    document.getElementById('rejected-prev').disabled = rejectedCurrentPage === 1;
+    document.getElementById('rejected-next').disabled = rejectedCurrentPage === totalPages;
+    document.getElementById('rejected-pagination').style.display = totalPages <= 1 ? 'none' : 'flex';
+  }
+  function rejectedPage(dir) {
+    const totalPages = Math.ceil(document.querySelectorAll('.rejected-card').length / PER_PAGE);
+    rejectedCurrentPage = Math.max(1, Math.min(totalPages, rejectedCurrentPage + dir));
+    renderRejectedPage();
+  }
+
+  // Run initial renders
+  renderEligPage();
+  renderAppliedPage();
+  renderApprovedPage();
+  renderRejectedPage();
+
 
   const schemeData = {
     {% for sch in eligible_scholarships + rejected_scholarships + applied_scholarships + approved_scholarships %}

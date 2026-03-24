@@ -113,8 +113,9 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
         filters={
             "admission_cycle": cycle,
             "campus": campus,
+            "is_active": 1
         },
-        fields=["scholarship_scheme", "program", "category"]
+        fields=["scholarship_scheme", "program", "program_level", "category"]
     )
     
     if not mappings:
@@ -123,16 +124,22 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     # Get applicant categories for filtering
     from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
     applicant_categories = get_applicant_categories(applicant_id)
+    
+    # Get applicant program level
+    applicant_program_level = frappe.db.get_value("Applicant", applicant_id, "program_level")
 
     applicable_schemes = []
     for m in mappings:
         # Check program match
         program_match = not m.program or m.program == program
         
+        # Check program level match
+        level_match = not m.program_level or m.program_level == applicant_program_level
+        
         # Check category match (if mapping has category, student must have it in their multi-category list)
         category_match = not m.category or m.category in applicant_categories
         
-        if program_match and category_match:
+        if program_match and level_match and category_match:
             applicable_schemes.append(m.scholarship_scheme)
 
     if not applicable_schemes:
