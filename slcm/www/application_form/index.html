@@ -2621,7 +2621,7 @@
                                     placeholder="e.g. CBSE, State Board"><span class="field-error"
                                     id="err_class_xii_board"></span></div>
                             <div class="fg">
-                                <label>Percentage/CGPA obtained (Class XII/Equivalent) <span
+                                <label>Percentage(Class XII/Equivalent) <span
                                         class="req">*</span></label>
                                 <input type="text" class="fc numeric-decimal" name="class_xii_percentage"
                                     id="class_xii_percentage" inputmode="decimal" placeholder="e.g. 75.00" min="0"
@@ -2631,10 +2631,20 @@
                                     XII/Equivalent) must be between 35 and
                                     100</span>
                             </div>
-                            <div class="fg">
+                            <!-- <div class="fg">
                                 <label>If CGPA, maximum CGPA (Class XII/Equivalent)</label>
                                 <input type="text" class="fc numeric-decimal" name="class_xii_cgpa" id="class_xii_cgpa"
                                     placeholder="Max CGPA" inputmode="decimal" onblur="collectFormData()">
+                            </div> -->
+                            <div class="fg">
+                                <label>XII group <span class="req">*</span></label>
+                                <select class="fc" name="hsc_group" id="hsc_group" onchange="collectFormData()">
+                                    <option value="">Select XII Group</option>
+                                    {% for g in hsc_groups %}
+                                    <option value="{{ g.name }}">{{ g.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="field-error" id="err_hsc_group"></span>
                             </div>
                             <div class="fg">
                                 <label>Class XII marksheet/Equivalent documents to be uploaded (Max 5MB — supported
@@ -2659,16 +2669,7 @@
                                 </div>
                                 <span class="field-error" id="err_class_xii_marksheet"></span>
                             </div>
-                            <div class="fg">
-                                <label>XII group <span class="req">*</span></label>
-                                <select class="fc" name="hsc_group" id="hsc_group" onchange="collectFormData()">
-                                    <option value="">Select XII Group</option>
-                                    {% for g in hsc_groups %}
-                                    <option value="{{ g.name }}">{{ g.name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <span class="field-error" id="err_hsc_group"></span>
-                            </div>
+                            
 
                         </div>
 
@@ -4549,13 +4550,13 @@
                 showToast('Add at least one UG degree.', 'error');
                 v = false;
             }
-            ugRows.forEach((row, idx) => {
-                if (!(row.ug_program && String(row.ug_program).trim())) { showToast(`Row ${idx + 1}: Name of degree (UG) is required.`, 'error'); v = false; }
-                if (!(row.college && String(row.college).trim())) { showToast(`Row ${idx + 1}: College / University is required.`, 'error'); v = false; }
-                if (!(row.year_of_completion && String(row.year_of_completion).trim())) { showToast(`Row ${idx + 1}: Year of completion is required.`, 'error'); v = false; }
-                if (row.ug_cgpa === undefined || row.ug_cgpa === null || String(row.ug_cgpa).trim() === '') { showToast(`Row ${idx + 1}: CGPA obtained is required.`, 'error'); v = false; }
-                if (!(row.degree_certificate && String(row.degree_certificate).trim())) { showToast(`Row ${idx + 1}: UG degree certificate is required.`, 'error'); v = false; }
-                if (!(row.marksheets && String(row.marksheets).trim())) { showToast(`Row ${idx + 1}: Transcripts / Marksheets is required.`, 'error'); v = false; }
+            ugRows.forEach((item, idx) => {
+                if (!(item.ug_program && String(item.ug_program).trim())) { showToast(`Row ${idx + 1}: Name of degree (UG) is required.`, 'error'); v = false; }
+                if (!(item.college && String(item.college).trim())) { showToast(`Row ${idx + 1}: College / University is required.`, 'error'); v = false; }
+                if (!(item.year_of_completion && String(item.year_of_completion).trim())) { showToast(`Row ${idx + 1}: Year of completion is required.`, 'error'); v = false; }
+                if (item.ug_cgpa === undefined || item.ug_cgpa === null || String(item.ug_cgpa).trim() === '') { showToast(`Row ${idx + 1}: CGPA obtained is required.`, 'error'); v = false; }
+                if (!(item.degree_certificate && String(item.degree_certificate).trim())) { showToast(`Row ${idx + 1}: UG degree certificate is required.`, 'error'); v = false; }
+                if (!(item.marksheets && String(item.marksheets).trim())) { showToast(`Row ${idx + 1}: Transcripts / Marksheets is required.`, 'error'); v = false; }
             });
         }
         if (pgLevel === 'Research Course') {
@@ -4565,13 +4566,13 @@
                 showToast('Add at least one PG degree for Research Course.', 'error');
                 v = false;
             }
-            pgRows.forEach((row, idx) => {
-                if (!(row.pg_program && String(row.pg_program).trim())) { showToast(`PG Row ${idx + 1}: Name of degree (PG) is required.`, 'error'); v = false; }
-                if (!(row.collegeuniversity && String(row.collegeuniversity).trim())) { showToast(`PG Row ${idx + 1}: College / University is required.`, 'error'); v = false; }
-                if (!(row.year_of_completion && String(row.year_of_completion).trim())) { showToast(`PG Row ${idx + 1}: Year of completion is required.`, 'error'); v = false; }
-                if (row.pg_cgpa === undefined || row.pg_cgpa === null || String(row.pg_cgpa).trim() === '') { showToast(`PG Row ${idx + 1}: CGPA obtained is required.`, 'error'); v = false; }
-                if (!(row.pg_degree_certificatebonafide_certificate_to_be_uploaded && String(row.pg_degree_certificatebonafide_certificate_to_be_uploaded).trim())) { showToast(`PG Row ${idx + 1}: PG degree certificate is required.`, 'error'); v = false; }
-                if (!(row.transcriptsmarksheets_to_be_uploaded && String(row.transcriptsmarksheets_to_be_uploaded).trim())) { showToast(`PG Row ${idx + 1}: Transcripts / Marksheets is required.`, 'error'); v = false; }
+            pgRows.forEach((item, idx) => {
+                if (!(item.pg_program && String(item.pg_program).trim())) { showToast(`PG Row ${idx + 1}: Name of degree (PG) is required.`, 'error'); v = false; }
+                if (!(item.collegeuniversity && String(item.collegeuniversity).trim())) { showToast(`PG Row ${idx + 1}: College / University is required.`, 'error'); v = false; }
+                if (!(item.year_of_completion && String(item.year_of_completion).trim())) { showToast(`PG Row ${idx + 1}: Year of completion is required.`, 'error'); v = false; }
+                if (item.pg_cgpa === undefined || item.pg_cgpa === null || String(item.pg_cgpa).trim() === '') { showToast(`PG Row ${idx + 1}: CGPA obtained is required.`, 'error'); v = false; }
+                if (!(item.pg_degree_certificatebonafide_certificate_to_be_uploaded && String(item.pg_degree_certificatebonafide_certificate_to_be_uploaded).trim())) { showToast(`PG Row ${idx + 1}: PG degree certificate is required.`, 'error'); v = false; }
+                if (!(item.transcriptsmarksheets_to_be_uploaded && String(item.transcriptsmarksheets_to_be_uploaded).trim())) { showToast(`PG Row ${idx + 1}: Transcripts / Marksheets is required.`, 'error'); v = false; }
             });
             var phdProposalNameEl = document.getElementById('fp_phd_proposal_name');
             var uploadInProgress = phdProposalNameEl && phdProposalNameEl.textContent && phdProposalNameEl.textContent.indexOf('Uploading') >= 0;
@@ -4978,8 +4979,8 @@
     function downloadDegreeFileByRow(type, rowIdx, field) {
         const key = type === 'ug' ? 'ug_degree_details' : 'pg_degree_details';
         const rows = formData[key];
-        const row = (rows && rows[rowIdx]) ? rows[rowIdx] : null;
-        const url = row ? row[field] : '';
+        const targetRow = (rows && rows[rowIdx]) ? rows[rowIdx] : null;
+        const url = targetRow ? targetRow[field] : '';
         if (!url || !String(url).trim()) { showToast('No file to download.', 'info'); return; }
         const fullUrl = url.startsWith('http') ? url : (window.location.origin + (url.startsWith('/') ? '' : '/') + url);
         const pathPart = fullUrl.split('?')[0];
@@ -5047,7 +5048,7 @@
             return;
         }
 
-        details.forEach((row, idx) => {
+        details.forEach((item, idx) => {
             const cellId_cert = `ug_cert_${idx}`;
             const cellId_ms = `ug_ms_${idx}`;
             const bg = idx % 2 === 0 ? 'var(--slate-50)' : '#fff';
@@ -5061,15 +5062,15 @@
                 </td>
                 <td style="padding-top:1rem;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">Name of Degree (UG) <span class="req">*</span></label>
-                    ${buildProgramSelect('ug', idx, row.ug_program || '', 'Undergraduate')}
+                    ${buildProgramSelect('ug', idx, item.ug_program || '', 'Undergraduate')}
                 </td>
                 <td style="padding-top:1rem;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">Year of Completion (UG Degree) <span class="req">*</span></label>
-                    <input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(row.year_of_completion || '')}" onchange="updateDegreeRow('ug',${idx},'year_of_completion',this.value)">
+                    <input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(item.year_of_completion || '')}" onchange="updateDegreeRow('ug',${idx},'year_of_completion',this.value)">
                 </td>
                 <td style="padding-top:1rem;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">College/University (UG Degree) <span class="req">*</span></label>
-                    <input type="text" class="fc" placeholder="College / University" value="${escapeAttr(row.college || '')}" onchange="updateDegreeRow('ug',${idx},'college',this.value)">
+                    <input type="text" class="fc" placeholder="College / University" value="${escapeAttr(item.college || '')}" onchange="updateDegreeRow('ug',${idx},'college',this.value)">
                 </td>`;
 
             const row2 = tbody.insertRow();
@@ -5078,16 +5079,16 @@
             row2.style.borderBottom = '2px solid var(--slate-200)';
             row2.innerHTML = `
                 <td style="padding-bottom:1rem;">
-                    <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">Percentage/CGPA obtained (UG Degree) <span class="req">*</span></label>
-                    <input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr((row.ug_cgpa != null && row.ug_cgpa !== '' && row.ug_cgpa !== 0 && row.ug_cgpa !== '0') ? row.ug_cgpa : '')}" oninput="validateUGCGPA(this,${idx})" onchange="updateDegreeRow('ug',${idx},'ug_cgpa',this.value)">
+                    <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">CGPA obtained (UG Degree) <span class="req">*</span></label>
+                    <input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr((item.ug_cgpa != null && item.ug_cgpa !== '' && item.ug_cgpa !== 0 && item.ug_cgpa !== '0') ? item.ug_cgpa : '')}" oninput="validateUGCGPA(this,${idx})" onchange="updateDegreeRow('ug',${idx},'ug_cgpa',this.value)">
                 </td>
                 <td style="padding-bottom:1rem;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">UG Degree Certificate/Bonafide Certificate <span class="req">*</span></label>
-                    <div class="td-attach">${buildAttachCell(cellId_cert, 'ug', idx, 'degree_certificate', row.degree_certificate || '')}</div>
+                    <div class="td-attach">${buildAttachCell(cellId_cert, 'ug', idx, 'degree_certificate', item.degree_certificate || '')}</div>
                 </td>
                 <td style="padding-bottom:1rem; position:relative;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">Transcripts/Marksheets <span class="req">*</span></label>
-                    <div class="td-attach">${buildAttachCell(cellId_ms, 'ug', idx, 'marksheets', row.marksheets || '')}</div>
+                    <div class="td-attach">${buildAttachCell(cellId_ms, 'ug', idx, 'marksheets', item.marksheets || '')}</div>
                     <button type="button" class="btn-del-row" onclick="removeRow('ug',this)" title="Remove Record" style="position:absolute; bottom:1rem; right:0.5rem; padding:2px; height:24px; width:24px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
@@ -5107,7 +5108,7 @@
             return;
         }
 
-        details.forEach((row, idx) => {
+        details.forEach((item, idx) => {
             const cellId_cert = `pg_cert_${idx}`;
             const cellId_ms = `pg_ms_${idx}`;
             const bg = idx % 2 === 0 ? 'var(--slate-50)' : '#fff';
@@ -5121,15 +5122,15 @@
                 </td>
                 <td style="padding-top:1rem;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">Name of Degree (PG) <span class="req">*</span></label>
-                    ${buildProgramSelect('pg', idx, row.pg_program || '', 'Postgraduate')}
+                    ${buildProgramSelect('pg', idx, item.pg_program || '', 'Postgraduate')}
                 </td>
                 <td style="padding-top:1rem;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">Year of Completion (PG Degree) <span class="req">*</span></label>
-                    <input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(row.year_of_completion || '')}" onchange="updateDegreeRow('pg',${idx},'year_of_completion',this.value)">
+                    <input type="text" class="fc numeric-integer" placeholder="e.g. 2023" maxlength="4" value="${escapeAttr(item.year_of_completion || '')}" onchange="updateDegreeRow('pg',${idx},'year_of_completion',this.value)">
                 </td>
                 <td style="padding-top:1rem;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">College/University (PG Degree) <span class="req">*</span></label>
-                    <input type="text" class="fc" placeholder="College / University" value="${escapeAttr(row.collegeuniversity || '')}" onchange="updateDegreeRow('pg',${idx},'collegeuniversity',this.value)">
+                    <input type="text" class="fc" placeholder="College / University" value="${escapeAttr(item.collegeuniversity || '')}" onchange="updateDegreeRow('pg',${idx},'collegeuniversity',this.value)">
                 </td>`;
 
             const row2 = tbody.insertRow();
@@ -5138,16 +5139,16 @@
             row2.style.borderBottom = '2px solid var(--slate-200)';
             row2.innerHTML = `
                 <td style="padding-bottom:1rem;">
-                    <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">Percentage/CGPA obtained (PG Degree) <span class="req">*</span></label>
-                    <input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr((row.pg_cgpa != null && row.pg_cgpa !== '' && row.pg_cgpa !== 0 && row.pg_cgpa !== '0') ? row.pg_cgpa : '')}" oninput="validatePGCGPA(this,${idx})" onchange="updateDegreeRow('pg',${idx},'pg_cgpa',this.value)">
+                    <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">CGPA obtained (PG Degree) <span class="req">*</span></label>
+                    <input type="text" class="fc numeric-decimal" placeholder="0.00" inputmode="decimal" value="${escapeAttr((item.pg_cgpa != null && item.pg_cgpa !== '' && item.pg_cgpa !== 0 && item.pg_cgpa !== '0') ? item.pg_cgpa : '')}" oninput="validatePGCGPA(this,${idx})" onchange="updateDegreeRow('pg',${idx},'pg_cgpa',this.value)">
                 </td>
                 <td style="padding-bottom:1rem;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">PG Degree Certificate/Bonafide Certificate <span class="req">*</span></label>
-                    <div class="td-attach">${buildAttachCell(cellId_cert, 'pg', idx, 'pg_degree_certificatebonafide_certificate_to_be_uploaded', row.pg_degree_certificatebonafide_certificate_to_be_uploaded || '')}</div>
+                    <div class="td-attach">${buildAttachCell(cellId_cert, 'pg', idx, 'pg_degree_certificatebonafide_certificate_to_be_uploaded', item.pg_degree_certificatebonafide_certificate_to_be_uploaded || '')}</div>
                 </td>
                 <td style="padding-bottom:1rem; position:relative;">
                     <label class="lp-label" style="font-size:10px;margin-bottom:4px;display:block;">Transcripts/Marksheets <span class="req">*</span></label>
-                    <div class="td-attach">${buildAttachCell(cellId_ms, 'pg', idx, 'transcriptsmarksheets_to_be_uploaded', row.transcriptsmarksheets_to_be_uploaded || '')}</div>
+                    <div class="td-attach">${buildAttachCell(cellId_ms, 'pg', idx, 'transcriptsmarksheets_to_be_uploaded', item.transcriptsmarksheets_to_be_uploaded || '')}</div>
                     <button type="button" class="btn-del-row" onclick="removeRow('pg',this)" title="Remove Record" style="position:absolute; bottom:1rem; right:0.5rem; padding:2px; height:24px; width:24px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
@@ -5164,12 +5165,12 @@
     }
 
     function removeRow(type, btn) {
-        const row = btn.closest('tr');
-        const tbody = row.parentElement;
+        const trElement = btn.closest('tr');
+        const tbody = trElement.parentElement;
         let rowIdx;
 
         const allRows = Array.from(tbody.rows);
-        const indexInDom = allRows.indexOf(row);
+        const indexInDom = allRows.indexOf(trElement);
         rowIdx = Math.floor(indexInDom / 2);
 
         if (type === 'ug') {
@@ -6332,6 +6333,39 @@
     // ═══════════════════════════════════════════════════════
     //  FLATPICKR DATE PICKERS
     // ═══════════════════════════════════════════════════════
+    // Clear error highlights when user starts typing/correcting a field
+    document.addEventListener('input', (e) => {
+        const target = e.target;
+        if (!target) return;
+        target.classList.remove('is-error');
+        target.closest('.phone-wrap')?.classList.remove('is-error');
+        target.closest('.fg')?.classList.remove('is-error');
+        target.closest('.file-zone')?.classList.remove('is-error');
+        target.closest('.id-proof-upload-row')?.classList.remove('is-error');
+        if (target.id === 'candidatePhoto') document.getElementById('photoUploadArea')?.classList.remove('is-error');
+        
+        const fieldName = target.name || target.id;
+        if (fieldName) {
+            const baseFieldName = fieldName.endsWith('_num') ? fieldName.replace('_num', '') : fieldName;
+            const errEl = document.getElementById('err_' + baseFieldName) || document.getElementById('err_' + fieldName);
+            if (errEl) errEl.classList.remove('show');
+        }
+    });
+    document.addEventListener('change', (e) => {
+        const target = e.target;
+        if (!target) return;
+        if (target.tagName === 'SELECT' || target.type === 'file') {
+            target.classList.remove('is-error');
+            target.closest('.fg')?.classList.remove('is-error');
+            target.closest('.file-zone')?.classList.remove('is-error');
+            const fieldName = target.name || target.id;
+            if (fieldName) {
+                const errEl = document.getElementById('err_' + fieldName);
+                if (errEl) errEl.classList.remove('show');
+            }
+        }
+    });
+
     function initFlatpickr() {
         const dobInput = document.getElementById('date_of_birth');
         if (!dobInput) return;

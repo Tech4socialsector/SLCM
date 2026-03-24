@@ -618,7 +618,7 @@ class Applicant(Document):
         <p>This is an auto-generated email. Please do not reply directly.</p>
         <p>For queries, contact the admissions helpdesk.</p>
         <p style="margin-top:10px;font-size:11px;color:#b4b2a9;">
-            Application ID: {self.applicant_id} &nbsp;|&nbsp;
+            Application ID: {self.name} &nbsp;|&nbsp;
             Generated: {frappe.utils.now_datetime().strftime('%d %b %Y, %I:%M %p')}
         </p>
         </div>
@@ -629,7 +629,7 @@ class Applicant(Document):
 
         frappe.sendmail(
             recipients=[self.email],
-            subject=f"Application Submitted — {self.applicant_id} | {self.program or 'Admissions'}",
+            subject=f"Application Submitted — {self.name} | {self.program or 'Admissions'}",
             message=html_body,
             attachments=attachments,
             now=True
