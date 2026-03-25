@@ -1375,6 +1375,11 @@ function _showSuccessModal(title, message, nextUrl) {
 function runSubmitFlow() {
 	var wf = frappe.web_form;
 
+	// ── Phone validation ──────────────────────────────────────────
+	if (typeof window._validate_phone_fields === 'function' && !window._validate_phone_fields()) {
+		return;
+	}
+
 	// ── 1. Save with mandatory validation ──────────────────────────
 	_showSubmitOverlay('Saving and validating\u2026');
 	handleSaveDraft({ ignore_mandatory: false, silent: true })
@@ -1637,12 +1642,12 @@ function setupCandidatePhotoPreview() {
 
 function _validateAttachFile(file, fieldtype) {
 	if (!file) return true;
-	var ext = (file.name || '').split('.').pop().toLowerCase();
 
-	// Attach Image: only images
-	var allowed = (fieldtype === 'Attach Image')
-		? ['png', 'jpeg', 'jpg']
-		: _ATTACH_ALLOWED;
+	// Skip validation for 'Attach Image' as per user request
+	if (fieldtype === 'Attach Image') return true;
+
+	var ext = (file.name || '').split('.').pop().toLowerCase();
+	var allowed = _ATTACH_ALLOWED;
 
 	if (allowed.indexOf(ext) === -1) {
 		_showToast(
@@ -1724,6 +1729,181 @@ function setupAttachFieldValidation() {
 			clearInterval(_upTimer);
 		}
 	}, 200);
+}
+
+function setupNumericFieldRestriction() {
+	// Select common numeric field types used in SLCM (Int, Float, Currency, Percent)
+	var NUMERIC_TYPES = ['Int', 'Float', 'Currency', 'Percent'];
+
+	document.body.addEventListener('keypress', function (e) {
+		var input = e.target;
+		if (!input || input.tagName !== 'INPUT' && input.tagName !== 'SELECT') return;
+
+		var ctrl = input.closest('[data-fieldtype]');
+		var ft = ctrl ? ctrl.getAttribute('data-fieldtype') : null;
+
+		if (!ft || NUMERIC_TYPES.indexOf(ft) === -1) return;
+
+		// Key values for digits: 48 to 57
+		var charCode = (e.which) ? e.which : e.keyCode;
+		
+		// Allow: decimal point (46) for Float/Currency/Percent, 
+		// but NOT for Int.
+		if (charCode === 46) {
+			if (ft === 'Int' || input.value.indexOf('.') !== -1) {
+				e.preventDefault();
+				return false;
+			}
+			return true;
+		}
+
+		// Allow digits only (0-9: 48-57)
+		if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+			e.preventDefault();
+			return false;
+		}
+		return true;
+	});
+
+	// Handle pasted non-numeric values
+	document.body.addEventListener('input', function (e) {
+		var input = e.target;
+		if (!input || input.tagName !== 'INPUT') return;
+
+		var ctrl = input.closest('[data-fieldtype]');
+		var ft = ctrl ? ctrl.getAttribute('data-fieldtype') : null;
+
+		if (!ft || NUMERIC_TYPES.indexOf(ft) === -1) return;
+
+		var regex = (ft === 'Int') ? /[^0-9]/g : /[^0-9.]/g;
+		var val = input.value;
+		if (regex.test(val)) {
+			input.value = val.replace(regex, '');
+		}
+	});
+}
+
+function setupPhoneValidation() {
+	var PHONE_FIELDS = ['mobile_number', 'alternate_contact', 'father_mobile', 'mother_mobile', 'guardian_mobile'];
+	
+	// Map common ISD codes to their expected lengths
+	var ISD_LENGTHS = {
+		'+91': [10],      // India
+		'+1':  [10],      // USA/Canada
+		'+44': [10],      // UK
+		'+971': [9],      // UAE
+		'+65': [8],       // Singapore
+		'+61': [9, 10],   // Australia
+		'+966': [9],      // Saudi Arabia
+	};
+
+	// ── Real-time Maxlength Restriction ──────────────────────────
+	document.body.addEventListener('input', function (e) {
+		var input = e.target;
+		if (!input || input.tagName !== 'INPUT') return;
+
+		// Find the phone control container
+		var ctrl = input.closest('[data-fieldtype="Phone"]') || input.closest('.frappe-control[data-fieldtype="Phone"]');
+		if (!ctrl) return;
+
+		// Get ISD from the Frappe Phone control's country span
+		var isdEl = ctrl.querySelector('.country') || ctrl.querySelector('.selected-phone .country');
+		var isdRaw = isdEl ? isdEl.textContent.trim().replace(/[^0-9+]/g, '') : '';
+		if (!isdRaw) return;
+
+		// Normalize ISD (handle both '91' and '+91')
+		var isd = isdRaw.startsWith('+') ? isdRaw : '+' + isdRaw;
+		var lengths = ISD_LENGTHS[isd] || ISD_LENGTHS[isdRaw];
+
+		if (lengths) {
+			var limit = Math.max.apply(null, lengths);
+			input.setAttribute('maxlength', limit);
+			
+			// Force clean-up of extra characters (especially on paste/prefill)
+			if (input.value.length > limit) {
+				input.value = input.value.slice(0, limit);
+			}
+		} else {
+			input.setAttribute('maxlength', 15); // Generic limit
+		}
+	}, true);
+
+	// Sync when clicking or focusing (handles country picker selection)
+	var syncPhone = function (e) {
+		var input = e.target.closest('[data-fieldtype="Phone"] input');
+		if (input) {
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+	};
+	['click', 'focusin', 'keyup', 'change'].forEach(function(ev) {
+		document.body.addEventListener(ev, syncPhone, true);
+	});
+
+	// Immediate feedback on blur / focusout
+	document.body.addEventListener('focusout', function (e) {
+		var input = e.target;
+		if (!input || input.tagName !== 'INPUT' || !input.closest('[data-fieldtype="Phone"]')) return;
+
+		var ctrl = input.closest('[data-fieldtype="Phone"]');
+		var isdEl = ctrl.querySelector('.country') || ctrl.querySelector('.selected-phone .country');
+		var isdRaw = isdEl ? isdEl.textContent.trim().replace(/[^0-9+]/g, '') : '';
+		if (!isdRaw) return;
+
+		var isd = isdRaw.startsWith('+') ? isdRaw : '+' + isdRaw;
+		var expected = ISD_LENGTHS[isd] || ISD_LENGTHS[isdRaw];
+		var val = input.value.replace(/\D/g, '');
+
+		if (expected && val && expected.indexOf(val.length) === -1) {
+			var expectedStr = expected.join(' or ');
+			showToast('\u26a0 Invalid phone length for ' + isd + '. Must be ' + expectedStr + ' digits.', 'error');
+			
+			// Optional: truncate immediately
+			var limit = Math.max.apply(null, expected);
+			if (val.length > limit) input.value = val.slice(0, limit);
+		}
+	}, true);
+
+	window._validate_phone_fields = function () {
+		var wf = frappe.web_form;
+		var errors = [];
+
+		PHONE_FIELDS.forEach(function (fn) {
+			var field = wf.fields_dict[fn];
+			if (!field || field.df.hidden || field.df.read_only) return;
+
+			var val = wf.get_value(fn) || '';
+			if (!val) return; 
+
+			var parts = val.split('-');
+			var isd = parts[0] || '';
+			var num = parts[1] || '';
+
+			if (!num) {
+				errors.push((field.df.label || fn) + ': Missing number.');
+				return;
+			}
+
+			var numClean = num.replace(/\D/g, '');
+			var expected = ISD_LENGTHS[isd];
+
+			if (expected) {
+				if (expected.indexOf(numClean.length) === -1) {
+					var expectedStr = expected.join(' or ');
+					errors.push((field.df.label || fn) + ': Must be ' + expectedStr + ' digits for ' + isd + '.');
+				}
+			} else {
+				if (numClean.length < 7 || numClean.length > 15) {
+					errors.push((field.df.label || fn) + ': Invalid length (' + numClean.length + ').');
+				}
+			}
+		});
+
+		if (errors.length) {
+			showToast('\u26a0  ' + errors.join('\n'), 'error');
+			return false;
+		}
+		return true;
+	};
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -1814,7 +1994,9 @@ frappe.ready(function () {
 	setupSubmittedFormUX();
 	setupCandidatePhotoPreview();
 	setupAttachFieldValidation();
-
+	setupNumericFieldRestriction();
+	setupPhoneValidation();
+	
 	// Submit intercept (retry: web form may attach after this script's first frappe.ready)
 	interceptSubmit();
 	var _patchAttempts = 0;
