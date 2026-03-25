@@ -151,6 +151,21 @@ def get_offer_details(offer_name=None):
         "cancellation_status": cancellation[0].status if cancellation else ""
     }
 
+    # Calculate available scholarships
+    from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard
+    available_scholarships_count = 0
+    try:
+        available_scholarships = get_available_scholarships_for_dashboard(
+            applicant_id=target_applicant,
+            cycle=admission_cycle,
+            campus=applicant_dict.get("campus"),
+            program=applicant_dict.get("program"),
+            applicant_statuses=[applicant_dict.get("application_status")]
+        )
+        available_scholarships_count = len(available_scholarships)
+    except Exception:
+        pass
+
     return {
         "offer": offer_dict,
         "applicant": applicant_dict,
@@ -160,7 +175,8 @@ def get_offer_details(offer_name=None):
         "is_fee_paid": True if fee_paid else False,
         "online_payment_enabled": online_payment_enabled,
         "currency": frappe.defaults.get_global_default("currency") or "INR",
-        "cancellation": cancellation_info
+        "cancellation": cancellation_info,
+        "available_scholarships_count": available_scholarships_count
     }
 
 

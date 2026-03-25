@@ -257,10 +257,12 @@ class ScholarshipApplication(Document):
 		if not self.applicant_id:
 			return
 
-		# Check for Paid or Converted Fee Assignments
+		# Check for Paid or Converted Admission Fee Assignments
+		# Application Fee payment should not block scholarship applications.
 		paid_afa = frappe.db.exists("Applicant Fee Assignment", {
 			"applicant": self.applicant_id,
 			"admission_cycle": self.admission_cycle,
+			"fee_type": "Admission Fee",
 			"status": ["in", ["Paid", "Converted"]],
 			"docstatus": ["!=", 2]
 		})
