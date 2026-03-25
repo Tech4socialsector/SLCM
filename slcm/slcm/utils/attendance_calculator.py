@@ -38,6 +38,9 @@ def calculate_student_attendance(student, course_offering):
 	# Calculate office hours
 	office_hours_data = calculate_office_hours(student, course_offering)
 	
+	# Update Student Group Student (Office Hours)
+	update_office_hours_in_group(student, course_offering, office_hours_data['total_hours'])
+	
 	# Get condonation
 	condonation_data = get_approved_condonation(student, course_offering)
 
@@ -130,25 +133,46 @@ def calculate_student_attendance(student, course_offering):
 def calculate_sessions(course_offering):
 	"""
 	Calculate session statistics for a course offering.
-	Returns total hours of CONDUCTED sessions (for Denominator).
+	Returns total hours from Class Schedule (all scheduled classes).
 	"""
-	# We assume only 'Lecture' and 'Tutorial' count towards the mandatory denominator.
-	# Office Hours are usually supplementary.
-	sessions = frappe.db.sql("""
+	# Get total scheduled hours from Class Schedule
+	# This represents the denominator for attendance percentage
+	scheduled_hours = frappe.db.sql("""
+		SELECT 
+			COUNT(name) as total_schedules,
+			COALESCE(SUM(duration_hours), 0) as total_hours
+		FROM `tabClass Schedule`
+		WHERE course_offering = %s
+		AND docstatus < 2
+	""", course_offering, as_dict=True)
+	
+	# Get conducted sessions count from Attendance Session
+	# We still track conducted sessions for reference
+	conducted = frappe.db.sql("""
 		SELECT 
 			COUNT(name) as conducted_sessions,
-			COALESCE(SUM(duration_hours), 0) as total_hours,
-			COALESCE(SUM(CASE WHEN session_status = 'Conducted' THEN duration_hours ELSE 0 END), 0) as conducted_hours
+			COALESCE(SUM(duration_hours), 0) as conducted_hours
 		FROM `tabAttendance Session`
 		WHERE course_offering = %s
 		AND session_type IN ('Lecture', 'Tutorial')
 		AND session_status = 'Conducted'
 	""", course_offering, as_dict=True)
 	
-	if sessions:
-		return sessions[0]
+	result = {
+		'total_hours': 0,
+		'conducted_hours': 0,
+		'conducted_sessions': 0
+	}
 	
-	return {'total_hours': 0, 'conducted_hours': 0, 'conducted_sessions': 0}
+	if scheduled_hours and scheduled_hours[0]:
+		result['total_hours'] = scheduled_hours[0]['total_hours']
+	
+	if conducted and conducted[0]:
+		result['conducted_hours'] = conducted[0]['conducted_hours']
+		result['conducted_sessions'] = conducted[0]['conducted_sessions']
+	
+	return result
+
 
 
 def calculate_fa_mfa_hours(student, course_offering):
@@ -205,16 +229,32 @@ def calculate_office_hours(student, course_offering):
 	"""
 	Calculate office hours attendance for a student (from Student Attendance now).
 	"""
+	# Get Course Context for Fallback
+	course = None
+	academic_year = None
+	if course_offering:
+		offering = frappe.db.get_value("Course Offering", course_offering, ["course_title", "academic_year"], as_dict=True)
+		if offering:
+			course = offering.course_title
+			academic_year = offering.academic_year
+
 	office_hours = frappe.db.sql("""
 		SELECT 
 			COALESCE(SUM(hours_counted), 0) as total_hours
 		FROM `tabStudent Attendance`
 		WHERE student = %s
-		AND course_offer = %s
+		AND (
+			course_offer = %s
+			OR (
+				course_offer IS NULL 
+				AND course = %s 
+				AND academic_year = %s
+			)
+		)
 		AND session_type = 'Office Hour'
 		AND status IN ('Present', 'Late', 'Excused')
 		AND docstatus < 2
-	""", (student, course_offering), as_dict=True)
+	""", (student, course_offering, course, academic_year), as_dict=True)
 	
 	if office_hours:
 		return office_hours[0]
@@ -256,12 +296,21 @@ def get_or_create_summary(student, course_offering):
 		return frappe.get_doc("Attendance Summary", summary_name)
 	
 	# Create new summary
-	summary = frappe.get_doc({
-		"doctype": "Attendance Summary",
-		"student": student,
-		"course_offering": course_offering
-	})
-	summary.insert(ignore_permissions=True)
+	summary = frappe.new_doc("Attendance Summary")
+	summary.student = student
+	summary.course_offering = course_offering
+	
+	try:
+		summary.insert(ignore_permissions=True)
+	except frappe.DuplicateEntryError:
+		# Race condition: Record created concurrently
+		# Re-fetch using the deterministic name logic or filters
+		# Re-calculate name logic to find it
+		import hashlib
+		offering_hash = hashlib.md5(course_offering.encode("utf-8")).hexdigest()[:10]
+		name = f"ASU-{student}-{offering_hash}"
+		summary = frappe.get_doc("Attendance Summary", name)
+		
 	return summary
 
 
@@ -479,5 +528,46 @@ def get_student_group(student, course_offering):
 	except Exception:
 		pass
 
+
 	return None
+
+
+def update_office_hours_in_group(student, course_offering, total_hours):
+	"""
+	Update total_office_hours in Student Group Student doc for Office Hours Groups
+	"""
+	try:
+		# Get Course Context
+		offering = frappe.db.get_value("Course Offering", course_offering, ["course_title", "academic_year", "term_name"], as_dict=True)
+		if not offering:
+			return
+
+		# Find all Office Hours Groups for this course context
+		office_groups = frappe.get_all("Office Hours Group", 
+			filters={
+				"course": offering.course_title,
+				"academic_year": offering.academic_year,
+				"academic_term": offering.term_name,
+			},
+			pluck="name"
+		)
+		
+		if not office_groups:
+			return
+
+		# Update the child table rows
+		rows = frappe.get_all("Student Group Student",
+			filters={
+				"parent": ["in", office_groups],
+				"parenttype": "Office Hours Group",
+				"student": student
+			},
+			fields=["name"]
+		)
+		
+		for row in rows:
+			frappe.db.set_value("Student Group Student", row.name, "total_office_hours", total_hours)
+			
+	except Exception as e:
+		frappe.log_error(message=f"Failed to update office hours group for {student}: {str(e)}", title="Office Hours Update Error")
 

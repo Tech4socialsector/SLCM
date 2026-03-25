@@ -25,6 +25,39 @@ class AttendanceSession(Document):
 		self.update_student_attendance_status()
 		self.trigger_calculations()
 
+	def on_update(self):
+		"""Trigger calculations on save"""
+		# Ensure duration is recalculated if times changed
+		self.calculate_duration()
+		
+		# Sync generated hours to student attendance
+		self.update_student_attendance_hours()
+		
+		# Sync session_type to Review/Student Attendance records if changed
+		self.sync_details_to_attendance()
+		self.trigger_calculations()
+
+	def update_student_attendance_hours(self):
+		"""Update hours_counted in linked Student Attendance records"""
+		if not self.duration_hours:
+			return
+
+		frappe.db.sql("""
+			UPDATE `tabStudent Attendance`
+			SET hours_counted = %s
+			WHERE attendance_session = %s
+			AND status IN ('Present', 'Late', 'Excused')
+			AND docstatus < 2
+		""", (self.duration_hours, self.name))
+
+	def sync_details_to_attendance(self):
+		"""Sync Session Type and other details to linked Student Attendance"""
+		frappe.db.sql("""
+			UPDATE `tabStudent Attendance`
+			SET session_type = %s, attendance_date = %s
+			WHERE attendance_session = %s
+		""", (self.session_type, self.session_date, self.name))
+
 	def calculate_duration(self):
 		"""Calculate session duration in hours"""
 		if self.session_start_time and self.session_end_time:
@@ -200,3 +233,52 @@ def get_pending_sessions(instructor=None, course_offering=None):
 		fields=["name", "session_date", "course", "instructor", "duration_hours"],
 		order_by="session_date desc"
 	)
+
+
+@frappe.whitelist()
+def update_attendance_summary_realtime(session_name, course_offering, duration_hours):
+	"""
+	Update Attendance Summary in real-time when Attendance Session times change.
+	Called from client-side JavaScript without requiring a full save.
+	Recalculates total_class_hours for all affected students.
+	"""
+	try:
+		# Verify the session exists
+		if not frappe.db.exists("Attendance Session", session_name):
+			return {"success": False, "message": "Attendance Session not found"}
+
+		# Trigger attendance recalculation for all students in this course offering
+		from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+		
+		# Get all students who have attendance records for this course offering
+		students = frappe.db.sql("""
+			SELECT DISTINCT student
+			FROM `tabStudent Attendance`
+			WHERE course_offer = %s
+		""", course_offering, as_dict=True)
+		
+		students_updated = 0
+		
+		# Recalculate attendance for each student
+		for student_row in students:
+			try:
+				calculate_student_attendance(student_row.student, course_offering)
+				students_updated += 1
+			except Exception as student_error:
+				frappe.log_error(
+					message=f"Error updating student {student_row.student}: {str(student_error)}",
+					title="Student Attendance Update Error"
+				)
+		
+		frappe.db.commit()
+
+		return {
+			"success": True,
+			"message": f"Attendance Summary updated for {students_updated} students",
+			"students_updated": students_updated
+		}
+
+	except Exception as e:
+		frappe.log_error(message=str(e), title="Real-time Attendance Summary Update Error")
+		return {"success": False, "message": str(e)}
+

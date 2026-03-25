@@ -1,5 +1,6 @@
 import frappe
 
 def get_context(context):
-	# do your magic here
-	pass
+	# Disable the default header and footer
+	context.no_header = 1
+	context.no_footer = 1

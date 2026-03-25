@@ -1,6 +1,7 @@
 [project]
 name = "slcm"
 description = "Student Life Cycle Management"
+requires-python = ">=3.10,<3.15"
 readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["version"]
@@ -11,7 +12,9 @@ authors = [
 ]
  
 dependencies = [
-    # "frappe~=15.0.0"  # Installed and managed by bench.
+    # "frappe~=15.0.0" # Installed and managed by bench.
+    "qrcode[pil]>=7.4.2",
+    "Pillow>=10.2.0"
 ]
  
 [build-system]
@@ -19,7 +22,7 @@ requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
  
 [tool.bench.frappe-dependencies]
-frappe = ">=15,<16"
+frappe = ">=15,<18"
 qrcode = "~=7.4.2"
 Pillow = "~=10.2.0"
  

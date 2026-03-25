@@ -8,9 +8,7 @@
  "field_order": [
   "skill_name"
  ],
- "fields": [
- 
- ],
+ "fields": [],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
@@ -38,5 +36,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "custom": 0
 }

@@ -148,5 +148,6 @@
  "sort_field": "application_start",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1
+ "track_changes": 1,
+ "custom": 0
 }

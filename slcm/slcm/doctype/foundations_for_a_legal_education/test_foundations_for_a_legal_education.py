@@ -7,3 +7,5 @@ from frappe.tests.utils import FrappeTestCase
 
 class TestFoundationsforaLegalEducation(FrappeTestCase):
 	pass
+
+# Added space for git commit as requested

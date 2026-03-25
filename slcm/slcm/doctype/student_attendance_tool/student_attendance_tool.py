@@ -17,6 +17,7 @@ def get_student_attendance_records(
 	student_group=None,
 	course_schedule=None,
 	class_schedule=None,
+	office_hours_group=None,
 ):
 	"""
 	Get student list with existing attendance status
@@ -39,6 +40,10 @@ def get_student_attendance_records(
 		if not class_schedule:
 			frappe.throw(_("Class Schedule is required"))
 
+	if based_on == "Office Hours":
+		if not office_hours_group:
+			frappe.throw(_("Office Hours Group is required"))
+
 	# -------------------- RESOLVE STUDENT GROUP --------------------
 
 	if based_on == "Course Schedule" and course_schedule:
@@ -55,11 +60,12 @@ def get_student_attendance_records(
 			"student_group",
 		)
 
-	if not student_group:
+	if not student_group and not office_hours_group:
 		return []
 
 	# -------------------- FETCH STUDENTS --------------------
 
+	group_name = student_group or office_hours_group
 	student_list = frappe.get_all(
 		"Student Group Student",
 		fields=[
@@ -68,7 +74,7 @@ def get_student_attendance_records(
 			"group_roll_number",
 		],
 		filters={
-			"parent": student_group,
+			"parent": group_name,
 			"active": 1,
 		},
 		order_by="group_roll_number",
@@ -98,6 +104,9 @@ def get_student_attendance_records(
 
 	if date:
 		query = query.where(StudentAttendance.attendance_date == date)
+
+	if based_on == "Office Hours":
+		query = query.where(StudentAttendance.office_hours_group == office_hours_group)
 
 	if based_on == "Student Group":
 		query = query.where(StudentAttendance.student_group == student_group)

@@ -1,0 +1,194 @@
+{% extends "templates/web.html" %}
+
+{% block title %}FLE — Payment Receipt{% endblock %}
+
+{% block style %}
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap"
+    rel="stylesheet">
+<link rel="stylesheet" href="/fle/css/login.css?v=6">
+<style>
+    .navbar,
+    .web-footer,
+    header.navbar,
+    .navbar-expand,
+    #navbar,
+    .container>.navbar {
+        display: none !important;
+    }
+
+    body, html { margin: 0; padding: 0; height: 100%; }
+
+    .view-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    .view-toolbar {
+        background: #fff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .toolbar-title {
+        flex: 1;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-download {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #8b0000;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 16px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.15s;
+    }
+
+    .btn-download:hover {
+        background: #6b0000;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #555;
+        font-size: 0.83rem;
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 5px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        white-space: nowrap;
+        transition: background 0.15s;
+    }
+
+    .btn-back:hover {
+        background: #f0f0f0;
+        color: #333;
+        text-decoration: none;
+    }
+
+    .pdf-embed {
+        flex: 1;
+        width: 100%;
+        border: none;
+        display: block;
+    }
+
+    .center-state {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        color: #555;
+        font-size: 0.93rem;
+    }
+
+    .center-state.error { color: #8b0000; }
+
+    .spinner {
+        width: 34px;
+        height: 34px;
+        border: 3px solid #e5e7eb;
+        border-top-color: #8b0000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="view-wrapper">
+
+    <div class="view-toolbar">
+        <a class="btn-back" href="/fle/enrolled">&#8592; Back</a>
+        <span class="toolbar-title" id="toolbar-title">Payment Receipt</span>
+        <a id="btn-download" class="btn-download" style="display:none;">&#8681; Download PDF</a>
+    </div>
+
+    <div class="center-state" id="loading-state">
+        <div class="spinner"></div>
+        <span>Loading receipt…</span>
+    </div>
+
+    <div class="center-state error" id="error-state" style="display:none;">
+        <span>&#9888; Failed to load. Please try again.</span>
+        <a href="/fle/enrolled" style="color:#8b0000;font-size:0.85rem;">Go back</a>
+    </div>
+
+    <embed id="pdf-embed" class="pdf-embed" type="application/pdf" style="display:none;" />
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+(function () {
+    var docname = new URLSearchParams(window.location.search).get("docname") || "";
+
+    if (docname) {
+        document.getElementById("toolbar-title").textContent = "Payment Receipt — " + docname;
+    }
+
+    if (!docname) {
+        showError();
+        return;
+    }
+
+    frappe.call({
+        method: "slcm.api.user.get_fle_receipt_pdf_base64",
+        args: { docname: docname },
+        callback: function (r) {
+            if (!r.message || !r.message.pdf) { showError(); return; }
+            try {
+                var bytes = Uint8Array.from(atob(r.message.pdf), function(c) { return c.charCodeAt(0); });
+                var blob = new Blob([bytes], { type: "application/pdf" });
+                var url = URL.createObjectURL(blob);
+
+                var embed = document.getElementById("pdf-embed");
+                embed.src = url;
+                embed.style.display = "block";
+
+                var btn = document.getElementById("btn-download");
+                btn.href = url;
+                btn.setAttribute("download", (r.message.filename || ("Receipt-" + docname + ".pdf")));
+                btn.style.display = "inline-flex";
+
+                document.getElementById("loading-state").style.display = "none";
+            } catch (e) { showError(); }
+        },
+        error: function () { showError(); }
+    });
+
+    function showError() {
+        document.getElementById("loading-state").style.display = "none";
+        document.getElementById("error-state").style.display = "flex";
+    }
+}());
+</script>
+{% endblock %}

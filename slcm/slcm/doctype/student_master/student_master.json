@@ -192,7 +192,10 @@
   "tab_status_history",
   "status_history_section",
   "workflow_history",
-  "registration_status"
+  "registration_status",
+  "other_tab",
+  "about_the_program",
+  "if_others_mention_here"
  ],
  "fields": [
   {

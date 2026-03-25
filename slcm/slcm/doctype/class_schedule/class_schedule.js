@@ -105,5 +105,69 @@ frappe.ui.form.on('Class Schedule', {
             frappe.msgprint(__('To Time must be after From Time'));
             frappe.validated = false;
         }
+    },
+
+    from_time: function (frm) {
+        frm.events.calculate_duration(frm);
+        frm.events.sync_to_attendance_session(frm);
+    },
+
+    to_time: function (frm) {
+        frm.events.calculate_duration(frm);
+        frm.events.sync_to_attendance_session(frm);
+    },
+
+    calculate_duration: function (frm) {
+        if (frm.doc.from_time && frm.doc.to_time) {
+            // Parse time strings (format: HH:MM:SS)
+            const from_parts = frm.doc.from_time.split(':');
+            const to_parts = frm.doc.to_time.split(':');
+
+            // Create Date objects for today with the specified times
+            const from_date = new Date();
+            from_date.setHours(parseInt(from_parts[0]), parseInt(from_parts[1]), parseInt(from_parts[2] || 0), 0);
+
+            const to_date = new Date();
+            to_date.setHours(parseInt(to_parts[0]), parseInt(to_parts[1]), parseInt(to_parts[2] || 0), 0);
+
+            // Calculate difference in milliseconds and convert to hours
+            const diff_ms = to_date - from_date;
+            const duration_hours = diff_ms / (1000 * 60 * 60);
+
+            // Set the duration field (rounded to 2 decimal places)
+            frm.set_value('duration_hours', parseFloat(duration_hours.toFixed(2)));
+        }
+    },
+
+    sync_to_attendance_session: function (frm) {
+        // Only sync if the document is saved (has a name)
+        if (!frm.doc.name || frm.is_new()) {
+            return;
+        }
+
+        // Only sync if we have valid times
+        if (!frm.doc.from_time || !frm.doc.to_time) {
+            return;
+        }
+
+        // Call server method to update Attendance Session in real-time
+        frappe.call({
+            method: 'slcm.slcm.doctype.class_schedule.class_schedule.update_attendance_session_realtime',
+            args: {
+                class_schedule_name: frm.doc.name,
+                from_time: frm.doc.from_time,
+                to_time: frm.doc.to_time,
+                schedule_date: frm.doc.schedule_date,
+                duration_hours: frm.doc.duration_hours
+            },
+            callback: function (r) {
+                if (r.message && r.message.success) {
+                    frappe.show_alert({
+                        message: __('Attendance Session updated'),
+                        indicator: 'green'
+                    }, 3);
+                }
+            }
+        });
     }
 });
