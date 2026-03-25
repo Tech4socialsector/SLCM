@@ -241,7 +241,7 @@ ignore_links_on_delete = ["Admission Audit Log", "Merit Audit Log", "Seat Alloca
 
 # Request Events
 # ----------------
-# before_request = ["slcm.utils.before_request"]
+before_request = ["slcm.admission.portal_application_web_form.slcm_before_request"]
 # after_request = ["slcm.utils.after_request"]
 
 # Job Events

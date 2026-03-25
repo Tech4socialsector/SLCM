@@ -2,6 +2,9 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate
+from slcm.admission.portal_application_web_form import (
+	applicant_portal_application_locked,
+)
 from slcm.admission.utils.regulatory import log_audit_trail
 
 class Applicant(Document):
@@ -15,6 +18,17 @@ class Applicant(Document):
         if self.application_status == "Draft":
             self.flags.ignore_mandatory = True
 
+    def _deny_portal_web_form_edit_if_locked(self):
+        if not frappe.flags.get("in_web_form") or not self.name:
+            return
+        prev = (frappe.db.get_value("Applicant", self.name, "application_status") or "").strip()
+        if not applicant_portal_application_locked(prev):
+            return
+        frappe.throw(
+            _("This application has been submitted and cannot be edited."),
+            title=_("Not allowed"),
+        )
+
     def validate(self):
         """
         Runs on every save.
@@ -23,6 +37,8 @@ class Applicant(Document):
         during that submit request. Save Draft does not set Submitted, so no eligibility/mandatory here.
         create_or_update_evaluation() is called inside validate_eligibility().
         """
+        self._deny_portal_web_form_edit_if_locked()
+
         set_intake_type(self)
 
         if self.application_status == "Submitted" and self.has_value_changed("application_status"):

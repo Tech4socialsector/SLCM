@@ -10,5 +10,6 @@ slcm.patches.v1_0.rename_academic_management_to_term_administration
 slcm.patches.v2_0.migrate_exam_types
 slcm.patches.v2_0.set_anytime_scholarship_stage
 slcm.patches.v2_0.fix_applicant_web_form_breadcrumbs
+slcm.patches.v2_0.enable_applicant_web_form_allow_edit
 # Patches added in this section will be executed after doctypes are migrated
 

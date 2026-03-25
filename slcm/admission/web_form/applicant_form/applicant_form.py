@@ -6,8 +6,33 @@ from frappe.utils import flt, strip_html
 
 
 def get_context(context):
-    """Pass admission cycle and academic year options to the web form context."""
-    pass
+    """
+    Locked (submitted) applicants: force view mode; redirect /edit → read-only URL.
+    Draft/Rejected remain editable (allow_edit on Web Form + no is_read flag).
+    """
+    from slcm.admission.portal_application_web_form import applicant_portal_application_locked
+
+    ref = context.get("reference_doc") or {}
+    doc_name = ref.get("name") or context.get("doc_name")
+    if not doc_name:
+        return None
+
+    status = (ref.get("application_status") or "").strip()
+    if not applicant_portal_application_locked(status):
+        return None
+
+    context.in_view_mode = True
+    context.in_edit_mode = False
+    wfd = context.get("web_form_doc")
+    if isinstance(wfd, dict):
+        wfd["in_view_mode"] = True
+        wfd["in_edit_mode"] = False
+
+    route = wfd.get("route", "applicant-form") if isinstance(wfd, dict) else "applicant-form"
+    if frappe.form_dict.get("is_edit"):
+        frappe.redirect(f"/{route}/{doc_name}")
+
+    return None
 
 
 # ───────────────────────────────────────────────────────────────────

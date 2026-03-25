@@ -90,6 +90,10 @@ function _injectCSS() {
 			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--slcm-primary,#1a73e8);' +
 			'background:#fff;color:var(--slcm-primary,#1a73e8);cursor:pointer;transition:background .15s;}',
 		'#slcm-fee-receipt-btn:hover{background:color-mix(in srgb,var(--slcm-primary,#1a73e8) 8%,#fff);}',
+		/* Student Photo — always-visible preview (edit + read-only / all statuses) */
+		'.slcm-candidate-photo-preview{margin:0 0 14px;display:flex;align-items:flex-start;}',
+		'.slcm-candidate-photo-preview img{display:block;width:128px;height:128px;object-fit:cover;' +
+			'border-radius:50%;border:3px solid #e2e8f0;box-shadow:0 2px 10px rgba(0,0,0,.1);background:#f8fafc;}',
 		/* Submit progress overlay */
 		'#slcm-submit-overlay{position:fixed;inset:0;z-index:99997;background:rgba(255,255,255,.8);' +
 			'display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;' +
@@ -400,6 +404,13 @@ function getDocName() {
 		var p = new URLSearchParams(window.location.search);
 		name = p.get('name') || p.get('doc');
 	}
+	if (!name && window.location && window.location.pathname) {
+		var path = String(window.location.pathname).replace(/\/$/, '');
+		var m = path.match(/\/applicant-form\/([^/]+)(?:\/edit)?$/);
+		if (m && m[1] && m[1] !== 'new' && m[1] !== 'list') {
+			name = decodeURIComponent(m[1]);
+		}
+	}
 	return name || null;
 }
 
@@ -422,6 +433,34 @@ function resolveField(fieldname) {
 	if (!val && wf && wf.doc) val = wf.doc[fieldname] || '';
 	if (!val && frappe.reference_doc) val = frappe.reference_doc[fieldname] || '';
 	return val;
+}
+
+/** application_fee_status: same sources as resolveField + visible control text (read-only / slow hydrate). */
+function resolveApplicationFeeStatus() {
+	var s = (resolveField('application_fee_status') || '').trim();
+	if (s) return s;
+	try {
+		var $cv = $('[data-fieldname="application_fee_status"] .control-value').first();
+		if ($cv.length) s = ($cv.text() || '').trim();
+		if (!s) {
+			var $inp = $('[data-fieldname="application_fee_status"] input, [data-fieldname="application_fee_status"] select').first();
+			if ($inp.length) s = ($inp.val() || '').trim();
+		}
+	} catch (e) {}
+	return s || '';
+}
+
+/** Mirror server PORTAL_LOCKED_APPLICATION_STATUSES (Draft / Rejected stay editable). */
+function slcmApplicationPortalLocked() {
+	var s = (resolveField('application_status') || '').trim();
+	if (!s) return false;
+	var locked = {
+		Submitted: true,
+		'Interview Excempted': true,
+		'Entrance Test Exempted': true,
+		'Excempted Entrance Test And Interview': true,
+	};
+	return !!locked[s];
 }
 
 function collectDraftData() {
@@ -717,10 +756,18 @@ var _SVG_DOWNLOAD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
 
 /** Ensure the top-bar strip (Back left, Receipt right) exists above the web-form head. */
 function _ensureTopBar() {
-	if (document.getElementById('slcm-form-topbar')) return null;
+	var existing = document.getElementById('slcm-form-topbar');
+	if (existing) {
+		return document.getElementById('slcm-fee-receipt-wrap');
+	}
 
-	// Find the web-form head to prepend before it
-	var $head = $('.web-form-container .web-form-head, .web-form-head').first();
+	var $head = $(
+		'.web-form-container .web-form-head, .web-form-head, ' +
+			'.web-form-header, .web-form-wrapper .web-form-head'
+	).first();
+	if (!$head.length) {
+		$head = $('form.web-form, .web-form-container, .page-content').first();
+	}
 	if (!$head.length) return null;
 
 	var bar = document.createElement('div');
@@ -740,32 +787,63 @@ function _ensureTopBar() {
 
 	bar.appendChild(backBtn);
 	bar.appendChild(receiptWrap);
-	$head.before(bar);
+
+	if ($head.is('form') || ($head.prop('tagName') || '').toLowerCase() === 'form') {
+		$head.prepend(bar);
+	} else if ($head.hasClass('web-form-container') || $head.hasClass('page-content')) {
+		$head.prepend(bar);
+	} else {
+		$head.before(bar);
+	}
 	return receiptWrap;
 }
 
-/** Paid + server has Applicant Payment Receipt → show download icon-btn (top-right). */
+function _slcmAppendFeeReceiptButton(applicant, receiptWrap) {
+	if (!receiptWrap || document.getElementById('slcm-fee-receipt-btn')) return;
+	var btn = document.createElement('button');
+	btn.type = 'button';
+	btn.id = 'slcm-fee-receipt-btn';
+	btn.title = 'Download application fee receipt';
+	btn.innerHTML = _SVG_DOWNLOAD + '<span>Receipt</span>';
+	btn.onclick = function () {
+		var url =
+			slcmPortalAbsUrl(
+				'/api/method/slcm.admission.web_form.applicant_form.applicant_form.download_portal_application_fee_receipt'
+			) + '?applicant_name=' + encodeURIComponent(applicant);
+		window.open(url, '_blank', 'noopener,noreferrer');
+	};
+	receiptWrap.appendChild(btn);
+	receiptWrap.style.display = 'flex';
+}
+
+/** Paid → show Receipt (client); optional server ready for cases where status is not hydrated yet. */
 function syncApplicationFeeReceiptButton() {
 	var wf = window.frappe && frappe.web_form;
 	if (!wf) return;
 
 	var applicant = getDocName();
-
-	// Always ensure the top-bar (with Back button) is present
 	_ensureTopBar();
 
 	if (!applicant) return;
 
-	// Do not block on empty fee status (hidden field may not hydrate); server checks DB.
-	var st = (resolveField('application_fee_status') || '').trim();
+	var st = resolveApplicationFeeStatus();
 	var receiptWrap = document.getElementById('slcm-fee-receipt-wrap');
 
 	if (st === 'Pending' || st === 'Requested' || st === 'Waived') {
-		if (receiptWrap) receiptWrap.style.display = 'none';
+		if (receiptWrap) {
+			receiptWrap.style.display = 'none';
+			var old = document.getElementById('slcm-fee-receipt-btn');
+			if (old) old.remove();
+		}
 		return;
 	}
 
-	// If receipt button already rendered, nothing more to do
+	if (st === 'Paid') {
+		if (receiptWrap) _slcmAppendFeeReceiptButton(applicant, receiptWrap);
+		return;
+	}
+
+	// Fee status unknown on client — fall back to server (receipt row exists)
 	if (document.getElementById('slcm-fee-receipt-btn')) return;
 	if (_feeReceiptBtnInFlight) return;
 
@@ -777,34 +855,10 @@ function syncApplicationFeeReceiptButton() {
 			_feeReceiptBtnInFlight = false;
 			var m = r && r.message;
 			if (!m || !m.ready) return;
-
-			// Ensure top-bar exists and get the receipt slot
 			_ensureTopBar();
 			var wrap = document.getElementById('slcm-fee-receipt-wrap');
 			if (!wrap || document.getElementById('slcm-fee-receipt-btn')) return;
-
-			// Build compact icon + label button
-			var btn = document.createElement('button');
-			btn.type = 'button';
-			btn.id = 'slcm-fee-receipt-btn';
-			btn.title = 'Download application fee receipt';
-			btn.innerHTML = _SVG_DOWNLOAD + '<span>Receipt</span>';
-			btn.onclick = function () {
-				var url =
-					slcmPortalAbsUrl(
-						'/api/method/slcm.admission.web_form.applicant_form.applicant_form.download_portal_application_fee_receipt'
-					) + '?applicant_name=' + encodeURIComponent(applicant);
-				var a = document.createElement('a');
-				a.href = url;
-				a.download = '';
-				a.style.display = 'none';
-				document.body.appendChild(a);
-				a.click();
-				setTimeout(function () { document.body.removeChild(a); }, 1000);
-			};
-
-			wrap.appendChild(btn);
-			wrap.style.display = 'flex';
+			_slcmAppendFeeReceiptButton(applicant, wrap);
 		},
 		error: function () {
 			_feeReceiptBtnInFlight = false;
@@ -815,19 +869,20 @@ function syncApplicationFeeReceiptButton() {
 function setupApplicationFeeReceiptDownload() {
 	// Inject Back button immediately on load (doesn't need receipt check)
 	var t = setInterval(function () {
-		if (_ensureTopBar() !== null || document.getElementById('slcm-form-topbar')) {
+		if (document.getElementById('slcm-form-topbar') || _ensureTopBar()) {
 			clearInterval(t);
 		}
 	}, 400);
 	setInterval(syncApplicationFeeReceiptButton, 1200);
 }
 
-/** Submitted applications: hide Submit / Save Draft (footer still shows Discard / nav). */
+/** Locked portal statuses: hide Submit / Save Draft / Edit (footer still shows Discard / nav where shown). */
 function setupSubmittedFormUX() {
 	setInterval(function () {
-		if ((resolveField('application_status') || '').trim() !== 'Submitted') return;
+		if (!slcmApplicationPortalLocked()) return;
 		try {
 			$('#slcm-save-draft-btn').hide();
+			$('.edit-button, a.edit-button, .btn-edit').hide();
 			$(
 				'.web-form-footer .right-area .submit-btn, ' +
 					'.web-form-footer .btn-submit-web-form, ' +
@@ -1402,7 +1457,7 @@ function interceptSubmit() {
 	 * otherwise the browser reloads and any modal (e.g. ineligible) disappears.
 	 */
 	wf.save = function () {
-		if ((resolveField('application_status') || '').trim() === 'Submitted') {
+		if (slcmApplicationPortalLocked()) {
 			var $sb = $(
 				'.web-form-footer .right-area .btn-primary, ' +
 					'.web-form-footer .btn-submit-web-form, ' +
@@ -1456,6 +1511,129 @@ function interceptSubmit() {
 // ───────────────────────────────────────────────────────────────────
 var _ATTACH_MAX_BYTES = 5 * 1024 * 1024;  // 5 MB
 var _ATTACH_ALLOWED   = ['png', 'jpeg', 'jpg', 'pdf'];
+
+// ───────────────────────────────────────────────────────────────────
+//  STUDENT PHOTO (candidate_photo) — inline preview, all modes / statuses
+// ───────────────────────────────────────────────────────────────────
+
+/** Strip ControlAttach "FILENAME,data:image/..." payload to URL/data for <img src>. */
+function _slcmNormalizeAttachFieldValue(raw) {
+	if (!raw || typeof raw !== 'string') return '';
+	var t = raw.trim();
+	var m = t.match(/^([^:]+),(.+):(.+)$/);
+	if (m) return (m[2] + ':' + m[3]).trim();
+	return t;
+}
+
+function resolveCandidatePhotoPath() {
+	var v = _slcmNormalizeAttachFieldValue(resolveField('candidate_photo') || '');
+	if (v) return v;
+
+	var $block = $('[data-fieldname="candidate_photo"]').first();
+	if (!$block.length) return '';
+
+	v = $block.find('input[type="hidden"]').val();
+	if (v) return _slcmNormalizeAttachFieldValue(String(v).trim());
+
+	v = $block.find('.attached-file-link').attr('href');
+	if (v) return _slcmNormalizeAttachFieldValue(String(v).trim());
+
+	v = ($block.find('.control-value').text() || '').trim();
+	if (v) return _slcmNormalizeAttachFieldValue(v);
+
+	v = $block.find('a[target="_blank"]').attr('href') || '';
+	if (v) return _slcmNormalizeAttachFieldValue(String(v).trim());
+
+	return '';
+}
+
+function candidatePhotoToImgSrc(path) {
+	if (!path) return '';
+	if (/^data:/i.test(path)) return path;
+	if (/^https?:\/\//i.test(path)) return path;
+	var rel = path.charAt(0) === '/' ? path : '/' + path;
+	var parts = rel.split('/');
+	var enc = parts.map(function (seg, i) {
+		if (i === 0) return seg;
+		return encodeURIComponent(seg).replace(/'/g, '%27');
+	});
+	return slcmPortalAbsUrl(enc.join('/'));
+}
+
+function findCandidatePhotoControlWrapper() {
+	var $el = $('[data-fieldname="candidate_photo"]').first();
+	if (!$el.length) return $();
+	var $c = $el.closest('.frappe-control');
+	if ($c.length) return $c;
+	var $g = $el.closest('.form-group, .webform-group');
+	return $g.length ? $g : $el.parent();
+}
+
+function syncCandidatePhotoPreview() {
+	var path = resolveCandidatePhotoPath();
+	var $wrap = findCandidatePhotoControlWrapper();
+	if (!$wrap.length) return;
+
+	var $prev = $wrap.children('#slcm-candidate-photo-preview').first();
+	if (!path) {
+		$prev.remove();
+		return;
+	}
+
+	var src = candidatePhotoToImgSrc(path);
+	if (!src) {
+		$prev.remove();
+		return;
+	}
+
+	if (!$prev.length) {
+		$prev = $(
+			'<div id="slcm-candidate-photo-preview" class="slcm-candidate-photo-preview">' +
+				'<img alt="" decoding="async" />' +
+				'</div>'
+		);
+		$wrap.prepend($prev);
+	}
+
+	var $img = $prev.find('img');
+	$img.attr('alt', 'Student photo preview');
+	if ($img.attr('data-slcm-src') !== src) {
+		$img.attr('data-slcm-src', src);
+		$img.attr('src', src);
+	}
+}
+
+function setupCandidatePhotoPreview() {
+	function tick() {
+		syncCandidatePhotoPreview();
+	}
+
+	tick();
+	setInterval(tick, 450);
+
+	$(document).on('click', '.btn-next, .btn-previous', function () {
+		setTimeout(tick, 120);
+	});
+
+	var bindWf = 0;
+	var bindTimer = setInterval(function () {
+		bindWf++;
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.candidate_photo && !wf._slcm_candidate_photo_on) {
+			wf._slcm_candidate_photo_on = true;
+			try {
+				wf.on('candidate_photo', tick);
+			} catch (e) {}
+		}
+		if (wf && wf.events && wf.events.on && !wf._slcm_photo_after_load) {
+			wf._slcm_photo_after_load = true;
+			try {
+				wf.events.on('after_load', tick);
+			} catch (e2) {}
+		}
+		if (bindWf > 100) clearInterval(bindTimer);
+	}, 100);
+}
 
 function _validateAttachFile(file, fieldtype) {
 	if (!file) return true;
@@ -1634,6 +1812,7 @@ frappe.ready(function () {
 
 	setupApplicationFeeReceiptDownload();
 	setupSubmittedFormUX();
+	setupCandidatePhotoPreview();
 	setupAttachFieldValidation();
 
 	// Submit intercept (retry: web form may attach after this script's first frappe.ready)
@@ -1645,4 +1824,28 @@ frappe.ready(function () {
 			clearInterval(_patchTimer);
 		}
 	}, 150);
+	setTimeout(() => {
+        document.querySelectorAll('[data-fieldname]')
+            .forEach(field => {
+                let fieldname = field.getAttribute('data-fieldname');
+                let fieldtype = field.getAttribute('data-fieldtype');
+
+                if (!['Attach', 'Attach Image'].includes(fieldtype)) return;
+
+                // Check if label already exists
+                let existingLabel = field.querySelector('.control-label');
+                if (existingLabel) return;
+
+                // ✅ Get correct label from Frappe meta
+                let df = frappe.web_form.fields_dict[fieldname]?.df;
+                let labelText = df?.label || fieldname;
+
+                // Create label
+                let lbl = document.createElement('label');
+                lbl.className = 'control-label';
+                lbl.innerText = labelText;
+
+                field.prepend(lbl);
+            });
+    }, 500);
 });
