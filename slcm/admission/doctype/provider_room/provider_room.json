@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-22 22:11:54.192212",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "entrance_test_seat_information_section",
+  "room_code",
+  "room_name",
+  "building",
+  "floor",
+  "active",
+  "room_capacity",
+  "room_reserved_seats",
+  "room_available_capacity"
+ ],
+ "fields": [
+  {
+   "fieldname": "room_code",
+   "fieldtype": "Data",
+   "label": "Room Code"
+  },
+  {
+   "fieldname": "room_name",
+   "fieldtype": "Data",
+   "label": "Room Name"
+  },
+  {
+   "fieldname": "building",
+   "fieldtype": "Data",
+   "label": "Building"
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "label": "Floor"
+  },
+  {
+   "fieldname": "room_capacity",
+   "fieldtype": "Int",
+   "label": "Room Capacity"
+  },
+  {
+   "default": "0",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "fieldname": "entrance_test_seat_information_section",
+   "fieldtype": "Section Break",
+   "label": "Entrance Test Seat Information"
+  },
+  {
+   "fieldname": "room_reserved_seats",
+   "fieldtype": "Int",
+   "label": "Room Reserved Seats"
+  },
+  {
+   "fieldname": "room_available_capacity",
+   "fieldtype": "Int",
+   "label": "Room Available Capacity"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-22 22:22:34.418427",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Provider Room",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

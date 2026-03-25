@@ -1,0 +1,8 @@
+{
+  "doctype": "Page",
+  "name": "exam-score-import",
+  "page_name": "exam-score-import",
+  "title": "Exam Score Import",
+  "module": "Admission",
+  "system_page": 0
+}

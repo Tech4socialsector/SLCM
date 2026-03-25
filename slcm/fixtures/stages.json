@@ -1,0 +1,83 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-23 17:58:31.700120",
+  "name": "Submitted",
+  "stage_code": "sub",
+  "stage_name": "Submitted",
+  "stage_type": "Application"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 10:15:33.791172",
+  "name": "Entrance Test",
+  "stage_code": "ET",
+  "stage_name": "Entrance Test",
+  "stage_type": "Exam"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 10:15:40.147718",
+  "name": "Scholarship",
+  "stage_code": "Scholarship",
+  "stage_name": "Scholarship",
+  "stage_type": "Offer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 10:15:51.081559",
+  "name": "Seat Allocation",
+  "stage_code": "Seat Allocation",
+  "stage_name": "Seat Allocation",
+  "stage_type": "Offer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 10:16:02.028342",
+  "name": "Merit",
+  "stage_code": "Merit List",
+  "stage_name": "Merit",
+  "stage_type": "Merit"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 10:17:05.248286",
+  "name": "Enrolled",
+  "stage_code": "enroll",
+  "stage_name": "Enrolled",
+  "stage_type": "Enrollment"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 10:22:43.457845",
+  "name": "Offer Letter",
+  "stage_code": "offer",
+  "stage_name": "Offer Letter",
+  "stage_type": "Offer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 10:15:57.068421",
+  "name": "Intereview",
+  "stage_code": "Interview",
+  "stage_name": "Intereview",
+  "stage_type": "Interview"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 10:16:41.323861",
+  "name": "Admission Fee",
+  "stage_code": "Fee",
+  "stage_name": "Admission Fee",
+  "stage_type": "Fee"
+ }
+]

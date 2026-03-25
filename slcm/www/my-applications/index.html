@@ -1,0 +1,4066 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block theme_vars %}
+<style>
+  :root {
+    --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+    --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+    --accent: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+    --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
+    --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --text-1: #111827;
+    --text-2: #374151;
+    --text-3: #6b7280;
+    --text-4: #9ca3af;
+    --border: #e5e7eb;
+    --bg: #f3f4f6;
+    --card-bg: #ffffff;
+    --radius: 16px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, .06),
+    0 8px 24px rgba(0, 0, 0, .06);
+    --shadow-premium: 0 4px 20px rgba(0, 0, 0, .08),
+    0 12px 40px rgba(0, 0, 0, .06);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body,
+  .adm-main,
+  .adm-container {
+    font-family: 'Poppins', sans-serif !important;
+    background: var(--bg) !important;
+    color: var(--text-1);
+  }
+
+  /* ── Animations ──────────────────────────────────────────── */
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse-ring {
+
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 40%, transparent);
+    }
+
+    50% {
+      box-shadow: 0 0 0 8px transparent;
+    }
+  }
+
+  .fade-up {
+    animation: fadeUp .45s cubic-bezier(.16, 1, .3, 1) both;
+    opacity: 0;
+  }
+
+  /* ── Page wrapper ────────────────────────────────────────── */
+  .ma-page {
+    min-height: calc(100vh - 60px);
+    background: var(--bg);
+    margin: 0 -20px 0;
+    padding: 32px 24px 64px;
+  }
+
+  .ma-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+
+
+  /* ── Card base ───────────────────────────────────────────── */
+  .ma-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow .2s ease, border-color .2s ease;
+  }
+
+  .ma-card:hover {
+    box-shadow: var(--shadow-premium);
+    border-color: rgba(0, 0, 0, .08);
+  }
+
+  .ma-card-head {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ma-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ma-card-title .ico {
+    width: 36px;
+    height: 36px;
+    background: var(--primary-light);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 20px;
+  }
+
+  .ma-card-body {
+    padding: 20px 22px;
+  }
+
+  /* ── Back link ───────────────────────────────────────────── */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-3);
+    text-decoration: none;
+    transition: color .15s;
+  }
+
+  .back-link:hover {
+    color: var(--primary);
+  }
+
+  .back-link .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  .btn-edit-application {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    background: var(--primary, #1d4ed8);
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: opacity .15s, transform .15s;
+  }
+
+  .btn-edit-application:hover {
+    opacity: .9;
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .btn-edit-application .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  /* ── Status badge ────────────────────────────────────────── */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: .05em;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  /* ╔═══════════════════════════════════╗
+     ║  APPLICATION SUMMARY CARD         ║
+     ╚═══════════════════════════════════╝ */
+  .app-summary-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow .25s ease, transform .25s ease, border-color .2s ease;
+  }
+
+  .app-summary-card:hover {
+    box-shadow: var(--shadow-premium);
+    border-color: rgba(0, 0, 0, .06);
+    transform: translateY(-2px);
+  }
+
+  .app-summary-head {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .app-header-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .app-header-right {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .app-program-name {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-1);
+    line-height: 1.1;
+    margin: 4px 0 8px;
+  }
+
+  .app-id-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .app-id-chip {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-2);
+    background: #f1f5f9;
+    padding: 6px 14px;
+    border-radius: 9px;
+    border: 1px solid #e2e8f0;
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+
+  .app-submitted-date {
+    font-size: 13px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  /* ── Header Actions ────────────────────────────────────────── */
+  .btn-view-application {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: #2ecc71;
+    color: white;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+    min-width: 200px;
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
+  }
+
+  .btn-view-application:hover {
+    background: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(46, 204, 113, 0.3);
+    color: white;
+  }
+
+  .btn-download-application {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: white;
+    color: var(--text-2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+    min-width: 200px;
+  }
+
+  .btn-download-application:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--bg);
+  }
+
+  /* ── Stage Tracker ───────────────────────────────────────── */
+  .stage-track-wrap {
+    padding: 24px 26px 20px;
+    position: relative;
+  }
+
+  .stage-track {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+  }
+
+  .stage-track::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: calc(100% / (var(--num-stages) * 2));
+    right: calc(100% / (var(--num-stages) * 2));
+    height: 3px;
+    background: var(--border);
+    z-index: 0;
+  }
+
+  .stage-track-fill {
+    position: absolute;
+    top: 20px;
+    left: calc(100% / (var(--num-stages) * 2));
+    height: 3px;
+    background: var(--success);
+    border-radius: 2px;
+    z-index: 1;
+    transition: width .6s ease;
+  }
+
+  .stage-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .stage-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    flex-shrink: 0;
+    font-size: 17px;
+    position: relative;
+  }
+
+  .stage-circle.completed {
+    background: var(--success);
+    box-shadow: 0 0 0 2px var(--success);
+    color: white;
+  }
+
+  .stage-circle.active {
+    background: var(--warning);
+    box-shadow: 0 0 0 2px var(--warning);
+    color: white;
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+
+  .stage-circle.closed {
+    background: var(--danger);
+    box-shadow: 0 0 0 2px var(--danger);
+    color: white;
+  }
+
+  .stage-circle.pending {
+    background: #f9fafb;
+    box-shadow: 0 0 0 2px var(--border);
+    color: var(--text-4);
+  }
+
+  .stage-label.closed {
+    color: var(--danger);
+    font-weight: 700;
+  }
+
+  .stage-arrow {
+    position: absolute;
+    right: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--border);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .stage-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: .06em;
+    text-align: center;
+    line-height: 1.3;
+    max-width: 80px;
+    word-break: break-word;
+  }
+
+  .stage-label.completed {
+    color: var(--success);
+  }
+
+  .stage-label.active {
+    color: var(--warning);
+  }
+
+  .stage-label.pending {
+    color: var(--text-1);
+  }
+
+  .exemption-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+
+  /* ── Quick Status Grid ───────────────────────────────────── */
+  .quick-status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .qs-item {
+    padding: 16px 18px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .qs-item:last-child {
+    border-right: none;
+  }
+
+  .qs-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: none;
+    letter-spacing: .05em;
+  }
+
+  .qs-label .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  .qs-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+    line-height: 1.3;
+  }
+
+  .qs-value.pending {
+    color: var(--warning);
+  }
+
+  .qs-value.success {
+    color: var(--success);
+  }
+
+  .qs-value.danger {
+    color: var(--danger);
+  }
+
+  .qs-value.muted {
+    color: var(--text-4);
+    font-weight: 400;
+  }
+
+  @media (max-width: 620px) {
+    .quick-status-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .qs-item:nth-child(2) {
+      border-right: none;
+    }
+  }
+
+  /* ╔═══════════════════════════════════╗
+     ║  MERIT + SEAT ALLOCATION CARD     ║
+     ╚═══════════════════════════════════╝ */
+  .merit-seat-card .ma-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 0;
+  }
+
+  .merit-panel,
+  .seat-panel {
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .merit-panel {
+    border-right: 1px solid var(--border);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    /* padding-top: 28px; */
+  }
+
+  .merit-stat-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 8px;
+    justify-content: center;
+  }
+
+  .merit-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+  }
+
+  .merit-stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-4);
+    text-transform: none;
+    letter-spacing: .07em;
+  }
+
+  .merit-stat-value {
+    font-size: clamp(34px, 8vw, 50px);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--primary);
+    word-break: break-all;
+  }
+
+  .merit-stat-value.score {
+    color: var(--text-1);
+  }
+
+  .merit-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #dcfce7;
+    color: var(--success);
+    text-transform: none;
+    letter-spacing: .05em;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15);
+  }
+
+  .merit-panel .merit-chip,
+  .seat-panel .merit-chip {
+    position: absolute;
+    /* top: 20px; */
+    right: 18px;
+  }
+
+  /* Seat panel */
+  .seat-info-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .seat-prog-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 2px;
+  }
+
+  .seat-meta {
+    font-size: 11px;
+    color: var(--text-3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .seat-deadline {
+    font-size: 11px;
+    color: var(--text-2);
+  }
+
+  .seat-deadline strong {
+    color: var(--text-1);
+    font-weight: 600;
+  }
+
+  .seat-action-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-accept {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+
+  .btn-accept:hover {
+    opacity: .88;
+    transform: translateY(-1px);
+  }
+
+  .btn-decline {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+
+  .btn-decline:hover {
+    opacity: .88;
+    transform: translateY(-1px);
+  }
+
+  .btn-accept .material-symbols-outlined,
+  .btn-decline .material-symbols-outlined {
+    font-size: 17px;
+  }
+
+  @media (max-width: 620px) {
+    .merit-seat-card .ma-card-body {
+      grid-template-columns: 1fr;
+    }
+
+    .merit-panel {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+  }
+
+  /* ╔═══════════════════════════════════╗
+     ║  DOCUMENTS + NEXT STEPS           ║
+     ╚═══════════════════════════════════╝ */
+  .doc-nextsteps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  @media (max-width: 680px) {
+    .doc-nextsteps-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Document list */
+  .doc-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .doc-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 22px;
+    border-bottom: 1px solid #f9fafb;
+    transition: background .12s;
+  }
+
+  .doc-row:last-child {
+    border-bottom: none;
+  }
+
+  .doc-row:hover {
+    background: #f9fafb;
+  }
+
+  .doc-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .15s, background .15s;
+  }
+
+  .doc-checkbox.checked {
+    background: var(--success);
+    border-color: var(--success);
+  }
+
+  .doc-checkbox.checked::after {
+    content: '✓';
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .doc-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    flex: 1;
+  }
+
+  .doc-view-link {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .doc-view-link:hover {
+    text-decoration: underline;
+  }
+
+  .doc-card-foot {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-upload {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity .15s;
+  }
+
+  .btn-upload:hover {
+    opacity: .88;
+  }
+
+  .btn-upload .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  /* Next Steps list */
+  .nextsteps-list {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 22px;
+    gap: 14px;
+  }
+
+  .ns-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ns-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .ns-check.done {
+    background: #fef3c7;
+    color: var(--warning);
+  }
+
+  .ns-check.pending {
+    background: #fef3c7;
+    color: var(--warning);
+  }
+
+  .ns-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    line-height: 1.45;
+    padding-top: 2px;
+  }
+
+  .ns-deadline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+
+  .ns-deadline-row .material-symbols-outlined {
+    font-size: 18px;
+    color: var(--warning);
+  }
+
+  .ns-deadline-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-3);
+  }
+
+  .ns-deadline-text strong {
+    color: var(--warning);
+    font-weight: 600;
+  }
+
+  /* ── Download button ─────────────────────────────────────── */
+  .btn-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 28px;
+    background: var(--card-bg);
+    color: var(--text-2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+
+  .btn-download:hover {
+    background: var(--bg);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .btn-download .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  /* ── Error / empty states ────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 56px 24px;
+  }
+
+  .empty-state .ico-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  .empty-state .ico-wrap .material-symbols-outlined {
+    font-size: 32px;
+    color: var(--text-4);
+  }
+
+  .empty-state h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 8px;
+  }
+
+  .empty-state p {
+    font-size: 13px;
+    color: var(--text-3);
+    max-width: 360px;
+    margin: 0 auto 24px;
+  }
+
+  /* ── Entrance Test + Interview cards (reuse same style) ──── */
+  .info-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .info-tile {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 13px 16px;
+    border: 1px solid var(--border);
+  }
+
+  .info-tile-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-4);
+    text-transform: none;
+    letter-spacing: .07em;
+    margin-bottom: 4px;
+  }
+
+  .info-tile-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .info-tile-value.red {
+    color: var(--danger);
+  }
+
+  .info-tile-value.blue {
+    color: var(--primary);
+  }
+
+  /* ── Result Published banner ─────────────────────────────── */
+  .result-banner {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .result-banner-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .result-banner-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #166534;
+  }
+
+  .result-banner-badge {
+    background: var(--success);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .result-score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+  }
+
+  .result-score-box {
+    background: white;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .result-score-box .lbl {
+    font-size: 10px;
+    color: var(--text-3);
+    font-weight: 700;
+    text-transform: none;
+    margin-bottom: 4px;
+  }
+
+  .result-score-box .val {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-1);
+  }
+
+  .result-score-box .val.green {
+    color: var(--success);
+  }
+
+  .result-score-box .val.red {
+    color: var(--danger);
+  }
+
+  /* ── Eligibility Result card enhancements ────────────────── */
+  .eligibility-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #bbf7d0;
+  }
+  .eligibility-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+  }
+  .eligibility-meta-icon {
+    font-size: 16px !important;
+    color: var(--text-4);
+  }
+  .eligibility-meta-item.status-qualified {
+    color: var(--success);
+    font-weight: 600;
+  }
+  .eligibility-meta-item.status-qualified .eligibility-meta-icon {
+    color: var(--success);
+  }
+
+  /* ── Profile tab ─────────────────────────────────────────── */
+  .prof-wrap {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  @media (max-width: 720px) {
+    .prof-wrap {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .prof-sidebar {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 26px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .prof-avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .prof-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .prof-name-display {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-1);
+    text-align: center;
+    margin-bottom: 3px;
+  }
+
+  .prof-email-display {
+    font-size: 11px;
+    color: var(--text-4);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .prof-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+  }
+
+  .prof-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    text-decoration: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+
+  .prof-action:hover {
+    background: var(--bg);
+    color: var(--text-1);
+  }
+
+  .prof-action .material-symbols-outlined {
+    font-size: 18px;
+    color: var(--text-4);
+  }
+
+  .prof-action.primary {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .prof-action.primary .material-symbols-outlined {
+    color: var(--primary);
+  }
+
+  .prof-action.danger {
+    color: var(--danger);
+  }
+
+  .prof-action.danger .material-symbols-outlined {
+    color: var(--danger);
+  }
+
+  .prof-main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .prof-section-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .prof-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px 13px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .prof-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .prof-section-title .material-symbols-outlined {
+    font-size: 18px;
+    color: var(--text-3);
+  }
+
+  .prof-edit-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-3);
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+
+  .prof-edit-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .prof-edit-btn .material-symbols-outlined {
+    font-size: 15px;
+  }
+
+  .prof-field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 540px) {
+    .prof-field-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .prof-field {
+    padding: 14px 22px;
+    border-bottom: 1px solid #f9fafb;
+    border-right: 1px solid #f9fafb;
+  }
+
+  .prof-field:nth-child(even) {
+    border-right: none;
+  }
+
+  .prof-field-full {
+    grid-column: 1/-1;
+    padding: 14px 22px;
+    border-bottom: 1px solid #f9fafb;
+  }
+
+  .prof-subsection {
+    grid-column: 1/-1;
+    padding: 10px 22px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: none;
+    letter-spacing: .06em;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .prof-fl {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-4);
+    text-transform: none;
+    letter-spacing: .06em;
+    margin-bottom: 3px;
+  }
+
+  .prof-fv {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-1);
+  }
+
+  .prof-fv.empty {
+    color: var(--border);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  /* ── Profile edit modal ──────────────────────────────────── */
+  .prof-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .prof-overlay.open {
+    display: flex;
+  }
+
+  .prof-modal {
+    background: white;
+    border-radius: 18px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 86vh;
+    overflow-y: auto;
+    margin: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .2);
+    animation: fadeUp .2s ease-out both;
+  }
+
+  .prof-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .prof-modal-head h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-1);
+  }
+
+  .prof-modal-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: var(--bg);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+  }
+
+  .prof-modal-close:hover {
+    background: var(--border);
+  }
+
+  .prof-modal-body {
+    padding: 18px 22px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .pef-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+  }
+
+  .pef-row.full {
+    grid-template-columns: 1fr;
+  }
+
+  .pef label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: none;
+    letter-spacing: .05em;
+    margin-bottom: 5px;
+  }
+
+  .pef input,
+  .pef select,
+  .pef textarea {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: var(--text-1);
+    background: white;
+    transition: border-color .15s;
+  }
+
+  .pef input:focus,
+  .pef select:focus,
+  .pef textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  .pef textarea {
+    min-height: 68px;
+    resize: vertical;
+  }
+
+  .app-confirm-overlay .app-confirm-modal .prof-modal-body {
+    padding: 20px 22px 16px;
+  }
+  .app-confirm-message {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-2);
+    margin: 0;
+  }
+  .prof-modal-foot {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 14px 22px 18px;
+    border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .btn-save {
+    padding: 8px 22px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+
+  .btn-save:hover {
+    opacity: .88;
+  }
+
+  .btn-save:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .btn-cancel {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-3);
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .btn-cancel:hover {
+    background: var(--border);
+  }
+
+  .prof-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-1);
+    color: white;
+    padding: 9px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+    z-index: 9999;
+    display: none;
+    animation: fadeUp .2s ease-out;
+  }
+
+  .prof-toast.show {
+    display: block;
+  }
+
+  .prof-toast.error {
+    background: var(--danger);
+  }
+
+  /* ── Tab bar ─────────────────────────────────────────────── */
+  .ma-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 18px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ma-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ma-tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .ma-tab:hover {
+    color: var(--primary);
+  }
+
+  .ma-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  .ma-tab .material-symbols-outlined {
+    font-size: 17px;
+  }
+
+  /* ── Responsive Enhancements ────────────────────────────── */
+  @media (max-width: 992px) {
+    .ma-inner {
+      max-width: 100%;
+      padding: 0 10px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .prof-field-grid {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .prof-field {
+      border-right: none !important;
+    }
+
+    .ma-page {
+      padding: 20px 12px 40px;
+      margin: 0;
+    }
+
+    .app-top-row {
+      flex-direction: column;
+      align-items: stretch !important;
+      gap: 20px;
+    }
+
+    .app-header-left {
+      width: 100%;
+    }
+
+    .app-header-right {
+      width: 100%;
+      flex-direction: row !important;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 8px !important;
+    }
+
+    .app-header-right .btn-edit-application,
+    .app-header-right .btn-download,
+    .app-header-right .btn-view-application {
+      flex: 1;
+      justify-content: center;
+      min-width: 120px;
+    }
+
+    .app-program-name {
+      font-size: 20px !important;
+    }
+
+    .quick-status-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .qs-item {
+      border-right: 1px solid var(--border) !important;
+    }
+
+    .qs-item:nth-child(2n) {
+      border-right: none !important;
+    }
+
+    .merit-seat-card .ma-card-body {
+      grid-template-columns: 1fr;
+    }
+
+    .merit-panel {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-grid-2 {
+      grid-template-columns: 1fr;
+    }
+
+    .result-score-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .pef-row {
+      grid-template-columns: 1fr !important;
+    }
+
+    .stage-track-wrap {
+      padding: 30px 20px;
+    }
+
+    .stage-track {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 30px;
+      padding-left: 15px;
+    }
+
+    .stage-track::before {
+      left: 34px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      height: 100%;
+    }
+
+    .stage-track-fill {
+      left: 34px;
+      top: 0;
+      width: 3px !important;
+      height: var(--pct, 0%);
+    }
+
+    .stage-item {
+      flex-direction: row;
+      width: 100%;
+      gap: 20px;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .stage-circle {
+      margin: 0;
+    }
+
+    .stage-label {
+      text-align: left;
+      max-width: none;
+      font-size: 13px;
+    }
+
+    .stage-arrow {
+      display: none;
+    }
+
+    .result-score-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .app-header-right a {
+      flex: 1 1 calc(50% - 8px) !important;
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .quick-status-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .qs-item {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+      text-align: left;
+      padding: 12px 18px;
+    }
+
+    .qs-item:last-child {
+      border-bottom: none;
+    }
+
+    .app-program-name {
+      font-size: 18px !important;
+    }
+
+    .app-id-chip {
+      width: 100%;
+      text-align: center;
+    }
+
+    .app-id-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .prof-modal {
+      margin: 0;
+      border-radius: 0;
+      max-height: 100vh;
+      height: 100vh;
+    }
+    
+    .prof-modal-head, .prof-modal-foot {
+      border-radius: 0;
+    }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+  rel="stylesheet">
+<link
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block"
+  rel="stylesheet">
+{% endblock %}
+
+{% block title %}{{ "Application Details" if show_detail else "My Applications" }}{% endblock %}
+
+{% block content %}
+
+{# ── NOT FOUND ──────────────────────────────────────────────────── #}
+{% if app_not_found %}
+<div class="empty-state" style="padding:80px 20px">
+  <div class="ico-wrap"><span class="material-symbols-outlined">search_off</span></div>
+  <h3>Application Not Found</h3>
+  <p>This application does not exist or may have been removed.</p>
+  <a href="/merit-and-scholarship/admission_dashboard" class="btn-download">Back</a>
+</div>
+
+{# ── ACCESS DENIED ──────────────────────────────────────────────── #}
+{% elif access_denied %}
+<div class="empty-state" style="padding:80px 20px">
+  <div class="ico-wrap"><span class="material-symbols-outlined">lock</span></div>
+  <h3>Access Denied</h3>
+  <p>You do not have permission to view this application.</p>
+  <a href="/merit-and-scholarship/admission_dashboard" class="btn-download">Back</a>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════
+DETAIL VIEW
+══════════════════════════════════════════════════════════════════ #}
+{% elif show_detail %}
+{% set _app = selected_app %}
+{% set _aname = (_app.get('candidate_name') or _app.get('applicant_name') if _app.get else (_app.candidate_name or
+_app.applicant_name)) or '' %}
+{% set _prog = (_app.get('program_name') or _app.get('program') if _app.get else (_app.program_name or _app.program)) or
+'Programme' %}
+{% set _cycle = (_app.get('admission_cycle') if _app.get else _app.admission_cycle) or '' %}
+{% set _status = (_app.get('application_status') if _app.get else _app.application_status) or 'Draft' %}
+{% set _stage = (_app.get('current_stage_name') or _app.get('current_stage') if _app.get else (_app.current_stage_name
+or _app.current_stage)) or _status %}
+{% set _email = (_app.get('email') if _app.get else _app.email) or '' %}
+{% set _intake = (_app.get('intake_type') if _app.get else _app.intake_type) or '' %}
+{% set _appid = app_name_param or '' %}
+{% set _subdate = submission_date or '' %}
+{% set _narr = app_narrative or '' %}
+{% set _docs = app_documents or [] %}
+{% set _stages = stage_tracker or [] %}
+{% set _steps = next_steps or [] %}
+{% set _sname = support_name or '' %}
+{% set _srole = support_role or '' %}
+{% set _semail = support_email or '' %}
+{% set _campimg = campus_image or '' %}
+
+<div class="ma-page">
+  <div class="ma-inner">
+
+    <!-- Back breadcrumb + Edit Application -->
+    <div class="ma-detail-actions fade-up"
+      style="animation-delay:.0s;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <a href="/merit-and-scholarship/admission_dashboard" class="back-link">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Back
+      </a>
+
+    </div>
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  APPLICATION SUMMARY CARD                    ║
+         ╚══════════════════════════════════════════════╝ -->
+    <div class="app-summary-card fade-up" style="animation-delay:.06s">
+
+      <!-- Header -->
+      <div class="app-summary-head">
+        <div class="app-top-row">
+          <div class="app-header-left">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
+              <h1 class="app-program-name" style="margin:0; font-size:24px;">{{ _prog }}</h1>
+              <span class="app-id-chip" style="margin:0; background:#f8fafc; color:#64748b; border-color:#e2e8f0; font-size:11px; text-transform:none; font-weight:600;">Application number: {{ _appid }}</span>
+            </div>
+            <div class="app-id-row" style="margin-top:0; gap:16px;">
+              <span class="app-submitted-date">Submitted on: {{ _subdate }}</span>
+              {% if _cycle %}
+              <span class="app-submitted-date" style="display:flex; align-items:center; gap:16px;">
+                <span style="color:var(--border);">|</span>
+                Admission cycle: {{ _cycle }}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="app-header-right" style="flex-direction:row; align-items:center; gap:10px;">
+            {% if cancellation_details %}
+              {% set _cstat = cancellation_details.status %}
+              {% set _bg = '#fee2e2' if _cstat == 'Initiated' else ('#ffedd5' if _cstat == 'Approved' else '#dcfce7') %}
+              {% set _clr = '#991b1b' if _cstat == 'Initiated' else ('#9a3412' if _cstat == 'Approved' else '#166534') %}
+              <div class="cancellation-status-badge" style="display:flex; align-items:center; gap:8px; background:{{ _bg }}; color:{{ _clr }}; padding:6px 14px; border-radius:30px; font-size:12px; font-weight:700; border:1px solid {{ _clr }}40;">
+                <span class="material-symbols-outlined" style="font-size:16px;">cancel_presentation</span>
+                Withdrawal: {{ _cstat }}
+              </div>
+            {% elif payment_details %}
+            <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}')" 
+              class="btn-withdraw-application" title="Withdraw your application and request refund"
+              style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
+              <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
+              Withdraw Application
+            </button>
+            {% endif %}
+
+            <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
+              title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
+              <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
+              {{ 'View' if not is_editable else 'Edit' }}
+            </a>
+            
+            {% if app_name_param %}
+            <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
+              target="_blank" class="btn-download" title="Download application" 
+              style="padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
+              <span class="material-symbols-outlined" style="margin:0;">download</span>
+            </a>
+            {% endif %}
+            
+            {% if offer_letter_url %}
+            <a href="{{ offer_letter_url }}" target="_blank" class="btn-download" title="Download offer letter"
+              style="background:var(--text-1); color:white; border-color:var(--text-1); padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
+              <span class="material-symbols-outlined" style="margin:0;">drafts</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage Tracker -->
+      {% if _stages %}
+      <div class="stage-track-wrap">
+        {% set ns = namespace(done=0, stopped=false) %}
+        {% for s in _stages %}
+        {% if not ns.stopped %}
+        {% if s.state in ['completed', 'active', 'closed'] %}
+        {% set ns.done = ns.done + 1 %}
+        {% endif %}
+        {% if s.state in ['active', 'closed'] %}
+        {% set ns.stopped = true %}
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+        
+        {% set _num_stages = _stages|length %}
+        {% if _num_stages > 1 %}
+          {% set _pct = (((ns.done - 1) / _num_stages) * 100) %}
+        {% else %}
+          {% set _pct = 0 %}
+        {% endif %}
+
+        <div class="stage-track" style="--num-stages: {{ _num_stages }};">
+          <div class="stage-track-fill" style="width:{{ _pct }}%; --pct: {{ _pct }}%;"></div>
+
+          {% for s in _stages %}
+          {% set _sstate = s.state if s is mapping else s['state'] %}
+          {% set _slabel = s.name if s is mapping else s['name'] %}
+
+          <div class="stage-item">
+            <div class="stage-circle {{ _sstate }}">
+              {% if _sstate == 'completed' %}
+              <span class="material-symbols-outlined" style="font-size:18px">check</span>
+              {% elif _sstate == 'active' %}
+              <span class="material-symbols-outlined" style="font-size:18px">sync</span>
+              {% elif _sstate == 'closed' %}
+              <span class="material-symbols-outlined" style="font-size:18px">close</span>
+              {% else %}
+              <span class="material-symbols-outlined" style="font-size:18px">radio_button_unchecked</span>
+              {% endif %}
+              {% if not loop.last %}
+              <span class="stage-arrow">→</span>
+              {% endif %}
+            </div>
+            <span class="stage-label {{ _sstate }}">{{ _slabel }}</span>
+            {% if s.is_exempted %}
+              <span class="exemption-badge">Exempted</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+        </div><!-- end stage-track -->
+      </div><!-- end stage-track-wrap -->
+      {% endif %}
+
+      <!-- Quick Status Row -->
+      <div class="quick-status-grid">
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined">person</span>
+            Applicant
+          </span>
+          <span class="qs-value">{{ _aname or '—' }}</span>
+        </div>
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined">record_voice_over</span>
+            Interview date
+          </span>
+          {% if interview_status %}
+          <span class="qs-value pending">{{ interview_date }}</span>
+          {% else %}
+          <span class="qs-value muted">Not Scheduled</span>
+          {% endif %}
+        </div>
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined"></span>
+            Application fee
+          </span>
+          {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
+          <span class="qs-value success">{{ fee_payment_status }}</span>
+          {% elif fee_payment_status %}
+          <span class="qs-value pending">{{ fee_payment_status }}</span>
+          {% else %}
+          <span class="qs-value muted">Pending</span>
+          {% endif %}
+        </div>
+      </div>
+
+
+    </div><!-- end app-summary-card -->
+
+
+    {% if cancellation_details %}
+    {% set r_status = cancellation_details.refund_status or cancellation_details.status %}
+    {% set card_border = '#fecaca' %}
+    {% set card_bg = 'linear-gradient(to bottom, #ffffff, #fff1f2)' %}
+    {% set status_color = '#dc2626' %}
+    {% set status_icon = 'info' %}
+    {% set display_status = r_status %}
+    
+    {% if r_status in ['Processed', 'Completed'] %}
+        {% set card_border = '#bbf7d0' %}
+        {% set card_bg = 'linear-gradient(to bottom, #ffffff, #f0fdf4)' %}
+        {% set status_color = '#16a34a' %}
+        {% set status_icon = 'check_circle' %}
+        {% set display_status = 'Refund Processed' %}
+    {% elif r_status in ['Processing', 'Approved', 'Initiated'] %}
+        {% set card_border = '#fef08a' %}
+        {% set card_bg = 'linear-gradient(to bottom, #ffffff, #fefce8)' %}
+        {% set status_color = '#ca8a04' %}
+        {% set status_icon = 'hourglass_empty' %}
+        {% set display_status = 'Refund Processing' if r_status != 'Initiated' else 'Withdrawal Initiated' %}
+    {% elif r_status in ['Error', 'Failed', 'Rejected'] %}
+        {% set card_border = '#fecaca' %}
+        {% set card_bg = 'linear-gradient(to bottom, #ffffff, #fff1f2)' %}
+        {% set status_color = '#dc2626' %}
+        {% set status_icon = 'error' %}
+        {% set display_status = 'Refund Error' if r_status != 'Rejected' else 'Request Rejected' %}
+    {% endif %}
+
+    <div class="ma-card fade-up" style="animation-delay:.35s; margin-top:24px; border: 1px solid {{ card_border }}; background: {{ card_bg }};">
+      <div class="ma-card-head" style="border-bottom: 1px solid {{ card_border }}; background: rgba(255, 255, 255, 0.4);">
+        <div class="ma-card-title">
+          <span class="ico" style="background: {{ card_border }}; color: {{ status_color }};">
+            <span class="material-symbols-outlined">cancel_presentation</span>
+          </span>
+          Withdrawal Status
+        </div>
+        {% if cancellation_details.status == 'Completed' and cancellation_details.refund_request %}
+        <div class="ma-card-actions">
+          <a href="/api/method/slcm.admission.utils.web.download_refund_receipt?refund_request={{ cancellation_details.refund_request }}" target="_blank" class="btn-download" 
+             style="padding: 0 16px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; background: {{ status_color }}; color: white; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+            Download Receipt
+          </a>
+        </div>
+        {% endif %}
+      </div>
+      
+      <div class="ma-card-body" style="padding: 24px;">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+          
+          <!-- Column 1: Status -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: {{ status_color }}; font-weight: 700; font-size: 12px; text-transform: none; letter-spacing: 0.05em;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">track_changes</span>
+              Request Status
+            </div>
+            
+            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid {{ card_border }}; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Process Status</div>
+                  <div style="font-size: 18px; font-weight: 800; color: {{ status_color }}; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">{{ status_icon }}</span>
+                    {{ display_status }}
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
+                  <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.format(cancellation_details.requested_on, "Datetime") }}</div>
+                </div>
+              </div>
+
+              {% if cancellation_details.refund_amount %}
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed {{ card_border }}; display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refund Amount</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #334155;">{{ frappe.format(cancellation_details.refund_amount, "Currency", cancellation_details.currency or "INR") }}</div>
+                </div>
+                {% if cancellation_details.refund_date and r_status in ['Processed', 'Completed'] %}
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refunded On</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #16a34a;">{{ frappe.format(cancellation_details.refund_date, "Datetime") }}</div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+
+          <!-- Column 2: Reason -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #991b1b; font-weight: 700; font-size: 12px; text-transform: none; letter-spacing: 0.05em;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">description</span>
+              Withdrawal Details
+            </div>
+            
+            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #fecaca; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                 <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Reason</div>
+                 <div style="font-size: 13px; font-weight: 500; color: #475569; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                   {{ cancellation_details.cancellation_reason or '—' }}
+                 </div>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Meta Info Footer -->
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #fecaca; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #64748b;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">id_card</span>
+            Request ID: <span style="font-weight: 600; color: #334155;">{{ cancellation_details.name }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+                 <span class="material-symbols-outlined" style="font-size: 16px;">contact_support</span>
+                 Need help? Contact Admissions Office
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  INTERVIEW CARD                              ║
+         ╚══════════════════════════════════════════════╝ -->
+    {% if interview_doc %}
+    <div class="ma-card fade-up" style="animation-delay:.12s">
+      <div class="ma-card-head">
+        <div class="ma-card-title">
+          <span class="ico"><span class="material-symbols-outlined">groups</span></span>
+          Interview
+        </div>
+        {% set i_status = interview_doc.interview_status %}
+        {% if i_status and i_status != 'Scheduled' %}
+        {% if i_status == 'Absent' %}
+        <span class="status-badge" style="background:#fee2e2;color:#dc2626">Absent</span>
+        {% elif i_status == 'Attended' %}
+        <span class="status-badge" style="background:#f8faf9;color:#0854b7">Attended</span>
+        {% else %}
+        <span class="status-badge" style="background:#f0fdf4;color:#166534">{{ i_status|title
+          }}</span>
+        {% endif %}
+        {% else %}
+        <span class="status-badge" style="background:#f0fdf4;color:#166534">
+          {{ (interview_doc.re_interview_slot_status if interview_is_rescheduled else
+          interview_doc.interview_slot_status)|title }}
+        </span>
+        {% endif %}
+      </div>
+      <div class="ma-card-body">
+        {% if interview_show_result %}
+        <div class="result-banner">
+          <div class="result-banner-head">
+            <span class="result-banner-title">Assessment score</span>
+            <span class="result-banner-badge">Published</span>
+          </div>
+          <div class="result-score-grid">
+            <div class="result-score-box">
+              <div class="lbl">Score</div>
+              <div class="val">{{ interview_doc.interview_score or '0' }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Rank</div>
+              <div class="val" style="font-size:18px">{% if interview_doc.rank %}{{ interview_doc.rank }}{% else %}—{% endif %}</div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Result Status</div>
+              <div class="val {% if interview_doc.interview_result_status == 'Pass' %}green{% elif interview_doc.interview_result_status == 'Fail' %}red{% endif %}" style="font-size:14px">{{ interview_doc.interview_result_status or '—' }}</div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        {% if interview_current_slot %}
+        <div class="info-grid-2" style="margin-bottom:14px">
+          <div class="info-tile">
+            <div class="info-tile-label">Date</div>
+            <div class="info-tile-value">{{ interview_current_slot.interview_date }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Reporting</div>
+            <div class="info-tile-value red">{{ interview_current_slot.reporting_time }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Slot time</div>
+            <div class="info-tile-value blue">{{ interview_current_slot.interview_time }}</div>
+          </div>
+        </div>
+        {% if interview_current_slot.interview_address %}
+        <div
+          style="display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:14px">
+          <span class="material-symbols-outlined"
+            style="font-size:17px;color:var(--text-4);flex-shrink:0">location_on</span>
+          <div style="flex:1">
+            <div style="font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.04em;margin-bottom:4px">Venue address</div>
+            <span style="font-size:13px;color:var(--text-2);line-height:1.5;display:block;margin-bottom:4px">{{ interview_current_slot.interview_address }}</span>
+            {% if interview_current_slot.interview_location %}
+            <a href="#" onclick="openMap('{{ interview_current_slot.interview_location | escape }}'); return false;" 
+               style="font-size:11px;color:var(--primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+               <span class="material-symbols-outlined" style="font-size:14px">map</span>
+               View on Map
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if not interview_current_slot.attendance_confirmation %}
+        <div id="interview-attendance-section">
+          <p style="font-size:12px;color:var(--text-3);margin-bottom:10px">Please confirm your attendance.</p>
+          <div style="display:flex;gap:10px">
+            <select id="interviewAttendanceSelect"
+              style="flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px">
+              <option value="" disabled selected>Your response...</option>
+              {% for opt in interview_attendance_options %}
+              <option value="{{ opt }}">{{ opt }}</option>
+              {% endfor %}
+            </select>
+            <button id="btnSaveInterviewAttendance"
+              style="padding:0 18px;height:40px;border-radius:8px;background:var(--primary);color:white;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
+              disabled>
+              Submit
+            </button>
+          </div>
+        </div>
+        {% else %}
+        {% set conf = interview_current_slot.attendance_confirmation %}
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:11px;text-align:center;margin-bottom:14px">
+          <span style="font-size:12px;color:#1e40af;font-weight:600">
+            {% if conf == "Confirm Attendance" %}
+              Interview Attendance Accepted
+            {% elif conf == "Decline Interview Invitation" %}
+              Interview Invitation Declined
+            {% elif conf == "Request Rescheduling" %}
+              Reschedule Request Submitted
+            {% else %}
+              {{ conf }}
+            {% endif %}
+          </span>
+        </div>
+        {% endif %}
+      {% endif %}
+      {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  ENTRANCE TEST CARD                          ║
+         ╚══════════════════════════════════════════════╝ -->
+    {% if et_doc %}
+    <div class="ma-card fade-up" style="animation-delay:.18s">
+      <div class="ma-card-head">
+        <div class="ma-card-title">
+          <span class="ico"><span class="material-symbols-outlined">edit_document</span></span>
+          Entrance Test
+        </div>
+        <span class="status-badge" style="background:#dbeafe;color:#1d4ed8">
+          {{ et_doc.entrance_test_status|title }}
+        </span>
+      </div>
+      <div class="ma-card-body">
+        {% if et_show_result %}
+        <div class="result-banner">
+          <div class="result-banner-head">
+            <span class="result-banner-title">Entrance test result</span>
+            <span class="result-banner-badge">Published</span>
+          </div>
+          <div class="result-score-grid">
+            <div class="result-score-box">
+              <div class="lbl">Score</div>
+              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Rank</div>
+              <div class="val">{{ et_doc.entrance_test_rank or '—' }}</div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Result Status</div>
+              <div class="val {% if et_doc.result_status == 'Pass' %}green{% elif et_doc.result_status == 'Fail' %}red{% endif %}" style="font-size:14px">{{ et_doc.result_status or '—' }}</div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        {% set current_alloc_status = et_doc.re_allocation_status if et_is_rescheduled else et_doc.allocation_status %}
+        {% if current_alloc_status == "Allocated" %}
+        <div
+          style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-size:11px;color:var(--text-4);font-weight:600;margin-bottom:3px">
+              Exam centre</div>
+            <div style="font-size:15px;font-weight:600;color:var(--text-1)">{{ et_doc.re_center_name if
+              et_is_rescheduled else et_doc.center_name }}</div>
+          </div>
+          <button onclick="downloadAdmitCard()"
+            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;color:white;background:var(--primary);cursor:pointer;font-family:'Poppins',sans-serif">
+            <span class="material-symbols-outlined" style="font-size:17px">download</span>
+            Download admit card
+          </button>
+        </div>
+        <div class="info-grid-2">
+          <div class="info-tile">
+            <div class="info-tile-label">Test date</div>
+            <div class="info-tile-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else
+              et_doc.allocation_date) }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Reporting time</div>
+            <div class="info-tile-value red">{{ et_reporting_time }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Room / hall</div>
+            <div class="info-tile-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name }}</div>
+          </div>
+          <div class="info-tile">
+            <div class="info-tile-label">Seat number</div>
+            <div class="info-tile-value blue">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}
+            </div>
+          </div>
+        </div>
+        <div
+          style="display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:10px;padding:12px;margin-top:12px;border:1px solid var(--border)">
+          <span class="material-symbols-outlined"
+            style="font-size:17px;color:var(--text-4);flex-shrink:0;margin-top:1px">location_on</span>
+          <div style="flex:1">
+            <span style="font-size:12px;color:var(--text-2);display:block;margin-bottom:4px">{{ et_doc.re_center_address if et_is_rescheduled else
+              et_doc.center_address }}</span>
+            {% if et_location %}
+            <a href="#" onclick="openMap('{{ et_location | escape }}'); return false;" 
+               style="font-size:11px;color:var(--primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+               <span class="material-symbols-outlined" style="font-size:14px">map</span>
+               View on Map
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <!-- Provider selection -->
+        <div id="allocation-view-section">
+          <h4 style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px">Test centre selection</h4>
+          <p style="font-size:12px;color:var(--text-3);margin-bottom:18px">Select your preferred examination centre.
+            <strong>This choice cannot be changed.</strong>
+          </p>
+          <div style="display:flex;flex-direction:column;gap:13px">
+            <div>
+              <label
+                style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:none;display:block;margin-bottom:5px">Available
+                centres</label>
+              <select id="providerDropdown"
+                style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px">
+                <option value="" disabled selected>Choose a location...</option>
+                {% for p in et_preferences %}
+                <option value="{{ p.provider }}">{{ p.center_name or p.provider }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div id="centerDetails"
+              style="display:none;background:var(--bg);padding:13px;border-radius:9px;border:1px solid var(--border)">
+              <div style="display:flex;gap:10px;align-items:center">
+                <div
+                  style="background:var(--primary);color:white;padding:7px;border-radius:7px;display:flex;align-items:center;justify-content:center">
+                  <span class="material-symbols-outlined" style="font-size:18px">location_on</span>
+                </div>
+                <div style="flex:1">
+                  <div id="selectedCenterName" style="font-size:13px;font-weight:600;color:var(--text-1)"></div>
+                  <div id="selectedCenterAddr" style="font-size:11px;color:var(--text-3);margin-bottom:4px"></div>
+                  <div id="selectedCenterMapLink" style="display:none">
+                    <a href="#" id="viewSelectedMap" style="font-size:11px;color:var(--primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+                       <span class="material-symbols-outlined" style="font-size:14px">map</span>
+                       View on Map
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button id="btnSaveProvider"
+              style="width:100%;height:42px;border-radius:9px;background:var(--primary);color:white;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
+              disabled>
+              Confirm allocation
+            </button>
+          </div>
+        </div>
+        <div id="successSection" style="display:none;text-align:center;padding:32px">
+          <div style="font-size:32px;margin-bottom:8px">⏳</div>
+          <h4 style="font-size:16px;font-weight:700;color:var(--text-1)">Securing your selection...</h4>
+          <p style="font-size:12px;color:var(--text-3)">Please wait while we finalise your centre.</p>
+        </div>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  ELIGIBILITY RESULT CARD                     ║
+         ╚══════════════════════════════════════════════╝ -->
+    {% if eligibility_result %}
+    <div class="ma-card fade-up" style="animation-delay:.24s; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4);">
+      <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5);">
+        <div class="ma-card-title">
+          <span class="ico" style="background: #dcfce7; color: #16a34a;">
+            <span class="material-symbols-outlined">assignment_turned_in</span>
+          </span>
+          Eligibility Result
+        </div>
+        {% if eligibility_result.eligibility_result_card %}
+        <div class="ma-card-actions">
+          <a href="{{ eligibility_result.eligibility_result_card }}" target="_blank" class="btn-download" 
+             style="padding: 0 16px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; background: #16a34a; color: white; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); transition: all 0.2s;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+            Download Mark Sheet
+          </a>
+        </div>
+        {% endif %}
+      </div>
+      
+      <div class="ma-card-body" style="padding: 24px;">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- Column 1: Scores -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 12px; letter-spacing: 0.05em;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">analytics</span>
+              Assessment Scores
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Entrance Test</div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.entrance_test_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
+              </div>
+              
+              <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Interview</div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.interview_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Column 2: Status -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 12px; letter-spacing: 0.05em;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">verified_user</span>
+              Qualification Status
+            </div>
+            
+            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 2px;">Result Status</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #16a34a; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">check_circle</span>
+                    {{ eligibility_result.result_status or 'Qualified' }}
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 2px;">Source</div>
+                  <div style="font-size: 12px; font-weight: 600; color: #475569;">{{ eligibility_result.source_type or 'Assessment' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Meta Info Footer -->
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #bbf7d0; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #64748b;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">sync</span>
+            Cycle: <span style="font-weight: 600; color: #334155;">{{ eligibility_result.admission_cycle }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">corporate_fare</span>
+            Campus: <span style="font-weight: 600; color: #334155;">{{ eligibility_result.campus }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    
+
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  MERIT RESULT & SEAT ALLOCATION              ║
+         ╚══════════════════════════════════════════════╝ -->
+    <div class="ma-card merit-seat-card fade-up" style="animation-delay:.30s">
+      <div class="ma-card-head">
+        <div class="ma-card-title">
+          <span class="ico"><span class="material-symbols-outlined">military_tech</span></span>
+          Merit Result and Seat Allocation
+        </div>
+      </div>
+      <div class="ma-card-body">
+        <!-- Left: Merit -->
+        <div class="merit-panel">
+          {% if all_merit and all_merit|length > 0 and all_merit[0].overall_rank and all_merit[0].total_score %}
+            {% set m = all_merit[0] %}
+            <div class="merit-stat-row">
+              <div class="merit-stat">
+                <span class="merit-stat-label">Overall rank</span>
+                <span class="merit-stat-value">{{ m.overall_rank }}</span>
+                <span class="merit-chip" style="position: static; margin-top: 8px;">{{ m.status or 'Selected' }}</span>
+              </div>
+              <div class="merit-stat">
+                <span class="merit-stat-label">Merit score</span>
+                <span class="merit-stat-value score">{{ m.total_score }}</span>
+              </div>
+            </div>
+          {% else %}
+            <div style="padding:8px 0; text-align: center; display: flex; flex-direction: column; align-items: center;">
+              <span class="merit-stat-label" style="display:block;margin-bottom:4px">Overall rank</span>
+              <span style="font-size:24px;font-weight:700;color:var(--text-4)">—</span>
+              <p style="font-size:11px;color:var(--text-4);margin-top:4px">Merit list not yet published</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Right: Seat -->
+        <div class="seat-panel">
+          <div
+            style="font-size: 11px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 8px;">
+            Seat allocation result</div>
+          {% if all_results and all_results|length > 0 %}
+          {% set r = all_results[0] %}
+
+          <div class="seat-info-box">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+              <span class="seat-prog-name">{{ _prog }}</span>
+              <span class="merit-chip" style="position: static;">{{ r.selection_status }}</span>
+            </div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);">
+              <div
+                style="font-size: 11px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">
+                Allocated category</div>
+              <div
+                style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 4px 12px; border-radius: 8px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
+                {{ r.allocated_category or 'General' }}
+              </div>
+            </div>
+            <!-- {% if payment_details and payment_details.payment_date %}
+            <div class="seat-deadline">
+              Accept before: <strong>{{ payment_details.payment_date }}</strong>
+            </div>
+            {% endif %} -->
+          </div>
+
+          {% if r.selection_status in ['Selected','Offered'] %}
+          <!-- Accept/Decline buttons commented out intentionally -->
+          {% elif r.selection_status == 'Accepted' %}
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
+            <span class="material-symbols-outlined"
+              style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
+            <span style="font-size:13px;font-weight:600;color:#166534">Seat Accepted</span>
+          </div>
+          {% else %}
+          <div style="padding:12px 0;text-align:center">
+            <span style="font-size:13px;font-weight:500;color:var(--text-3)">Status: {{ r.selection_status }}</span>
+          </div>
+          {% endif %}
+          {% else %}
+          <div style="padding:12px 0">
+            <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
+          </div>
+          {% endif %}
+        </div><!-- end seat-panel -->
+      </div><!-- end ma-card-body -->
+    </div><!-- end merit-seat-card -->
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  DOCUMENTS + NEXT STEPS                      ║
+         ╚══════════════════════════════════════════════╝ -->
+    <div class="doc-nextsteps-grid fade-up" style="animation-delay:.36s">
+
+      <!-- Documents Checklist -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <div class="ma-card-title">
+            <span class="ico"><span class="material-symbols-outlined">folder_open</span></span>
+            Document checklist
+          </div>
+          {% if _docs %}
+          <span style="font-size:12px;font-weight:500;color:var(--text-3)">
+            {{ _docs|length }} document{{ 's' if _docs|length != 1 }}
+          </span>
+          {% endif %}
+        </div>
+
+        <div class="doc-list">
+          {% if app_documents %}
+          {% for doc in app_documents %}
+          {% set _is_done = doc.is_uploaded %}
+          <div class="doc-row"
+            {% if _status == 'Draft' %}
+            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}')"
+            style="cursor:pointer;"
+            {% else %}
+            style="cursor:default;"
+            {% endif %}>
+            <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
+            <span class="doc-name">{{ doc.document_name }}</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              {% if doc.file_url %}
+              <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
+                onclick="event.stopPropagation()">View</a>
+              {% endif %}
+              
+              {% if _status == 'Draft' %}
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
+                {% if _is_done %}edit_square{% else %}upload{% endif %}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div style="padding: 20px; text-align: center; color: var(--text-4); font-size: 13px;">
+            No documents required.
+          </div>
+          {% endif %}
+        </div>
+      </div><!-- end documents card -->
+
+      <!-- Next Steps -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <div class="ma-card-title">
+            <span class="ico"><span class="material-symbols-outlined">task_alt</span></span>
+            Next steps
+          </div>
+        </div>
+
+        <div class="nextsteps-list">
+          {% if _steps %}
+          {% for step in _steps %}
+          {% set _stext = step.text if step is mapping else step['text'] %}
+          {% set _sislink = step.is_link if step is mapping else step['is_link'] %}
+          {% set _slurl = step.link_url if step is mapping else step['link_url'] %}
+          {% set _slabel = step.link_label if step is mapping else step['link_label'] %}
+          <div class="ns-item">
+            <div class="ns-check done">
+              <span class="material-symbols-outlined" style="font-size:14px">check</span>
+            </div>
+            <span class="ns-text">
+              {% if _sislink and _slurl %}
+              <a href="{{ _slurl }}" style="color:var(--primary);font-weight:600">{{ _slabel or _stext }}</a>
+              {% else %}
+              {{ _stext }}
+              {% endif %}
+            </span>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="ns-item">
+            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+            <span class="ns-text">Pay admission fee</span>
+          </div>
+          <div class="ns-item">
+            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+            <span class="ns-text">Upload original documents</span>
+          </div>
+          <div class="ns-item">
+            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+            <span class="ns-text">Attend orientation</span>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if _steps %}
+        <div class="ns-deadline-row">
+          <span class="material-symbols-outlined">calendar_today</span>
+          <span class="ns-deadline-text">
+            Complete all steps before <strong>your cycle deadline</strong>
+          </span>
+        </div>
+        {% endif %}
+      </div><!-- end next steps card -->
+
+    </div><!-- end doc-nextsteps-grid -->
+
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  DOWNLOAD APPLICATION ROW                    ║
+         ╚══════════════════════════════════════════════╝ -->
+    <!-- <div class="fade-up" style="animation-delay:.3s;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+      {% if app_name_param %}
+      <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
+        target="_blank" class="btn-download">
+        <span class="material-symbols-outlined">download</span>
+        Download Applicatio
+      </a>
+      {% endif %}
+      {% if offer_letter_url %}
+      <a href="{{ offer_letter_url }}" target="_blank" class="btn-download"
+        style="background:var(--text-1);color:white;border-color:var(--text-1)">
+        <span class="material-symbols-outlined">drafts</span>
+        Download Offer Letter
+      </a>
+      {% endif %}
+    </div> -->
+
+  </div><!-- end ma-inner -->
+</div><!-- end ma-page -->
+
+{# ══════════════════════════════════════════════════════════════════
+LIST / DASHBOARD VIEW
+══════════════════════════════════════════════════════════════════ #}
+{% else %}
+<div class="ma-page">
+  <div class="ma-inner">
+
+    {% if frappe.session.user != "Guest" %}
+    <div class="ma-tabs">
+      <a href="/my-applications" class="ma-tab {% if not show_profile %}active{% endif %}">
+        <span class="material-symbols-outlined">description</span>
+        My Application
+      </a>
+      <a href="/my-applications?tab=profile" class="ma-tab {% if show_profile %}active{% endif %}">
+        <span class="material-symbols-outlined">person</span>
+        My Profile
+      </a>
+    </div>
+    {% endif %}
+
+    {# ── PROFILE TAB ─────────────────────────────────────────── #}
+    {% if show_profile %}
+    {%- set _pname = prof_candidate_name or '' -%}
+    {%- set _pinitial = _pname[0].upper() if _pname else 'U' -%}
+    {%- set _pphoto = prof_user_image or '' -%}
+
+    <div class="prof-wrap fade-up">
+
+      <div class="prof-sidebar">
+        <div class="prof-avatar" id="prof-avatar-circle"
+          onclick="openUploadModal('Photo', 'Photo', 'candidate_photo', '', 'field', '{{ prof_app_name }}')"
+          style="cursor:pointer; position:relative;" title="Click to change photo">
+          {%- if _pphoto -%}
+          <img src="{{ _pphoto }}" id="prof-avatar-img" alt="{{ _pinitial }}">
+          {%- else -%}
+          <span id="prof-avatar-init">{{ _pinitial }}</span>
+          {%- endif -%}
+          <div
+            style="position:absolute; bottom:0; right:0; background:var(--primary); color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;">
+            <span class="material-symbols-outlined" style="font-size:12px;">photo_camera</span>
+          </div>
+        </div>
+        <div class="prof-name-display">{{ _pname }}</div>
+        <div class="prof-email-display">{{ frappe.session.user }}</div>
+
+        {%- if prof_app_status -%}
+        <span class="status-badge" style="background:#dcfce7;color:#16a34a;margin-bottom:16px">
+          <span class="status-dot" style="background:#16a34a"></span>{{ prof_app_status }}
+        </span>
+        {%- endif -%}
+
+        <a href="/my-applications" class="prof-action primary">
+          <span class="material-symbols-outlined">description</span>My application
+        </a>
+        {% if prof_app_name %}
+        <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant&name={{ prof_app_name }}&format=Applicant Application Form"
+          class="prof-action" target="_blank">
+          <span class="material-symbols-outlined">download</span>Download application
+        </a>
+        {% endif %}
+        <div class="prof-divider"></div>
+        <a href="/update-password" class="prof-action">
+          <span class="material-symbols-outlined">lock_reset</span>Change password
+        </a>
+        <div class="prof-divider"></div>
+        <button class="prof-action danger" onclick="doLogout()">
+          <span class="material-symbols-outlined">logout</span>Log out
+        </button>
+      </div><!-- end prof-sidebar -->
+
+      <div class="prof-main">
+        <div class="prof-section-card">
+          <div class="prof-section-head">
+            <div class="prof-section-title">
+              <span class="material-symbols-outlined">badge</span>Personal details
+            </div>
+            {% if prof_app_status == 'Draft' %}
+            <button class="prof-edit-btn" onclick="openEditModal()">
+              <span class="material-symbols-outlined">edit</span>Edit all
+            </button>
+            {% endif %}
+          </div>
+          <div class="doc-list" style="border-top: 1px solid var(--border);">
+            {% set profile_fields = [
+            {'label': 'Full name', 'value': prof_candidate_name, 'id': 'disp-name'},
+            {'label': 'Date of birth', 'value': prof_dob, 'id': 'disp-dob'},
+            {'label': 'Gender', 'value': prof_gender, 'id': 'disp-gender'},
+            {'label': 'Nationality', 'value': prof_nationality, 'id': 'disp-nationality'},
+            {'label': 'Religion', 'value': prof_religion, 'id': 'disp-religion'},
+            {'label': 'Mobile number', 'value': prof_mobile, 'id': 'disp-mobile'},
+            {'label': 'Alternate contact', 'value': prof_alternate_contact, 'id': 'disp-alternate'},
+            {'label': 'Correspondence address', 'value': prof_address, 'id': 'disp-address'}
+            ] %}
+            {% for pf in profile_fields %}
+            <div class="doc-row" 
+              {% if prof_app_status == 'Draft' %}
+              onclick="openEditModal()"
+              style="cursor:pointer;"
+              {% else %}
+              style="cursor:default;"
+              {% endif %}>
+              <div class="doc-checkbox {% if pf.value %}checked{% endif %}"></div>
+              <div style="flex:1;">
+                <div class="prof-fl" style="margin-bottom:0;">{{ pf.label }}</div>
+                <div class="prof-fv" id="{{ pf.id }}">
+                  {% if pf.id == 'disp-dob' and pf.value %}
+                  {{ frappe.utils.formatdate(pf.value,'dd MMM, yyyy') }}
+                  {% else %}
+                  {{ pf.value or '<span class="empty">Not set</span>'|safe }}
+                  {% endif %}
+                </div>
+              </div>
+              {% if prof_app_status == 'Draft' %}
+              <span class="material-symbols-outlined"
+                style="font-size:18px; color:var(--primary); cursor:pointer;">edit</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Document Checklist in Profile -->
+        <div class="prof-section-card" style="margin-top:18px;">
+          <div class="prof-section-head">
+            <div class="prof-section-title">
+              <span class="material-symbols-outlined">folder_open</span>Document status
+            </div>
+          </div>
+          <div class="doc-list">
+            {% if app_documents %}
+            {% for doc in app_documents %}
+            {% set _is_done = doc.is_uploaded %}
+            <div class="doc-row"
+              {% if prof_app_status == 'Draft' %}
+              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ prof_app_name }}')"
+              style="cursor:pointer;"
+              {% else %}
+              style="cursor:default;"
+              {% endif %}>
+              <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
+              <span class="doc-name">{{ doc.document_name }}</span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                {% if doc.file_url %}
+                <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
+                  onclick="event.stopPropagation()">View</a>
+                {% endif %}
+                
+                {% if prof_app_status == 'Draft' %}
+                <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary); cursor:pointer;">
+                  {% if _is_done %}edit_square{% else %}upload{% endif %}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="padding: 20px; text-align: center; color: var(--text-4); font-size: 13px;">
+              No documents required.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div><!-- end prof-main -->
+
+    </div><!-- end prof-wrap -->
+
+    {# ── EDIT MODAL #}
+    <div class="prof-overlay" id="editOverlay">
+      <div class="prof-modal">
+        <div class="prof-modal-head">
+          <h3>Edit personal details</h3>
+          <button class="prof-modal-close" onclick="closeEditModal()">
+            <span class="material-symbols-outlined" style="font-size:17px">close</span>
+          </button>
+        </div>
+        <div class="prof-modal-body">
+          <div class="pef-row">
+            <div class="pef"><label>Full name</label><input type="text" id="edit-name"
+                value="{{ prof_candidate_name or '' }}" placeholder="Full name"></div>
+            <div class="pef"><label>Date of birth</label><input type="date" id="edit-dob" value="{{ prof_dob or '' }}">
+            </div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>Gender</label>
+              <select id="edit-gender">
+                <option value="">— Select —</option>
+                <option value="Male" {% if prof_gender=='Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if prof_gender=='Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if prof_gender=='Other' %}selected{% endif %}>Other</option>
+                <option value="Prefer not to say" {% if prof_gender=='Prefer not to say' %}selected{% endif %}>Prefer
+                  not to say</option>
+              </select>
+            </div>
+            <div class="pef"><label>Nationality</label><input type="text" id="edit-nationality"
+                value="{{ prof_nationality or '' }}" placeholder="e.g. Indian"></div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>Religion</label><input type="text" id="edit-religion"
+                value="{{ prof_religion or '' }}"></div>
+            <div class="pef"><label>Mobile number</label><input type="tel" id="edit-mobile"
+                value="{{ prof_mobile or '' }}" placeholder="+91 9XXXXXXXXX"></div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>Alternate contact</label><input type="tel" id="edit-alternate"
+                value="{{ prof_alternate_contact or '' }}"></div>
+            <div class="pef"><label>ID proof type</label><input type="text" id="edit-idproof"
+                value="{{ prof_id_proof or '' }}" placeholder="e.g. Aadhaar, Passport"></div>
+          </div>
+          <div class="pef-row full">
+            <div class="pef"><label>Correspondence address</label><textarea id="edit-address"
+                placeholder="Street address">{{ prof_address or '' }}</textarea></div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>State</label>
+              <select id="edit-state" onchange="loadDistricts(this.value)">
+                <option value="">— Select state —</option>
+                {% for s in states %}
+                <option value="{{ s.name }}" {% if prof_state==s.name %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="pef"><label>City (district)</label>
+              <select id="edit-city">
+                <option value="">— Select city —</option>
+                {% for d in districts %}
+                <option value="{{ d.name }}" {% if prof_city==d.name %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="pef-row">
+            <div class="pef"><label>Pin code</label><input type="text" id="edit-pincode"
+                value="{{ prof_pincode or '' }}"></div>
+            <div class="pef"></div>
+          </div>
+        </div>
+        <div class="prof-modal-foot">
+          <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+          <button class="btn-save" id="saveBtn" onclick="saveProfile()">Save changes</button>
+        </div>
+      </div>
+    </div>
+    <div class="prof-toast" id="profToast"></div>
+
+    {% else %}
+
+    {# ── LIST VIEW ────────────────────────────────────────────── #}
+    {% if applications %}
+    {% for app in applications %}
+    {% set h = app.header %}
+
+    <div class="app-summary-card fade-up" style="animation-delay:{{ loop.index0 * 0.06 }}s">
+      <div class="app-summary-head">
+        <div class="app-top-row">
+          <div>
+            <div class="app-id-row" style="margin-bottom:6px">
+              <span class="status-badge" style="background:{{ h.status_bg }};color:{{ h.status_color }}">
+                <span class="status-dot" style="background:{{ h.status_color }}"></span>
+                {{ h.status }}
+              </span>
+            </div>
+            <div class="app-program-name">{{ h.program_name }}</div>
+            <div class="app-id-row" style="margin-top:6px">
+              <span class="app-id-chip">{{ h.applicant_id }}</span>
+              <span class="app-submitted-date">{{ h.submitted_on }}</span>
+              <span class="app-submitted-date">· {{ h.cycle }}</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+            {% if app.payment_details %}
+            <button onclick="show_cancellation_dialog('{{ app.offer_name }}', '{{ app.name }}', '{{ app.campus }}', '{{ app.program }}')" 
+              class="btn-withdraw-application" title="Withdraw your application and request refund"
+              style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:8px 14px; border-radius:9px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:12px; height:38px;">
+              <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
+              Withdraw
+            </button>
+            {% endif %}
+
+            <a href="/my-applications?app={{ app.name }}"
+              style="display:inline-flex;align-items:center;gap:6px;padding:0 18px;border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;text-decoration:none;color:white;background:var(--primary);height:38px;">
+              View details
+              <span class="material-symbols-outlined" style="font-size:17px">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage tracker (loaded via JS) -->
+      <div style="padding:20px 24px 16px">
+        <div id="stageLoading-{{ app.name }}"
+          style="display:flex;align-items:center;gap:8px;color:var(--text-4);font-size:12px">
+          <div
+            style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite">
+          </div>
+          Loading pipeline...
+        </div>
+        <div id="stagePipeline-{{ app.name }}" style="display:none"></div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="quick-status-grid" style="border-top:1px solid var(--border)">
+        <div class="qs-item">
+          <span class="qs-label"><span class="material-symbols-outlined">person</span>Applicant</span>
+          <span class="qs-value">{{ app.personal[0].value if app.personal else '—' }}</span>
+        </div>
+        <div class="qs-item">
+          <span class="qs-label"><span class="material-symbols-outlined">school</span>Programme</span>
+          <span class="qs-value" style="font-size:13px">{{ h.program_name }}</span>
+        </div>
+        <div class="qs-item">
+          <span class="qs-label"><span class="material-symbols-outlined">military_tech</span>Merit score</span>
+          <span class="qs-value {% if h.merit_score %}{% else %}muted{% endif %}">{{ h.merit_score or 'Pending'
+            }}</span>
+        </div>
+        <div class="qs-item">
+          <span class="qs-label"><span class="material-symbols-outlined">category</span>Category</span>
+          <span class="qs-value">{{ app.application[4].value if app.application and app.application|length > 4 else
+            'General' }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="ma-card fade-up">
+      <div class="empty-state">
+        <div class="ico-wrap"><span class="material-symbols-outlined">description</span></div>
+        <h3>No application found</h3>
+        <p>You haven't started an application for the current admission cycle yet.</p>
+        <a href="/admission" class="btn-upload" style="display:inline-flex;width:auto;padding:11px 28px">Browse
+          programmes</a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% endif %}{# end show_profile / list #}
+
+  </div><!-- end ma-inner -->
+</div><!-- end ma-page -->
+
+{% endif %}{# end app_not_found / access_denied / show_detail / list #}
+
+{% endblock %}
+
+
+{% block extra_js %}
+<style>
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<!-- ── Document Upload Modal ──────────────────────────────────────── -->
+<div id="doc-upload-modal" class="prof-overlay">
+  <div class="prof-modal" style="max-width: 440px;">
+    <div class="prof-modal-head">
+      <h3 id="modal-doc-label">Upload Document</h3>
+      <button class="prof-modal-close" onclick="closeUploadModal()">
+        <span class="material-symbols-outlined" style="font-size:17px">close</span>
+      </button>
+    </div>
+    <div class="prof-modal-body">
+      <p id="modal-doc-type-hint" style="font-size:12px; color:var(--text-3); margin-bottom:16px;">Requirement details
+        will appear here.</p>
+
+      <div class="pef">
+        <label>Select File</label>
+        <input type="file" id="modal-file-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+          onchange="handleModalFileSelect(this)" />
+        <p style="font-size:10px; color:var(--text-4); margin-top:6px;">Accepted: PDF, JPG, PNG, DOC (Max 5MB)</p>
+      </div>
+
+      <div id="upload-progress-wrap" style="display:none; margin-top:16px;">
+        <div class="progress-bar-track" style="height:6px;">
+          <div id="upload-progress-fill" class="progress-bar-fill" style="width:0%"></div>
+        </div>
+        <p id="upload-status-text" style="font-size:11px; color:var(--primary); margin-top:6px; font-weight:600;">
+          Uploading...</p>
+      </div>
+
+      <div id="doc-upload-msg" style="margin-top:14px;font-size:13px;min-height:18px;"></div>
+    </div>
+    <div class="prof-modal-foot">
+      <button class="btn-cancel" onclick="closeUploadModal()">Cancel</button>
+      <button id="doc-upload-btn" class="btn-save" onclick="executeDocumentUpload()" disabled>Start Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Custom confirmation modal (replaces browser confirm for professional layout) ── -->
+<div id="app-confirm-modal" class="prof-overlay app-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title">
+  <div class="prof-modal app-confirm-modal" style="max-width: 420px;">
+    <div class="prof-modal-head">
+      <h3 id="app-confirm-title" class="app-confirm-title">Confirm</h3>
+      <button type="button" class="prof-modal-close" onclick="window._appConfirmResolve && window._appConfirmResolve(false)" aria-label="Close">
+        <span class="material-symbols-outlined" style="font-size:17px">close</span>
+      </button>
+    </div>
+    <div class="prof-modal-body">
+      <p id="app-confirm-message" class="app-confirm-message">Are you sure?</p>
+    </div>
+    <div class="prof-modal-foot">
+      <button type="button" class="btn-cancel" id="app-confirm-cancel">Cancel</button>
+      <button type="button" class="btn-save" id="app-confirm-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.showConfirmModal = function (options) {
+    var title = (options && options.title) ? options.title : 'Confirm';
+    var message = (options && options.message) ? options.message : 'Are you sure?';
+    var modal = document.getElementById('app-confirm-modal');
+    var titleEl = document.getElementById('app-confirm-title');
+    var messageEl = document.getElementById('app-confirm-message');
+    var btnOk = document.getElementById('app-confirm-ok');
+    var btnCancel = document.getElementById('app-confirm-cancel');
+    if (!modal || !messageEl) return Promise.resolve(false);
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    return new Promise(function (resolve) {
+      window._appConfirmResolve = function (value) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+        window._appConfirmResolve = null;
+        resolve(value);
+      };
+    });
+  };
+  (function () {
+    var confirmModal = document.getElementById('app-confirm-modal');
+    if (confirmModal) {
+      document.getElementById('app-confirm-ok').addEventListener('click', function () {
+        if (window._appConfirmResolve) window._appConfirmResolve(true);
+      });
+      document.getElementById('app-confirm-cancel').addEventListener('click', function () {
+        if (window._appConfirmResolve) window._appConfirmResolve(false);
+      });
+      confirmModal.addEventListener('click', function (e) {
+        if (e.target === confirmModal && window._appConfirmResolve) window._appConfirmResolve(false);
+      });
+    }
+    window.openMap = function (locationJson) {
+      if (!locationJson) return;
+      try {
+        const loc = JSON.parse(locationJson);
+        if (loc.features && loc.features.length > 0) {
+          const coords = loc.features[0].geometry.coordinates;
+          const lat = coords[1];
+          const lng = coords[0];
+          window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        }
+      } catch (e) {
+        console.error("Error parsing location JSON:", e);
+      }
+    };
+
+    let currentUploadTarget = {
+      label: '', type: '', field: '', docName: '', source: '', file: null
+    };
+
+    window.openUploadModal = function (label, type, field, docName, source, applicantId) {
+      currentUploadTarget = { label, type, field, docName, source, applicantId, file: null };
+      document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
+      document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
+      document.getElementById('modal-file-input').value = '';
+      document.getElementById('doc-upload-btn').disabled = true;
+      document.getElementById('doc-upload-msg').textContent = '';
+      document.getElementById('upload-progress-wrap').style.display = 'none';
+      document.getElementById('doc-upload-modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeUploadModal = function () {
+      document.getElementById('doc-upload-modal').classList.remove('open');
+      document.body.style.overflow = '';
+    };
+
+    window.handleModalFileSelect = function (input) {
+      if (input.files && input.files[0]) {
+        currentUploadTarget.file = input.files[0];
+        document.getElementById('doc-upload-btn').disabled = false;
+      } else {
+        currentUploadTarget.file = null;
+        document.getElementById('doc-upload-btn').disabled = true;
+      }
+    };
+
+    window.executeDocumentUpload = async function () {
+      const btn = document.getElementById('doc-upload-btn');
+      const msg = document.getElementById('doc-upload-msg');
+      const progWrap = document.getElementById('upload-progress-wrap');
+      const progFill = document.getElementById('upload-progress-fill');
+
+      if (!currentUploadTarget.file) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
+      progWrap.style.display = 'block';
+      progFill.style.width = '15%';
+
+      try {
+        const fd = new FormData();
+        fd.append('file', currentUploadTarget.file);
+        fd.append('is_private', '1');
+        fd.append('folder', 'Home/Attachments');
+
+        const uploadResp = await fetch('/api/method/upload_file', {
+          method: 'POST',
+          body: fd,
+          headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
+        });
+        const uploadData = await uploadResp.json();
+
+        if (!uploadData.message || !uploadData.message.file_url) {
+          throw new Error('File upload failed');
+        }
+
+        const fileUrl = uploadData.message.file_url;
+        progFill.style.width = '60%';
+
+        if (currentUploadTarget.field) {
+          const updateData = {
+            [currentUploadTarget.field]: fileUrl
+          };
+          if (currentUploadTarget.applicantId) {
+            updateData.applicant = currentUploadTarget.applicantId;
+          }
+          await apiFetch('slcm.admission.api.profile.update_profile', updateData);
+        } else {
+          throw new Error('This document type does not map to a profile field.');
+        }
+
+        progFill.style.width = '100%';
+        msg.style.color = 'var(--success)';
+        msg.textContent = '✓ Upload successful. Refreshing...';
+
+        // Immediate UI update for photo
+        if (currentUploadTarget.field === 'candidate_photo') {
+          const avatars = document.querySelectorAll('#prof-avatar-img, #adm-avatar-img');
+          avatars.forEach(img => { img.src = fileUrl; });
+
+          const profCircle = document.getElementById('prof-avatar-circle');
+          if (profCircle && !document.getElementById('prof-avatar-img')) {
+            const init = document.getElementById('prof-avatar-init');
+            if (init) init.remove();
+            const newImg = document.createElement('img');
+            newImg.id = 'prof-avatar-img';
+            newImg.src = fileUrl;
+            newImg.alt = 'Avatar';
+            profCircle.prepend(newImg);
+          }
+
+          const navBtn = document.getElementById('adm-avatar-btn');
+          if (navBtn && !document.getElementById('adm-avatar-img')) {
+            const init = document.getElementById('adm-avatar-init');
+            if (init) init.remove();
+            const newImg = document.createElement('img');
+            newImg.id = 'adm-avatar-img';
+            newImg.src = fileUrl;
+            newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+            navBtn.prepend(newImg);
+          }
+        }
+
+        setTimeout(() => window.location.reload(), 1000);
+
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Retry Upload';
+        msg.style.color = 'var(--danger)';
+        msg.textContent = 'Error: ' + (e.message || 'Unknown error');
+      }
+    };
+
+    {% if show_detail %}
+    /* ── Detail view: stagger animations ── */
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.fade-up').forEach(function (el) {
+        el.style.animationFillMode = 'forwards';
+      });
+
+      /* ── Accept / Decline seat ── */
+      window.handleSeatAction = async function (action, appId) {
+        var title = action === 'accept' ? 'Accept seat' : 'Decline seat';
+        var msg = action === 'accept'
+          ? 'Accept your seat allocation? This action is binding.'
+          : 'Decline your seat? This cannot be undone.';
+        if (!(await showConfirmModal({ title: title, message: msg }))) return;
+        try {
+          const message = await apiFetch('slcm.admission.api.seat.handle_seat_action', { applicant: appId, action: action });
+          if (message && message.success) {
+            window.location.reload();
+          } else {
+            alert((message && message.error) || 'Action failed. Please try again.');
+          }
+        } catch (e) {
+          alert(e.message || 'Error performing action.');
+        }
+      };
+
+      /* ── Entrance test provider selection ── */
+      (function () {
+        var dropdown = document.getElementById('providerDropdown');
+        if (!dropdown) return;
+        var btnSave = document.getElementById('btnSaveProvider');
+        var centerDetails = document.getElementById('centerDetails');
+        var selectedCenterName = document.getElementById('selectedCenterName');
+        var selectedCenterAddr = document.getElementById('selectedCenterAddr');
+        var etData = {
+          preferences: {{ et_preferences | tojson | safe if et_preferences else '[]' }},
+          applicantId: '{{ et_doc.applicant if et_doc else "" }}',
+          entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
+          allocationName: '{{ et_doc.name if et_doc else "" }}',
+          isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
+        };
+
+        dropdown.addEventListener('change', async function () {
+          var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
+          if (!selected) return;
+          btnSave.disabled = true;
+          btnSave.style.opacity = '.5';
+          btnSave.textContent = 'Verifying...';
+          try {
+            const message = await apiFetch('slcm.admission.doctype.entrance_test_list.entrance_test_list.get_applicant_preferences', {
+              applicant_id: etData.applicantId,
+              entrance_test_list: etData.entranceTestList
+            });
+            var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
+            if (pinfo && pinfo.is_full) {
+              alert((selected.center_name || selected.provider) + ' is currently full.');
+              dropdown.value = '';
+              centerDetails.style.display = 'none';
+              btnSave.textContent = 'Confirm allocation';
+              btnSave.disabled = true;
+              btnSave.style.opacity = '.5';
+              return;
+            }
+
+            centerDetails.style.display = 'block';
+            selectedCenterName.textContent = selected.center_name || selected.provider;
+            selectedCenterAddr.textContent = selected.center_address || '';
+            
+            var mapLinkDiv = document.getElementById('selectedCenterMapLink');
+            var viewMapBtn = document.getElementById('viewSelectedMap');
+            if (selected.location) {
+              mapLinkDiv.style.display = 'block';
+              viewMapBtn.onclick = function(e) {
+                e.preventDefault();
+                openMap(selected.location);
+              };
+            } else {
+              mapLinkDiv.style.display = 'none';
+            }
+
+            btnSave.disabled = false;
+            btnSave.style.opacity = '1';
+            btnSave.textContent = 'Confirm allocation';
+          } catch (e) {
+            alert('Verification failed: ' + e.message);
+            btnSave.disabled = false;
+            btnSave.style.opacity = '1';
+            btnSave.textContent = 'Confirm allocation';
+          }
+        });
+
+        if (btnSave) {
+          btnSave.addEventListener('click', async function () {
+            var selectedText = (dropdown.options[dropdown.selectedIndex] && dropdown.options[dropdown.selectedIndex].text) || dropdown.value;
+            if (!(await showConfirmModal({ title: 'Confirm allocation', message: 'Confirm allocation at ' + selectedText + '? This choice cannot be changed.' }))) return;
+            btnSave.disabled = true;
+            btnSave.textContent = 'Processing...';
+            try {
+              await apiFetch('slcm.www.eligibility.entrance_test_seat_allocation.save_provider', {
+                allocation_name: etData.allocationName,
+                selected_provider: dropdown.value,
+                is_rescheduled: etData.isRescheduled
+              });
+              document.getElementById('allocation-view-section').style.display = 'none';
+              document.getElementById('successSection').style.display = 'block';
+              setTimeout(function () { window.location.reload(); }, 1500);
+            } catch (e) {
+              alert('Allocation failed: ' + e.message);
+              btnSave.disabled = false;
+              btnSave.textContent = 'Confirm allocation';
+            }
+          });
+        }
+      })();
+
+  /* ── Interview attendance ── */
+  (function () {
+    var iName = '{{ interview_doc.name if interview_doc else "" }}';
+    var isRescheduled = {{ 'true' if interview_is_rescheduled else 'false' }};
+
+    if (!iName) return;
+
+    var attSel = document.getElementById('interviewAttendanceSelect');
+    var btnAtt = document.getElementById('btnSaveInterviewAttendance');
+    if (attSel && btnAtt) {
+      attSel.addEventListener('change', function () {
+        btnAtt.disabled = !this.value;
+        btnAtt.style.opacity = this.value ? '1' : '.5';
+      });
+      btnAtt.addEventListener('click', async function () {
+        var chosen = attSel.value;
+        if (!chosen) return;
+        if (!(await showConfirmModal({ title: 'Confirm response', message: 'Confirm your response as ' + chosen + '?' }))) return;
+        btnAtt.disabled = true;
+        btnAtt.style.opacity = '.7';
+        btnAtt.textContent = 'Saving...';
+        try {
+          await apiFetch('slcm.www.eligibility.interview_management.save_attendance_confirmation', {
+            allocation_name: iName,
+            confirmation: chosen,
+            is_rescheduled: isRescheduled
+          });
+          setTimeout(function () { window.location.reload(); }, 800);
+        } catch (e) {
+          alert('Error saving attendance: ' + e.message);
+          btnAtt.disabled = false;
+          btnAtt.style.opacity = '1';
+          btnAtt.textContent = 'Submit';
+        }
+      });
+    }
+
+    })();
+
+  /* ── Admit Card download ── */
+  window.downloadAdmitCard = function () {
+    const doc = {{ et_doc_json | safe if et_doc_json else '{}'
+  }};
+  const branding = {{ et_campus_branding | tojson | safe if et_campus_branding else '{}' }};
+  const is_rescheduled = {{ 'true' if et_is_rescheduled else 'false' }};
+
+  if (!doc || !doc.name) {
+    frappe.show_alert({ message: "No admit card data available", indicator: "orange" });
+    return;
+  }
+
+  const esc = (v) => { if (!v) return ""; return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); };
+  const val = (v) => (v && String(v).trim() !== "") ? esc(v) : "—";
+  const fmtDate = (v) => { if (!v) return "—"; try { return new Date(v).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return v; } };
+
+  const admit_no = doc.admit_card_number || ("AC-" + doc.name);
+
+  const f_date = is_rescheduled ? doc.re_allocation_date : doc.allocation_date;
+  const f_test = is_rescheduled ? (doc.re_entrance_test_name || doc.re_entrance_test_list) : (doc.entrance_test_name || doc.entrance_test_list);
+  const f_seat = is_rescheduled ? doc.re_seat_number : doc.seat_number;
+  const f_room = is_rescheduled ? doc.re_room_name : doc.room_name;
+  const f_code = is_rescheduled ? doc.re_room_code : doc.room_code;
+  const f_building = is_rescheduled ? doc.re_building : doc.building;
+  const f_floor = is_rescheduled ? doc.re_floor : doc.floor;
+  const f_center = is_rescheduled ? doc.re_center_name : doc.center_name;
+  const f_address = is_rescheduled ? doc.re_center_address : doc.center_address;
+  const f_status = is_rescheduled ? doc.re_allocation_status : doc.allocation_status;
+
+  const alloc_date = fmtDate(f_date);
+  const dob = fmtDate(doc.date_of_birth);
+  const issue_date = new Date().toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  const exam_date_time = alloc_date !== "—" ? alloc_date + " &nbsp;|&nbsp; As per schedule" : "As per schedule";
+
+  let profile_image_url = doc.profile;
+  if (profile_image_url && !profile_image_url.startsWith('http')) {
+    profile_image_url = '/files/' + encodeURIComponent(profile_image_url.replace(/^.*[\\\/]/, ""));
+  }
+
+  const campus_display_name = branding.campus_name || doc.campus || "Institution of Legal Education";
+  const campus_logo_url = branding.logo ? (branding.logo.startsWith("http") ? branding.logo : '/files/' + encodeURIComponent(branding.logo.replace(/^.*[\\\/]/, ""))) : null;
+
+  const centre_parts = [f_center, f_address].filter(v => v && v.trim());
+  const centre_full = centre_parts.length ? centre_parts.map(esc).join(", ") : "—";
+
+  function headerHTML() {
+    return `
+          <div class="header" style="background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e;">
+            <div class="logo-box" style="width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+              ${campus_logo_url
+        ? `<img src="${campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`
+        : `<div class="logo-inner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+                    <span class="logo-icon" style="font-size: 28px; line-height: 1; color: #7b1c1c;">⚖</span>
+                    <span class="logo-text" style="font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-align: center; letter-spacing: 0.5px; line-height: 1.2;">LAW<br>SCHOOL</span>
+                  </div>`
+      }
+            </div>
+            <div class="hdr-center" style="flex: 1; text-align: center;">
+              <div class="univ-name" style="font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: none; letter-spacing: 1.5px; line-height: 1.2;">${esc(campus_display_name)}</div>
+              <div class="univ-sub" style="font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: none; margin-top: 3px;">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
+            </div>
+          </div>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Admit Card - ${esc(admit_no)}</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Times New Roman", Times, serif; font-size: 13px; background: #c8c8c8; color: #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.card-page { width: 710px; margin: 20px auto; background: #fff; border: 1.5px solid #555; }
+.header { background: #7b1c1c; display: flex; align-items: center; padding: 10px 18px; gap: 16px; border-bottom: 3px solid #5a0e0e; }
+.logo-box { width: 74px; height: 74px; background: #fff; border: 2px solid rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+.univ-name { font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff; text-transform: none; letter-spacing: 1.5px; line-height: 1.2; }
+.univ-sub { font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80); letter-spacing: 2.5px; text-transform: none; margin-top: 3px; }
+.title-row { text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }
+.title-row .t1 { font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }
+.title-row .t2 { font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }
+.info-wrap { border: 1.5px solid #888; margin: 12px 14px; display: flex; }
+.info-tbl { flex: 1; border-collapse: collapse; }
+.info-tbl tr { border-bottom: 1px solid #ccc; }
+.info-tbl tr:last-child { border-bottom: none; }
+.info-tbl td { padding: 5.5px 8px; font-size: 12.5px; vertical-align: middle; line-height: 1.5; }
+.info-tbl td.lb { font-weight: bold; font-family: Arial, sans-serif; width: 36%; white-space: nowrap; color: #000; }
+.info-tbl td.sp { width: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; text-align: center; padding: 0; }
+.info-tbl td.vl { font-family: "Times New Roman", Times, serif; font-size: 13px; color: #000; }
+.seat-pill { display: inline-block; background: #1a237e; color: #fff; font-weight: bold; font-family: Arial, sans-serif; font-size: 13px; padding: 2px 14px; border-radius: 2px; letter-spacing: 1px; }
+.status-pill { display: inline-block; border: 1px solid #4caf50; color: #1b5e20; background: #f0fdf0; font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px; }
+.photo-col { width: 135px; flex-shrink: 0; border-left: 1.5px solid #888; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 8px; min-height: 250px; gap: 8px; }
+.photo-box-inner { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.photo-frame { width: 120px; height: 150px; border: 1.5px solid #555; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center; }
+.photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+.photo-cap { font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3; }
+.sig-note { text-align: center; font-style: italic; font-size: 11.5px; font-family: "Times New Roman", Times, serif; padding: 6px 14px 3px; color: #000; }
+.sig-tbl { border-collapse: collapse; width: calc(100% - 28px); margin: 0 14px 16px; border: 1.5px solid #888; }
+.sig-tbl td { border: 1.5px solid #888; padding: 0; width: 50%; }
+.sig-hdr { font-weight: bold; font-family: Arial, sans-serif; font-size: 12px; color: #000; text-align: center; padding: 5px 8px 4px; border-bottom: 1.5px solid #888; display: block; }
+.sig-body { height: 54px; display: block; }
+.inst-outer { border: 1.5px solid #888; margin: 12px 14px 16px; padding: 14px 18px 18px; }
+.inst-main-title { font-size: 13.5px; font-weight: bold; font-family: Arial, sans-serif; text-align: center; color: #000; margin-bottom: 10px; }
+.sec-title { font-size: 12.5px; font-weight: bold; font-family: Arial, sans-serif; color: #000; margin: 10px 0 3px; }
+.il { list-style: none; margin: 0; padding: 0; }
+.il > li { display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; padding-left: 18px; }
+.il > li .mk { flex-shrink: 0; min-width: 16px; }
+.sl { list-style: none; margin: 2px 0 2px 52px; padding: 0; }
+.sl li { display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; }
+.sl li .mk { flex-shrink: 0; min-width: 22px; font-style: italic; }
+.pg-footer { padding: 6px 14px 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; }
+.pg-footer span { font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }
+@media print { body { background: #fff; margin: 0; } .card-page { width: 100%; margin: 0; border: 1.5px solid #555; } .p1 { page-break-after: always; } .p2 { page-break-before: always; } }
+</style>
+</head>
+<body>
+<div class="card-page p1">
+  ${headerHTML()}
+  <div class="title-row">
+    <div class="t1">Admit Card (${val(f_test)})</div>
+    <div class="t2">Admission to ${doc.program_level ? esc(doc.program_level) : "the Programme"} &nbsp;|&nbsp; ${val(doc.academic_year)} &nbsp;|&nbsp; ${val(doc.admission_cycle)}</div>
+  </div>
+  <div class="info-wrap">
+    <table class="info-tbl">
+      <tbody>
+        <tr><td class="lb">Admit Card Number</td><td class="sp">:</td><td class="vl"><strong>${val(admit_no)}</strong></td></tr>
+        <tr><td class="lb">Candidate's Name</td><td class="sp">:</td><td class="vl">${val(doc.candidate_name)}</td></tr>
+        <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">${val(dob)}</td></tr>
+        <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">${val(doc.father_name)}</td></tr>
+        <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">${val(doc.mother_name)}</td></tr>
+        <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">${val(doc.gender)}</td></tr>
+        <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">${val(doc.program)}</td></tr>
+        <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">${val(doc.applicant)}</td></tr>
+        <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">${exam_date_time}</td></tr>
+        <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
+        <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">${val(f_seat)}</span></td></tr>
+        <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">${val(f_room)}${f_code && f_code.trim() ? "&nbsp; (Code:&nbsp;" + esc(f_code) + ")" : ""}</td></tr>
+        <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">${val(f_building)}${f_floor && f_floor.trim() ? "&nbsp; &middot;&nbsp; Floor:&nbsp;" + esc(f_floor) : ""}</td></tr>
+        <tr><td class="lb">Allocation Status</td><td class="sp">:</td><td class="vl"><span class="status-pill">${val(f_status)}</span></td></tr>
+        <tr><td class="lb">Test Centre Name &amp;&nbsp;Address</td><td class="sp">:</td><td class="vl" style="font-size:11.5px;">${centre_full}</td></tr>
+      </tbody>
+    </table>
+    <div class="photo-col">
+      <div class="photo-box-inner">
+        <div class="photo-frame">
+          ${profile_image_url ? `<img src="${profile_image_url}" alt="Candidate Photo">` : `<div class="photo-ph">👤</div>`}
+        </div>
+        <div class="photo-cap">Candidate's Photograph</div>
+      </div>
+      <div class="photo-sig-box" style="width: 100%; text-align: center; margin-top: auto; padding-bottom: 5px;">
+        <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
+        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: none; color: #333;">Candidate's Signature</div>
+      </div>
+    </div>
+  </div>
+  <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>
+  <table class="sig-tbl">
+    <tr>
+      <td><span class="sig-hdr">Candidate's Signature</span><span class="sig-body"></span></td>
+      <td><span class="sig-hdr">Invigilator's Signature</span><span class="sig-body"></span></td>
+    </tr>
+  </table>
+</div>
+<div class="card-page p2">
+  <div class="inst-outer">
+    <div class="inst-main-title">Instructions to Candidates</div>
+    <div class="sec-title">1.&nbsp;&nbsp; General Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates should check and review their admit cards carefully and make sure that their Name, Date of Birth, and other personal details mentioned in the admit card are as per the details filled by them in the application form. In case of any discrepancy, please contact the Examination Cell immediately.</span></li>
+      <li><span class="mk">b.</span><span>Please carry a printed copy of this admit card to the test centre.</span></li>
+    </ul>
+    <div class="sec-title">2.&nbsp;&nbsp; Reporting to the Test Centre &amp; Test Timings</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates will be allowed to enter the premises of the test centre 30 minutes before the examination start time and should be seated in the examination hall at least 15 minutes before commencement.</span></li>
+      <li><span class="mk">b.</span><span>Candidates should carry a Government-issued photo ID card, preferably the one uploaded with the application form. The ID card will be checked at the time of entry into the centre.</span></li>
+      <li><span class="mk">c.</span><span>Candidates who arrive at the test centre beyond the scheduled entry cut-off time will not be permitted entry.</span></li>
+      <li><span class="mk">d.</span><span>Once the test commences, Candidates will not be permitted to leave the examination hall until the test is completed, and all the Question Booklets and OMR response sheets have been collected by the invigilator/s.</span></li>
+    </ul>
+    <div class="sec-title">3.&nbsp;&nbsp; Pre-Test Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates shall be required to follow all directions issued by the Centre Coordinators and the Institution representatives at their respective test centres.</span></li>
+      <li><span class="mk">b.</span><span>Candidates must maintain all protocols in place at their respective test centres.</span></li>
+    </ul>
+    <div class="sec-title">4.&nbsp;&nbsp; Permitted Items</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>Candidates will only be permitted to carry the following inside the Test Centre:</span></li>
+    </ul>
+    <ul class="sl">
+      <li><span class="mk">i.</span><span>Admit Card (In case the photograph on the Admit Card is not clear, candidates should carry a self-attested passport size photograph).</span></li>
+      <li><span class="mk">ii.</span><span>Government Issued Photo ID (preferably the one uploaded with the application form).</span></li>
+      <li><span class="mk">iii.</span><span>Black or Blue Ballpoint pen.</span></li>
+      <li><span class="mk">iv.</span><span>A transparent water bottle.</span></li>
+      <li><span class="mk">v.</span><span>A face mask (the Candidate may be asked to remove the face mask for ascertainment of identity).</span></li>
+      <li><span class="mk">vi.</span><span>An analogue watch. <strong>Note:</strong> Smart Watches are not permitted.</span></li>
+    </ul>
+    <div class="sec-title">5.&nbsp;&nbsp; Admissions Test Related Instructions</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>An attendance sheet will be circulated during the admissions test. The requisite details should be filled in the attendance sheet.</span></li>
+      <li><span class="mk">b.</span><span>Candidates will be provided with a Question Booklet and/or answer sheets. Candidates should use black/blue ball point pen <strong>only</strong> to enter the admit card number and other required details.</span></li>
+    </ul>
+    <div class="sec-title">6.&nbsp;&nbsp; Documents to be retained by the Candidate after the test</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>The admit card, with the invigilator's signature, should be retained by the candidate and produced at the Institution at the time of admission.</span></li>
+    </ul>
+    <div class="sec-title">7.&nbsp;&nbsp; Malpractice</div>
+    <ul class="il">
+      <li><span class="mk">a.</span><span>The use of any unfair means by a Candidate shall result in their disqualification and cancellation of their test.</span></li>
+      <li><span class="mk">b.</span><span>Possession of electronic devices, including mobile phones, smart watches, etc., is strictly prohibited.</span></li>
+    </ul>
+  </div>
+  <div class="pg-footer">
+    <span>Doc: <strong>${val(doc.name)}</strong> &nbsp;·&nbsp; Generated: ${val(issue_date)}</span>
+    <span>${val(admit_no)}</span>
+  </div>
+</div>
+<script>window.print();<\/script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank", "width=800,height=900");
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+    };
+
+  });/* end DOMContentLoaded */
+
+  {% else %}
+  /* ── List view: stage trackers ── */
+  var activeApp = '{{ active_app.name if active_app else "" }}';
+
+  function buildPipeline(appName, stages) {
+    var wrap = document.getElementById('stagePipeline-' + appName);
+    if (!wrap) return;
+    wrap.style.display = 'flex';
+    wrap.style.alignItems = 'center';
+    wrap.style.gap = '0';
+    wrap.style.overflowX = 'auto';
+    wrap.innerHTML = '';
+    stages.forEach(function (s, idx) {
+      if (idx > 0) {
+        var conn = document.createElement('div');
+        conn.style.cssText = 'flex:1;height:2px;background:' + (stages[idx - 1].status === 'completed' ? 'var(--primary)' : 'var(--border)') + ';min-width:12px;';
+        wrap.appendChild(conn);
+      }
+      var node = document.createElement('div');
+      node.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:7px;flex-shrink:0';
+      var circle = document.createElement('div');
+      circle.style.cssText = 'width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:3px solid white;';
+      if (s.status === 'completed') { circle.style.background = 'var(--primary)'; circle.style.boxShadow = '0 0 0 2px var(--primary)'; circle.textContent = '✓'; circle.style.color = 'white'; }
+      else if (s.status === 'active') { circle.style.background = 'var(--secondary)'; circle.style.boxShadow = '0 0 0 2px var(--secondary)'; circle.textContent = '↻'; circle.style.color = 'white'; }
+      else { circle.style.background = '#f9fafb'; circle.style.boxShadow = '0 0 0 2px var(--border)'; circle.textContent = '○'; circle.style.color = 'var(--text-4)'; }
+      var label = document.createElement('div');
+      label.style.cssText = 'font-size:10px;font-weight:600;text-transform:none;letter-spacing:.06em;text-align:center;max-width:70px;word-break:break-word;color:' + (s.status === 'active' ? 'var(--primary)' : 'var(--text-1)') + ';';
+      label.textContent = s.stage_name;
+      node.appendChild(circle);
+      node.appendChild(label);
+      if (s.is_exempted) {
+        var badge = document.createElement('div');
+        badge.className = 'exemption-badge';
+        badge.textContent = 'Exempted';
+        node.appendChild(badge);
+      }
+      wrap.appendChild(node);
+    });
+  }
+
+  async function initTracker(appName) {
+    if (!appName) return;
+    var loading = document.getElementById('stageLoading-' + appName);
+    var pipeline = document.getElementById('stagePipeline-' + appName);
+    if (loading) loading.style.display = 'flex';
+    if (pipeline) { pipeline.style.display = 'none'; pipeline.innerHTML = ''; }
+    try {
+      const message = await apiFetch('slcm.admission.utils.web.get_stage_tracker_data', { applicant_name: appName });
+      if (loading) loading.style.display = 'none';
+      if (pipeline) {
+        if (!message || !message.stages || message.stages.length === 0) {
+          pipeline.style.display = 'block';
+          pipeline.innerHTML = '<p style="color:var(--text-4);font-size:12px;padding:8px 0">No stages configured.</p>';
+          return;
+        }
+        buildPipeline(appName, message.stages);
+      }
+    } catch (e) {
+      if (loading) loading.style.display = 'none';
+      if (pipeline) {
+        pipeline.style.display = 'block';
+        pipeline.innerHTML = '<p style="color:var(--danger);font-size:12px">Could not load stages.</p>';
+      }
+    }
+  }
+
+  if (typeof frappe !== 'undefined' && frappe.ready) {
+    frappe.ready(function () {
+      if (activeApp) initTracker(activeApp);
+    });
+  } else {
+    document.addEventListener('DOMContentLoaded', function () {
+      if (activeApp) initTracker(activeApp);
+    });
+  }
+  {% endif %}
+
+  /* ── Profile edit modal (shared) ── */
+  window.openEditModal = function () {
+    document.getElementById('editOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeEditModal = function () {
+    document.getElementById('editOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  var overlay = document.getElementById('editOverlay');
+  if (overlay) {
+    overlay.addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
+  }
+  function showProfToast(msg, isErr) {
+    var t = document.getElementById('profToast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = 'prof-toast show' + (isErr ? ' error' : '');
+    setTimeout(function () { t.className = 'prof-toast'; }, 3000);
+  }
+  window.saveProfile = async function () {
+    var btn = document.getElementById('saveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    var payload = {
+      candidate_name: document.getElementById('edit-name')?.value || '',
+      date_of_birth: document.getElementById('edit-dob')?.value || '',
+      gender: document.getElementById('edit-gender')?.value || '',
+      nationality: document.getElementById('edit-nationality')?.value || '',
+      religion: document.getElementById('edit-religion')?.value || '',
+      mobile_number: document.getElementById('edit-mobile')?.value || '',
+      alternate_contact: document.getElementById('edit-alternate')?.value || '',
+      id_proof: document.getElementById('edit-idproof')?.value || '',
+      correspondence_address: document.getElementById('edit-address')?.value || '',
+      city: document.getElementById('edit-city')?.value || '',
+      state: document.getElementById('edit-state')?.value || '',
+      pincode: document.getElementById('edit-pincode')?.value || '',
+      applicant: '{{ prof_app_name }}'
+    };    try {
+      const message = await apiFetch('slcm.admission.api.profile.update_profile', payload);
+      if (message && message.success) {
+        var dmap = {
+          'disp-name': payload.candidate_name, 'disp-gender': payload.gender,
+          'disp-nationality': payload.nationality, 'disp-religion': payload.religion,
+          'disp-mobile': payload.mobile_number, 'disp-alternate': payload.alternate_contact,
+          'disp-idproof': payload.id_proof
+        };
+        Object.keys(dmap).forEach(function (id) { var el = document.getElementById(id); if (el && dmap[id]) el.textContent = dmap[id]; });
+        if (payload.date_of_birth) {
+          var el = document.getElementById('disp-dob');
+          if (el) el.textContent = new Date(payload.date_of_birth).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        var addrParts = [payload.correspondence_address, payload.city, payload.state, payload.pincode].filter(Boolean);
+        if (addrParts.length) { var el = document.getElementById('disp-address'); if (el) el.textContent = addrParts.join(', '); }
+        closeEditModal();
+        showProfToast('✓ Profile updated successfully');
+      } else {
+        showProfToast((message && message.error) || 'Save failed', true);
+      }
+    } catch (e) {
+      showProfToast(e.message || 'Network error — please try again.', true);
+    }
+    btn.textContent = 'Save changes';
+  };
+
+  window.doLogout = function () {
+    window.location.href = '/logout';
+  };
+
+  window.loadDistricts = async function (state, selectedDistrict = null) {
+    const citySelect = document.getElementById('edit-city');
+    if (!citySelect) return;
+    if (!state) {
+      citySelect.innerHTML = '<option value="">— Select city —</option>';
+      return;
+    }
+    citySelect.innerHTML = '<option value="">Loading...</option>';
+    try {
+      const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
+      let html = '<option value="">— Select city —</option>';
+      districts.forEach(d => {
+        html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
+      });
+      citySelect.innerHTML = html;
+    } catch (e) {
+      citySelect.innerHTML = '<option value="">Error loading cities</option>';
+    }
+    };
+
+    })();
+
+    // --- Withdrawal Logic (Matching Offer Letter Implementation) ---
+    document.addEventListener('DOMContentLoaded', function() {
+    const modalEl = document.getElementById('cancellationModal');
+    if (!modalEl) return;
+
+    const cancellationModal = new bootstrap.Modal(modalEl);
+
+    window.show_cancellation_dialog = async function(offer_name, applicant, campus, program, payment_request) {
+        document.getElementById('modal_offer_name').value = offer_name;
+        document.getElementById('modal_applicant').value = applicant;
+        document.getElementById('modal_campus').value = campus;
+        document.getElementById('modal_program').value = program;
+        document.getElementById('modal_payment_request').value = payment_request || '';
+
+        // Reset form
+        document.getElementById('cancellationForm').reset();
+        document.getElementById('modal_submit_btn').disabled = false;
+
+        // Fetch and show refund policies
+        try {
+            const api_args = {
+                applicant: applicant,
+                program: program,
+                campus: campus
+            };
+            const res = await apiFetch('slcm.admission_cancel_api.get_refund_policies', api_args) || {};
+            
+            const policies = res.policies || [];
+            const daysElapsed = res.days_since_payment || 0;
+
+            const policyTableBody = document.getElementById('refundPolicyTableBody');
+            const policyContainer = document.getElementById('refundPolicyContainer');
+            const policySection = document.getElementById('refundPolicySection');
+            const nonRefundableMsg = document.getElementById('nonRefundableMsg');
+
+            if (policies && policies.length > 0) {
+                let rows = '';
+                let highlighted = false;
+                
+                // Sort policies by days just in case
+                policies.sort((a, b) => a.days_from_payment - b.days_from_payment);
+
+                policies.forEach(p => {
+                    let isCurrent = false;
+                    if (!highlighted && daysElapsed <= p.days_from_payment) {
+                        isCurrent = true;
+                        highlighted = true;
+                    }
+                    
+                    const rowBg = isCurrent ? 'background-color: #f0fdf4 !important;' : '';
+                    const rowBorder = isCurrent ? 'border-left: 4px solid #22c55e !important;' : 'border-bottom: 1px solid #f8fafc;';
+                    const badgeHtml = isCurrent ? `<span class="badge bg-success ms-2" style="font-size: 9px; vertical-align: middle;">Current</span>` : '';
+
+                    rows += `
+                        <tr style="${rowBg} ${rowBorder}">
+                            <td class="px-3 py-2 fw-600 text-dark">${p.policy_name}${badgeHtml}</td>
+                            <td class="px-3 py-2 text-center text-muted">${p.days_from_payment}</td>
+                            <td class="px-3 py-2 text-end fw-bold text-primary">${p.refund_percentage}%</td>
+                        </tr>
+                    `;
+                });
+                policyTableBody.innerHTML = rows;
+                if (policySection) policySection.style.display = 'block';
+                if (nonRefundableMsg) nonRefundableMsg.style.display = 'none';
+                if (policyContainer) policyContainer.style.display = 'block';
+            } else {
+                if (policySection) policySection.style.display = 'none';
+                if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
+                if (policyContainer) policyContainer.style.display = 'block';
+            }
+        } catch (e) {
+            console.error("Failed to fetch refund policies:", e);
+            const policyContainer = document.getElementById('refundPolicyContainer');
+            const policySection = document.getElementById('refundPolicySection');
+            const nonRefundableMsg = document.getElementById('nonRefundableMsg');
+            
+            if (policyContainer) {
+                if (policySection) policySection.style.display = 'none';
+                if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
+                policyContainer.style.display = 'block';
+            }
+        }
+
+        cancellationModal.show();
+    };
+
+    const cForm = document.getElementById('cancellationForm');
+    if (cForm) {
+        cForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            showConfirm("{{ _('Are you sure you want to cancel your admission? This action is final and irreversible.') }}", async function() {
+                const btn = document.getElementById('modal_submit_btn');
+                const data = {
+                    offer: document.getElementById('modal_offer_name').value,
+                    applicant: document.getElementById('modal_applicant').value,
+                    campus: document.getElementById('modal_campus').value,
+                    program: document.getElementById('modal_program').value,
+                    payment_request: document.getElementById('modal_payment_request').value,
+                    cancellation_reason_type: document.getElementById('modal_reason_type').value,
+                    cancellation_reason: document.getElementById('modal_reason').value
+                };
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> Processing...';
+
+                try {
+                    const response = await apiFetch('slcm.admission_cancel_api.submit_admission_cancellation', data);
+
+                    if (response && response.status === 'Success') {
+                        cancellationModal.hide();
+                        showToast("{{ _('Cancellation request submitted successfully') }}", 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = "{{ _('Withdraw Application') }}";
+                    }
+                } catch (error) {
+                    btn.disabled = false;
+                    btn.innerHTML = "{{ _('Withdraw Application') }}";
+                    showToast(error.message || "{{ _('Error submitting request') }}", 'error');
+                }
+            });
+        });
+    }
+    });
+    </script>
+
+    <!-- Admission Cancellation Modal (Exact implementation from Offer Letter) -->
+    <div class="modal fade" id="cancellationModal" tabindex="-1" aria-labelledby="cancellationModalLabel" aria-hidden="true" style="z-index: 9999;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 24px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+                <div class="modal-header border-bottom-0 pt-4 px-4 pb-0">
+                    <h5 class="modal-title fw-800 text-dark" id="cancellationModalLabel" style="font-size: 1.5rem; letter-spacing: -0.02em;">{{ _('Withdraw Admission') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="background-color: #f1f5f9; border-radius: 50%; padding: 10px;"></button>
+                </div>
+                <div class="modal-body px-4 pb-4 pt-3">
+                    <!-- Info Section -->
+                    <div class="d-flex align-items-center p-3 mb-4" style="background: #f0f9ff; border-radius: 16px; border: 1px solid #e0f2fe;">
+                        <div class="me-3" style="background: #bae6fd; color: #0369a1; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
+                        </div>
+                        <div>
+                            <div class="text-dark fw-bold" style="font-size: 14px;">{{ _('Withdrawal Process') }}</div>
+                            <div class="text-muted small" style="line-height: 1.4;">{{ _('Processing takes 5–7 working days after approval.') }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Refund Policy Section -->
+                    <div id="refundPolicyContainer" class="mb-4" style="display: none;">
+                        <div id="refundPolicySection">
+                            <label class="form-label small fw-700 text-muted mb-3" style="letter-spacing: -0.01em;">{{ _('Refund Policy Summary') }}</label>
+                            <div class="table-responsive" style="border-radius: 16px; border: 1px solid #f1f5f9; background: #fafafa;">
+                                <table class="table table-sm table-borderless mb-0" style="font-size: 13px;">
+                                    <thead style="background: #f8fafc; border-bottom: 1px solid #f1f5f9;">
+                                        <tr>
+                                            <th class="px-3 py-3 text-muted fw-700">{{ _('Policy Phase') }}</th>
+                                            <th class="px-3 py-3 text-muted fw-700 text-center">{{ _('Payment Days') }}</th>
+                                            <th class="px-3 py-3 text-muted fw-700 text-end">{{ _('Refund %') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="refundPolicyTableBody">
+                                        <!-- Policies injected here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="nonRefundableMsg" class="p-3 mb-2" style="display: none; background: #fff1f2; border-radius: 16px; border: 1px solid #ffe4e6; color: #e11d48; font-size: 13px; font-weight: 600;">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">warning</span> 
+                                {{ _('Note: The admission fee for this program is non-refundable.') }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 mb-4" style="background: #fff7ed; border-radius: 16px; border: 1px solid #ffedd5; display: flex; gap: 12px;">
+                        <div class="text-warning-emphasis fw-600" style="line-height: 1.5; color: #9a3412; font-size: 14px;">
+                            {{ _('⚠️ Please confirm your decision. Cancelling your admission will release your seat to other candidates. This step cannot be undone once completed.') }}
+                        </div>
+                    </div>
+
+                    <form id="cancellationForm" style="background: #fff; border: 1px solid #f1f5f9; padding: 20px; border-radius: 20px;">
+                        <input type="hidden" id="modal_offer_name">
+                        <input type="hidden" id="modal_applicant">
+                        <input type="hidden" id="modal_campus">
+                        <input type="hidden" id="modal_program">
+                        <input type="hidden" id="modal_payment_request">
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-700 text-muted mb-2" style="letter-spacing: -0.01em;">
+                                {{ _('Reason for withdrawal') }} <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select border-0 bg-light" id="modal_reason_type" required style="border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500;">
+                                <option value="">{{ _('Choose a category...') }}</option>
+                                <option value="Financial Issues">{{ _('Financial Issues') }}</option>
+                                <option value="Medical Reasons">{{ _('Medical Reasons') }}</option>
+                                <option value="Personal Reasons">{{ _('Personal Reasons') }}</option>
+                                <option value="Better Offer Elsewhere">{{ _('Better Offer Elsewhere') }}</option>
+                                <option value="Program Change">{{ _('Program Change') }}</option>
+                                <option value="Other">{{ _('Other') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-700 text-muted mb-2" style="letter-spacing: -0.01em;">
+                                {{ _('Detailed explanation') }} <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control border-0 bg-light" id="modal_reason" rows="3" required style="border-radius: 12px; padding: 12px 16px; font-size: 14px;" placeholder="{{ _('Tell us why you are withdrawing...') }}"></textarea>
+                        </div>
+
+                        <div class="mb-4 p-3" style="background: #f8fafc; border-radius: 12px;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="modal_declaration" required style="cursor: pointer; width: 1.2rem; height: 1.2rem; margin-top: 0.1rem;">
+                                <label class="form-check-label small fw-500 text-muted ps-2" for="modal_declaration" style="cursor: pointer; line-height: 1.5;">
+                                    {{ _('I hereby declare that I wish to withdraw my admission. I understand that this request, once processed, is final and irreversible.') }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn w-100 py-3 fw-800 text-white" id="modal_submit_btn" 
+                                style="border-radius: 14px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3); font-size: 16px; transition: all 0.2s;">
+                                {{ _('Confirm Withdrawal') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endblock %}

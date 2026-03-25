@@ -3,7 +3,7 @@ from frappe import _
 from frappe.utils import now_datetime, getdate, get_datetime, time_diff_in_hours
 
 
-@frappe.whitelist(methods=["POST"])
+@frappe.whitelist(allow_guest=True)
 def create_attendance_log():
 	"""
 	Secure API to receive RFID attendance data and store it in Attendance Log
@@ -54,7 +54,7 @@ def create_attendance_log():
 	# 4. Device Validation (if device_id provided)
 	# --------------------------------------------------
 	device_id = data.get("device_id")
-	
+
 	if device_id:
 		device = frappe.db.get_value(
 			"RFID Device",
@@ -62,7 +62,7 @@ def create_attendance_log():
 			["name", "is_active", "location"],
 			as_dict=True
 		)
-		
+
 		if not device:
 			frappe.log_error(
 				title=f"Unauthorized Device: {device_id}",
@@ -72,16 +72,16 @@ def create_attendance_log():
 				_(f"Device {device_id} is not authorized. Please contact administration."),
 				frappe.PermissionError
 			)
-		
+
 		if not device.get("is_active"):
 			frappe.throw(
 				_(f"Device {device_id} is inactive. Please contact administration."),
 				frappe.PermissionError
 			)
-		
+
 		# Update last_seen timestamp for the device
 		frappe.db.set_value("RFID Device", device_id, "last_seen", now_datetime())
-		
+
 		# Use device location if not provided in request
 		if not data.get("location") and device.get("location"):
 			location = device.get("location")

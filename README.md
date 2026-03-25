@@ -1,8 +1,8 @@
 ### SLCM
 
-Student Life Cycle Management
+Student Life Cycle Management - SLCM
 
-### Installation
+### Installation Process
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
 
@@ -39,4 +39,11 @@ This app can use GitHub Actions for CI. The following workflows are configured:
 ### License
 
 mit
+
+
 # test
+
+
+
+TFSS source code revalidated and synced
+

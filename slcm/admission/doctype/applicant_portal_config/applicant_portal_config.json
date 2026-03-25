@@ -1,0 +1,459 @@
+{
+ "actions": [],
+ "creation": "2026-02-25 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_branding",
+  "portal_title",
+  "portal_subtitle",
+  "col_break_1",
+  "hero_image",
+  "primary_color",
+  "secondary_color",
+  "slideshow_section",
+  "slideshow_images",
+  "section_break_announcement",
+  "show_announcement",
+  "header_announcement",
+  "section_break_status",
+  "portal_active",
+  "col_break_2",
+  "maintenance_message",
+  "section_break_programs",
+  "program_card_layout",
+  "show_intake_count",
+  "show_eligibility_hint",
+  "section_break_edit_rules",
+  "allow_edit_after_submit",
+  "edit_allowed_until",
+  "edit_allowed_days",
+  "col_break_3",
+  "allow_document_upload_after_submit",
+  "section_break_stage",
+  "show_stage_progress",
+  "progress_style",
+  "section_break_downloads",
+  "allow_pdf_download",
+  "col_break_4",
+  "application_template",
+  "section_break_notifications",
+  "enable_email_notifications",
+  "enable_portal_notifications",
+  "section_break_login",
+  "login_required_for_application",
+  "portal_tagline",
+  "institution_since",
+  "hero_cta_label",
+  "hero_cta2_label",
+  "footer_address",
+  "footer_phone",
+  "footer_email",
+  "powerd_by",
+  "social_links",
+  "value_cards",
+  "portal_mission",
+  "support_name",
+  "support_role",
+  "support_email",
+  "stage_next_steps",
+  "section_break_messages",
+  "document_upload_note",
+  "col_break_5",
+  "submission_message",
+  "submission_email_template",
+  "section_break_contact",
+  "contact_email",
+  "contact_phone",
+  "col_break_6",
+  "footer_text"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_branding",
+   "fieldtype": "Section Break",
+   "label": "Branding & Identity"
+  },
+  {
+   "description": "Main heading shown on portal",
+   "fieldname": "portal_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Portal title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "portal_subtitle",
+   "fieldtype": "Small Text",
+   "label": "Portal subtitle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hero_image",
+   "fieldtype": "Attach Image",
+   "label": "Hero / Banner image",
+   "reqd": 1
+  },
+  {
+   "description": "Defaults to #1a3c6e if blank",
+   "fieldname": "primary_color",
+   "fieldtype": "Color",
+   "label": "Primary color",
+   "reqd": 1
+  },
+  {
+   "fieldname": "secondary_color",
+   "fieldtype": "Color",
+   "label": "Secondary color",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "description": "Images for the hero carousel on the /admission page.",
+   "fieldname": "slideshow_section",
+   "fieldtype": "Section Break",
+   "label": "Hero Banner Slideshow"
+  },
+  {
+   "fieldname": "slideshow_images",
+   "fieldtype": "Table",
+   "label": "Slideshow Images",
+   "options": "Portal Slideshow Image"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_announcement",
+   "fieldtype": "Section Break",
+   "label": "Announcement Banner"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_announcement",
+   "fieldtype": "Check",
+   "label": "Show Announcement Banner"
+  },
+  {
+   "depends_on": "eval:doc.show_announcement==1",
+   "fieldname": "header_announcement",
+   "fieldtype": "Text Editor",
+   "label": "Announcement chontent"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_status",
+   "fieldtype": "Section Break",
+   "label": "Portal Status"
+  },
+  {
+   "default": "1",
+   "fieldname": "portal_active",
+   "fieldtype": "Check",
+   "label": "Portal Active"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.portal_active==0",
+   "fieldname": "maintenance_message",
+   "fieldtype": "Text Editor",
+   "label": "Maintenance message"
+  },
+  {
+   "fieldname": "section_break_programs",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Program Display"
+  },
+  {
+   "default": "Grid",
+   "fieldname": "program_card_layout",
+   "fieldtype": "Select",
+   "label": "Program card layout",
+   "options": "Grid\nList"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_intake_count",
+   "fieldtype": "Check",
+   "label": "Show Seat Count on Cards"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_eligibility_hint",
+   "fieldtype": "Check",
+   "label": "Show Eligibility Summary on Cards"
+  },
+  {
+   "fieldname": "section_break_edit_rules",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Edit Rules After Submission"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_edit_after_submit",
+   "fieldtype": "Check",
+   "label": "Allow Edit After Submission"
+  },
+  {
+   "depends_on": "eval:doc.allow_edit_after_submit==1",
+   "fieldname": "edit_allowed_until",
+   "fieldtype": "Select",
+   "label": "Edit Allowed Until",
+   "options": "\nApplication End Date\nFixed Days\nNever"
+  },
+  {
+   "depends_on": "eval:doc.edit_allowed_until=='Fixed Days'",
+   "fieldname": "edit_allowed_days",
+   "fieldtype": "Int",
+   "label": "Edit Allowed Days"
+  },
+  {
+   "fieldname": "col_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_document_upload_after_submit",
+   "fieldtype": "Check",
+   "label": "Allow Document Upload After Submission"
+  },
+  {
+   "fieldname": "section_break_stage",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Stage Progress Display"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_stage_progress",
+   "fieldtype": "Check",
+   "label": "Show Stage Progress"
+  },
+  {
+   "default": "Steps",
+   "depends_on": "eval:doc.show_stage_progress==1",
+   "fieldname": "progress_style",
+   "fieldtype": "Select",
+   "label": "Progress Style",
+   "options": "Steps\nTimeline"
+  },
+  {
+   "fieldname": "section_break_downloads",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Downloads"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_pdf_download",
+   "fieldtype": "Check",
+   "label": "Allow Application PDF Download"
+  },
+  {
+   "fieldname": "col_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.allow_pdf_download==1",
+   "fieldname": "application_template",
+   "fieldtype": "Link",
+   "label": "Application PDF Template",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "section_break_notifications",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Notification Settings"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_email_notifications",
+   "fieldtype": "Check",
+   "label": "Send Email on Stage Change"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_portal_notifications",
+   "fieldtype": "Check",
+   "label": "Show Portal Bell Notifications"
+  },
+  {
+   "fieldname": "section_break_messages",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Applicant Messages"
+  },
+  {
+   "fieldname": "document_upload_note",
+   "fieldtype": "Text Editor",
+   "label": "Document Upload Instructions"
+  },
+  {
+   "fieldname": "col_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "submission_message",
+   "fieldtype": "Text Editor",
+   "label": "Post-Submission Message"
+  },
+  {
+   "fieldname": "submission_email_template",
+   "fieldtype": "Link",
+   "label": "Submission Email Template",
+   "options": "Email Template Config"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_contact",
+   "fieldtype": "Section Break",
+   "label": "Contact & Footer"
+  },
+  {
+   "fieldname": "contact_email",
+   "fieldtype": "Data",
+   "label": "Contact email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "contact_phone",
+   "fieldtype": "Data",
+   "label": "Contact phone"
+  },
+  {
+   "fieldname": "col_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "footer_text",
+   "fieldtype": "Small Text",
+   "label": "Footer text"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_login",
+   "fieldtype": "Section Break",
+   "label": "Application Form Access"
+  },
+  {
+   "default": "1",
+   "description": "If unchecked, applicants can open the application form without logging in.",
+   "fieldname": "login_required_for_application",
+   "fieldtype": "Check",
+   "label": "Login Required to Apply"
+  },
+  {
+   "fieldname": "portal_tagline",
+   "fieldtype": "Small Text",
+   "label": "Portal tagline / Subtitle"
+  },
+  {
+   "fieldname": "institution_since",
+   "fieldtype": "Data",
+   "label": "Institution founded year (e.g. 1924)"
+  },
+  {
+   "fieldname": "hero_cta_label",
+   "fieldtype": "Data",
+   "label": "Hero primary CTA label"
+  },
+  {
+   "fieldname": "hero_cta2_label",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Hero secondary CTA label"
+  },
+  {
+   "fieldname": "footer_address",
+   "fieldtype": "Small Text",
+   "label": "Footer address"
+  },
+  {
+   "fieldname": "footer_phone",
+   "fieldtype": "Data",
+   "label": "Footer phone"
+  },
+  {
+   "fieldname": "footer_email",
+   "fieldtype": "Data",
+   "label": "Footer email"
+  },
+  {
+   "fieldname": "social_links",
+   "fieldtype": "Table",
+   "label": "Social media links",
+   "options": "Portal Social Link"
+  },
+  {
+   "fieldname": "value_cards",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Dashboard value cards",
+   "options": "Portal Value Card"
+  },
+  {
+   "fieldname": "portal_mission",
+   "fieldtype": "Small Text",
+   "label": "Institution mission statement"
+  },
+  {
+   "fieldname": "support_name",
+   "fieldtype": "Data",
+   "label": "Support contact name"
+  },
+  {
+   "fieldname": "support_role",
+   "fieldtype": "Data",
+   "label": "Support contact role"
+  },
+  {
+   "fieldname": "support_email",
+   "fieldtype": "Data",
+   "label": "Support contact email"
+  },
+  {
+   "fieldname": "stage_next_steps",
+   "fieldtype": "Table",
+   "label": "Stage-wise next steps",
+   "options": "Admission Stage Next Step"
+  },
+  {
+   "fieldname": "powerd_by",
+   "fieldtype": "Data",
+   "label": "Powerd By"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-03-23 21:01:07.628899",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Applicant Portal Config",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Admission Admin",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "FI-.YYYY.-.#####",
- "creation": "2025-12-31 12:00:00.000000",
+ "creation": "2025-12-31 12:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -17,13 +17,16 @@
   "academic_term",
   "section_invoice",
   "fee_assignment",
+  "applicant_fee_assignment",
   "invoice_date",
   "due_date",
+  "status",
   "column_break_2",
   "total_amount",
+  "scholarship_amount",
+  "final_payable_amount",
   "paid_amount",
   "outstanding_amount",
-  "status",
   "section_components",
   "fee_components",
   "section_payments",
@@ -95,6 +98,14 @@
    "read_only": 1
   },
   {
+   "fieldname": "applicant_fee_assignment",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant Fee Assignment",
+   "options": "Applicant Fee Assignment",
+   "read_only": 1
+  },
+  {
    "default": "Today",
    "fieldname": "invoice_date",
    "fieldtype": "Date",
@@ -118,6 +129,20 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scholarship_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Scholarship Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "final_payable_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Final Payable Amount",
    "read_only": 1
   },
   {
@@ -167,11 +192,11 @@
   }
  ],
  "links": [],
- "modified": "2025-12-31 12:00:00.000000",
+ "modified": "2026-03-18 12:38:43.232222",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Invoice",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

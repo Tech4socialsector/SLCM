@@ -1,0 +1,174 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-18 13:52:52.093682",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "admission_cycle",
+  "campus",
+  "program_level",
+  "merit_list",
+  "status",
+  "column_break_tgne",
+  "total_selected",
+  "total_waitlisted",
+  "total_rejected",
+  "published_on",
+  "published_by",
+  "section_break_ganj",
+  "selection_applicant"
+ ],
+ "fields": [
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Admission cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program level",
+   "options": "Undergraduate\nPostgraduate\nResearch Course"
+  },
+  {
+   "fieldname": "merit_list",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Merit list",
+   "options": "Merit List",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nAllocated\nPublished"
+  },
+  {
+   "fieldname": "column_break_tgne",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_selected",
+   "fieldtype": "Int",
+   "label": "Total selected"
+  },
+  {
+   "fieldname": "total_waitlisted",
+   "fieldtype": "Int",
+   "label": "Total waitlisted"
+  },
+  {
+   "fieldname": "total_rejected",
+   "fieldtype": "Int",
+   "label": "Total rejected"
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Datetime",
+   "label": "Published On"
+  },
+  {
+   "fieldname": "published_by",
+   "fieldtype": "Link",
+   "label": "Published by",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_break_ganj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "selection_applicant",
+   "fieldtype": "Table",
+   "label": "Selection applicant",
+   "options": "Seat Selection Applicant"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-23 12:57:09.345134",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Seat Allocation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Merit Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offer Letter Admin",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,342 @@
+{
+ "actions": [],
+ "creation": "2026-02-19 12:49:06.041694",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_basic",
+  "scheme_name",
+  "scheme_code",
+  "admission_cycle",
+  "approval_authority",
+  "scheme_type",
+  "column_basic_2",
+  "eligibility_criteria",
+  "description",
+  "coverage_and_financial_controls_tab",
+  "section_coverage",
+  "apply_on",
+  "coverage_type",
+  "coverage_value",
+  "max_amount",
+  "exclusive_scheme",
+  "column_coverage_2",
+  "section_component_coverage",
+  "coverage_rules",
+  "section_financial",
+  "total_budget",
+  "utilized_budget",
+  "column_financial_2",
+  "max_beneficiaries",
+  "current_beneficiaries",
+  "priority_and_availability_controls_tab",
+  "section_conflict",
+  "min_income",
+  "max_income",
+  "column_conflict_2",
+  "min_merit_score",
+  "income_certificate_required",
+  "section_availability",
+  "application_start",
+  "application_end",
+  "approval_reference",
+  "column_availability_2",
+  "stage_availability",
+  "status",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_basic",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
+  },
+  {
+   "fieldname": "scheme_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Scheme name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "scheme_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Scheme code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Admission cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approval_authority",
+   "fieldtype": "Select",
+   "label": "Approval authority",
+   "options": "Admissions Committee\nFinance Head\nVC",
+   "reqd": 1
+  },
+  {
+   "fieldname": "scheme_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Scheme type",
+   "options": "Need\nMerit\nGovernment\nInstitutional",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_basic_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "eligibility_criteria",
+   "fieldtype": "Small Text",
+   "label": "Eligibility criteria"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "min_income",
+   "fieldtype": "Currency",
+   "label": "Minimum income"
+  },
+  {
+   "fieldname": "max_income",
+   "fieldtype": "Currency",
+   "label": "Maximum income"
+  },
+  {
+   "fieldname": "section_coverage",
+   "fieldtype": "Section Break",
+   "label": "Coverage Configuration"
+  },
+  {
+   "fieldname": "apply_on",
+   "fieldtype": "Select",
+   "label": "Apply On",
+   "options": "Total Fee\nTuition Only\nComponent-wise",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.apply_on != 'Component-wise'",
+   "fieldname": "coverage_type",
+   "fieldtype": "Select",
+   "label": "Coverage type",
+   "mandatory_depends_on": "eval:doc.apply_on != 'Component-wise'",
+   "options": "Percentage\nFixed\nComponent-wise"
+  },
+  {
+   "depends_on": "eval:doc.apply_on != 'Component-wise'",
+   "fieldname": "coverage_value",
+   "fieldtype": "Float",
+   "label": "Coverage value",
+   "mandatory_depends_on": "eval:doc.apply_on != 'Component-wise'"
+  },
+  {
+   "fieldname": "max_amount",
+   "fieldtype": "Currency",
+   "label": "Maximum amount"
+  },
+  {
+   "fieldname": "column_coverage_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.apply_on == 'Component-wise'",
+   "fieldname": "section_component_coverage",
+   "fieldtype": "Section Break",
+   "label": "Component-wise Coverage"
+  },
+  {
+   "depends_on": "eval:doc.apply_on == 'Component-wise'",
+   "fieldname": "coverage_rules",
+   "fieldtype": "Table",
+   "label": "Coverage Rules",
+   "mandatory_depends_on": "eval:doc.apply_on == 'Component-wise'",
+   "options": "Scholarship Coverage Rule"
+  },
+  {
+   "fieldname": "section_financial",
+   "fieldtype": "Section Break",
+   "label": "Financial Controls"
+  },
+  {
+   "fieldname": "total_budget",
+   "fieldtype": "Currency",
+   "label": "Total Budget"
+  },
+  {
+   "default": "0",
+   "fieldname": "utilized_budget",
+   "fieldtype": "Currency",
+   "label": "Utilized Budget",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_financial_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_beneficiaries",
+   "fieldtype": "Int",
+   "label": "Maximum Beneficiaries"
+  },
+  {
+   "default": "0",
+   "fieldname": "current_beneficiaries",
+   "fieldtype": "Int",
+   "label": "Current Beneficiaries",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_conflict",
+   "fieldtype": "Section Break",
+   "label": "Conflict & Priority Controls"
+  },
+  {
+   "default": "0",
+   "fieldname": "exclusive_scheme",
+   "fieldtype": "Check",
+   "label": "Exclusive scheme",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_conflict_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_availability",
+   "fieldtype": "Section Break",
+   "label": "Availability Controls"
+  },
+  {
+   "fieldname": "stage_availability",
+   "fieldtype": "Select",
+   "label": "Stage availability",
+   "options": "Anytime\nPost-Selection\nPost-Offer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "application_start",
+   "fieldtype": "Date",
+   "label": "Application start"
+  },
+  {
+   "fieldname": "column_availability_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "application_end",
+   "fieldtype": "Date",
+   "label": "Application end"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nActive\nArchived",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approval_reference",
+   "fieldtype": "Data",
+   "label": "Approval reference"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "coverage_and_financial_controls_tab",
+   "fieldtype": "Tab Break",
+   "label": "Coverage And Financial Controls"
+  },
+  {
+   "fieldname": "priority_and_availability_controls_tab",
+   "fieldtype": "Tab Break",
+   "label": "Priority And Availability Controls"
+  },
+  {
+   "fieldname": "min_merit_score",
+   "fieldtype": "Float",
+   "label": "Minimum merit score"
+  },
+  {
+   "default": "0",
+   "fieldname": "income_certificate_required",
+   "fieldtype": "Check",
+   "label": "Income Certificate Required"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-16 12:03:01.125416",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Scholarship Scheme",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Scholarship Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

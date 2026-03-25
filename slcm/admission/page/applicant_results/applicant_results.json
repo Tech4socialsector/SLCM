@@ -1,0 +1,24 @@
+{
+ "content": null,
+ "creation": "2026-03-02 13:00:00",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "medal",
+ "idx": 0,
+ "modified": "2026-03-02 14:16:36.833158",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "applicant-results",
+ "owner": "Administrator",
+ "page_name": "applicant-results",
+ "roles": [
+  {
+   "role": "Applicant"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 1,
+ "title": "My Results & Scholarships"
+}

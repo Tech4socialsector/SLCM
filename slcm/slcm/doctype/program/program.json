@@ -1,66 +1,122 @@
 {
  "actions": [],
- "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:program_name",
- "creation": "2025-12-18 10:59:03.532617",
- "default_view": "List",
+ "creation": "2026-03-11 13:55:37.916716",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "program_id",
+  "program_code",
+  "program_slug",
   "program_name",
   "program_shortcode",
   "department",
-  "hero_image",
-  "column_break_3",
-  "program_level",
+  "image",
+  "column_break_aosh",
+  "level_of_study",
   "program_duration",
   "academic_year",
   "current_year",
   "academic_term",
   "graduation_credits",
   "program_status",
-  "section_break_xbux",
+  "section_break_fwyh",
   "table_fela",
-  "connections_tab"
+  "portal_details_tab",
+  "intake_type",
+  "program_image",
+  "program_description",
+  "eligibility_summary",
+  "brochure_file",
+  "media",
+  "curriculum_items",
+  "career_items",
+  "faculty_items",
+  "connections_tab_tab"
  ],
  "fields": [
+  {
+   "fieldname": "program_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Program Code",
+   "reqd": 1
+  },
   {
    "fieldname": "program_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Program Name",
    "reqd": 1,
    "unique": 1
   },
   {
+   "fieldname": "program_shortcode",
+   "fieldtype": "Data",
+   "label": "Program Shortcode"
+  },
+  {
    "fieldname": "department",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Department",
    "options": "Department"
   },
   {
-   "fieldname": "hero_image",
+   "fieldname": "image",
    "fieldtype": "Attach Image",
    "hidden": 1,
    "label": "Image"
   },
   {
-   "fieldname": "column_break_3",
+   "fieldname": "column_break_aosh",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "connections_tab",
-   "fieldtype": "Tab Break",
-   "label": "Connections",
-   "show_dashboard": 1
+   "fieldname": "level_of_study",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Level of Study",
+   "options": "\nUndergraduate\nPostgraduate\nResearch Course",
+   "reqd": 1
   },
   {
-   "fieldname": "section_break_xbux",
+   "fieldname": "program_duration",
+   "fieldtype": "Int",
+   "label": "Program Duration"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "description": "Enter the last two digit of the current year",
+   "fieldname": "current_year",
+   "fieldtype": "Data",
+   "label": "Current Year"
+  },
+  {
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "label": "Academic Term",
+   "options": "Academic Term"
+  },
+  {
+   "fieldname": "graduation_credits",
+   "fieldtype": "Int",
+   "label": "Graduation Credits"
+  },
+  {
+   "fieldname": "program_status",
+   "fieldtype": "Select",
+   "label": "Program Status",
+   "options": "\nActive\nInactive"
+  },
+  {
+   "fieldname": "section_break_fwyh",
    "fieldtype": "Section Break"
   },
   {
@@ -69,82 +125,79 @@
    "options": "Program Enrollment Course"
   },
   {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Year",
-   "options": "Academic Year"
+   "fieldname": "portal_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Portal Details"
   },
   {
-   "fieldname": "academic_term",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Term",
-   "options": "Academic Term"
-  },
-  {
-   "fieldname": "program_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Program Code"
-  },
-  {
-   "fieldname": "program_level",
+   "fieldname": "intake_type",
    "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Level of Study",
-   "options": "\nUG\nPG"
-  },
-  {
-   "fieldname": "program_duration",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "label": "Program Duration"
-  },
-  {
-   "fieldname": "graduation_credits",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Graduation Credits"
-  },
-  {
-   "fieldname": "program_status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Program Status",
-   "options": "\nActive\nInactive"
-  },
-  {
-   "fieldname": "program_shortcode",
-   "fieldtype": "Data",
-   "label": "Program Shortcode",
+   "label": "Intake Type",
+   "options": "\nInternal Test\nExternal Test\nDirect Merit",
    "reqd": 1
   },
   {
-   "description": "Enter the last two digit of the current year",
-   "fieldname": "current_year",
-   "fieldtype": "Data",
-   "label": "Current Year"
-  }
- ],
- "image_field": "hero_image",
- "links": [
+   "fieldname": "program_image",
+   "fieldtype": "Attach Image",
+   "label": "Program Image",
+   "reqd": 1
+  },
   {
-   "group": "Admission and Enrollments",
-   "link_doctype": "Student Enrollment",
-   "link_fieldname": "program"
+   "fieldname": "program_description",
+   "fieldtype": "Text Editor",
+   "label": "Program Description"
+  },
+  {
+   "fieldname": "eligibility_summary",
+   "fieldtype": "Text Editor",
+   "label": "Eligibility Summary"
+  },
+  {
+   "fieldname": "brochure_file",
+   "fieldtype": "Attach",
+   "label": "Brochure File"
+  },
+  {
+   "fieldname": "media",
+   "fieldtype": "Table",
+   "label": "Media Gallery",
+   "options": "Program Media"
+  },
+  {
+   "fieldname": "curriculum_items",
+   "fieldtype": "Table",
+   "label": "Curriculum",
+   "options": "Program Curriculum Item"
+  },
+  {
+   "fieldname": "career_items",
+   "fieldtype": "Table",
+   "label": "Career Prospects",
+   "options": "Program Career Item"
+  },
+  {
+   "fieldname": "faculty_items",
+   "fieldtype": "Table",
+   "label": "Faculty",
+   "options": "Program Faculty Item"
+  },
+  {
+   "fieldname": "connections_tab_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "fieldname": "program_slug",
+   "fieldtype": "Data",
+   "label": "URL Slug",
+   "read_only": 1
   }
  ],
- "modified": "2026-02-11 12:09:43.826138",
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-23 10:18:21.298677",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",
@@ -164,14 +217,49 @@
    "write": 1
   },
   {
+   "email": 1,
+   "export": 1,
+   "print": 1,
    "read": 1,
-   "role": "Student"
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Merit Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Scholarship Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offer Letter Admin",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
- "search_fields": "program_name",
- "show_name_in_global_search": 1,
- "sort_field": "modified",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
  "custom": 0
