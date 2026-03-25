@@ -51,6 +51,16 @@ fixtures = [
 ]
 # Apps  
 # ------------------
+doc_events = {
+    "Foundations for a Legal Education": {
+        "before_save": "slcm.lms_automation.handle_payment_paid"
+    }
+}
+fixtures = [
+    "Web Form",
+    "Custom Field",
+    "Property Setter"
+]
 
 # required_apps = []
 
