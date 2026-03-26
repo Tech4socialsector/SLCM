@@ -69,5 +69,6 @@
  "row_format": "Dynamic",
  "sort_field": "idx",
  "sort_order": "ASC",
- "states": []
+ "states": [],
+ "custom": 0
 }

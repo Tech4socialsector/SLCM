@@ -31,7 +31,7 @@
   },
   {
    "columns": 2,
-   "description": "e.g., 2 Months / June\u2013July 2024",
+   "description": "e.g., 2 Months / June–July 2024",
    "fieldname": "duration",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -68,5 +68,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1
+ "track_changes": 1,
+ "custom": 0
 }

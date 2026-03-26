@@ -16,7 +16,6 @@
  "sort_order": "DESC",
  "grid_page_length": 50,
  "rows_threshold_for_grid_search": 20,
-
  "field_order": [
   "section_shortlist",
   "opportunity",
@@ -24,7 +23,6 @@
   "uploaded_on",
   "uploaded_by"
  ],
-
  "fields": [
   {
    "fieldname": "section_shortlist",
@@ -65,7 +63,6 @@
    "in_list_view": 1
   }
  ],
-
  "permissions": [
   {
    "role": "Placement Officer",
@@ -90,6 +87,6 @@
    "share": 1
   }
  ],
-
- "states": []
+ "states": [],
+ "custom": 0
 }

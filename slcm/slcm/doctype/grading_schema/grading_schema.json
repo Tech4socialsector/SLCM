@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:grading_schema_name",
+ "creation": "2026-03-03 16:33:09.036459",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "grading_schema_name",
+  "schema_name",
+  "description",
+  "maximum_marks",
+  "grading_type",
+  "section_break_grades",
+  "grades"
+ ],
+ "fields": [
+  {
+   "fieldname": "grading_schema_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Schema Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "schema_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "maximum_marks",
+   "fieldtype": "Float",
+   "label": "Maximum Marks",
+   "reqd": 1
+  },
+  {
+   "default": "Absolute",
+   "fieldname": "grading_type",
+   "fieldtype": "Select",
+   "label": "Grading Type",
+   "options": "Absolute\nRelative",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_grades",
+   "fieldtype": "Section Break",
+   "label": "Grade Schema Global Settings"
+  },
+  {
+   "fieldname": "grades",
+   "fieldtype": "Table",
+   "label": "Regular/Makeup Exam Composition",
+   "options": "Grading Schema Component",
+   "reqd": 1,
+   "description": ""
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-03 16:33:58.605782",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Grading Schema",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
