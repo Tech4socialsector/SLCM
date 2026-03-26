@@ -11,6 +11,12 @@ from frappe.utils.file_manager import save_file
 class IDCardGenerationTool(Document):
 	@frappe.whitelist()
 	def get_students(self):
+		if not any([self.academic_year, self.department, self.program, self.batch]):
+			frappe.throw(
+				"Please select at least one filter (Academic Year, Department, Program, or Batch) "
+				"before fetching students."
+			)
+
 		filters = {"student_status": "Active"}
 
 		if self.academic_year:
@@ -30,6 +36,13 @@ class IDCardGenerationTool(Document):
 
 		self.set("student_list", [])
 
+		if not students:
+			self.save()
+			frappe.throw(
+				"No active students found matching the selected filters. "
+				"Please adjust your filters and try again."
+			)
+
 		for student in students:
 			row = self.append("student_list", {})
 			row.student = student.name
@@ -47,11 +60,25 @@ class IDCardGenerationTool(Document):
 				row.status = "Pending"
 
 		self.save()
+		return len(students)
 
 	@frappe.whitelist()
 	def generate_cards(self):
 		if not self.id_card_template:
-			frappe.throw("Please select an ID Card Template")
+			frappe.throw("Please select an ID Card Template.")
+
+		if not self.student_list:
+			frappe.throw(
+				"No students in the list. Please use \"Get Students\" to fetch students "
+				"using filters, or add students manually before generating cards."
+			)
+
+		pending_rows = [r for r in self.student_list if r.status != "Already Exists"]
+		if not pending_rows:
+			frappe.throw(
+				"All students in the list already have an active ID card. "
+				"No new cards need to be generated."
+			)
 
 		generated_count = 0
 

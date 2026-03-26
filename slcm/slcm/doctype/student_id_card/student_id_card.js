@@ -63,45 +63,119 @@ frappe.ui.form.on("Student ID Card", {
 		}
 
 		if (!frm.doc.__islocal) {
-			frm.add_custom_button(__("Generate Card"), function () {
-				frm.call("generate_card").then((r) => {
-					frm.refresh();
-					frappe.msgprint("ID Card generated Successfully");
+			// Generate Card — only for Draft or Error states
+			if (["Draft", "Error"].includes(frm.doc.card_status)) {
+				frm.add_custom_button(__("Generate Card"), function () {
+					frm.call("generate_card").then(() => {
+						frm.refresh();
+						frappe.msgprint(__("ID Card generated successfully."));
+					});
 				});
-			});
+			}
 
-			if (frm.doc.front_id_image) {
+			// Print Card — only when Generated; logs the print action
+			if (frm.doc.front_id_image && frm.doc.card_status === "Generated") {
 				frm.add_custom_button(__("Print Card"), function () {
-					// Open both sides in a print-friendly window
-					let front_url = frappe.utils.get_file_link(frm.doc.front_id_image);
-					let back_url = frm.doc.back_id_image
-						? frappe.utils.get_file_link(frm.doc.back_id_image)
-						: null;
+					frm.call({
+						doc: frm.doc,
+						method: "log_print",
+						args: { layout: "Single" },
+						callback: function (r) {
+							if (!r.exc) {
+								let front_url = frappe.utils.get_file_link(frm.doc.front_id_image);
+								let back_url = frm.doc.back_id_image
+									? frappe.utils.get_file_link(frm.doc.back_id_image)
+									: null;
 
-					let w = window.open("", "_blank");
-					w.document.write(`
-						<html>
-						<head>
-							<title>Print ID Card - ${frm.doc.student_name}</title>
-							<style>
-								body { margin: 0; padding: 20px; text-align: center; }
-								img { max-width: 100%; border: 1px solid #ccc; margin-bottom: 20px; }
-								@media print {
-									img { page-break-after: always; }
-								}
-							</style>
-						</head>
-						<body>
-							<img src="${front_url}" />
-							${back_url ? `<br><img src="${back_url}" />` : ""}
-							<script>
-								window.onload = function() { window.print(); }
-							</script>
-						</body>
-						</html>
-					`);
-					w.document.close();
+								let w = window.open("", "_blank");
+								w.document.write(`
+									<html>
+									<head>
+										<title>Print ID Card - ${frm.doc.student_name}</title>
+										<style>
+											body { margin: 0; padding: 20px; text-align: center; font-family: sans-serif; }
+											img { max-width: 100%; border: 1px solid #ccc; margin-bottom: 20px; }
+											@media print { img { page-break-after: always; } }
+										</style>
+									</head>
+									<body>
+										<h3>${frm.doc.student_name} (${r.message || "Copy"})</h3>
+										<img src="${front_url}" />
+										${back_url ? `<br><img src="${back_url}" />` : ""}
+										<script>window.onload = function() { window.print(); }</script>
+									</body>
+									</html>
+								`);
+								w.document.close();
+								frm.refresh();
+							}
+						},
+					});
 				});
+			}
+
+			// Cancel Card — not available on terminal states
+			if (!["Cancelled", "Expired"].includes(frm.doc.card_status)) {
+				frm.add_custom_button(__("Cancel Card"), function () {
+					frappe.prompt(
+						{
+							label: __("Reason for Cancellation"),
+							fieldname: "reason",
+							fieldtype: "Small Text",
+							reqd: 1,
+						},
+						function (values) {
+							frm.call({
+								doc: frm.doc,
+								method: "cancel_card",
+								args: { reason: values.reason },
+								callback: function (r) {
+									if (!r.exc) {
+										frm.refresh();
+										frappe.msgprint(__("Card has been cancelled."));
+									}
+								},
+							});
+						},
+						__("Cancel ID Card"),
+						__("Confirm Cancellation")
+					);
+				}, __("Actions"));
+			}
+
+			// Reissue Card — available when Generated or Printed (Lost/Damaged card)
+			if (["Generated", "Printed"].includes(frm.doc.card_status)) {
+				frm.add_custom_button(__("Reissue Card"), function () {
+					frappe.prompt(
+						{
+							label: __("Reason for Reissue (e.g. Lost, Damaged)"),
+							fieldname: "reason",
+							fieldtype: "Small Text",
+							reqd: 1,
+						},
+						function (values) {
+							frm.call({
+								doc: frm.doc,
+								method: "reissue_card",
+								args: { reason: values.reason },
+								freeze: true,
+								freeze_message: __("Creating replacement card..."),
+								callback: function (r) {
+									if (!r.exc && r.message) {
+										frappe.msgprint(
+											__("New card {0} has been created.", [
+												`<a href="/app/student-id-card/${r.message}">${r.message}</a>`,
+											])
+										);
+										frm.refresh();
+									}
+								},
+							});
+						},
+						__("Reissue ID Card"),
+						__("Confirm Reissue")
+					);
+				}, __("Actions"));
 			}
 		}
 
