@@ -1,37 +1,37 @@
 {
  "actions": [],
- "autoname": "field:component_name",
+ "autoname": "field:exam_name",
  "creation": "2026-03-26 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "component_name",
-  "component_type",
-  "is_active"
+  "exam_name",
+  "term",
+  "status"
  ],
  "fields": [
   {
-   "fieldname": "component_name",
+   "fieldname": "exam_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Component Name",
+   "label": "Exam Name",
    "reqd": 1,
    "unique": 1
   },
   {
-   "default": "Custom",
-   "fieldname": "component_type",
-   "fieldtype": "Select",
+   "fieldname": "term",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Component Type",
-   "options": "Custom\nRe Exam\nMakeup",
-   "reqd": 1
+   "label": "Term",
+   "options": "Academic Term"
   },
   {
-   "default": "1",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "label": "Is Active"
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nActive\nInactive"
   }
  ],
  "grid_page_length": 50,
@@ -40,7 +40,7 @@
  "modified": "2026-03-26 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Exam Component",
+ "name": "Exam Plan",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
@@ -67,5 +67,5 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "component_name"
+ "title_field": "exam_name"
 }

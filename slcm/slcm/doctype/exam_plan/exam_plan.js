@@ -1,7 +1,7 @@
 // Copyright (c) 2026, CU and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Exam Component', {
+frappe.ui.form.on('Exam Plan', {
 	refresh(frm) {
 	}
 });

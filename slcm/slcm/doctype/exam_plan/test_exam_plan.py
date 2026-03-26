@@ -5,5 +5,5 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestExamComponent(FrappeTestCase):
+class TestExamPlan(FrappeTestCase):
 	pass
