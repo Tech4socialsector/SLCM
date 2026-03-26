@@ -1,0 +1,21 @@
+{
+ "color": "#fd7e14",
+ "currency": "INR",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Student Master",
+ "filters_json": "[[\"Student Master\", \"registration_status\", \"=\", \"Pending REGO\"]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Pending REGO",
+ "module": "SLCM",
+ "name": "Pending REGO",
+ "owner": "Administrator",
+ "report_function": "Sum",
+ "show_full_number": 0,
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Document Type"
+}
