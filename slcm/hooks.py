@@ -75,18 +75,29 @@ fixtures = [
         "doctype": "Workflow",
         "filters": [["name", "=", "Student Registration Workflow"]]
     },
-    # --- Dashboard components (KPI cards + charts on Student Registration workspace) ---
+    # --- Dashboard: Number Cards on Student Registration workspace ---
     {
         "doctype": "Number Card",
         "filters": [["name", "in", [
             "Total Students", "Active Enrollments", "Active Programs", "Active Courses"
         ]]]
     },
+    # --- Dashboard: Charts on Student Registration workspace ---
     {
         "doctype": "Dashboard Chart",
         "filters": [["name", "in", [
             "Student Registration Status", "Student Enrollment by Program"
         ]]]
+    },
+    # --- Desktop Icons (app launcher tiles) ---
+    {
+        "doctype": "Desktop Icon",
+        "filters": [["app", "=", "slcm"], ["standard", "=", 1]]
+    },
+    # --- Workspace Sidebars (left-panel navigation for each workspace) ---
+    {
+        "doctype": "Workspace Sidebar",
+        "filters": [["app", "=", "slcm"]]
     },
     # --- Web Forms / Custom Fields / Property Setters ---
     "Web Form",

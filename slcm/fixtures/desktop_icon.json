@@ -1,0 +1,352 @@
+[
+ {
+  "app": "slcm",
+  "bg_color": "blue",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": "/files/FLE Course Icon.png",
+  "icon_type": "Link",
+  "label": "FLE",
+  "link": null,
+  "link_to": "FLE",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-03 00:19:32.107195",
+  "name": "FLE",
+  "parent_icon": null,
+  "restrict_removal": 0,
+  "roles": [],
+  "sidebar": "FLE",
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "blue",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": "education",
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Student Registration",
+  "link": null,
+  "link_to": "Student Registration",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-26 10:50:03.877886",
+  "name": "Student Registration",
+  "parent_icon": null,
+  "restrict_removal": 0,
+  "roles": [],
+  "sidebar": null,
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "blue",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": "",
+  "icon_type": "App",
+  "label": "Admission",
+  "link": "",
+  "link_to": null,
+  "link_type": "External",
+  "logo_url": null,
+  "modified": "2026-03-25 17:14:27.603401",
+  "name": "Admission",
+  "parent_icon": null,
+  "restrict_removal": 0,
+  "roles": [],
+  "sidebar": null,
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "gray",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Eligibility",
+  "link": null,
+  "link_to": "Eligibility",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-06 12:25:41.336807",
+  "name": "Eligibility",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [
+   {
+    "role": "Eligibility Admin"
+   }
+  ],
+  "sidebar": "",
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "gray",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Admission Settings",
+  "link": null,
+  "link_to": "Admission Settings",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-02-25 17:42:55.324986",
+  "name": "Admission Settings",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [],
+  "sidebar": null,
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "blue",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": "/files/email_5119719.png",
+  "icon_type": "Link",
+  "label": "Offer Letter",
+  "link": null,
+  "link_to": "Offer Letter",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-03 14:28:46.694450",
+  "name": "Offer Letter",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [
+   {
+    "role": "Academic Admin"
+   },
+   {
+    "role": "Accounts Manager"
+   },
+   {
+    "role": "Admission Admin"
+   },
+   {
+    "role": "Campus Admin"
+   },
+   {
+    "role": "Applicant"
+   },
+   {
+    "role": "Offer Letter Admin"
+   }
+  ],
+  "sidebar": "Offer Letter",
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "gray",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": "/files/scholarship (1).png",
+  "icon_type": "Link",
+  "label": "Scholarship",
+  "link": null,
+  "link_to": "Scholarship",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-06 12:51:45.256222",
+  "name": "Scholarship",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [
+   {
+    "role": "Admission Admin"
+   },
+   {
+    "role": "Campus Admin"
+   },
+   {
+    "role": "Scholarship Admin"
+   },
+   {
+    "role": "Administrator"
+   }
+  ],
+  "sidebar": "Scholarship",
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "blue",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": "/files/dashboard.png",
+  "icon_type": "Link",
+  "label": "Dashboard",
+  "link": null,
+  "link_to": "Dashboard",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-04 14:35:14.418049",
+  "name": "Dashboard",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [
+   {
+    "role": "System Manager"
+   },
+   {
+    "role": "Campus Admin"
+   },
+   {
+    "role": "Admission Admin"
+   }
+  ],
+  "sidebar": "Dashboard",
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "gray",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Test",
+  "link": null,
+  "link_to": "Test",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-16 11:35:07.269658",
+  "name": "Test",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [
+   {
+    "role": "Entrance Test Admin"
+   },
+   {
+    "role": "Entrance Test Provider"
+   },
+   {
+    "role": "Admission Admin"
+   },
+   {
+    "role": "Campus Admin"
+   }
+  ],
+  "sidebar": "Test",
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "gray",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Interview",
+  "link": null,
+  "link_to": "Interview",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-16 11:15:17.372376",
+  "name": "Interview",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [
+   {
+    "role": "Interview Admin"
+   },
+   {
+    "role": "Interview Staff Member"
+   },
+   {
+    "role": "Admission Admin"
+   },
+   {
+    "role": "Campus Admin"
+   }
+  ],
+  "sidebar": "Interview",
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "gray",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Merit",
+  "link": null,
+  "link_to": "Merit",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-16 11:12:11.577885",
+  "name": "Merit",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [
+   {
+    "role": "Merit Admin"
+   },
+   {
+    "role": "Admission Admin"
+   },
+   {
+    "role": "Campus Admin"
+   }
+  ],
+  "sidebar": "Merit",
+  "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "gray",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": null,
+  "icon_image": "",
+  "icon_type": "Link",
+  "label": "Settings",
+  "link": null,
+  "link_to": "Admission",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-03-16 11:09:58.113896",
+  "name": "Settings",
+  "parent_icon": "Admission",
+  "restrict_removal": 0,
+  "roles": [
+   {
+    "role": "Admission Admin"
+   }
+  ],
+  "sidebar": "Admission",
+  "standard": 1
+ }
+]
