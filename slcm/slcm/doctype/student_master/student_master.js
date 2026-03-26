@@ -89,7 +89,7 @@ frappe.ui.form.on("Student Master", {
 												.filter(Boolean)
 												.join(" "),
 											cohort: frm.doc.programme,
-											data_xgxm: frm.doc.batch_year, // Batch
+											batch_year_ref: frm.doc.batch_year,
 											academic_year: frm.doc.academic_year,
 										});
 									} else {
@@ -130,7 +130,7 @@ frappe.ui.form.on("Student Master", {
 			return;
 		}
 
-		const image = frm.doc.student_image || "/assets/frappe/images/default-avatar.png";
+		const image = frm.doc.student_image || frm.doc.passport_size_photo || "/assets/frappe/images/default-avatar.png";
 
 		const html = `
 			<div class="student-profile-card">
@@ -155,7 +155,7 @@ frappe.ui.form.on("Student Master", {
 					docname: frm.doc.name,
 					on_success(file) {
 						if (file.file_url && file.file_url.match(/\.(jpg|jpeg|png|webp)$/i)) {
-							frm.set_value("student_image", file.file_url);
+							frm.set_value("passport_size_photo", file.file_url);
 							frm.save().then(() => {
 								frm.reload_doc();
 							});

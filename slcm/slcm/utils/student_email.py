@@ -111,7 +111,7 @@ def send_email(student, pdf_content, triggered_by):
 
 	frappe.sendmail(
 		recipients=recipients,
-		sender="nishanthclintona@gmail.com",  # Explicit sender as requested
+		sender=frappe.db.get_single_value("Email Account", "email_id") or frappe.conf.get("mail_login"),
 		subject=subject,
 		message=message,
 		attachments=attachments,

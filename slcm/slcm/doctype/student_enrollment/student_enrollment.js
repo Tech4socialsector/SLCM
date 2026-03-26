@@ -9,26 +9,26 @@ frappe.ui.form.on("Student Enrollment", {
 	program(frm) {
 		// 1️⃣ Clear table if program removed
 		if (!frm.doc.program) {
-			frm.clear_table("table_hxbo");
-			frm.refresh_field("table_hxbo");
+			frm.clear_table("enrolled_courses");
+			frm.refresh_field("enrolled_courses");
 			return;
 		}
 
 		// 2️⃣ Clear existing rows
-		frm.clear_table("table_hxbo");
+		frm.clear_table("enrolled_courses");
 
 		// 3️⃣ Fetch Program with child table
 		frappe.db.get_doc("Program", frm.doc.program).then((program_doc) => {
 			console.log(program_doc, "Fetched Program");
 
 			if (!program_doc.table_fela || program_doc.table_fela.length === 0) {
-				frm.refresh_field("table_hxbo");
+				frm.refresh_field("enrolled_courses");
 				return;
 			}
 
 			// 4️⃣ Copy Program Course → Enrollment Course
 			program_doc.table_fela.forEach((pc) => {
-				const row = frm.add_child("table_hxbo");
+				const row = frm.add_child("enrolled_courses");
 
 				// ✅ ALWAYS works
 				frappe.model.set_value(row.doctype, row.name, "course", pc.course);
@@ -41,7 +41,7 @@ frappe.ui.form.on("Student Enrollment", {
 			});
 
 			// 5️⃣ Refresh grid
-			frm.refresh_field("table_hxbo");
+			frm.refresh_field("enrolled_courses");
 		});
 	},
 });

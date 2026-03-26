@@ -260,18 +260,49 @@ function add_bulk_enroll_button(listview) {
 	btn.addClass("btn-black-enroll");
 }
 
+const VALID_TRANSITIONS = {
+	"Draft":                   ["Selected"],
+	"Selected":                ["Pending REGO"],
+	"Pending REGO":            ["Pending FINO"],
+	"Pending FINO":            ["Pending Registration"],
+	"Pending Registration":    ["Pending Print & Scan"],
+	"Pending Print & Scan":    ["Pending Residences"],
+	"Pending Residences":      ["Pending IT"],
+	"Pending IT":              ["Final Verification REGO"],
+	"Final Verification REGO": ["Completed"],
+	"Completed":               ["Re-Open"],
+	"Re-Open":                 ["Pending REGO"],
+};
+
 function show_bulk_status_dialog(listview, selected) {
-	const statuses = [
-		"Selected",
-		"Pending REGO",
-		"Pending FINO",
-		"Pending Registration",
-		"Pending Print & Scan",
-		"Pending Residences",
-		"Pending IT",
-		"Final Verification REGO",
-		"Completed",
-	];
+	const is_admin = frappe.user.has_role("System Manager") || frappe.session.user === "Administrator";
+
+	// Collect unique current statuses
+	const current_statuses = [...new Set(selected.map(s => s.registration_status || "Selected"))];
+
+	// Determine valid next states: intersection of next states for ALL selected statuses
+	// (Admin sees all states; regular users only see commonly-valid next states)
+	let statuses;
+	if (is_admin) {
+		statuses = Object.keys(VALID_TRANSITIONS);
+	} else {
+		// Find next states valid for every selected student's current status
+		const next_sets = current_statuses.map(s => VALID_TRANSITIONS[s] || []);
+		if (next_sets.length === 0) {
+			statuses = [];
+		} else {
+			statuses = next_sets.reduce((a, b) => a.filter(s => b.includes(s)));
+		}
+	}
+
+	if (statuses.length === 0) {
+		frappe.msgprint({
+			title: __("No Common Next State"),
+			message: __("The selected students are in different states with no common valid next state. Please select students in the same status."),
+			indicator: "orange",
+		});
+		return;
+	}
 
 	// Get current statuses for selected students
 	const status_summary = {};
