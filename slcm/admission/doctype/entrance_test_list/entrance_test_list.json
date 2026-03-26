@@ -35,7 +35,7 @@
   {
    "fieldname": "program_level",
    "fieldtype": "Select",
-   "label": "Program Level",
+   "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
@@ -59,7 +59,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 10:35:49.655874",
+ "modified": "2026-03-26 14:44:44.023730",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test List",

@@ -11,36 +11,45 @@
   "room_name",
   "building",
   "floor",
-  "active",
   "room_capacity",
   "room_reserved_seats",
-  "room_available_capacity"
+  "room_available_capacity",
+  "active"
  ],
  "fields": [
   {
    "fieldname": "room_code",
    "fieldtype": "Data",
-   "label": "Room Code"
+   "in_list_view": 1,
+   "label": "Room Code",
+   "reqd": 1
   },
   {
    "fieldname": "room_name",
    "fieldtype": "Data",
-   "label": "Room Name"
+   "in_list_view": 1,
+   "label": "Room Name",
+   "reqd": 1
   },
   {
    "fieldname": "building",
    "fieldtype": "Data",
-   "label": "Building"
+   "in_list_view": 1,
+   "label": "Building",
+   "reqd": 1
   },
   {
    "fieldname": "floor",
    "fieldtype": "Data",
-   "label": "Floor"
+   "in_list_view": 1,
+   "label": "Floor",
+   "reqd": 1
   },
   {
    "fieldname": "room_capacity",
    "fieldtype": "Int",
-   "label": "Room Capacity"
+   "label": "Room Capacity",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -68,7 +77,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-22 22:22:34.418427",
+ "modified": "2026-03-26 14:37:43.197625",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Provider Room",
