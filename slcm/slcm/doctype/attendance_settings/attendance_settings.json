@@ -24,6 +24,7 @@
   "condonation_section",
   "allow_condonation",
   "condonation_approval_role",
+  "condonation_min_percentage",
   "fa_mfa_section",
   "allow_fa_mfa",
   "fa_application_days_before_exam",
@@ -174,6 +175,14 @@
    "options": "Role"
   },
   {
+   "default": "60",
+   "depends_on": "eval:doc.allow_condonation==1",
+   "description": "Minimum attendance percentage required to apply for condonation",
+   "fieldname": "condonation_min_percentage",
+   "fieldtype": "Percent",
+   "label": "Minimum Attendance for Condonation"
+  },
+  {
    "fieldname": "fa_mfa_section",
    "fieldtype": "Section Break",
    "label": "First Attempt (FA) / Medical First Attempt (MFA)"
@@ -204,7 +213,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-02-06 09:43:29.115353",
+ "modified": "2026-02-17 12:30:04.991800",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Settings",
@@ -225,5 +234,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1
+ "track_changes": 1,
+ "custom": 0
 }

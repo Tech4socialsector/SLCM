@@ -78,5 +78,6 @@
  "sort_order": "ASC",
  "states": [],
  "track_changes": 1,
- "translated_doctype": 1
+ "translated_doctype": 1,
+ "custom": 0
 }

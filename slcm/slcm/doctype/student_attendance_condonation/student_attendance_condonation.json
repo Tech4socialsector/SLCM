@@ -10,16 +10,16 @@
   "course_offering",
   "course",
   "academic_year",
-  "column_break_1",
   "number_of_sessions",
+  "number_of_hours",
   "condonation_reason",
+  "column_break_1",
   "proof_document",
   "faculty_recommendation",
   "final_status",
   "approver",
   "remarks",
-  "amended_from",
-  "number_of_hours"
+  "amended_from"
  ],
  "fields": [
   {
@@ -133,7 +133,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-11 15:19:53.840016",
+ "modified": "2026-02-17 10:19:01.781137",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Attendance Condonation",
@@ -224,5 +224,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1
+ "track_changes": 1,
+ "custom": 0
 }

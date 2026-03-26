@@ -19,6 +19,8 @@
   "course_offering",
   "course",
   "attendance_details_section",
+  "total_scheduled_class_hours",
+  "total_scheduled_office_hours",
   "total_classes",
   "total_class_hours",
   "total_attended_class_hours",
@@ -95,6 +97,18 @@
    "fieldname": "attendance_details_section",
    "fieldtype": "Section Break",
    "label": "Attendance Details"
+  },
+  {
+   "fieldname": "total_scheduled_class_hours",
+   "fieldtype": "Float",
+   "label": "Total Scheduled Class Hours",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_scheduled_office_hours",
+   "fieldtype": "Float",
+   "label": "Total Scheduled Office Hours",
+   "read_only": 1
   },
   {
    "fieldname": "course_offering",
@@ -256,5 +270,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "custom": 0
 }
