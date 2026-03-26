@@ -120,7 +120,6 @@
   "status": "Exempted Entrance Test And Interview"
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "docstatus": 0,
   "doctype": "Applicant Status",
   "modified": "2026-03-18 14:12:32.295577",
@@ -129,7 +128,6 @@
   "status": "Entrance Test Scheduled"
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "docstatus": 0,
   "doctype": "Applicant Status",
   "modified": "2026-03-18 14:13:37.338810",
@@ -186,7 +184,6 @@
   "status": "Entrance Test Rejected"
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "docstatus": 0,
   "doctype": "Applicant Status",
   "modified": "2026-03-18 14:11:39.493461",
