@@ -3444,9 +3444,9 @@ LIST / DASHBOARD VIEW
       return;
     }
 
-    // Direct download by navigating to the API endpoint
+    // Direct download by opening the API endpoint in a new tab
     const downloadUrl = `/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name=${encodeURIComponent(doc.name)}`;
-    window.location.href = downloadUrl;
+    window.open(downloadUrl, '_blank');
   };
 
   });/* end DOMContentLoaded */
