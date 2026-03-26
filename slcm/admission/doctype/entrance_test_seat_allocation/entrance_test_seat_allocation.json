@@ -43,8 +43,7 @@
   "allocation_status",
   "allocation_date",
   "allocated_by",
-  "download_admit_card",
-  "admit_card",
+  "admit_card_download",
   "tab_9_tab",
   "reschedule_seat_allocation_section",
   "re_entrance_test_name",
@@ -61,8 +60,7 @@
   "re_allocation_status",
   "re_allocation_date",
   "re_allocated_by",
-  "re_download_admit_card",
-  "reschedule_admit_card",
+  "re_admit_card_download",
   "section_break_axgb",
   "is_rescheduled",
   "reschedule_reason",
@@ -259,13 +257,6 @@
    "options": "User"
   },
   {
-   "depends_on": "eval:doc.allocation_status == 'Allocated'",
-   "fieldname": "download_admit_card",
-   "fieldtype": "Button",
-   "hidden": 1,
-   "label": "Download Admit Card"
-  },
-  {
    "default": "0",
    "fieldname": "is_rescheduled",
    "fieldtype": "Check",
@@ -445,12 +436,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "re_download_admit_card",
-   "fieldtype": "Button",
-   "hidden": 1,
-   "label": "Download Admit Card"
-  },
-  {
    "default": "Scheduled",
    "fieldname": "entrance_test_status",
    "fieldtype": "Select",
@@ -489,22 +474,20 @@
    "options": "Applicant Category"
   },
   {
-   "fieldname": "admit_card",
+   "fieldname": "admit_card_download",
    "fieldtype": "Attach",
-   "hidden": 1,
-   "label": "Admit Card"
+   "label": "Admit Card Download "
   },
   {
-   "fieldname": "reschedule_admit_card",
+   "fieldname": "re_admit_card_download",
    "fieldtype": "Attach",
-   "hidden": 1,
-   "label": "Admit Card"
+   "label": "Re Admit Card Download "
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 10:36:59.037654",
+ "modified": "2026-03-26 11:14:34.605441",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
