@@ -10,7 +10,7 @@
  "group_by_type": "Count",
  "idx": 0,
  "is_public": 1,
- "is_standard": 1,
+ "is_standard": 0,
  "module": "SLCM",
  "name": "Cohort Status Distribution",
  "number_of_groups": 0,
