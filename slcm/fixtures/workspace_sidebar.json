@@ -43,7 +43,6 @@
   ],
   "modified": "2026-03-02 02:11:11.650873",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "FLE",
   "standard": 1,
   "title": "FLE"
@@ -381,7 +380,6 @@
   ],
   "modified": "2026-03-25 22:25:40.193800",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "Attendance",
   "standard": 1,
   "title": "Attendance"
@@ -481,7 +479,6 @@
   ],
   "modified": "2026-02-18 15:11:01.644107",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "Hostel Management",
   "standard": 0,
   "title": "Hostel Management"
@@ -615,7 +612,6 @@
   ],
   "modified": "2026-02-18 15:11:01.667605",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "IT Team",
   "standard": 0,
   "title": "IT Team"
@@ -800,7 +796,6 @@
   ],
   "modified": "2026-02-18 15:11:01.696188",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "Placement",
   "standard": 0,
   "title": "Placement"
@@ -1087,7 +1082,6 @@
   ],
   "modified": "2026-03-26 11:45:53.593761",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "Programme Management",
   "standard": 0,
   "title": "Programme Management"
@@ -1272,7 +1266,6 @@
   ],
   "modified": "2026-02-18 15:11:01.754805",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "REGO",
   "standard": 0,
   "title": "REGO"
@@ -1474,7 +1467,6 @@
   ],
   "modified": "2026-03-26 11:10:01.301894",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "Student Registration",
   "standard": 0,
   "title": "Student Registration"
@@ -1727,7 +1719,6 @@
   ],
   "modified": "2026-02-27 22:12:14.066782",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "Eligibility",
   "standard": 1,
   "title": "Eligibility"
@@ -2133,7 +2124,6 @@
   ],
   "modified": "2026-03-17 10:11:51.486336",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "Settings",
   "standard": 1,
   "title": "Settings"
@@ -2488,7 +2478,6 @@
   ],
   "modified": "2026-03-23 17:39:08.175208",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "Offer Letter",
   "standard": 1,
   "title": "Offer Letter"
@@ -2622,7 +2611,6 @@
   ],
   "modified": "2026-03-05 11:07:05.510823",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "Scholarship",
   "standard": 1,
   "title": "Scholarship"
@@ -2773,7 +2761,6 @@
   ],
   "modified": "2026-03-03 21:15:32.033046",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "INM",
   "standard": 1,
   "title": "INM"
@@ -2822,7 +2809,6 @@
   ],
   "modified": "2026-03-03 18:29:39.521588",
   "module": "SLCM",
-  "module_onboarding": null,
   "name": "Examination Management",
   "standard": 0,
   "title": "Examination Management"
@@ -2854,7 +2840,6 @@
   ],
   "modified": "2026-03-03 18:47:31.387946",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "Dashboard",
   "standard": 1,
   "title": "Dashboard"
@@ -3124,7 +3109,6 @@
   ],
   "modified": "2026-03-18 15:04:43.061897",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "Test",
   "standard": 1,
   "title": "Test"
@@ -3292,7 +3276,6 @@
   ],
   "modified": "2026-03-18 15:05:52.407881",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "Interview",
   "standard": 1,
   "title": "Interview"
@@ -3494,7 +3477,6 @@
   ],
   "modified": "2026-03-16 11:08:52.369850",
   "module": "Admission",
-  "module_onboarding": null,
   "name": "Merit",
   "standard": 1,
   "title": "Merit"

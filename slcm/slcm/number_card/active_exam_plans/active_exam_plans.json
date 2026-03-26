@@ -1,0 +1,20 @@
+{
+ "color": "#29CD42",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Exam Plan",
+ "filters_json": "[[\"Exam Plan\",\"status\",\"=\",\"Active\",false]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Active Exam Plans",
+ "module": "SLCM",
+ "name": "Active Exam Plans",
+ "owner": "Administrator",
+ "report_function": "Sum",
+ "show_full_number": 0,
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Monthly",
+ "type": "Document Type"
+}

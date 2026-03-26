@@ -1,7 +1,16 @@
 {
  "app": "slcm",
- "charts": [],
- "content": "[{\"id\":\"em-hdr-planning\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Examination Planning</b></span>\",\"col\":12}},{\"id\":\"em-sc-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Examination Planner\",\"col\":3}},{\"id\":\"em-sc-2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Plan\",\"col\":3}},{\"id\":\"em-sp-1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-evaluation\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Evaluation &amp; Grading</b></span>\",\"col\":12}},{\"id\":\"em-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Evaluation Schema\",\"col\":3}},{\"id\":\"em-sc-4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Grading Schema\",\"col\":3}},{\"id\":\"em-sp-2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-masters\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"em-sc-5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Component\",\"col\":3}},{\"id\":\"em-sc-6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Assessment Type\",\"col\":3}},{\"id\":\"em-sc-7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quiz\",\"col\":3}}]",
+ "charts": [
+  {
+   "chart_name": "Exam Plans by Status",
+   "col": 6
+  },
+  {
+   "chart_name": "Exam Components by Type",
+   "col": 6
+  }
+ ],
+ "content": "[{\"id\":\"em-hdr-cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"em-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Exam Plans\",\"col\":4}},{\"id\":\"em-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Exam Plans\",\"col\":4}},{\"id\":\"em-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Courses Mapped\",\"col\":4}},{\"id\":\"em-nc-4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Evaluation Schemas\",\"col\":4}},{\"id\":\"em-nc-5\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Grading Schemas\",\"col\":4}},{\"id\":\"em-nc-6\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Schema Changes\",\"col\":4}},{\"id\":\"em-sp-0\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-charts\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Analytics</b></span>\",\"col\":12}},{\"id\":\"em-ch-1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Exam Plans by Status\",\"col\":6}},{\"id\":\"em-ch-2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Exam Components by Type\",\"col\":6}},{\"id\":\"em-sp-1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-planning\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Examination Planning</b></span>\",\"col\":12}},{\"id\":\"em-sc-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Examination Planner\",\"col\":3}},{\"id\":\"em-sc-2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Plan\",\"col\":3}},{\"id\":\"em-sc-csa\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Schema Assignment\",\"col\":3}},{\"id\":\"em-sc-scl\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Schema Change Log\",\"col\":3}},{\"id\":\"em-sp-2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-evaluation\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Evaluation &amp; Grading</b></span>\",\"col\":12}},{\"id\":\"em-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Evaluation Schema\",\"col\":3}},{\"id\":\"em-sc-4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Grading Schema\",\"col\":3}},{\"id\":\"em-sp-3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-reports\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"em-sc-r1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Schema Mapping Report\",\"col\":3}},{\"id\":\"em-sc-r2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Schema Change Audit\",\"col\":3}},{\"id\":\"em-sp-4\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-masters\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"em-sc-5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Component\",\"col\":3}},{\"id\":\"em-sc-6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Assessment Type\",\"col\":3}},{\"id\":\"em-sc-7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quiz\",\"col\":3}}]",
  "creation": "2026-03-26 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -51,6 +60,28 @@
    "dependencies": "",
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Course Schema Assignment",
+   "link_count": 0,
+   "link_to": "Course Schema Assignment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Schema Change Log",
+   "link_count": 0,
+   "link_to": "Schema Change Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Exam Component",
    "link_count": 0,
    "link_to": "Exam Component",
@@ -79,13 +110,40 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Course Schema Mapping Report",
+   "link_count": 0,
+   "link_to": "Course Schema Mapping Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Schema Change Audit",
+   "link_count": 0,
+   "link_to": "Schema Change Audit",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
  "modified": "2026-03-26 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Examination Management",
- "number_cards": [],
+ "number_cards": [
+  {"label": "Total Exam Plans", "name": "Total Exam Plans"},
+  {"label": "Active Exam Plans", "name": "Active Exam Plans"},
+  {"label": "Courses Mapped", "name": "Courses Mapped"},
+  {"label": "Evaluation Schemas", "name": "Evaluation Schemas"},
+  {"label": "Grading Schemas", "name": "Grading Schemas"},
+  {"label": "Schema Changes", "name": "Schema Changes"}
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
@@ -114,7 +172,27 @@
    "url": ""
   },
   {
-   "color": "Green",
+   "color": "Teal",
+   "doc_view": "List",
+   "label": "Course Schema Assignment",
+   "link_to": "Course Schema Assignment",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Schema Change Log",
+   "link_to": "Schema Change Log",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Purple",
    "doc_view": "List",
    "label": "Evaluation Schema",
    "link_to": "Evaluation Schema",
@@ -131,6 +209,26 @@
    "report_ref_doctype": "",
    "stats_filter": "[]",
    "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Course Schema Mapping Report",
+   "link_to": "Course Schema Mapping Report",
+   "report_ref_doctype": "Exam Plan",
+   "stats_filter": "",
+   "type": "Report",
+   "url": ""
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Schema Change Audit",
+   "link_to": "Schema Change Audit",
+   "report_ref_doctype": "Schema Change Log",
+   "stats_filter": "",
+   "type": "Report",
    "url": ""
   },
   {
