@@ -1,0 +1,43 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block title %}{{ announcement.title }}{% endblock %}
+
+{% block theme_vars %}
+<style>
+    :root {
+        --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else '#1a3c6e' }};
+        --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else '#c8a14b' }};
+        --accent: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else '#c8a14b' }};
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="/admission" style="color:var(--primary);font-size:14px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:20px;">← Back to programmes</a>
+
+<div class="detail-section" style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">
+        {{ frappe.utils.formatdate(announcement.publish_date, "dd MMM yyyy") if announcement.publish_date else '' }}
+        {% if announcement.announcement_type %} · {{ announcement.announcement_type }}{% endif %}
+    </div>
+    
+    <h1 style="font-size:24px;font-weight:800;color:var(--primary);margin-bottom:20px;">{{ announcement.title }}</h1>
+
+    {% if announcement.featured_image %}
+    <div style="margin-bottom:24px;border-radius:8px;overflow:hidden;">
+        <img src="{{ announcement.featured_image }}" alt="{{ announcement.title }}" style="width:100%;max-height:400px;object-fit:cover;">
+    </div>
+    {% endif %}
+
+    <div style="font-size:15px;line-height:1.8;color:#333;">{{ announcement.content | safe }}</div>
+    
+    {% if announcement.event_date or announcement.event_venue %}
+    <div style="margin-top:32px;padding:20px;background:var(--bg);border-radius:8px;border-left:4px solid var(--primary);">
+        <h4 style="font-size:14px;font-weight:700;margin-bottom:12px;">Event Details</h4>
+        {% if announcement.event_date %}<div style="font-size:14px;margin-bottom:4px;"><strong>Date:</strong> {{ frappe.utils.format_datetime(announcement.event_date, "dd MMM yyyy, hh:mm a") }}</div>{% endif %}
+        {% if announcement.event_venue %}<div style="font-size:14px;margin-bottom:12px;"><strong>Venue:</strong> {{ announcement.event_venue }}</div>{% endif %}
+        {% if announcement.event_registration_url %}<a href="{{ announcement.event_registration_url }}" target="_blank" class="btn-primary-adm">Register for event</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

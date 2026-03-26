@@ -1,20 +1,241 @@
 {
     "app": "slcm",
     "charts": [],
-    "content": "[{\"id\":\"qaOSi5ehAD\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">REGO</span>\",\"col\":12}},{\"id\":\"QSfgl1b70S\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Master\",\"col\":3}},{\"id\":\"d3XPCbqjCZ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Master\",\"col\":3}},{\"id\":\"CmEMELn-sx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Master\",\"col\":3}},{\"id\":\"m5JzWYmuIs\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Academic Year\",\"col\":3}},{\"id\":\"i8c7vEgUdO\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Academic Term\",\"col\":3}},{\"id\":\"SDVAKj6ak8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Department\",\"col\":3}},{\"id\":\"D_8QPjha2j\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program\",\"col\":3}},{\"id\":\"fV3cXRhJAc\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course\",\"col\":3}},{\"id\":\"TQQajFDH1x\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cohort\",\"col\":3}}]",
+    "content": "[{\"id\":\"sec_top_shortcuts\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Student Registration</span>\",\"col\":12}},{\"id\":\"sc_sm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Master\",\"col\":3}},{\"id\":\"sc_se\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Enrollment\",\"col\":3}},{\"id\":\"sc_idcard\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"ID Card Generation\",\"col\":3}},{\"id\":\"sc_rfid\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student RFID Card\",\"col\":3}},{\"id\":\"sec_academic\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"sc_ay\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Academic Year\",\"col\":3}},{\"id\":\"sc_at\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Academic Term\",\"col\":3}},{\"id\":\"sc_cohort\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cohort\",\"col\":3}},{\"id\":\"sc_prog\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program\",\"col\":3}},{\"id\":\"sc_dept\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Department\",\"col\":3}},{\"id\":\"sc_faculty\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty\",\"col\":3}},{\"id\":\"sc_course\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course\",\"col\":3}},{\"id\":\"sc_cm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Master\",\"col\":3}}]",
     "creation": "2026-01-07 18:11:36.419086",
     "custom_blocks": [],
     "docstatus": 0,
     "doctype": "Workspace",
     "for_user": "",
     "hide_custom": 0,
-    "icon": "share",
+    "icon": "users",
     "idx": 0,
-    "indicator_color": "green",
+    "indicator_color": "blue",
     "is_hidden": 0,
     "label": "REGO",
-    "links": [],
-    "modified": "2026-02-17 18:13:52.354961",
+    "links": [
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Student Master",
+            "link_count": 0,
+            "link_to": "Student Master",
+            "link_type": "DocType",
+            "onboard": 1,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Student Enrollment",
+            "link_count": 0,
+            "link_to": "Student Enrollment",
+            "link_type": "DocType",
+            "onboard": 1,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Student Group",
+            "link_count": 0,
+            "link_to": "Student Group",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Student Batch Name",
+            "link_count": 0,
+            "link_to": "Student Batch Name",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Student Category",
+            "link_count": 0,
+            "link_to": "Student Category",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Student RFID Card",
+            "link_count": 0,
+            "link_to": "Student RFID Card",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Student ID Card",
+            "link_count": 0,
+            "link_to": "Student ID Card",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "ID Card Generation",
+            "link_count": 0,
+            "link_to": "ID Card Generation",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "ID Card Template",
+            "link_count": 0,
+            "link_to": "ID Card Template",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "ID Card Print Log",
+            "link_count": 0,
+            "link_to": "ID Card Print Log",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Academic Year",
+            "link_count": 0,
+            "link_to": "Academic Year",
+            "link_type": "DocType",
+            "onboard": 1,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Academic Term",
+            "link_count": 0,
+            "link_to": "Academic Term",
+            "link_type": "DocType",
+            "onboard": 1,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Cohort",
+            "link_count": 0,
+            "link_to": "Cohort",
+            "link_type": "DocType",
+            "onboard": 1,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Program",
+            "link_count": 0,
+            "link_to": "Program",
+            "link_type": "DocType",
+            "onboard": 1,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Department",
+            "link_count": 0,
+            "link_to": "Department",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Faculty",
+            "link_count": 0,
+            "link_to": "Faculty",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Course",
+            "link_count": 0,
+            "link_to": "Course",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Course Master",
+            "link_count": 0,
+            "link_to": "Course Master",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Curriculum",
+            "link_count": 0,
+            "link_to": "Curriculum",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Institution Settings",
+            "link_count": 0,
+            "link_to": "Institution Settings",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        }
+    ],
+    "modified": "2026-03-26 10:00:00.000000",
     "modified_by": "Administrator",
     "module": "SLCM",
     "name": "REGO",
@@ -24,26 +245,42 @@
     "public": 1,
     "quick_lists": [],
     "roles": [],
-    "sequence_id": 3.0,
+    "sequence_id": 2.0,
     "shortcuts": [
         {
-            "color": "Grey",
+            "color": "Blue",
             "doc_view": "List",
-            "label": "Faculty Master",
-            "link_to": "Faculty",
+            "label": "Student Master",
+            "link_to": "Student Master",
             "stats_filter": "[]",
             "type": "DocType"
         },
         {
-            "color": "Grey",
+            "color": "Green",
             "doc_view": "List",
-            "label": "Course Master",
-            "link_to": "Course Master",
+            "label": "Student Enrollment",
+            "link_to": "Student Enrollment",
             "stats_filter": "[]",
             "type": "DocType"
         },
         {
-            "color": "Grey",
+            "color": "Orange",
+            "doc_view": "List",
+            "label": "ID Card Generation",
+            "link_to": "ID Card Generation",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Purple",
+            "doc_view": "List",
+            "label": "Student RFID Card",
+            "link_to": "Student RFID Card",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Pink",
             "doc_view": "List",
             "label": "Academic Year",
             "link_to": "Academic Year",
@@ -53,8 +290,40 @@
         {
             "color": "Grey",
             "doc_view": "List",
+            "label": "Academic Term",
+            "link_to": "Academic Term",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Yellow",
+            "doc_view": "List",
+            "label": "Cohort",
+            "link_to": "Cohort",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Yellow",
+            "doc_view": "List",
+            "label": "Program",
+            "link_to": "Program",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Orange",
+            "doc_view": "List",
             "label": "Department",
             "link_to": "Department",
+            "stats_filter": "[]",
+            "type": "DocType"
+        },
+        {
+            "color": "Grey",
+            "doc_view": "List",
+            "label": "Faculty",
+            "link_to": "Faculty",
             "stats_filter": "[]",
             "type": "DocType"
         },
@@ -69,32 +338,8 @@
         {
             "color": "Grey",
             "doc_view": "List",
-            "label": "Student Master",
-            "link_to": "Student Master",
-            "stats_filter": "[]",
-            "type": "DocType"
-        },
-        {
-            "color": "Grey",
-            "doc_view": "List",
-            "label": "Academic Term",
-            "link_to": "Academic Term",
-            "stats_filter": "[]",
-            "type": "DocType"
-        },
-        {
-            "color": "Grey",
-            "doc_view": "List",
-            "label": "Program",
-            "link_to": "Program",
-            "stats_filter": "[]",
-            "type": "DocType"
-        },
-        {
-            "color": "Grey",
-            "doc_view": "List",
-            "label": "Cohort",
-            "link_to": "Cohort",
+            "label": "Course Master",
+            "link_to": "Course Master",
             "stats_filter": "[]",
             "type": "DocType"
         }

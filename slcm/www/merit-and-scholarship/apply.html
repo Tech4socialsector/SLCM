@@ -1,0 +1,374 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block title %}Apply for Scholarship — {{ scheme.scheme_name }}{% endblock %}
+
+{% block theme_vars %}
+<style>
+  :root {
+    {% if portal_config %}
+    --primary:   {{ portal_config.get('primary_color','#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
+    --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
+    {% else %}
+    --primary: #1a3c6e;
+    --secondary: #c8a14b;
+    {% endif %}
+    --radius-xl: 24px;
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+{% endblock %}
+
+{% block page_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: 'var(--primary)',
+          secondary: 'var(--secondary)',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body, .adm-main, .adm-container {
+    font-family: 'Lexend', system-ui, sans-serif !important;
+    background: #f5f7f8 !important;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-up {
+    animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+    opacity: 0;
+  }
+
+  .form-container {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+
+  .form-header {
+    background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary), black 20%) 100%);
+    padding: 32px 40px;
+    color: white;
+  }
+
+  .form-body {
+    padding: 32px 40px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #f1f5f9;
+  }
+
+  .form-control {
+    width: 100%;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .form-control:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary), transparent 90%);
+  }
+
+  .file-upload-box {
+    border: 2px dashed #e2e8f0;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    background: #fcfdfe;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .file-upload-box:hover {
+    border-color: var(--primary);
+    background: #f8fafc;
+  }
+
+  .file-upload-box.has-file {
+    border-style: solid;
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary), transparent 96%);
+  }
+
+  .btn-submit {
+    background: var(--primary);
+    color: white;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 700;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary), transparent 80%);
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px color-mix(in srgb, var(--primary), transparent 70%);
+  }
+
+  .btn-cancel {
+    background: white;
+    color: #64748b;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s;
+  }
+
+  .btn-cancel:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+  }
+
+  @media (max-width: 640px) {
+    .form-header, .form-body { padding: 20px; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-10 px-4 flex flex-col items-center">
+    <div class="w-full max-w-4xl">
+        
+        <a href="/merit-and-scholarship/scholarships" class="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors mb-6 group">
+            <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            Back to Dashboard
+        </a>
+
+        {% if unauthorized %}
+        <div class="form-container text-center p-12 fade-in-up">
+            <span class="material-symbols-outlined text-6xl text-slate-300 mb-6">lock</span>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Authentication Required</h2>
+            <p class="text-slate-500 mb-8">Please log in to your account to apply for scholarships.</p>
+            <a href="/login" class="btn-submit inline-block">Sign In to Account</a>
+        </div>
+        {% elif error %}
+        <div class="form-container text-center p-12 fade-in-up">
+            <span class="material-symbols-outlined text-6xl text-amber-400 mb-6">warning</span>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Application Unavailable</h2>
+            <p class="text-slate-500">{{ error }}</p>
+            <a href="/merit-and-scholarship/admission_dashboard" class="btn-cancel inline-block mt-8">Return to Dashboard</a>
+        </div>
+        {% else %}
+
+        <div class="form-container fade-in-up">
+            <div class="form-header">
+                <h1 class="text-2xl font-black mb-1 leading-tight">{{ scheme.scheme_name }}</h1>
+                <p class="text-white/90 text-xs font-bold mb-2">Scheme Type: <span class="text-white/70 font-medium">{{ scheme.scheme_type }}</span></p>
+                <p class="text-white/80 text-xs font-medium">Please fill out the details below to submit your application.</p>
+            </div>
+
+            <div class="form-body">
+                <form id="fullScholarshipForm" novalidate class="space-y-6">
+                    <input type="hidden" id="scheme_id" value="{{ scheme.name }}">
+
+                    <!-- Section 1: Applicant Details -->
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
+                            <span class="material-symbols-outlined text-lg">person</span>
+                            Applicant Information
+                        </div>
+                        <div class="info-grid">
+                            <div class="space-y-1">
+                                <p class="text-[12px] font-bold text-slate-400">Candidate Name</p>
+                                <p class="text-sm font-bold text-slate-700">{{ applicant.candidate_name }}</p>
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-[12px] font-bold text-slate-400">Applicant ID</p>
+                                <p class="text-sm font-bold text-slate-700">{{ applicant.name }}</p>
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-[12px] font-bold text-slate-400">Program</p>
+                                <p class="text-sm font-bold text-slate-700">{{ applicant.program }}</p>
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-[12px] font-bold text-slate-400">Campus</p>
+                                <p class="text-sm font-bold text-slate-700">{{ applicant.campus }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Financials -->
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
+                            <span class="material-symbols-outlined text-lg">payments</span>
+                            Financial Details
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 mb-1.5 block" for="family_income">
+                                Annual Family Income (₹) <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" id="family_income" class="form-control" placeholder="e.g. 450000" required>
+                            <p class="text-[11px] text-slate-400 italic mt-1.5">Combine the total annual income of all earning family members.</p>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Documents -->
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
+                            <span class="material-symbols-outlined text-lg">description</span>
+                            Required Documents
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500">Income Certificate <span class="text-red-500">*</span></label>
+                                <div class="file-upload-box" id="box_income_cert" onclick="document.getElementById('income_certificate').click()">
+                                    <input type="file" id="income_certificate" accept=".pdf,.jpg,.jpeg,.png" required style="display:none" onchange="handleFile(this, 'box_income_cert')">
+                                    <span class="material-symbols-outlined text-2xl text-slate-300 mb-2">upload_file</span>
+                                    <p class="text-[13px] font-bold text-slate-600">Upload Income Certificate</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">PDF, JPG, PNG (Max 5MB)</p>
+                                    <div class="selected-filename text-primary font-bold text-xs mt-2 hidden"></div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500">Supporting Documents (Optional)</label>
+                                <div class="file-upload-box" id="box_supp_docs" onclick="document.getElementById('supporting_documents').click()">
+                                    <input type="file" id="supporting_documents" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFile(this, 'box_supp_docs')">
+                                    <span class="material-symbols-outlined text-2xl text-slate-300 mb-2">folder_open</span>
+                                    <p class="text-[13px] font-bold text-slate-600">Upload additional documents</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Any relevant proof for eligibility.</p>
+                                    <div class="selected-filename text-primary font-bold text-xs mt-2 hidden"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-slate-50 p-6 flex flex-col-reverse sm:flex-row gap-4 border-t border-slate-100">
+                <button type="button" class="btn-cancel flex-1" onclick="window.location.href='/merit-and-scholarship/scholarships'">Cancel</button>
+                <button type="button" id="submitAppBtn" class="btn-submit flex-[2]">Submit Scholarship Application</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function handleFile(input, boxId) {
+        const box = document.getElementById(boxId);
+        const fileNameEl = box.querySelector('.selected-filename');
+        const iconEl = box.querySelector('.material-symbols-outlined');
+
+        if (input.files && input.files[0]) {
+            box.classList.add('has-file');
+            fileNameEl.innerText = '✓ ' + input.files[0].name;
+            fileNameEl.classList.remove('hidden');
+            if (iconEl) iconEl.style.color = 'var(--primary)';
+        } else {
+            box.classList.remove('has-file');
+            fileNameEl.classList.add('hidden');
+            if (iconEl) iconEl.style.color = '#cbd5e1';
+        }
+    }
+
+    async function getBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(reader.error);
+        });
+    }
+
+    document.getElementById('submitAppBtn')?.addEventListener('click', async function () {
+        const btn = this;
+        const incomeValue = document.getElementById('family_income').value;
+        const incomeCertFile = document.getElementById('income_certificate').files[0];
+
+        // Validation
+        const income = parseFloat(incomeValue);
+        if (isNaN(income) || income < 0) {
+            showToast('Please enter a valid Annual Family Income', 'error');
+            document.getElementById('family_income').focus();
+            return;
+        }
+
+        if (!incomeCertFile) {
+            showToast('Income Certificate is mandatory', 'error');
+            return;
+        }
+
+        const originalText = btn.innerHTML;
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = `
+                <div class="flex items-center justify-center gap-2">
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                </div>`;
+
+            const schemeId = document.getElementById('scheme_id').value;
+            const suppDocsFile = document.getElementById('supporting_documents').files[0];
+
+            const incomeCertData = await getBase64(incomeCertFile);
+
+            let suppDocsData = null;
+            let suppDocsName = null;
+            if (suppDocsFile) {
+                suppDocsData = await getBase64(suppDocsFile);
+                suppDocsName = suppDocsFile.name;
+            }
+
+            const response = await apiFetch('slcm.admission.doctype.scholarship_application.scholarship_application.create_scholarship_application', {
+                scheme: schemeId,
+                family_income: incomeValue,
+                income_certificate_data: incomeCertData,
+                income_certificate_name: incomeCertFile.name,
+                supporting_documents_data: suppDocsData,
+                supporting_documents_name: suppDocsName
+            });
+
+            if (response) {
+                showToast('Application submitted successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/merit-and-scholarship/scholarships';
+                }, 1500);
+            }
+
+        } catch (error) {
+            console.error('Submission error:', error);
+            showToast(error.message || 'Failed to submit application. Please try again.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+</script>
+{% endblock %}

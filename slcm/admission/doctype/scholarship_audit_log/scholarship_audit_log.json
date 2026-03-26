@@ -1,0 +1,176 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-28 16:15:52.644936",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "scholarship_application",
+  "scholarship_scheme",
+  "admission_cycle",
+  "campus",
+  "program",
+  "action_type",
+  "previous_state",
+  "new_state",
+  "performed_by",
+  "triggered_by",
+  "action_timestamp",
+  "reason",
+  "ip_address",
+  "record_hash"
+ ],
+ "fields": [
+  {
+   "fieldname": "scholarship_application",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Scholarship Application",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "scholarship_scheme",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Scholarship Scheme",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Data",
+   "label": "Admission Cycle",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Data",
+   "label": "Campus",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Data",
+   "label": "Program",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "action_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Action Type",
+   "options": "Apply\nReview\nApprove\nReject\nModify\nRevoke\nAuto-Expire",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "previous_state",
+   "fieldtype": "JSON",
+   "label": "Previous State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_state",
+   "fieldtype": "JSON",
+   "label": "New State",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "performed_by",
+   "fieldtype": "Link",
+   "label": "Performed By",
+   "options": "User",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "triggered_by",
+   "fieldtype": "Select",
+   "label": "Triggered By",
+   "options": "Applicant\nAdmin\nSystem",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "action_timestamp",
+   "fieldtype": "Datetime",
+   "label": "Action Timestamp",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "ip_address",
+   "fieldtype": "Data",
+   "label": "IP Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "record_hash",
+   "fieldtype": "Data",
+   "label": "Record Hash",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-06 12:43:45.740384",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Scholarship Audit Log",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Scholarship Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "read_only": 1,
+ "row_format": "Dynamic",
+ "sort_field": "action_timestamp",
+ "sort_order": "DESC",
+ "states": []
+}

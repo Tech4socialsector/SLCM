@@ -1,0 +1,197 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-02-27 14:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "section_break_basic",
+  "admission_cycle",
+  "program",
+  "payment_gateway",
+  "col_break_basic",
+  "payment_receipt_template",
+  "total_seats",
+  "status",
+  "section_break_summary",
+  "total_allocated",
+  "total_filled",
+  "col_break_summary",
+  "policy_document",
+  "total_available",
+  "section_break_categories",
+  "categories"
+ ],
+ "fields": [
+  {
+   "default": "PRP-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "PRP-.YYYY.-"
+  },
+  {
+   "fieldname": "section_break_basic",
+   "fieldtype": "Section Break",
+   "label": "Program and Cycle"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "total_seats",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Total Seats",
+   "reqd": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nActive\nLocked",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_summary",
+   "fieldtype": "Section Break",
+   "label": "Seat Summary"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "description": "Sum of all category seats",
+   "fieldname": "total_allocated",
+   "fieldtype": "Int",
+   "label": "Total Allocated",
+   "read_only": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "total_filled",
+   "fieldtype": "Int",
+   "label": "Total Filled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_summary",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "total_available",
+   "fieldtype": "Int",
+   "label": "Total Available",
+   "read_only": 1
+  },
+  {
+   "description": "Add one row per category. Each row defines seats allocated and application fee for that category.",
+   "fieldname": "section_break_categories",
+   "fieldtype": "Section Break",
+   "label": "Category-wise Seats and Fees"
+  },
+  {
+   "fieldname": "categories",
+   "fieldtype": "Table",
+   "label": "Categories",
+   "options": "Program Reservation Category",
+   "reqd": 1
+  },
+  {
+   "fieldname": "policy_document",
+   "fieldtype": "Attach",
+   "label": "Policy Document"
+  },
+  {
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "label": "Payment Gateway",
+   "options": "Payment Gateway"
+  },
+  {
+   "fieldname": "payment_receipt_template",
+   "fieldtype": "Link",
+   "label": "Payment Receipt Template",
+   "options": "Print Format",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-03-17 14:35:23.162358",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Program Reservation Policy",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Admission Admin",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Merit Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "admission_cycle",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Gray",
+   "title": "Draft"
+  },
+  {
+   "color": "Green",
+   "title": "Active"
+  },
+  {
+   "color": "Red",
+   "title": "Locked"
+  }
+ ],
+ "title_field": "program",
+ "track_changes": 1
+}

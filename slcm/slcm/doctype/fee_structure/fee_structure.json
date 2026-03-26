@@ -11,11 +11,20 @@
   "program",
   "academic_year",
   "academic_term",
+  "applicable",
+  "online_payment",
+  "cash",
   "column_break_1",
+  "offer_round",
+  "payment_gateway",
   "valid_from",
   "valid_until",
   "status",
   "total_amount",
+  "receipt_print_format",
+  "section_refund",
+  "is_refund_available",
+  "refund_policies",
   "section_components",
   "components"
  ],
@@ -24,6 +33,7 @@
    "fieldname": "fee_structure_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Fee Structure Name",
    "reqd": 1,
    "unique": 1
@@ -32,6 +42,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Program",
    "options": "Program",
    "reqd": 1
@@ -40,6 +51,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
@@ -47,6 +59,7 @@
   {
    "fieldname": "academic_term",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Academic Term",
    "options": "Academic Term"
   },
@@ -70,6 +83,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Active\nInactive",
    "reqd": 1
@@ -90,14 +104,78 @@
    "fieldtype": "Table",
    "label": "Components",
    "options": "Fee Component Child"
+  },
+  {
+   "fieldname": "applicable",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Applicable",
+   "options": "Applicant\nStudent\nFaculty\nOthers",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.applicable == \"Applicant\"",
+   "fieldname": "offer_round",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Offer Round",
+   "mandatory_depends_on": "eval:doc.applicable == \"Applicant\"",
+   "options": "Round 1\nRound 2\nRound 3\nRound 4"
+  },
+  {
+   "default": "0",
+   "fieldname": "online_payment",
+   "fieldtype": "Check",
+   "label": "Online Payment"
+  },
+  {
+   "default": "0",
+   "fieldname": "cash",
+   "fieldtype": "Check",
+   "label": "Cash"
+  },
+  {
+   "depends_on": "eval:doc.online_payment == 1",
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Payment Gateway",
+   "mandatory_depends_on": "eval:doc.online_payment == 1",
+   "options": "Payment Gateway"
+  },
+  {
+   "depends_on": "eval:doc.online_payment ==1",
+   "fieldname": "receipt_print_format",
+   "fieldtype": "Link",
+   "label": "Receipt Print Format",
+   "mandatory_depends_on": "eval:doc.online_payment ==1",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "section_refund",
+   "fieldtype": "Section Break",
+   "label": "Refund Policy Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_refund_available",
+   "fieldtype": "Check",
+   "label": "Is Refund Available"
+  },
+  {
+   "depends_on": "eval:doc.is_refund_available == 1",
+   "fieldname": "refund_policies",
+   "fieldtype": "Table",
+   "label": "Refund Policies",
+   "options": "Fee Structure Refund Policy"
   }
  ],
  "links": [],
- "modified": "2026-01-19 16:59:34.238479",
+ "modified": "2026-03-20 14:10:51.901284",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Structure",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -109,6 +187,39 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offer Letter Admin",
    "share": 1,
    "write": 1
   }

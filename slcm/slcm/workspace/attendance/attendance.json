@@ -1,24 +1,74 @@
 {
  "app": "slcm",
- "charts": [],
- "content": "[{\"id\":\"KubNzboJeQ\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Attendance</span>\",\"col\":12}},{\"id\":\"IhLQqP8kR_\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Venue Booking</span>\",\"col\":12}},{\"id\":\"WdU-jVHkif\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room\",\"col\":3}},{\"id\":\"6YZ3Glfkmj\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Venue Booking\",\"col\":3}},{\"id\":\"WDJcH9WDuQ\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Manual Process</span>\",\"col\":12}},{\"id\":\"Ga7Yn_ifTq\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Settings\",\"col\":3}},{\"id\":\"nXbVASay28\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class Schedule\",\"col\":3}},{\"id\":\"za2-PzEA9j\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance Tool\",\"col\":3}},{\"id\":\"UYSux4UnV6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Office Hours\",\"col\":3}},{\"id\":\"RB9Ro1HMy9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance Condonation\",\"col\":3}},{\"id\":\"JKTLg7kQfz\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"FA MFA Application\",\"col\":3}},{\"id\":\"OAizugpMID\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Summary\",\"col\":3}},{\"id\":\"yG0REgN3CO\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">RFID Process</span>\",\"col\":12}},{\"id\":\"zfW3roK0zu\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Session\",\"col\":3}},{\"id\":\"YSLh9jI0gg\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Log \",\"col\":3}},{\"id\":\"TtHTRdYWWL\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance\",\"col\":3}},{\"id\":\"0Qk9S-AZ0_\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Report</b></span>\",\"col\":12}},{\"id\":\"AlZpYdp1Vj\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Final Report\",\"col\":3}}]",
- "creation": "2026-02-04 17:41:15.897875",
+ "charts": [
+  {
+   "chart_name": "Attendance Status Distribution",
+   "label": "Attendance Status Distribution"
+  },
+  {
+   "chart_name": "Attendance Trend Over Time",
+   "label": "Attendance Trend Over Time"
+  },
+  {
+   "chart_name": "Session Type Breakdown",
+   "label": "Session Type Breakdown"
+  },
+  {
+   "chart_name": "FA MFA Application Status",
+   "label": "FA MFA Application Status"
+  }
+ ],
+ "content": "[{\"id\":\"att-hdr-overview\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"att-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Attendance Records\",\"col\":3}},{\"id\":\"att-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Present Count\",\"col\":3}},{\"id\":\"att-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Absent Count\",\"col\":3}},{\"id\":\"att-nc-4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"OD Count\",\"col\":3}},{\"id\":\"att-nc-5\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Sessions\",\"col\":3}},{\"id\":\"att-nc-6\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Sessions\",\"col\":3}},{\"id\":\"att-nc-7\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Pending Condonations\",\"col\":3}},{\"id\":\"att-nc-8\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Pending FA / MFA\",\"col\":3}},{\"id\":\"att-hdr-config\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Configuration</span>\",\"col\":12}},{\"id\":\"att-sc-13\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Settings\",\"col\":3}},{\"id\":\"att-hdr-ops\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Daily Operations</b></span>\",\"col\":12}},{\"id\":\"att-sc-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance Tool\",\"col\":3}},{\"id\":\"att-sc-2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Session\",\"col\":3}},{\"id\":\"att-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Log\",\"col\":3}},{\"id\":\"att-sc-4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance\",\"col\":3}},{\"id\":\"att-hdr-approvals\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Applications &amp; Approvals</span>\",\"col\":12}},{\"id\":\"att-sc-5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance Condonation\",\"col\":3}},{\"id\":\"att-sc-6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"FA MFA Application\",\"col\":3}},{\"id\":\"att-sc-7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Summary\",\"col\":3}},{\"id\":\"att-sc-8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Final Report\",\"col\":3}},{\"id\":\"att-hdr-venue\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Venue &amp; Scheduling</span>\",\"col\":12}},{\"id\":\"att-sc-9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class Schedule\",\"col\":3}},{\"id\":\"att-sc-10\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Venue Booking\",\"col\":3}},{\"id\":\"att-sc-11\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room\",\"col\":3}},{\"id\":\"att-sc-12\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Office Hours\",\"col\":3}},{\"id\":\"att-hdr-analytics\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Analytics</span>\",\"col\":12}},{\"id\":\"att-ch-1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Attendance Status Distribution\",\"col\":6}},{\"id\":\"att-ch-2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Attendance Trend Over Time\",\"col\":6}},{\"id\":\"att-ch-3\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Session Type Breakdown\",\"col\":6}},{\"id\":\"att-ch-4\",\"type\":\"chart\",\"data\":{\"chart_name\":\"FA MFA Application Status\",\"col\":6}}]",
+ "creation": "2026-03-25 21:20:03.401517",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
  "for_user": "",
  "hide_custom": 0,
- "icon": "customization",
+ "icon": "calendar",
  "idx": 0,
- "indicator_color": "green",
+ "indicator_color": "blue",
  "is_hidden": 0,
  "label": "Attendance",
  "links": [],
- "modified": "2026-02-17 18:07:23.982974",
+ "modified": "2026-03-25 22:04:34.855821",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance",
- "number_cards": [],
+ "number_cards": [
+  {
+   "label": "Total Attendance Records",
+   "number_card_name": "Total Attendance Records"
+  },
+  {
+   "label": "Present Count",
+   "number_card_name": "Present Count"
+  },
+  {
+   "label": "Absent Count",
+   "number_card_name": "Absent Count"
+  },
+  {
+   "label": "OD Count",
+   "number_card_name": "OD Count"
+  },
+  {
+   "label": "Total Sessions",
+   "number_card_name": "Total Sessions"
+  },
+  {
+   "label": "Active Sessions",
+   "number_card_name": "Active Sessions"
+  },
+  {
+   "label": "Pending Condonations",
+   "number_card_name": "Pending Condonations"
+  },
+  {
+   "label": "Pending FA / MFA",
+   "number_card_name": "Pending FA / MFA"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
@@ -27,43 +77,74 @@
  "sequence_id": 7.0,
  "shortcuts": [
   {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Office Hours",
-   "link_to": "Office Hours Group",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Room",
-   "link_to": "Room",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Class Schedule",
-   "link_to": "Class Schedule",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Venue Booking",
-   "link_to": "Venue Booking",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
+   "color": "Blue",
    "doc_view": "List",
    "label": "Student Attendance Tool",
    "link_to": "Student Attendance Tool",
-   "type": "DocType"
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Attendance Session",
+   "link_to": "Attendance Session",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Attendance Log",
+   "link_to": "Attendance Log",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Student Attendance",
+   "link_to": "Student Attendance",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Student Attendance Condonation",
+   "link_to": "Student Attendance Condonation",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Pink",
+   "doc_view": "List",
+   "label": "FA MFA Application",
+   "link_to": "FA MFA Application",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "List",
+   "label": "Attendance Summary",
+   "link_to": "Attendance Summary",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
   },
   {
    "color": "Grey",
@@ -71,62 +152,59 @@
    "label": "Attendance Final Report",
    "link_to": "Comprehensive Attendance Report",
    "report_ref_doctype": "Attendance Summary",
-   "type": "Report"
+   "stats_filter": "",
+   "type": "Report",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Class Schedule",
+   "link_to": "Class Schedule",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
   },
   {
    "color": "Grey",
    "doc_view": "List",
-   "label": "Attendance Session",
-   "link_to": "Attendance Session",
+   "label": "Venue Booking",
+   "link_to": "Venue Booking",
+   "report_ref_doctype": "",
    "stats_filter": "[]",
-   "type": "DocType"
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Room",
+   "link_to": "Room",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Office Hours",
+   "link_to": "Office Hours Group",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
   },
   {
    "color": "Grey",
    "doc_view": "List",
    "label": "Attendance Settings",
    "link_to": "Attendance Settings",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Attendance Log ",
-   "link_to": "Attendance Log",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Student Attendance Condonation",
-   "link_to": "Student Attendance Condonation",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Student Attendance",
-   "link_to": "Student Attendance",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "FA MFA Application",
-   "link_to": "FA MFA Application",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Attendance Summary",
-   "link_to": "Attendance Summary",
-   "stats_filter": "[]",
-   "type": "DocType"
+   "report_ref_doctype": "",
+   "stats_filter": "",
+   "type": "DocType",
+   "url": ""
   }
  ],
  "title": "Attendance",

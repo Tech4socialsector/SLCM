@@ -1,0 +1,263 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:applicant_id",
+ "creation": "2026-03-23 12:49:56.296731",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_details_section",
+  "applicant_id",
+  "candidate_name",
+  "email",
+  "mobile_number",
+  "gender",
+  "date_of_birth",
+  "category",
+  "column_break_results",
+  "program",
+  "program_level",
+  "academic_year",
+  "admission_cycle",
+  "campus",
+  "education_details_section",
+  "hsc_group",
+  "hsc_percentage",
+  "ug_degree_details",
+  "ug_cgpa",
+  "pg_degree_details",
+  "pg_cgpa",
+  "scores_section",
+  "entrance_test_score",
+  "interview_score",
+  "status_section",
+  "source_type",
+  "result_status",
+  "eligibility_result_card",
+  "configuration_reference"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant_details_section",
+   "fieldtype": "Section Break",
+   "label": "Applicant Details"
+  },
+  {
+   "fieldname": "applicant_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Applicant id",
+   "options": "Applicant",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Candidate name"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "Gender",
+   "options": "Male\nFemale\nOthers"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "column_break_results",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Program level",
+   "options": "Undergraduate\nPostgraduate\nResearch Course"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Academic year",
+   "options": "Academic Year"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Admission cycle",
+   "options": "Admission Cycle"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "scores_section",
+   "fieldtype": "Section Break",
+   "label": "Scores"
+  },
+  {
+   "fieldname": "entrance_test_score",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Entrance score"
+  },
+  {
+   "fieldname": "interview_score",
+   "fieldtype": "Int",
+   "label": "Interview score"
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "fieldname": "source_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Source",
+   "options": "Interview Pass\nExempted\nET Pass (Interview Exempt)"
+  },
+  {
+   "fieldname": "result_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Result status",
+   "options": "Qualified\nSelected"
+  },
+  {
+   "fieldname": "eligibility_result_card",
+   "fieldtype": "Attach",
+   "label": "Eligibility Result Card",
+   "read_only": 1
+  },
+  {
+   "fieldname": "configuration_reference",
+   "fieldtype": "Link",
+   "label": "Configuration reference",
+   "options": "Eligibility Result Configuration",
+   "read_only": 1
+  },
+  {
+   "fieldname": "education_details_section",
+   "fieldtype": "Section Break",
+   "label": "Education Details "
+  },
+  {
+   "fieldname": "hsc_group",
+   "fieldtype": "Link",
+   "label": "HSC group ",
+   "options": "HSC Groups"
+  },
+  {
+   "fieldname": "hsc_percentage",
+   "fieldtype": "Percent",
+   "label": "HSC percentage "
+  },
+  {
+   "fieldname": "ug_degree_details",
+   "fieldtype": "Table",
+   "label": "Undergraduate degree details",
+   "options": "UG Degree Detail"
+  },
+  {
+   "fieldname": "ug_cgpa",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Ug cgpa",
+   "precision": "2"
+  },
+  {
+   "fieldname": "pg_degree_details",
+   "fieldtype": "Table",
+   "label": "Postgraduate degree details ",
+   "options": "PG Degree Details"
+  },
+  {
+   "fieldname": "pg_cgpa",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Pg cgpa",
+   "precision": "2"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Table",
+   "label": "Category",
+   "options": "Applicant Category"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-23 14:12:41.230949",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Eligibility Result",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "applicant_id,candidate_name",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "candidate_name",
+ "track_changes": 1
+}

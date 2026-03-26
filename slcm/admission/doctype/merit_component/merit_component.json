@@ -1,0 +1,75 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "field:component_name",
+    "creation": "2026-03-03 17:30:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "component_name",
+        "field_name",
+        "multiplier",
+        "description",
+        "standard_components_help"
+    ],
+    "fields": [
+        {
+            "fieldname": "component_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Component Name",
+            "reqd": 1,
+            "unique": 1
+        },
+        {
+            "fieldname": "field_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Field Name",
+            "description": "Technical field name in Eligibility Result DocType",
+            "reqd": 1
+        },
+        {
+            "default": "10.0",
+            "fieldname": "multiplier",
+            "fieldtype": "Float",
+            "label": "Multiplier",
+            "description": "Factor to multiply the field value by (e.g. 10 for CGPA to Percentage)"
+        },
+        {
+            "fieldname": "description",
+            "fieldtype": "Small Text",
+            "label": "Description",
+            "description": "e.g. Averages CGPA/Marks from UG Degree table."
+        },
+        {
+            "fieldname": "standard_components_help",
+            "fieldtype": "HTML",
+            "label": "Standard Components Reference",
+            "options": "<div style='background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-top: 20px;'>\n  <h5 style='margin-top: 0; color: #1a3c6e; border-bottom: 2px solid #1a3c6e; padding-bottom: 5px;'>📚 Standard Components Reference</h5>\n  <p style='font-size: 12px; color: #64748b;'>Use these common fields to build your merit calculation. They are automatically available in the Eligibility Result.</p>\n  <table style='width: 100%; border-collapse: collapse; font-size: 11px;'>\n    <thead>\n      <tr style='background-color: #f1f5f9;'>\n        <th style='border: 1px solid #cbd5e1; padding: 6px; text-align: left;'>Component Name</th>\n        <th style='border: 1px solid #cbd5e1; padding: 6px; text-align: left;'>Internal Field Name</th>\n        <th style='border: 1px solid #cbd5e1; padding: 6px; text-align: center;'>Multiplier</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><strong>UG Average Score</strong></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><code>ug_degree_details</code></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px; text-align: center;'>10.0</td>\n      </tr>\n      <tr>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><strong>PG Average Score</strong></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><code>pg_degree_details</code></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px; text-align: center;'>10.0</td>\n      </tr>\n      <tr>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><strong>HSC Percentage</strong></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><code>hsc_percentage</code></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px; text-align: center;'>1.0</td>\n      </tr>\n      <tr>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><strong>Entrance Score</strong></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><code>entrance_test_score</code></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px; text-align: center;'>1.0</td>\n      </tr>\n      <tr>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><strong>Interview Score</strong></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px;'><code>interview_score</code></td>\n        <td style='border: 1px solid #cbd5e1; padding: 6px; text-align: center;'>1.0</td>\n      </tr>\n    </tbody>\n  </table>\n</div>"
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "modified": "2026-03-03 17:30:00.000000",
+    "modified_by": "Administrator",
+    "module": "Admission",
+    "name": "Merit Component",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}

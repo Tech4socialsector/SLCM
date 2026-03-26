@@ -1,0 +1,207 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:exemption_name",
+ "creation": "2026-02-16 11:21:09.072829",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "national_test_exemption_details_section",
+  "exemption_name",
+  "exemption_code",
+  "campus",
+  "admission_cycle",
+  "academic_year",
+  "column_break_wiuc",
+  "applicable_program",
+  "test_configuration_section",
+  "national_test",
+  "mark_percentage",
+  "operator",
+  "valid_from",
+  "valid_until",
+  "column_break_ulsu",
+  "exempts_entrance_test",
+  "exempts_interview",
+  "overrides_academic_rule",
+  "description",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "exemption_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": " Exemption name ",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission cycle",
+   "options": "Admission Cycle"
+  },
+  {
+   "fieldname": "exemption_code",
+   "fieldtype": "Data",
+   "label": "Exemption code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "applicable_program",
+   "fieldtype": "Table",
+   "label": "Applicable program",
+   "options": "Eligibility Allowed Degree",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "test_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "Test Configuration "
+  },
+  {
+   "fieldname": "national_test",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "National test",
+   "options": "National Test",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mark_percentage",
+   "fieldtype": "Percent",
+   "label": "Mark percentage ",
+   "reqd": 1
+  },
+  {
+   "fieldname": "operator",
+   "fieldtype": "Select",
+   "label": "Operator",
+   "options": ">=\n<=\n=",
+   "reqd": 1
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "label": "Valid from",
+   "reqd": 1
+  },
+  {
+   "fieldname": "valid_until",
+   "fieldtype": "Date",
+   "label": "Valid until",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_entrance_test",
+   "fieldtype": "Check",
+   "label": "Exempts entrance test"
+  },
+  {
+   "default": "0",
+   "fieldname": "exempts_interview",
+   "fieldtype": "Check",
+   "label": "Exempts interview"
+  },
+  {
+   "default": "0",
+   "fieldname": "overrides_academic_rule",
+   "fieldtype": "Check",
+   "label": "Overrides academic rule"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "column_break_ulsu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_wiuc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "national_test_exemption_details_section",
+   "fieldtype": "Section Break",
+   "label": "National Test Exemption Details "
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Academic year ",
+   "options": "Academic Year",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-16 12:01:33.130333",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "National Test Exemption Rule",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Eligibility Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

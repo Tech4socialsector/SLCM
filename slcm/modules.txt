@@ -1,1 +1,2 @@
-SLCM
+slcm
+Admission

@@ -1,0 +1,72 @@
+{
+ "cards": [
+  {
+   "card": "Total Applicants"
+  },
+  {
+   "card": "Selected Applicants"
+  },
+  {
+   "card": "Rejected Applicants"
+  },
+  {
+   "card": "Waitlisted Applicants"
+  },
+  {
+   "card": "Total offer letter"
+  },
+  {
+   "card": "Issued Offers"
+  },
+  {
+   "card": "Accepted Offers"
+  },
+  {
+   "card": "Expired Offers"
+  },
+  {
+   "card": "Admission Fee Paid"
+  }
+ ],
+ "charts": [
+  {
+   "width": "Half"
+  },
+  {
+   "chart": "Applicant Fee Payment Status",
+   "width": "Half"
+  },
+  {
+   "chart": "Admission Pipeline",
+   "width": "Full"
+  },
+  {
+   "chart": "Distribution by Campus",
+   "width": "Half"
+  },
+  {
+   "chart": "Application Trends",
+   "width": "Half"
+  },
+  {
+   "chart": "Primary Program Choice",
+   "width": "Half"
+  },
+  {
+   "chart": "Applicant Fee Status",
+   "width": "Half"
+  }
+ ],
+ "creation": "2026-02-27 17:30:20.026471",
+ "dashboard_name": "Admission",
+ "docstatus": 0,
+ "doctype": "Dashboard",
+ "idx": 0,
+ "is_default": 0,
+ "is_standard": 1,
+ "modified": "2026-03-03 15:56:12.018067",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission",
+ "owner": "Administrator"
+}

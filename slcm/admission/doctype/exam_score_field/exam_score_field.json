@@ -1,0 +1,27 @@
+{
+ "actions": [],
+ "creation": "2026-02-25 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["field_name", "label", "field_type", "is_rank_field", "is_primary_score", "min_value", "max_value"],
+ "fields": [
+  {"fieldname": "field_name", "fieldtype": "Data", "label": "Field Name", "reqd": 1, "in_list_view": 1, "description": "Internal name e.g. air_rank, total_score"},
+  {"fieldname": "label", "fieldtype": "Data", "label": "Display Label", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "field_type", "fieldtype": "Select", "label": "Field Type", "options": "Float\nInt\nData", "reqd": 1, "in_list_view": 1, "default": "Float"},
+  {"fieldname": "is_rank_field", "fieldtype": "Check", "label": "Is Rank Field"},
+  {"fieldname": "is_primary_score", "fieldtype": "Check", "label": "Primary Score for Merit"},
+  {"fieldname": "min_value", "fieldtype": "Float", "label": "Min Valid Value"},
+  {"fieldname": "max_value", "fieldtype": "Float", "label": "Max Valid Value"}
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "modified": "2026-02-25 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Exam Score Field",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

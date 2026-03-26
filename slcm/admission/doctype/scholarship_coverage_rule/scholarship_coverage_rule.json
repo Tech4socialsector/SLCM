@@ -1,0 +1,77 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-26 16:48:32",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "fee_component",
+  "coverage_type",
+  "coverage_value",
+  "maximum_cap",
+  "is_applicable",
+  "sequence",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "fee_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Component",
+   "options": "Fee Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "coverage_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Coverage Type",
+   "options": "Percentage\nFixed",
+   "reqd": 1
+  },
+  {
+   "fieldname": "coverage_value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Coverage Value",
+   "reqd": 1
+  },
+  {
+   "fieldname": "maximum_cap",
+   "fieldtype": "Currency",
+   "label": "Maximum Cap"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_applicable",
+   "fieldtype": "Check",
+   "label": "Is Applicable",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "label": "Sequence",
+   "reqd": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-26 16:53:40.255479",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Scholarship Coverage Rule",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

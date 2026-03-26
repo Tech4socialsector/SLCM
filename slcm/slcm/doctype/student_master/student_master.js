@@ -62,6 +62,40 @@ frappe.ui.form.on("Student Master", {
 				__("Update Status")
 			).addClass("btn-primary");
 
+				// Download Registration Slip
+			frm.add_custom_button(
+				__("Registration Slip"),
+				function () {
+					const student_name = frm.doc.name;
+					const url = frappe.urllib.get_full_url(
+						`/api/method/frappe.utils.print_format.download_pdf?doctype=Student+Master&name=${encodeURIComponent(student_name)}&format=Student+Registration+Slip`
+					);
+					frappe.show_alert({ message: __("Generating PDF..."), indicator: "blue" });
+					fetch(url, { credentials: "same-origin" })
+						.then((res) => {
+							if (!res.ok) throw new Error("Failed");
+							return res.blob();
+						})
+						.then((blob) => {
+							const a = document.createElement("a");
+							a.href = URL.createObjectURL(blob);
+							a.download = `Registration_Slip_${student_name}.pdf`;
+							document.body.appendChild(a);
+							a.click();
+							a.remove();
+							URL.revokeObjectURL(a.href);
+						})
+						.catch(() => {
+							frappe.msgprint({
+								title: __("Error"),
+								message: __("Could not generate PDF. Please try again."),
+								indicator: "red",
+							});
+						});
+				},
+				__("Download")
+			);
+
 			// Check Enrollment Eligibility and Add Button
 			frappe.call({
 				method: "slcm.slcm.doctype.student_master.student_master.validate_new_enrollment",
@@ -89,7 +123,7 @@ frappe.ui.form.on("Student Master", {
 												.filter(Boolean)
 												.join(" "),
 											cohort: frm.doc.programme,
-											data_xgxm: frm.doc.batch_year, // Batch
+											batch_year_ref: frm.doc.batch_year,
 											academic_year: frm.doc.academic_year,
 										});
 									} else {
@@ -130,7 +164,7 @@ frappe.ui.form.on("Student Master", {
 			return;
 		}
 
-		const image = frm.doc.student_image || "/assets/frappe/images/default-avatar.png";
+		const image = frm.doc.student_image || frm.doc.passport_size_photo || "/assets/frappe/images/default-avatar.png";
 
 		const html = `
 			<div class="student-profile-card">
@@ -155,7 +189,7 @@ frappe.ui.form.on("Student Master", {
 					docname: frm.doc.name,
 					on_success(file) {
 						if (file.file_url && file.file_url.match(/\.(jpg|jpeg|png|webp)$/i)) {
-							frm.set_value("student_image", file.file_url);
+							frm.set_value("passport_size_photo", file.file_url);
 							frm.save().then(() => {
 								frm.reload_doc();
 							});

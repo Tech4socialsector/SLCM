@@ -1,0 +1,189 @@
+{
+ "actions": [],
+ "creation": "2026-02-26 12:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "program",
+  "intake_type",
+  "program_name",
+  "brochure_url",
+  "col_break_1",
+  "is_active",
+  "campus",
+  "seats",
+  "program_level",
+  "section_break_eligibility",
+  "eligibility_hint",
+  "col_break_2",
+  "desciption",
+  "section_break_limits",
+  "max_applications",
+  "application_count",
+  "add_reservation_policy",
+  "add_program_media",
+  "col_break_limits",
+  "reservation_policy",
+  "program_image",
+  "program_media"
+ ],
+ "fields": [
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Programme",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "program.intake_type",
+   "fieldname": "intake_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Intake type",
+   "options": "\nInternal Test\nExternal Test\nDirect Merit",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "program.program_name",
+   "fieldname": "program_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Program name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Leave blank for single-campus institutions",
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Campus",
+   "options": "Campus"
+  },
+  {
+   "fieldname": "seats",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Total seats"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Show on Portal"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_eligibility",
+   "fieldtype": "Section Break",
+   "label": "Eligibility and Description"
+  },
+  {
+   "description": "Short text shown on portal card",
+   "fieldname": "eligibility_hint",
+   "fieldtype": "Small Text",
+   "label": "Eligibility summary"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Direct link to program brochure PDF",
+   "fieldname": "brochure_url",
+   "fieldtype": "Data",
+   "label": "Brochure URL"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_limits",
+   "fieldtype": "Section Break",
+   "label": "Application Limits and Reservation"
+  },
+  {
+   "description": "Maximum applications allowed. 0 means unlimited.",
+   "fieldname": "max_applications",
+   "fieldtype": "Int",
+   "label": "Max applications"
+  },
+  {
+   "default": "0",
+   "fieldname": "application_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Applications received",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_limits",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Auto-linked when Program Reservation Policy is saved for this program",
+   "fieldname": "reservation_policy",
+   "fieldtype": "Link",
+   "label": "Reservation policy",
+   "options": "Program Reservation Policy",
+   "read_only": 1
+  },
+  {
+   "description": "Featured image shown on the program card. Used if no Program Media is linked.",
+   "fieldname": "program_image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Program image"
+  },
+  {
+   "description": "Link to a Program Media record for multiple carousel images on the card.",
+   "fieldname": "program_media",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Program gallery",
+   "options": "Program Media",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: !doc.reservation_policy",
+   "fieldname": "add_reservation_policy",
+   "fieldtype": "Button",
+   "label": "Add Reservation Policy"
+  },
+  {
+   "depends_on": "eval: !doc.program_media",
+   "fieldname": "add_program_media",
+   "fieldtype": "Button",
+   "hidden": 1,
+   "label": "Add/Update Program Media"
+  },
+  {
+   "fieldname": "desciption",
+   "fieldtype": "Text Editor",
+   "label": "Desciption"
+  },
+  {
+   "fetch_from": "program.level_of_study",
+   "fieldname": "program_level",
+   "fieldtype": "Data",
+   "label": "Program level",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-16 11:31:12.475726",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission Cycle Program",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "program_name",
+ "sort_order": "ASC",
+ "states": []
+}

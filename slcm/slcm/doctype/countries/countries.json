@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_import": 1,
+ "allow_rename": 1,
  "autoname": "field:country_name",
  "creation": "2026-01-30 09:39:04.279518",
  "default_view": "List",
@@ -52,7 +53,7 @@
  ],
  "icon": "fa fa-globe",
  "links": [],
- "modified": "2026-01-30 10:10:40.416029",
+ "modified": "2026-02-16 10:02:00.760254",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Countries",

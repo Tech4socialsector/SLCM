@@ -1,0 +1,52 @@
+[
+ {
+  "component_name": "HSC Percentage",
+  "description": "Automatically created from migration mapping for HSC Percentage.",
+  "docstatus": 0,
+  "doctype": "Merit Component",
+  "field_name": "hsc_percentage",
+  "modified": "2026-03-03 17:31:23.464387",
+  "multiplier": 1.0,
+  "name": "HSC Percentage"
+ },
+ {
+  "component_name": "Entrance Score",
+  "description": "Automatically created from migration mapping for Entrance Score.",
+  "docstatus": 0,
+  "doctype": "Merit Component",
+  "field_name": "entrance_test_score",
+  "modified": "2026-03-03 17:31:24.655881",
+  "multiplier": 1.0,
+  "name": "Entrance Score"
+ },
+ {
+  "component_name": "UG Average Score",
+  "description": "Automatically averages CGPA/Percentage from all UG degree entries",
+  "docstatus": 0,
+  "doctype": "Merit Component",
+  "field_name": "ug_degree_details",
+  "modified": "2026-03-16 17:51:38.084409",
+  "multiplier": 10.0,
+  "name": "UG Average Score"
+ },
+ {
+  "component_name": "PG Average Score",
+  "description": "Automatically averages CGPA/Percentage from all PG degree entries",
+  "docstatus": 0,
+  "doctype": "Merit Component",
+  "field_name": "pg_degree_details",
+  "modified": "2026-03-16 17:51:50.443470",
+  "multiplier": 10.0,
+  "name": "PG Average Score"
+ },
+ {
+  "component_name": "Interview Score",
+  "description": "Automatically created from migration mapping for Interview Score.",
+  "docstatus": 0,
+  "doctype": "Merit Component",
+  "field_name": "interview_score",
+  "modified": "2026-03-03 17:31:24.657504",
+  "multiplier": 1.0,
+  "name": "Interview Score"
+ }
+]

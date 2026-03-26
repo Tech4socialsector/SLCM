@@ -1,0 +1,227 @@
+<style>
+    .receipt-wrapper {
+        padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .receipt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid #0056b3;
+        padding-bottom: 15px;
+        margin-bottom: 30px;
+    }
+
+    .company-logo {
+        font-size: 24px;
+        font-weight: 800;
+        color: #0056b3;
+        letter-spacing: -0.5px;
+    }
+
+    .receipt-title {
+        text-align: right;
+    }
+
+    .receipt-title h1 {
+        margin: 0;
+        font-size: 22px;
+        color: #333;
+        letter-spacing: 1px;
+    }
+
+    .receipt-title p {
+        margin: 5px 0 0;
+        color: #666;
+        font-size: 13px;
+    }
+
+    .info-grid {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 40px;
+    }
+
+    .info-block {
+        width: 48%;
+    }
+
+    .info-label {
+        font-size: 11px;
+        color: #888;
+        font-weight: 600;
+        margin-bottom: 4px;
+        display: block;
+        /* REMOVED text-transform: uppercase */
+    }
+
+    .info-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: #111;
+        margin-bottom: 12px;
+    }
+
+    .info-value strong {
+        font-weight: 700;
+    }
+
+    .fee-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 30px;
+    }
+
+    .fee-table th {
+        background: #f4f7f9;
+        color: #444;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 2px solid #ddd;
+        /* REMOVED text-transform: uppercase */
+    }
+
+    .fee-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+    }
+
+    .fee-table .amount-col {
+        text-align: right;
+    }
+
+    .totals-area {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .totals-box {
+        width: 300px;
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .total-row.grand-total {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 2px solid #333;
+        font-weight: 800;
+        font-size: 18px;
+        color: #0056b3;
+    }
+
+    .status-stamp {
+        border: 3px solid #28a745;
+        color: #28a745;
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 4px;
+        font-weight: 900;
+        transform: rotate(-5deg);
+        opacity: 0.8;
+        font-size: 20px;
+        margin-top: 20px;
+    }
+
+    .footer-note {
+        margin-top: 60px;
+        font-size: 12px;
+        color: #999;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+        text-align: center;
+    }
+</style>
+
+<div class="receipt-wrapper">
+    <!-- Header -->
+    <div class="receipt-header">
+        <div class="company-logo">
+            {{ _(doc.campus or "") }}
+        </div>
+        <div class="receipt-title">
+            <h1>Payment Receipt</h1>
+            <p><strong>Receipt ID:</strong> {{ doc.name }}</p>
+        </div>
+    </div>
+
+    <!-- Details Grid -->
+    <div class="info-grid">
+        <div class="info-block">
+            <span class="info-label">Applicant Information</span>
+            <div class="info-value">
+                <strong>{{ doc.applicant_name }}</strong><br>
+                Applicant No: {{ doc.applicant }}<br>
+                Program: {{ doc.program }}
+            </div>
+
+            <span class="info-label">Academic Year</span>
+            <div class="info-value">{{ doc.academic_year }}</div>
+        </div>
+
+        <div class="info-block" style="text-align: right;">
+            <span class="info-label">Payment Details</span>
+            <div class="info-value">
+                <strong>Date:</strong> {{ frappe.utils.formatdate(doc.payment_date) }}<br>
+                <strong>Mode:</strong> {{ doc.payment_mode }}<br>
+                <strong>Reference:</strong> {{ doc.transaction_id }}
+            </div>
+
+            <div class="status-stamp">Paid</div>
+        </div>
+    </div>
+
+    <!-- Fee Breakdown -->
+    <table class="fee-table">
+        <thead>
+            <tr>
+                <th>Fee Component</th>
+                <th class="amount-col">Base Amount</th>
+                <th class="amount-col">Tax</th>
+                <th class="amount-col">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in doc.fee_components %}
+            <tr>
+                <td style="font-weight: 500;">{{ row.component_name }}</td>
+                <td class="amount-col">{{ doc.get_formatted("amount", row) }}</td>
+                <td class="amount-col">{{ doc.get_formatted("tax_amount", row) }}</td>
+                <td class="amount-col" style="font-weight: 600;">{{ doc.get_formatted("total_amount", row) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="totals-area">
+        <div class="totals-box">
+            <div class="total-row grand-total">
+                <span>Total Amount Paid</span>
+                <span>{{ doc.get_formatted("total_amount") }}</span>
+            </div>
+            <p style="text-align: right; font-size: 11px; margin: 5px 0 0; color: #666;">
+                Currency: {{ doc.currency or "INR" }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-note">
+        <p>This is a computer-generated document. No signature required.</p>
+        <p>&copy; {{ frappe.utils.now_datetime().year }} {{ doc.campus }}. All rights reserved.</p>
+    </div>
+</div>

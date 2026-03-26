@@ -1,0 +1,99 @@
+<div class="application-summary-header"
+    style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+    <h2 style="margin: 0; text-transform: uppercase;">Admissions Office - {{ _("Application Summary") }}</h2>
+    <h3 style="margin: 5px 0; color: #555;">{{ _("Session") }}: {{ doc.academic_year }}</h3>
+</div>
+
+<div class="row">
+    <div class="col-xs-8">
+        <table class="table table-bordered" style="width: 100%;">
+            <tr>
+                <td style="width: 30%; font-weight: bold; background: #f9f9f9;">{{ _("Application ID") }}</td>
+                <td>{{ doc.name }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; background: #f9f9f9;">{{ _("Candidate Name") }}</td>
+                <td style="text-transform: uppercase;">{{ doc.candidate_name }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; background: #f9f9f9;">{{ _("Program Applied") }}</td>
+                <td>{{ doc.program }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; background: #f9f9f9;">{{ _("Application Status") }}</td>
+                <td><span class="label label-info">{{ doc.application_status }}</span></td>
+            </tr>
+        </table>
+    </div>
+    <div class="col-xs-4" style="text-align: center;">
+        {% if doc.candidate_photo %}
+        <img src="{{ doc.candidate_photo }}" style="max-width: 150px; border: 1px solid #ccc; padding: 2px;">
+        {% else %}
+        <div
+            style="width: 150px; height: 180px; border: 1px dashed #ccc; padding-top: 70px; margin: 0 auto; color: #999;">
+            {{ _("Photo Not Provided") }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="section-title"
+    style="background: #333; color: #fff; padding: 5px 10px; margin: 20px 0 10px 0; font-weight: bold;">
+    {{ _("CAMPUS DETAILS") }}
+</div>
+<table class="table table-bordered">
+    <tbody>
+        <tr>
+            <td style="width: 30%; font-weight: bold; background: #f9f9f9;">{{ _("Assigned/Selected Campus") }}</td>
+            <td>{{ doc.campus }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="section-title"
+    style="background: #333; color: #fff; padding: 5px 10px; margin: 20px 0 10px 0; font-weight: bold;">
+    {{ _("ACADEMIC QUALIFICATIONS") }}
+</div>
+<table class="table table-bordered">
+    <tr style="background: #eee;">
+        <th>{{ _("Examination") }}</th>
+        <th>{{ _("Board/University") }}</th>
+        <th>{{ _("Year") }}</th>
+        <th>{{ _("Percentage/Marks") }}</th>
+    </tr>
+    <tr>
+        <td>{{ _("Class X") }}</td>
+        <td>{{ doc.class_x_board }}</td>
+        <td>{{ doc.class_x_year_of_completion }}</td>
+        <td>{{ doc.class_x_percentage }}</td>
+    </tr>
+    <tr>
+        <td>{{ _("Class XII") }}</td>
+        <td>{{ doc.class_xii_board }}</td>
+        <td>{{ doc.class_xii_year_of_completion }}</td>
+        <td>{{ doc.hsc_percentage }}</td>
+    </tr>
+</table>
+
+<div class="section-title"
+    style="background: #333; color: #fff; padding: 5px 10px; margin: 20px 0 10px 0; font-weight: bold;">
+    {{ _("PERSONAL & CONTACT DETAILS") }}
+</div>
+<div class="row">
+    <div class="col-xs-6">
+        <p><strong>{{ _("Email") }}:</strong> {{ doc.email }}</p>
+        <p><strong>{{ _("Mobile") }}:</strong> {{ doc.mobile_number }}</p>
+        <p><strong>{{ _("DOB") }}:</strong> {{ doc.date_of_birth }}</p>
+    </div>
+    <div class="col-xs-6">
+        <p><strong>{{ _("Father's Name") }}:</strong> {{ doc.father_name }}</p>
+        <p><strong>{{ _("Mother's Name") }}:</strong> {{ doc.mother_name }}</p>
+        <p><strong>{{ _("Category") }}:</strong> {{ doc.reservation_category or 'General' }}</p>
+    </div>
+</div>
+
+<div class="footer"
+    style="margin-top: 50px; font-size: 11px; color: #777; font-style: italic; border-top: 1px solid #ddd; padding-top: 10px;">
+    {{ _("This is a computer-generated summary of your application to the Admissions portal.") }} - {{
+    frappe.utils.now_datetime() }}
+</div>

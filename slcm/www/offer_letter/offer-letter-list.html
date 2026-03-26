@@ -1,0 +1,590 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block title %}My Admission Offers{% endblock %}
+
+{% block page_css %}
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    body,
+    .adm-main,
+    .adm-container {
+        font-family: 'Lexend', system-ui, sans-serif !important;
+        background: #f5f7f8 !important;
+    }
+
+    .offer-card {
+        background: #ffffff;
+        border-radius: 18px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        transition: all .25s ease;
+        cursor: pointer;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .offer-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 30px rgba(15, 23, 42, 0.12);
+        border-color: var(--primary);
+    }
+
+    .card-body {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .card-top-header {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .status-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 100px;
+    }
+
+    .status-badge.payment-completed {
+        background: #e8f1ff;
+        color: #2563eb;
+    }
+
+    .status-badge.accepted {
+        background: #ecfdf5;
+        color: #16a34a;
+    }
+
+    .status-badge.issued {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .offer-id-tag {
+        font-family: monospace;
+        font-size: 11px;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 6px 10px;
+        border-radius: 8px;
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .program-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #94a3b8;
+    }
+
+    .program-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.3;
+    }
+
+    .campus-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .campus-info i {
+        color: var(--primary);
+    }
+
+    .card-footer {
+        padding: 18px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #eef2f7;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .price-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #94a3b8;
+    }
+
+    .price-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--primary);
+    }
+
+    .scholarship-info {
+        font-size: 11px;
+        font-weight: 700;
+        color: #059669;
+    }
+
+    .details-btn {
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .portal-header {
+        margin-bottom: 28px;
+        text-align: center;
+    }
+
+    .portal-header h2 {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--primary);
+        margin-bottom: 2px;
+        letter-spacing: -0.02em;
+    }
+
+    .portal-header p {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────── */
+    .sidebar-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: none;
+        color: #94a3b8;
+        margin: 0 0 12px 4px;
+    }
+
+    .adm-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.15s;
+        margin-bottom: 2px;
+        text-decoration: none !important;
+    }
+
+    .adm-menu-item:hover:not(.active) {
+        background: #f8fafc;
+        color: var(--text-1);
+    }
+
+    .adm-menu-item.active {
+        background: var(--primary-light);
+        color: var(--primary) !important;
+        font-weight: 600;
+    }
+
+    .adm-menu-item.active .ms-icon {
+        color: var(--primary) !important;
+    }
+
+    .adm-menu-item.danger {
+        color: var(--danger);
+    }
+
+    .adm-menu-item.danger:hover {
+        background: #fff5f5;
+    }
+
+    .ms-icon {
+        font-family: 'Material Symbols Outlined';
+        font-size: 20px;
+        color: #94a3b8;
+        flex-shrink: 0;
+    }
+
+    /* ── Responsive Enhancements ────────────────────────────── */
+    @media (max-width: 1024px) {
+        .sidebar-card {
+            position: static !important;
+            margin-bottom: 24px;
+            overflow: hidden !important;
+        }
+
+        .sidebar-card nav {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            gap: 8px !important;
+            padding-bottom: 8px !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: auto !important;
+        }
+
+        .sidebar-card nav::-webkit-scrollbar {
+            display: block !important;
+            height: 4px !important;
+        }
+
+        .sidebar-card nav::-webkit-scrollbar-thumb {
+            background: var(--primary-light, #e2e8f0);
+            border-radius: 10px;
+        }
+
+        .adm-menu-item {
+            padding: 8px 14px !important;
+            font-size: 13px !important;
+            white-space: nowrap !important;
+            border-left: none !important;
+            border-bottom: 3px solid transparent !important;
+            margin-bottom: 0 !important;
+            flex-shrink: 0 !important;
+        }
+
+        .adm-menu-item.active {
+            border-bottom-color: var(--primary) !important;
+            background: transparent !important;
+        }
+
+        .sidebar-section-label {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        div[style*="padding:32px 20px 40px"] {
+            padding: 20px 12px 40px !important;
+        }
+    }
+
+    /* ── Animations ─────────────────────────────────────── */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-up {
+        animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+{% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
+
+<div style="min-height:calc(100vh - 60px);background:#f5f7f8; margin:0 -20px 0;padding:32px 20px 40px;">
+    <div style="max-width:1200px;margin:0 auto;">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <aside class="lg:col-span-3 fade-in-up" style="animation-delay:0.05s">
+                <div class="sidebar-card" style="position:sticky;top:80px;">
+                    <p class="sidebar-section-label">Main Menu</p>
+                    <nav style="display:flex;flex-direction:column;gap:2px;">
+
+                        <div class="adm-menu-item" data-panel="profile"
+                            onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=profile'">
+                            <span class="ms-icon">account_circle</span>
+                            Profile
+                        </div>
+
+                        <div class="adm-menu-item" data-panel="applications"
+                            onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=applications'">
+                            <span class="ms-icon">description</span>
+                            Applications
+                        </div>
+
+                        <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
+                            <span class="ms-icon">school</span>
+                            Scholarships
+                        </div>
+                        <div class="adm-menu-item active" data-panel="offer_letters"
+                            onclick="window.location.href='/offer_letter/offer-letter-list'">
+                            <span class="ms-icon">mail</span>
+                            Offer Letter
+                        </div>
+                        <div class="adm-menu-item" onclick="window.location.href='/update-password'">
+                            <span class="ms-icon">lock_reset</span>
+                            Change Password
+                        </div>
+
+                        <div class="adm-menu-item danger" onclick="window.doLogout()">
+                            <span class="ms-icon" style="color:var(--danger)">logout</span>
+                            Logout
+                        </div>
+
+                    </nav>
+
+                    {% if _mission_txt %}
+                    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+                        <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:none !important;
+                      color:var(--primary);margin:0 0 8px;display:flex;align-items:center;gap:6px;">
+                            <span class="ms-icon" style="font-size:14px;">auto_awesome</span>Our Mission
+                        </p>
+                        <p style="font-size:12px;color:#64748b;line-height:1.6;margin:0;">{{ _mission_txt }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </aside>
+
+            <div class="lg:col-span-9">
+                <div id="offer-list-wrapper">
+                    <div class="text-center p-5 mt-5" id="loader">
+                        <div class="spinner-border" style="color: var(--primary);" role="status">
+                            <span class="sr-only">{{ _("Loading...") }}</span>
+                        </div>
+                        <p class="mt-3 text-muted">{{ _("Fetching your admission offers...") }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function format_currency(v, c) {
+        return (c || "INR") + " " + parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    }
+
+    // Fallback for translation helper
+    window._ = window._ || function (s) { return s; };
+
+    let current_page = 0;
+    const page_size = 20;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch_offers();
+    });
+
+    async function fetch_offers() {
+        console.log("Fetching offers...");
+        try {
+            const data = await apiFetch('slcm.admission.utils.web.get_offer_list', {
+                limit_start: current_page * page_size,
+                limit_page_length: page_size
+            });
+            console.log("Offers data received:", data);
+            if (!data) {
+                render_error("{{ _('No response from server') }}");
+                return;
+            }
+            render_offer_list(data);
+        } catch (e) {
+            console.error("Fetch offers failed:", e);
+            render_error(e.message || "{{ _('Unknown Error') }}");
+        }
+    }
+
+    function render_offer_list(data) {
+        if (!data || typeof data !== 'object') {
+            render_error("{{ _('Invalid data received from server') }}");
+            return;
+        }
+        const { offers, total_count, applicant_name, is_admin, currency } = data;
+        const wrapper = $('#offer-list-wrapper');
+
+        if (!offers || offers.length === 0) {
+            render_error("{{ _('No admission offers found.') }}");
+            return;
+        }
+
+        let html = `
+        <div class="portal-header">
+            <h2>${is_admin ? "{{ _('Admission Offers Registry') }}" : "{{ _('My Admission Offers') }}"}</h2>
+            <p>${is_admin ? "{{ _('Administrative overview of all issued offers.') }}" : "{{ _('Welcome back, ') }}" + applicant_name + ". {{ _('Review your offers below.') }}"}</p>
+            ${total_count > 0 ? `<div class="mt-3"><span class="badge badge-light p-2 text-muted" style="border: 1px solid #eef2f7; border-radius: 8px;">Total: ${total_count}</span></div>` : ''}
+        </div>
+        <div class="row g-4">
+    `;
+
+        offers.forEach(offer => {
+            const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
+            const display_status = offer.offer_status.charAt(0).toUpperCase() + offer.offer_status.slice(1).toLowerCase();
+            html += `
+<div class="col-12 col-lg-6 col-xl-4 mb-4">
+<div class="offer-card" onclick="window.location.href='/offer_letter/offer-letter-detail?offer=${offer.name}'">
+
+<div class="card-body">
+
+<div class="card-top-header">
+<span class="status-badge ${status_class}">
+${display_status}
+</span>
+</div>
+
+<div class="offer-id-tag">
+Offer letter no: ${offer.name}
+</div>
+
+<div class="program-label">Program</div>
+<div class="program-name">${offer.program}</div>
+
+<div class="campus-info">
+<i class="fa fa-map-marker"></i>
+<span>${offer.campus_name || offer.campus}</span>
+</div>
+
+</div>
+
+<div class="card-footer">
+
+<div>
+<div class="price-label">Admission Fee</div>
+<div class="price-value">
+${format_currency(offer.final_payable_amount || offer.payable_amount, currency)}
+</div>
+
+${offer.scholarship_amount > 0 ? `
+<div class="scholarship-info">
+<i class="fa fa-star"></i>
+Scholarship applied (-${format_currency(offer.scholarship_amount, currency)})
+</div>
+` : ''}
+
+</div>
+
+<div class="details-btn">
+Details
+<i class="fa fa-arrow-right"></i>
+</div>
+
+</div>
+
+</div>
+</div>
+`;
+        });
+
+        html += `</div>`;
+
+        // Pagination UI
+        if (total_count > page_size) {
+            const total_pages = Math.ceil(total_count / page_size);
+            html += `
+                <div class="pagination-wrapper">
+                    <button class="btn-pagination" ${current_page === 0 ? 'disabled' : ''} onclick="change_page(${current_page - 1})">
+                        <i class="fa fa-chevron-left"></i>
+                    </button>
+            `;
+
+            // Simple pagination strategy: show current, first, last and 1 around
+            let start = Math.max(0, current_page - 1);
+            let end = Math.min(total_pages - 1, current_page + 1);
+
+            if (start > 0) html += `<button class="btn-pagination" onclick="change_page(0)">1</button>`;
+            if (start > 1) html += `<span class="text-muted">...</span>`;
+
+            for (let i = start; i <= end; i++) {
+                html += `<button class="btn-pagination ${i === current_page ? 'active' : ''}" onclick="change_page(${i})">${i + 1}</button>`;
+            }
+
+            if (end < total_pages - 2) html += `<span class="text-muted">...</span>`;
+            if (end < total_pages - 1) html += `<button class="btn-pagination" onclick="change_page(${total_pages - 1})">${total_pages}</button>`;
+
+            html += `
+                    <button class="btn-pagination" ${current_page >= total_pages - 1 ? 'disabled' : ''} onclick="change_page(${current_page + 1})">
+                        <i class="fa fa-chevron-right"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        wrapper.html(html);
+        start_offer_timers();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function change_page(page) {
+        current_page = page;
+        fetch_offers();
+    }
+
+    function start_offer_timers() {
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+        const update_timers = () => {
+            $('.offer-timer').each(function () {
+                const $this = $(this);
+                const $wrapper = $this.closest('.offer-timer-wrapper');
+                const deadline_str = $this.data('deadline');
+                const $label = $this.prev('small'); // To update Expiry label
+                if (!deadline_str) return;
+
+                let deadline_val = deadline_str;
+                if (deadline_str.length === 10) deadline_val += " 23:59:59";
+
+                const deadline = new Date(deadline_val).getTime();
+                const now = new Date().getTime();
+                const distance = deadline - now;
+
+                if (distance < 0) {
+                    $this.closest('div').css('background', 'var(--danger)');
+                    $this.text("{{ _('EXPIRED') }}");
+                    return;
+                }
+
+                if (distance > 24 * 60 * 60 * 1000) {
+                    // More than 24 hours
+                    $label.text("{{ _('Expiry Date') }}");
+                    $this.text(deadline_str.split(' ')[0]);
+                } else {
+                    // 24 hours or less
+                    $label.text("{{ _('Expiry Timer') }}");
+                    const hours = Math.floor(distance / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    const display =
+                        (hours < 10 ? "0" + hours : hours) + ":" +
+                        (minutes < 10 ? "0" + minutes : minutes) + ":" +
+                        (seconds < 10 ? "0" + seconds : seconds);
+
+                    $this.text(display);
+                }
+            });
+        };
+
+        setInterval(update_timers, 1000);
+        update_timers();
+    }
+
+    function render_error(message) {
+        $('#offer-list-wrapper').html(`
+        <div class="text-center p-5 mt-5">
+            <i class="fa fa-folder-open fa-3x text-muted mb-4 opacity-25" style="color: var(--primary) !important;"></i>
+            <h4 class="text-muted font-weight-bold">{{ _("No Offers Found") }}</h4>
+            <p class="text-muted">${message}</p>
+        </div>
+    `);
+    }
+    </script>
+    {% endblock %}
