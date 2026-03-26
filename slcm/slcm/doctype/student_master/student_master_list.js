@@ -12,6 +12,7 @@ frappe.listview_settings["Student Master"] = {
 		add_listview_status_button(listview);
 		add_bulk_delete_button(listview);
 		add_bulk_enroll_button(listview);
+		add_download_slip_button(listview);
 		// Ensure status column is visible
 		ensure_status_column_visible(listview);
 	},
@@ -467,6 +468,77 @@ function ensure_status_column_visible(listview) {
 			// The field is already set to in_list_view: 1 in JSON
 		}
 	}, 500);
+}
+
+/* --------------------------------------------------
+   List View → Download Registration Slip
+-------------------------------------------------- */
+function add_download_slip_button(listview) {
+	const btn = listview.page.add_inner_button(__("Download Slip"), function () {
+		const selected = listview.get_checked_items();
+
+		if (selected.length === 0) {
+			frappe.msgprint({
+				title: __("No Selection"),
+				message: __("Please select at least one student to download the Registration Slip."),
+				indicator: "orange",
+			});
+			return;
+		}
+
+		if (selected.length > 5) {
+			frappe.msgprint({
+				title: __("Too Many Selected"),
+				message: __("Please select a maximum of 5 students at a time to avoid browser popup blocking."),
+				indicator: "orange",
+			});
+			return;
+		}
+
+		selected.forEach((student, idx) => {
+			setTimeout(() => {
+				download_registration_slip(student.name);
+			}, idx * 600);
+		});
+	});
+
+	btn.css({
+		"background-color": "#800020",
+		"color": "#fff",
+		"border-color": "#800020",
+		"box-shadow": "none",
+	});
+}
+
+/* --------------------------------------------------
+   Download Registration Slip as named PDF
+-------------------------------------------------- */
+function download_registration_slip(student_name) {
+	const url = frappe.urllib.get_full_url(
+		`/api/method/frappe.utils.print_format.download_pdf?doctype=Student+Master&name=${encodeURIComponent(student_name)}&format=Student+Registration+Slip`
+	);
+
+	fetch(url, { credentials: "same-origin" })
+		.then((res) => {
+			if (!res.ok) throw new Error("Failed to generate PDF");
+			return res.blob();
+		})
+		.then((blob) => {
+			const a = document.createElement("a");
+			a.href = URL.createObjectURL(blob);
+			a.download = `Registration_Slip_${student_name}.pdf`;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			URL.revokeObjectURL(a.href);
+		})
+		.catch(() => {
+			frappe.msgprint({
+				title: __("Error"),
+				message: __("Could not generate PDF for {0}. Please try again.", [student_name]),
+				indicator: "red",
+			});
+		});
 }
 
 /* --------------------------------------------------

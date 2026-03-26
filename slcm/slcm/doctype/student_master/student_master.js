@@ -62,6 +62,40 @@ frappe.ui.form.on("Student Master", {
 				__("Update Status")
 			).addClass("btn-primary");
 
+				// Download Registration Slip
+			frm.add_custom_button(
+				__("Registration Slip"),
+				function () {
+					const student_name = frm.doc.name;
+					const url = frappe.urllib.get_full_url(
+						`/api/method/frappe.utils.print_format.download_pdf?doctype=Student+Master&name=${encodeURIComponent(student_name)}&format=Student+Registration+Slip`
+					);
+					frappe.show_alert({ message: __("Generating PDF..."), indicator: "blue" });
+					fetch(url, { credentials: "same-origin" })
+						.then((res) => {
+							if (!res.ok) throw new Error("Failed");
+							return res.blob();
+						})
+						.then((blob) => {
+							const a = document.createElement("a");
+							a.href = URL.createObjectURL(blob);
+							a.download = `Registration_Slip_${student_name}.pdf`;
+							document.body.appendChild(a);
+							a.click();
+							a.remove();
+							URL.revokeObjectURL(a.href);
+						})
+						.catch(() => {
+							frappe.msgprint({
+								title: __("Error"),
+								message: __("Could not generate PDF. Please try again."),
+								indicator: "red",
+							});
+						});
+				},
+				__("Download")
+			);
+
 			// Check Enrollment Eligibility and Add Button
 			frappe.call({
 				method: "slcm.slcm.doctype.student_master.student_master.validate_new_enrollment",
