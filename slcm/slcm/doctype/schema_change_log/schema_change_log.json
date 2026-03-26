@@ -1,0 +1,110 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-03-26 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "exam_plan",
+  "course",
+  "column_break_1",
+  "changed_on",
+  "changed_by",
+  "section_break_old",
+  "old_evaluation_schema",
+  "old_grade_schema",
+  "section_break_new",
+  "new_evaluation_schema",
+  "new_grade_schema"
+ ],
+ "fields": [
+  {
+   "fieldname": "exam_plan",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Exam Plan",
+   "options": "Exam Plan"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "changed_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Changed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "changed_by",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Changed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_old",
+   "fieldtype": "Section Break",
+   "label": "Previous Values"
+  },
+  {
+   "fieldname": "old_evaluation_schema",
+   "fieldtype": "Data",
+   "label": "Old Evaluation Schema"
+  },
+  {
+   "fieldname": "old_grade_schema",
+   "fieldtype": "Data",
+   "label": "Old Grade Schema"
+  },
+  {
+   "fieldname": "section_break_new",
+   "fieldtype": "Section Break",
+   "label": "New Values"
+  },
+  {
+   "fieldname": "new_evaluation_schema",
+   "fieldtype": "Data",
+   "label": "New Evaluation Schema"
+  },
+  {
+   "fieldname": "new_grade_schema",
+   "fieldtype": "Data",
+   "label": "New Grade Schema"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-03-26 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Schema Change Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "role": "System Manager",
+   "write": 0,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "read": 1,
+   "role": "Academics User",
+   "create": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
