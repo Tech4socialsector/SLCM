@@ -283,3 +283,110 @@ def get_terms():
 		fields=["name", "term_name"],
 		order_by="creation desc",
 	)
+
+
+@frappe.whitelist()
+def get_courses_for_plan(exam_plan, search=""):
+	"""Return all courses with their schema assignments for the given exam plan."""
+	if search:
+		courses = frappe.db.sql(
+			"""
+			SELECT name, course_name, course_code, department_name, credit_value
+			FROM `tabCourse`
+			WHERE course_name LIKE %(s)s OR course_code LIKE %(s)s
+			ORDER BY course_name ASC
+			LIMIT 500
+			""",
+			{"s": f"%{search}%"},
+			as_dict=True,
+		)
+	else:
+		courses = frappe.get_all(
+			"Course",
+			fields=["name", "course_name", "course_code", "department_name", "credit_value"],
+			order_by="course_name asc",
+			page_length=500,
+		)
+
+	# Fetch existing assignments for this plan
+	asgn_map = {}
+	if frappe.db.table_exists("tabCourse Schema Assignment"):
+		assignments = frappe.get_all(
+			"Course Schema Assignment",
+			filters={"exam_plan": exam_plan},
+			fields=["name", "course", "evaluation_schema", "grade_schema"],
+		)
+		asgn_map = {a["course"]: a for a in assignments}
+
+	for c in courses:
+		asgn = asgn_map.get(c["name"], {})
+		c["evaluation_schema"] = asgn.get("evaluation_schema") or ""
+		c["grade_schema"] = asgn.get("grade_schema") or ""
+		c["assignment_name"] = asgn.get("name", "")
+		if asgn.get("evaluation_schema"):
+			c["max_marks"] = (
+				frappe.db.get_value("Evaluation Schema", asgn["evaluation_schema"], "total_marks") or ""
+			)
+		else:
+			c["max_marks"] = ""
+
+	return courses
+
+
+@frappe.whitelist()
+def save_course_schema(exam_plan, assignments):
+	"""Create or update Course Schema Assignment records."""
+	import json
+
+	if isinstance(assignments, str):
+		assignments = json.loads(assignments)
+
+	for asgn in assignments:
+		course = asgn.get("course")
+		if not course:
+			continue
+		eval_schema = asgn.get("evaluation_schema") or None
+		grade_schema = asgn.get("grade_schema") or None
+
+		existing = frappe.db.get_value(
+			"Course Schema Assignment",
+			{"exam_plan": exam_plan, "course": course},
+			"name",
+		)
+		if existing:
+			frappe.db.set_value(
+				"Course Schema Assignment",
+				existing,
+				{"evaluation_schema": eval_schema, "grade_schema": grade_schema},
+			)
+		else:
+			doc = frappe.new_doc("Course Schema Assignment")
+			doc.exam_plan = exam_plan
+			doc.course = course
+			doc.evaluation_schema = eval_schema
+			doc.grade_schema = grade_schema
+			doc.insert(ignore_permissions=True)
+
+	frappe.db.commit()
+	return True
+
+
+@frappe.whitelist()
+def unmap_course_schema(exam_plan, courses):
+	"""Delete Course Schema Assignment records for the given courses."""
+	import json
+
+	if isinstance(courses, str):
+		courses = json.loads(courses)
+
+	for course in courses:
+		existing = frappe.db.get_value(
+			"Course Schema Assignment",
+			{"exam_plan": exam_plan, "course": course},
+			"name",
+		)
+		if existing:
+			frappe.delete_doc("Course Schema Assignment", existing, ignore_permissions=True)
+
+	frappe.db.commit()
+	return True
