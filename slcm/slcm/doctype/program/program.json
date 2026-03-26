@@ -196,7 +196,26 @@
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "links": [],
+ "links": [
+  {
+   "group": "Academics",
+   "link_doctype": "Cohort",
+   "link_fieldname": "program",
+   "type": "Has Many"
+  },
+  {
+   "group": "Academics",
+   "link_doctype": "Course Offering",
+   "link_fieldname": "program",
+   "type": "Has Many"
+  },
+  {
+   "group": "Students",
+   "link_doctype": "Student Enrollment",
+   "link_fieldname": "program",
+   "type": "Has Many"
+  }
+ ],
  "modified": "2026-03-23 10:18:21.298677",
  "modified_by": "Administrator",
  "module": "SLCM",

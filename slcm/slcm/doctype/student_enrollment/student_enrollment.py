@@ -9,6 +9,7 @@ from frappe.model.document import Document
 class StudentEnrollment(Document):
     def validate(self):
         self.validate_duplicate_enrollment()
+        self._validate_cohort_seat_limit()
 
     def before_save(self):
         self.fetch_program_and_courses()
@@ -32,6 +33,27 @@ class StudentEnrollment(Document):
                         "course_status": pc.course_status,
                         "credit_value": pc.credit_value,
                     })
+
+    def _validate_cohort_seat_limit(self):
+        """Block enrollment if cohort has reached its seat limit."""
+        if not self.cohort:
+            return
+        seat_limit = frappe.db.get_value("Cohort", self.cohort, "seat_limit")
+        if not seat_limit:
+            return
+        existing_count = frappe.db.count(
+            "Student Enrollment",
+            {
+                "cohort": self.cohort,
+                "status": ["not in", ["Dropped"]],
+                "name": ["!=", self.name or "__new__"],
+                "docstatus": ["<", 2],
+            },
+        )
+        if existing_count >= seat_limit:
+            frappe.throw(
+                _("Cohort {0} has reached its seat limit of {1}").format(self.cohort, seat_limit)
+            )
 
     def validate_duplicate_enrollment(self):
         """Prevent duplicate enrollment for same student + cohort + academic_year."""

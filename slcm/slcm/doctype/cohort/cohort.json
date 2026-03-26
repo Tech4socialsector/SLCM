@@ -154,7 +154,20 @@
    "label": "Current Year"
   }
  ],
- "links": [],
+ "links": [
+  {
+   "group": "Students",
+   "link_doctype": "Student Enrollment",
+   "link_fieldname": "cohort",
+   "type": "Has Many"
+  },
+  {
+   "group": "Academics",
+   "link_doctype": "Course Offering",
+   "link_fieldname": "cohort",
+   "type": "Has Many"
+  }
+ ],
  "modified": "2026-01-06 18:17:41.308176",
  "modified_by": "Administrator",
  "module": "SLCM",

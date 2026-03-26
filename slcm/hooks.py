@@ -75,18 +75,20 @@ fixtures = [
         "doctype": "Workflow",
         "filters": [["name", "=", "Student Registration Workflow"]]
     },
-    # --- Dashboard: Number Cards on Student Registration workspace ---
+    # --- Dashboard: Number Cards ---
     {
         "doctype": "Number Card",
         "filters": [["name", "in", [
-            "Total Students", "Active Enrollments", "Active Programs", "Active Courses"
+            "Total Students", "Active Enrollments", "Active Programs", "Active Courses",
+            "Active Cohorts", "Open Course Offerings"
         ]]]
     },
-    # --- Dashboard: Charts on Student Registration workspace ---
+    # --- Dashboard: Charts ---
     {
         "doctype": "Dashboard Chart",
         "filters": [["name", "in", [
-            "Student Registration Status", "Student Enrollment by Program"
+            "Student Registration Status", "Student Enrollment by Program",
+            "Cohort Status Distribution", "Course Offerings by Status"
         ]]]
     },
     # --- Desktop Icons (app launcher tiles) ---
