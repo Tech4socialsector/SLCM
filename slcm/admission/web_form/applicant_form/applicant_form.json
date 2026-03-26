@@ -31,7 +31,7 @@
  "max_attachment_size": 5,
  "meta_image": "",
  "meta_title": "Application Form",
- "modified": "2026-03-25 17:45:13.042222",
+ "modified": "2026-03-25 18:31:22.281334",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "applicant-form",
@@ -491,7 +491,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
