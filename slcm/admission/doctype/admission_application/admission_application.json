@@ -157,7 +157,7 @@
   },
   {
    "fieldname": "campus_preferences",
-   "fieldtype": "Table",
+   "fieldtype": "Link",
    "label": "Campus Preferences",
    "options": "Applicant Campus Preference"
   },

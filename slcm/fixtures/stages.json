@@ -2,6 +2,15 @@
  {
   "docstatus": 0,
   "doctype": "Stages",
+  "modified": "2026-03-10 12:18:15.622402",
+  "name": "Application Open",
+  "stage_code": "Open",
+  "stage_name": "Application Open",
+  "stage_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
   "modified": "2026-03-23 17:58:31.700120",
   "name": "Submitted",
   "stage_code": "sub",
@@ -79,5 +88,32 @@
   "stage_code": "Fee",
   "stage_name": "Admission Fee",
   "stage_type": "Fee"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-24 12:25:07.375576",
+  "name": "Merit List",
+  "stage_code": "Merit List",
+  "stage_name": "Merit List",
+  "stage_type": "Merit"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-18 15:29:45.185300",
+  "name": "Fee Payment",
+  "stage_code": "Fee Payment",
+  "stage_name": "Fee Payment",
+  "stage_type": "Fee"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-18 15:29:58.225835",
+  "name": "Interview",
+  "stage_code": "Interview",
+  "stage_name": "Interview",
+  "stage_type": "Interview"
  }
 ]

@@ -73,7 +73,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 	});
 
 	page.add_field({
-		label: __('Program'),
+		label: __('Programme'),
 		fieldtype: 'Link',
 		options: 'Program',
 		fieldname: 'program',
