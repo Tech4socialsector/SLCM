@@ -134,10 +134,11 @@ def download_admit_card(allocation_name):
     if status not in ["Allocated", "Reallocated"]:
         frappe.throw(_("Admit Card is only available after seat allocation is confirmed."))
 
-    field_to_check = "reschedule_admit_card" if is_rescheduled else "admit_card"
-    
+    field_to_check = "re_admit_card_download" if is_rescheduled else "admit_card_download"
+
     # Always regenerate the Admit Card PDF to reflect potential changes in data/layout
     if frappe.session.user == "Guest":
+
         stored_file_url = getattr(doc, field_to_check)
         if not stored_file_url:
             frappe.throw(_("Admit Card not yet generated. Please login to generate it."), frappe.PermissionError)
