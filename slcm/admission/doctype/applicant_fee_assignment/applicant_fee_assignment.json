@@ -81,7 +81,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program",
    "read_only": 1
   },
@@ -198,7 +198,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-20 10:00:32.929839",
+ "modified": "2026-03-26 14:40:21.796966",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",

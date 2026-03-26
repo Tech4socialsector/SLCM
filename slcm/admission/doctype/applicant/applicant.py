@@ -1927,3 +1927,137 @@ def notify_stage_entry(applicant_doc, stage):
         frappe.db.commit()
     except Exception as e:
         frappe.log_error(f"notify_stage_entry failed: {e}", "Stage Notification")
+
+@frappe.whitelist()
+def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, academic_year=None, admission_year=None, application_status=None, print_format=None):
+    """
+    Whitelisted entry point for bulk applicant form download.
+    Filters applicants, generates PDFs using selected print format, and returns a ZIP.
+    Handles small batches synchronously and large batches via background queue.
+    """
+    filters = {}
+    if campus: filters["campus"] = campus
+    if program: filters["program"] = program
+    if admission_cycle: filters["admission_cycle"] = admission_cycle
+    if academic_year: filters["academic_year"] = academic_year
+    if admission_year: filters["admission_year"] = admission_year
+    if application_status: filters["application_status"] = application_status
+
+    applicants = frappe.get_all("Applicant", filters=filters, pluck="name")
+
+    if not applicants:
+        frappe.throw(_("No applicants found matching the selected filters."))
+
+    if not print_format:
+        print_format = "Applicant Application Form"
+
+    # LARGE BATCH HANDLING (> 10)
+    if len(applicants) > 10:
+        frappe.enqueue(
+            "slcm.admission.doctype.applicant.applicant.background_bulk_worker",
+            applicants=applicants,
+            print_format=print_format,
+            user=frappe.session.user,
+            queue='long',
+            timeout=3600
+        )
+        return {
+            "queued": True,
+            "message": _("Large batch detected ({0} applicants). Processing started in the background. You will receive a notification when finished.").format(len(applicants))
+        }
+
+    # SMALL BATCH SYNC
+    return background_bulk_worker(applicants, print_format, sync=True)
+
+def background_bulk_worker(applicants, print_format, user=None, sync=False):
+    """
+    Worker function to generate PDFs and package into ZIP.
+    """
+    import zipfile
+    from io import BytesIO
+    from frappe.utils.file_manager import save_file
+
+    total = len(applicants)
+    success_count = 0
+    errors = []
+    
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for i, name in enumerate(applicants):
+            try:
+                # Update progress for background jobs
+                if not sync:
+                    frappe.publish_realtime("bulk_download_progress", {
+                        "progress": i + 1,
+                        "total": total,
+                        "message": _("Generating PDF for {0}").format(name)
+                    }, user=user)
+
+                pdf_content = frappe.get_print(
+                    doctype="Applicant",
+                    name=name,
+                    print_format=print_format,
+                    as_pdf=True
+                )
+                
+                # Fetch applicant ID for filename
+                applicant_id = frappe.db.get_value("Applicant", name, "applicant_id") or name
+                zip_file.writestr(f"{applicant_id}.pdf", pdf_content)
+                success_count += 1
+                
+            except Exception as e:
+                errors.append({"applicant": name, "error": str(e)})
+
+    if success_count == 0:
+        error_msg = _("Failed to generate any PDFs. Errors: {0}").format(len(errors))
+        if sync: frappe.throw(error_msg)
+        return
+
+    # Save ZIP File
+    zip_buffer.seek(0)
+    file_name = f"Applicant_Forms_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    saved_file = save_file(file_name, zip_buffer.getvalue(), "Applicant", "Bulk Download", is_private=1)
+
+    if sync:
+        return {"file_url": saved_file.file_url, "success": success_count, "errors": errors}
+
+    # Background cleanup and notification
+    notification_content = f"""
+        <div style="font-family: sans-serif; padding: 5px;">
+            <h4 style="color: #1a202c; margin-bottom: 12px;">{_('Bulk Form Generation Report')}</h4>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <span style="background: #f0fff4; color: #2f855a; padding: 4px 10px; border-radius: 4px; border: 1px solid #c6f6d5; font-weight: bold; font-size: 12px;">
+                    {success_count} {_('Generated')}
+                </span>
+                <span style="background: { '#fff5f5' if errors else '#f7fafc' }; color: { '#c53030' if errors else '#718096' }; padding: 4px 10px; border-radius: 4px; border: 1px solid { '#fed7d7' if errors else '#edf2f7' }; font-weight: bold; font-size: 12px;">
+                    {len(errors)} {_('Failed')}
+                </span>
+            </div>
+            <p style="font-size: 13px; color: #4a5568;">{_('Your ZIP archive is ready for download.')}</p>
+            <div style="margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 12px;">
+                <a href="{saved_file.file_url}" target="_blank" style="background: #1a202c; color: #ffffff !important; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">
+                    {_('Download ZIP')}
+                </a>
+            </div>
+        </div>
+    """
+
+    from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+    enqueue_create_notification([user], {
+        "subject": _("Bulk Applicant Forms Ready"),
+        "email_content": notification_content,
+        "type": "Alert",
+        "document_type": "Applicant"
+    })
+
+    frappe.publish_realtime("bulk_download_complete", {
+        "file_url": saved_file.file_url,
+        "doctype": "Applicant"
+    }, user=user)
+
+    frappe.publish_realtime("msgprint", {
+        "message": _("Successfully generated {0} application forms.").format(success_count),
+        "title": _("Download Ready"),
+        "indicator": "green" if not errors else "orange",
+        "primary_action": {"label": _("Download ZIP"), "action": f"window.open('{saved_file.file_url}')"}
+    }, user=user)
