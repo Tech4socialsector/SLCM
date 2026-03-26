@@ -11,11 +11,9 @@ frappe.ui.form.on('Evaluation Schema', {
 		_hide_flat_sections(frm);
 		_ensure_dyn_area(frm);
 		_load_and_render(frm);
-		if (frm.doc.docstatus === 0) {
-			frm.add_custom_button(__('Customize Form'), () => {
-				frappe.set_route('Form', 'Customize Form', 'Evaluation Schema');
-			});
-		}
+		frm.add_custom_button(__('Customize Form'), () => {
+			frappe.set_route('customize-form', frm.doctype);
+		});
 	},
 
 	total_marks(frm) {
@@ -34,9 +32,14 @@ frappe.ui.form.on('Evaluation Schema Component', {
 		const row = frappe.get_doc(cdt, cdn);
 		if (!row.component) return;
 		const ci = (frm._ep_components || []).find(c => c.name === row.component);
-		const lbl = row.label || (ci ? ci.component_name : row.component);
+		const comp_name = ci ? ci.component_name : row.component;
+		const lbl = row.label || comp_name;
+		const ctype = _comp_type(frm, row.component);
+		const title = (ctype === 'Re Exam' || ctype === 'Makeup')
+			? `${comp_name} | ${lbl}`
+			: `${lbl} | ${lbl}`;
 		frm.$wrapper.find(`.es-sub-section[data-comp="${row.component}"] .es-sect-title`)
-			.text(`${lbl} | ${lbl}`);
+			.text(title);
 	},
 
 	effective_max_marks(frm, cdt, cdn) {
@@ -107,10 +110,11 @@ function _render(frm) {
 	(frm.doc.schema_components || []).filter(r => r.component).forEach(cr => {
 		const ctype = _comp_type(frm, cr.component);
 		const ci = (frm._ep_components || []).find(c => c.name === cr.component);
-		const lbl = cr.label || (ci ? ci.component_name : cr.component);
+		const comp_name = ci ? ci.component_name : cr.component;
+		const lbl = cr.label || comp_name;
 
 		if (ctype === 'Re Exam' || ctype === 'Makeup') {
-			_render_reexam_sec(frm, $area, cr.component, lbl, ctype);
+			_render_reexam_sec(frm, $area, cr.component, lbl, ctype, comp_name);
 		} else {
 			_render_assess_sec(frm, $area, cr.component, lbl, ctype, cr.effective_max_marks || 0);
 		}
@@ -279,7 +283,7 @@ function _upd_assess_sum($sec) {
 
 /* ── Re-Exam section ─────────────────────────────── */
 
-function _render_reexam_sec(frm, $area, comp, lbl, ctype) {
+function _render_reexam_sec(frm, $area, comp, lbl, ctype, comp_name) {
 	const bg = ctype === 'Makeup' ? '#e67e22' : '#e74c3c';
 	const $sec = $(`
 		<div class="es-sub-section" data-comp="${comp}"
@@ -287,7 +291,7 @@ function _render_reexam_sec(frm, $area, comp, lbl, ctype) {
 			<div style="display:flex;justify-content:space-between;align-items:center;
 					padding:9px 14px;background:#f7f8fa;border-bottom:1px solid #e0e0e0;">
 				<span class="es-sect-title" style="font-weight:600;font-size:13px;">
-					${lbl} | ${lbl}
+					${comp_name || comp} | ${lbl}
 					<span style="background:${bg};color:#fff;font-size:10px;padding:2px 8px;
 						border-radius:10px;margin-left:6px;">${ctype}</span>
 				</span>
@@ -333,9 +337,15 @@ function _add_reexam_row(frm, $sec, comp, data) {
 	const at_opts = (frm._ep_atypes || []).map(a =>
 		`<option value="${a.name}" ${(data.assessment_type || '') === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
 	).join('');
-	const sub_opts = (frm._ep_atypes || []).map(a =>
-		`<option value="${a.name}" ${(data.substitute_for || '') === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
-	).join('');
+	const _non_reexam = (frm.doc.schema_components || []).filter(cr => {
+		const _ct = _comp_type(frm, cr.component);
+		return _ct !== 'Re Exam' && _ct !== 'Makeup';
+	});
+	const sub_opts = _non_reexam.map(cr => {
+		const _ci = (frm._ep_components || []).find(c => c.name === cr.component);
+		const _disp = cr.label || (_ci ? _ci.component_name : cr.component);
+		return `<option value="${cr.component}" ${(data.substitute_for || '') === cr.component ? 'selected' : ''}>${_disp}</option>`;
+	}).join('');
 
 	const show_sub = data.substitute_for ? '' : 'display:none;';
 	const sub_lbl  = data.substitute_for ? 'Hide Substitution Settings' : 'Show Substitution Settings';
@@ -397,7 +407,8 @@ function _add_reexam_row(frm, $sec, comp, data) {
 					</div>
 				</div>
 				<div style="font-size:10px;color:#999;margin-top:3px;">
-					Substitute exam effective marks must be ≤ effective maximum marks of assessment
+					<strong>Substitute exam effective marks must be less than or equal to the effective maximum marks of assessment</strong><br>
+				If a student is enrolled for this component, his/her marks will be distributed as per the above schema.
 				</div>
 			</td>
 		</tr>
@@ -425,6 +436,15 @@ function _add_reexam_row(frm, $sec, comp, data) {
 		r.enrollment         = $main.find('[name=enroll]').val();
 		r.substitute_for     = $subst.find('[name=sub_for]').val() || null;
 		r.substitute_weightage = parseFloat($subst.find('[name=sub_wt]').val()) || 100;
+		// Calculate effective marks: substitute component's eff_max × weightage%
+		const _sub_cr = (frm.doc.schema_components || []).find(c => c.component === r.substitute_for);
+		const _sub_eff_max = _sub_cr ? (_sub_cr.effective_max_marks || 0) : 0;
+		const _eff = r.substitute_for
+			? Math.round((r.substitute_weightage / 100) * _sub_eff_max * 100) / 100
+			: 0;
+		r.effective_marks = _eff;
+		$subst.find('[name=eff]').val(_eff || '');
+		$subst.find('[name=sub_eff]').val(_eff || '');
 		frm.dirty();
 	};
 
