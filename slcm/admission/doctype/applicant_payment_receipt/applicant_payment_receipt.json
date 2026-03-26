@@ -1,247 +1,257 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "autoname": "format:APR-{YYYY}-{#####}",
-    "creation": "2026-02-25 17:30:00",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "receipt_details_section",
-        "applicant",
-        "applicant_name",
-        "program",
-        "academic_year",
-        "offer_letter",
-        "column_break_1",
-        "payment_date",
-        "payment_reference",
-        "payment_mode",
-        "transaction_id",
-        "bank_name",
-        "cheque_number",
-        "cheque_date",
-        "upi_id",
-        "campus",
-        "remarks",
-        "fee_breakdown_section",
-        "fee_components",
-        "totals_section",
-        "total_amount",
-        "currency",
-        "amended_from",
-        "notification_receiver"
-    ],
-    "fields": [
-        {
-            "fieldname": "receipt_details_section",
-            "fieldtype": "Section Break",
-            "label": "Receipt Details"
-        },
-        {
-            "fieldname": "applicant",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "in_standard_filter": 1,
-            "label": "Applicant",
-            "options": "Applicant",
-            "reqd": 1
-        },
-        {
-            "fetch_from": "applicant.candidate_name",
-            "fieldname": "applicant_name",
-            "fieldtype": "Data",
-            "in_standard_filter": 1,
-            "label": "Applicant Name",
-            "read_only": 1
-        },
-        {
-            "fieldname": "program",
-            "fieldtype": "Link",
-            "in_standard_filter": 1,
-            "label": "Program",
-            "options": "Program",
-            "read_only": 1
-        },
-        {
-            "fieldname": "academic_year",
-            "fieldtype": "Link",
-            "in_standard_filter": 1,
-            "label": "Academic Year",
-            "options": "Academic Year",
-            "read_only": 1
-        },
-        {
-            "fieldname": "offer_letter",
-            "fieldtype": "Link",
-            "in_standard_filter": 1,
-            "label": "Offer Letter",
-            "options": "Offer Letter",
-            "read_only": 1
-        },
-        {
-            "fieldname": "column_break_1",
-            "fieldtype": "Column Break"
-        },
-        {
-            "default": "Today",
-            "fieldname": "payment_date",
-            "fieldtype": "Date",
-            "in_standard_filter": 1,
-            "label": "Payment Date",
-            "reqd": 1
-        },
-        {
-            "fieldname": "payment_reference",
-            "fieldtype": "Link",
-            "label": "Payment Reference",
-            "options": "Payment Request"
-        },
-        {
-            "fieldname": "payment_mode",
-            "fieldtype": "Select",
-            "in_standard_filter": 1,
-            "label": "Payment Mode",
-            "options": "Online\nCash\nCheque\nUPI\nQR Code\nBank Transfer\nDemand Draft",
-            "reqd": 1
-        },
-        {
-            "fieldname": "transaction_id",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Transaction ID / Reference No"
-        },
-        {
-            "depends_on": "eval:['Cheque', 'Bank Transfer', 'Demand Draft'].includes(doc.payment_mode)",
-            "fieldname": "bank_name",
-            "fieldtype": "Data",
-            "label": "Bank Name"
-        },
-        {
-            "depends_on": "eval:doc.payment_mode == 'Cheque'",
-            "fieldname": "cheque_number",
-            "fieldtype": "Data",
-            "label": "Cheque Number"
-        },
-        {
-            "depends_on": "eval:doc.payment_mode == 'Cheque'",
-            "fieldname": "cheque_date",
-            "fieldtype": "Date",
-            "label": "Cheque Date"
-        },
-        {
-            "depends_on": "eval:doc.payment_mode == 'UPI'",
-            "fieldname": "upi_id",
-            "fieldtype": "Data",
-            "label": "UPI ID"
-        },
-        {
-            "fieldname": "campus",
-            "fieldtype": "Link",
-            "in_standard_filter": 1,
-            "label": "Campus",
-            "options": "Campus",
-            "read_only": 1
-        },
-        {
-            "fieldname": "remarks",
-            "fieldtype": "Small Text",
-            "label": "Remarks / Notes"
-        },
-        {
-            "fieldname": "fee_breakdown_section",
-            "fieldtype": "Section Break",
-            "label": "Fee Breakdown"
-        },
-        {
-            "fieldname": "fee_components",
-            "fieldtype": "Table",
-            "label": "Fee Components",
-            "options": "Applicant Receipt Component",
-            "reqd": 1
-        },
-        {
-            "fieldname": "totals_section",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "total_amount",
-            "fieldtype": "Currency",
-            "in_list_view": 1,
-            "label": "Total Amount",
-            "options": "currency",
-            "read_only": 1
-        },
-        {
-            "fieldname": "currency",
-            "fieldtype": "Link",
-            "label": "Currency",
-            "options": "Currency"
-        },
-        {
-            "fieldname": "amended_from",
-            "fieldtype": "Link",
-            "label": "Amended From",
-            "options": "Applicant Payment Receipt"
-        },
-        {
-            "fieldname": "notification_receiver",
-            "fieldtype": "Link",
-            "hidden": 1,
-            "label": "Notification Receiver",
-            "options": "User",
-            "read_only": 1
-        }
-    ],
-    "is_submittable": 1,
-    "links": [],
-    "modified": "2026-03-02 18:40:59.672642",
-    "modified_by": "Administrator",
-    "module": "Admission",
-    "name": "Applicant Payment Receipt",
-    "naming_rule": "Expression (old style)",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "cancel": 1,
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        },
-        {
-            "if_owner": 1,
-            "read": 1,
-            "role": "Applicant"
-        },
-        {
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Campus Admin",
-            "share": 1
-        },
-        {
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Accounts Manager",
-            "share": 1
-        }
-    ],
-    "row_format": "Dynamic",
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": [],
-    "track_changes": 1
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:APR-{YYYY}-{#####}",
+ "creation": "2026-02-25 17:30:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "receipt_details_section",
+  "applicant",
+  "applicant_name",
+  "program",
+  "academic_year",
+  "offer_letter",
+  "payment_receipt_template",
+  "column_break_1",
+  "payment_date",
+  "payment_reference",
+  "payment_mode",
+  "transaction_id",
+  "bank_name",
+  "cheque_number",
+  "cheque_date",
+  "upi_id",
+  "campus",
+  "remarks",
+  "fee_breakdown_section",
+  "fee_components",
+  "totals_section",
+  "total_amount",
+  "currency",
+  "amended_from",
+  "notification_receiver"
+ ],
+ "fields": [
+  {
+   "fieldname": "receipt_details_section",
+   "fieldtype": "Section Break",
+   "label": "Receipt Details"
+  },
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Applicant",
+   "options": "Applicant",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "applicant.candidate_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Applicant Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Program",
+   "read_only": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "offer_letter",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Offer Letter",
+   "options": "Offer Letter",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "in_standard_filter": 1,
+   "label": "Payment Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payment_reference",
+   "fieldtype": "Link",
+   "label": "Payment Reference",
+   "options": "Payment Request"
+  },
+  {
+   "fieldname": "payment_mode",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Payment Mode",
+   "options": "Online\nCash\nCheque\nUPI\nQR Code\nBank Transfer\nDemand Draft",
+   "reqd": 1
+  },
+  {
+   "fieldname": "transaction_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Transaction ID / Reference No"
+  },
+  {
+   "depends_on": "eval:['Cheque', 'Bank Transfer', 'Demand Draft'].includes(doc.payment_mode)",
+   "fieldname": "bank_name",
+   "fieldtype": "Data",
+   "label": "Bank Name"
+  },
+  {
+   "depends_on": "eval:doc.payment_mode == 'Cheque'",
+   "fieldname": "cheque_number",
+   "fieldtype": "Data",
+   "label": "Cheque Number"
+  },
+  {
+   "depends_on": "eval:doc.payment_mode == 'Cheque'",
+   "fieldname": "cheque_date",
+   "fieldtype": "Date",
+   "label": "Cheque Date"
+  },
+  {
+   "depends_on": "eval:doc.payment_mode == 'UPI'",
+   "fieldname": "upi_id",
+   "fieldtype": "Data",
+   "label": "UPI ID"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks / Notes"
+  },
+  {
+   "fieldname": "fee_breakdown_section",
+   "fieldtype": "Section Break",
+   "label": "Fee Breakdown"
+  },
+  {
+   "fieldname": "fee_components",
+   "fieldtype": "Table",
+   "label": "Fee Components",
+   "options": "Applicant Receipt Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "totals_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Applicant Payment Receipt"
+  },
+  {
+   "fieldname": "notification_receiver",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Notification Receiver",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_receipt_template",
+   "fieldtype": "Link",
+   "label": "Payment Receipt Template",
+   "options": "Print Format"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-03-26 14:35:23.556035",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Applicant Payment Receipt",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
 }
