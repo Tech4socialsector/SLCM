@@ -74,6 +74,10 @@ class OfferLetter(Document):
 
         sa_status, app_status = status_map[self.offer_status]
 
+        # 0. Automatic Fee Assignment for Accepted status
+        if self.offer_status == "Accepted":
+            FeeService.create_fee_assignment_from_offer(self)
+
         # 1. Automatic Fee Cancellation for termination statuses
         if self.offer_status in ["Rejected", "Expired", "Withdrawn"]:
             FeeService.cancel_linked_fee_assignment(self.name)
