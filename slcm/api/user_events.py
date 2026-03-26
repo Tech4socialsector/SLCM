@@ -46,10 +46,6 @@ def send_signup_email(doc, method):
             frappe.log_error("Custom email disabled in Institution Settings during processing", "Signup Email Error")
             return
 
-        # Check SMTP configuration (optional warning)
-        if not frappe.conf.get("mail_server"):
-            frappe.log_error("SMTP not configured in site_config.json", "Signup Email Error")
-
         full_name = doc.full_name or doc.first_name or doc.email
 
         # Generate secure password setup link
@@ -89,6 +85,9 @@ def send_signup_email(doc, method):
             message=message,
             now=True
         )
+        # Core sign_up() treats success as user.flags.email_sent; we suppress the default welcome mail
+        # in before_insert, so mark the flag here so the API returns (1, ...) instead of (2, ...).
+        doc.flags.email_sent = 1
         frappe.log_error(f"Successfully triggered sendmail for {doc.email}", "Signup Email Hook: after_insert success")
 
     except Exception:
