@@ -37,7 +37,7 @@ function _injectCSS() {
 		/* spinner keyframes */
 		'@keyframes slcm-spin{to{transform:rotate(360deg)}}',
 		/* Toast — top-right */
-		'#slcm-toast{position:fixed;top:80px;right:24px;z-index:99999;' +
+		'#slcm-toast{position:fixed;top:40px;right:24px;z-index:99999;' +
 			'min-width:260px;max-width:min(440px,92vw);padding:13px 18px;border-radius:10px;' +
 			'font-size:13.5px;font-weight:500;line-height:1.5;pointer-events:auto;' +
 			'box-shadow:0 8px 32px rgba(0,0,0,.18);display:none;cursor:default;' +
@@ -94,6 +94,10 @@ function _injectCSS() {
 		'.slcm-candidate-photo-preview{margin:0 0 14px;display:flex;align-items:flex-start;}',
 		'.slcm-candidate-photo-preview img{display:block;width:128px;height:128px;object-fit:cover;' +
 			'border-radius:50%;border:3px solid #e2e8f0;box-shadow:0 2px 10px rgba(0,0,0,.1);background:#f8fafc;}',
+		/* Preview is prepended before .form-group → order: preview, label, then Attach + help (not label under button/description) */
+		'.frappe-control[data-fieldname="candidate_photo"] > .form-group{' +
+			'display:flex!important;flex-direction:column!important;align-items:stretch!important;}',
+		'.frappe-control[data-fieldname="candidate_photo"] > .form-group > .clearfix{margin-bottom:8px;}',
 		/* Submit progress overlay */
 		'#slcm-submit-overlay{position:fixed;inset:0;z-index:99997;background:rgba(255,255,255,.8);' +
 			'display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;' +
@@ -143,8 +147,9 @@ function _injectCSS() {
 		'.page-content{margin-top:0!important;padding-top:0!important;}',
 		'.main-section{padding-top:0!important;}',
 		/* ── Admission nav bar ────────────────────────────────────── */
+		/* Below Frappe msgprint (2000) / Bootstrap modal so dialogs are not covered */
 		'.adm-nav{background:var(--slcm-primary,#1a3c6e);padding:10px 24px;display:flex;align-items:center;' +
-			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:9000;' +
+			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
 			'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
 		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
 			'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
@@ -212,6 +217,16 @@ function _injectCSS() {
 		'.web-form-container:has(#slcm-stepper-wrap) form.web-form .web-form-body{border-top:none!important;}',
 		/* Field error highlight */
 		'.slcm-field-error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}',
+		/* Small Text / Long Text / Text — taller textarea (Address etc.) */
+		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
+			'min-height:104px;line-height:1.5;padding:10px 12px;resize:vertical;}',
+		'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control,' +
+			'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control,' +
+			'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control{' +
+			'min-height:120px;}',
+		/* Required checkbox error (ControlCheck drops .form-control on the input) */
+		'.web-form input[type=checkbox].slcm-field-error,.web-form .checkbox.slcm-field-error{' +
+			'outline:2px solid #ef4444!important;outline-offset:3px;border-radius:4px;}',
 
 	].join('');
 	document.head.appendChild(s);
@@ -1426,9 +1441,8 @@ function _showSuccessModal(title, message, nextUrl) {
 
 	document.getElementById('slcm-success-close').onclick = function() {
 		modal.remove();
-		if (!nextUrl) {
-			window.location.reload();
-		}
+		// Always reload so read-only / submitted state and status match the server (incl. "Stay on Page")
+		window.location.reload();
 	};
 }
 
@@ -1446,6 +1460,23 @@ function runSubmitFlow() {
 
 	// ── Phone validation ──────────────────────────────────────────
 	if (typeof window._validate_phone_fields === 'function' && !window._validate_phone_fields()) {
+		return;
+	}
+
+	// ── Required Check fields (Frappe get_values uses is_null(); is_null(0) is false for unchecked) ──
+	var missChkSubmit = _slcmCollectAllEmptyRequiredChecks(wf);
+	if (missChkSubmit.length) {
+		_slcmHighlightRequiredCheckFields(missChkSubmit, true);
+		showToast(
+			'\u26a0 ' +
+				__('Please tick all required confirmations before submitting.') +
+				' ' +
+				__('Missing') +
+				': ' +
+				missChkSubmit.map(function (m) { return m.label; }).join(', '),
+			'error',
+			9000
+		);
 		return;
 	}
 
@@ -1582,12 +1613,27 @@ function interceptSubmit() {
 }
 
 // ───────────────────────────────────────────────────────────────────
-//  ATTACH FIELD VALIDATION
-//  Max 5 MB, allowed extensions: png, jpeg, jpg, pdf
-//  Applied to every Attach (and Attach Image) field in the web form.
+//  ATTACH FIELD VALIDATION (Applicant Web Form)
+//  • Attach: max 5 MB — png, jpeg, jpg, pdf
+//  • Attach Image: max 1 MB — png, jpeg, jpg
+//  FileUploader runs in a modal outside .web-form; we wrap the constructor + click context.
 // ───────────────────────────────────────────────────────────────────
-var _ATTACH_MAX_BYTES = 5 * 1024 * 1024;  // 5 MB
-var _ATTACH_ALLOWED   = ['png', 'jpeg', 'jpg', 'pdf'];
+var _SLCM_ATTACH_MAX_BYTES = 5 * 1024 * 1024;
+var _SLCM_ATTACH_IMAGE_MAX_BYTES = 1 * 1024 * 1024;
+var _SLCM_ATTACH_ALLOWED = ['png', 'jpeg', 'jpg', 'pdf'];
+var _SLCM_ATTACH_IMAGE_ALLOWED = ['png', 'jpeg', 'jpg'];
+/** +1 because Frappe uses file.size < max_file_size */
+var _SLCM_ATTACH_MAX_STRICT = _SLCM_ATTACH_MAX_BYTES + 1;
+var _SLCM_ATTACH_IMAGE_MAX_STRICT = _SLCM_ATTACH_IMAGE_MAX_BYTES + 1;
+var _SLCM_ATTACH_FILE_TYPES = [
+	'.png', '.jpeg', '.jpg', '.jpe', '.pdf',
+	'image/png', 'image/jpeg', 'image/jpg',
+	'application/pdf',
+];
+var _SLCM_ATTACH_IMAGE_FILE_TYPES = [
+	'.png', '.jpeg', '.jpg', '.jpe',
+	'image/png', 'image/jpeg', 'image/jpg',
+];
 
 // ───────────────────────────────────────────────────────────────────
 //  STUDENT PHOTO (candidate_photo) — inline preview, all modes / statuses
@@ -1678,6 +1724,13 @@ function syncCandidatePhotoPreview() {
 		$img.attr('data-slcm-src', src);
 		$img.attr('src', src);
 	}
+
+	// Remove mistaken label nodes injected inside .btn-attach (data-fieldname matches button too)
+	var $btn = $wrap.find('.btn-attach');
+	if ($btn.length && $btn.find('.control-label').length) {
+		$btn.find('.control-label').remove();
+		$btn.html(__('Attach'));
+	}
 }
 
 function setupCandidatePhotoPreview() {
@@ -1715,24 +1768,33 @@ function setupCandidatePhotoPreview() {
 function _validateAttachFile(file, fieldtype) {
 	if (!file) return true;
 
-	// Skip validation for 'Attach Image' as per user request
-	if (fieldtype === 'Attach Image') return true;
-
 	var ext = (file.name || '').split('.').pop().toLowerCase();
-	var allowed = _ATTACH_ALLOWED;
+	var isImage = fieldtype === 'Attach Image';
+	var allowed = isImage ? _SLCM_ATTACH_IMAGE_ALLOWED : _SLCM_ATTACH_ALLOWED;
+	var maxBytes = isImage ? _SLCM_ATTACH_IMAGE_MAX_BYTES : _SLCM_ATTACH_MAX_BYTES;
+	var maxLabel = isImage ? '1 MB' : '5 MB';
 
 	if (allowed.indexOf(ext) === -1) {
-		_showToast(
-			'Invalid file type “.' + ext + '”.  ' +
-			'Allowed: ' + allowed.join(', ').toUpperCase() + '.',
+		showToast(
+			'\u26a0 Invalid file type “.' +
+				ext +
+				'”. ' +
+				(isImage
+					? 'Use png, jpeg, or jpg only (max 1 MB).'
+					: 'Use png, jpeg, jpg, or pdf only (max 5 MB).'),
 			'error'
 		);
 		return false;
 	}
-	if (file.size > _ATTACH_MAX_BYTES) {
-		_showToast(
-			'File “' + file.name + '” exceeds the 5 MB limit ' +
-			'(' + (file.size / (1024 * 1024)).toFixed(1) + ' MB).',
+	if (file.size > maxBytes) {
+		showToast(
+			'\u26a0 File “' +
+				file.name +
+				'” exceeds the ' +
+				maxLabel +
+				' limit (' +
+				(file.size / (1024 * 1024)).toFixed(1) +
+				' MB).',
 			'error'
 		);
 		return false;
@@ -1740,67 +1802,125 @@ function _validateAttachFile(file, fieldtype) {
 	return true;
 }
 
-function setupAttachFieldValidation() {
-	// ── 1. Native <input type="file"> change — event delegation ────────
-	// Frappe renders the hidden file input inside .frappe-control wrappers.
-	document.addEventListener('change', function (e) {
-		var input = e.target;
-		if (!input || input.type !== 'file') return;
-
-		// Restrict to inputs inside the web-form container only
-		var inForm = input.closest(
-			'.web-form-container, form.web-form, .web-form-wrapper'
-		);
-		if (!inForm) return;
-
-		var file = input.files && input.files[0];
-		if (!file) return;
-
-		// Detect field type from the wrapper
-		var ctrl = input.closest('[data-fieldtype]');
-		var ft   = ctrl ? ctrl.getAttribute('data-fieldtype') : 'Attach';
-
-		if (!_validateAttachFile(file, ft)) {
-			e.preventDefault();
-			input.value = '';   // clear the selection
-		}
-	}, true);  // capture phase so we can preventDefault reliably
-
-	// ── 2. Frappe upload dialog interception ─────────────────────────
-	// Frappe's uploader sometimes opens its own dialog and reads the
-	// file through a FileReader rather than a regular file input.
-	// We patch frappe.ui.FileUploader by wrapping the upload trigger.
-	var _patchUploader = function () {
-		if (!window.frappe || !frappe.ui || !frappe.ui.FileUploader) return;
-		if (frappe.ui.FileUploader._slcm_patched) return;
-		frappe.ui.FileUploader._slcm_patched = true;
-
-		var _orig = frappe.ui.FileUploader.prototype.upload_file ||
-		            frappe.ui.FileUploader.prototype.upload;
-		if (!_orig) return;
-
-		var _key = frappe.ui.FileUploader.prototype.upload_file
-			? 'upload_file' : 'upload';
-
-		frappe.ui.FileUploader.prototype[_key] = function (file) {
-			var f = file && (file.file_obj || file);
-			if (f && f.name) {
-				if (!_validateAttachFile(f, 'Attach')) return;
+/** Remember which Attach / Attach Image was opened (uploader modal is outside the form DOM). */
+function setupSlcmAttachClickContext() {
+	document.addEventListener(
+		'click',
+		function (e) {
+			var t = e.target && e.target.closest && e.target.closest('.btn-attach');
+			if (!t || !window.frappe || !frappe.web_form) return;
+			if (
+				!t.closest(
+					'.web-form, .web-form-wrapper, .web-form-container, form.web-form'
+				)
+			) {
+				return;
 			}
-			return _orig.apply(this, arguments);
-		};
-	};
+			var ctrl = t.closest('.frappe-control[data-fieldtype]');
+			if (!ctrl) return;
+			var ft = ctrl.getAttribute('data-fieldtype');
+			if (ft !== 'Attach' && ft !== 'Attach Image') return;
+			window._slcmLastAttachCtx = {
+				fieldtype: ft,
+				fieldname: ctrl.getAttribute('data-fieldname') || '',
+				ts: Date.now(),
+			};
+		},
+		true
+	);
+}
 
-	// Retry patching until FileUploader is available
+/**
+ * Frappe FileUploader filters files in check_restrictions(); empty restrictions allow any type.
+ * Merge strict allowed_file_types + max_file_size for Applicant Web Form uploads.
+ */
+function wrapSlcmApplicantFileUploaderConstructor() {
+	if (!window.frappe || !frappe.ui || !frappe.ui.FileUploader) return;
+	if (frappe.ui.FileUploader._slcmApplicantWrapped) return;
+
+	var Original = frappe.ui.FileUploader;
+
+	function SlcmFileUploader(opts) {
+		opts = opts || {};
+		if (frappe.web_form && window._slcmLastAttachCtx) {
+			var ctx = window._slcmLastAttachCtx;
+			if (Date.now() - (ctx.ts || 0) < 120000) {
+				var base = Object.assign({}, opts.restrictions || {});
+				if (ctx.fieldtype === 'Attach Image') {
+					opts.restrictions = Object.assign(base, {
+						max_file_size: _SLCM_ATTACH_IMAGE_MAX_STRICT,
+						allowed_file_types: _SLCM_ATTACH_IMAGE_FILE_TYPES.slice(),
+					});
+				} else if (ctx.fieldtype === 'Attach') {
+					opts.restrictions = Object.assign(base, {
+						max_file_size: _SLCM_ATTACH_MAX_STRICT,
+						allowed_file_types: _SLCM_ATTACH_FILE_TYPES.slice(),
+					});
+				}
+			}
+		}
+		return new Original(opts);
+	}
+
+	SlcmFileUploader.UploadOptions = Original.UploadOptions;
+	SlcmFileUploader._slcmApplicantWrapped = true;
+	frappe.ui.FileUploader = SlcmFileUploader;
+}
+
+function setupAttachFieldValidation() {
+	setupSlcmAttachClickContext();
+
+	document.addEventListener(
+		'change',
+		function (e) {
+			var input = e.target;
+			if (!input || input.type !== 'file' || !window.frappe || !frappe.web_form) return;
+
+			var inForm = input.closest(
+				'.web-form-container, form.web-form, .web-form-wrapper'
+			);
+			var inUploader = input.closest('.file-uploader');
+			var ctx = window._slcmLastAttachCtx;
+			var ft = null;
+
+			if (inForm) {
+				var ctrl = input.closest('[data-fieldtype]');
+				ft = ctrl ? ctrl.getAttribute('data-fieldtype') : null;
+			} else if (inUploader && ctx && Date.now() - (ctx.ts || 0) < 120000) {
+				ft = ctx.fieldtype;
+			} else {
+				return;
+			}
+
+			if (ft !== 'Attach' && ft !== 'Attach Image') return;
+
+			var file = input.files && input.files[0];
+			if (!file) return;
+
+			if (!_validateAttachFile(file, ft)) {
+				input.value = '';
+				e.preventDefault();
+				try {
+					e.stopImmediatePropagation();
+				} catch (err) { /* ignore */ }
+			}
+		},
+		true
+	);
+
 	var _upN = 0;
 	var _upTimer = setInterval(function () {
-		_patchUploader();
-		if (++_upN > 60 ||
-			(window.frappe && frappe.ui && frappe.ui.FileUploader &&
-			 frappe.ui.FileUploader._slcm_patched)) {
+		wrapSlcmApplicantFileUploaderConstructor();
+		if (
+			++_upN > 80 ||
+			(window.frappe &&
+				frappe.ui &&
+				frappe.ui.FileUploader &&
+				frappe.ui.FileUploader._slcmApplicantWrapped)
+		) {
 			clearInterval(_upTimer);
 		}
-	}, 200);
+	}, 120);
 }
 
 function setupNumericFieldRestriction() {
@@ -1857,89 +1977,157 @@ function setupNumericFieldRestriction() {
 
 function setupPhoneValidation() {
 	var PHONE_FIELDS = ['mobile_number', 'alternate_contact', 'father_mobile', 'mother_mobile', 'guardian_mobile'];
-	
-	// Map common ISD codes to their expected lengths
+
+	// National number lengths (digits after country code). Keys: with and without leading "+".
 	var ISD_LENGTHS = {
-		'+91': [10],      // India
-		'+1':  [10],      // USA/Canada
-		'+44': [10],      // UK
-		'+971': [9],      // UAE
-		'+65': [8],       // Singapore
-		'+61': [9, 10],   // Australia
-		'+966': [9],      // Saudi Arabia
+		// Existing
+		'+91': [10], 91: [10],              // India
+		'+1': [10], 1: [10],                // USA/Canada
+		'+44': [10], 44: [10],              // UK
+		'+971': [9], 971: [9],              // UAE
+		'+65': [8], 65: [8],                // Singapore
+		'+61': [9, 10], 61: [9, 10],        // Australia
+		'+966': [9], 966: [9],              // Saudi
+	
+		// 🔥 Added Top Countries
+	
+		'+81': [10, 11], 81: [10, 11],      // Japan
+		'+49': [10, 11], 49: [10, 11],      // Germany
+		'+33': [9], 33: [9],                // France
+		'+39': [9, 10], 39: [9, 10],        // Italy
+		'+34': [9], 34: [9],                // Spain
+		'+86': [11], 86: [11],              // China
+		'+82': [9, 10], 82: [9, 10],        // South Korea
+		'+7': [10], 7: [10],                // Russia
+		'+55': [10, 11], 55: [10, 11],      // Brazil
+		'+27': [9], 27: [9],                // South Africa
+		'+234': [10], 234: [10],            // Nigeria
+		'+20': [10], 20: [10],              // Egypt
+		'+92': [10], 92: [10],              // Pakistan
+		'+880': [10], 880: [10],            // Bangladesh
+		'+62': [10, 11, 12], 62: [10, 11, 12], // Indonesia
+		'+63': [10], 63: [10],              // Philippines
+		'+60': [9, 10], 60: [9, 10],        // Malaysia
+		'+66': [9], 66: [9],                // Thailand
+		'+84': [9, 10], 84: [9, 10],        // Vietnam
+		'+64': [9, 10], 64: [9, 10],        // New Zealand
 	};
 
-	// ── Real-time Maxlength Restriction ──────────────────────────
+	function _slcmPhoneCtrl(input) {
+		if (!input || !input.closest) return null;
+		return input.closest('.frappe-control[data-fieldtype="Phone"]') ||
+			input.closest('[data-fieldtype="Phone"]');
+	}
+
+	function _slcmNormalizeIsd(raw) {
+		if (raw === undefined || raw === null) return '';
+		var s = String(raw).trim().replace(/[^\d+]/g, '');
+		if (!s) return '';
+		return s.startsWith('+') ? s : ('+' + s);
+	}
+
+	function _slcmPhoneIsdLengths(ctrl) {
+		if (!ctrl) return null;
+		var isdNorm = '';
+		var isdEl = ctrl.querySelector('.country') || ctrl.querySelector('.selected-phone .country');
+		if (isdEl && isdEl.textContent.trim()) {
+			isdNorm = _slcmNormalizeIsd(isdEl.textContent);
+		}
+		if (!isdNorm) {
+			var fn = ctrl.getAttribute('data-fieldname');
+			var wf = window.frappe && frappe.web_form;
+			if (fn && wf && typeof wf.get_value === 'function') {
+				var v = wf.get_value(fn);
+				if (v && String(v).indexOf('-') >= 0) {
+					var head = String(v).split('-')[0].trim();
+					isdNorm = _slcmNormalizeIsd(head.replace(/[^\d+]/g, ''));
+				}
+			}
+		}
+		if (!isdNorm) return null;
+		var bare = isdNorm.replace(/^\+/, '');
+		var lengths = ISD_LENGTHS[isdNorm] || ISD_LENGTHS[bare];
+		if (!lengths) return null;
+		return { isd: isdNorm, lengths: lengths, limit: Math.max.apply(null, lengths) };
+	}
+
+	function _slcmApplyPhoneDigitCap(input) {
+		var ctrl = _slcmPhoneCtrl(input);
+		if (!ctrl) return;
+		var info = _slcmPhoneIsdLengths(ctrl);
+		var limit = info ? info.limit : 15;
+		input.setAttribute('maxlength', limit);
+		var digits = (input.value || '').replace(/\D/g, '');
+		if (digits.length > limit) {
+			input.value = digits.slice(0, limit);
+		}
+	}
+
+	// Real-time cap (ISD from flag row or from stored +91-… value while UI still syncing)
 	document.body.addEventListener('input', function (e) {
 		var input = e.target;
-		if (!input || input.tagName !== 'INPUT') return;
+		if (!input || input.tagName !== 'INPUT' || !_slcmPhoneCtrl(input)) return;
+		_slcmApplyPhoneDigitCap(input);
+	}, true);
 
-		// Find the phone control container
-		var ctrl = input.closest('[data-fieldtype="Phone"]') || input.closest('.frappe-control[data-fieldtype="Phone"]');
-		if (!ctrl) return;
-
-		// Get ISD from the Frappe Phone control's country span
-		var isdEl = ctrl.querySelector('.country') || ctrl.querySelector('.selected-phone .country');
-		var isdRaw = isdEl ? isdEl.textContent.trim().replace(/[^0-9+]/g, '') : '';
-		if (!isdRaw) return;
-
-		// Normalize ISD (handle both '91' and '+91')
-		var isd = isdRaw.startsWith('+') ? isdRaw : '+' + isdRaw;
-		var lengths = ISD_LENGTHS[isd] || ISD_LENGTHS[isdRaw];
-
-		if (lengths) {
-			var limit = Math.max.apply(null, lengths);
-			input.setAttribute('maxlength', limit);
-			
-			// Force clean-up of extra characters (especially on paste/prefill)
-			if (input.value.length > limit) {
-				input.value = input.value.slice(0, limit);
-			}
-		} else {
-			input.setAttribute('maxlength', 15); // Generic limit
+	// Block typing extra digits (maxlength is not always enforced for type="tel")
+	document.body.addEventListener('keydown', function (e) {
+		var input = e.target;
+		if (!input || input.tagName !== 'INPUT' || !_slcmPhoneCtrl(input)) return;
+		if (e.ctrlKey || e.metaKey || e.altKey) return;
+		var k = e.keyCode;
+		if (k === 8 || k === 9 || k === 13 || k === 27 || k === 46) return;
+		if (k === 35 || k === 36 || k === 37 || k === 38 || k === 39 || k === 40) return;
+		var isDigit =
+			(k >= 48 && k <= 57) || (k >= 96 && k <= 105) ||
+			(e.key && e.key.length === 1 && /\d/.test(e.key));
+		if (!isDigit) return;
+		var ctrl = _slcmPhoneCtrl(input);
+		var info = _slcmPhoneIsdLengths(ctrl);
+		var limit = info ? info.limit : 15;
+		var val = input.value || '';
+		var digits = val.replace(/\D/g, '');
+		var start = typeof input.selectionStart === 'number' ? input.selectionStart : 0;
+		var end = typeof input.selectionEnd === 'number' ? input.selectionEnd : 0;
+		var selDigits = (val.substring(start, end) || '').replace(/\D/g, '').length;
+		if (digits.length - selDigits + 1 > limit) {
+			e.preventDefault();
 		}
 	}, true);
 
+	document.body.addEventListener('paste', function (e) {
+		var input = e.target;
+		if (!input || input.tagName !== 'INPUT' || !_slcmPhoneCtrl(input)) return;
+		setTimeout(function () { _slcmApplyPhoneDigitCap(input); }, 0);
+	}, true);
+
 	// Sync when clicking or focusing (handles country picker selection)
-	// Deferred via setTimeout(0) so we never run synchronously during
-	// Frappe's own initialization chain (which can call set_formatted_input
-	// before the PhoneField's selected_icon element is created).
 	var syncPhone = function (e) {
 		var target = e.target;
 		setTimeout(function () {
-			var input = target.closest
-				? target.closest('[data-fieldtype="Phone"] input')
-				: null;
+			var input = target.closest ? target.closest('.frappe-control[data-fieldtype="Phone"] input') : null;
+			if (!input) {
+				input = target.closest ? target.closest('[data-fieldtype="Phone"] input') : null;
+			}
 			if (!input) return;
 			input.dispatchEvent(new Event('input', { bubbles: true }));
 		}, 0);
 	};
-	['click', 'focusin', 'keyup', 'change'].forEach(function(ev) {
+	['click', 'focusin', 'keyup', 'change'].forEach(function (ev) {
 		document.body.addEventListener(ev, syncPhone, true);
 	});
 
-
-	// Immediate feedback on blur / focusout
 	document.body.addEventListener('focusout', function (e) {
 		var input = e.target;
-		if (!input || input.tagName !== 'INPUT' || !input.closest('[data-fieldtype="Phone"]')) return;
-
-		var ctrl = input.closest('[data-fieldtype="Phone"]');
-		var isdEl = ctrl.querySelector('.country') || ctrl.querySelector('.selected-phone .country');
-		var isdRaw = isdEl ? isdEl.textContent.trim().replace(/[^0-9+]/g, '') : '';
-		if (!isdRaw) return;
-
-		var isd = isdRaw.startsWith('+') ? isdRaw : '+' + isdRaw;
-		var expected = ISD_LENGTHS[isd] || ISD_LENGTHS[isdRaw];
-		var val = input.value.replace(/\D/g, '');
-
-		if (expected && val && expected.indexOf(val.length) === -1) {
-			var expectedStr = expected.join(' or ');
-			showToast('\u26a0 Invalid phone length for ' + isd + '. Must be ' + expectedStr + ' digits.', 'error');
-			
-			// Optional: truncate immediately
-			var limit = Math.max.apply(null, expected);
-			if (val.length > limit) input.value = val.slice(0, limit);
+		if (!input || input.tagName !== 'INPUT' || !_slcmPhoneCtrl(input)) return;
+		var ctrl = _slcmPhoneCtrl(input);
+		var info = _slcmPhoneIsdLengths(ctrl);
+		if (!info) return;
+		var val = (input.value || '').replace(/\D/g, '');
+		if (val && info.lengths.indexOf(val.length) === -1) {
+			var expectedStr = info.lengths.join(' or ');
+			showToast('\u26a0 Invalid phone length for ' + info.isd + '. Must be ' + expectedStr + ' digits.', 'error');
+			if (val.length > info.limit) input.value = val.slice(0, info.limit);
 		}
 	}, true);
 
@@ -1952,29 +2140,29 @@ function setupPhoneValidation() {
 			if (!field || field.df.hidden || field.df.read_only) return;
 
 			var val = wf.get_value(fn) || '';
-			if (!val) return; 
+			if (!val) return;
 
-			var parts = val.split('-');
-			var isd = parts[0] || '';
-			var num = parts[1] || '';
+			var parts = String(val).split('-');
+			var isdRaw = (parts[0] || '').trim();
+			var num = parts.slice(1).join('-') || '';
 
 			if (!num) {
 				errors.push((field.df.label || fn) + ': Missing number.');
 				return;
 			}
 
+			var isd = _slcmNormalizeIsd(isdRaw.replace(/[^\d+]/g, ''));
 			var numClean = num.replace(/\D/g, '');
-			var expected = ISD_LENGTHS[isd];
+			var bare = isd.replace(/^\+/, '');
+			var expected = ISD_LENGTHS[isd] || ISD_LENGTHS[bare];
 
 			if (expected) {
 				if (expected.indexOf(numClean.length) === -1) {
 					var expectedStr = expected.join(' or ');
 					errors.push((field.df.label || fn) + ': Must be ' + expectedStr + ' digits for ' + isd + '.');
 				}
-			} else {
-				if (numClean.length < 7 || numClean.length > 15) {
-					errors.push((field.df.label || fn) + ': Invalid length (' + numClean.length + ').');
-				}
+			} else if (numClean.length < 7 || numClean.length > 15) {
+				errors.push((field.df.label || fn) + ': Invalid length (' + numClean.length + ').');
 			}
 		});
 
@@ -2029,6 +2217,91 @@ function applyQueryStringPrefill() {
 		});
 		scheduleFeeUpdate();
 	}, 80);
+}
+
+/** Latest DOB still allowed: 17 full years completed today (no future dates). */
+function _slcmMaxDateOfBirth() {
+	var d = new Date();
+	d.setHours(0, 0, 0, 0);
+	d.setFullYear(d.getFullYear() - 17);
+	return d;
+}
+
+/** Completed age in years from yyyy-mm-dd (or null if invalid). -1 if date is in the future. */
+function _slcmAgeCompletedYears(dobVal) {
+	if (dobVal === undefined || dobVal === null || dobVal === '') return null;
+	var s = String(dobVal).trim();
+	var parts = s.split('-');
+	if (parts.length < 3) return null;
+	var y = parseInt(parts[0], 10);
+	var mo = parseInt(parts[1], 10) - 1;
+	var day = parseInt(parts[2], 10);
+	if (isNaN(y) || isNaN(mo) || isNaN(day)) return null;
+	var birth = new Date(y, mo, day);
+	if (isNaN(birth.getTime())) return null;
+	var today = new Date();
+	today.setHours(0, 0, 0, 0);
+	birth.setHours(0, 0, 0, 0);
+	if (birth > today) return -1;
+	var age = today.getFullYear() - birth.getFullYear();
+	var md = today.getMonth() - birth.getMonth();
+	if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
+	return age;
+}
+
+/** Web Form: cap DOB datepicker (max = today − 17 years) and enforce age on change. */
+function _slcmTryPatchDateOfBirth(wf) {
+	if (!wf || !wf.fields_dict) return;
+	var fd = wf.fields_dict.date_of_birth;
+	if (!fd || fd.df.fieldtype !== 'Date') return;
+
+	var maxD = _slcmMaxDateOfBirth();
+	if (fd.datepicker && typeof fd.datepicker.update === 'function') {
+		try {
+			fd.datepicker.update({ maxDate: maxD });
+		} catch (e) { /* ignore */ }
+	}
+
+	if (!fd._slcmDobListeners && fd.$input && fd.$input.length) {
+		fd._slcmDobListeners = true;
+		fd.$input.on('change.slcmdob', function () {
+			var v = wf.get_value && wf.get_value('date_of_birth');
+			var age = _slcmAgeCompletedYears(v);
+			if (v && (age === null || age < 17)) {
+				frappe.msgprint({
+					title: __('Invalid Date of Birth'),
+					message: __('Applicant must be at least 17 years old. The date cannot be in the future.'),
+					indicator: 'red',
+				});
+				if (typeof wf.set_value === 'function') {
+					wf.set_value('date_of_birth', '');
+				}
+			}
+		});
+	}
+}
+
+function setupDateOfBirthWebForm() {
+	function tick() {
+		var wf = window.frappe && frappe.web_form;
+		_slcmTryPatchDateOfBirth(wf);
+	}
+	if (window.frappe && frappe.web_form && frappe.web_form.events && frappe.web_form.events.on) {
+		frappe.web_form.events.on('after_load', function () {
+			setTimeout(tick, 0);
+		});
+	}
+	var n = 0;
+	var t = setInterval(function () {
+		tick();
+		var wf = window.frappe && frappe.web_form;
+		var fd = wf && wf.fields_dict && wf.fields_dict.date_of_birth;
+		if (fd && fd._slcmDobListeners && fd.datepicker) {
+			clearInterval(t);
+		} else if (++n > 150) {
+			clearInterval(t);
+		}
+	}, 100);
 }
 
 /** Remove red validation outline as soon as the user edits the control. */
@@ -2102,31 +2375,34 @@ frappe.ready(function () {
 	}, 150);
 	// Stepper / Stages
 	setupStepper();
+	setupDateOfBirthWebForm();
 
-	setTimeout(() => {
-        document.querySelectorAll('[data-fieldname]')
-            .forEach(field => {
-                let fieldname = field.getAttribute('data-fieldname');
-                let fieldtype = field.getAttribute('data-fieldtype');
+	// Frappe Next: validate_section ignores Attach (no .form-control) — patch after web_form exists
+	var _attachSecPatchN = 0;
+	var _attachSecTimer = setInterval(function () {
+		patchWebFormValidateSectionForAttach();
+		if ((frappe.web_form && frappe.web_form._slcmValidateSectionAttachPatched) || ++_attachSecPatchN > 100) {
+			clearInterval(_attachSecTimer);
+		}
+	}, 100);
 
-                if (!['Attach', 'Attach Image'].includes(fieldtype)) return;
-
-                // Check if label already exists
-                let existingLabel = field.querySelector('.control-label');
-                if (existingLabel) return;
-
-                // ✅ Get correct label from Frappe meta
-                let df = frappe.web_form.fields_dict[fieldname]?.df;
-                let labelText = df?.label || fieldname;
-
-                // Create label
-                let lbl = document.createElement('label');
-                lbl.className = 'control-label';
-                lbl.innerText = labelText;
-
-                field.prepend(lbl);
-            });
-    }, 500);
+	setTimeout(function () {
+		// Only real field wrappers — inputs/buttons also carry data-fieldname and must not get a prepended label
+		document.querySelectorAll('.frappe-control[data-fieldname]').forEach(function (field) {
+			var fieldname = field.getAttribute('data-fieldname');
+			var fieldtype = field.getAttribute('data-fieldtype');
+			if (!fieldtype || !['Attach', 'Attach Image'].includes(fieldtype)) return;
+			/* Layout + label order handled in CSS / syncCandidatePhotoPreview; never inject here */
+			if (fieldname === 'candidate_photo') return;
+			if (field.querySelector('.control-label')) return;
+			var df = frappe.web_form.fields_dict[fieldname] && frappe.web_form.fields_dict[fieldname].df;
+			var labelText = (df && df.label) || fieldname;
+			var lbl = document.createElement('label');
+			lbl.className = 'control-label';
+			lbl.textContent = labelText;
+			field.prepend(lbl);
+		});
+	}, 500);
 });
 
 /**
@@ -2301,6 +2577,164 @@ function _slcmStepperSkipForwardValidation(wf) {
 }
 
 /**
+ * Frappe WebForm.validate_section() only walks `.form-control`; Attach / Attach Image use
+ * `.btn-attach` and are skipped. Collect required attach fields on the active section.
+ */
+function _slcmPageContainsFieldname($page, fieldname) {
+	if (!$page || !$page.length || !fieldname) return false;
+	var hit = false;
+	$page.find('[data-fieldname]').each(function () {
+		if (($(this).attr('data-fieldname') || '') === fieldname) {
+			hit = true;
+			return false;
+		}
+	});
+	return hit;
+}
+
+function _slcmWebFormAttachValueEmpty(val) {
+	if (val === undefined || val === null) return true;
+	if (typeof val === 'string' && !String(val).trim()) return true;
+	return false;
+}
+
+function _slcmCollectEmptyRequiredAttachOnPage(wf) {
+	if (!wf || wf.allow_incomplete) return [];
+	var $page = $(wf.get_page(wf.current_section));
+	if (!$page.length) return [];
+
+	var out = [];
+	for (var fieldname in wf.fields_dict) {
+		if (!Object.prototype.hasOwnProperty.call(wf.fields_dict, fieldname)) continue;
+		var field = wf.fields_dict[fieldname];
+		var df = field && field.df;
+		if (!df) continue;
+		if (!df.reqd) continue;
+		if (df.fieldtype !== 'Attach' && df.fieldtype !== 'Attach Image') continue;
+		if (df.read_only) continue;
+		if (field.$wrapper && field.$wrapper.length && field.$wrapper.is(':hidden')) continue;
+		if (!_slcmPageContainsFieldname($page, fieldname)) continue;
+		var value = field.get_value ? field.get_value() : null;
+		if (!_slcmWebFormAttachValueEmpty(value)) continue;
+		out.push({ field: field, label: (df.label || fieldname).trim() || fieldname });
+	}
+	return out;
+}
+
+function _slcmHighlightRequiredAttachFields(missing, on) {
+	missing.forEach(function (m) {
+		var $w = m.field && m.field.$wrapper;
+		if (!$w || !$w.length) return;
+		var sel =
+			'.form-control, .attached-file, .input-with-feedback, .btn-attach, .control-value';
+		if (on) {
+			$w.find(sel).addClass('slcm-field-error');
+		} else {
+			$w.find(sel).removeClass('slcm-field-error');
+		}
+	});
+}
+
+/** Unchecked required Check: Frappe is_null(0) is false, so core get_values misses these. */
+function _slcmCheckValueUnchecked(val) {
+	var n = typeof cint === 'function' ? cint(val) : (val ? 1 : 0);
+	return !n;
+}
+
+function _slcmCollectEmptyRequiredCheckOnPage(wf) {
+	if (!wf || wf.allow_incomplete) return [];
+	var $page = $(wf.get_page(wf.current_section));
+	if (!$page.length) return [];
+
+	var out = [];
+	for (var fieldname in wf.fields_dict) {
+		if (!Object.prototype.hasOwnProperty.call(wf.fields_dict, fieldname)) continue;
+		var field = wf.fields_dict[fieldname];
+		var df = field && field.df;
+		if (!df) continue;
+		if (!df.reqd || df.fieldtype !== 'Check') continue;
+		if (df.read_only) continue;
+		if (field.$wrapper && field.$wrapper.length && field.$wrapper.is(':hidden')) continue;
+		if (!_slcmPageContainsFieldname($page, fieldname)) continue;
+		var value = field.get_value ? field.get_value() : 0;
+		if (!_slcmCheckValueUnchecked(value)) continue;
+		out.push({ field: field, label: (df.label || fieldname).trim() || fieldname });
+	}
+	return out;
+}
+
+function _slcmCollectAllEmptyRequiredChecks(wf) {
+	if (!wf || wf.allow_incomplete) return [];
+	var out = [];
+	for (var fieldname in wf.fields_dict) {
+		if (!Object.prototype.hasOwnProperty.call(wf.fields_dict, fieldname)) continue;
+		var field = wf.fields_dict[fieldname];
+		var df = field && field.df;
+		if (!df) continue;
+		if (!df.reqd || df.fieldtype !== 'Check') continue;
+		if (df.read_only) continue;
+		if (field.$wrapper && field.$wrapper.length && field.$wrapper.is(':hidden')) continue;
+		var value = field.get_value ? field.get_value() : 0;
+		if (!_slcmCheckValueUnchecked(value)) continue;
+		out.push({ field: field, label: (df.label || fieldname).trim() || fieldname });
+	}
+	return out;
+}
+
+function _slcmHighlightRequiredCheckFields(missing, on) {
+	missing.forEach(function (m) {
+		var $w = m.field && m.field.$wrapper;
+		if (!$w || !$w.length) return;
+		var $cb = $w.find('input[type="checkbox"]');
+		var $box = $w.find('.checkbox').first();
+		if (on) {
+			$cb.addClass('slcm-field-error');
+			$box.addClass('slcm-field-error');
+		} else {
+			$cb.removeClass('slcm-field-error');
+			$box.removeClass('slcm-field-error');
+		}
+	});
+}
+
+function patchWebFormValidateSectionForAttach() {
+	var wf = window.frappe && frappe.web_form;
+	if (!wf || typeof wf.validate_section !== 'function' || wf._slcmValidateSectionAttachPatched) {
+		return;
+	}
+	wf._slcmValidateSectionAttachPatched = true;
+	var orig = wf.validate_section.bind(wf);
+	wf.validate_section = function () {
+		var base = orig();
+		if (!base) return false;
+		var missingAtt = _slcmCollectEmptyRequiredAttachOnPage(this);
+		var missingChk = _slcmCollectEmptyRequiredCheckOnPage(this);
+		if (!missingAtt.length && !missingChk.length) return true;
+		_slcmHighlightRequiredAttachFields(missingAtt, true);
+		_slcmHighlightRequiredCheckFields(missingChk, true);
+		var labels = missingAtt
+			.map(function (m) {
+				return __(m.label);
+			})
+			.concat(
+				missingChk.map(function (m) {
+					return __(m.label);
+				})
+			);
+		frappe.msgprint({
+			title: __('Error', null, 'Title of the error message in web form'),
+			message:
+				__('Mandatory fields required:', null, 'Error message in web form') +
+				'<br><br><ul><li>' +
+				labels.join('<li>') +
+				'</ul>',
+			indicator: 'orange',
+		});
+		return false;
+	};
+}
+
+/**
  * Layout fieldtypes never store a value; reqd on them in Web Form JSON is a misconfiguration.
  */
 function _slcmWebFormLayoutFieldtype(ft) {
@@ -2355,19 +2789,33 @@ function _validateStage(wf, $page) {
 		if (df.fieldtype === 'Text Editor' && typeof val === 'string' && frappe.utils && frappe.utils.strip_html) {
 			val = frappe.utils.strip_html(val);
 		}
-		const empty = val === undefined || val === null || val === '' ||
-			(Array.isArray(val) && val.length === 0) ||
-			(val === 0 && df.fieldtype === 'Check');
+		let empty;
+		if (df.fieldtype === 'Check') {
+			empty = _slcmCheckValueUnchecked(val);
+		} else {
+			empty =
+				val === undefined ||
+				val === null ||
+				val === '' ||
+				(Array.isArray(val) && val.length === 0);
+		}
+
+		var errSel =
+			'.form-control, .attached-file, .input-with-feedback, .btn-attach, .control-value, input[type="checkbox"], .checkbox';
+		if (fieldname === 'date_of_birth' && !empty && df.fieldtype === 'Date') {
+			const age = _slcmAgeCompletedYears(val);
+			if (age === null || age < 17) {
+				fw.$wrapper && fw.$wrapper.find(errSel).addClass('slcm-field-error');
+				missing.push((df.label || fieldname).trim() + ': ' + __('must be at least 17 years old'));
+				return;
+			}
+		}
 
 		if (empty) {
-			fw.$wrapper && fw.$wrapper
-				.find('.form-control, .attached-file, .input-with-feedback')
-				.addClass('slcm-field-error');
+			fw.$wrapper && fw.$wrapper.find(errSel).addClass('slcm-field-error');
 			missing.push((df.label || fieldname).trim() || fieldname);
 		} else {
-			fw.$wrapper && fw.$wrapper
-				.find('.form-control, .attached-file, .input-with-feedback')
-				.removeClass('slcm-field-error');
+			fw.$wrapper && fw.$wrapper.find(errSel).removeClass('slcm-field-error');
 		}
 	});
 
