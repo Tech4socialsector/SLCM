@@ -914,7 +914,7 @@ def check_portal_eligibility(applicant_data):
         main_eligible   = True
         main_message    = "You meet the eligibility criteria for the selected program."
 
-        for prog_name in all_programs[:10]:
+        for prog_name in all_programs:
             is_elig, reason = doc._check_eligibility_for_program(prog_name) if hasattr(doc, '_check_eligibility_for_program') else (True, "")
             programs_result.append({
                 "program":  prog_name,

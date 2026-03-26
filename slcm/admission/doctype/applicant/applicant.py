@@ -737,17 +737,42 @@ class Applicant(Document):
 
     def _get_all_programs_for_level(self, program_level):
         """
-        Returns ALL programs from the Program doctype that match the given
-        level_of_study (e.g., 'Undergraduate', 'Postgraduate', 'Research Course').
+        Returns programs of the same level that are part of the ACTIVE admission cycle.
+        Prioritizes the applicant's linked admission cycle if set.
 
-        This ensures the eligibility table shows EVERY program of the same
-        level — not just those with eligibility rules configured.
-
-        NOTE: Uses `level_of_study` (correct column) not `program_level` (often null).
+        This ensures the eligibility table shows programs from the current admission cycle —
+        not just EVERY program of the same level from the Program doctype.
         """
         if not program_level:
             return []
 
+        # 1. Use the applicant's cycle if set
+        cycle = self.admission_cycle
+
+        # 2. If not set, look for any 'Active' cycle
+        if not cycle:
+            cycle = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+
+        if cycle:
+            # Fetch programs from the selected cycle that match the level
+            # We filter by acp.is_active = 1 (Show on Portal)
+            programs = frappe.db.sql("""
+                SELECT DISTINCT acp.program
+                FROM `tabAdmission Cycle Program` acp
+                JOIN `tabProgram` p ON p.name = acp.program
+                WHERE acp.parent = %(cycle)s
+                  AND acp.is_active = 1
+                  AND p.level_of_study = %(program_level)s
+                ORDER BY acp.program ASC
+            """, {
+                "cycle": cycle,
+                "program_level": program_level
+            }, as_dict=True)
+
+            if programs:
+                return [row.program for row in programs if row.program]
+
+        # 3. Fallback: all programs of that level if no cycle or no programs found in cycle
         programs = frappe.db.sql("""
             SELECT name AS program
             FROM `tabProgram`
