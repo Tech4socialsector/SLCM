@@ -250,6 +250,18 @@ function _csm_inject_styles() {
 		}
 		.csm-panel-btn-danger:hover { background: #b91c1c; }
 
+		/* ── Sortable column headers ── */
+		table.csm-tbl th.csm-sortable {
+			cursor: pointer; user-select: none;
+		}
+		table.csm-tbl th.csm-sortable:hover { background: #eff6ff; }
+		table.csm-tbl th.csm-sortable .csm-sort-icon {
+			display: inline-block; margin-left: 4px;
+			font-size: 10px; color: #cbd5e1;
+		}
+		table.csm-tbl th.csm-sort-asc .csm-sort-icon,
+		table.csm-tbl th.csm-sort-desc .csm-sort-icon { color: #6366f1; }
+
 		/* ── Unmap checkboxes ── */
 		.csm-unmap-opts { margin-bottom: 4px; }
 		.csm-unmap-item {
@@ -312,13 +324,13 @@ function _csm_open(exam_plan, exam_name) {
 							<thead>
 								<tr>
 									<th style="width:40px;"><input type="checkbox" class="csm-chk-all"/></th>
-									<th>Course Name</th>
-									<th>Credits</th>
-									<th>Department</th>
+									<th class="csm-sortable" data-sort="course_name">Course Name <span class="csm-sort-icon">⇅</span></th>
+									<th class="csm-sortable" data-sort="credit_value">Credits <span class="csm-sort-icon">⇅</span></th>
+									<th class="csm-sortable" data-sort="department_name">Department <span class="csm-sort-icon">⇅</span></th>
 									<th>Enrolled Students</th>
-									<th>Evaluation Schema</th>
-									<th>Max Marks</th>
-									<th>Grade Schema</th>
+									<th class="csm-sortable" data-sort="evaluation_schema">Evaluation Schema <span class="csm-sort-icon">⇅</span></th>
+									<th class="csm-sortable" data-sort="max_marks">Max Marks <span class="csm-sort-icon">⇅</span></th>
+									<th class="csm-sortable" data-sort="grade_schema">Grade Schema <span class="csm-sort-icon">⇅</span></th>
 								</tr>
 							</thead>
 							<tbody class="csm-tbody">
@@ -346,6 +358,21 @@ function _csm_open(exam_plan, exam_name) {
 	$ov.find('.csm-search').on('input', function () {
 		clearTimeout(_timer);
 		_timer = setTimeout(() => _csm_load(exam_plan, $(this).val().trim(), $ov), 400);
+	});
+
+	// Sortable column headers
+	$ov.find('th.csm-sortable').on('click', function () {
+		const col = $(this).data('sort');
+		const curCol = $ov.data('_sortCol');
+		const curDir = $ov.data('_sortDir') || 'asc';
+		const newDir = (col === curCol && curDir === 'asc') ? 'desc' : 'asc';
+		$ov.data('_sortCol', col).data('_sortDir', newDir);
+		// Update icons on all sortable headers
+		$ov.find('th.csm-sortable').removeClass('csm-sort-asc csm-sort-desc')
+			.find('.csm-sort-icon').text('⇅');
+		$(this).addClass('csm-sort-' + newDir)
+			.find('.csm-sort-icon').text(newDir === 'asc' ? '↑' : '↓');
+		_csm_sort_render($ov);
 	});
 
 	// Map Schema
@@ -390,11 +417,35 @@ function _csm_load(exam_plan, search, $ov) {
 		args: { exam_plan, search },
 		callback: r => {
 			const courses = r.message || [];
+			$ov.data('_courses', courses);
 			$ov.find('.csm-count-bar').text(`${courses.length} course(s)`);
 			$ov.find('.csm-chk-all').prop('checked', false);
-			_csm_render(courses, $ov);
+			_csm_sort_render($ov);
 		}
 	});
+}
+
+function _csm_sort_render($ov) {
+	const courses = ($ov.data('_courses') || []).slice();
+	const col = $ov.data('_sortCol');
+	const dir = $ov.data('_sortDir') || 'asc';
+	if (col) {
+		courses.sort((a, b) => {
+			let av = a[col] != null ? a[col] : '';
+			let bv = b[col] != null ? b[col] : '';
+			const an = parseFloat(av), bn = parseFloat(bv);
+			if (!isNaN(an) && !isNaN(bn) && av !== '' && bv !== '') {
+				av = an; bv = bn;
+			} else {
+				av = String(av).toLowerCase();
+				bv = String(bv).toLowerCase();
+			}
+			if (av < bv) return dir === 'asc' ? -1 : 1;
+			if (av > bv) return dir === 'asc' ? 1 : -1;
+			return 0;
+		});
+	}
+	_csm_render(courses, $ov);
 }
 
 function _csm_render(courses, $ov) {
