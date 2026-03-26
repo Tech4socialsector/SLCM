@@ -5,6 +5,7 @@ import mimetypes
 import frappe
 from frappe import _
 from frappe.utils import random_string
+from frappe.core.doctype.user.user import sign_up
 
 
 def _photo_as_data_uri(photo_url):
@@ -726,7 +727,8 @@ def get_payment_status(docname):
         "payment_status": doc.payment_status,
         "docstatus": doc.docstatus
     }
-from frappe.core.doctype.user.user import sign_up
+
+ 
 @frappe.whitelist(allow_guest=True)
 def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
     # Proactively check for existing email or mobile number

@@ -819,7 +819,7 @@ def save_form(data):
         except Exception:
             pass
 
-        # Special handling for rich ineligibility HTML
+        # Special handling for rich ineligibility HTML coming from Applicant._build_ineligibility_message
         lower_msg = raw_msg.lower()
         if "ineligibility alert" in lower_msg or "program options" in lower_msg:
             try:
@@ -839,7 +839,8 @@ def save_form(data):
         if "|" in raw_msg:
             return {"error": raw_msg, "is_eligibility_error": True, "programs": programs}
 
-        return {"error": raw_msg}
+        # Fallback for all other validation errors
+        return {"error": raw_msg, "programs": programs}
 
     except frappe.MandatoryError as e:
         frappe.db.rollback()
@@ -913,7 +914,7 @@ def check_portal_eligibility(applicant_data):
         main_eligible   = True
         main_message    = "You meet the eligibility criteria for the selected program."
 
-        for prog_name in all_programs[:10]:
+        for prog_name in all_programs:
             is_elig, reason = doc._check_eligibility_for_program(prog_name) if hasattr(doc, '_check_eligibility_for_program') else (True, "")
             programs_result.append({
                 "program":  prog_name,
