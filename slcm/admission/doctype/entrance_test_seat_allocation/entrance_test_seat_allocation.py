@@ -104,6 +104,73 @@ def _update_applicant_status_for_result_status(applicant_name, result_status):
 
 
 @frappe.whitelist()
+def bulk_download_admit_cards(names):
+    """
+    Creates a ZIP archive containing the Admit Cards (PDF)
+    for the selected records. Includes both original and rescheduled cards if available.
+    """
+    import io
+    import os
+    import zipfile
+    from frappe.utils.file_manager import save_file, get_file_path
+
+    if isinstance(names, str):
+        names = frappe.parse_json(names)
+
+    if not names:
+        frappe.throw("No records selected for download.")
+
+    zip_buffer = io.BytesIO()
+    found_files = 0
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for name in names:
+            doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+            
+            # Helper to add file to zip
+            def add_to_zip(field, suffix=""):
+                nonlocal found_files
+                # Ensure the card exists
+                if not getattr(doc, field):
+                    from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                    is_re = (field == "re_admit_card_download")
+                    generate_and_store_admit_card(doc, is_rescheduled=is_re)
+                    doc.reload()
+                
+                file_url = getattr(doc, field)
+                if file_url:
+                    fname = file_url.split('/')[-1]
+                    fpath = get_file_path(fname)
+                    if os.path.exists(fpath):
+                        zip_name = f"Admit_Card_{doc.applicant or doc.name}{suffix}.pdf"
+                        zip_file.write(fpath, arcname=zip_name)
+                        found_files += 1
+
+            # 1. Process Original Admit Card
+            if doc.allocation_status in ["Allocated", "Reallocated"]:
+                add_to_zip("admit_card_download")
+
+            # 2. Process Rescheduled Admit Card
+            if doc.is_rescheduled and doc.re_allocation_status in ["Allocated", "Reallocated"]:
+                add_to_zip("re_admit_card_download", suffix="_Rescheduled")
+
+    if found_files == 0:
+        frappe.throw("No Admit Cards found or generated for the selected records (ensure they have an 'Allocated' status).")
+
+    zip_filename = f"Bulk_Admit_Cards_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    
+    saved_zip = save_file(
+        zip_filename,
+        zip_buffer.getvalue(),
+        "Entrance Test Seat Allocation",
+        names[0],
+        is_private=0
+    )
+
+    return saved_zip.file_url
+
+
+@frappe.whitelist()
 def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None):
     """
     Ranks applicants based on score_obtained for a given batch and sends result emails.

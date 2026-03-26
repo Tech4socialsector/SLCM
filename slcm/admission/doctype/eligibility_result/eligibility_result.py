@@ -389,6 +389,65 @@ class EligibilityResult(Document):
         return html
 
 @frappe.whitelist()
+def bulk_download_cards(names):
+    """
+    Creates a ZIP archive containing the Eligibility Result Card (PDF)
+    for the selected records.
+    """
+    import io
+    import os
+    import zipfile
+    from frappe.utils.file_manager import save_file, get_file_path
+
+    if isinstance(names, str):
+        names = frappe.parse_json(names)
+
+    if not names:
+        frappe.throw("No records selected for download.")
+
+    zip_buffer = io.BytesIO()
+    found_files = 0
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for name in names:
+            doc = frappe.get_doc("Eligibility Result", name)
+            
+            # Ensure the card exists
+            if not doc.eligibility_result_card:
+                doc.generate_eligibility_card()
+            
+            if doc.eligibility_result_card:
+                file_url = doc.eligibility_result_card
+                
+                # Get local path for the file
+                # If file_url is /files/filename.pdf, we need the actual disk path
+                fname = file_url.split('/')[-1]
+                fpath = get_file_path(fname)
+                
+                if os.path.exists(fpath):
+                    # Use applicant_id in the filename inside the zip for clarity
+                    zip_name = f"Eligibility_Card_{doc.applicant_id or doc.name}.pdf"
+                    zip_file.write(fpath, arcname=zip_name)
+                    found_files += 1
+
+    if found_files == 0:
+        frappe.throw("No Eligibility Cards found or generated for the selected records.")
+
+    zip_filename = f"Bulk_Eligibility_Cards_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    
+    # Save the ZIP as a temporary file to provide a URL
+    saved_zip = save_file(
+        zip_filename,
+        zip_buffer.getvalue(),
+        "Eligibility Result",
+        names[0], # Attach to the first selected record as a reference
+        is_private=0,
+        df="eligibility_result_card" # Just to associate it somewhere, though it's a bulk file
+    )
+
+    return saved_zip.file_url
+
+@frappe.whitelist()
 def get_applicant_data():
     """
     Fetches merit scores and admission statuses for the currently logged-in applicant.

@@ -107,7 +107,8 @@
   {
    "fieldname": "center_address",
    "fieldtype": "Small Text",
-   "label": "Center Address"
+   "label": "Center Address",
+   "reqd": 1
   },
   {
    "fieldname": "total_capacity",
@@ -148,7 +149,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-19 17:27:17.221442",
+ "modified": "2026-03-26 14:36:51.131234",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",
