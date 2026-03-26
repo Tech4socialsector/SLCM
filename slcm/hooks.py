@@ -79,19 +79,32 @@ fixtures = [
     {
         "doctype": "Number Card",
         "filters": [["name", "in", [
+            # Programme Management / Registration
             "Total Students", "Active Enrollments", "Active Programs", "Active Courses",
             "Active Cohorts", "Open Course Offerings",
             "Draft", "Selected", "Pending REGO", "Pending FINO", "Pending Registration",
             "Pending Print & Scan", "Pending Residences", "Pending IT",
-            "Final Verification REGO", "Completed", "Re-Open"
+            "Final Verification REGO", "Completed", "Re-Open",
+            # IT Team (ID Card)
+            "Active Students", "Total ID Cards", "Active ID Cards",
+            "Pending (Draft) Cards", "Cancelled Cards", "Print Log Entries",
+            # Attendance
+            "Total Attendance Records", "Present Count", "Absent Count", "OD Count",
+            "Total Sessions", "Active Sessions", "Pending Condonations", "Pending FA / MFA",
         ]]]
     },
     # --- Dashboard: Charts ---
     {
         "doctype": "Dashboard Chart",
         "filters": [["name", "in", [
+            # Programme Management / Registration
             "Student Registration Status", "Student Enrollment by Program",
-            "Cohort Status Distribution", "Course Offerings by Status"
+            "Cohort Status Distribution", "Course Offerings by Status",
+            # IT Team (ID Card)
+            "ID Card Status Distribution", "ID Cards Generated Over Time",
+            # Attendance
+            "Attendance Status Distribution", "Attendance Trend Over Time",
+            "Session Type Breakdown", "FA MFA Application Status",
         ]]]
     },
     # --- Desktop Icons (app launcher tiles) ---
