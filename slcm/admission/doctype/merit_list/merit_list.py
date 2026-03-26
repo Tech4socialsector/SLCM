@@ -82,6 +82,9 @@ def create_seat_allocation(merit_list_name, selected_applicants):
 
     for applicant_id in selected_applicants:
         row = merit_data.get(applicant_id)
+        # Skip Rejected applicants — they must not receive a seat allocation
+        if row and row.status == "Rejected":
+            continue
         alloc.append("selection_applicant", {
             "applicant_id": row.applicant_id if row else applicant_id,
             "candidate_name": row.candidate_name if row else None,
@@ -91,7 +94,10 @@ def create_seat_allocation(merit_list_name, selected_applicants):
             "selection_status": "Draft"
         })
 
-    alloc.total_selected = len(selected_applicants)
+    if not alloc.selection_applicant:
+        frappe.throw("No eligible applicants to allocate. Rejected applicants cannot be added to a Seat Allocation.", title="No Eligible Applicants")
+
+    alloc.total_selected = len(alloc.selection_applicant)
     alloc.insert()
     
     # Run automatic allocation logic immediately
