@@ -551,10 +551,25 @@ class OfferService:
             summary_msg += _(" {0} errors encountered.").format(error_count)
 
         notification_content = f"""
-            <h4>{_('Bulk Offer Generation Finished')}</h4>
-            <p>{summary_msg}</p>
-            <hr>
-            <p><small>{_('Check the Offer Letter list for details.')}</small></p>
+            <div style="font-family: sans-serif; padding: 5px;">
+                <h4 style="color: #1a202c; margin-bottom: 12px;">{_('Bulk Offer Generation Report')}</h4>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <span style="background: #f0fff4; color: #2f855a; padding: 4px 10px; border-radius: 4px; border: 1px solid #c6f6d5; font-weight: bold; font-size: 12px;">
+                        {success_count} {_('Successful')}
+                    </span>
+                    <span style="background: { '#fff5f5' if error_count > 0 else '#f7fafc' }; color: { '#c53030' if error_count > 0 else '#718096' }; padding: 4px 10px; border-radius: 4px; border: 1px solid { '#fed7d7' if error_count > 0 else '#edf2f7' }; font-weight: bold; font-size: 12px;">
+                        {error_count} {_('Failed')}
+                    </span>
+                </div>
+                <p style="font-size: 13px; color: #4a5568; line-height: 1.5;">
+                    {_('Offer generation process has finished for {0} applicants.').format(len(applicants))}
+                </p>
+                <div style="margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 12px;">
+                    <a href="/app/offer-letter" style="background: #1a202c; color: #ffffff !important; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">
+                        {_('View Offer Letters')}
+                    </a>
+                </div>
+            </div>
         """
 
         # Dispatch standard Frappe notification
@@ -562,7 +577,7 @@ class OfferService:
         enqueue_create_notification(
             [user],
             {
-                "subject": _("Bulk Offer Generation Report"),
+                "subject": _("Bulk Offer Generation Finished"),
                 "email_content": notification_content,
                 "type": "Alert",
                 "document_type": "Offer Letter"
@@ -575,7 +590,11 @@ class OfferService:
             {
                 "message": summary_msg, 
                 "title": _("Background Process Completed"),
-                "indicator": "green" if error_count == 0 else "orange"
+                "indicator": "green" if error_count == 0 else "orange",
+                "primary_action": {
+                    "label": _("View Offer Letters"),
+                    "action": "frappe.set_route('List', 'Offer Letter')"
+                }
             }, 
             user=user
         )
@@ -921,13 +940,13 @@ class OfferService:
 
     @staticmethod
     @frappe.whitelist()
-    def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
+    def send_bulk_reminders(offer_names=None, email_template=None, send_email=True, send_notification=True, sender_email=None):
         """
-        Sends emails and system notifications for selected pending offers.
+        API endpoint to send reminders using an Email Template.
+        Uses background queueing for large batches.
         """
         from frappe.utils import cint
         
-        # Cast to bool in case strings like "1" or "0" are passed from client
         send_email = bool(cint(send_email))
         send_notification = bool(cint(send_notification))
 
@@ -935,84 +954,141 @@ class OfferService:
             frappe.throw(_("Please select at least one offer to send reminders."))
 
         if isinstance(offer_names, str):
-            try:
-                offer_names = frappe.parse_json(offer_names)
-            except:
-                offer_names = [o.strip() for o in offer_names.split(',')]
-            
-        if not isinstance(offer_names, list):
-            offer_names = [offer_names]
+            offer_names = json.loads(offer_names)
 
-        if not message:
-            frappe.throw(_("Message content is required for reminders."))
+        if not email_template:
+            frappe.throw(_("Email Template is required for reminders."))
+
+        # Threshold for background processing
+        if len(offer_names) > 5:
+            frappe.enqueue(
+                method="slcm.api.service.offer_service.OfferService._send_bulk_reminders_worker",
+                queue="long",
+                offer_names=offer_names,
+                email_template=email_template,
+                send_email=send_email,
+                send_notification=send_notification,
+                sender_email=sender_email,
+                user=frappe.session.user
+            )
+            return {
+                "status": "success",
+                "message": _("Bulk reminder process started in the background for {0} offers. You will receive a notification when finished.").format(len(offer_names))
+            }
+
+        return OfferService._send_bulk_reminders_worker(
+            offer_names, email_template, send_email, send_notification, sender_email
+        )
+
+    @staticmethod
+    def _send_bulk_reminders_worker(offer_names, email_template, send_email=True, send_notification=True, sender_email=None, user=None):
+        """
+        Internal worker to process a batch of reminders.
+        """
+        if user:
+            frappe.set_user(user)
 
         success_count = 0
+        error_count = 0
+        error_details = []
+
+        try:
+            tpl = frappe.get_doc("Email Templates", email_template)
+        except Exception as e:
+            msg = _("Failed to load Email Template {0}: {1}").format(email_template, str(e))
+            if user:
+                frappe.log_error(msg, "Offer Reminder Error")
+            return {"status": "error", "message": msg}
+
+        actual_sender = None
+        if sender_email:
+            actual_sender = frappe.db.get_value("Email Account", sender_email, "email_id")
+
         for offer_name in offer_names:
-            if not frappe.db.exists("Offer Letter", offer_name):
-                continue
-                
-            offer = frappe.get_doc("Offer Letter", offer_name)
-            
-            # Context-aware message formatting
-            final_message = message
-            if "[Program]" in final_message:
-                final_message = final_message.replace("[Program]", offer.program or "")
-            if "[Deadline]" in final_message:
-                deadline_str = str(offer.payment_deadline) if offer.payment_deadline else "N/A"
-                final_message = final_message.replace("[Deadline]", deadline_str)
-            
-            # Email Delivery
-            if send_email and offer.applicant:
-                applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
-                if applicant_email:
-                    # Resolve Email Account link to actual email address
-                    actual_sender = None
-                    if sender_email:
-                        actual_sender = frappe.db.get_value("Email Account", sender_email, "email_id")
+            try:
+                if not frappe.db.exists("Offer Letter", offer_name):
+                    continue
                     
-                    frappe.sendmail(
-                        recipients=[applicant_email],
-                        subject=_("Admission Reminder: Pending Offer Letter for {0}").format(offer.program),
-                        message=final_message,
-                        reference_doctype="Offer Letter",
-                        reference_name=offer.name,
-                        sender=actual_sender
-                    )
-                    frappe.logger().info(f"Offer Reminder Email sent to {applicant_email} for {offer_name}")
-                else:
-                    frappe.logger().warning(f"Skipped Email Reminder for {offer_name}: Applicant has no email.")
+                offer = frappe.get_doc("Offer Letter", offer_name)
+                context = OfferService._get_template_context(offer)
+
+                # Render dynamic content
+                subject = frappe.render_template(tpl.subject, context)
+                message_content = tpl.response_html if tpl.use_html else tpl.response
+                final_message = frappe.render_template(message_content, context)
+                
+                # Email Delivery
+                if send_email and offer.applicant:
+                    applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
+                    if applicant_email:
+                        frappe.sendmail(
+                            recipients=[applicant_email],
+                            subject=subject,
+                            message=final_message,
+                            reference_doctype="Offer Letter",
+                            reference_name=offer.name,
+                            sender=actual_sender
+                        )
+                    else:
+                        raise ValueError(_("Applicant has no email address."))
+                
+                # System Notification Delivery
+                if send_notification:
+                    receiver = offer.notification_receiver
+                    if not receiver and offer.applicant:
+                        email = frappe.db.get_value("Applicant", offer.applicant, "email")
+                        if email:
+                            receiver = frappe.db.get_value("User", {"email": email}, "name")
+                    
+                    if receiver:
+                        frappe.get_doc({
+                            "doctype": "Notification Log",
+                            "subject": subject,
+                            "email_content": final_message,
+                            "for_user": receiver,
+                            "document_type": "Offer Letter",
+                            "document_name": offer.name
+                        }).insert(ignore_permissions=True)
+                    else:
+                        raise ValueError(_("No recipient User found for system notification."))
+                
+                success_count += 1
+            except Exception as e:
+                error_count += 1
+                err_msg = f"{offer_name}: {str(e)}"
+                error_details.append(err_msg)
+                frappe.log_error(f"Offer Reminder Error for {offer_name}: {err_msg}", "Offer Reminder Error")
+                
+        # Completion Summary
+        summary_msg = _("Processed {0} reminders. Success: {1}, Errors: {2}").format(
+            len(offer_names), success_count, error_count
+        )
+
+        # Notify user (for background jobs)
+        if user:
+            from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
             
-            # System Notification Delivery
-            if send_notification:
-                receiver = offer.notification_receiver
-                
-                # Fallback: Try to find user from applicant email if receiver is not set
-                if not receiver and offer.applicant:
-                    email = frappe.db.get_value("Applicant", offer.applicant, "email")
-                    if email:
-                        receiver = frappe.db.get_value("User", {"email": email}, "name")
-                
-                if receiver:
-                    frappe.get_doc({
-                        "doctype": "Notification Log",
-                        "subject": _("Reminder: Offer Letter for {0} is pending").format(offer.program),
-                        "email_content": final_message,
-                        "for_user": receiver,
-                        "document_type": "Offer Letter",
-                        "document_name": offer.name
-                    }).insert(ignore_permissions=True)
-                    frappe.logger().info(f"Offer Reminder Notification sent to {receiver} for {offer_name}")
-                else:
-                    frappe.logger().warning(f"Skipped System Notification for {offer_name}: No corresponding User found.")
-            
-            success_count += 1
-                
+            report_html = f"<p>{summary_msg}</p>"
+            if error_count > 0:
+                report_html += f"<b>{_('Error Details:')}</b><ul>"
+                for err in error_details:
+                    report_html += f"<li>{err}</li>"
+                report_html += "</ul>"
+
+            enqueue_create_notification(
+                [user],
+                {
+                    "subject": _("Bulk Offer Reminder Report"),
+                    "email_content": report_html,
+                    "type": "Alert",
+                    "document_type": "Offer Letter"
+                }
+            )
+
         return {
-            "status": "success",
-            "message": _("Processed {0} reminders successfully.").format(success_count)
+            "status": "success" if error_count == 0 else "partial_success",
+            "message": summary_msg
         }
-
-
 
 
 @frappe.whitelist()
@@ -1073,5 +1149,5 @@ def get_pending_offers_list():
     return OfferService.get_pending_offers_list()
 
 @frappe.whitelist()
-def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
-    return OfferService.send_bulk_reminders(offer_names, message, send_email, send_notification, sender_email)
+def send_bulk_reminders(offer_names=None, email_template=None, send_email=True, send_notification=True, sender_email=None):
+    return OfferService.send_bulk_reminders(offer_names, email_template, send_email, send_notification, sender_email)

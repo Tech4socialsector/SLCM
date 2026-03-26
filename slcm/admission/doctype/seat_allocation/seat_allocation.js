@@ -190,24 +190,24 @@ frappe.ui.form.on("Seat Allocation", {
                             data: applicants
                         }
                     ],
-                    primary_action_label: __("Generate {0} Offers", [applicants.length]),
+                    primary_action_label: __("Generate Offers"),
                     primary_action(values) {
                         const selections = d.fields_dict.applicants_grid.grid.get_selected_children()
                             .map(row => ({
                                 applicant: row.applicant_id,
                                 campus: frm.doc.campus,
                                 cycle: frm.doc.admission_cycle,
-                                program: row.program
+                                program: row.program,
+                                admission_year: values.dialog_admission_year
                             }));
 
                         if (selections.length === 0) {
-                            frappe.msgprint(__("Please select at least one applicant."));
+                            frappe.msgprint(__('Please select at least one applicant.'));
                             return;
                         }
 
                         d.hide();
 
-                        // --- LARGE BATCH HANDLING (> 10) ---
                         if (selections.length > 10) {
                             frappe.dom.freeze(__("Submitting batch to background queue..."));
                             frappe.call({
@@ -219,7 +219,11 @@ frappe.ui.form.on("Seat Allocation", {
                                         frappe.msgprint({
                                             title: __("Processing Started"),
                                             message: r.message.message,
-                                            indicator: 'blue'
+                                            indicator: 'blue',
+                                            primary_action: {
+                                                label: __('View Offer Letters'),
+                                                action: () => frappe.set_route('List', 'Offer Letter')
+                                            }
                                         });
                                     }
                                 }
@@ -227,86 +231,100 @@ frappe.ui.form.on("Seat Allocation", {
                             return;
                         }
 
-                        // --- SMALL BATCH SEQUENTIAL HANDLING (<= 10) ---
+                        // SMALL BATCH PROCESSING
                         const total = selections.length;
-                        frappe.show_progress(__("Generating Offer Letters"), 0, total, __("Initializing..."));
+                        frappe.show_progress(__("Generating Offer Letters"), 0, total, __("Preparing..."));
 
-                        let processed = 0;
-                        let success_count = 0;
-                        let error_count = 0;
-                        let summary_log = [];
+                        let processed = 0, success_count = 0, error_count = 0, summary_log = [];
 
-                        const processNextBatch = () => {
+                        const process_next = () => {
                             if (processed >= total) {
-                                frappe.show_progress(__("Generating Offer Letters"), total, total, __("Process Completed."));
+                                frappe.show_progress(__("Generating Offer Letters"), total, total, __("Completed."));
                                 setTimeout(() => {
                                     frappe.hide_progress();
-                                    let message = __("Successfully generated {0} offers.", [success_count]);
+                                    
+                                    let message = `
+                                        <div style="padding: 10px;">
+                                            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                                                <div style="flex: 1; padding: 12px; background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 8px; text-align: center;">
+                                                    <h3 style="margin: 0; color: #2f855a;">${success_count}</h3>
+                                                    <div style="font-size: 11px; color: #38a169; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">${__('Successful')}</div>
+                                                </div>
+                                                <div style="flex: 1; padding: 12px; background: ${error_count > 0 ? '#fff5f5' : '#f7fafc'}; border: 1px solid ${error_count > 0 ? '#fed7d7' : '#edf2f7'}; border-radius: 8px; text-align: center;">
+                                                    <h3 style="margin: 0; color: ${error_count > 0 ? '#c53030' : '#718096'};">${error_count}</h3>
+                                                    <div style="font-size: 11px; color: ${error_count > 0 ? '#e53e3e' : '#a0aec0'}; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">${__('Failed')}</div>
+                                                </div>
+                                            </div>
+                                    `;
+
                                     if (error_count > 0) {
-                                        message += "<br><br>" + __("<b>{0} errors encountered:</b>", [error_count]);
-                                        message += '<div style="max-height: 200px; overflow-y: auto; font-size: 11px; margin-top: 10px; background: #fff5f5; border: 1px solid #ffcccc; padding: 10px; border-radius: 4px;">';
-                                        message += summary_log.join("<br>");
-                                        message += '</div>';
+                                        message += `
+                                            <div style="margin-bottom: 8px; font-weight: 600; color: #4a5568;">${__('Generation Failures:')}</div>
+                                            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                                <table class="table table-bordered table-condensed" style="margin:0; font-size: 12px; background: #fff;">
+                                                    <thead style="background: #f8fafc;">
+                                                        <tr>
+                                                            <th style="width: 35%;">${__('Applicant')}</th>
+                                                            <th>${__('Reason for Failure')}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${summary_log.map(item => `
+                                                            <tr>
+                                                                <td style="font-weight: 600;">${item.applicant}</td>
+                                                                <td style="color: #e53e3e; word-break: break-word;">${item.error}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        `;
                                     }
+                                    message += `</div>`;
+
                                     frappe.msgprint({
-                                        title: __("Bulk Offer Generation Report"),
+                                        title: __('Offer Generation Report'),
                                         message: message,
-                                        indicator: error_count > 0 ? 'orange' : 'green'
+                                        wide: true,
+                                        indicator: error_count === 0 ? 'green' : (success_count > 0 ? 'orange' : 'red'),
+                                        primary_action: {
+                                            label: __('View Offer Letters'),
+                                            action: () => frappe.set_route('List', 'Offer Letter')
+                                        }
                                     });
-                                }, 800);
+                                }, 1000);
                                 return;
                             }
 
                             const payload = selections[processed];
-                            const current_applicant = payload.applicant;
-                            frappe.show_progress(
-                                __("Generating Offer Letters"),
-                                processed + 1,
-                                total,
-                                __("Generating for {0}...", [current_applicant])
-                            );
+                            frappe.show_progress(__("Generating Offer Letters"), processed + 1, total, __("Processing {0}", [payload.applicant]));
 
                             frappe.call({
                                 method: "slcm.api.service.offer_service.bulk_generate_offers",
-                                args: {
-                                    applicants: [payload] // Passing the full dict
-                                },
-                                callback: function (r) {
+                                args: { applicants: [payload] },
+                                callback: (r) => {
                                     if (r.message) {
-                                        const result = r.message;
-                                        if (result.success && result.success.length > 0) {
-                                            success_count++;
-                                        }
-                                        if (result.errors && result.errors.length > 0) {
+                                        if (r.message.success?.length) success_count++;
+                                        if (r.message.errors?.length) {
                                             error_count++;
-                                            summary_log.push(`<b>${current_applicant}:</b> ${result.errors[0].error}`);
+                                            summary_log.push(r.message.errors[0]);
                                         }
                                     }
                                     processed++;
-                                    processNextBatch();
+                                    process_next();
                                 },
-                                error: function (err) {
+                                error: (err) => {
                                     error_count++;
-                                    let server_error = "";
-                                    if (err._server_messages) {
-                                        try {
-                                            const messages = JSON.parse(err._server_messages);
-                                            server_error = messages.map(m => JSON.parse(m).message).join(", ");
-                                        } catch (e) {
-                                            server_error = "Server Error (Check Logs)";
-                                        }
-                                    } else if (err.message) {
-                                        server_error = err.message;
-                                    } else {
-                                        server_error = "Connection or Server Error";
-                                    }
-                                    summary_log.push(`<b>${current_applicant}:</b> ${server_error}`);
+                                    summary_log.push({
+                                        applicant: payload.applicant,
+                                        error: __("Unexpected Server Error")
+                                    });
                                     processed++;
-                                    processNextBatch();
+                                    process_next();
                                 }
                             });
                         };
-                        processNextBatch();
+                        process_next();
                     }
                 });
 

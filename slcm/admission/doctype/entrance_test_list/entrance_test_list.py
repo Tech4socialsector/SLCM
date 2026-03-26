@@ -479,7 +479,7 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     Generates the admit card using the manual template (bypassing Print Formats)
     and attaches it to the Entrance Test Seat Allocation record.
     If html_content is provided (from the portal), it uses that to generate the PDF.
-    If is_rescheduled is True, stores in reschedule_admit_card field.
+    If is_rescheduled is True, stores in re_admit_card_download field.
     """
     if isinstance(allocation, str):
         allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation)
@@ -504,7 +504,7 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
         )
         return None
     
-    field_to_update = "reschedule_admit_card" if is_rescheduled else "admit_card"
+    field_to_update = "re_admit_card_download" if is_rescheduled else "admit_card_download"
     # Ensure the Admit Card is saved in public storage with the requested naming convention
     file_name = f"Admit_Card_{allocation.applicant}.pdf"
     if is_rescheduled:
@@ -514,7 +514,13 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     old_file_url = getattr(allocation, field_to_update)
     if old_file_url:
         try:
-            old_file_name = frappe.db.get_value("File", {"file_url": old_file_url}, "name")
+            # First try to find by file_url and attached details to be precise
+            old_file_name = frappe.db.get_value("File", {
+                "file_url": old_file_url,
+                "attached_to_doctype": allocation.doctype,
+                "attached_to_name": allocation.name,
+                "attached_to_field": field_to_update
+            }, "name")
             if old_file_name:
                 frappe.delete_doc("File", old_file_name, ignore_permissions=True)
         except Exception:

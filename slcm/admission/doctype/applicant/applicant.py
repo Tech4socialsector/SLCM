@@ -737,17 +737,42 @@ class Applicant(Document):
 
     def _get_all_programs_for_level(self, program_level):
         """
-        Returns ALL programs from the Program doctype that match the given
-        level_of_study (e.g., 'Undergraduate', 'Postgraduate', 'Research Course').
+        Returns programs of the same level that are part of the ACTIVE admission cycle.
+        Prioritizes the applicant's linked admission cycle if set.
 
-        This ensures the eligibility table shows EVERY program of the same
-        level — not just those with eligibility rules configured.
-
-        NOTE: Uses `level_of_study` (correct column) not `program_level` (often null).
+        This ensures the eligibility table shows programs from the current admission cycle —
+        not just EVERY program of the same level from the Program doctype.
         """
         if not program_level:
             return []
 
+        # 1. Use the applicant's cycle if set
+        cycle = self.admission_cycle
+
+        # 2. If not set, look for any 'Active' cycle
+        if not cycle:
+            cycle = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+
+        if cycle:
+            # Fetch programs from the selected cycle that match the level
+            # We filter by acp.is_active = 1 (Show on Portal)
+            programs = frappe.db.sql("""
+                SELECT DISTINCT acp.program
+                FROM `tabAdmission Cycle Program` acp
+                JOIN `tabProgram` p ON p.name = acp.program
+                WHERE acp.parent = %(cycle)s
+                  AND acp.is_active = 1
+                  AND p.level_of_study = %(program_level)s
+                ORDER BY acp.program ASC
+            """, {
+                "cycle": cycle,
+                "program_level": program_level
+            }, as_dict=True)
+
+            if programs:
+                return [row.program for row in programs if row.program]
+
+        # 3. Fallback: all programs of that level if no cycle or no programs found in cycle
         programs = frappe.db.sql("""
             SELECT name AS program
             FROM `tabProgram`
@@ -890,10 +915,11 @@ class Applicant(Document):
 
     def _build_ineligibility_message(self, failure_message, program_table_html):
         """
-        Builds the full ineligibility HTML message using explicit inline styles
-        for consistent rendering across local and production Frappe environments.
+        Builds a high-end, premium ineligibility message with focused styling for 
+        required vs secured scores and specific eligibility mismatches.
         """
-        # Split combined message if it contains '|'
+        # Split combined message if it contains '|' (multi-reason support)
+        reasons_list = []
         if "|" in failure_message:
             parts = failure_message.split("|")
             main_reason = parts[0].strip()
@@ -1284,6 +1310,86 @@ class Applicant(Document):
     # STEP 2 — Multi-category priority engine
     # ──────────────────────────────────────────────
 
+    def _build_rule_failure_reason(self, base_rule, required_val):
+        """
+        Constructs a detailed failure reason for a specific rule failure.
+        Captures: Required vs Secured scores/CGPA and Ineligible HSC Group details.
+        """
+        reasons = []
+        qualification_level = base_rule.get("qualification_level") or "Academic"
+        rule_type           = base_rule.get("rule_type")
+        operator            = base_rule.get("operator") or ">="
+        
+        # Determine unit symbol
+        unit = ""
+        is_cgpa = (rule_type == "CGPA" or "cgpa" in (base_rule.get("unit_type") or "").lower())
+        if is_cgpa:
+            unit = " CGPA"
+        else:
+            unit = "%"
+
+        # Special label for XII as HSE
+        display_level = "HSE (Class XII)" if qualification_level == "XII" else qualification_level
+
+        # 1. Academic Threshold Check (Score/Percentage/CGPA)
+        applicant_val = self._get_applicant_value(base_rule)
+        
+        # If a required value exists, check if it failed due to low score.
+        # Hide the score comparison if Secured is 0.0 (confusing placeholders for missing data)
+        # unless it's a specific requirement for entry.
+        if required_val and applicant_val > 0 and not self._compare(applicant_val, required_val, operator):
+            # User specifically asked for "required percentage [val] and you have to mention what they are secured"
+            reasons.append(_("{0} Score — Required: {1}{2}, Secured: {3}{2}").format(
+                display_level, required_val, unit, applicant_val
+            ))
+
+        # 2. Non-percentage checks (HSC Group / Degree)
+        if not self._evaluate_non_percentage_checks(base_rule):
+            # HSC Group failure detail
+            if rule_type == "HSC Group" and not self._check_hsc_group_eligibility(base_rule.name):
+                # Get applicant's secured group
+                applicant_group = (getattr(self, "hsc_group", None) or "").strip() or _("Not provided")
+                # Mention the ineligible group as requested
+                reasons.append(_("Ineligible {0} Group: '{1}' is not allowed for this program.").format(display_level, applicant_group))
+            
+            # Detailed mismatch for Allowed Degrees
+            else:
+                # 1. Fetch allowed degrees directly from DB
+                rule_allowed = frappe.get_all("Eligibility Allowed Degree", 
+                                            filters={"parent": base_rule.name}, 
+                                            pluck="degree_name")
+                
+                # 2. Identify Applicant's studied degrees
+                applicant_studied = []
+                if qualification_level == "Undergraduate":
+                    applicant_studied = [r.ug_program for r in (self.get("ug_degree_details") or []) if r.ug_program]
+                elif qualification_level == "Postgraduate":
+                    applicant_studied = [r.pg_program for r in (self.get("pg_degree_details") or []) if r.pg_program]
+                
+                # 3. Construct the message
+                if rule_allowed:
+                    # e.g. "Required Undergraduate Degree: BCA"
+                    req_msg = _("Required {0} Degree: {1}").format(display_level, ", ".join(rule_allowed))
+                    
+                    # e.g. "But you have studied: B.A English"
+                    studied_val = ", ".join(applicant_studied) if applicant_studied else _("Not provided")
+                    usr_msg = _("But you have studied: {0}").format(studied_val)
+                    
+                    # Combine with pipe for the toast bullet renderer
+                    reasons.append(f"{req_msg} | {usr_msg}")
+                elif not reasons:
+                    # Fallback generic mismatch message only if no other details exist
+                    reasons.append(_("Program mismatch for {0} qualification.").format(display_level))
+
+        # 3. Custom message from rule (e.g. "this is an ineligible message. ajay basker")
+        custom_rule_msg = (base_rule.get("ineligible_message") or "").strip()
+        if custom_rule_msg:
+            # Avoid repeating the exact same message
+            if custom_rule_msg not in reasons:
+                reasons.append(custom_rule_msg)
+
+        return " | ".join(reasons)
+
     def _evaluate_mapping_with_category_priority(self, mapping):
         """
         Comprehensive eligibility engine:
@@ -1357,18 +1463,26 @@ class Applicant(Document):
                     )
                     return True, ""
                 else:
-                    # If this specific rule failed, collect its custom message
-                    rule_msg = (base_rule.get("ineligible_message") or "").strip()
-                    if rule_msg and rule_msg not in ineligible_messages:
+                    # If this specific rule failed, collect its detailed failure reason
+                    rule_msg = self._build_rule_failure_reason(base_rule, required_val)
+                    if rule_msg:
+                        # Append with Pipe separator
                         ineligible_messages.append(rule_msg)
 
         # If all paths and all rules failed, combine the mapping-level failure_message
         # with the specific ineligible_message(s) from the rules.
         final_message = failure_msg
         if ineligible_messages:
-            # If mapping-level message exists, append rule messages. 
-            # Use a clear separator that we can handle in the UI.
-            final_message = f"{failure_msg} | {' '.join(ineligible_messages)}"
+            # deduplicate and handle multi-part messages
+            unique_parts = []
+            for m in ineligible_messages:
+                parts = [p.strip() for p in (m or "").split("|") if p.strip()]
+                for p in parts:
+                    if p and p not in unique_parts:
+                        unique_parts.append(p)
+            
+            if unique_parts:
+                final_message = f"{failure_msg} | {' | '.join(unique_parts)}"
 
         return False, final_message
 
@@ -1927,3 +2041,137 @@ def notify_stage_entry(applicant_doc, stage):
         frappe.db.commit()
     except Exception as e:
         frappe.log_error(f"notify_stage_entry failed: {e}", "Stage Notification")
+
+@frappe.whitelist()
+def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, academic_year=None, admission_year=None, application_status=None, print_format=None):
+    """
+    Whitelisted entry point for bulk applicant form download.
+    Filters applicants, generates PDFs using selected print format, and returns a ZIP.
+    Handles small batches synchronously and large batches via background queue.
+    """
+    filters = {}
+    if campus: filters["campus"] = campus
+    if program: filters["program"] = program
+    if admission_cycle: filters["admission_cycle"] = admission_cycle
+    if academic_year: filters["academic_year"] = academic_year
+    if admission_year: filters["admission_year"] = admission_year
+    if application_status: filters["application_status"] = application_status
+
+    applicants = frappe.get_all("Applicant", filters=filters, pluck="name")
+
+    if not applicants:
+        frappe.throw(_("No applicants found matching the selected filters."))
+
+    if not print_format:
+        print_format = "Applicant Application Form"
+
+    # LARGE BATCH HANDLING (> 10)
+    if len(applicants) > 10:
+        frappe.enqueue(
+            "slcm.admission.doctype.applicant.applicant.background_bulk_worker",
+            applicants=applicants,
+            print_format=print_format,
+            user=frappe.session.user,
+            queue='long',
+            timeout=3600
+        )
+        return {
+            "queued": True,
+            "message": _("Large batch detected ({0} applicants). Processing started in the background. You will receive a notification when finished.").format(len(applicants))
+        }
+
+    # SMALL BATCH SYNC
+    return background_bulk_worker(applicants, print_format, sync=True)
+
+def background_bulk_worker(applicants, print_format, user=None, sync=False):
+    """
+    Worker function to generate PDFs and package into ZIP.
+    """
+    import zipfile
+    from io import BytesIO
+    from frappe.utils.file_manager import save_file
+
+    total = len(applicants)
+    success_count = 0
+    errors = []
+    
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for i, name in enumerate(applicants):
+            try:
+                # Update progress for background jobs
+                if not sync:
+                    frappe.publish_realtime("bulk_download_progress", {
+                        "progress": i + 1,
+                        "total": total,
+                        "message": _("Generating PDF for {0}").format(name)
+                    }, user=user)
+
+                pdf_content = frappe.get_print(
+                    doctype="Applicant",
+                    name=name,
+                    print_format=print_format,
+                    as_pdf=True
+                )
+                
+                # Fetch applicant ID for filename
+                applicant_id = frappe.db.get_value("Applicant", name, "applicant_id") or name
+                zip_file.writestr(f"{applicant_id}.pdf", pdf_content)
+                success_count += 1
+                
+            except Exception as e:
+                errors.append({"applicant": name, "error": str(e)})
+
+    if success_count == 0:
+        error_msg = _("Failed to generate any PDFs. Errors: {0}").format(len(errors))
+        if sync: frappe.throw(error_msg)
+        return
+
+    # Save ZIP File
+    zip_buffer.seek(0)
+    file_name = f"Applicant_Forms_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    saved_file = save_file(file_name, zip_buffer.getvalue(), "Applicant", "Bulk Download", is_private=1)
+
+    if sync:
+        return {"file_url": saved_file.file_url, "success": success_count, "errors": errors}
+
+    # Background cleanup and notification
+    notification_content = f"""
+        <div style="font-family: sans-serif; padding: 5px;">
+            <h4 style="color: #1a202c; margin-bottom: 12px;">{_('Bulk Form Generation Report')}</h4>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <span style="background: #f0fff4; color: #2f855a; padding: 4px 10px; border-radius: 4px; border: 1px solid #c6f6d5; font-weight: bold; font-size: 12px;">
+                    {success_count} {_('Generated')}
+                </span>
+                <span style="background: { '#fff5f5' if errors else '#f7fafc' }; color: { '#c53030' if errors else '#718096' }; padding: 4px 10px; border-radius: 4px; border: 1px solid { '#fed7d7' if errors else '#edf2f7' }; font-weight: bold; font-size: 12px;">
+                    {len(errors)} {_('Failed')}
+                </span>
+            </div>
+            <p style="font-size: 13px; color: #4a5568;">{_('Your ZIP archive is ready for download.')}</p>
+            <div style="margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 12px;">
+                <a href="{saved_file.file_url}" target="_blank" style="background: #1a202c; color: #ffffff !important; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">
+                    {_('Download ZIP')}
+                </a>
+            </div>
+        </div>
+    """
+
+    from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+    enqueue_create_notification([user], {
+        "subject": _("Bulk Applicant Forms Ready"),
+        "email_content": notification_content,
+        "type": "Alert",
+        "document_type": "Applicant"
+    })
+
+    frappe.publish_realtime("bulk_download_complete", {
+        "file_url": saved_file.file_url,
+        "doctype": "Applicant"
+    }, user=user)
+
+    frappe.publish_realtime("msgprint", {
+        "message": _("Successfully generated {0} application forms.").format(success_count),
+        "title": _("Download Ready"),
+        "indicator": "green" if not errors else "orange",
+        "primary_action": {"label": _("Download ZIP"), "action": f"window.open('{saved_file.file_url}')"}
+    }, user=user)

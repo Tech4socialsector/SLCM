@@ -2,7 +2,7 @@
 frappe.ui.form.on('Applicant Fee Assignment', {
     refresh: function (frm) {
         if (frm.doc.docstatus === 1 && frm.doc.status === "Paid" && frm.doc.fee_type === "Admission Fee") {
-            frm.add_custom_button(__('Create Invoice & Convert Student'), function () {
+            frm.add_custom_button(__('Convert to Student'), function () {
                 frappe.confirm(__('This action will create a Student Master, Enrollment, and Fee Invoice. Continue?'),
                     function () {
                         frappe.call({

@@ -12,10 +12,12 @@
   "is_active",
   "allow_admission",
   "section_break_location",
-  "city",
+  "email",
   "address",
+  "city",
   "column_break_bgkw",
   "state",
+  "phone_number",
   "remarks",
   "conections_tab"
  ],
@@ -50,17 +52,20 @@
   {
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City"
+   "label": "City",
+   "reqd": 1
   },
   {
    "fieldname": "state",
    "fieldtype": "Data",
-   "label": "State"
+   "label": "State",
+   "reqd": 1
   },
   {
    "fieldname": "address",
    "fieldtype": "Small Text",
-   "label": "Address"
+   "label": "Address",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_qlnd",
@@ -90,13 +95,26 @@
   {
    "fieldname": "logo",
    "fieldtype": "Attach Image",
-   "label": "Logo"
+   "label": "Logo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "phone_number",
+   "fieldtype": "Phone",
+   "label": "Phone Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 14:48:39.453734",
+ "modified": "2026-03-26 18:48:50.117219",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Campus",

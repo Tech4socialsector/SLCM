@@ -21,9 +21,97 @@ frappe.listview_settings['Offer Letter'] = {
                 }
             });
         });
+
+        listview.page.add_inner_button(__("Bulk Download ZIP"), function () {
+            let dialog = new frappe.ui.Dialog({
+                title: __('Bulk Download Offer Letters'),
+                fields: [
+                    {
+                        label: __('Campus'),
+                        fieldname: 'campus',
+                        fieldtype: 'Link',
+                        options: 'Campus'
+                    },
+                    {
+                        label: __('Programme'),
+                        fieldname: 'program',
+                        fieldtype: 'Link',
+                        options: 'Program'
+                    },
+                    {
+                        label: __('Admission Cycle'),
+                        fieldname: 'admission_cycle',
+                        fieldtype: 'Link',
+                        options: 'Admission Cycle'
+                    },
+                    {
+                        label: __('Academic Year'),
+                        fieldname: 'academic_year',
+                        fieldtype: 'Link',
+                        options: 'Academic Year'
+                    },
+                    {
+                        label: __('Admission Year'),
+                        fieldname: 'admission_year',
+                        fieldtype: 'Link',
+                        options: 'Admission Year'
+                    },
+                    {
+                        label: __('Offer Status'),
+                        fieldname: 'offer_status',
+                        fieldtype: 'Select',
+                        options: '\nDraft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn'
+                    }
+                ],
+                primary_action_label: __('Download'),
+                primary_action: function (values) {
+                    dialog.hide();
+                    frappe.call({
+                        method: 'slcm.admission.doctype.offer_letter.offer_letter.get_bulk_offers_zip',
+                        args: {
+                            filters: values
+                        },
+                        callback: function (r) {
+                            if (r.message) {
+                                if (typeof r.message === 'string') {
+                                    // Sync response (URL)
+                                    let file_url = r.message;
+                                    let w = window.open(file_url, '_blank');
+                                    if (!w) {
+                                        frappe.msgprint(__('Please allow popups to download the file.'));
+                                    }
+                                } else if (r.message.status === 'enqueued') {
+                                    frappe.msgprint({
+                                        title: __('Background Job Started'),
+                                        message: r.message.message,
+                                        indicator: 'blue'
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            dialog.show();
+        });
         
     },
     onload: function (listview) {
+        // Listen for bulk download progress
+        frappe.realtime.on('bulk_offer_download_progress', (data) => {
+            frappe.show_progress(data.title, data.progress[0], 100, data.description);
+        });
+
+        // AUTO-DOWNLOAD ON COMPLETION
+        frappe.realtime.on("bulk_download_complete", (data) => {
+            if (data.doctype === "Offer Letter") {
+                frappe.hide_progress();
+                if (data.file_url) {
+                    window.open(data.file_url);
+                }
+            }
+        });
+
         listview.page.add_action_item(__("Pay Fees (Online)"), function () {
             const selected = listview.get_checked_items();
             if (selected.length !== 1) {
@@ -79,7 +167,7 @@ slcm.utils.show_offer_reminder_dialog = function (offers) {
                     </td>
                     <td><b>${o.applicant_name}</b><br><small class="text-muted">${o.name}</small></td>
                     <td>${o.program}</td>
-                    <td>${o.payment_deadline || '-'}</td>
+                    <td>${o.payment_deadline ? moment(o.payment_deadline).format("DD-MM-YYYY") : '-'}</td>
                 </tr>
             `);
         });
@@ -138,18 +226,25 @@ slcm.utils.show_offer_reminder_dialog = function (offers) {
                 label: __('Message Content')
             },
             {
+                label: __('Email Template'),
+                fieldname: 'email_template',
+                fieldtype: 'Link',
+                options: 'Email Templates',
+                reqd: 1,
+                get_query: function() {
+                    return {
+                        filters: {
+                            template_for_offer_letter: 1
+                        }
+                    };
+                }
+            },
+            {
                 label: __('Sender Email Account'),
                 fieldname: 'sender_email',
                 fieldtype: 'Link',
                 options: 'Email Account',
                 description: __('If blank, system default account will be used.')
-            },
-            {
-                fieldname: 'message',
-                fieldtype: 'Small Text',
-                label: __('Reminder Message'),
-                default: __('Dear Applicant, this is a reminder that your offer letter for [Program] is pending. Please take action (Accept/Reject) before the deadline: [Deadline].'),
-                reqd: 1
             },
             {
                 fieldname: 'channels_section',
@@ -190,7 +285,7 @@ slcm.utils.show_offer_reminder_dialog = function (offers) {
                 method: "slcm.api.service.offer_service.send_bulk_reminders",
                 args: {
                     offer_names: final_selection,
-                    message: values.message,
+                    email_template: values.email_template,
                     send_email: values.send_email,
                     send_notification: values.send_notification,
                     sender_email: values.sender_email

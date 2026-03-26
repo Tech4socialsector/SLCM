@@ -5263,6 +5263,11 @@
         if (input.value !== '' && isNaN(val)) {
             showToast('UG CGPA must be a number', 'error');
             input.classList.add('is-error');
+        } else if (val > 10) {
+            showToast('Please enter your UG CGPA between 0 and 10.', 'error');
+            input.value = '';
+            input.classList.add('is-error');
+            updateDegreeRow('ug', idx, 'ug_cgpa', '');
         } else {
             input.classList.remove('is-error');
         }
@@ -5273,6 +5278,11 @@
         if (input.value !== '' && isNaN(val)) {
             showToast('PG CGPA must be a number', 'error');
             input.classList.add('is-error');
+        } else if (val > 10) {
+            showToast('Please enter your PG CGPA between 0 and 10.', 'error');
+            input.value = '';
+            input.classList.add('is-error');
+            updateDegreeRow('pg', idx, 'pg_cgpa', '');
         } else {
             input.classList.remove('is-error');
         }
@@ -6555,11 +6565,23 @@
         mainMsg = decodeHtmlEntities(mainMsg);
         
         let header = '';
-        let sub = '';
+        let subHtml = '';
         if (mainMsg.includes('|')) {
-            const parts = mainMsg.split('|');
-            header = parts[0].trim();
-            sub = parts.slice(1).join(' ').trim();
+            const parts = mainMsg.split('|').map(p => p.trim()).filter(p => p);
+            header = parts[0];
+            const subReasons = parts.slice(1);
+            if (subReasons.length > 0) {
+                subHtml = '<div style="margin: 8px 0; display: flex; flex-direction: column; gap: 5px;">';
+                subReasons.forEach(reason => {
+                    subHtml += `
+                        <div style="display: flex; align-items: flex-start; gap: 8px; line-height: 1.4;">
+                            <span style="color: #e74c3c; font-weight: bold; font-size: 14px; margin-top: -1px;">•</span>
+                            <span style="font-size: 0.82rem; color: var(--slate-600);">${escapeHtml(reason)}</span>
+                        </div>
+                    `;
+                });
+                subHtml += '</div>';
+            }
         } else {
             header = mainMsg;
         }
@@ -6567,9 +6589,9 @@
         const programs = eligRes.programs || [];
         const eligibleProgs = programs.filter(p => p.eligible).map(p => p.program);
         
-        let html = `<div class="toast-title">${escapeHtml(header)}</div>`;
-        if (sub) {
-            html += `<div style="font-size:0.82rem;color:var(--slate-600);margin-bottom:8px;line-height:1.4;">${escapeHtml(sub)}</div>`;
+        let html = `<div class="toast-title" style="font-weight: 700; color: var(--red);">${escapeHtml(header)}</div>`;
+        if (subHtml) {
+            html += subHtml;
         }
 
         if (eligibleProgs.length > 0) {
@@ -6734,7 +6756,7 @@
             const isElig = p.eligible;
             const rowBg = isSelected && !isElig ? '#fff5f5' : isSelected ? '#f0fdf4' : '#fff';
             const badge = isSelected
-                ? `&nbsp;<span style="font-size:10px;padding:2px 8px;background:${isElig ? '#27ae60' : '#e74c3c'};color:#fff;border-radius:10px;font-weight:600;vertical-align:middle;">${isElig ? 'Selected ✓' : 'Your Choice'}</span>`
+                ? `&nbsp;<span style="font-size:10px;padding:2px 8px;background:${isElig ? '#27ae60' : '#e74c3c'};color:#fff;border-radius:10px;font-weight:600;vertical-align:middle;">${isElig ? 'Selected ✓' : 'Choosen Program'}</span>`
                 : '';
             const progDisplay = `<strong style="color:#2c3e50;">${escapeHtml(p.program)}</strong>${badge}`;
             const statusDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px;background:${isElig ? '#27ae60' : '#e74c3c'};"></span>`;
@@ -6742,10 +6764,14 @@
             
             let reasonHtml = '';
             if (!isElig && p.reason) {
-                const reasonParts = p.reason.split('|');
-                const mainReason = reasonParts[0].trim();
-                const subReason = reasonParts.length > 1 ? reasonParts.slice(1).join(' ').trim() : '';
-                reasonHtml = `<div style="font-size:11px;color:#888;margin-top:3px;font-style:italic;line-height:1.4;">${escapeHtml(mainReason)}${subReason ? `<br><span style="font-size:10px;color:#aaa;font-style:normal;">${escapeHtml(subReason)}</span>` : ''}</div>`;
+                const parts = p.reason.split('|').map(r => r.trim()).filter(r => r);
+                const mainReason = parts[0];
+                const subReasons = parts.slice(1);
+                
+                reasonHtml = `<div style="font-size:11px;color:#888;margin-top:4px;font-style:italic;line-height:1.4;">${escapeHtml(mainReason)}</div>`;
+                if (subReasons.length > 0) {
+                    reasonHtml += subReasons.map(sr => `<div style="font-size:10px;color:#94a3b8;font-style:normal;margin-top:2px;display:flex;gap:4px;"><span>•</span><span>${escapeHtml(sr)}</span></div>`).join('');
+                }
             }
 
             rowsHtml += `
@@ -6788,10 +6814,24 @@
                 <div style="padding:24px;overflow-y:auto;flex:1;">
                     <!-- Ineligibility Alert - premium card -->
                     <div style="margin-bottom:24px;padding:18px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fed7d7 8%);border:1px solid #fecaca;border-radius:14px;box-shadow:0 1px 3px rgba(220,38,38,0.08);">
-                        <div style="font-weight:700;font-size:1rem;color:#b91c1c;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                        <div style="font-weight:700;font-size:1rem;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
                             <span style="width:6px;height:6px;background:#dc2626;border-radius:50%;"></span>${mainHeading}
                         </div>
-                        <div style="font-size:0.875rem;color:#7f1d1d;line-height:1.6;">${escapeHtml(noteMsg)}</div>
+                        <div style="font-size:0.875rem;color:#7f1d1d;line-height:1.6;">
+                            ${(() => {
+                                const rawMsg = (eligRes.message || 'You do not meet the eligibility criteria for the selected program.').trim();
+                                const parts = rawMsg.split('|').map(p => p.trim()).filter(p => p);
+                                if (parts.length <= 1) return escapeHtml(parts[0] || '');
+                                
+                                return `<div style="font-weight:600;margin-bottom:6px;">${escapeHtml(parts[0])}</div>` + 
+                                       parts.slice(1).map(p => `
+                                            <div style="display:flex;gap:8px;margin-bottom:4px;font-size:0.8125rem;color:#991b1b;">
+                                                <span style="color:#ef4444;font-weight:bold;">•</span>
+                                                <span>${escapeHtml(p)}</span>
+                                            </div>
+                                       `).join('');
+                            })()}
+                        </div>
                     </div>
 
                     <!-- Stats row -->
