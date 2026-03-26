@@ -527,13 +527,48 @@
     font-weight: 400;
   }
 
+  /* ── Animated Offer Button ── */
+  .btn-qs-offer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 16px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    animation: qs-pulse 2s infinite;
+    border: 1px solid transparent;
+  }
+
+  @keyframes qs-pulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(var(--qs-pulse-rgb, 0, 0, 0), 0.4);
+    }
+    70% {
+      transform: scale(1.03);
+      box-shadow: 0 0 0 8px rgba(var(--qs-pulse-rgb, 0, 0, 0), 0);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(var(--qs-pulse-rgb, 0, 0, 0), 0);
+    }
+  }
+
+  .btn-qs-offer:hover {
+    transform: translateY(-1px);
+    filter: brightness(0.95);
+  }
+
   @media (max-width: 620px) {
     .quick-status-grid {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr !important;
     }
 
-    .qs-item:nth-child(2) {
-      border-right: none;
+    .qs-item:nth-child(2n) {
+      border-right: none !important;
     }
   }
 
@@ -1634,7 +1669,7 @@
     }
 
     .quick-status-grid {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr !important;
     }
 
     .qs-item {
@@ -1865,44 +1900,39 @@ or _app.current_stage)) or _status %}
             </div>
           </div>
 
-          <div class="app-header-right" style="flex-direction:row; align-items:center; gap:10px;">
-            {% if cancellation_details %}
-              {% set _cstat = cancellation_details.status %}
-              {% set _bg = '#fee2e2' if _cstat == 'Initiated' else ('#ffedd5' if _cstat == 'Approved' else '#dcfce7') %}
-              {% set _clr = '#991b1b' if _cstat == 'Initiated' else ('#9a3412' if _cstat == 'Approved' else '#166534') %}
-              <div class="cancellation-status-badge" style="display:flex; align-items:center; gap:8px; background:{{ _bg }}; color:{{ _clr }}; padding:6px 14px; border-radius:30px; font-size:12px; font-weight:700; border:1px solid {{ _clr }}40;">
-                <span class="material-symbols-outlined" style="font-size:16px;">cancel_presentation</span>
-                Withdrawal: {{ _cstat }}
-              </div>
-            {% elif payment_details %}
-            <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}')" 
-              class="btn-withdraw-application" title="Withdraw your application and request refund"
-              style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
-              <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
-              Withdraw Application
-            </button>
-            {% endif %}
+          <div class="app-header-right" style="flex-direction:column; align-items:flex-end; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+              {% if cancellation_details %}
+                {% set _cstat = cancellation_details.status %}
+                {% set _bg = '#fee2e2' if _cstat == 'Initiated' else ('#ffedd5' if _cstat == 'Approved' else '#dcfce7') %}
+                {% set _clr = '#991b1b' if _cstat == 'Initiated' else ('#9a3412' if _cstat == 'Approved' else '#166534') %}
+                <div class="cancellation-status-badge" style="display:flex; align-items:center; gap:8px; background:{{ _bg }}; color:{{ _clr }}; padding:6px 14px; border-radius:30px; font-size:12px; font-weight:700; border:1px solid {{ _clr }}40;">
+                  <span class="material-symbols-outlined" style="font-size:16px;">cancel_presentation</span>
+                  Withdrawal: {{ _cstat }}
+                </div>
+              {% elif payment_details %}
+              <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}')" 
+                class="btn-withdraw-application" title="Withdraw your application and request refund"
+                style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
+                <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
+                Withdraw Application
+              </button>
+              {% endif %}
 
-            <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
-              title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
-              <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
-              {{ 'View' if not is_editable else 'Edit' }}
-            </a>
-            
-            {% if app_name_param %}
-            <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
-              target="_blank" class="btn-download" title="Download application" 
-              style="padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
-              <span class="material-symbols-outlined" style="margin:0;">download</span>
-            </a>
-            {% endif %}
-            
-            {% if offer_letter_url %}
-            <a href="{{ offer_letter_url }}" target="_blank" class="btn-download" title="Download offer letter"
-              style="background:var(--text-1); color:white; border-color:var(--text-1); padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
-              <span class="material-symbols-outlined" style="margin:0;">drafts</span>
-            </a>
-            {% endif %}
+              <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
+                title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
+                <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
+                {{ 'View' if not is_editable else 'Edit' }}
+              </a>
+              
+              {% if app_name_param %}
+              <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
+                target="_blank" class="btn-download" title="Download application" 
+                style="padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
+                <span class="material-symbols-outlined" style="margin:0;">download</span>
+              </a>
+              {% endif %}
+            </div>
           </div>
         </div>
       </div>
@@ -1963,7 +1993,7 @@ or _app.current_stage)) or _status %}
       {% endif %}
 
       <!-- Quick Status Row -->
-      <div class="quick-status-grid">
+      <div class="quick-status-grid" style="grid-template-columns: repeat({{ 4 if offer_name else 3 }}, 1fr);">
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined">person</span>
@@ -1995,6 +2025,34 @@ or _app.current_stage)) or _status %}
           <span class="qs-value muted">Pending</span>
           {% endif %}
         </div>
+        {% if offer_name %}
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined">mail</span>
+            Offer Letter
+          </span>
+          <span class="qs-value">
+              {% set _display_status = offer_status %}
+              {% if offer_status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
+              {% elif offer_status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
+              {% elif offer_status == 'Payment Completed' %}{% set _display_status = 'Offer Accepted' %}
+              {% elif offer_status == 'Expired' %}{% set _display_status = 'Offer Expired' %}
+              {% elif offer_status == 'Rejected' %}{% set _display_status = 'Offer Declined' %}
+              {% elif offer_status == 'Withdrawn' %}{% set _display_status = 'Offer Withdrawn' %}
+              {% endif %}
+
+              {% set _obg, _oclr, _orgb = ('#e0f2fe', '#0369a1', '3, 105, 161') if offer_status == 'Issued' 
+                             else (('#d1fae5', '#065f46', '6, 95, 70') if offer_status in ['Accepted', 'Payment Completed'] 
+                             else (('#fef3c7', '#92400e', '146, 64, 14') if offer_status == 'Expired' 
+                             else ('#fee2e2', '#991b1b', '153, 27, 27'))) %}
+              
+              <a href="/offer_letter/offer-letter-detail?offer={{ offer_name }}" class="btn-qs-offer"
+                 style="background: {{ _obg }}; color: {{ _oclr }}; border-color: {{ _oclr }}40; --qs-pulse-rgb: {{ _orgb }};">
+                {{ _display_status }}
+              </a>
+          </span>
+        </div>
+        {% endif %}
       </div>
 
 

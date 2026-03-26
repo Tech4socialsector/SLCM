@@ -84,10 +84,10 @@
    "label": "Approval reference"
   },
   {
-   "description": "Add all programs offered in this cycle. These appear on the applicant portal.",
+   "description": "Add all programmes offered in this cycle. These appear on the applicant portal.",
    "fieldname": "section_break_programs",
    "fieldtype": "Section Break",
-   "label": "Programs Offered in this Cycle"
+   "label": "Programmes Offered in this Cycle"
   },
   {
    "fieldname": "programs",
@@ -148,7 +148,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-18 15:40:52.145106",
+ "modified": "2026-03-26 09:34:15.011440",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

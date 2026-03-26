@@ -145,7 +145,8 @@
   {
    "fieldname": "program_description",
    "fieldtype": "Text Editor",
-   "label": "Program Description"
+   "label": "Program Description",
+   "reqd": 1
   },
   {
    "fieldname": "eligibility_summary",
@@ -197,7 +198,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 10:18:21.298677",
+ "modified": "2026-03-26 09:44:05.066448",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",

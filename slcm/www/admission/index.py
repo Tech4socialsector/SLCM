@@ -309,6 +309,30 @@ def get_context(context):
     except Exception:
         _slug = ""
 
+    # ── user_app_map: program_name → {app_name, status} ──
+    context.user_app_map = {}
+    context.has_any_application = False
+    if frappe.session.user and frappe.session.user != "Guest":
+        try:
+            _uapps = frappe.get_all(
+                "Applicant",
+                filters={"email": frappe.session.user},
+                fields=["name", "program", "application_status"],
+                order_by="creation desc",
+                limit=50
+            )
+            for _ua in _uapps:
+                _key = (_ua.get("program") or "").strip()
+                if _key and _key not in context.user_app_map:
+                    context.user_app_map[_key] = {
+                        "app_name": _ua.get("name") or "",
+                        "status":   _ua.get("application_status") or ""
+                    }
+            if context.user_app_map:
+                context.has_any_application = True
+        except Exception:
+            context.user_app_map = {}
+
     if _slug:
         _load_program_detail(context, _slug)
         context.show_detail = True
@@ -385,28 +409,6 @@ def get_context(context):
         active_cycle_name = active_cycle.name if active_cycle else ""
         
         context.programs = programs
-
-        # ── user_app_map: program_name → {app_name, status} ──
-        context.user_app_map = {}
-        if frappe.session.user and frappe.session.user != "Guest":
-            try:
-                _uapps = frappe.get_all(
-                    "Applicant",
-                    filters={"email": frappe.session.user},
-                    fields=["name", "program", "application_status"],
-                    order_by="creation desc",
-                    limit=50
-                )
-                for _ua in _uapps:
-                    _key = (_ua.get("program") or "").strip()
-                    if _key and _key not in context.user_app_map:
-                        context.user_app_map[_key] = {
-                            "app_name": _ua.get("name") or "",
-                            "status":   _ua.get("application_status") or ""
-                        }
-            except Exception:
-                context.user_app_map = {}
-
     except Exception as e:
         frappe.log_error(title="Portal Index", message=f"fetch failed: {e}")
         context.programs = []

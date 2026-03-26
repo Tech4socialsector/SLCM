@@ -360,6 +360,21 @@ def get_context(context):
         context.submission_date = frappe.utils.format_date(applicant.creation, "MMMM d, yyyy")
         context.app_name_param = _app_name
 
+        # --- Fetch Offer Letter for this applicant ---
+        offer_letter = frappe.get_all("Offer Letter", 
+            filters={"applicant": applicant.name},
+            fields=["name", "offer_status"],
+            order_by="creation desc",
+            limit=1,
+            ignore_permissions=True
+        )
+        if offer_letter:
+            context.offer_name = offer_letter[0].name
+            context.offer_status = offer_letter[0].offer_status
+        else:
+            context.offer_name = ""
+            context.offer_status = ""
+
         # --- Fetch Payment Details for Cancellation Button ---
         context.payment_details = None
         context.cancellation_details = frappe.get_all("Admission Cancellation", 
