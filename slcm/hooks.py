@@ -80,7 +80,10 @@ fixtures = [
         "doctype": "Number Card",
         "filters": [["name", "in", [
             "Total Students", "Active Enrollments", "Active Programs", "Active Courses",
-            "Active Cohorts", "Open Course Offerings"
+            "Active Cohorts", "Open Course Offerings",
+            "Draft", "Selected", "Pending REGO", "Pending FINO", "Pending Registration",
+            "Pending Print & Scan", "Pending Residences", "Pending IT",
+            "Final Verification REGO", "Completed", "Re-Open"
         ]]]
     },
     # --- Dashboard: Charts ---
