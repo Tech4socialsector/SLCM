@@ -239,26 +239,54 @@ def get_context(context):
 
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
+        context.cycle_next_step_message = ""
         try:
             # 1. Get Admission Cycle Doc to check enabled stages
             # ── Use active cycle for stage configuration (per requirement) ──
             active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
             cycle_name_to_use = active_cycle_name if active_cycle_name else applicant.admission_cycle
+
+            # Post–offer admission fee: paid if offer accepted / payment completed or submitted receipt exists
+            admission_fee_paid = False
+            try:
+                _off_row = frappe.get_all(
+                    "Offer Letter",
+                    filters={"applicant": applicant.name},
+                    fields=["offer_status"],
+                    order_by="creation desc",
+                    limit=1,
+                    ignore_permissions=True,
+                )
+                if _off_row and (_off_row[0].get("offer_status") or "") in (
+                    "Accepted",
+                    "Payment Completed",
+                ):
+                    admission_fee_paid = True
+                if not admission_fee_paid:
+                    admission_fee_paid = bool(
+                        frappe.db.exists(
+                            "Applicant Payment Receipt",
+                            {"applicant": applicant.name, "docstatus": 1},
+                        )
+                    )
+            except Exception:
+                admission_fee_paid = False
             
             if cycle_name_to_use:
                 cycle_doc = frappe.get_doc("Admission Cycle", cycle_name_to_use, ignore_permissions=True)
                 
                 # Potential stages mapping based on checkboxes in Admission Cycle
                 # Using 'intereview' as per the doctype field name (note the typo)
+                # after_* fields on Admission Cycle drive portal "next step" messaging.
                 POTENTIAL_STAGES = [
-                    {"field": "submitted",       "name": "Application",   "stage_type": "Application"},
-                    {"field": "entrance_test",   "name": "Entrance Test", "stage_type": "Entrance Test"},
-                    {"field": "intereview",      "name": "Interview",     "stage_type": "Interview"},
-                    {"field": "merit",           "name": "Merit",         "stage_type": "Merit"},
-                    {"field": "seat_allocation", "name": "Seat Allocation", "stage_type": "Seat Allocation"},
-                    {"field": "offer_letter",    "name": "Offer Letter",  "stage_type": "Offer Letter"},
-                    {"field": "admission_fee",   "name": "Admission Fee", "stage_type": "Admission Fee"},
-                    {"field": "enrolled",        "name": "Enrollment",    "stage_type": "Enrollment"},
+                    {"field": "submitted",       "name": "Application Submitted", "stage_type": "Application",       "after_field": "after_submitted"},
+                    {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test",     "after_field": "after_entrance_test"},
+                    {"field": "intereview",      "name": "Interview",             "stage_type": "Interview",         "after_field": "after_interview"},
+                    {"field": "merit",           "name": "Merit",                 "stage_type": "Merit",             "after_field": "after_merit"},
+                    {"field": "seat_allocation", "name": "Seat Allocation",       "stage_type": "Seat Allocation",   "after_field": "after_seat_allocation"},
+                    {"field": "offer_letter",    "name": "Offer Letter",          "stage_type": "Offer Letter",      "after_field": "after_offer_letter"},
+                    {"field": "admission_fee",   "name": "Admission Fee",         "stage_type": "Admission Fee",     "after_field": "after_admission_fee"},
+                    {"field": "enrolled",        "name": "Enrollment",            "stage_type": "Enrollment",        "after_field": "after_enroll"},
                 ]
                 
                 enabled_stages = [ps for ps in POTENTIAL_STAGES if cycle_doc.get(ps["field"])]
@@ -308,20 +336,55 @@ def get_context(context):
                     if state in ["active", "closed"]:
                         status_label = applicant.application_status
 
+                    if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
+                        "completed",
+                        "active",
+                    ):
+                        status_label = "Paid"
+
                     stages_with_state.append({
                         "name": stage_name,
                         "display_name": stage_name,
                         "status_label": status_label,
                         "state": state,
-                        "is_exempted": is_exempted
+                        "is_exempted": is_exempted,
+                        "stage_type": s["stage_type"],
+                        "after_field": s.get("after_field"),
                     })
+
+                # 5. Next-step banner: message from Admission Cycle for the last completed stage
+                last_completed_idx = -1
+                for i, st in enumerate(stages_with_state):
+                    _st = st.get("state")
+                    if _st == "completed":
+                        last_completed_idx = i
+                    elif _st == "active":
+                        break
+                    elif _st == "closed":
+                        last_completed_idx = i
+                        break
+                    else:
+                        break
+
+                if last_completed_idx >= 0:
+                    last_st = stages_with_state[last_completed_idx]
+                    if last_st.get("stage_type") == "Application":
+                        # Fixed portal copy after application is submitted (ignores misconfigured cycle notes)
+                        context.cycle_next_step_message = (
+                            "You have successfully submitted the application. "
+                            "Our team will notify you soon regarding the entrance test."
+                        )
+                    else:
+                        af = (last_st.get("after_field") or "").strip()
+                        if af:
+                            context.cycle_next_step_message = (cycle_doc.get(af) or "").strip()
         except Exception as e:
             frappe.log_error(f"Stage tracker context error: {e}")
 
         if not stages_with_state:
             # Fallback based on common statuses
             statuses = [
-                {"name": "Application", "activate": "Submitted", "closed": "Rejected"},
+                {"name": "Application Submitted", "activate": "Submitted", "closed": "Rejected"},
                 {"name": "Review", "activate": "Under Review", "closed": "Rejected"},
                 {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
                 {"name": "Decision", "activate": "Selected", "closed": "Rejected"}

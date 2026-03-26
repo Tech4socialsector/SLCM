@@ -284,6 +284,8 @@ class Applicant(Document):
             or "Admissions Office"
         )
 
+        admission_portal_url = frappe.utils.get_url("/admission")
+
         # ── PDF attachment ────────────────────────────────────────────────
         try:
             pdf_content = frappe.get_print(
@@ -312,11 +314,11 @@ class Applicant(Document):
         body {{
         font-family: Arial, sans-serif;
         font-size: 14px;
-        color: #920c24;
+        color: #000000;
         line-height: 1.6;
         margin: 0;
         padding: 0;
-        background: #f5f5f0;
+        background: #f4f4f4;
         }}
         .wrapper {{
         max-width: 620px;
@@ -324,10 +326,10 @@ class Applicant(Document):
         background: #ffffff;
         border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #d3d1c7;
+        border: 1px solid #e0e0e0;
         }}
         .header {{
-        background: #1D9E75;
+        background: #920c24;
         padding: 28px 32px;
         text-align: center;
         }}
@@ -338,14 +340,14 @@ class Applicant(Document):
         font-weight: 600;
         }}
         .header p {{
-        color: #9FE1CB;
+        color: rgba(255,255,255,0.88);
         font-size: 13px;
         margin: 0;
         }}
         .badge {{
         display: inline-block;
         background: #ffffff;
-        color: #0F6E56;
+        color: #920c24;
         font-size: 13px;
         font-weight: 600;
         padding: 6px 18px;
@@ -358,24 +360,62 @@ class Applicant(Document):
         }}
         .greeting {{
         font-size: 15px;
-        color: #2c2c2a;
+        color: #000000;
         margin-bottom: 12px;
+        font-weight: 600;
         }}
         .intro {{
         font-size: 14px;
-        color: #5f5e5a;
-        margin-bottom: 24px;
+        color: #000000;
+        margin-bottom: 20px;
         line-height: 1.7;
+        }}
+        .intro strong {{
+        color: #920c24;
+        }}
+        .notify-next {{
+        font-size: 14px;
+        color: #000000;
+        background: #fafafa;
+        border-left: 3px solid #920c24;
+        border-radius: 0 6px 6px 0;
+        padding: 14px 18px;
+        margin: 0 0 24px 0;
+        line-height: 1.65;
+        }}
+        .cta-wrap {{
+        text-align: center;
+        margin: 8px 0 28px 0;
+        }}
+        .cta-link {{
+        display: inline-block;
+        background: #920c24;
+        color: #ffffff !important;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 14px 32px;
+        border-radius: 8px;
+        text-decoration: none;
+        letter-spacing: 0.02em;
+        }}
+        .cta-fallback {{
+        font-size: 12px;
+        color: #333333;
+        margin-top: 12px;
+        word-break: break-all;
+        }}
+        .cta-fallback a {{
+        color: #920c24;
         }}
         .section-title {{
         font-size: 11px;
         font-weight: 700;
-        color: #888780;
+        color: #920c24;
         text-transform: uppercase;
         letter-spacing: 0.8px;
         margin: 24px 0 10px 0;
         padding-bottom: 6px;
-        border-bottom: 1px solid #ebe9e2;
+        border-bottom: 1px solid #e8e8e8;
         }}
         .detail-table {{
         width: 100%;
@@ -384,39 +424,40 @@ class Applicant(Document):
         .detail-table tr td {{
         padding: 7px 0;
         font-size: 13px;
-        border-bottom: 1px solid #f1efe8;
+        border-bottom: 1px solid #eeeeee;
         vertical-align: top;
         }}
         .detail-table tr:last-child td {{
         border-bottom: none;
         }}
         .detail-table td.label {{
-        color: #888780;
+        color: #333333;
         width: 44%;
         padding-right: 12px;
         }}
         .detail-table td.value {{
-        color: #2c2c2a;
+        color: #000000;
         font-weight: 500;
         }}
         .status-pill {{
         display: inline-block;
-        background: #E1F5EE;
-        color: #085041;
+        background: #fbe9ec;
+        color: #920c24;
         font-size: 12px;
         font-weight: 600;
         padding: 3px 12px;
         border-radius: 20px;
         }}
         .next-steps {{
-        background: #f1efe8;
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
         border-radius: 6px;
         padding: 16px 20px;
         margin: 24px 0;
         }}
         .next-steps p {{
         font-size: 13px;
-        color: #444441;
+        color: #000000;
         margin: 0 0 8px 0;
         font-weight: 600;
         }}
@@ -426,34 +467,34 @@ class Applicant(Document):
         }}
         .next-steps ul li {{
         font-size: 13px;
-        color: #5f5e5a;
+        color: #000000;
         margin-bottom: 5px;
         line-height: 1.6;
         }}
         .attachment-note {{
-        background: #E6F1FB;
-        border-left: 3px solid #378ADD;
+        background: #fafafa;
+        border-left: 3px solid #920c24;
         border-radius: 0 6px 6px 0;
         padding: 12px 16px;
         font-size: 13px;
-        color: #0C447C;
+        color: #000000;
         margin: 20px 0;
         }}
         .footer {{
-        background: #f1efe8;
+        background: #fafafa;
         padding: 20px 32px;
         text-align: center;
-        border-top: 1px solid #d3d1c7;
+        border-top: 1px solid #e0e0e0;
         }}
         .footer p {{
         font-size: 12px;
-        color: #888780;
+        color: #333333;
         margin: 4px 0;
         }}
         .footer .university-name {{
         font-size: 13px;
         font-weight: 600;
-        color: #444441;
+        color: #000000;
         margin-bottom: 6px;
         }}
     </style>
@@ -476,6 +517,18 @@ class Applicant(Document):
             <strong>{self.name}</strong> for all future correspondence.
             A copy of your completed application form is attached to this email.
         </p>
+
+        <p class="notify-next">
+            <strong style="color:#920c24;">What happens next?</strong><br>
+            The admissions office will notify you by email about the next steps in your application process.
+            Please monitor your inbox (including spam or promotions folders) for further updates.
+        </p>
+
+        <div class="cta-wrap">
+        <a class="cta-link" href="{admission_portal_url}" target="_blank" rel="noopener noreferrer">Continue to admission portal</a>
+        <p class="cta-fallback">If the button does not work, copy this link into your browser:<br>
+        <a href="{admission_portal_url}" target="_blank" rel="noopener noreferrer">{admission_portal_url}</a></p>
+        </div>
 
         <div class="section-title">Application details</div>
         <table class="detail-table">
@@ -555,10 +608,6 @@ class Applicant(Document):
             <td class="label">Class XII percentage</td>
             <td class="value">{f"{self.hsc_percentage}%" if self.hsc_percentage else '—'}</td>
             </tr>
-            <tr>
-            <td class="label">Academic summary</td>
-            <td class="value">{academic_line or '—'}</td>
-            </tr>
         </table>
 
         <div class="section-title">Reservation / category</div>
@@ -589,7 +638,9 @@ class Applicant(Document):
             </tr>
             <tr>
             <td class="label">Fee amount</td>
-            <td class="value">{"&#8377;" + frappe.utils.fmt_money(self.application_fee_amount, currency="INR") if self.application_fee_amount else '—'}</td>
+            <td class="value">
+                {frappe.utils.fmt_money(self.application_fee_amount, currency="INR") if self.application_fee_amount else '—'}
+            </td>
             </tr>
         </table>
 
@@ -600,14 +651,12 @@ class Applicant(Document):
         </div>
 
         <div class="next-steps">
-            <p>What happens next?</p>
+            <p>Reminders</p>
             <ul>
-            <li>Your application will be reviewed for eligibility.</li>
-            <li>Admit card details will be communicated once the
-                test schedule is confirmed.</li>
-            <li>Track your application status by logging in to
-                the applicant portal.</li>
-            <li>Keep all original documents ready for verification.</li>
+            <li>Your application will be reviewed for eligibility; admissions will email you when there are updates.</li>
+            <li>Admit card and test details will be shared once the schedule is confirmed.</li>
+            <li>Log in to the admission portal anytime to track your application status.</li>
+            <li>Keep original documents ready for verification when asked.</li>
             </ul>
         </div>
 
@@ -617,7 +666,7 @@ class Applicant(Document):
         <p class="university-name">{institution_name}</p>
         <p>This is an auto-generated email. Please do not reply directly.</p>
         <p>For queries, contact the admissions helpdesk.</p>
-        <p style="margin-top:10px;font-size:11px;color:#b4b2a9;">
+        <p style="margin-top:10px;font-size:11px;color:#555555;">
             Application ID: {self.name} &nbsp;|&nbsp;
             Generated: {frappe.utils.now_datetime().strftime('%d %b %Y, %I:%M %p')}
         </p>

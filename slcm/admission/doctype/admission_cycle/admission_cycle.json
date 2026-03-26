@@ -22,14 +22,22 @@
   "stages",
   "section_break_ligo",
   "submitted",
+  "after_submitted",
   "entrance_test",
+  "after_entrance_test",
   "intereview",
+  "after_interview",
   "merit",
+  "after_merit",
   "column_break_wokg",
   "seat_allocation",
+  "after_seat_allocation",
   "offer_letter",
+  "after_offer_letter",
   "admission_fee",
+  "after_admission_fee",
   "enrolled",
+  "after_enroll",
   "section_break_rounds",
   "enable_multiple_rounds",
   "section_break_remarks",
@@ -150,12 +158,14 @@
   {
    "fieldname": "cycle_start_date",
    "fieldtype": "Date",
-   "label": "Cycle start date"
+   "label": "Cycle start date",
+   "reqd": 1
   },
   {
    "fieldname": "cycle_end_date",
    "fieldtype": "Date",
-   "label": "Cycle end date"
+   "label": "Cycle end date",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_ligo",
@@ -173,31 +183,36 @@
    "default": "1",
    "fieldname": "entrance_test",
    "fieldtype": "Check",
-   "label": "Entrance Test"
+   "label": "Entrance Test",
+   "read_only": 1
   },
   {
    "default": "1",
    "fieldname": "intereview",
    "fieldtype": "Check",
-   "label": "Intereview"
+   "label": "Intereview",
+   "read_only": 1
   },
   {
    "default": "1",
    "fieldname": "merit",
    "fieldtype": "Check",
-   "label": "Merit"
+   "label": "Merit",
+   "read_only": 1
   },
   {
    "default": "1",
    "fieldname": "seat_allocation",
    "fieldtype": "Check",
-   "label": "Seat Allocation"
+   "label": "Seat Allocation",
+   "read_only": 1
   },
   {
    "default": "1",
    "fieldname": "admission_fee",
    "fieldtype": "Check",
-   "label": "Admission Fee"
+   "label": "Admission Fee",
+   "read_only": 1
   },
   {
    "default": "1",
@@ -210,15 +225,80 @@
    "default": "1",
    "fieldname": "offer_letter",
    "fieldtype": "Check",
-   "label": "Offer Letter"
+   "label": "Offer Letter",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_wokg",
    "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.submitted",
+   "fieldname": "after_submitted",
+   "fieldtype": "Data",
+   "label": "Next Step Note",
+   "mandatory_depends_on": "eval: doc.submitted",
+   "placeholder": "After Application Submitted"
+  },
+  {
+   "depends_on": "eval: doc.entrance_test",
+   "fieldname": "after_entrance_test",
+   "fieldtype": "Data",
+   "label": "Next Step Note",
+   "mandatory_depends_on": "eval: doc.entrance_test",
+   "placeholder": "After Entrance Test Completed"
+  },
+  {
+   "depends_on": "eval: doc.intereview",
+   "fieldname": "after_interview",
+   "fieldtype": "Data",
+   "label": "Next Step Note",
+   "mandatory_depends_on": "eval: doc.intereview",
+   "placeholder": "After interview Completed"
+  },
+  {
+   "depends_on": "eval: doc.merit",
+   "fieldname": "after_merit",
+   "fieldtype": "Data",
+   "label": "Next Step Note",
+   "mandatory_depends_on": "eval: doc.merit",
+   "placeholder": "After Merit Published"
+  },
+  {
+   "depends_on": "eval: doc.seat_allocation",
+   "fieldname": "after_seat_allocation",
+   "fieldtype": "Data",
+   "label": "Next Step Note",
+   "mandatory_depends_on": "eval: doc.seat_allocation",
+   "placeholder": "After Seat Allocation Completed"
+  },
+  {
+   "depends_on": "eval: doc.offer_letter",
+   "fieldname": "after_offer_letter",
+   "fieldtype": "Data",
+   "label": "Next Step Note",
+   "mandatory_depends_on": "eval: doc.offer_letter",
+   "placeholder": "After Offer Letter Issued"
+  },
+  {
+   "depends_on": "eval: doc.admission_fee",
+   "fieldname": "after_admission_fee",
+   "fieldtype": "Data",
+   "label": "Next Step Note",
+   "mandatory_depends_on": "eval: doc.admission_fee",
+   "placeholder": "After Admission Fee Paid"
+  },
+  {
+   "depends_on": "eval: doc.enrolled",
+   "fieldname": "after_enroll",
+   "fieldtype": "Data",
+   "label": "Next Step Note",
+   "mandatory_depends_on": "eval: doc.enrolled",
+   "placeholder": "After Enrollment"
   }
  ],
  "links": [],
- "modified": "2026-03-26 14:59:46.273063",
+ "modified": "2026-03-26 22:15:58.441583",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

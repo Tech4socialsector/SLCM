@@ -35,7 +35,7 @@ else 'Admissions Open') %}
 {% if (not _start or today >= _start) and (not _end or today <= _end) %} {% set _is_cycle_active=True %} {% endif %} {%
   endif %} {# Profile data shortcuts (Sourced from User via controller) #} {% set _pd=profile_data or {} %} {% set
   _pname=_pd.get('candidate_name','') %} {% set _pemail=_pd.get('email','') %} {% set
-  _pphoto=_pd.get('candidate_photo','') %} {% set _pstatus=_pd.get('application_status','') %} {% set
+  _pphoto=_pd.get('candidate_photo','') %} {% set
   _app_id=_pd.get('name','') %} {% set _pfirst=(_pname[0]|upper) if _pname else (_first or 'U' ) %} {% set
   _pmobile=_pd.get('mobile_number','') %} {% set _pdob=_pd.get('date_of_birth','') %} {% set
   _pgender=_pd.get('gender','') %} {% set _pnation=_pd.get('nationality','') %} {% set

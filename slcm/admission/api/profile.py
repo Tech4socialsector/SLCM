@@ -142,12 +142,9 @@ def update_applicant_from_form(**kwargs):
         return {"success": False, "error": "No valid fields provided for applicant update."}
 
     try:
-        # Update Applicant
+        # Update Applicant only — User profile is updated only via update_user_profile (portal modal).
         frappe.db.set_value("Applicant", app_name, applicant_update_dict)
-        
-        # Sync to User (Requirement 2a)
-        sync_applicant_to_user(frappe.get_doc("Applicant", app_name))
-        
+
         frappe.db.commit()
         return {"success": True, "status": "ok"}
     except Exception as e:
@@ -156,33 +153,11 @@ def update_applicant_from_form(**kwargs):
 
 def sync_applicant_to_user(doc, method=None):
     """
-    Hook function for Applicant on_update.
-    Syncs allowed fields from Applicant to User.
-    Requirement 2a: Sync relevant fields to User doctype.
+    Deprecated for portal flow: Applicant saves must not overwrite User.
+    User is updated only through update_user_profile (dashboard profile modal).
+    Kept as no-op for any legacy hook references.
     """
-    # 1. Map Applicant fields to User fields
-    INV_MAP = {v: k for k, v in PROFILE_FIELD_MAP.items()}
-    user_data = {}
-    
-    for app_f, user_f in INV_MAP.items():
-        val = doc.get(app_f)
-        if val is not None:
-            user_data[user_f] = val
-            
-    if not user_data:
-        return
-
-    # 2. Find associated User (using email)
-    user_email = doc.email or doc.owner
-    if not user_email or user_email == "Guest":
-        return
-
-    if frappe.db.exists("User", user_email):
-        try:
-            # We use db.set_value to avoid triggering validation loops if User also has hooks
-            frappe.db.set_value("User", user_email, user_data)
-        except Exception as e:
-            frappe.log_error(f"Failed to sync Applicant {doc.name} to User {user_email}: {e}")
+    return
 
 @frappe.whitelist(allow_guest=True, methods=["POST", "GET"])
 def update_profile(**kwargs):
