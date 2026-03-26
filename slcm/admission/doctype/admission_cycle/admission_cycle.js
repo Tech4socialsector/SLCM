@@ -1,6 +1,22 @@
 frappe.ui.form.on("Admission Cycle", {
 
     refresh: function (frm) {
+
+        frm.set_query("academic_year", function () {
+            return {
+                filters: {
+                    status: "Active"
+                }
+            };
+        });
+        frm.set_query("admission_year", function () {
+            return {
+                filters: {
+                    is_active: 1
+                }
+            };
+        });
+
         // Status indicator
         const colors = { "Draft": "gray", "Active": "green", "Closed": "red" };
         frm.dashboard.set_headline_alert(
@@ -36,7 +52,7 @@ frappe.ui.form.on("Admission Cycle", {
         // Set queries for Admission Cycle Stage child table
         const stage_status_fields = ["activate_status", "completed_status", "closed_status"];
         stage_status_fields.forEach(field => {
-            frm.set_query(field, "stages", function(doc, cdt, cdn) {
+            frm.set_query(field, "stages", function (doc, cdt, cdn) {
                 let row = locals[cdt][cdn];
                 if (!row.stage_type) {
                     return {};
@@ -164,7 +180,7 @@ frappe.ui.form.on("Admission Cycle Program", {
 });
 
 frappe.ui.form.on("Admission Cycle Stage", {
-    stage_type: function(frm, cdt, cdn) {
+    stage_type: function (frm, cdt, cdn) {
         frappe.model.set_value(cdt, cdn, "activate_status", null);
         frappe.model.set_value(cdt, cdn, "completed_status", null);
         frappe.model.set_value(cdt, cdn, "closed_status", null);
@@ -371,7 +387,7 @@ function open_reservation_policy(frm, row) {
                         "reservation_policy",
                         res.policy_name
                     );
-                    
+
                     // Update current form timestamp to prevent "modified after opened" error
                     if (res.new_modified) {
                         frm.doc.modified = res.new_modified;

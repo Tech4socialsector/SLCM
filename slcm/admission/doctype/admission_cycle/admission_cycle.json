@@ -20,6 +20,16 @@
   "programs",
   "section_break_stages",
   "stages",
+  "section_break_ligo",
+  "submitted",
+  "entrance_test",
+  "intereview",
+  "merit",
+  "column_break_wokg",
+  "seat_allocation",
+  "offer_letter",
+  "admission_fee",
+  "enrolled",
   "section_break_rounds",
   "enable_multiple_rounds",
   "section_break_remarks",
@@ -98,12 +108,13 @@
   {
    "fieldname": "section_break_stages",
    "fieldtype": "Section Break",
-   "label": "Admission Stages"
+   "hidden": 1
   },
   {
    "description": "Stages active in this cycle and their sequence",
    "fieldname": "stages",
    "fieldtype": "Table",
+   "hidden": 1,
    "label": "Stages",
    "options": "Admission Cycle Stage"
   },
@@ -145,10 +156,69 @@
    "fieldname": "cycle_end_date",
    "fieldtype": "Date",
    "label": "Cycle end date"
+  },
+  {
+   "fieldname": "section_break_ligo",
+   "fieldtype": "Section Break",
+   "label": "Admission Stages"
+  },
+  {
+   "default": "1",
+   "fieldname": "submitted",
+   "fieldtype": "Check",
+   "label": "Application Submitted",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test"
+  },
+  {
+   "default": "1",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "label": "Intereview"
+  },
+  {
+   "default": "1",
+   "fieldname": "merit",
+   "fieldtype": "Check",
+   "label": "Merit"
+  },
+  {
+   "default": "1",
+   "fieldname": "seat_allocation",
+   "fieldtype": "Check",
+   "label": "Seat Allocation"
+  },
+  {
+   "default": "1",
+   "fieldname": "admission_fee",
+   "fieldtype": "Check",
+   "label": "Admission Fee"
+  },
+  {
+   "default": "1",
+   "fieldname": "enrolled",
+   "fieldtype": "Check",
+   "label": "Enrolled",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "offer_letter",
+   "fieldtype": "Check",
+   "label": "Offer Letter"
+  },
+  {
+   "fieldname": "column_break_wokg",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2026-03-26 09:34:15.011440",
+ "modified": "2026-03-26 14:59:46.273063",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

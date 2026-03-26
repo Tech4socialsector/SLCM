@@ -309,7 +309,7 @@ scheduler_events = {
 	"hourly": [
 		"slcm.admission.events.auto_update_cycle_status",
         "slcm.admission.utils.notifications.check_and_send_offer_reminders",
-        "slcm.admission.utils.auto_draft.auto_save_all_drafts"
+        # "slcm.admission.utils.auto_draft.auto_save_all_drafts"
 	],
 	"daily": [
 		"slcm.api.service.offer_service.expire_offers",
@@ -350,6 +350,10 @@ doc_events = {
     },
     "Campus Seat Matrix": {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
+    },
+    "User": {
+        "before_insert": "slcm.api.user_events.user_before_insert",
+        "after_insert": "slcm.api.user_events.send_signup_email"
     }
 }
 # permission_query_conditions = {

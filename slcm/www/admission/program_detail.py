@@ -238,13 +238,18 @@ def get_context(context):
     context.has_any_application = False
     if frappe.session.user and frappe.session.user != "Guest":
         try:
-            # 1. Any applications?
+            # Only consider applications in the active cycle
+            filters = {"email": frappe.session.user}
+            if context.active_cycle:
+                filters["admission_cycle"] = context.active_cycle.name
+
             _all = frappe.get_all(
                 "Applicant",
-                filters={"email": frappe.session.user},
+                filters=filters,
                 fields=["name", "program", "application_status"],
                 order_by="creation desc"
             )
+            
             if _all:
                 context.has_any_application = True
                 # 2. Match for this specific program
