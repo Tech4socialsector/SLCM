@@ -1,0 +1,363 @@
+{
+ "app": "slcm",
+ "charts": [
+  {
+   "chart_name": "Student Registration Status",
+   "label": "Student Registration Status"
+  },
+  {
+   "chart_name": "Student Enrollment by Program",
+   "label": "Student Enrollment by Program"
+  }
+ ],
+ "content": "[{\"id\": \"nc_students\", \"type\": \"card\", \"data\": {\"card_name\": \"Total Students\", \"col\": 3}}, {\"id\": \"nc_enrollments\", \"type\": \"card\", \"data\": {\"card_name\": \"Active Enrollments\", \"col\": 3}}, {\"id\": \"nc_programs\", \"type\": \"card\", \"data\": {\"card_name\": \"Active Programs\", \"col\": 3}}, {\"id\": \"nc_courses\", \"type\": \"card\", \"data\": {\"card_name\": \"Active Courses\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"ch_status\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Student Registration Status\", \"col\": 6}}, {\"id\": \"ch_program\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Student Enrollment by Program\", \"col\": 6}}, {\"id\": \"sp_charts\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"sec_academic\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>ACADEMIC SETUP</b></span>\", \"col\": 12}}, {\"id\": \"sc_ay\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Academic Year\", \"col\": 3}}, {\"id\": \"sc_at\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Academic Term\", \"col\": 3}}, {\"id\": \"sc_dept\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Department\", \"col\": 3}}, {\"id\": \"sc_fac\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Faculty\", \"col\": 3}}, {\"id\": \"sc_prog\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Program\", \"col\": 3}}, {\"id\": \"sc_cm\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Course Master\", \"col\": 3}}, {\"id\": \"sc_crs\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Course\", \"col\": 3}}, {\"id\": \"sc_coh\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Cohort\", \"col\": 3}}, {\"id\": \"sc_co\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Course Offering\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"sec_student\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>STUDENT REGISTRATION</b></span>\", \"col\": 12}}, {\"id\": \"sc_sm\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Master\", \"col\": 3}}, {\"id\": \"sc_se\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Enrollment\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"sec_att\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>ATTENDANCE</b></span>\", \"col\": 12}}, {\"id\": \"sc_sg\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Group\", \"col\": 3}}, {\"id\": \"sc_rfid\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student RFID Card\", \"col\": 3}}, {\"id\": \"sc_al\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Attendance Log\", \"col\": 3}}, {\"id\": \"sc_sa\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Attendance\", \"col\": 3}}, {\"id\": \"sc_sat\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Attendance Tool\", \"col\": 3}}]",
+ "creation": "2025-12-18 09:29:30.795332",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "graduation-cap",
+ "idx": 0,
+ "indicator_color": "blue",
+ "is_hidden": 0,
+ "label": "Student Registration",
+ "links": [
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Academic Year",
+   "link_count": 0,
+   "link_to": "Academic Year",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Academic Term",
+   "link_count": 0,
+   "link_to": "Academic Term",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Department",
+   "link_count": 0,
+   "link_to": "Department",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Faculty",
+   "link_count": 0,
+   "link_to": "Faculty",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program",
+   "link_count": 0,
+   "link_to": "Program",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course Master",
+   "link_count": 0,
+   "link_to": "Course Master",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course",
+   "link_count": 0,
+   "link_to": "Course",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Cohort",
+   "link_count": 0,
+   "link_to": "Cohort",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course Offering",
+   "link_count": 0,
+   "link_to": "Course Offering",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Master",
+   "link_count": 0,
+   "link_to": "Student Master",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Enrollment",
+   "link_count": 0,
+   "link_to": "Student Enrollment",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Group",
+   "link_count": 0,
+   "link_to": "Student Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student RFID Card",
+   "link_count": 0,
+   "link_to": "Student RFID Card",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Attendance Log",
+   "link_count": 0,
+   "link_to": "Attendance Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Attendance",
+   "link_count": 0,
+   "link_to": "Student Attendance",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Attendance Tool",
+   "link_count": 0,
+   "link_to": "Student Attendance Tool",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-03-26 10:33:20.708870",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Registration",
+ "number_cards": [
+  {
+   "label": "Total Students",
+   "number_card_name": "Total Students"
+  },
+  {
+   "label": "Active Enrollments",
+   "number_card_name": "Active Enrollments"
+  },
+  {
+   "label": "Active Programs",
+   "number_card_name": "Active Programs"
+  },
+  {
+   "label": "Active Courses",
+   "number_card_name": "Active Courses"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 1.0,
+ "shortcuts": [
+  {
+   "color": "Pink",
+   "doc_view": "List",
+   "label": "Academic Year",
+   "link_to": "Academic Year",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Academic Term",
+   "link_to": "Academic Term",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Department",
+   "link_to": "Department",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Faculty",
+   "link_to": "Faculty",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Yellow",
+   "doc_view": "List",
+   "label": "Program",
+   "link_to": "Program",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Course Master",
+   "link_to": "Course Master",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Course",
+   "link_to": "Course",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Yellow",
+   "doc_view": "List",
+   "label": "Cohort",
+   "link_to": "Cohort",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Course Offering",
+   "link_to": "Course Offering",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Student Master",
+   "link_to": "Student Master",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Student Enrollment",
+   "link_to": "Student Enrollment",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Student Group",
+   "link_to": "Student Group",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Student RFID Card",
+   "link_to": "Student RFID Card",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Attendance Log",
+   "link_to": "Attendance Log",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Student Attendance",
+   "link_to": "Student Attendance",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Student Attendance Tool",
+   "link_to": "Student Attendance Tool",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
+ "title": "Student Registration",
+ "type": "Workspace"
+}

@@ -75,6 +75,19 @@ fixtures = [
         "doctype": "Workflow",
         "filters": [["name", "=", "Student Registration Workflow"]]
     },
+    # --- Dashboard components (KPI cards + charts on Student Registration workspace) ---
+    {
+        "doctype": "Number Card",
+        "filters": [["name", "in", [
+            "Total Students", "Active Enrollments", "Active Programs", "Active Courses"
+        ]]]
+    },
+    {
+        "doctype": "Dashboard Chart",
+        "filters": [["name", "in", [
+            "Student Registration Status", "Student Enrollment by Program"
+        ]]]
+    },
     # --- Web Forms / Custom Fields / Property Setters ---
     "Web Form",
     "Custom Field",
