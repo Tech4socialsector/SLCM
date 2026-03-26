@@ -97,6 +97,10 @@ def handle_refund_processed(payload):
 
     txn = frappe.get_doc("Refund Transaction", txn_name)
     txn.db_set("status", "Processed")
+    if payload.get("created_at"):
+        from frappe.utils import format_datetime, get_datetime
+        payload["processed_date"] = format_datetime(get_datetime(payload.get("created_at")))
+
     txn.db_set("gateway_response", json.dumps(payload, indent=4))
 
     refund = frappe.get_doc("Refund Request", txn.refund_request)
@@ -138,6 +142,10 @@ def handle_refund_failed(payload):
 
     txn = frappe.get_doc("Refund Transaction", txn_name)
     txn.db_set("status", "Failed")
+    if payload.get("created_at"):
+        from frappe.utils import format_datetime, get_datetime
+        payload["processed_date"] = format_datetime(get_datetime(payload.get("created_at")))
+
     txn.db_set("gateway_response", json.dumps(payload, indent=4))
 
     refund = frappe.get_doc("Refund Request", txn.refund_request)

@@ -1581,6 +1581,208 @@
     font-size: 17px;
   }
 
+  /* ── Modern Premium Card Enhancements ───────────────────── */
+  .et-card {
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .et-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: var(--primary-mid);
+  }
+
+  .et-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: linear-gradient(to right, #f8fafc, #ffffff);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .et-title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .et-icon-box {
+    width: 38px;
+    height: 38px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .et-title-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.01em;
+  }
+
+  .et-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .et-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .et-badge.scheduled {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+
+  .et-body {
+    padding: 20px;
+  }
+
+  .et-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 32px;
+  }
+
+  .et-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .et-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-4);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .et-value {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text-1);
+    line-height: 1.4;
+  }
+
+  .et-value.accent {
+    color: var(--danger);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .et-value.highlight {
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  .et-address-box {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    gap: 12px;
+  }
+
+  .et-loc-icon {
+    width: 32px;
+    height: 32px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .et-address-content {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+
+  .et-map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 11.5px;
+    margin-top: 6px;
+    padding: 2px 0;
+    border-bottom: 1.5px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .et-map-link:hover {
+    border-bottom-color: var(--primary);
+    gap: 6px;
+  }
+
+  .btn-download-premium {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(var(--primary-rgb, 29, 78, 216), 0.2);
+    transition: all 0.2s;
+  }
+
+  .btn-download-premium:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(var(--primary-rgb, 29, 78, 216), 0.3);
+    opacity: 0.95;
+  }
+
+  @media (max-width: 600px) {
+    .et-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .et-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .et-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .btn-download-premium {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
   /* ── Responsive Enhancements ────────────────────────────── */
   @media (max-width: 992px) {
     .ma-inner {
@@ -2042,14 +2244,14 @@ or _app.current_stage)) or _status %}
           <a href="/api/method/slcm.admission.utils.web.download_refund_receipt?refund_request={{ cancellation_details.refund_request }}" target="_blank" class="btn-download" 
              style="padding: 0 16px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; background: {{ status_color }}; color: white; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
             <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
-            Download Receipt
+            Refund Receipt
           </a>
         </div>
         {% endif %}
       </div>
       
       <div class="ma-card-body" style="padding: 24px;">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+        <div class="grid grid-cols-1 gap-8" style="display: grid; grid-template-columns: 1fr;">
           
           <!-- Column 1: Status -->
           <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -2069,7 +2271,7 @@ or _app.current_stage)) or _status %}
                 </div>
                 <div style="text-align: right;">
                   <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
-                  <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.format(cancellation_details.requested_on, "Datetime") }}</div>
+                  <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.utils.get_datetime(cancellation_details.requested_on).strftime("%d-%m-%Y %I:%M:%S %p") if cancellation_details.requested_on else "—" }}</div>
                 </div>
               </div>
 
@@ -2077,12 +2279,18 @@ or _app.current_stage)) or _status %}
               <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed {{ card_border }}; display: flex; justify-content: space-between; align-items: flex-end;">
                 <div>
                   <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refund Amount</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #334155;">{{ frappe.format(cancellation_details.refund_amount, "Currency", cancellation_details.currency or "INR") }}</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #334155; display: flex; align-items: baseline; gap: 8px;">
+                    {{ frappe.format(cancellation_details.refund_amount, "Currency", cancellation_details.currency or "INR") }}
+                    {% if cancellation_details.amount_paid %}
+                      {% set percentage = (cancellation_details.refund_amount / cancellation_details.amount_paid * 100)|round(0)|int %}
+                      <span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">{{ percentage }}% Refund</span>
+                    {% endif %}
+                  </div>
                 </div>
                 {% if cancellation_details.refund_date and r_status in ['Processed', 'Completed'] %}
                 <div style="text-align: right;">
                   <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refunded On</div>
-                  <div style="font-size: 11px; font-weight: 700; color: #16a34a;">{{ frappe.format(cancellation_details.refund_date, "Datetime") }}</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #16a34a;">{{ frappe.utils.get_datetime(cancellation_details.refund_date).strftime("%d-%m-%Y %I:%M:%S %p") if cancellation_details.refund_date else "—" }}</div>
                 </div>
                 {% endif %}
               </div>
@@ -2091,20 +2299,6 @@ or _app.current_stage)) or _status %}
           </div>
 
 
-          <!-- Column 2: Reason -->
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; color: #991b1b; font-weight: 700; font-size: 12px; text-transform: none; letter-spacing: 0.05em;">
-              <span class="material-symbols-outlined" style="font-size: 18px;">description</span>
-              Withdrawal Details
-            </div>
-            
-            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #fecaca; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                 <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Reason</div>
-                 <div style="font-size: 13px; font-weight: 500; color: #475569; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                   {{ cancellation_details.cancellation_reason or '—' }}
-                 </div>
-            </div>
-          </div>
           
         </div>
 
@@ -2251,17 +2445,29 @@ or _app.current_stage)) or _status %}
          ║  ENTRANCE TEST CARD                          ║
          ╚══════════════════════════════════════════════╝ -->
     {% if et_doc %}
-    <div class="ma-card fade-up" style="animation-delay:.18s">
-      <div class="ma-card-head">
-        <div class="ma-card-title">
-          <span class="ico"><span class="material-symbols-outlined">edit_document</span></span>
-          Entrance Test
+    <div class="et-card fade-up" style="animation-delay:.18s">
+      {% set current_alloc_status = et_doc.re_allocation_status if et_is_rescheduled else et_doc.allocation_status %}
+      <div class="et-header">
+        <div class="et-title-area">
+          <div class="et-icon-box">
+            <span class="material-symbols-outlined">edit_document</span>
+          </div>
+          <span class="et-title-text">Entrance Test</span>
         </div>
-        <span class="status-badge" style="background:#dbeafe;color:#1d4ed8">
-          {{ et_doc.entrance_test_status|title }}
-        </span>
+        <div class="et-actions">
+          <span class="et-badge scheduled">
+            {{ (et_doc.entrance_test_status or 'Scheduled')|capitalize }}
+          </span>
+          {% if current_alloc_status == "Allocated" and not et_show_result %}
+          <button onclick="downloadAdmitCard()" class="btn-download-premium">
+            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+            Download Admit Card
+          </button>
+          {% endif %}
+        </div>
       </div>
-      <div class="ma-card-body">
+
+      <div class="et-body">
         {% if et_show_result %}
         <div class="result-banner">
           <div class="result-banner-head">
@@ -2284,52 +2490,42 @@ or _app.current_stage)) or _status %}
           </div>
         </div>
         {% else %}
-        {% set current_alloc_status = et_doc.re_allocation_status if et_is_rescheduled else et_doc.allocation_status %}
         {% if current_alloc_status == "Allocated" %}
-        <div
-          style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
-          <div>
-            <div style="font-size:11px;color:var(--text-4);font-weight:600;margin-bottom:3px">
-              Exam centre</div>
-            <div style="font-size:15px;font-weight:600;color:var(--text-1)">{{ et_doc.re_center_name if
-              et_is_rescheduled else et_doc.center_name }}</div>
+        <div class="et-grid">
+          <div class="et-field">
+            <span class="et-label">Exam centre</span>
+            <span class="et-value">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</span>
           </div>
-          <button onclick="downloadAdmitCard()"
-            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;color:white;background:var(--primary);cursor:pointer;font-family:'Poppins',sans-serif">
-            <span class="material-symbols-outlined" style="font-size:17px">download</span>
-            Download admit card
-          </button>
-        </div>
-        <div class="info-grid-2">
-          <div class="info-tile">
-            <div class="info-tile-label">Test date</div>
-            <div class="info-tile-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else
-              et_doc.allocation_date) }}</div>
+          <div class="et-field">
+            <span class="et-label">Test date</span>
+            <span class="et-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date) }}</span>
           </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Reporting time</div>
-            <div class="info-tile-value red">{{ et_reporting_time }}</div>
+          <div class="et-field">
+            <span class="et-label">Reporting time</span>
+            <span class="et-value accent">
+              <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+              {{ et_reporting_time }}
+            </span>
           </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Room / hall</div>
-            <div class="info-tile-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name }}</div>
+          <div class="et-field">
+            <span class="et-label">Seat number</span>
+            <span class="et-value highlight">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}</span>
           </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Seat number</div>
-            <div class="info-tile-value blue">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}
-            </div>
+          <div class="et-field">
+            <span class="et-label">Room / hall</span>
+            <span class="et-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name or '—' }}</span>
           </div>
         </div>
-        <div
-          style="display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:10px;padding:12px;margin-top:12px;border:1px solid var(--border)">
-          <span class="material-symbols-outlined"
-            style="font-size:17px;color:var(--text-4);flex-shrink:0;margin-top:1px">location_on</span>
-          <div style="flex:1">
-            <span style="font-size:12px;color:var(--text-2);display:block;margin-bottom:4px">{{ et_doc.re_center_address if et_is_rescheduled else
-              et_doc.center_address }}</span>
+
+        <div class="et-address-box">
+          <div class="et-loc-icon">
+            <span class="material-symbols-outlined" style="font-size:18px;">location_on</span>
+          </div>
+          <div class="et-address-content">
+            {{ et_doc.re_center_address if et_is_rescheduled else et_doc.center_address }}
             {% if et_location %}
-            <a href="#" onclick="openMap('{{ et_location | escape }}'); return false;" 
-               style="font-size:11px;color:var(--primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+            <br>
+            <a href="#" onclick="openMap('{{ et_location | escape }}'); return false;" class="et-map-link">
                <span class="material-symbols-outlined" style="font-size:14px">map</span>
                View on Map
             </a>
@@ -2528,7 +2724,13 @@ or _app.current_stage)) or _status %}
           <div class="seat-info-box">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
               <span class="seat-prog-name">{{ _prog }}</span>
-              <span class="merit-chip" style="position: static;">{{ r.selection_status }}</span>
+              {% if r.selection_status == 'Rejected' %}
+              <span class="merit-chip" style="position: static; background:#fee2e2; color:#991b1b;">Rejected</span>
+              {% elif r.selection_status == 'Waitlisted' %}
+              <span class="merit-chip" style="position: static; background:#fef9c3; color:#854d0e;">Waitlisted</span>
+              {% else %}
+              <span class="merit-chip" style="position: static;">Selected</span>
+              {% endif %}
             </div>
             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);">
               <div
@@ -2546,19 +2748,7 @@ or _app.current_stage)) or _status %}
             {% endif %} -->
           </div>
 
-          {% if r.selection_status in ['Selected','Offered'] %}
-          <!-- Accept/Decline buttons commented out intentionally -->
-          {% elif r.selection_status == 'Accepted' %}
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
-            <span class="material-symbols-outlined"
-              style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
-            <span style="font-size:13px;font-weight:600;color:#166534">Seat Accepted</span>
-          </div>
-          {% else %}
-          <div style="padding:12px 0;text-align:center">
-            <span style="font-size:13px;font-weight:500;color:var(--text-3)">Status: {{ r.selection_status }}</span>
-          </div>
-          {% endif %}
+
           {% else %}
           <div style="padding:12px 0">
             <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>

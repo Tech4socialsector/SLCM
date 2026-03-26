@@ -118,20 +118,42 @@ def get_offer_details(offer_name=None):
     # Get Online Payment Enabled flag
     online_payment_enabled = frappe.db.get_value("Fee Structure", fee_structure, "online_payment") if fee_structure else False
 
+    # --- Scholarship: Get latest application status and benefit ---
+    scholarship_data = None
+    latest_sa = frappe.get_all("Scholarship Application",
+        filters={"applicant_id": applicant_id, "admission_cycle": admission_cycle, "docstatus": ["!=", 2]},
+        fields=["name", "status", "scholarship_scheme", "calculated_benefit", "original_fee_amount", "final_fee_amount"],
+        order_by="creation desc",
+        limit=1
+    )
+    if latest_sa:
+        scholarship_data = latest_sa[0]
+        # Status normalization for frontend
+        if scholarship_data.status == "Submitted":
+            scholarship_data.status = "Submitted" # Under Review
+
     # --- Scholarship: Override payable_amount with scholarship-adjusted amount ---
     afa = frappe.db.get_value("Applicant Fee Assignment", 
-        {"offer_letter": offer_id, "docstatus": ["!=", 2]},
+        {"offer_letter": offer_id, "fee_type": "Admission Fee", "docstatus": ["!=", 2]},
         ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied"],
         as_dict=True)
     
+    applied_scholarship = 0
     if afa and afa.scholarship_applied and flt(afa.scholarship_amount) > 0:
         # Show the scholarship-reduced amount as the payable amount
         offer_dict["payable_amount"] = flt(afa.final_payable_amount)
-        
-        # Append scholarship deduction row to fee breakdown
+        applied_scholarship = flt(afa.scholarship_amount)
+    elif scholarship_data and scholarship_data.status == "Approved":
+        # Fallback: if AFA not created yet, show potential reduced amount in portal
+        benefit = flt(scholarship_data.calculated_benefit)
+        offer_dict["payable_amount"] = max(0, flt(offer_dict["payable_amount"]) - benefit)
+        applied_scholarship = benefit
+
+    # Append scholarship deduction row to fee breakdown if applicable
+    if applied_scholarship > 0:
         fee_data.append({
             "component": "Scholarship Benefit",
-            "amount": -flt(afa.scholarship_amount),
+            "amount": -applied_scholarship,
             "is_discount": True
         })
 
@@ -151,6 +173,21 @@ def get_offer_details(offer_name=None):
         "cancellation_status": cancellation[0].status if cancellation else ""
     }
 
+    # Calculate available scholarships
+    from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard
+    available_scholarships_count = 0
+    try:
+        available_scholarships = get_available_scholarships_for_dashboard(
+            applicant_id=target_applicant,
+            cycle=admission_cycle,
+            campus=applicant_dict.get("campus"),
+            program=applicant_dict.get("program"),
+            applicant_statuses=[applicant_dict.get("application_status")]
+        )
+        available_scholarships_count = len(available_scholarships)
+    except Exception:
+        pass
+
     return {
         "offer": offer_dict,
         "applicant": applicant_dict,
@@ -160,7 +197,9 @@ def get_offer_details(offer_name=None):
         "is_fee_paid": True if fee_paid else False,
         "online_payment_enabled": online_payment_enabled,
         "currency": frappe.defaults.get_global_default("currency") or "INR",
-        "cancellation": cancellation_info
+        "cancellation": cancellation_info,
+        "available_scholarships_count": available_scholarships_count,
+        "scholarship_application": scholarship_data
     }
 
 

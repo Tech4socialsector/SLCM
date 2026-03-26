@@ -112,6 +112,13 @@ frappe.ui.form.on('Refund Request', {
 			frm.change_custom_button_type(__('Process Refund'), null, 'primary');
 		}
 
+		if (frm.doc.status === 'Processed') {
+			frm.add_custom_button(__('Download Receipt'), function() {
+				const print_url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Refund%20Request&name=${encodeURIComponent(frm.doc.name)}&format=Refund%20Receipt%20Format&no_letterhead=0`;
+				window.open(print_url);
+			});
+		}
+
 		if (['Processing', 'Processed', 'Failed'].includes(frm.doc.status) && frm.doc.razorpay_refund_id) {
 			frm.add_custom_button(__('Check Status'), function() {
 				frappe.call({

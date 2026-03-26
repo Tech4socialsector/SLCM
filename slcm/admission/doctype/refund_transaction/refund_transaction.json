@@ -55,7 +55,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Initiated",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,

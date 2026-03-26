@@ -23,7 +23,8 @@ def get_dashboard_data(filters=None):
             "campus_dist": get_campus_distribution(refund_conditions),
             "processing_time": get_avg_processing_time(refund_conditions)
         },
-        "recent_refunds": get_recent_refunds(refund_conditions)
+        "recent_refunds": get_recent_refunds(refund_conditions, filters.get("limit_start", 0), filters.get("limit_page_length", 10)),
+        "total_recent_refunds": get_recent_refunds_count(refund_conditions)
     }
 
 def get_conditions(filters, date_field, table_alias):
@@ -166,7 +167,7 @@ def get_avg_processing_time(conditions):
     """)[0][0] or 0
     return round(flt(res), 1)
 
-def get_recent_refunds(conditions):
+def get_recent_refunds(conditions, limit_start=0, limit_page_length=10):
     # Manual SQL for joins
     return frappe.db.sql(f"""
         SELECT rr.name, rr.applicant, ac.program, rr.amount_paid, rr.refund_amount, rr.status, rr.request_date, rr.refund_date
@@ -174,5 +175,13 @@ def get_recent_refunds(conditions):
         JOIN `tabAdmission Cancellation` ac ON rr.admission_cancellation = ac.name
         WHERE {conditions}
         ORDER BY rr.creation DESC
-        LIMIT 10
+        LIMIT {limit_page_length} OFFSET {limit_start}
     """, as_dict=1)
+
+def get_recent_refunds_count(conditions):
+    return frappe.db.sql(f"""
+        SELECT COUNT(rr.name)
+        FROM `tabRefund Request` rr
+        JOIN `tabAdmission Cancellation` ac ON rr.admission_cancellation = ac.name
+        WHERE {conditions}
+    """)[0][0] or 0
