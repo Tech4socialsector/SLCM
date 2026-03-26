@@ -240,66 +240,78 @@ def get_context(context):
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
         try:
-            all_cycle_stages = frappe.get_all(
-                "Admission Cycle Stage",
-                filters={
-                    "parent": applicant.admission_cycle,
-                    "is_enabled": 1
-                },
-                fields=[
-                    "stage_name", "stage_type", "applicable_workflow",
-                    "sequence_no", "activate_status", "completed_status", "closed_status"
-                ],
-                order_by="sequence_no asc",
-                ignore_permissions=True
-            )
-
-            if all_cycle_stages:
-                intake = applicant.intake_type or "External Test"
-                filtered_stages = [
-                    s for s in all_cycle_stages
-                    if s.applicable_workflow == "All" or s.applicable_workflow == intake
+            # 1. Get Admission Cycle Doc to check enabled stages
+            # ── Use active cycle for stage configuration (per requirement) ──
+            active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+            cycle_name_to_use = active_cycle_name if active_cycle_name else applicant.admission_cycle
+            
+            if cycle_name_to_use:
+                cycle_doc = frappe.get_doc("Admission Cycle", cycle_name_to_use, ignore_permissions=True)
+                
+                # Potential stages mapping based on checkboxes in Admission Cycle
+                # Using 'intereview' as per the doctype field name (note the typo)
+                POTENTIAL_STAGES = [
+                    {"field": "submitted",       "name": "Application",   "stage_type": "Application"},
+                    {"field": "entrance_test",   "name": "Entrance Test", "stage_type": "Entrance Test"},
+                    {"field": "intereview",      "name": "Interview",     "stage_type": "Interview"},
+                    {"field": "merit",           "name": "Merit",         "stage_type": "Merit"},
+                    {"field": "seat_allocation", "name": "Seat Allocation", "stage_type": "Seat Allocation"},
+                    {"field": "offer_letter",    "name": "Offer Letter",  "stage_type": "Offer Letter"},
+                    {"field": "admission_fee",   "name": "Admission Fee", "stage_type": "Admission Fee"},
+                    {"field": "enrolled",        "name": "Enrollment",    "stage_type": "Enrollment"},
                 ]
-                current_status = applicant.application_status
+                
+                enabled_stages = [ps for ps in POTENTIAL_STAGES if cycle_doc.get(ps["field"])]
+                
+                # 2. Get current status info from Applicant Status doctype
+                status_info = frappe.db.get_value("Applicant Status", 
+                    applicant.application_status, 
+                    ["stage_type", "status_type"], 
+                    as_dict=True) or {}
+                
+                current_stage_type = status_info.get("stage_type")
+                current_status_type = status_info.get("status_type")
+                
+                # 3. Determine active index
                 active_index = -1
-                is_terminal_stop = False
-                is_completed_stop = False
+                for i, s in enumerate(enabled_stages):
+                    if s["stage_type"] == current_stage_type:
+                        active_index = i
+                        break
                 
-                for i, s in enumerate(filtered_stages):
-                    if s.activate_status == current_status:
-                        active_index = i
-                        is_terminal_stop = False
-                        is_completed_stop = False
-                    elif s.completed_status == current_status:
-                        active_index = i
-                        is_terminal_stop = False
-                        is_completed_stop = True
-                    elif s.closed_status == current_status:
-                        active_index = i
-                        is_terminal_stop = True
-                        is_completed_stop = False
-                
-                for i, s in enumerate(filtered_stages):
+                # 4. Build stages with state
+                for i, s in enumerate(enabled_stages):
                     state = "pending"
                     if active_index != -1:
                         if i < active_index:
                             state = "completed"
                         elif i == active_index:
-                            if is_terminal_stop:
-                                state = "closed"
-                            elif is_completed_stop:
+                            if current_status_type == "Complete":
                                 state = "completed"
+                            elif current_status_type == "Closed":
+                                state = "closed"
                             else:
                                 state = "active"
                     
                     is_exempted = False
-                    if s.stage_type == "Exam" and evaluation.get("exempts_entrance_test"):
+                    if s["stage_type"] == "Entrance Test" and evaluation.get("exempts_entrance_test"):
                         is_exempted = True
-                    elif s.stage_type == "Interview" and evaluation.get("exempts_interview"):
+                    elif s["stage_type"] == "Interview" and evaluation.get("exempts_interview"):
                         is_exempted = True
 
+                    # Logic for display names:
+                    # Line 1 (primary): Stage Name
+                    # Line 2 (subtext): Status Name if active or closed
+                    
+                    stage_name = s["name"]
+                    status_label = ""
+                    if state in ["active", "closed"]:
+                        status_label = applicant.application_status
+
                     stages_with_state.append({
-                        "name": s.stage_name or s.stage_type,
+                        "name": stage_name,
+                        "display_name": stage_name,
+                        "status_label": status_label,
                         "state": state,
                         "is_exempted": is_exempted
                     })
@@ -309,8 +321,8 @@ def get_context(context):
         if not stages_with_state:
             # Fallback based on common statuses
             statuses = [
-                {"name": "Submitted", "activate": "Submitted", "closed": "Rejected"},
-                {"name": "Under Review", "activate": "Under Review", "closed": "Rejected"},
+                {"name": "Application", "activate": "Submitted", "closed": "Rejected"},
+                {"name": "Review", "activate": "Under Review", "closed": "Rejected"},
                 {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
                 {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
             ]
@@ -327,7 +339,17 @@ def get_context(context):
                         stop_found = True
                     else:
                         state = "completed"
-                stages_with_state.append({"name": st["name"], "state": state})
+
+                status_label = ""
+                if state in ["active", "closed"]:
+                    status_label = current
+
+                stages_with_state.append({
+                    "name": st["name"],
+                    "display_name": st["name"],
+                    "status_label": status_label,
+                    "state": state
+                })
 
         context.stage_tracker = stages_with_state
 
@@ -439,7 +461,9 @@ def get_context(context):
             else:
                 context.payment_details = None
         else:
-            context.offer_name = ""
+            # Don't wipe offer_name — it may already be set from the initial offer
+            # letter fetch above and is needed for the quick-status offer button.
+            # The withdrawal button is controlled by payment_details, not offer_name.
             context.payment_details = None
 
         # Combined results

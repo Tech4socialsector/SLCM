@@ -1981,7 +1981,14 @@ or _app.current_stage)) or _status %}
               <span class="stage-arrow">→</span>
               {% endif %}
             </div>
-            <span class="stage-label {{ _sstate }}">{{ _slabel }}</span>
+            <span class="stage-label {{ _sstate }}">
+              <div class="stage-name-main">{{ s.display_name if s is mapping else _slabel }}</div>
+              {% if s is mapping and s.status_label %}
+              <div class="stage-status-sub" style="font-size: 8px; font-weight: 400; margin-top: 2px; opacity: 0.8;">
+                {{ s.status_label }}
+              </div>
+              {% endif %}
+            </span>
             {% if s.is_exempted %}
               <span class="exemption-badge">Exempted</span>
             {% endif %}

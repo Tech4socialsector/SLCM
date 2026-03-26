@@ -726,3 +726,14 @@ def get_payment_status(docname):
         "payment_status": doc.payment_status,
         "docstatus": doc.docstatus
     }
+
+
+@frappe.whitelist()
+def get_login_redirect():
+    if frappe.session.user == "Guest":
+        return ""
+    
+    user_type = frappe.db.get_value("User", frappe.session.user, "user_type") or "Website User"
+    if user_type == "System User":
+        return "/app"
+    return ""
