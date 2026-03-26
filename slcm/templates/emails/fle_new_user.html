@@ -1,0 +1,41 @@
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+<div style="font-family: 'Merriweather', serif;">
+
+<p>Dear {{ first_name | e }}{% if last_name %} {{ last_name | e }}{% endif %},</p>
+
+<p>Welcome to <em>Foundations for a Legal Education (FLE)</em>!</p>
+
+<p>Your registration has been successfully received, and your Log-in ID is <b>{{ user }}</b></p>
+
+<p>To get started, please complete your registration by clicking the link below:</p>
+
+<p style="margin: 15px 0px;">
+	<a href="{{ link }}" rel="nofollow" class="btn btn-primary"><b>Complete Registration</b></a>
+</p>
+
+<p>
+	If the button does not work, you may copy and paste this link into your browser:<br>
+	<a href="{{ link }}">{{ link }}</a>
+</p>
+
+<br>
+<p>We are delighted to have you join us and look forward to an engaging learning experience.</p>
+
+<p>Warm regards,</p>
+
+<table cellpadding="0" cellspacing="0" border="0" style="margin-top: 10px;">
+	<tr>
+		<td style="padding-right: 15px; vertical-align: middle;">
+			<img src="{{ frappe.utils.get_url('/files/nlsiu-logo.jpg') }}" alt="NLSIU Logo" style="width: 60px; height: auto;" />
+		</td>
+		<td style="vertical-align: middle;">
+			<strong>FLE Programme Team</strong><br>
+			<a href="https://pace.nls.ac.in">Foundations for a Legal Education</a><br>
+			National Law School of India University<br>
+			Website: <a href="https://pace.nls.ac.in">pace.nls.ac.in</a>
+		</td>
+	</tr>
+</table>
+
+</div>

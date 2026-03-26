@@ -36,6 +36,7 @@ frappe.ui.form.on("Student Attendance Tool", {
 		frm.set_value("group_based_on", null);
 		frm.set_value("course_schedule", null);
 		frm.set_value("class_schedule", null);
+		frm.set_value("office_hours_group", null);
 		frm.students_area.empty();
 		frm.trigger("set_student_group_query");
 	},
@@ -71,7 +72,7 @@ frappe.ui.form.on("Student Attendance Tool", {
 	/* ---------------- Data Fetch ---------------- */
 
 	student_group(frm) {
-		if ((frm.doc.student_group && frm.doc.date) || frm.doc.course_schedule || frm.doc.class_schedule) {
+		if ((frm.doc.student_group && frm.doc.date) || frm.doc.course_schedule || frm.doc.class_schedule || frm.doc.office_hours_group) {
 			frm.students_area.html(
 				"<div style='padding:2rem;text-align:center'>" +
 				"<i class='fa fa-spinner fa-spin'></i> Fetching students..." +
@@ -86,6 +87,7 @@ frappe.ui.form.on("Student Attendance Tool", {
 					date: frm.doc.date,
 					course_schedule: frm.doc.course_schedule,
 					class_schedule: frm.doc.class_schedule,
+					office_hours_group: frm.doc.office_hours_group,
 				},
 				callback(r) {
 					frm.events.get_students(frm, r.message || []);
@@ -136,6 +138,14 @@ frappe.ui.form.on("Student Attendance Tool", {
 				}
 				frm.trigger("student_group");
 			});
+		} else {
+			frm.trigger("student_group");
+		}
+	},
+
+	office_hours_group(frm) {
+		if (frm.doc.office_hours_group) {
+			frm.trigger("student_group");
 		} else {
 			frm.trigger("student_group");
 		}
@@ -249,6 +259,7 @@ class StudentsEditor {
 						student_group: this.frm.doc.student_group,
 						course_schedule: this.frm.doc.course_schedule,
 						class_schedule: this.frm.doc.class_schedule,
+						office_hours_group: this.frm.doc.office_hours_group,
 						date: this.frm.doc.date,
 						based_on: this.frm.doc.based_on,
 						group_based_on: this.frm.doc.group_based_on,

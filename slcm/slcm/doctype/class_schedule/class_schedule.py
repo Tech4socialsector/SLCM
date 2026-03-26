@@ -16,6 +16,10 @@ class ClassSchedule(Document):
         self.validate_repeat_settings()
         self.check_conflicts()
 
+    def on_update(self):
+        """Update the corresponding Attendance Session when Class Schedule is updated"""
+        self.update_attendance_session()
+
     def validate_time(self):
         """Validate that to_time is after from_time"""
         if self.from_time and self.to_time:
@@ -32,31 +36,64 @@ class ClassSchedule(Document):
 
     def check_conflicts(self):
         """Check for scheduling conflicts"""
-        if not self.instructor or not self.schedule_date or not self.from_time or not self.to_time:
+        if not self.schedule_date or not self.from_time or not self.to_time:
             return
 
-        # Check if instructor has another class at the same time
-        conflicts = frappe.get_all(
-            "Class Schedule",
-            filters={
+        # 1. Check for Duplicate Class Schedule (Same Student Group, Same Date, Overlapping Time)
+        if self.student_group:
+            filters = {
                 "name": ["!=", self.name],
-                "instructor": self.instructor,
+                "student_group": self.student_group,
                 "schedule_date": self.schedule_date,
-            },
-            fields=["name", "from_time", "to_time", "course"],
-        )
+                "docstatus": ["<", 2] # Exclude cancelled
+            }
+            
+            # Optional: restrict to same course if 'same class' means exact same course
+            # But usually 'same class' means the students are busy. 
+            # User said "save the same time same class same day it should not duplicate"
+            # implying exact duplicate of the schedule.
+            # Let's check for Student Group overlap broadly implies they are busy.
+            # But the user specifically said "duplicate... same time same class".
+            # "Class" context usually means Course in this system (from previous files).
+            # Let's stick to Student Group + Course overlap to be safe against "Duplicate", 
+            # OR just Student Group overlap to prevent double booking the students.
+            # Given "validations", double booking students is generally bad.
+            # I will check for Student Group overlap.
+            
+            conflicts = frappe.get_all(
+                "Class Schedule",
+                filters=filters,
+                fields=["name", "from_time", "to_time", "course", "student_group"],
+            )
 
-        for conflict in conflicts:
-            # Check if times overlap
-            if self.times_overlap(
-                self.from_time, self.to_time, conflict.from_time, conflict.to_time
-            ):
-                frappe.msgprint(
-                    f"Warning: Instructor {self.instructor} has another class ({conflict.course}) "
-                    f"from {conflict.from_time} to {conflict.to_time} on {self.schedule_date}",
-                    indicator="orange",
-                    alert=True,
-                )
+            for conflict in conflicts:
+                if self.times_overlap(self.from_time, self.to_time, conflict.from_time, conflict.to_time):
+                    frappe.throw(
+                        f"Already scheduled same time class {conflict.course} for {self.student_group} ({conflict.from_time} - {conflict.to_time})",
+                        title="Duplicate Schedule"
+                    )
+
+        # 2. Check Instructor Conflict
+        if self.instructor:
+            conflicts = frappe.get_all(
+                "Class Schedule",
+                filters={
+                    "name": ["!=", self.name],
+                    "instructor": self.instructor,
+                    "schedule_date": self.schedule_date,
+                    "docstatus": ["<", 2]
+                },
+                fields=["name", "from_time", "to_time", "course"],
+            )
+
+            for conflict in conflicts:
+                if self.times_overlap(self.from_time, self.to_time, conflict.from_time, conflict.to_time):
+                    frappe.msgprint(
+                        f"Warning: Instructor {self.instructor} has another class ({conflict.course}) "
+                        f"from {conflict.from_time} to {conflict.to_time} on {self.schedule_date}",
+                        indicator="orange",
+                        alert=True,
+                    )
 
     def times_overlap(self, start1, end1, start2, end2):
         """Check if two time ranges overlap"""
@@ -87,6 +124,11 @@ class ClassSchedule(Document):
         if exists:
             return
 
+        # Fetch Room from Venue Booking if venue is selected
+        room_name = None
+        if self.venue:
+            room_name = frappe.db.get_value("Venue Booking", self.venue, "room")
+
         doc = frappe.get_doc({
             "doctype": "Attendance Session",
             "based_on": "Class Schedule",
@@ -95,7 +137,7 @@ class ClassSchedule(Document):
             "course_offering": self.course_offering,
             "course": self.course,
             "instructor": self.instructor,
-            "room": self.room,
+            "room": room_name,
             "session_date": self.schedule_date,
             "session_start_time": self.from_time,
             "session_end_time": self.to_time,
@@ -103,6 +145,82 @@ class ClassSchedule(Document):
             "session_status": "Scheduled"
         })
         doc.insert(ignore_permissions=True)
+
+    def update_attendance_session(self):
+        """Update the corresponding Attendance Session when Class Schedule is updated"""
+        frappe.logger().info(f"update_attendance_session called for {self.name}")
+        
+        if not self.schedule_date or not self.from_time or not self.to_time:
+            frappe.logger().info(f"Missing required fields: schedule_date={self.schedule_date}, from_time={self.from_time}, to_time={self.to_time}")
+            return
+
+        # Find the Attendance Session linked to this Class Schedule
+        session_name = frappe.db.get_value("Attendance Session", {
+            "class_schedule": self.name
+        })
+
+        if not session_name:
+            frappe.logger().info(f"No Attendance Session found for Class Schedule {self.name}")
+            frappe.msgprint(
+                f"No Attendance Session found for this Class Schedule. "
+                "Please create an Attendance Session first.",
+                indicator="orange",
+                alert=True
+            )
+            return
+
+        frappe.logger().info(f"Found Attendance Session: {session_name}")
+
+        # Get the Attendance Session document
+        session = frappe.get_doc("Attendance Session", session_name)
+
+        # Only update if attendance hasn't been marked yet
+        # This prevents overwriting attendance data
+        if session.attendance_marked:
+            frappe.msgprint(
+                f"Attendance has already been marked for session {session_name}. "
+                "Changes to Class Schedule will not update the session.",
+                indicator="orange",
+                alert=True
+            )
+            return
+
+        # Fetch Room from Venue Booking if venue is selected
+        room_name = None
+        if self.venue:
+            room_name = frappe.db.get_value("Venue Booking", self.venue, "room")
+
+        # Calculate duration in hours
+        duration_hours = 0
+        if self.from_time and self.to_time:
+            from_delta = to_timedelta(self.from_time)
+            to_delta = to_timedelta(self.to_time)
+            duration_seconds = (to_delta - from_delta).total_seconds()
+            duration_hours = duration_seconds / 3600
+
+        frappe.logger().info(f"Updating session {session_name}: from {self.from_time} to {self.to_time}, duration={duration_hours}")
+
+        # Update the session fields
+        session.session_date = self.schedule_date
+        session.session_start_time = self.from_time
+        session.session_end_time = self.to_time
+        session.duration_hours = round(duration_hours, 2)
+        session.instructor = self.instructor
+        session.room = room_name
+        session.course = self.course
+        session.course_offering = self.course_offering
+        session.student_group = self.student_group
+
+        # Save the session
+        session.save(ignore_permissions=True)
+
+        frappe.msgprint(
+            f"Attendance Session {session_name} has been updated successfully.",
+            indicator="green",
+            alert=True
+        )
+
+
 
     def create_recurring_schedules(self):
         """Create recurring class schedules based on repeat frequency"""
@@ -408,3 +526,71 @@ def update_event(args, field_map):
     
     return doc.name
 
+
+@frappe.whitelist()
+def update_attendance_session_realtime(class_schedule_name, from_time, to_time, schedule_date, duration_hours):
+	"""
+	Update Attendance Session in real-time when Class Schedule times change.
+	Called from client-side JavaScript without requiring a full save.
+	Also triggers recalculation of Attendance Summary for all affected students.
+	"""
+	try:
+		# Find the Attendance Session linked to this Class Schedule
+		session_name = frappe.db.get_value("Attendance Session", {
+			"class_schedule": class_schedule_name
+		})
+
+		if not session_name:
+			return {"success": False, "message": "No Attendance Session found"}
+
+		# Get the Attendance Session document
+		session = frappe.get_doc("Attendance Session", session_name)
+
+		# Only update if attendance hasn't been marked yet
+		if session.attendance_marked:
+			return {"success": False, "message": "Attendance already marked"}
+
+		# Update the session fields
+		session.session_start_time = from_time
+		session.session_end_time = to_time
+		session.duration_hours = duration_hours
+		session.session_date = schedule_date
+
+		# Save the session
+		session.save(ignore_permissions=True)
+		frappe.db.commit()
+
+		# Trigger attendance recalculation for all students in this course offering
+		# This updates total_class_hours in Attendance Summary
+		if session.course_offering:
+			try:
+				from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+				
+				# Get all students who have attendance records for this course offering
+				students = frappe.db.sql("""
+					SELECT DISTINCT student
+					FROM `tabStudent Attendance`
+					WHERE course_offer = %s
+				""", session.course_offering, as_dict=True)
+				
+				# Recalculate attendance for each student
+				for student_row in students:
+					calculate_student_attendance(student_row.student, session.course_offering)
+				
+				frappe.db.commit()
+			except Exception as calc_error:
+				# Log the error but don't fail the entire operation
+				frappe.log_error(
+					message=f"Error recalculating attendance: {str(calc_error)}", 
+					title="Attendance Recalculation Error"
+				)
+
+		return {
+			"success": True,
+			"message": f"Attendance Session {session_name} updated",
+			"session_name": session_name
+		}
+
+	except Exception as e:
+		frappe.log_error(message=str(e), title="Real-time Attendance Session Update Error")
+		return {"success": False, "message": str(e)}

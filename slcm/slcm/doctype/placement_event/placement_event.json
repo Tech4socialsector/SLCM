@@ -16,7 +16,6 @@
  "sort_order": "ASC",
  "grid_page_length": 50,
  "rows_threshold_for_grid_search": 20,
-
  "field_order": [
   "section_event",
   "opportunity",
@@ -25,7 +24,6 @@
   "venue",
   "attendance_required"
  ],
-
  "fields": [
   {
    "fieldname": "section_event",
@@ -67,7 +65,6 @@
    "default": 1
   }
  ],
-
  "permissions": [
   {
    "role": "Placement Officer",
@@ -92,6 +89,6 @@
    "share": 1
   }
  ],
-
- "states": []
+ "states": [],
+ "custom": 0
 }

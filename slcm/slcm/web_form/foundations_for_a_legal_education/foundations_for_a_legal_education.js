@@ -1,108 +1,134 @@
+// Poll until the phone control is fully initialised, then set India (+91)
+// as default when no country code is present.
+// Defined at module scope so it can be called from both frappe.ready and after_load.
+function set_india_default(attempts) {
+    attempts = attempts || 0;
+    const phone_field = frappe.web_form.fields_dict &&
+        frappe.web_form.fields_dict['candidate_contact_number'];
+    if (phone_field && phone_field.country_code_picker &&
+        phone_field.country_codes && phone_field.$isd) {
+        // Set India if: the ISD picker shows nothing, OR the stored value has
+        // no '+' prefix (meaning no country code was saved with the number).
+        const stored_value = (phone_field.value || '').toString().trim();
+        const isd_empty = !phone_field.$isd.text().trim();
+        const no_country_code = !stored_value.startsWith('+');
+        if (isd_empty || no_country_code) {
+            phone_field.country_code_picker.on_change('India', false);
+        }
+    } else if (attempts < 20) {
+        setTimeout(function () { set_india_default(attempts + 1); }, 200);
+    }
+}
+
+
 frappe.ready(function () {
-	function toggle_declaration_section() {
-		try {
-			const dob_val = frappe.web_form.get_value('candidate_dob');
-			// Default to false (hidden) if no DOB or error
-			let show_declaration = false;
-			let age = null;
+    // Mask the URL — replace any path like /foundations-for-a-legal-education/FLE-2026-XXXX
+    // with the clean base route so document names are never visible in the browser bar.
+    if (window.location.pathname !== '/foundations-for-a-legal-education') {
+        history.replaceState(null, '', '/foundations-for-a-legal-education');
+    }
 
-			if (dob_val) {
-				const dob = new Date(dob_val);
-				const today = new Date();
-				age = today.getFullYear() - dob.getFullYear();
-				const m = today.getMonth() - dob.getMonth();
+    // --------------------------------------------------
+    // Master-level Guest Restrictor:
+    // Prevent direct access to the web form without login
+    // --------------------------------------------------
+    if (frappe.session.user === 'Guest') {
+        $('body').removeClass('theme-loaded').css({ 'opacity': '0', 'visibility': 'hidden', 'display': 'none' });
+        frappe.msgprint({
+            title: __('Authentication Required'),
+            indicator: 'red',
+            message: __('You must be logged in to access this application form. Redirecting to login...')
+        });
+        setTimeout(function () {
+            window.location.replace('/login.html');
+        }, 2000);
+        return;
+    }
 
-				if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-					age--;
-				}
 
-				if (age < 18) {
-					show_declaration = true;
-				}
-			}
+    // Capitalize each word in all fields dynamically
+    const excluded_fields = ['email_address', 'parent_email_address'];
+    if (frappe.web_form && frappe.web_form.fields_dict) {
+        $.each(frappe.web_form.fields_dict, function (fieldname, field) {
+            if (['Data', 'Small Text', 'Text'].includes(field.df.fieldtype) && !excluded_fields.includes(fieldname)) {
+                frappe.web_form.on(fieldname, function (_f, value) {
+                    value = value || frappe.web_form.get_value(fieldname);
+                    if (value && typeof value === 'string') {
+                        const capitalized = value.replace(/\b[a-zA-Z]/g, function (l) { return l.toUpperCase(); });
+                        if (capitalized !== value) {
+                            frappe.web_form.set_value(fieldname, capitalized);
+                        }
+                    }
+                });
+            }
+        });
+    }
 
-			// --- 1. Toggle Section Break (Declaration) ---
-			// Try standard API first
-			toggle_field('section_break_declaration', show_declaration);
 
-			// MASTER FALLBACK: Find the section header by text 'Declaration'
-			// We search for header elements containing "Declaration" and hide their parent container
-			const $headers = $('.section-head, .section-header, h2, h3, h4, h5, h6').filter(function () {
-				return $(this).text().trim() === 'Declaration';
-			});
+    // Pre-fill email and mobile from server-side cache (URL is kept clean)
+    frappe.call({
+        method: 'slcm.api.user.get_fle_prefill_data',
+        callback: function (r) {
+            const data = r.message || {};
+            setTimeout(() => {
+                if (data.email) {
+                    frappe.web_form.set_value('email_address', data.email);
+                    if (frappe.web_form.fields_dict && frappe.web_form.fields_dict['email_address']) {
+                        frappe.web_form.fields_dict['email_address'].df.read_only = 1;
+                        frappe.web_form.fields_dict['email_address'].refresh();
+                    }
+                }
+                if (data.mobile) {
+                    const phone_fld = frappe.web_form.fields_dict &&
+                        frappe.web_form.fields_dict['candidate_contact_number'];
+                    let mobile = data.mobile.trim();
+                    // Pre-format with country code so the phone control uses the simple
+                    // branch-1 path (value.includes("-")) instead of the async else-if
+                    // branch, which can cause the number to appear doubled.
+                    if (!mobile.startsWith('+') && phone_fld && phone_fld.$isd) {
+                        const isd = phone_fld.$isd.text().trim();
+                        if (isd) {
+                            mobile = isd + '-' + mobile;
+                        }
+                    }
+                    frappe.web_form.set_value('candidate_contact_number', mobile);
+                    if (phone_fld) {
+                        phone_fld.df.read_only = 1;
+                        phone_fld.refresh();
+                    }
+                }
+            }, 500);
+        }
+    });
 
-			if ($headers.length > 0) {
-				// Determine the container (usually .web-form-section or .section-break)
-				const $section_container = $headers.closest('.web-form-section, .section-break');
-				if ($section_container.length > 0) {
-					$section_container.toggle(show_declaration);
-				} else {
-					// Fallback: hide the header and maybe its next sibling if it's a flat structure
-					$headers.toggle(show_declaration);
-					// This is risky without a container, but better than nothing
-				}
-			}
+    set_india_default();
+});
 
-			// --- 2. Toggle HTML Content ---
-			toggle_field('declaration_html', show_declaration);
 
-			// MASTER FALLBACK: Find by content text
-			const unique_text = "This declaration is only for the students below 18 years of age";
-			// Find elements containing this text
-			const $html_content = $(`div:contains("${unique_text}"), p:contains("${unique_text}")`).filter(function () {
-				// Ensure it's the actual content element, not a parent container
-				return $(this).children().length === 0 || $(this).hasClass('control-value') || $(this).hasClass('form-control');
-			});
-			$html_content.closest('.form-group, .web-form-field').toggle(show_declaration);
+// Runs after frappe.web_form.make() → set_field_values(), so field values
+// (including the phone number) are already loaded at this point.
+frappe.web_form.after_load = function () {
+    // Re-apply India (+91) default now that field values are populated.
+    // This is the definitive call — the frappe.ready call handles new forms
+    // but after_load is needed for existing documents where set_field_values()
+    // runs after frappe.ready and may reset the ISD picker.
+    set_india_default();
 
-			// --- 3. Toggle Consent Checkbox ---
-			toggle_field('declaration_consent', show_declaration);
+    if (frappe.web_form.is_new || frappe.web_form.in_edit_mode) return;
 
-		} catch (e) {
-			// Error handling silently in production or log to system console if available
-		}
-	}
+    // Fallback: form loaded in read-only mode — redirect to /edit URL.
+    var docname = frappe.web_form.doc && frappe.web_form.doc.name;
+    if (docname) {
+        window.location.replace(
+            '/' + frappe.web_form.route + '/' + encodeURIComponent(docname) + '/edit'
+        );
+    }
+};
 
-	function toggle_field(fieldname, show) {
-		try {
-			// Method 1: Try toggle_display (v15+)
-			if (typeof frappe.web_form.toggle_display === 'function') {
-				frappe.web_form.toggle_display(fieldname, show);
-				return;
-			}
 
-			// Method 2: Try set_field_property (v13/14)
-			if (typeof frappe.web_form.set_field_property === 'function') {
-				frappe.web_form.set_field_property(fieldname, 'hidden', show ? 0 : 1);
-				return;
-			}
-
-			// Method 3: Direct DOM manipulation via get_field
-			let field = frappe.web_form.get_field(fieldname);
-			if (field && field.$wrapper) {
-				field.$wrapper.toggle(show);
-				return;
-			}
-
-			// Method 4: Data attribute selector
-			let $el = $('[data-fieldname="' + fieldname + '"]');
-			if ($el.length) {
-				// If it's a section break, hide the container
-				if ($el.hasClass('section-break') || $el.hasClass('web-form-section')) {
-					$el.toggle(show);
-				} else {
-					$el.closest('.form-group, .web-form-field').toggle(show);
-				}
-			}
-		} catch (e) {
-			// Error handling silently
-		}
-	}
-
-	frappe.web_form.on('candidate_dob', function () {
-		toggle_declaration_section();
-	});
-
-	// Run on load
-	toggle_declaration_section();
+// Call the global custom header/footer injector
+$(function () {
+    if (typeof inject_fle_header_footer === 'function') {
+        inject_fle_header_footer();
+    }
 });
