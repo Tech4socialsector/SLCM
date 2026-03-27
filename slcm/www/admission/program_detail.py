@@ -232,6 +232,38 @@ def get_context(context):
         frappe.log_error(str(ex), "prog_detail:eligibility_rules")
         context.eligibility_rules = []
 
+    # ── user application status ───────────────────────────────────
+    context.user_app_name   = ""
+    context.user_app_status = ""
+    context.has_any_application = False
+    if frappe.session.user and frappe.session.user != "Guest":
+        try:
+            # Only consider applications in the active cycle
+            filters = {"email": frappe.session.user}
+            if context.active_cycle:
+                filters["admission_cycle"] = context.active_cycle.name
+
+            _all = frappe.get_all(
+                "Applicant",
+                filters=filters,
+                fields=["name", "program", "application_status"],
+                order_by="creation desc"
+            )
+            
+            if _all:
+                context.has_any_application = True
+                # 2. Match for this specific program
+                for _a in _all:
+                    _p = (_a.get("program") or "").strip().lower()
+                    _t = (prog.name or "").strip().lower()
+                    _s = (slug or "").strip().lower()
+                    if _p == _t or _p == _s:
+                        context.user_app_name   = _a.get("name") or ""
+                        context.user_app_status = _a.get("application_status") or ""
+                        break
+        except Exception as _ex:
+            frappe.log_error(title="prog_detail_app_lookup", message=str(_ex))
+
     # ── Support email ─────────────────────────────────────────────
     try:
         pc = context.portal_config

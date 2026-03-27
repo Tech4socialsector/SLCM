@@ -157,6 +157,22 @@ def get_context(context):
         context.applicant_data = {}
 
     app_data = context.applicant_data or {}
+    
+    # --- Fetch Offer Letter for this applicant ---
+    context.offer_name = ""
+    context.offer_status = ""
+    if app_data.get("name"):
+        offer_letter = frappe.get_all("Offer Letter", 
+            filters={"applicant": app_data.get("name")},
+            fields=["name", "offer_status"],
+            order_by="creation desc",
+            limit=1,
+            ignore_permissions=True
+        )
+        if offer_letter:
+            context.offer_name = offer_letter[0].name
+            context.offer_status = offer_letter[0].offer_status
+
     if app_data.get("name") and app_data.get("application_status") != "Submitted":
         context.prefill_program = app_data.get("program") or session_sel.get("program") or prefill_prog
         context.prefill_admission_cycle = app_data.get("admission_cycle") or session_sel.get("admission_cycle") or prefill_cycle

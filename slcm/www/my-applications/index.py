@@ -239,78 +239,153 @@ def get_context(context):
 
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
+        context.cycle_next_step_message = ""
         try:
-            all_cycle_stages = frappe.get_all(
-                "Admission Cycle Stage",
-                filters={
-                    "parent": applicant.admission_cycle,
-                    "is_enabled": 1
-                },
-                fields=[
-                    "stage_name", "stage_type", "applicable_workflow",
-                    "sequence_no", "activate_status", "completed_status", "closed_status"
-                ],
-                order_by="sequence_no asc",
-                ignore_permissions=True
-            )
+            # 1. Get Admission Cycle Doc to check enabled stages
+            # ── Use active cycle for stage configuration (per requirement) ──
+            active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+            cycle_name_to_use = active_cycle_name if active_cycle_name else applicant.admission_cycle
 
-            if all_cycle_stages:
-                intake = applicant.intake_type or "External Test"
-                filtered_stages = [
-                    s for s in all_cycle_stages
-                    if s.applicable_workflow == "All" or s.applicable_workflow == intake
+            # Post–offer admission fee: paid if offer accepted / payment completed or submitted receipt exists
+            admission_fee_paid = False
+            try:
+                _off_row = frappe.get_all(
+                    "Offer Letter",
+                    filters={"applicant": applicant.name},
+                    fields=["offer_status"],
+                    order_by="creation desc",
+                    limit=1,
+                    ignore_permissions=True,
+                )
+                if _off_row and (_off_row[0].get("offer_status") or "") in (
+                    "Accepted",
+                    "Payment Completed",
+                ):
+                    admission_fee_paid = True
+                if not admission_fee_paid:
+                    admission_fee_paid = bool(
+                        frappe.db.exists(
+                            "Applicant Payment Receipt",
+                            {"applicant": applicant.name, "docstatus": 1},
+                        )
+                    )
+            except Exception:
+                admission_fee_paid = False
+            
+            if cycle_name_to_use:
+                cycle_doc = frappe.get_doc("Admission Cycle", cycle_name_to_use, ignore_permissions=True)
+                
+                # Potential stages mapping based on checkboxes in Admission Cycle
+                # Using 'intereview' as per the doctype field name (note the typo)
+                # after_* fields on Admission Cycle drive portal "next step" messaging.
+                POTENTIAL_STAGES = [
+                    {"field": "submitted",       "name": "Application Submitted", "stage_type": "Application",       "after_field": "after_submitted"},
+                    {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test",     "after_field": "after_entrance_test"},
+                    {"field": "intereview",      "name": "Interview",             "stage_type": "Interview",         "after_field": "after_interview"},
+                    {"field": "merit",           "name": "Merit",                 "stage_type": "Merit",             "after_field": "after_merit"},
+                    {"field": "seat_allocation", "name": "Seat Allocation",       "stage_type": "Seat Allocation",   "after_field": "after_seat_allocation"},
+                    {"field": "offer_letter",    "name": "Offer Letter",          "stage_type": "Offer Letter",      "after_field": "after_offer_letter"},
+                    {"field": "admission_fee",   "name": "Admission Fee",         "stage_type": "Admission Fee",     "after_field": "after_admission_fee"},
+                    {"field": "enrolled",        "name": "Enrollment",            "stage_type": "Enrollment",        "after_field": "after_enroll"},
                 ]
-                current_status = applicant.application_status
+                
+                enabled_stages = [ps for ps in POTENTIAL_STAGES if cycle_doc.get(ps["field"])]
+                
+                # 2. Get current status info from Applicant Status doctype
+                status_info = frappe.db.get_value("Applicant Status", 
+                    applicant.application_status, 
+                    ["stage_type", "status_type"], 
+                    as_dict=True) or {}
+                
+                current_stage_type = status_info.get("stage_type")
+                current_status_type = status_info.get("status_type")
+                
+                # 3. Determine active index
                 active_index = -1
-                is_terminal_stop = False
-                is_completed_stop = False
+                for i, s in enumerate(enabled_stages):
+                    if s["stage_type"] == current_stage_type:
+                        active_index = i
+                        break
                 
-                for i, s in enumerate(filtered_stages):
-                    if s.activate_status == current_status:
-                        active_index = i
-                        is_terminal_stop = False
-                        is_completed_stop = False
-                    elif s.completed_status == current_status:
-                        active_index = i
-                        is_terminal_stop = False
-                        is_completed_stop = True
-                    elif s.closed_status == current_status:
-                        active_index = i
-                        is_terminal_stop = True
-                        is_completed_stop = False
-                
-                for i, s in enumerate(filtered_stages):
+                # 4. Build stages with state
+                for i, s in enumerate(enabled_stages):
                     state = "pending"
                     if active_index != -1:
                         if i < active_index:
                             state = "completed"
                         elif i == active_index:
-                            if is_terminal_stop:
-                                state = "closed"
-                            elif is_completed_stop:
+                            if current_status_type == "Complete":
                                 state = "completed"
+                            elif current_status_type == "Closed":
+                                state = "closed"
                             else:
                                 state = "active"
                     
                     is_exempted = False
-                    if s.stage_type == "Exam" and evaluation.get("exempts_entrance_test"):
+                    if s["stage_type"] == "Entrance Test" and evaluation.get("exempts_entrance_test"):
                         is_exempted = True
-                    elif s.stage_type == "Interview" and evaluation.get("exempts_interview"):
+                    elif s["stage_type"] == "Interview" and evaluation.get("exempts_interview"):
                         is_exempted = True
 
+                    # Logic for display names:
+                    # Line 1 (primary): Stage Name
+                    # Line 2 (subtext): Status Name if active or closed
+                    
+                    stage_name = s["name"]
+                    status_label = ""
+                    if state in ["active", "closed"]:
+                        status_label = applicant.application_status
+
+                    if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
+                        "completed",
+                        "active",
+                    ):
+                        status_label = "Paid"
+
                     stages_with_state.append({
-                        "name": s.stage_name or s.stage_type,
+                        "name": stage_name,
+                        "display_name": stage_name,
+                        "status_label": status_label,
                         "state": state,
-                        "is_exempted": is_exempted
+                        "is_exempted": is_exempted,
+                        "stage_type": s["stage_type"],
+                        "after_field": s.get("after_field"),
                     })
+
+                # 5. Next-step banner: message from Admission Cycle for the last completed stage
+                last_completed_idx = -1
+                for i, st in enumerate(stages_with_state):
+                    _st = st.get("state")
+                    if _st == "completed":
+                        last_completed_idx = i
+                    elif _st == "active":
+                        break
+                    elif _st == "closed":
+                        last_completed_idx = i
+                        break
+                    else:
+                        break
+
+                if last_completed_idx >= 0:
+                    last_st = stages_with_state[last_completed_idx]
+                    if last_st.get("stage_type") == "Application":
+                        # Fixed portal copy after application is submitted (ignores misconfigured cycle notes)
+                        context.cycle_next_step_message = (
+                            "You have successfully submitted the application. "
+                            "Our team will notify you soon regarding the entrance test."
+                        )
+                    else:
+                        af = (last_st.get("after_field") or "").strip()
+                        if af:
+                            context.cycle_next_step_message = (cycle_doc.get(af) or "").strip()
         except Exception as e:
             frappe.log_error(f"Stage tracker context error: {e}")
 
         if not stages_with_state:
             # Fallback based on common statuses
             statuses = [
-                {"name": "Submitted", "activate": "Submitted", "closed": "Rejected"},
-                {"name": "Under Review", "activate": "Under Review", "closed": "Rejected"},
+                {"name": "Application Submitted", "activate": "Submitted", "closed": "Rejected"},
+                {"name": "Review", "activate": "Under Review", "closed": "Rejected"},
                 {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
                 {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
             ]
@@ -327,7 +402,17 @@ def get_context(context):
                         stop_found = True
                     else:
                         state = "completed"
-                stages_with_state.append({"name": st["name"], "state": state})
+
+                status_label = ""
+                if state in ["active", "closed"]:
+                    status_label = current
+
+                stages_with_state.append({
+                    "name": st["name"],
+                    "display_name": st["name"],
+                    "status_label": status_label,
+                    "state": state
+                })
 
         context.stage_tracker = stages_with_state
 
@@ -359,6 +444,21 @@ def get_context(context):
         context.app_narrative = applicant.get("remarks") or ""
         context.submission_date = frappe.utils.format_date(applicant.creation, "MMMM d, yyyy")
         context.app_name_param = _app_name
+
+        # --- Fetch Offer Letter for this applicant ---
+        offer_letter = frappe.get_all("Offer Letter", 
+            filters={"applicant": applicant.name},
+            fields=["name", "offer_status"],
+            order_by="creation desc",
+            limit=1,
+            ignore_permissions=True
+        )
+        if offer_letter:
+            context.offer_name = offer_letter[0].name
+            context.offer_status = offer_letter[0].offer_status
+        else:
+            context.offer_name = ""
+            context.offer_status = ""
 
         # --- Fetch Payment Details for Cancellation Button ---
         context.payment_details = None
@@ -424,7 +524,9 @@ def get_context(context):
             else:
                 context.payment_details = None
         else:
-            context.offer_name = ""
+            # Don't wipe offer_name — it may already be set from the initial offer
+            # letter fetch above and is needed for the quick-status offer button.
+            # The withdrawal button is controlled by payment_details, not offer_name.
             context.payment_details = None
 
         # Combined results

@@ -43,6 +43,7 @@
    "reqd": 1
   },
   {
+   "description": "Do not use special characters such as &.",
    "fieldname": "program_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -145,7 +146,8 @@
   {
    "fieldname": "program_description",
    "fieldtype": "Text Editor",
-   "label": "Program Description"
+   "label": "Program Description",
+   "reqd": 1
   },
   {
    "fieldname": "eligibility_summary",
@@ -197,9 +199,10 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 10:18:21.298677",
+ "make_attachments_public": 1,
+ "modified": "2026-03-26 21:02:45.391314",
  "modified_by": "Administrator",
- "module": "SLCM",
+ "module": "slcm",
  "name": "Program",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
@@ -261,6 +264,5 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }

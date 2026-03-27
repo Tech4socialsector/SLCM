@@ -30,953 +30,961 @@ else 'Admissions Open') %}
 {# Cycle Active Check #}
 {% set _is_cycle_active = False %}
 {% if active_cycle %}
-    {% set _start = active_cycle.cycle_start_date %}
-    {% set _end = active_cycle.cycle_end_date %}
-    {% if (not _start or today >= _start) and (not _end or today <= _end) %}
-        {% set _is_cycle_active = True %}
-    {% endif %}
-{% endif %}
-
-{# Profile data shortcuts (Sourced from User via controller) #}
-{% set _pd = profile_data or {} %}
-{% set _pname = _pd.get('candidate_name','') %}
-{% set _pemail = _pd.get('email','') %}
-{% set _pphoto = _pd.get('candidate_photo','') %}
-{% set _pstatus = _pd.get('application_status','') %}
-{% set _app_id = _pd.get('name','') %}
-{% set _pfirst = (_pname[0]|upper) if _pname else (_first or 'U') %}
-{% set _pmobile = _pd.get('mobile_number','') %}
-{% set _pdob = _pd.get('date_of_birth','') %}
-{% set _pgender = _pd.get('gender','') %}
-{% set _pnation = _pd.get('nationality','') %}
-{% set _paddr = _pd.get('correspondence_address','') %}
-{% set _pcity = _pd.get('city','') %}
-{% set _pstate = _pd.get('state','') %}
-{% set _ppincode= _pd.get('pincode','') %}
-
-{# Profile completion calculation (8 fields) #}
-{% set _completion_fields = [_pmobile, _pdob, _pgender, _pnation, _paddr, _pcity, _pstate, _ppincode] %}
-{% set _filled_count = namespace(v=0) %}
-{% for f in _completion_fields %}{% if f %}{% set _filled_count.v = _filled_count.v + 1 %}{% endif %}{% endfor %}
-{% set _completion_pct = ((_filled_count.v / 8) * 100) | round | int %}
-
-{# Documents #}
-{% set _docs = app_documents or [] %}
-
-{% block title %}Dashboard — Admissions{% endblock %}
-
-{% block theme_vars %}
-<style>
+{% set _start = active_cycle.cycle_start_date %}
+{% set _end = active_cycle.cycle_end_date %}
+{% if (not _start or today >= _start) and (not _end or today <= _end) %} {% set _is_cycle_active=True %} {% endif %} {%
+  endif %} {# Profile data shortcuts (Sourced from User via controller) #} {% set _pd=profile_data or {} %} {% set
+  _pname=_pd.get('candidate_name','') %} {% set _pemail=_pd.get('email','') %} {% set
+  _pphoto=_pd.get('candidate_photo','') %} {% set
+  _app_id=_pd.get('name','') %} {% set _pfirst=(_pname[0]|upper) if _pname else (_first or 'U' ) %} {% set
+  _pmobile=_pd.get('mobile_number','') %} {% set _pdob=_pd.get('date_of_birth','') %} {% set
+  _pgender=_pd.get('gender','') %} {% set _pnation=_pd.get('nationality','') %} {% set
+  _paddr=_pd.get('correspondence_address','') %} {% set _pcity=_pd.get('city','') %} {% set _pstate=_pd.get('state','')
+  %} {% set _ppincode=_pd.get('pincode','') %} {# Profile completion calculation (8 fields) #} {% set
+  _completion_fields=[_pmobile, _pdob, _pgender, _pnation, _paddr, _pcity, _pstate, _ppincode] %} {% set
+  _filled_count=namespace(v=0) %} {% for f in _completion_fields %}{% if f %}{% set _filled_count.v=_filled_count.v + 1
+  %}{% endif %}{% endfor %} {% set _completion_pct=((_filled_count.v / 8) * 100) | round | int %} {# Documents #} {% set
+  _docs=app_documents or [] %} {% block title %}Dashboard — Admissions{% endblock %} {% block theme_vars %} <style>
   :root {
-    --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
-    --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
-    --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
-    --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
-    --text-1: #1f2937;
-    --text-2: #374151;
-    --text-3: #6b7280;
-    --text-4: #9ca3af;
-    --border: #e5e7eb;
-    --bg: #f3f4f6;
-    --card-bg: #ffffff;
-    --success: #16a34a;
-    --warning: #f59e0b;
-    --danger: #dc2626;
-    --radius: 14px;
+  --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else
+  (portal_config.primary_color if portal_config else '#1a3c6e') }};
+  --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else
+  (portal_config.secondary_color if portal_config else '#c8a14b') }};
+  --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
+  --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
+  --text-1: #1f2937;
+  --text-2: #374151;
+  --text-3: #6b7280;
+  --text-4: #9ca3af;
+  --border: #e5e7eb;
+  --bg: #f3f4f6;
+  --card-bg: #ffffff;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --radius: 14px;
   }
-</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
-  rel="stylesheet">
-<link
-  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block"
-  rel="stylesheet">
-{% endblock %}
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block"
+    rel="stylesheet">
+  {% endblock %}
 
-{% block page_css %}
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  body,
-  .adm-main,
-  .adm-container {
-    font-family: 'Poppins', system-ui, sans-serif !important;
-    background: var(--bg) !important;
-  }
-
-  /* ── Typography ─────────────────────────────────────── */
-  .page-title {
-    font-family: 'Poppins', sans-serif;
-    font-size: 32px;
-    font-weight: 600;
-    line-height: 40px;
-    color: var(--text-1);
-    margin: 0;
-  }
-
-  .page-subtitle {
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 24px;
-    color: var(--text-3);
-    margin: 4px 0 0;
-  }
-
-  .profile-name {
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 28px;
-    color: var(--text-1);
-    margin: 0 0 4px;
-  }
-
-  .secondary-text {
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 20px;
-    color: var(--text-3);
-    margin: 0;
-  }
-
-  .field-label {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: none;
-    color: var(--text-4);
-    margin: 0 0 5px;
-  }
-
-  .field-value {
-    font-size: 15px;
-    font-weight: 500;
-    line-height: 22px;
-    color: var(--text-1);
-    margin: 0;
-  }
-
-  .field-value.not-set {
-    color: var(--text-4);
-    font-style: italic;
-  }
-
-  .field-value.not-provided {
-    color: var(--danger);
-    font-weight: 500;
-  }
-
-  .card-title {
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 26px;
-    color: var(--text-1);
-    margin: 0;
-  }
-
-  .btn {
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 20px;
-    cursor: pointer;
-    border: none;
-    outline: none;
-  }
-
-  .btn-primary {
-    background: var(--primary);
-    color: white;
-    padding: 8px 18px;
-    border-radius: 8px;
-    transition: opacity 0.15s, transform 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-  }
-
-  .btn-primary:hover {
-    opacity: 0.88;
-    transform: translateY(-1px);
-  }
-
-  .status {
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  /* ── Sidebar ────────────────────────────────────────── */
-  .sidebar-card {
-    background: var(--card-bg);
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .sidebar-section-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: none;
-    color: #94a3b8;
-    margin: 0 0 12px 4px;
-  }
-
-  .adm-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: #64748b;
-    transition: all 0.15s;
-    margin-bottom: 2px;
-    text-decoration: none;
-    border-left: 3px solid transparent;
-  }
-
-  .adm-menu-item:hover:not(.active) {
-    background: #f8fafc;
-    color: var(--text-1);
-  }
-
-  .adm-menu-item.active {
-    background: var(--primary-light);
-    border-left-color: var(--primary);
-    color: var(--primary) !important;
-    font-weight: 600;
-  }
-
-  .adm-menu-item.active .ms-icon {
-    color: var(--primary) !important;
-  }
-
-  .adm-menu-item.danger {
-    color: var(--danger);
-  }
-
-  .adm-menu-item.danger:hover {
-    background: #fff5f5;
-  }
-
-  .ms-icon {
-    font-family: 'Material Symbols Outlined';
-    font-size: 20px;
-    color: #94a3b8;
-    flex-shrink: 0;
-  }
-
-  /* ── Animations ─────────────────────────────────────── */
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(18px);
+  {% block page_css %}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
     }
 
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .fade-in-up {
-    animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0;
-  }
-
-  @keyframes kenburns {
-    0% {
-      transform: scale(1);
+    body,
+    .adm-main,
+    .adm-container {
+      font-family: 'Poppins', system-ui, sans-serif !important;
+      background: var(--bg) !important;
     }
 
-    100% {
-      transform: scale(1.08);
+    /* ── Typography ─────────────────────────────────────── */
+    .page-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 40px;
+      color: var(--text-1);
+      margin: 0;
     }
-  }
 
-  .ken-burns {
-    animation: kenburns 20s ease-in-out infinite alternate;
-  }
-
-  /* ── Progress Bar ───────────────────────────────────── */
-  .progress-bar-track {
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 99px;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .progress-bar-fill {
-    height: 100%;
-    border-radius: 99px;
-    background: var(--primary);
-    transition: width 1.2s cubic-bezier(0.34, 1, 0.64, 1);
-  }
-
-  /* ── Profile Completion Row ─────────────────────────── */
-  .completion-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    background: #f9fafb;
-    border-radius: 10px;
-    /* margin-top: 16px; */
-  }
-
-  .completion-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-2);
-    white-space: nowrap;
-  }
-
-  .completion-pct {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--primary);
-    white-space: nowrap;
-  }
-
-  /* ── Profile Identity Card ─────────────────────────── */
-  .profile-identity-card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .avatar-wrap {
-    position: relative;
-    width: 68px;
-    height: 68px;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-
-  .avatar-circle {
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 3px solid white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  }
-
-  .avatar-initials {
-    width: 100%;
-    height: 100%;
-    background: var(--primary);
-    color: white;
-    font-size: 26px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Poppins', sans-serif;
-  }
-
-  .avatar-cam-badge {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--primary);
-    border: 2px solid white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .avatar-cam-badge .ms-icon {
-    font-size: 12px;
-    color: white;
-  }
-
-  .app-id-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #f1f5f9;
-    border-radius: 999px;
-    padding: 3px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #475569;
-    margin-top: 6px;
-  }
-
-  .app-id-chip .ms-icon {
-    font-size: 14px;
-    color: #94a3b8;
-  }
-
-  /* ── Profile Summary Card ───────────────────────────── */
-  .profile-summary-card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    padding: 24px;
-  }
-
-  .profile-fields-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px 32px;
-    margin-top: 20px;
-  }
-
-  /* ── Documents Status Card ──────────────────────────── */
-  .doc-status-card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    padding: 24px;
-  }
-
-  .doc-rows-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-top: 16px;
-  }
-
-  .doc-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .doc-check {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-2);
-  }
-
-  .doc-check-box {
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
-    border: 2px solid #d1d5db;
-    background: white;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .doc-check-box.checked {
-    background: white;
-    border-color: #d1d5db;
-  }
-
-  .doc-check-box.checked::after {
-    content: '';
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    background: var(--primary);
-    display: block;
-  }
-
-  .doc-status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  .doc-status-badge.uploaded {
-    color: var(--success);
-  }
-
-  .doc-status-badge.pending {
-    color: var(--warning);
-  }
-
-  .doc-status-badge .ms-icon {
-    font-size: 16px;
-  }
-
-  .btn-upload-docs {
-    margin-top: 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: 8px;
-    background: var(--primary);
-    color: white;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-    transition: opacity 0.15s, transform 0.15s;
-  }
-
-  .btn-upload-docs:hover {
-    opacity: 0.88;
-    transform: translateY(-1px);
-  }
-
-  /* ── Account Settings Card ──────────────────────────── */
-  .account-settings-card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    overflow: hidden;
-  }
-
-  .account-settings-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .account-settings-header:hover {
-    background: #fafafa;
-  }
-
-  .account-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 24px;
-    border-top: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.12s;
-    text-decoration: none;
-  }
-
-  .account-row:hover {
-    background: #f9fafb;
-  }
-
-  .account-row-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-2);
-  }
-
-  .account-row-left .ms-icon {
-    font-size: 18px;
-    color: #94a3b8;
-  }
-
-  .account-row-chevron .ms-icon {
-    font-size: 18px;
-    color: #cbd5e1;
-  }
-
-  #account-settings-body {
-    display: none;
-  }
-
-  #account-settings-body.open {
-    display: block;
-  }
-
-  .chevron-icon {
-    transition: transform 0.2s;
-  }
-
-  .chevron-icon.rotated {
-    transform: rotate(90deg);
-  }
-
-  /* ── Responsive Enhancements ────────────────────────────── */
-  @media (max-width: 1024px) {
-    .page-title { font-size: 28px; }
-  }
-
-  @media (max-width: 768px) {
-    .profile-identity-card {
-      flex-direction: column !important;
-      gap: 16px !important;
-      text-align: center !important;
-      padding: 24px 20px !important;
+    .page-subtitle {
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 24px;
+      color: var(--text-3);
+      margin: 4px 0 0;
     }
-    .profile-identity-card .btn-primary {
-      position: static !important;
-      margin-top: 10px !important;
-      width: 100% !important;
-      justify-content: center !important;
+
+    .profile-name {
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 28px;
+      color: var(--text-1);
+      margin: 0 0 4px;
     }
-    .avatar-wrap {
-      margin: 0 auto !important;
+
+    .secondary-text {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 20px;
+      color: var(--text-3);
+      margin: 0;
     }
-    .profile-fields-grid {
-      grid-template-columns: 1fr !important;
-      gap: 16px !important;
+
+    .field-label {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: none;
+      color: var(--text-4);
+      margin: 0 0 5px;
     }
-    .completion-row {
-      flex-direction: column !important;
-      gap: 8px !important;
-      align-items: center !important;
+
+    .field-value {
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 22px;
+      color: var(--text-1);
+      margin: 0;
     }
-    .progress-bar-track {
-      max-width: 100% !important;
-      width: 100% !important;
+
+    .field-value.not-set {
+      color: var(--text-4);
+      font-style: italic;
     }
-    
+
+    .field-value.not-provided {
+      color: var(--danger);
+      font-weight: 500;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 26px;
+      color: var(--text-1);
+      margin: 0;
+    }
+
+    .btn {
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 20px;
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      padding: 8px 18px;
+      border-radius: 8px;
+      transition: opacity 0.15s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
+
+    .status {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────── */
     .sidebar-card {
-      position: static !important;
-      padding: 12px !important;
-      margin-bottom: 20px !important;
-      overflow: hidden !important;
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
     }
-    .sidebar-card nav {
-      flex-direction: row !important;
-      flex-wrap: nowrap !important;
-      overflow-x: auto !important;
-      gap: 8px !important;
-      padding-bottom: 8px !important;
-      -webkit-overflow-scrolling: touch !important;
-      scrollbar-width: auto !important;
+
+    .sidebar-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: none;
+      color: #94a3b8;
+      margin: 0 0 12px 4px;
     }
-    .sidebar-card nav::-webkit-scrollbar {
-      display: block !important;
-      height: 4px !important;
-    }
-    .sidebar-card nav::-webkit-scrollbar-thumb {
-      background: var(--primary-light, #e2e8f0);
-      border-radius: 10px;
-    }
+
     .adm-menu-item {
-      padding: 8px 12px !important;
-      font-size: 13px !important;
-      white-space: nowrap !important;
-      border-left: none !important;
-      border-bottom: 3px solid transparent !important;
-      flex-shrink: 0 !important;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #64748b;
+      transition: all 0.15s;
+      margin-bottom: 2px;
+      text-decoration: none;
+      border-left: 3px solid transparent;
     }
+
+    .adm-menu-item:hover:not(.active) {
+      background: #f8fafc;
+      color: var(--text-1);
+    }
+
     .adm-menu-item.active {
-      border-bottom-color: var(--primary) !important;
+      background: var(--primary-light);
+      border-left-color: var(--primary);
+      color: var(--primary) !important;
+      font-weight: 600;
     }
-    
+
+    .adm-menu-item.active .ms-icon {
+      color: var(--primary) !important;
+    }
+
+    .adm-menu-item.danger {
+      color: var(--danger);
+    }
+
+    .adm-menu-item.danger:hover {
+      background: #fff5f5;
+    }
+
+    .ms-icon {
+      font-family: 'Material Symbols Outlined';
+      font-size: 20px;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    /* ── Animations ─────────────────────────────────────── */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes kenburns {
+      0% {
+        transform: scale(1);
+      }
+
+      100% {
+        transform: scale(1.08);
+      }
+    }
+
+    .ken-burns {
+      animation: kenburns 20s ease-in-out infinite alternate;
+    }
+
+    /* ── Progress Bar ───────────────────────────────────── */
+    .progress-bar-track {
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 99px;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--primary);
+      transition: width 1.2s cubic-bezier(0.34, 1, 0.64, 1);
+    }
+
+    /* ── Profile Completion Row ─────────────────────────── */
+    .completion-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: #f9fafb;
+      border-radius: 10px;
+      /* margin-top: 16px; */
+    }
+
+    .completion-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+
+    .completion-pct {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    /* ── Profile Identity Card ─────────────────────────── */
+    .profile-identity-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      width: 68px;
+      height: 68px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .avatar-circle {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .avatar-initials {
+      width: 100%;
+      height: 100%;
+      background: var(--primary);
+      color: white;
+      font-size: 26px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .avatar-cam-badge {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .avatar-cam-badge .ms-icon {
+      font-size: 12px;
+      color: white;
+    }
+
+    .app-id-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1f5f9;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-top: 6px;
+    }
+
+    .app-id-chip .ms-icon {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    /* ── Profile Summary Card ───────────────────────────── */
+    .profile-summary-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 24px;
+    }
+
+    .profile-fields-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px 32px;
+      margin-top: 20px;
+    }
+
+    /* ── Documents Status Card ──────────────────────────── */
+    .doc-status-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 24px;
+    }
+
+    .doc-rows-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .doc-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .doc-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-2);
+    }
+
+    .doc-check-box {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 2px solid #d1d5db;
+      background: white;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .doc-check-box.checked {
+      background: white;
+      border-color: #d1d5db;
+    }
+
+    .doc-check-box.checked::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--primary);
+      display: block;
+    }
+
+    .doc-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .doc-status-badge.uploaded {
+      color: var(--success);
+    }
+
+    .doc-status-badge.pending {
+      color: var(--warning);
+    }
+
+    .doc-status-badge .ms-icon {
+      font-size: 16px;
+    }
+
+    .btn-upload-docs {
+      margin-top: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .btn-upload-docs:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
+
+    /* ── Account Settings Card ──────────────────────────── */
+    .account-settings-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .account-settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .account-settings-header:hover {
+      background: #fafafa;
+    }
+
+    .account-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.12s;
+      text-decoration: none;
+    }
+
+    .account-row:hover {
+      background: #f9fafb;
+    }
+
+    .account-row-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-2);
+    }
+
+    .account-row-left .ms-icon {
+      font-size: 18px;
+      color: #94a3b8;
+    }
+
+    .account-row-chevron .ms-icon {
+      font-size: 18px;
+      color: #cbd5e1;
+    }
+
+    #account-settings-body {
+      display: none;
+    }
+
+    #account-settings-body.open {
+      display: block;
+    }
+
+    .chevron-icon {
+      transition: transform 0.2s;
+    }
+
+    .chevron-icon.rotated {
+      transform: rotate(90deg);
+    }
+
+    /* ── Responsive Enhancements ────────────────────────────── */
+    @media (max-width: 1024px) {
+      .page-title {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .profile-identity-card {
+        flex-direction: column !important;
+        gap: 16px !important;
+        text-align: center !important;
+        padding: 24px 20px !important;
+      }
+
+      .profile-identity-card .btn-primary {
+        position: static !important;
+        margin-top: 10px !important;
+        width: 100% !important;
+        justify-content: center !important;
+      }
+
+      .avatar-wrap {
+        margin: 0 auto !important;
+      }
+
+      .profile-fields-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+
+      .completion-row {
+        flex-direction: column !important;
+        gap: 8px !important;
+        align-items: center !important;
+      }
+
+      .progress-bar-track {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      .sidebar-card {
+        position: static !important;
+        padding: 12px !important;
+        margin-bottom: 20px !important;
+        overflow: hidden !important;
+      }
+
+      .sidebar-card nav {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        gap: 8px !important;
+        padding-bottom: 8px !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: auto !important;
+      }
+
+      .sidebar-card nav::-webkit-scrollbar {
+        display: block !important;
+        height: 4px !important;
+      }
+
+      .sidebar-card nav::-webkit-scrollbar-thumb {
+        background: var(--primary-light, #e2e8f0);
+        border-radius: 10px;
+      }
+
+      .adm-menu-item {
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
+        border-left: none !important;
+        border-bottom: 3px solid transparent !important;
+        flex-shrink: 0 !important;
+      }
+
+      .adm-menu-item.active {
+        border-bottom-color: var(--primary) !important;
+      }
+
+      .modal-box {
+        padding: 20px !important;
+        max-width: 95% !important;
+        margin: 10px !important;
+      }
+
+      .modal-grid-2col {
+        grid-template-columns: 1fr !important;
+      }
+
+      .profile-identity-card div[style*="padding-left:10px"] {
+        padding-left: 0 !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-title {
+        font-size: 24px !important;
+        line-height: 1.2 !important;
+      }
+
+      .profile-name {
+        font-size: 18px !important;
+      }
+
+      .sidebar-section-label {
+        display: none !important;
+      }
+    }
+
+    /* ── Application Cards ──────────────────────────────── */
+    .badge-draft {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .badge-submitted {
+      background: #eff6ff;
+      color: #3b82f6;
+    }
+
+    .badge-reviewing {
+      background: #fffbeb;
+      color: #d97706;
+    }
+
+    .badge-interview {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+
+    .badge-selected {
+      background: #ecfdf5;
+      color: #059669;
+    }
+
+    .badge-rejected {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .badge-waitlisted {
+      background: #faf5ff;
+      color: #7c3aed;
+    }
+
+    .badge-offered {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .hover-card {
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.22s ease, border-color 0.18s;
+    }
+
+    .hover-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.1);
+      border-color: rgba(26, 60, 110, 0.2) !important;
+    }
+
+    /* ── Modal ──────────────────────────────────────────── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.45);
+      align-items: center;
+      justify-content: center;
+    }
+
     .modal-box {
-      padding: 20px !important;
-      max-width: 95% !important;
-      margin: 10px !important;
+      background: white;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      position: relative;
     }
-    .modal-grid-2col {
-      grid-template-columns: 1fr !important;
+
+    .modal-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
     }
-    
-    .profile-identity-card div[style*="padding-left:10px"] {
-      padding-left: 0 !important;
+
+    .modal-input:focus {
+      border-color: var(--primary);
     }
-  }
 
-  @media (max-width: 480px) {
-    .page-title { font-size: 24px !important; line-height: 1.2 !important; }
-    .profile-name { font-size: 18px !important; }
-    .sidebar-section-label { display: none !important; }
-  }
+    .modal-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      display: block;
+      margin-bottom: 6px;
+    }
+  </style>
+  {% endblock %}
 
-  /* ── Application Cards ──────────────────────────────── */
-  .badge-draft {
-    background: #f1f5f9;
-    color: #64748b;
-  }
+  {% block content %}
 
-  .badge-submitted {
-    background: #eff6ff;
-    color: #3b82f6;
-  }
-
-  .badge-reviewing {
-    background: #fffbeb;
-    color: #d97706;
-  }
-
-  .badge-interview {
-    background: #f0fdf4;
-    color: #16a34a;
-  }
-
-  .badge-selected {
-    background: #ecfdf5;
-    color: #059669;
-  }
-
-  .badge-rejected {
-    background: #fef2f2;
-    color: #dc2626;
-  }
-
-  .badge-waitlisted {
-    background: #faf5ff;
-    color: #7c3aed;
-  }
-
-  .badge-offered {
-    background: #eff6ff;
-    color: #2563eb;
-  }
-
-  .hover-card {
-    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 0.22s ease, border-color 0.18s;
-  }
-
-  .hover-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.1);
-    border-color: rgba(26, 60, 110, 0.2) !important;
-  }
-
-  /* ── Modal ──────────────────────────────────────────── */
-  .modal-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(0, 0, 0, 0.45);
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal-box {
-    background: white;
-    border-radius: 20px;
-    width: 100%;
-    max-width: 560px;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 32px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    position: relative;
-  }
-
-  .modal-input {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .modal-input:focus {
-    border-color: var(--primary);
-  }
-
-  .modal-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #64748b;
-    display: block;
-    margin-bottom: 6px;
-  }
-</style>
-{% endblock %}
-
-{% block content %}
-
-<!-- ══ OUTER WRAPPER ══════════════════════════════════════════ -->
-<div style="min-height:calc(100vh - 60px);background:var(--bg);
+  <!-- ══ OUTER WRAPPER ══════════════════════════════════════════ -->
+  <div style="min-height:calc(100vh - 60px);background:var(--bg);
             margin:0 -20px 0;padding:28px 20px 40px;">
-  <div style="max-width:1200px;margin:0 auto;">
+    <div style="max-width:1200px;margin:0 auto;">
 
-    <!-- ── 12-COL GRID ────────────────────────────────────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-7">
+      <!-- ── 12-COL GRID ────────────────────────────────────── -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-7">
 
-      <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
-      <aside class="lg:col-span-3 fade-in-up" style="animation-delay:0.05s">
-        <div class="sidebar-card" style="position:sticky;top:80px;">
-          <p class="sidebar-section-label">Main Menu</p>
-          <nav style="display:flex;flex-direction:column;gap:2px;">
+        <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+        <aside class="lg:col-span-3 fade-in-up" style="animation-delay:0.05s">
+          <div class="sidebar-card" style="position:sticky;top:80px;">
+            <p class="sidebar-section-label">Main Menu</p>
+            <nav style="display:flex;flex-direction:column;gap:2px;">
 
-            <div class="adm-menu-item active" data-panel="profile" onclick="showPanel('profile')">
-              <span class="ms-icon">account_circle</span>
-              Profile
-            </div>
+              <div class="adm-menu-item active" data-panel="profile" onclick="showPanel('profile')">
+                <span class="ms-icon">account_circle</span>
+                Profile
+              </div>
 
-            <div class="adm-menu-item" data-panel="applications" onclick="showPanel('applications')">
-              <span class="ms-icon">description</span>
-              Applications
-            </div>
+              <div class="adm-menu-item" data-panel="applications" onclick="showPanel('applications')">
+                <span class="ms-icon">description</span>
+                Applications
+              </div>
 
-            <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
-              <span class="ms-icon">school</span>
-              Scholarships
-            </div>
-            <div class="adm-menu-item" onclick="window.location.href='/offer_letter/offer-letter-list'">
-              <span class="ms-icon" style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
-              Offer Letter
-            </div>
-            <div class="adm-menu-item" onclick="showChangePassword()">
-              <span class="ms-icon">lock_reset</span>
-              Change Password
-            </div>
+              <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
+                <span class="ms-icon">school</span>
+                Scholarships
+              </div>
+              <div class="adm-menu-item" onclick="window.location.href='/offer_letter/offer-letter-list'">
+                <span class="ms-icon" style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
+                Offer Letter
+              </div>
+              <div class="adm-menu-item" onclick="showChangePassword()">
+                <span class="ms-icon">lock_reset</span>
+                Change Password
+              </div>
 
-            <div class="adm-menu-item danger" onclick="window.location.href='/logout'">
-              <span class="ms-icon" style="color:var(--danger)">logout</span>
-              Logout
-            </div>
+              <div class="adm-menu-item danger" onclick="window.location.href='/logout'">
+                <span class="ms-icon" style="color:var(--danger)">logout</span>
+                Logout
+              </div>
 
-          </nav>
+            </nav>
 
-          {% if _mission_txt %}
-          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-            <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:none !important;
+            {% if _mission_txt %}
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+              <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:none !important;
                       color:var(--primary);margin:0 0 8px;display:flex;align-items:center;gap:6px;">
-              <span class="ms-icon" style="font-size:14px;">auto_awesome</span>Our Mission
-            </p>
-            <p style="font-size:12px;color:#64748b;line-height:1.6;margin:0;">{{ _mission_txt }}</p>
+                <span class="ms-icon" style="font-size:14px;">auto_awesome</span>Our Mission
+              </p>
+              <p style="font-size:12px;color:#64748b;line-height:1.6;margin:0;">{{ _mission_txt }}</p>
+            </div>
+            {% endif %}
           </div>
-          {% endif %}
-        </div>
-      </aside>
-      <!-- END SIDEBAR -->
+        </aside>
+        <!-- END SIDEBAR -->
 
-      <!-- ══ MAIN CONTENT ══════════════════════════════════════ -->
-      <main class="lg:col-span-9" style="display:flex;flex-direction:column;gap:0;">
+        <!-- ══ MAIN CONTENT ══════════════════════════════════════ -->
+        <main class="lg:col-span-9" style="display:flex;flex-direction:column;gap:0;">
 
-        <!-- ╔═ PANEL: PROFILE ══════════════════════════════════╗ -->
-        <div id="panel-profile" class="adm-panel-section fade-in-up" style="animation-delay:0.1s">
+          <!-- ╔═ PANEL: PROFILE ══════════════════════════════════╗ -->
+          <div id="panel-profile" class="adm-panel-section fade-in-up" style="animation-delay:0.1s">
 
-          <!-- Page Header -->
-          <div style="text-align:center;margin-bottom:28px;">
-            <h1 class="page-title">My Profile</h1>
-            <p class="page-subtitle">View and update your personal information.</p>
-          </div>
+            <!-- Page Header -->
+            <div style="text-align:center;margin-bottom:28px;">
+              <h1 class="page-title">My Profile</h1>
+              <p class="page-subtitle">View and update your personal information.</p>
+            </div>
 
-          <div style="display:flex;flex-direction:column;gap:16px;max-width:780px;margin:0 auto;">
+            <div style="display:flex;flex-direction:column;gap:16px;max-width:780px;margin:0 auto;">
 
-            <!-- Identity Card -->
-            <div class="profile-identity-card" style="position:relative;">
-              <!-- Avatar -->
-              <div class="avatar-wrap" onclick="document.getElementById('profile-photo-input').click()"
-                title="Change photo">
-                <div class="avatar-circle" id="profile-avatar-display">
-                  {% if _pphoto %}
-                  <img id="profile-avatar-img" src="{{ _pphoto }}" alt="Profile"
-                    style="width:100%;height:100%;object-fit:cover;display:block;" />
-                  {% else %}
-                  <div id="profile-avatar-initials" class="avatar-initials">{{ _pfirst }}</div>
-                  {% endif %}
-                </div>
-                <div class="avatar-cam-badge">
-                  <span class="ms-icon" style="font-size:12px;color:white;">photo_camera</span>
-                </div>
-              </div>
-              <input type="file" id="profile-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none;"
-                onchange="handleProfilePhotoUpload(this)" />
-
-              <!-- Name / Email / Info -->
-              <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding-left:10px; padding-top: 10px;">
-                <p class="profile-name" style="margin-bottom:2px;">{{ _pname or _display or 'Applicant' }}</p>
-                <p class="secondary-text">{{ _pemail or '' }}</p>
-
-                <!-- Completion bar inside identity card -->
-                <div class="completion-row" style="padding:10px 0px; margin-top:8px; border-radius:0; background:transparent; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">
-                  <span class="completion-label" style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">Profile completion:</span>
-                  <div class="progress-bar-track" style="height:6px; max-width:200px;">
-                    <div class="progress-bar-fill" id="progress-fill" 
-                         style="width:0%; {% if _completion_pct == 100 %}background-color:var(--success);{% endif %}"></div>
+              <!-- Identity Card -->
+              <div class="profile-identity-card" style="position:relative;">
+                <!-- Avatar -->
+                <div class="avatar-wrap" onclick="document.getElementById('profile-photo-input').click()"
+                  title="Change photo">
+                  <div class="avatar-circle" id="profile-avatar-display">
+                    {% if _pphoto %}
+                    <img id="profile-avatar-img" src="{{ _pphoto }}" alt="Profile"
+                      style="width:100%;height:100%;object-fit:cover;display:block;" />
+                    {% else %}
+                    <div id="profile-avatar-initials" class="avatar-initials">{{ _pfirst }}</div>
+                    {% endif %}
                   </div>
-                  <span class="completion-pct" id="completion-pct-label" 
-                        style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">{{ _completion_pct }}%</span>
+                  <div class="avatar-cam-badge">
+                    <span class="ms-icon" style="font-size:12px;color:white;">photo_camera</span>
+                  </div>
+                </div>
+                <input type="file" id="profile-photo-input" accept="image/jpeg,image/png,image/webp"
+                  style="display:none;" onchange="handleProfilePhotoUpload(this)" />
+
+                <!-- Name / Email / Info -->
+                <div
+                  style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding-left:10px; padding-top: 10px;">
+                  <p class="profile-name" style="margin-bottom:2px;">{{ _pname or _display or 'Applicant' }}</p>
+                  <p class="secondary-text">{{ _pemail or '' }}</p>
+
+                  <!-- Completion bar inside identity card -->
+                  <div class="completion-row"
+                    style="padding:10px 0px; margin-top:8px; border-radius:0; background:transparent; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">
+                    <span class="completion-label"
+                      style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">Profile
+                      completion:</span>
+                    <div class="progress-bar-track" style="height:6px; max-width:200px;">
+                      <div class="progress-bar-fill" id="progress-fill"
+                        style="width:0%; {% if _completion_pct == 100 %}background-color:var(--success);{% endif %}">
+                      </div>
+                    </div>
+                    <span class="completion-pct" id="completion-pct-label"
+                      style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">{{
+                      _completion_pct }}%</span>
+                  </div>
+
+                  <div id="profile-photo-status" style="font-size:11px;color:#94a3b8;min-height:14px;">
+                  </div>
                 </div>
 
-                <div id="profile-photo-status" style="font-size:11px;color:#94a3b8;min-height:14px;">
+                <!-- Edit Button -->
+                <button onclick="openProfileEditModal()" class="btn btn-primary"
+                  style="position:absolute; top:20px; right:24px; padding:6px 14px; font-size:13px;">
+                  <span class="ms-icon" style="font-size:16px;color:white;">edit</span>
+                  Edit profile
+                </button>
+              </div>
+
+              <!-- Profile Summary Card -->
+              <div class="profile-summary-card">
+                <h3 class="card-title">Profile Summary</h3>
+                <div class="profile-fields-grid">
+
+                  <div>
+                    <p class="field-label">Full name</p>
+                    <p class="field-value {{ '' if _pname else 'not-set' }}">{{ _pname or 'Not set' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">Email</p>
+                    <p class="field-value {{ '' if _pemail else 'not-set' }}">{{ _pemail or 'Not set' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">Mobile</p>
+                    <p class="field-value {{ '' if _pmobile else 'not-provided' }}">{{ _pmobile or 'Not provided' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">Date of birth</p>
+                    <p class="field-value {{ '' if _pdob else 'not-set' }}">{{ _pdob or 'Not set' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">Gender</p>
+                    <p class="field-value {{ '' if _pgender else 'not-set' }}">{{ _pgender or 'Not specified' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">Nationality</p>
+                    <p class="field-value {{ '' if _pnation else 'not-set' }}">{{ _pnation or 'Not set' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">Address</p>
+                    <p class="field-value {{ '' if _paddr else 'not-set' }}">{{ _paddr or 'Not set' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">City</p>
+                    <p class="field-value {{ '' if _pcity else 'not-set' }}">{{ _pcity or 'Not set' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">State</p>
+                    <p class="field-value {{ '' if _pstate else 'not-set' }}">{{ _pstate or 'Not set' }}</p>
+                  </div>
+                  <div>
+                    <p class="field-label">Pincode</p>
+                    <p class="field-value {{ '' if _ppincode else 'not-set' }}">{{ _ppincode or 'Not set' }}</p>
+                  </div>
+
                 </div>
               </div>
 
-              <!-- Edit Button -->
-              <button onclick="openProfileEditModal()" class="btn btn-primary"
-                style="position:absolute; top:20px; right:24px; padding:6px 14px; font-size:13px;">
-                <span class="ms-icon" style="font-size:16px;color:white;">edit</span>
-                Edit profile
-              </button>
-            </div>
-
-            <!-- Profile Summary Card -->
-            <div class="profile-summary-card">
-              <h3 class="card-title">Profile Summary</h3>
-              <div class="profile-fields-grid">
-
-                <div>
-                  <p class="field-label">Full name</p>
-                  <p class="field-value {{ '' if _pname else 'not-set' }}">{{ _pname or 'Not set' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">Email</p>
-                  <p class="field-value {{ '' if _pemail else 'not-set' }}">{{ _pemail or 'Not set' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">Mobile</p>
-                  <p class="field-value {{ '' if _pmobile else 'not-provided' }}">{{ _pmobile or 'Not provided' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">Date of birth</p>
-                  <p class="field-value {{ '' if _pdob else 'not-set' }}">{{ _pdob or 'Not set' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">Gender</p>
-                  <p class="field-value {{ '' if _pgender else 'not-set' }}">{{ _pgender or 'Not specified' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">Nationality</p>
-                  <p class="field-value {{ '' if _pnation else 'not-set' }}">{{ _pnation or 'Not set' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">Address</p>
-                  <p class="field-value {{ '' if _paddr else 'not-set' }}">{{ _paddr or 'Not set' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">City</p>
-                  <p class="field-value {{ '' if _pcity else 'not-set' }}">{{ _pcity or 'Not set' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">State</p>
-                  <p class="field-value {{ '' if _pstate else 'not-set' }}">{{ _pstate or 'Not set' }}</p>
-                </div>
-                <div>
-                  <p class="field-label">Pincode</p>
-                  <p class="field-value {{ '' if _ppincode else 'not-set' }}">{{ _ppincode or 'Not set' }}</p>
-                </div>
-
-              </div>
-            </div>
-
-            <!-- Documents Status Card -->
-            <!-- <div class="doc-status-card">
+              <!-- Documents Status Card -->
+              <!-- <div class="doc-status-card">
               <h3 class="card-title">Documents Status</h3>
 
               <div class="doc-rows-grid">
@@ -1010,8 +1018,8 @@ else 'Admissions Open') %}
               </div>
             </div> -->
 
-            <!-- Account Settings Card -->
-            <!-- <div class="account-settings-card">
+              <!-- Account Settings Card -->
+              <!-- <div class="account-settings-card">
               <div class="account-settings-header" onclick="toggleAccountSettings()">
                 <h3 class="card-title">Account Settings</h3>
                 <span class="ms-icon chevron-icon" id="acc-chevron" style="color:#94a3b8;">chevron_right</span>
@@ -1034,551 +1042,685 @@ else 'Admissions Open') %}
               </div>
             </div> -->
 
-          </div><!-- /max-width wrapper -->
-        </div>
-        <!-- ╚═ END PANEL: PROFILE ════════════════════════════╝ -->
+            </div><!-- /max-width wrapper -->
+          </div>
+          <!-- ╚═ END PANEL: PROFILE ════════════════════════════╝ -->
 
-        <!-- ╔═ PANEL: APPLICATIONS ═════════════════════════════╗ -->
-        <div id="panel-applications" class="adm-panel-section fade-in-up" style="display:none;animation-delay:0.1s">
+          <!-- ╔═ PANEL: APPLICATIONS ═════════════════════════════╗ -->
+          <div id="panel-applications" class="adm-panel-section fade-in-up" style="display:none;animation-delay:0.1s">
 
-          <!-- Hero -->
-          <section class="relative overflow-hidden"
-            style="border-radius:18px;min-height:200px;background:var(--primary);">
-            <div class="ken-burns absolute inset-0" {% if _hero_img %}
-              style="background:url('{{ _hero_img }}') center/cover no-repeat;" {% else %}
-              style="background:linear-gradient(135deg,var(--primary) 0%,var(--primary) 60%,var(--secondary) 100%);" {%
-              endif %}></div>
-            <div class="absolute inset-0"
-              style="background:linear-gradient(to top,rgba(15,23,42,0.9) 0%,rgba(15,23,42,0.3) 100%);">
-            </div>
-            <div class="relative z-10 flex flex-col md:flex-row items-end justify-between gap-5 p-7">
-              <div>
-                <!-- <span style="display:inline-block;padding:4px 12px;background:var(--primary);color:white;
+            <!-- Hero -->
+            <section class="relative overflow-hidden"
+              style="border-radius:18px;min-height:200px;background:var(--primary);">
+              <div class="ken-burns absolute inset-0" {% if _hero_img %}
+                style="background:url('{{ _hero_img }}') center/cover no-repeat;" {% else %}
+                style="background:linear-gradient(135deg,var(--primary) 0%,var(--primary) 60%,var(--secondary) 100%);"
+                {% endif %}></div>
+              <div class="absolute inset-0"
+                style="background:linear-gradient(to top,rgba(15,23,42,0.9) 0%,rgba(15,23,42,0.3) 100%);">
+              </div>
+              <div class="relative z-10 flex flex-col md:flex-row items-end justify-between gap-5 p-7">
+                <div>
+                  <!-- <span style="display:inline-block;padding:4px 12px;background:var(--primary);color:white;
                              font-size:10px;font-weight:700;letter-spacing:0.08em;
                              border-radius:999px;margin-bottom:10px;">
                   {{ _cta_tag }}
                 </span> -->
-                <p style="font-size:13px;color:#cbd5e1;max-width:420px;line-height:1.55;margin:0;">
-                  {% if _tagline %}{{ _tagline }}
-                  {% else %}Track your applications, explore programmes, and manage your admission journey.{% endif %}
-                </p>
-              </div>
-              <div style="display:flex;gap:10px;flex-shrink:0;">
-                <a href="/admission#programs" class="btn btn-primary" style="font-size:13px;">
-                  Explore Programmes
-                </a>
-                <a href="/admission" style="padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;
+                  <p style="font-size:13px;color:#cbd5e1;max-width:420px;line-height:1.55;margin:0;">
+                    {% if _tagline %}{{ _tagline }}
+                    {% else %}Track your applications, explore programmes, and manage your admission journey.{% endif %}
+                  </p>
+                </div>
+                <div style="display:flex;gap:10px;flex-shrink:0;">
+                  <a href="/admission#programs" class="btn btn-primary" style="font-size:13px;">
+                    Explore Programmes
+                  </a>
+                  <a href="/admission" style="padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;
                           color:white;text-decoration:none;font-family:'Poppins',sans-serif;
                           background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
                           backdrop-filter:blur(8px);transition:background 0.2s;"
-                  onmouseover="this.style.background='rgba(255,255,255,0.2)'"
-                  onmouseout="this.style.background='rgba(255,255,255,0.1)'">
-                  Admissions Home
-                </a>
+                    onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                    Admissions Home
+                  </a>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <!-- My Applications -->
-          <section style="margin-top:28px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <h3
-                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-1);margin:0;">
-                <span class="ms-icon" style="color:var(--primary);font-size:20px;">article</span>
-                My Applications
-              </h3>
-              <a href="/my-applications"
-                style="font-size:12px;font-weight:600;color:var(--primary);text-decoration:none;"
-                onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">View
-                all</a>
-            </div>
+            <!-- My Applications -->
+            <section style="margin-top:28px;">
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {% if _apps %}
+              {# ── Count active vs previous cycle apps ── #}
+              {% set _active_cycle_name = active_cycle.name if active_cycle else '' %}
+              {% set _ns = namespace(active_count=0, prev_count=0) %}
               {% for app in _apps %}
-              {% set _st = (app.get('application_status') if app.get else app.application_status) or 'Draft' %}
-              {% if _st in ['Draft'] %}{% set _badge='badge-draft' %}
-              {% elif _st in ['Submitted'] %}{% set _badge='badge-submitted' %}
-              {% elif _st in ['Under Review','Screening','Evaluation'] %}{% set _badge='badge-reviewing' %}
-              {% elif _st in ['Interview Scheduled','Interview'] %}{% set _badge='badge-interview' %}
-              {% elif _st in ['Selected','Accepted'] %}{% set _badge='badge-selected' %}
-              {% elif _st in ['Rejected'] %}{% set _badge='badge-rejected' %}
-              {% elif _st in ['Waitlisted'] %}{% set _badge='badge-waitlisted' %}
-              {% elif _st in ['Offered'] %}{% set _badge='badge-offered' %}
-              {% else %}{% set _badge='badge-draft' %}{% endif %}
+              {% set _cyc = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
+              {% if _active_cycle_name and _cyc == _active_cycle_name %}{% set _ns.active_count = _ns.active_count + 1
+              %}
+              {% else %}{% set _ns.prev_count = _ns.prev_count + 1 %}{% endif %}
+              {% endfor %}
 
-              {% set _pname2 = (app.get('program_name') or app.get('program') if app.get else (app.program_name or
-              app.program)) or 'Program' %}
-              {% set _cycle = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
-              {% set _stage = (app.get('current_stage_name') if app.get else app.current_stage_name) or '' %}
-              {% set _aname = (app.get('name') if app.get else app.name) or '' %}
-              {% set _mod = (app.get('modified') if app.get else app.modified) %}
+              {# ═══ ACTIVE APPLICATION SECTION ═══ #}
+              {% if _ns.active_count > 0 %}
+              <div style="margin-bottom:28px;">
+                <div
+                  style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                  <h3
+                    style="font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;color:var(--text-1);margin:0;">
+                    <span class="ms-icon" style="color:var(--primary);font-size:18px;">assignment_turned_in</span>
+                    Active Application
+                  </h3>
+                  {% if _active_cycle_name %}
+                  <span
+                    style="padding:3px 10px;background:var(--primary-light);color:var(--primary);font-size:11px;font-weight:700;border-radius:20px;white-space:nowrap;">{{
+                    _active_cycle_name }}</span>
+                  {% endif %}
+                </div>
 
-              <a href="/my-applications?app={{ _aname }}" style="text-decoration:none;" class="hover-card">
-                <div style="background:white;border-radius:12px;border:1.5px solid var(--border);overflow:hidden;
-                            display:flex;flex-direction:column;min-height:100%;">
-                  <!-- Image section (top) -->
-                  {% set _pimg = app.get('program_image') or app.program_image %}
-                  <div style="height:132px;width:100%;background:linear-gradient(135deg,var(--primary),#0d2040);position:relative;overflow:hidden;">
-                    {% if _pimg %}
-                    <img src="{{ _pimg }}" alt="{{ _pname2 }}" style="width:100%;height:100%;object-fit:cover;display:block;">
-                    {% else %}
-                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-                      <span class="ms-icon" style="font-size:40px;color:rgba(255,255,255,0.35);">school</span>
-                    </div>
-                    {% endif %}
-                  </div>
+                <!-- Active app cards: constrained width, row wrapping -->
+                <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                  {% for app in _apps %}
+                  {% set _cyc = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
+                  {% if _active_cycle_name and _cyc == _active_cycle_name %}
+                  {% set _st = (app.get('application_status') if app.get else app.application_status) or 'Draft' %}
+                  {% set _pn2 = (app.get('program_name') or app.get('program') if app.get else (app.program_name or
+                  app.program)) or 'Program' %}
+                  {% set _an = (app.get('name') if app.get else app.name) or '' %}
+                  {% set _pimg = app.get('program_image') if app.get else app.program_image %}
+                  {% if _st == 'Draft' %}{% set _badge='badge-draft' %}
+                  {% elif _st == 'Submitted' %}{% set _badge='badge-submitted' %}
+                  {% elif _st in ['Under Review','Screening','Evaluation'] %}{% set _badge='badge-reviewing' %}
+                  {% elif _st in ['Interview Scheduled','Interview'] %}{% set _badge='badge-interview' %}
+                  {% elif _st in ['Selected','Accepted'] %}{% set _badge='badge-selected' %}
+                  {% elif _st == 'Rejected' %}{% set _badge='badge-rejected' %}
+                  {% elif _st == 'Waitlisted' %}{% set _badge='badge-waitlisted' %}
+                  {% elif _st == 'Offered' %}{% set _badge='badge-offered' %}
+                  {% else %}{% set _badge='badge-draft' %}{% endif %}
 
-                  <!-- Content section (below image) -->
-                  <div style="padding:16px 16px 14px;display:flex;flex-direction:column;gap:12px;flex:1;min-width:0;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-                      <span style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:none !important;letter-spacing:0.06em;">Admissions</span>
-                      <span class="{{ _badge }}" style="padding:4px 12px;border-radius:20px;font-size:10px;font-weight:800;white-space:nowrap;">{{ _st }}</span>
-                    </div>
-
-                    <div style="min-width:0;">
-                      <h3 style="font-size:18px;font-weight:800;color:var(--text-1);margin:0;line-height:1.2;word-break:break-word;">
-                        {{ _pname2 }}
-                      </h3>
-                      <p style="font-size:12px;color:#94a3b8;margin:6px 0 0;line-height:1.35;">
-                        {{ _cycle }}
-                        <!-- {% if _stage %} · <span style="color:var(--secondary);font-weight:700;">{{ _stage }}</span>{% endif %} -->
-                        {% if app.campus %}<br><span style="color:#94a3b8;">Campus:</span> {{ app.campus or " " }}{% endif %}
-                      </p>
-                    </div>
-
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-                      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-                        <span style="font-size:13px;font-weight:900;color:var(--primary);line-height:1.2;word-break:break-word;">
-                          Application No: {{ _aname }}
-                        </span>
+                  <a href="/my-applications?app={{ _an }}" style="text-decoration:none;width:240px;display:block;"
+                    class="hover-card">
+                    <div
+                      style="background:white;border-radius:10px;border:1.5px solid var(--border);overflow:hidden;display:flex;flex-direction:column;height:100%;">
+                      <!-- Mini image (top) -->
+                      <div
+                        style="height:80px;background:linear-gradient(135deg,var(--primary),#0d2040);position:relative;overflow:hidden;flex-shrink:0;">
+                        {% if _pimg %}
+                        <img src="{{ _pimg }}" alt="{{ _pn2 }}" style="width:100%;height:100%;object-fit:cover;">
+                        {% else %}
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                          <span class="ms-icon" style="font-size:28px;color:rgba(255,255,255,0.4);">school</span>
+                        </div>
+                        {% endif %}
+                        <div style="position:absolute;top:6px;right:6px;">
+                          <span class="{{ _badge }}"
+                            style="padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700;white-space:nowrap;">{{
+                            _st }}</span>
+                        </div>
+                      </div>
+                      <!-- Body -->
+                      <div style="padding:10px 11px;display:flex;flex-direction:column;gap:4px;flex:1;">
+                        <h3
+                          style="font-size:12px;font-weight:700;color:var(--text-1);margin:0;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                          {{ _pn2 }}</h3>
+                        <p
+                          style="font-size:10px;color:#94a3b8;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                          {{ _cyc }}{% if app.campus %} &middot; {{ app.campus }}{% endif %}
+                        </p>
+                        <span
+                          style="font-size:10px;font-weight:600;color:var(--primary);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{
+                          _an }}</span>
+                        <div style="margin-top:auto;padding-top:6px;border-top:1px solid #f8fafc;text-align:center;">
+                          <span
+                            style="font-size:11px;font-weight:600;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:2px;">
+                            View details <span class="ms-icon" style="font-size:14px;">chevron_right</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
+                  </a>
+                  {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
 
-                    <div style="margin-top:auto;border-top:1px solid #f1f5f9;padding-top:12px;">
-                      <div style="width:100%;padding:10px 12px;border-radius:12px;border:1.5px solid #f1f5f9;background:white;
-                                  font-size:13px;font-weight:800;color:var(--text-1);display:flex;align-items:center;justify-content:center;gap:8px;">
-                        View <span class="ms-icon" style="font-size:18px;">chevron_right</span>
-                      </div>
-                    </div>
+              {# ═══ PREVIOUS APPLICATIONS CAROUSEL ═══ #}
+              {% if _ns.prev_count > 0 %}
+              <div>
+                <!-- Title row with nav buttons always visible -->
+                <div
+                  style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                  <h3
+                    style="font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;color:var(--text-2);margin:0;">
+                    <span class="ms-icon" style="color:var(--text-3);font-size:18px;">history</span>
+                    Previous Applications
+                    <span
+                      style="padding:1px 7px;background:#f1f5f9;color:#64748b;font-size:11px;font-weight:600;border-radius:20px;">{{
+                      _ns.prev_count }}</span>
+                  </h3>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <button id="prev-carousel-prev"
+                      style="width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-3);font-size:18px;padding:0;transition:all .15s;"
+                      onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'"
+                      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-3)'"
+                      onclick="prevCarouselScroll(-1)">&#8249;</button>
+                    <button id="prev-carousel-next"
+                      style="width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-3);font-size:18px;padding:0;transition:all .15s;"
+                      onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'"
+                      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-3)'"
+                      onclick="prevCarouselScroll(1)">&#8250;</button>
                   </div>
                 </div>
-              </a>
-              {% endfor %}
-              {% else %}
-              <div class="col-span-full"
-                style="background:white;padding:28px;border-radius:12px;border:1.5px solid var(--border);text-align:center;">
+
+                <!-- Carousel wrapper: clips overflow, enables smooth scroll -->
+                <div style="overflow:hidden;position:relative;">
+                  <div id="prev-carousel-track" style="display:flex;gap:12px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+                           scrollbar-width:none;padding-bottom:4px;">
+
+                    {% set _pidx = namespace(v=0) %}
+                    {% for app in _apps %}
+                    {% set _cyc = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
+                    {% if not (_active_cycle_name and _cyc == _active_cycle_name) %}
+                    {% set _pidx.v = _pidx.v + 1 %}
+                    {% set _st = (app.get('application_status') if app.get else app.application_status) or 'Draft' %}
+                    {% set _pn2 = (app.get('program_name') or app.get('program') if app.get else (app.program_name or
+                    app.program)) or 'Program' %}
+                    {% set _an = (app.get('name') if app.get else app.name) or '' %}
+                    {% set _pimg = app.get('program_image') if app.get else app.program_image %}
+                    {% if _st == 'Draft' %}{% set _badge='badge-draft' %}
+                    {% elif _st == 'Submitted' %}{% set _badge='badge-submitted' %}
+                    {% elif _st in ['Under Review','Screening','Evaluation'] %}{% set _badge='badge-reviewing' %}
+                    {% elif _st in ['Interview Scheduled','Interview'] %}{% set _badge='badge-interview' %}
+                    {% elif _st in ['Selected','Accepted'] %}{% set _badge='badge-selected' %}
+                    {% elif _st == 'Rejected' %}{% set _badge='badge-rejected' %}
+                    {% elif _st == 'Waitlisted' %}{% set _badge='badge-waitlisted' %}
+                    {% elif _st == 'Offered' %}{% set _badge='badge-offered' %}
+                    {% else %}{% set _badge='badge-draft' %}{% endif %}
+
+                    <a href="/my-applications?app={{ _an }}" style="text-decoration:none;flex-shrink:0;"
+                      class="hover-card prev-carousel-card">
+                      <div
+                        style="background:white;border-radius:10px;border:1.5px solid var(--border);overflow:hidden;display:flex;flex-direction:column;height:100%;">
+                        <!-- Mini image -->
+                        <div
+                          style="height:80px;background:linear-gradient(135deg,#475569,#1e293b);position:relative;overflow:hidden;flex-shrink:0;">
+                          {% if _pimg %}
+                          <img src="{{ _pimg }}" alt="{{ _pn2 }}"
+                            style="width:100%;height:100%;object-fit:cover;filter:grayscale(30%);">
+                          {% else %}
+                          <div
+                            style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                            <span class="ms-icon" style="font-size:28px;color:rgba(255,255,255,0.25);">school</span>
+                          </div>
+                          {% endif %}
+                          <div style="position:absolute;top:6px;right:6px;">
+                            <span class="{{ _badge }}"
+                              style="padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700;white-space:nowrap;">{{
+                              _st }}</span>
+                          </div>
+                        </div>
+                        <!-- Body -->
+                        <div style="padding:10px 11px;display:flex;flex-direction:column;gap:4px;flex:1;">
+                          <h3
+                            style="font-size:12px;font-weight:700;color:var(--text-2);margin:0;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                            {{ _pn2 }}</h3>
+                          <p
+                            style="font-size:10px;color:#94a3b8;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            {{ _cyc }}</p>
+                          <span
+                            style="font-size:10px;font-weight:600;color:var(--text-4);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{
+                            _an }}</span>
+                          <div style="margin-top:auto;padding-top:6px;border-top:1px solid #f8fafc;text-align:center;">
+                            <span
+                              style="font-size:11px;font-weight:600;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:2px;">
+                              View <span class="ms-icon" style="font-size:14px;">chevron_right</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                    {% endif %}
+                    {% endfor %}
+
+                  </div><!-- end track -->
+                </div><!-- end wrapper -->
+              </div>
+              {% endif %}
+
+              {# ── Empty state when no apps at all ── #}
+              {% if not _apps %}
+              <div
+                style="background:white;padding:32px 24px;border-radius:12px;border:1.5px solid var(--border);text-align:center;">
                 <span class="ms-icon" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px;">inbox</span>
                 <p style="font-size:13px;color:#94a3b8;font-weight:500;margin:0;">No applications yet</p>
               </div>
               {% endif %}
-              <a href="{{ '/admission#programs' if _is_cycle_active else 'javascript:void(0)' }}" 
-                class="col-span-full {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else '' }}" 
-                style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;
-                        border-radius:12px;text-decoration:none;border:2px dashed var(--border);
-                        color:#94a3b8;font-size:13px;font-weight:500;font-family:'Poppins',sans-serif;
-                        transition:all 0.2s; {{ 'pointer-events: none;' if not _is_cycle_active else '' }}"
-                {% if _is_cycle_active %}
+
+              {# ── New Application / Closed CTA ── #}
+              <a href="{{ '/admission#programs' if _is_cycle_active else 'javascript:void(0)' }}"
+                class="{{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else '' }}" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;margin-top:16px;
+                       border-radius:12px;text-decoration:none;border:2px dashed var(--border);
+                       color:#94a3b8;font-size:13px;font-weight:500;font-family:'Poppins',sans-serif;
+                       transition:all 0.2s;{{ 'pointer-events:none;' if not _is_cycle_active else '' }}" {% if
+                _is_cycle_active %}
                 onmouseover="this.style.color='var(--primary)';this.style.borderColor='var(--primary)';this.style.background='rgba(26,60,110,0.03)'"
                 onmouseout="this.style.color='#94a3b8';this.style.borderColor='var(--border)';this.style.background='transparent'"
                 {% endif %}>
-                <span class="ms-icon">{{ 'add_circle' if _is_cycle_active else 'event_busy' }}</span> 
+                <span class="ms-icon">{{ 'add_circle' if _is_cycle_active else 'event_busy' }}</span>
                 {{ 'Start New Application' if _is_cycle_active else 'Admissions Currently Closed' }}
               </a>
-            </div>
-          </section>
 
-          <!-- Value Cards -->
-          {% if _vcards %}
-          <section style="margin-top:28px;">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {% for vc in _vcards %}
-              <div class="hover-card"
-                style="background:white;border-radius:14px;padding:22px;border:1px solid var(--border);text-align:center;">
-                <div style="width:42px;height:42px;border-radius:50%;background:var(--primary-light);
-                            display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
-                  <span class="ms-icon" style="font-size:20px;color:var(--primary);">{{ vc.icon or 'star' }}</span>
-                </div>
-                <h4 style="font-size:14px;font-weight:600;color:var(--text-1);margin:0 0 6px;">{{ vc.title }}</h4>
-                <p style="font-size:12px;color:#64748b;line-height:1.55;margin:0;">{{ vc.description }}</p>
-              </div>
-              {% endfor %}
-            </div>
-          </section>
-          {% endif %}
-
-        </div>
-        <!-- ╚═ END PANEL: APPLICATIONS ═══════════════════════╝ -->
-
-        <!-- ╔═ PANEL: SCHOLARSHIPS ══════════════════════════════╗ -->
-        <div id="panel-scholarships" class="adm-panel-section" style="display:none;padding-top:4px;">
-          <div style="margin-bottom:24px;">
-            <h1 class="page-title">Scholarships</h1>
-            <p class="page-subtitle">View available schemes and your scholarship applications.</p>
-          </div>
-
-          <div style="display:flex;flex-direction:column;gap:24px;">
-            <!-- Applied -->
-            <section>
-              <h3
-                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-1);margin:0 0 14px;">
-                <span class="ms-icon" style="font-size:20px;color:var(--primary)">history_edu</span>
-                Applied Scholarships
-              </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {% if applied_scholarships %}
-                {% for s in applied_scholarships %}
-                <div style="background:white;padding:16px;border-radius:12px;border:1.5px solid var(--border);">
-                  <p style="font-size:13px;font-weight:600;color:var(--text-1);margin:0 0 4px;">{{ s.scheme_name }}</p>
-                  <p style="font-size:11px;color:#94a3b8;margin:0 0 10px;">Applied: {{
-                    frappe.utils.formatdate(s.creation,"dd MMM yyyy") }}</p>
-                  <span
-                    style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:#f1f5f9;color:#64748b;">{{
-                    s.application_status or 'Submitted' }}</span>
-                </div>
-                {% endfor %}
-                {% else %}
-                <div class="col-span-full"
-                  style="background:white;padding:24px;border-radius:12px;border:1.5px solid var(--border);text-align:center;">
-                  <span class="ms-icon"
-                    style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:8px;">inbox</span>
-                  <p style="font-size:13px;color:#94a3b8;font-weight:500;margin:0;">No scholarship applications yet.</p>
-                </div>
-                {% endif %}
-              </div>
             </section>
-            <!-- Available -->
-            <section>
-              <h3
-                style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-1);margin:0 0 14px;">
-                <span class="ms-icon" style="font-size:20px;color:var(--primary)">redeem</span>
-                Available Schemes
-              </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {% if _scholarships %}
-                {% for s in _scholarships %}
+
+
+            <!-- Value Cards -->
+            {% if _vcards %}
+            <section style="margin-top:28px;">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {% for vc in _vcards %}
                 <div class="hover-card"
-                  style="background:white;padding:16px;border-radius:12px;border:1.5px solid var(--border);">
-                  <p style="font-size:13px;font-weight:600;color:var(--text-1);margin:0 0 6px;">{{ s.scheme_name }}</p>
-                  <p style="font-size:12px;color:#64748b;line-height:1.5;margin:0 0 12px;">{{ s.description or 'No
-                    description available.' }}</p>
-                  <a href="/merit-and-scholarship/scholarships"
-                    style="font-size:12px;font-weight:600;color:var(--primary);text-decoration:none;">View Details →</a>
+                  style="background:white;border-radius:14px;padding:22px;border:1px solid var(--border);text-align:center;">
+                  <div style="width:42px;height:42px;border-radius:50%;background:var(--primary-light);
+                            display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+                    <span class="ms-icon" style="font-size:20px;color:var(--primary);">{{ vc.icon or 'star' }}</span>
+                  </div>
+                  <h4 style="font-size:14px;font-weight:600;color:var(--text-1);margin:0 0 6px;">{{ vc.title }}</h4>
+                  <p style="font-size:12px;color:#64748b;line-height:1.55;margin:0;">{{ vc.description }}</p>
                 </div>
                 {% endfor %}
-                {% else %}
-                <div class="col-span-full"
-                  style="background:white;padding:24px;border-radius:12px;border:1.5px solid var(--border);text-align:center;">
-                  <span class="ms-icon"
-                    style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:8px;">card_membership</span>
-                  <p style="font-size:13px;color:#94a3b8;font-weight:500;margin:0;">No schemes available for your
-                    current eligibility.</p>
-                </div>
-                {% endif %}
               </div>
             </section>
+            {% endif %}
+
           </div>
-        </div>
-        <!-- ╚═ END PANEL: SCHOLARSHIPS ══════════════════════╝ -->
+          <!-- ╚═ END PANEL: APPLICATIONS ═══════════════════════╝ -->
 
-      </main>
+          <!-- ╔═ PANEL: SCHOLARSHIPS ══════════════════════════════╗ -->
+          <div id="panel-scholarships" class="adm-panel-section" style="display:none;padding-top:4px;">
+            <div style="margin-bottom:24px;">
+              <h1 class="page-title">Scholarships</h1>
+              <p class="page-subtitle">View available schemes and your scholarship applications.</p>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:24px;">
+              <!-- Applied -->
+              <section>
+                <h3
+                  style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-1);margin:0 0 14px;">
+                  <span class="ms-icon" style="font-size:20px;color:var(--primary)">history_edu</span>
+                  Applied Scholarships
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {% if applied_scholarships %}
+                  {% for s in applied_scholarships %}
+                  <div style="background:white;padding:16px;border-radius:12px;border:1.5px solid var(--border);">
+                    <p style="font-size:13px;font-weight:600;color:var(--text-1);margin:0 0 4px;">{{ s.scheme_name }}
+                    </p>
+                    <p style="font-size:11px;color:#94a3b8;margin:0 0 10px;">Applied: {{
+                      frappe.utils.formatdate(s.creation,"dd MMM yyyy") }}</p>
+                    <span
+                      style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:#f1f5f9;color:#64748b;">{{
+                      s.application_status or 'Submitted' }}</span>
+                  </div>
+                  {% endfor %}
+                  {% else %}
+                  <div class="col-span-full"
+                    style="background:white;padding:24px;border-radius:12px;border:1.5px solid var(--border);text-align:center;">
+                    <span class="ms-icon"
+                      style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:8px;">inbox</span>
+                    <p style="font-size:13px;color:#94a3b8;font-weight:500;margin:0;">No scholarship applications yet.
+                    </p>
+                  </div>
+                  {% endif %}
+                </div>
+              </section>
+              <!-- Available -->
+              <section>
+                <h3
+                  style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-1);margin:0 0 14px;">
+                  <span class="ms-icon" style="font-size:20px;color:var(--primary)">redeem</span>
+                  Available Schemes
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {% if _scholarships %}
+                  {% for s in _scholarships %}
+                  <div class="hover-card"
+                    style="background:white;padding:16px;border-radius:12px;border:1.5px solid var(--border);">
+                    <p style="font-size:13px;font-weight:600;color:var(--text-1);margin:0 0 6px;">{{ s.scheme_name }}
+                    </p>
+                    <p style="font-size:12px;color:#64748b;line-height:1.5;margin:0 0 12px;">{{ s.description or 'No
+                      description available.' }}</p>
+                    <a href="/merit-and-scholarship/scholarships"
+                      style="font-size:12px;font-weight:600;color:var(--primary);text-decoration:none;">View Details
+                      →</a>
+                  </div>
+                  {% endfor %}
+                  {% else %}
+                  <div class="col-span-full"
+                    style="background:white;padding:24px;border-radius:12px;border:1.5px solid var(--border);text-align:center;">
+                    <span class="ms-icon"
+                      style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:8px;">card_membership</span>
+                    <p style="font-size:13px;color:#94a3b8;font-weight:500;margin:0;">No schemes available for your
+                      current eligibility.</p>
+                  </div>
+                  {% endif %}
+                </div>
+              </section>
+            </div>
+          </div>
+          <!-- ╚═ END PANEL: SCHOLARSHIPS ══════════════════════╝ -->
+
+        </main>
+      </div>
+
     </div>
-
   </div>
-</div>
-<!-- ── Profile Edit Modal ──────────────────────────────────────── -->
-<div id="profile-edit-modal" class="modal-backdrop">
-  <div class="modal-box">
-    <button onclick="closeProfileEditModal()" style="position:absolute;top:16px;right:16px;background:transparent;border:none;
+  <!-- ── Profile Edit Modal ──────────────────────────────────────── -->
+  <div id="profile-edit-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <button onclick="closeProfileEditModal()" style="position:absolute;top:16px;right:16px;background:transparent;border:none;
                    cursor:pointer;width:32px;height:32px;border-radius:8px;
                    display:flex;align-items:center;justify-content:center;">
-      <span class="ms-icon" style="font-size:20px;color:#94a3b8;">close</span>
-    </button>
-    <h3 style="font-size:18px;font-weight:600;color:#1e293b;margin:0 0 22px;">Edit Profile</h3>
-    <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div style="grid-column:1/-1;">
-        <label class="modal-label">Mobile Number</label>
-        <input id="edit-mobile" type="tel" class="modal-input" placeholder="e.g. 9876543210" />
+        <span class="ms-icon" style="font-size:20px;color:#94a3b8;">close</span>
+      </button>
+      <h3 style="font-size:18px;font-weight:600;color:#1e293b;margin:0 0 22px;">Edit Profile</h3>
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="grid-column:1/-1;">
+          <label class="modal-label">Mobile Number</label>
+          <input id="edit-mobile" type="tel" class="modal-input" placeholder="e.g. 9876543210" />
+        </div>
+        <div>
+          <label class="modal-label">Date of Birth</label>
+          <input id="edit-dob" type="date" class="modal-input" />
+        </div>
+        <div>
+          <label class="modal-label">Gender</label>
+          <select id="edit-gender" class="modal-input" style="background:#fff;">
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
+          </select>
+        </div>
+        <div>
+          <label class="modal-label">Nationality</label>
+          <input id="edit-nationality" type="text" class="modal-input" placeholder="e.g. Indian" />
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="modal-label">Correspondence Address</label>
+          <textarea id="edit-address" rows="2" class="modal-input" style="resize:vertical;"
+            placeholder="Street address, landmark..."></textarea>
+        </div>
+        <div>
+          <label class="modal-label">State</label>
+          <select id="edit-state" class="modal-input" onchange="loadDistricts(this.value)">
+            <option value="">Select State</option>
+            {% for s in states %}
+            <option value="{{ s.name }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="modal-label">City (District)</label>
+          <select id="edit-city" class="modal-input">
+            <option value="">Select City</option>
+            {% for d in districts %}
+            <option value="{{ d.name }}">{{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="modal-label">Pincode</label>
+          <input id="edit-pincode" type="text" maxlength="6" class="modal-input" placeholder="6-digit pincode" />
+        </div>
       </div>
-      <div>
-        <label class="modal-label">Date of Birth</label>
-        <input id="edit-dob" type="date" class="modal-input" />
-      </div>
-      <div>
-        <label class="modal-label">Gender</label>
-        <select id="edit-gender" class="modal-input" style="background:#fff;">
-          <option value="">Select</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-          <option value="Prefer not to say">Prefer not to say</option>
-        </select>
-      </div>
-      <div>
-        <label class="modal-label">Nationality</label>
-        <input id="edit-nationality" type="text" class="modal-input" placeholder="e.g. Indian" />
-      </div>
-      <div style="grid-column:1/-1;">
-        <label class="modal-label">Correspondence Address</label>
-        <textarea id="edit-address" rows="2" class="modal-input" style="resize:vertical;"
-          placeholder="Street address, landmark..."></textarea>
-      </div>
-      <div>
-        <label class="modal-label">State</label>
-        <select id="edit-state" class="modal-input" onchange="loadDistricts(this.value)">
-          <option value="">Select State</option>
-          {% for s in states %}
-          <option value="{{ s.name }}">{{ s.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="modal-label">City (District)</label>
-        <select id="edit-city" class="modal-input">
-          <option value="">Select City</option>
-          {% for d in districts %}
-          <option value="{{ d.name }}">{{ d.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="modal-label">Pincode</label>
-        <input id="edit-pincode" type="text" maxlength="6" class="modal-input" placeholder="6-digit pincode" />
-      </div>
-    </div>
-    <div id="profile-edit-msg" style="margin-top:14px;font-size:13px;min-height:18px;"></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
-      <button onclick="closeProfileEditModal()" style="padding:9px 22px;border-radius:8px;border:1.5px solid var(--border);
+      <div id="profile-edit-msg" style="margin-top:14px;font-size:13px;min-height:18px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+        <button onclick="closeProfileEditModal()" style="padding:9px 22px;border-radius:8px;border:1.5px solid var(--border);
                      background:#fff;font-family:'Poppins',sans-serif;font-size:13px;
                      font-weight:500;color:#64748b;cursor:pointer;">Cancel</button>
-      <button id="profile-save-btn" onclick="saveProfileEdits()" class="btn btn-primary" style="padding:9px 22px;">
-        Save Changes
-      </button>
+        <button id="profile-save-btn" onclick="saveProfileEdits()" class="btn btn-primary" style="padding:9px 22px;">
+          Save Changes
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
-{% endblock %}
+  {% endblock %}
 
-{% block extra_js %}
-<style>
-  @keyframes spin { to { transform: rotate(360deg); } }
-</style>
+  {% block extra_js %}
+  <style>
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 
-<!-- ── Document Upload Modal ──────────────────────────────────────── -->
-<div id="doc-upload-modal" class="modal-backdrop" style="display:none; z-index:10000; background:rgba(0,0,0,.5); backdrop-filter:blur(4px);">
-  <div class="modal-box" style="max-width: 440px;">
-    <button onclick="closeUploadModal()"
-            style="position:absolute;top:16px;right:16px;background:transparent;border:none;
+  <!-- ── Document Upload Modal ──────────────────────────────────────── -->
+  <div id="doc-upload-modal" class="modal-backdrop"
+    style="display:none; z-index:10000; background:rgba(0,0,0,.5); backdrop-filter:blur(4px);">
+    <div class="modal-box" style="max-width: 440px;">
+      <button onclick="closeUploadModal()" style="position:absolute;top:16px;right:16px;background:transparent;border:none;
                    cursor:pointer;width:32px;height:32px;border-radius:8px;
                    display:flex;align-items:center;justify-content:center;">
-      <span class="material-symbols-outlined" style="font-size:20px;color:#94a3b8;">close</span>
-    </button>
-    <div class="modal-header" style="margin-bottom:20px;">
-      <h3 id="modal-doc-label" style="font-size:18px; font-weight:700; color:var(--text-1); margin:0;">Upload Document</h3>
-      <p id="modal-doc-type-hint" style="font-size:12px; color:var(--text-3); margin:4px 0 0;">Requirement details will appear here.</p>
-    </div>
-    <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
-      <div class="pef">
-        <label class="modal-label" style="font-size:11px; font-weight:700; text-transform:none !important; color:var(--text-4); margin-bottom:6px; display:block;">Select File</label>
-        <input type="file" id="modal-file-input" class="modal-input" 
-               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
-               onchange="handleModalFileSelect(this)"/>
-        <p style="font-size:10px; color:var(--text-4); margin-top:6px;">Accepted: PDF, JPG, PNG, DOC (Max 5MB)</p>
+        <span class="material-symbols-outlined" style="font-size:20px;color:#94a3b8;">close</span>
+      </button>
+      <div class="modal-header" style="margin-bottom:20px;">
+        <h3 id="modal-doc-label" style="font-size:18px; font-weight:700; color:var(--text-1); margin:0;">Upload Document
+        </h3>
+        <p id="modal-doc-type-hint" style="font-size:12px; color:var(--text-3); margin:4px 0 0;">Requirement details
+          will appear here.</p>
       </div>
-      
-      <div id="upload-progress-wrap" style="display:none; margin-top:16px;">
-        <div class="progress-bar-track" style="height:6px; background:#e5e7eb; border-radius:99px; overflow:hidden;">
-          <div id="upload-progress-fill" class="progress-bar-fill" style="width:0%; height:100%; background:var(--primary); transition:width .3s;"></div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="pef">
+          <label class="modal-label"
+            style="font-size:11px; font-weight:700; text-transform:none !important; color:var(--text-4); margin-bottom:6px; display:block;">Select
+            File</label>
+          <input type="file" id="modal-file-input" class="modal-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            onchange="handleModalFileSelect(this)" />
+          <p style="font-size:10px; color:var(--text-4); margin-top:6px;">Accepted: PDF, JPG, PNG, DOC (Max 5MB)</p>
         </div>
-        <p id="upload-status-text" style="font-size:11px; color:var(--primary); margin-top:6px; font-weight:600;">Uploading...</p>
-      </div>
 
-      <div id="doc-upload-msg" style="margin-top:14px;font-size:13px;min-height:18px; font-weight:500;"></div>
-    </div>
-    <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; margin-top:24px; padding-top:16px; border-top:1px solid #f1f5f9;">
-      <button class="btn" onclick="closeUploadModal()" style="padding:8px 16px; border-radius:8px; background:#f3f4f6; color:var(--text-3);">Cancel</button>
-      <button id="doc-upload-btn" class="btn btn-primary" onclick="executeDocumentUpload()" disabled style="padding:8px 24px; border-radius:8px;">Start Upload</button>
+        <div id="upload-progress-wrap" style="display:none; margin-top:16px;">
+          <div class="progress-bar-track" style="height:6px; background:#e5e7eb; border-radius:99px; overflow:hidden;">
+            <div id="upload-progress-fill" class="progress-bar-fill"
+              style="width:0%; height:100%; background:var(--primary); transition:width .3s;"></div>
+          </div>
+          <p id="upload-status-text" style="font-size:11px; color:var(--primary); margin-top:6px; font-weight:600;">
+            Uploading...</p>
+        </div>
+
+        <div id="doc-upload-msg" style="margin-top:14px;font-size:13px;min-height:18px; font-weight:500;"></div>
+      </div>
+      <div class="modal-footer"
+        style="display:flex; gap:10px; justify-content:flex-end; margin-top:24px; padding-top:16px; border-top:1px solid #f1f5f9;">
+        <button class="btn" onclick="closeUploadModal()"
+          style="padding:8px 16px; border-radius:8px; background:#f3f4f6; color:var(--text-3);">Cancel</button>
+        <button id="doc-upload-btn" class="btn btn-primary" onclick="executeDocumentUpload()" disabled
+          style="padding:8px 24px; border-radius:8px;">Start Upload</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-(function() {
-  let currentUploadTarget = {
-    label: '', type: '', field: '', docName: '', source: '', file: null
-  };
+  <script>
+    (function () {
+      let currentUploadTarget = {
+        label: '', type: '', field: '', docName: '', source: '', file: null
+      };
 
-  window.openUploadModal = function(label, type, field, docName, source) {
-    currentUploadTarget = { label, type, field, docName, source, file: null };
-    document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
-    document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
-    document.getElementById('modal-file-input').value = '';
-    document.getElementById('doc-upload-btn').disabled = true;
-    document.getElementById('doc-upload-msg').textContent = '';
-    document.getElementById('upload-progress-wrap').style.display = 'none';
-    document.getElementById('doc-upload-modal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  };
+      window.openUploadModal = function (label, type, field, docName, source) {
+        currentUploadTarget = { label, type, field, docName, source, file: null };
+        document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
+        document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
+        document.getElementById('modal-file-input').value = '';
+        document.getElementById('doc-upload-btn').disabled = true;
+        document.getElementById('doc-upload-msg').textContent = '';
+        document.getElementById('upload-progress-wrap').style.display = 'none';
+        document.getElementById('doc-upload-modal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      };
 
-  window.closeUploadModal = function() {
-    document.getElementById('doc-upload-modal').style.display = 'none';
-    document.body.style.overflow = '';
-  };
+      window.closeUploadModal = function () {
+        document.getElementById('doc-upload-modal').style.display = 'none';
+        document.body.style.overflow = '';
+      };
 
-  window.handleModalFileSelect = function(input) {
-    if (input.files && input.files[0]) {
-      currentUploadTarget.file = input.files[0];
-      document.getElementById('doc-upload-btn').disabled = false;
-    } else {
-      currentUploadTarget.file = null;
-      document.getElementById('doc-upload-btn').disabled = true;
+      window.handleModalFileSelect = function (input) {
+        if (input.files && input.files[0]) {
+          currentUploadTarget.file = input.files[0];
+          document.getElementById('doc-upload-btn').disabled = false;
+        } else {
+          currentUploadTarget.file = null;
+          document.getElementById('doc-upload-btn').disabled = true;
+        }
+      };
+
+      window.executeDocumentUpload = async function () {
+        const btn = document.getElementById('doc-upload-btn');
+        const msg = document.getElementById('doc-upload-msg');
+        const progWrap = document.getElementById('upload-progress-wrap');
+        const progFill = document.getElementById('upload-progress-fill');
+
+        if (!currentUploadTarget.file) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Uploading...';
+        progWrap.style.display = 'block';
+        progFill.style.width = '15%';
+
+        try {
+          const fd = new FormData();
+          fd.append('file', currentUploadTarget.file);
+          fd.append('is_private', '1');
+          fd.append('folder', 'Home/Attachments');
+
+          const uploadResp = await fetch('/api/method/upload_file', {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
+          });
+          const uploadData = await uploadResp.json();
+
+          if (!uploadData.message || !uploadData.message.file_url) {
+            throw new Error('File upload failed');
+          }
+
+          const fileUrl = uploadData.message.file_url;
+          progFill.style.width = '60%';
+
+          if (currentUploadTarget.field) {
+            await apiFetch('slcm.admission.api.profile.update_profile', {
+              [currentUploadTarget.field]: fileUrl
+            });
+          } else {
+            throw new Error('This document type does not map to a profile field.');
+          }
+
+          progFill.style.width = '100%';
+          msg.style.color = 'var(--success)';
+          msg.textContent = '✓ Upload successful. Refreshing...';
+
+          // Immediate UI update for photo
+          if (currentUploadTarget.field === 'candidate_photo') {
+            const avatars = document.querySelectorAll('#profile-avatar-img, #adm-avatar-img');
+            avatars.forEach(img => { img.src = fileUrl; });
+
+            // Handle Profile Avatar swap (Initials -> Image)
+            const profDisplay = document.getElementById('profile-avatar-display');
+            if (profDisplay && !document.getElementById('profile-avatar-img')) {
+              const init = document.getElementById('profile-avatar-initials');
+              if (init) init.remove();
+              const newImg = document.createElement('img');
+              newImg.id = 'profile-avatar-img';
+              newImg.src = fileUrl;
+              newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+              profDisplay.appendChild(newImg);
+            }
+
+            // Handle Navbar Avatar swap (Initials -> Image)
+            const navBtn = document.getElementById('adm-avatar-btn');
+            if (navBtn && !document.getElementById('adm-avatar-img')) {
+              const init = document.getElementById('adm-avatar-init');
+              if (init) init.remove();
+              const newImg = document.createElement('img');
+              newImg.id = 'adm-avatar-img';
+              newImg.src = fileUrl;
+              newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+              navBtn.prepend(newImg);
+            }
+          }
+
+          setTimeout(() => window.location.reload(), 1000);
+
+        } catch (e) {
+          btn.disabled = false;
+          btn.textContent = 'Retry Upload';
+          msg.style.color = 'var(--danger)';
+          msg.textContent = 'Error: ' + (e.message || 'Unknown error');
+        }
+      };
+    })();
+  </script>
+
+  <script>
+    // ── Panel switching ──────────────────────────────────────────
+    function showPanel(name) {
+      document.querySelectorAll('.adm-panel-section').forEach(el => el.style.display = 'none');
+      var t = document.getElementById('panel-' + name);
+      if (t) t.style.display = 'block';
+
+      document.querySelectorAll('.adm-menu-item').forEach(el => el.classList.remove('active'));
+      var a = document.querySelector('[data-panel="' + name + '"]');
+      if (a) a.classList.add('active');
+
+      history.pushState({}, '', window.location.pathname + '?panel=' + name);
     }
-  };
 
-  window.executeDocumentUpload = async function() {
-    const btn = document.getElementById('doc-upload-btn');
-    const msg = document.getElementById('doc-upload-msg');
-    const progWrap = document.getElementById('upload-progress-wrap');
-    const progFill = document.getElementById('upload-progress-fill');
-    
-    if (!currentUploadTarget.file) return;
-    
-    btn.disabled = true;
-    btn.textContent = 'Uploading...';
-    progWrap.style.display = 'block';
-    progFill.style.width = '15%';
-    
-    try {
-      const fd = new FormData();
-      fd.append('file', currentUploadTarget.file);
-      fd.append('is_private', '1');
-      fd.append('folder', 'Home/Attachments');
-      
-      const uploadResp = await fetch('/api/method/upload_file', {
-        method: 'POST',
-        body: fd,
-        headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
-      });
-      const uploadData = await uploadResp.json();
-      
-      if (!uploadData.message || !uploadData.message.file_url) {
-        throw new Error('File upload failed');
+    function showChangePassword() { window.location.href = '/update-password'; }
+
+    function toggleAccountSettings() {
+      var body = document.getElementById('account-settings-body');
+      var chevron = document.getElementById('acc-chevron');
+      var open = body.classList.toggle('open');
+      if (chevron) chevron.classList.toggle('rotated', open);
+    }
+
+    // ── Init ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      var urlParams = new URLSearchParams(window.location.search);
+      var panel = urlParams.get('panel') || '{{ active_panel }}' || 'profile';
+      showPanel(panel);
+
+      // Animate progress bar
+      var fill = document.getElementById('progress-fill');
+      if (fill) setTimeout(() => fill.style.width = '{{ _completion_pct }}%', 300);
+    });
+
+    async function loadDistricts(state, selectedDistrict = null) {
+      const citySelect = document.getElementById('edit-city');
+      if (!state) {
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        return;
       }
-      
-      const fileUrl = uploadData.message.file_url;
-      progFill.style.width = '60%';
-      
-      if (currentUploadTarget.field) {
-        await apiFetch('slcm.admission.api.profile.update_profile', {
-          [currentUploadTarget.field]: fileUrl
+      citySelect.innerHTML = '<option value="">Loading...</option>';
+      try {
+        const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
+        let html = '<option value="">Select City</option>';
+        districts.forEach(d => {
+          html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
         });
-      } else {
-        throw new Error('This document type does not map to a profile field.');
+        citySelect.innerHTML = html;
+      } catch (e) {
+        citySelect.innerHTML = '<option value="">Error loading cities</option>';
       }
-      
-      progFill.style.width = '100%';
-      msg.style.color = 'var(--success)';
-      msg.textContent = '✓ Upload successful. Refreshing...';
-
-      // Immediate UI update for photo
-      if (currentUploadTarget.field === 'candidate_photo') {
-        const avatars = document.querySelectorAll('#profile-avatar-img, #adm-avatar-img');
-        avatars.forEach(img => { img.src = fileUrl; });
-        
-        // Handle Profile Avatar swap (Initials -> Image)
-        const profDisplay = document.getElementById('profile-avatar-display');
-        if (profDisplay && !document.getElementById('profile-avatar-img')) {
-          const init = document.getElementById('profile-avatar-initials');
-          if (init) init.remove();
-          const newImg = document.createElement('img');
-          newImg.id = 'profile-avatar-img';
-          newImg.src = fileUrl;
-          newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-          profDisplay.appendChild(newImg);
-        }
-
-        // Handle Navbar Avatar swap (Initials -> Image)
-        const navBtn = document.getElementById('adm-avatar-btn');
-        if (navBtn && !document.getElementById('adm-avatar-img')) {
-          const init = document.getElementById('adm-avatar-init');
-          if (init) init.remove();
-          const newImg = document.createElement('img');
-          newImg.id = 'adm-avatar-img';
-          newImg.src = fileUrl;
-          newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
-          navBtn.prepend(newImg);
-        }
-      }
-      
-      setTimeout(() => window.location.reload(), 1000);
-      
-    } catch (e) {
-      btn.disabled = false;
-      btn.textContent = 'Retry Upload';
-      msg.style.color = 'var(--danger)';
-      msg.textContent = 'Error: ' + (e.message || 'Unknown error');
     }
-  };
-})();
-</script>
 
-<script>
-  // ── Panel switching ──────────────────────────────────────────
-  function showPanel(name) {
-    document.querySelectorAll('.adm-panel-section').forEach(el => el.style.display = 'none');
-    var t = document.getElementById('panel-' + name);
-    if (t) t.style.display = 'block';
-
-    document.querySelectorAll('.adm-menu-item').forEach(el => el.classList.remove('active'));
-    var a = document.querySelector('[data-panel="' + name + '"]');
-    if (a) a.classList.add('active');
-
-    history.pushState({}, '', window.location.pathname + '?panel=' + name);
-  }
-
-  function showChangePassword() { window.location.href = '/update-password'; }
-
-  function toggleAccountSettings() {
-    var body = document.getElementById('account-settings-body');
-    var chevron = document.getElementById('acc-chevron');
-    var open = body.classList.toggle('open');
-    if (chevron) chevron.classList.toggle('rotated', open);
-  }
-
-  // ── Init ──────────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', function () {
-    var urlParams = new URLSearchParams(window.location.search);
-    var panel = urlParams.get('panel') || '{{ active_panel }}' || 'profile';
-    showPanel(panel);
-
-    // Animate progress bar
-    var fill = document.getElementById('progress-fill');
-    if (fill) setTimeout(() => fill.style.width = '{{ _completion_pct }}%', 300);
-  });
-
-  async function loadDistricts(state, selectedDistrict = null) {
-    const citySelect = document.getElementById('edit-city');
-    if (!state) {
-      citySelect.innerHTML = '<option value="">Select City</option>';
-      return;
-    }
-    citySelect.innerHTML = '<option value="">Loading...</option>';
-    try {
-      const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
-      let html = '<option value="">Select City</option>';
-      districts.forEach(d => {
-        html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
-      });
-      citySelect.innerHTML = html;
-    } catch (e) {
-      citySelect.innerHTML = '<option value="">Error loading cities</option>';
-    }
-  }
-
-  // ── Profile Edit Modal ──────────────────────────────────────
-  function openProfileEditModal() {
-    var pd = {{ profile_data_json | safe if profile_data_json else '{}' }};
+    // ── Profile Edit Modal ──────────────────────────────────────
+    function openProfileEditModal() {
+      var pd = {{ profile_data_json | safe if profile_data_json else '{}'
+    }};
     var mobileInput = document.getElementById('edit-mobile');
     var pincodeInput = document.getElementById('edit-pincode');
 
@@ -1606,160 +1748,227 @@ else 'Admissions Open') %}
     document.body.style.overflow = 'hidden';
   }
 
-  function closeProfileEditModal() {
-    document.getElementById('profile-edit-modal').style.display = 'none';
-    document.body.style.overflow = '';
-  }
-
-  document.getElementById('profile-edit-modal')?.addEventListener('click', function (e) {
-    if (e.target === this) closeProfileEditModal();
-  });
-
-  async function saveProfileEdits() {
-    var btn = document.getElementById('profile-save-btn');
-    var msg = document.getElementById('profile-edit-msg');
-
-    const args = {
-      mobile_number: document.getElementById('edit-mobile').value.trim(),
-      date_of_birth: document.getElementById('edit-dob').value,
-      gender: document.getElementById('edit-gender').value,
-      nationality: document.getElementById('edit-nationality').value.trim(),
-      correspondence_address: document.getElementById('edit-address').value.trim(),
-      city: document.getElementById('edit-city').value.trim(),
-      state: document.getElementById('edit-state').value.trim(),
-      pincode: document.getElementById('edit-pincode').value.trim(),
-    };
-
-    // ── Validation ──────────────────────────────────────────────
-    msg.style.color = '#dc2626';
-
-    if (args.date_of_birth) {
-      let selectedDate = new Date(args.date_of_birth);
-      let today = new Date();
-      if (selectedDate >= today) {
-        msg.textContent = 'Date of birth must be in the past.';
-        return;
-      }
+    function closeProfileEditModal() {
+      document.getElementById('profile-edit-modal').style.display = 'none';
+      document.body.style.overflow = '';
     }
 
-    if (args.pincode) {
-      if (!/^[0-9]{6}$/.test(args.pincode)) {
-        msg.textContent = 'Pincode must be exactly 6 digits.';
-        return;
-      }
-    }
+    document.getElementById('profile-edit-modal')?.addEventListener('click', function (e) {
+      if (e.target === this) closeProfileEditModal();
+    });
 
-    btn.disabled = true;
-    btn.textContent = 'Saving…';
-    msg.textContent = '';
-    
-    try {
-      const message = await apiFetch('slcm.admission.api.profile.update_profile', args);
-      btn.disabled = false;
-      btn.textContent = 'Save Changes';
-      if (message && message.status === 'ok') {
-        msg.style.color = '#16a34a';
-        msg.textContent = '✓ Profile updated successfully.';
-        setTimeout(() => window.location.reload(), 900);
-      } else {
-        msg.style.color = '#dc2626';
-        msg.textContent = 'Something went wrong. Please try again.';
-      }
-    } catch (e) {
-      btn.disabled = false;
-      btn.textContent = 'Save Changes';
+    async function saveProfileEdits() {
+      var btn = document.getElementById('profile-save-btn');
+      var msg = document.getElementById('profile-edit-msg');
+
+      const args = {
+        mobile_number: document.getElementById('edit-mobile').value.trim(),
+        date_of_birth: document.getElementById('edit-dob').value,
+        gender: document.getElementById('edit-gender').value,
+        nationality: document.getElementById('edit-nationality').value.trim(),
+        correspondence_address: document.getElementById('edit-address').value.trim(),
+        city: document.getElementById('edit-city').value.trim(),
+        state: document.getElementById('edit-state').value.trim(),
+        pincode: document.getElementById('edit-pincode').value.trim(),
+      };
+
+      // ── Validation ──────────────────────────────────────────────
       msg.style.color = '#dc2626';
-      msg.textContent = e.message || 'Error saving. Please try again.';
-    }
-  }
 
-  // ── Profile Photo Upload ─────────────────────────────────────
-  function handleProfilePhotoUpload(input) {
-    var statusEl = document.getElementById('profile-photo-status');
-    if (!input.files || !input.files[0]) return;
-    var file = input.files[0];
-    if (file.size > 2 * 1024 * 1024) {
-      statusEl.textContent = 'File too large (max 2 MB)';
-      statusEl.style.color = '#dc2626';
-      return;
-    }
-    statusEl.textContent = 'Uploading…';
-    statusEl.style.color = '#64748b';
-
-    // Preview immediately
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      var initials = document.getElementById('profile-avatar-initials');
-      var img = document.getElementById('profile-avatar-img');
-      if (initials) initials.style.display = 'none';
-      if (!img) {
-        img = document.createElement('img');
-        img.id = 'profile-avatar-img';
-        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-        document.getElementById('profile-avatar-display').appendChild(img);
-      }
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-
-    var fd = new FormData();
-    fd.append('file', file, file.name);
-    fd.append('is_private', '0');
-    fd.append('folder', 'Home/Attachments');
-
-    fetch('/api/method/upload_file', {
-      method: 'POST',
-      body: fd,
-      headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
-    })
-      .then(r => r.json())
-      .then(async data => {
-        if (data?.message?.file_url) {
-          const fileUrl = data.message.file_url;
-          try {
-            const message = await apiFetch('slcm.admission.api.profile.update_profile', { user_image: fileUrl });
-            if (message?.status === 'ok') {
-              statusEl.textContent = '✓ Photo updated';
-              statusEl.style.color = '#16a34a';
-              
-              // Immediate UI update for photo across page
-              const avatars = document.querySelectorAll('#profile-avatar-img, #adm-avatar-img');
-              avatars.forEach(img => { img.src = fileUrl; });
-              
-              // Handle Profile Avatar swap (Initials -> Image)
-              const profDisplay = document.getElementById('profile-avatar-display');
-              if (profDisplay && !document.getElementById('profile-avatar-img')) {
-                const init = document.getElementById('profile-avatar-initials');
-                if (init) init.remove();
-                const newImg = document.createElement('img');
-                newImg.id = 'profile-avatar-img';
-                newImg.src = fileUrl;
-                newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-                profDisplay.appendChild(newImg);
-              }
-
-              // Handle Navbar Avatar swap (Initials -> Image)
-              const navBtn = document.getElementById('adm-avatar-btn');
-              if (navBtn && !document.getElementById('adm-avatar-img')) {
-                const init = document.getElementById('adm-avatar-init');
-                if (init) init.remove();
-                const newImg = document.createElement('img');
-                newImg.id = 'adm-avatar-img';
-                newImg.src = fileUrl;
-                newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
-                navBtn.prepend(newImg);
-              }
-            }
-          } catch (e) {
-            statusEl.textContent = 'Error updating photo';
-            statusEl.style.color = '#dc2626';
-          }
+      if (args.date_of_birth) {
+        let selectedDate = new Date(args.date_of_birth);
+        let today = new Date();
+        if (selectedDate >= today) {
+          msg.textContent = 'Date of birth must be in the past.';
+          return;
         }
-      })
-      .catch(() => {
-        statusEl.textContent = 'Upload failed';
+      }
+
+      if (args.pincode) {
+        if (!/^[0-9]{6}$/.test(args.pincode)) {
+          msg.textContent = 'Pincode must be exactly 6 digits.';
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      msg.textContent = '';
+
+      try {
+        const message = await apiFetch('slcm.admission.api.profile.update_profile', args);
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        if (message && message.status === 'ok') {
+          msg.style.color = '#16a34a';
+          msg.textContent = '✓ Profile updated successfully.';
+          setTimeout(() => window.location.reload(), 900);
+        } else {
+          msg.style.color = '#dc2626';
+          msg.textContent = 'Something went wrong. Please try again.';
+        }
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        msg.style.color = '#dc2626';
+        msg.textContent = e.message || 'Error saving. Please try again.';
+      }
+    }
+
+    // ── Profile Photo Upload ─────────────────────────────────────
+    function handleProfilePhotoUpload(input) {
+      var statusEl = document.getElementById('profile-photo-status');
+      if (!input.files || !input.files[0]) return;
+      var file = input.files[0];
+      if (file.size > 2 * 1024 * 1024) {
+        statusEl.textContent = 'File too large (max 2 MB)';
         statusEl.style.color = '#dc2626';
+        return;
+      }
+      statusEl.textContent = 'Uploading…';
+      statusEl.style.color = '#64748b';
+
+      // Preview immediately
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var initials = document.getElementById('profile-avatar-initials');
+        var img = document.getElementById('profile-avatar-img');
+        if (initials) initials.style.display = 'none';
+        if (!img) {
+          img = document.createElement('img');
+          img.id = 'profile-avatar-img';
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+          document.getElementById('profile-avatar-display').appendChild(img);
+        }
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      var fd = new FormData();
+      fd.append('file', file, file.name);
+      fd.append('is_private', '0');
+      fd.append('folder', 'Home/Attachments');
+
+      fetch('/api/method/upload_file', {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Frappe-CSRF-Token': window.csrf_token }
+      })
+        .then(r => r.json())
+        .then(async data => {
+          if (data?.message?.file_url) {
+            const fileUrl = data.message.file_url;
+            try {
+              const message = await apiFetch('slcm.admission.api.profile.update_profile', { user_image: fileUrl });
+              if (message?.status === 'ok') {
+                statusEl.textContent = '✓ Photo updated';
+                statusEl.style.color = '#16a34a';
+
+                // Immediate UI update for photo across page
+                const avatars = document.querySelectorAll('#profile-avatar-img, #adm-avatar-img');
+                avatars.forEach(img => { img.src = fileUrl; });
+
+                // Handle Profile Avatar swap (Initials -> Image)
+                const profDisplay = document.getElementById('profile-avatar-display');
+                if (profDisplay && !document.getElementById('profile-avatar-img')) {
+                  const init = document.getElementById('profile-avatar-initials');
+                  if (init) init.remove();
+                  const newImg = document.createElement('img');
+                  newImg.id = 'profile-avatar-img';
+                  newImg.src = fileUrl;
+                  newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+                  profDisplay.appendChild(newImg);
+                }
+
+                // Handle Navbar Avatar swap (Initials -> Image)
+                const navBtn = document.getElementById('adm-avatar-btn');
+                if (navBtn && !document.getElementById('adm-avatar-img')) {
+                  const init = document.getElementById('adm-avatar-init');
+                  if (init) init.remove();
+                  const newImg = document.createElement('img');
+                  newImg.id = 'adm-avatar-img';
+                  newImg.src = fileUrl;
+                  newImg.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+                  navBtn.prepend(newImg);
+                }
+              }
+            } catch (e) {
+              statusEl.textContent = 'Error updating photo';
+              statusEl.style.color = '#dc2626';
+            }
+          }
+        })
+        .catch(() => {
+          statusEl.textContent = 'Upload failed';
+          statusEl.style.color = '#dc2626';
+        });
+    }
+    // ── Previous Applications Carousel ────────────────────────
+    (function () {
+      // Responsive card width: matches CSS breakpoints
+      function getCardWidth() {
+        var w = window.innerWidth;
+        if (w >= 1280) return 0.20;      // xl: 5 cards (~20%)
+        if (w >= 1024) return 0.25;      // lg: 4 cards (25%)
+        if (w >= 640) return 0.50;      // sm/md: 2 cards (50%)
+        return 1.00;                    // mobile: 1 card (100%)
+      }
+
+      function setCardWidths() {
+        var track = document.getElementById('prev-carousel-track');
+        if (!track) return;
+        var gap = 12; // matches gap:12px in HTML
+        var containerW = track.parentElement.offsetWidth;
+        var cols = Math.round(1 / getCardWidth());
+        var cardW = Math.floor((containerW - gap * (cols - 1)) / cols);
+        track.querySelectorAll('.prev-carousel-card').forEach(function (el) {
+          el.style.width = cardW + 'px';
+          el.style.minWidth = cardW + 'px';
+          el.style.maxWidth = cardW + 'px';
+        });
+      }
+
+      function updateBtns() {
+        var track = document.getElementById('prev-carousel-track');
+        if (!track) return;
+        var prevBtn = document.getElementById('prev-carousel-prev');
+        var nextBtn = document.getElementById('prev-carousel-next');
+        var atStart = track.scrollLeft <= 4;
+        var atEnd = track.scrollLeft + track.offsetWidth >= track.scrollWidth - 4;
+        if (prevBtn) {
+          prevBtn.disabled = atStart;
+          prevBtn.style.opacity = atStart ? '0.35' : '1';
+          prevBtn.style.cursor = atStart ? 'default' : 'pointer';
+        }
+        if (nextBtn) {
+          nextBtn.disabled = atEnd;
+          nextBtn.style.opacity = atEnd ? '0.35' : '1';
+          nextBtn.style.cursor = atEnd ? 'default' : 'pointer';
+        }
+      }
+
+      window.prevCarouselScroll = function (dir) {
+        var track = document.getElementById('prev-carousel-track');
+        if (!track) return;
+        var gap = 12;
+        var card = track.querySelector('.prev-carousel-card');
+        var step = card ? (card.offsetWidth + gap) : 200;
+        track.scrollBy({ left: dir * step, behavior: 'smooth' });
+        setTimeout(updateBtns, 400);
+      };
+
+      document.addEventListener('DOMContentLoaded', function () {
+        setCardWidths();
+        updateBtns();
+        var track = document.getElementById('prev-carousel-track');
+        if (track) track.addEventListener('scroll', updateBtns);
       });
-  }
-</script>
-{% endblock %}
+
+      window.addEventListener('resize', function () {
+        setCardWidths();
+        updateBtns();
+      });
+    })();
+
+  </script>
+  {% endblock %}

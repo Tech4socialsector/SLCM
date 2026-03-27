@@ -1,20 +1,18 @@
 import frappe
 
 def get_context(context):
+    redirect_to = frappe.local.request.args.get("redirect", "") or \
+                  frappe.local.request.args.get("next", "")
+
     # If user is already logged in, redirect appropriately
     if frappe.session.user != "Guest":
         user_type = frappe.db.get_value("User", frappe.session.user, "user_type") or "Website User"
         if user_type == "System User":
             frappe.local.flags.redirect_location = "/app"
         else:
-            frappe.local.flags.redirect_location = "/admission"
+            frappe.local.flags.redirect_location = redirect_to or "/admission"
         raise frappe.Redirect
 
-    redirect_to = frappe.local.request.args.get("redirect", "") or \
-                  frappe.local.request.args.get("next", "")
-    
-    # If redirect starts with /app, ensure System Users are correctly handled
-    context.is_desk_redirect = redirect_to.startswith("/app") or redirect_to.startswith("/desk")
     context.redirect_to = redirect_to or "/admission"
 
     from slcm.admission.utils.portal import get_portal_config
