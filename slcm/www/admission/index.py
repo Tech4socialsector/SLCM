@@ -308,16 +308,31 @@ def get_context(context):
         _slug = ""
 
     # ── 1. Active Admission Cycle ────────────────────────────────────
-    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    # Use db.get_value, not get_doc: public /admission is often loaded as Guest;
+    # get_doc enforces DocType read permission and returns 500 on live.
     active_cycle = None
-    if active_cycle_name:
-        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name, ignore_permissions=True)
-        active_cycle = frappe._dict({
-            "name": active_cycle_doc.name,
-            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
-            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
-            "application_end": getattr(active_cycle_doc, "application_end", None)
-        })
+    try:
+        active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+        if active_cycle_name:
+            row = frappe.db.get_value(
+                "Admission Cycle",
+                active_cycle_name,
+                ["cycle_start_date", "cycle_end_date"],
+                as_dict=True,
+            ) or {}
+            active_cycle = frappe._dict({
+                "name": active_cycle_name,
+                "cycle_start_date": frappe.utils.getdate(row.get("cycle_start_date"))
+                if row.get("cycle_start_date")
+                else None,
+                "cycle_end_date": frappe.utils.getdate(row.get("cycle_end_date"))
+                if row.get("cycle_end_date")
+                else None,
+                "application_end": None,
+            })
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "admission get_context: active_cycle")
+        active_cycle = None
 
     context.active_cycle = active_cycle
     context.today = frappe.utils.getdate(frappe.utils.today())
