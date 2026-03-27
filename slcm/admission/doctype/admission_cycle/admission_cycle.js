@@ -161,11 +161,13 @@ frappe.ui.form.on("Admission Cycle Program", {
         let row = locals[cdt][cdn];
 
         if (!row.reservation_policy) {
+            // Not yet created → save first, then open
             frm.save().then(() => {
                 open_reservation_policy(frm, row);
             });
         } else {
-            frappe.msgprint(__("Reservation policy already exists"));
+            // Already exists → directly open
+            open_reservation_policy(frm, row);
         }
     },
 
