@@ -13,7 +13,10 @@
   "maximum_marks",
   "grading_type",
   "section_break_grades",
-  "grades"
+  "grades",
+  "use_reexam_composition",
+  "section_break_reexam",
+  "reexam_grades"
  ],
  "fields": [
   {
@@ -46,7 +49,7 @@
    "fieldname": "grading_type",
    "fieldtype": "Select",
    "label": "Grading Type",
-   "options": "Absolute\nRelative",
+   "options": "Absolute\nRelative-Manual\nRelative-Auto",
    "reqd": 1
   },
   {
@@ -61,12 +64,29 @@
    "options": "Grading Schema Component",
    "reqd": 1,
    "description": ""
+  },
+  {
+   "default": "0",
+   "fieldname": "use_reexam_composition",
+   "fieldtype": "Check",
+   "label": "Use Re Exam Composition"
+  },
+  {
+   "fieldname": "section_break_reexam",
+   "fieldtype": "Section Break",
+   "label": "Re Exam Composition"
+  },
+  {
+   "fieldname": "reexam_grades",
+   "fieldtype": "Table",
+   "label": "Re Exam Composition",
+   "options": "Grading Schema Component"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 16:33:58.605782",
+ "modified": "2026-03-26 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Grading Schema",

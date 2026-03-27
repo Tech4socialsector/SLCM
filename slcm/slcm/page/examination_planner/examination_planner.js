@@ -974,10 +974,14 @@ class ExaminationPlanner {
 			`<option value="${a.name}">${a.type_name || a.name}</option>`
 		).join('');
 
+		const _rci = (this._components || []).find(c => c.name === comp.component);
+		const _rcomp_name = _rci ? _rci.component_name : comp.component;
+		const _ruser_lbl = comp.label || _rcomp_name;
+
 		const $section = $(`
 			<div class="ep-sub-section" id="${section_id}" data-comp="${comp.component}">
 				<div class="ep-sub-section-header">
-					<span class="ep-sub-section-title">${comp.label || comp.component} | ${comp.label || comp.component}</span>
+					<span class="ep-sub-section-title">${_rcomp_name} | ${_ruser_lbl}</span>
 					<div style="display:flex;align-items:center;gap:8px;">
 						<select class="re-type-cat" style="padding:4px 8px;border:1px solid #ddd;border-radius:3px;font-size:12px;">
 							<option value="Assessment">Assessment</option>
@@ -1020,9 +1024,15 @@ class ExaminationPlanner {
 		const opts = (this._assessment_types || []).map(a =>
 			`<option value="${a.name}" ${data.assessment_type === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
 		).join('');
-		const sub_at_opts = (this._assessment_types || []).map(a =>
-			`<option value="${a.name}" ${data.substitute_for === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
-		).join('');
+		const _schema_non_reexam = (this._schema_state.schema_components || []).filter(cr => {
+			const _ct = this._get_comp_type_by_name(cr.component);
+			return _ct !== 'Re Exam' && _ct !== 'Makeup';
+		});
+		const sub_at_opts = _schema_non_reexam.map(cr => {
+			const _ci = (this._components || []).find(c => c.name === cr.component);
+			const _disp = cr.label || (_ci ? _ci.component_name : cr.component);
+			return `<option value="${cr.component}" ${data.substitute_for === cr.component ? 'selected' : ''}>${_disp}</option>`;
+		}).join('');
 
 		const show_subst = data.substitute_for ? '' : 'display:none;';
 		const subst_label = data.substitute_for ? __('Hide Substitution Settings') : __('Show Substitution Settings');
@@ -1072,11 +1082,28 @@ class ExaminationPlanner {
 								<input type="number" name="sub_effective_marks" value="${data.effective_marks || ''}" readonly/>
 							</div>
 						</div>
+						<div style="font-size:11px;color:#888;margin-top:6px;">
+							${__('Substitute exam effective marks must be less than or equal to the effective maximum marks of assessment')}<br>
+							${__('If a student is enrolled for this component, his/her marks will be distributed as per the above schema.')}
+						</div>
 					</div>
 				</td>
 			</tr>
 		`);
 		$section.find('.reexam-body').append($row);
+
+		// Auto-calc substitution effective marks
+		const calc_subst_eff = () => {
+			const sub_comp = $row.find('select[name=substitute_for]').val();
+			const sub_wt = parseFloat($row.find('input[name=substitute_weightage]').val()) || 100;
+			const comp_row = (this._schema_state.schema_components || []).find(cr => cr.component === sub_comp);
+			const comp_eff = comp_row ? (comp_row.effective_max_marks || 0) : 0;
+			const eff = Math.round((sub_wt / 100) * comp_eff * 100) / 100;
+			$row.find('input[name=effective_marks]').val(eff || '');
+			$row.find('input[name=sub_effective_marks]').val(eff || '');
+		};
+		$row.find('select[name=substitute_for], input[name=substitute_weightage]').on('change input', calc_subst_eff);
+		if (data.substitute_for) calc_subst_eff();
 
 		// Toggle substitution settings
 		$row.on('click', '.ep-subst-toggle', function () {

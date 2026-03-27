@@ -283,3 +283,161 @@ def get_terms():
 		fields=["name", "term_name"],
 		order_by="creation desc",
 	)
+
+
+@frappe.whitelist()
+def get_courses_for_plan(exam_plan, search=""):
+	"""Return all courses with their schema assignments for the given exam plan."""
+	if search:
+		courses = frappe.db.sql(
+			"""
+			SELECT name, course_name, course_code, department_name, credit_value
+			FROM `tabCourse`
+			WHERE course_name LIKE %(s)s OR course_code LIKE %(s)s
+			ORDER BY course_name ASC
+			LIMIT 500
+			""",
+			{"s": f"%{search}%"},
+			as_dict=True,
+		)
+	else:
+		courses = frappe.get_all(
+			"Course",
+			fields=["name", "course_name", "course_code", "department_name", "credit_value"],
+			order_by="course_name asc",
+			page_length=500,
+		)
+
+	# Fetch existing assignments for this plan
+	asgn_map = {}
+	try:
+		assignments = frappe.db.sql(
+			"""
+			SELECT name, course, evaluation_schema, grade_schema
+			FROM `tabCourse Schema Assignment`
+			WHERE exam_plan = %(exam_plan)s
+			""",
+			{"exam_plan": exam_plan},
+			as_dict=True,
+		)
+		asgn_map = {a["course"]: a for a in assignments}
+	except Exception:
+		pass
+
+	for c in courses:
+		asgn = asgn_map.get(c["name"], {})
+		c["evaluation_schema"] = asgn.get("evaluation_schema") or ""
+		c["grade_schema"] = asgn.get("grade_schema") or ""
+		c["assignment_name"] = asgn.get("name", "")
+		if asgn.get("evaluation_schema"):
+			c["max_marks"] = (
+				frappe.db.get_value("Evaluation Schema", asgn["evaluation_schema"], "total_marks") or ""
+			)
+		else:
+			c["max_marks"] = ""
+
+	return courses
+
+
+@frappe.whitelist()
+def save_course_schema(exam_plan, assignments):
+	"""Create or update Course Schema Assignment records.
+
+	Fields not present in the assignment dict are left unchanged (partial update).
+	Passing ``null`` / ``None`` explicitly clears that field.
+	Records where both fields become null are automatically deleted.
+	"""
+	import json
+
+	_SKIP = "__SKIP__"
+
+	if isinstance(assignments, str):
+		assignments = json.loads(assignments)
+
+	for asgn in assignments:
+		course = asgn.get("course")
+		if not course:
+			continue
+
+		# Distinguish "not supplied" from "explicitly null"
+		eval_schema  = asgn.get("evaluation_schema", _SKIP)
+		grade_schema = asgn.get("grade_schema",      _SKIP)
+
+		rows = frappe.db.sql(
+			"SELECT name FROM `tabCourse Schema Assignment` WHERE exam_plan=%s AND course=%s LIMIT 1",
+			(exam_plan, course),
+		)
+		existing = rows[0][0] if rows else None
+
+		if existing:
+			update = {}
+			if eval_schema  != _SKIP: update["evaluation_schema"] = eval_schema  or None
+			if grade_schema != _SKIP: update["grade_schema"]      = grade_schema or None
+
+			if update:
+				cur_row = frappe.db.sql(
+					"SELECT evaluation_schema, grade_schema FROM `tabCourse Schema Assignment` WHERE name=%s",
+					(existing,), as_dict=True
+				)
+				cur = cur_row[0] if cur_row else frappe._dict()
+				old_ev = cur.get("evaluation_schema")
+				old_gr = cur.get("grade_schema")
+				new_ev = update.get("evaluation_schema", old_ev)
+				new_gr = update.get("grade_schema",      old_gr)
+				if not new_ev and not new_gr:
+					frappe.delete_doc("Course Schema Assignment", existing, ignore_permissions=True)
+				else:
+					frappe.db.sql(
+						"""UPDATE `tabCourse Schema Assignment`
+						   SET evaluation_schema=%s, grade_schema=%s, modified=NOW(), modified_by=%s
+						   WHERE name=%s""",
+						(new_ev, new_gr, frappe.session.user, existing)
+					)
+					# Log the change if anything actually changed
+					if old_ev != new_ev or old_gr != new_gr:
+						try:
+							log = frappe.new_doc("Schema Change Log")
+							log.exam_plan = exam_plan
+							log.course = course
+							log.old_evaluation_schema = old_ev or ""
+							log.new_evaluation_schema = new_ev or ""
+							log.old_grade_schema = old_gr or ""
+							log.new_grade_schema = new_gr or ""
+							log.changed_by = frappe.session.user
+							log.changed_on = frappe.utils.now()
+							log.insert(ignore_permissions=True)
+						except Exception:
+							pass  # Never block the main save due to logging failure
+		else:
+			ev = eval_schema  if eval_schema  != _SKIP else None
+			gr = grade_schema if grade_schema != _SKIP else None
+			if ev or gr:
+				doc = frappe.new_doc("Course Schema Assignment")
+				doc.exam_plan         = exam_plan
+				doc.course            = course
+				doc.evaluation_schema = ev
+				doc.grade_schema      = gr
+				doc.insert(ignore_permissions=True)
+
+	frappe.db.commit()
+	return True
+
+
+@frappe.whitelist()
+def unmap_course_schema(exam_plan, courses):
+	"""Delete Course Schema Assignment records for the given courses."""
+	import json
+
+	if isinstance(courses, str):
+		courses = json.loads(courses)
+
+	for course in courses:
+		rows = frappe.db.sql(
+			"SELECT name FROM `tabCourse Schema Assignment` WHERE exam_plan=%s AND course=%s",
+			(exam_plan, course),
+		)
+		for row in rows:
+			frappe.delete_doc("Course Schema Assignment", row[0], ignore_permissions=True)
+
+	frappe.db.commit()
+	return True
