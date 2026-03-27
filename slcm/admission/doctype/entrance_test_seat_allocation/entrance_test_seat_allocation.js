@@ -609,13 +609,24 @@ body {
 }
 
 /* ══ INFO TABLE SECTION ══ */
-.info-wrap {
-  border: 1.5px solid #888;
+.info-wrap-tbl {
+  width: calc(100% - 28px);
   margin: 12px 14px;
-  display: flex;
+  border: 1.5px solid #888;
+  border-collapse: collapse;
+}
+.info-tbl-cell {
+  vertical-align: top;
+}
+.photo-col-cell {
+  width: 140px;
+  vertical-align: top;
+  border-left: 1.5px solid #888;
+  padding: 10px 8px;
+  height: 250px;
 }
 .info-tbl {
-  flex: 1;
+  width: 100%;
   border-collapse: collapse;
 }
 .info-tbl tr {
@@ -675,17 +686,12 @@ body {
   border-radius: 30px;
 }
 
-/* Photo box */
-.photo-col {
-  width: 135px;
-  flex-shrink: 0;
-  border-left: 1.5px solid #888;
+.photo-inner-wrap {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: space-between;
-  padding: 10px 8px;
-  min-height: 250px;
-  gap: 8px;
+  height: 100%;
 }
 .photo-box-inner {
   display: flex;
@@ -704,10 +710,6 @@ body {
   justify-content: center;
 }
 .photo-frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
   display: block;
 }
 .photo-ph {
@@ -867,103 +869,48 @@ body {
   </div>
 
   <!-- Candidate info + photo -->
-  <div class="info-wrap">
-    <table class="info-tbl">
-      <tbody>
-        <tr>
-          <td class="lb">Admit Card Number</td>
-          <td class="sp">:</td>
-          <td class="vl"><strong>${val(admit_no)}</strong></td>
-        </tr>
-        <tr>
-          <td class="lb">Candidate's Name</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(doc.candidate_name)}</td>
-        </tr>
-        <tr>
-          <td class="lb">Date of Birth</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(dob)}</td>
-        </tr>
-        <tr>
-          <td class="lb">Father's Name</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(doc.father_name)}</td>
-        </tr>
-        <tr>
-          <td class="lb">Mother's Name</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(doc.mother_name)}</td>
-        </tr>
-        <tr>
-          <td class="lb">Gender</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(doc.gender)}</td>
-        </tr>
-        <tr>
-          <td class="lb">Programme Applied</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(doc.program)}</td>
-        </tr>
-        <tr>
-          <td class="lb">Application Number</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(doc.applicant)}</td>
-        </tr>
-        <tr>
-          <td class="lb">Examination Date &amp; Time</td>
-          <td class="sp">:</td>
-          <td class="vl">${exam_date_time}</td>
-        </tr>
-        <tr>
-          <td class="lb">Reporting Time</td>
-          <td class="sp">:</td>
-          <td class="vl">30 minutes before scheduled time</td>
-        </tr>
-        <tr>
-          <td class="lb">Seat Number</td>
-          <td class="sp">:</td>
-          <td class="vl"><span class="seat-pill">${val(f_seat)}</span></td>
-        </tr>
-        <tr>
-          <td class="lb">Room / Hall</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(f_room)}${f_code && f_code.trim() ? "&nbsp; (Code:&nbsp;" + esc(f_code) + ")" : ""}</td>
-        </tr>
-        <tr>
-          <td class="lb">Building / Floor</td>
-          <td class="sp">:</td>
-          <td class="vl">${val(f_building)}${f_floor && f_floor.trim() ? "&nbsp; &middot;&nbsp; Floor:&nbsp;" + esc(f_floor) : ""}</td>
-        </tr>
-        <tr>
-          <td class="lb">Allocation Status</td>
-          <td class="sp">:</td>
-          <td class="vl"><span class="status-pill">${val(f_status)}</span></td>
-        </tr>
-        <tr>
-          <td class="lb">Test Centre Name &amp;&nbsp;Address</td>
-          <td class="sp">:</td>
-          <td class="vl" style="font-size:11.5px;">${centre_full}</td>
-        </tr>
-      </tbody>
-    </table>
-    <!-- Photo -->
-    <div class="photo-col">
-      <div class="photo-box-inner">
-        <div class="photo-frame">
-          ${profile_image_url
-      ? `<img src="${profile_image_url}" alt="Candidate Photo">`
-      : `<div class="photo-ph">👤</div>`
-    }
+  <table class="info-wrap-tbl">
+    <tr>
+      <td class="info-tbl-cell">
+        <table class="info-tbl">
+          <tbody>
+            <tr><td class="lb">Admit Card Number</td><td class="sp">:</td><td class="vl"><strong>${val(admit_no)}</strong></td></tr>
+            <tr><td class="lb">Candidate's Name</td><td class="sp">:</td><td class="vl">${val(doc.candidate_name)}</td></tr>
+            <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">${val(dob)}</td></tr>
+            <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">${val(doc.father_name)}</td></tr>
+            <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">${val(doc.mother_name)}</td></tr>
+            <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">${val(doc.gender)}</td></tr>
+            <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">${val(doc.program)}</td></tr>
+            <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">${val(doc.applicant)}</td></tr>
+            <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">${exam_date_time}</td></tr>
+            <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
+            <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">${val(f_seat)}</span></td></tr>
+            <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">${val(f_room)}${f_code && f_code.trim() ? "&nbsp; (Code:&nbsp;" + esc(f_code) + ")" : ""}</td></tr>
+            <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">${val(f_building)}${f_floor && f_floor.trim() ? "&nbsp; &middot;&nbsp; Floor:&nbsp;" + esc(f_floor) : ""}</td></tr>
+            <tr><td class="lb">Allocation Status</td><td class="sp">:</td><td class="vl"><span class="status-pill">${val(f_status)}</span></td></tr>
+            <tr><td class="lb">Test Centre Name &amp;&nbsp;Address</td><td class="sp">:</td><td class="vl" style="font-size:11.5px;">${centre_full}</td></tr>
+          </tbody>
+        </table>
+      </td>
+      <td class="photo-col-cell">
+        <div class="photo-inner-wrap">
+          <div class="photo-box-inner" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div class="photo-frame">
+              ${profile_image_url
+                ? `<img src="${profile_image_url}" alt="Candidate Photo" width="120" height="150" style="width: 120px; height: 150px; object-fit: cover; display: block;">`
+                : `<div class="photo-ph">👤</div>`
+              }
+            </div>
+            <div class="photo-cap">Candidate's Photograph</div>
+          </div>
+          <div class="photo-sig-box" style="width: 100%; text-align: center; padding-bottom: 5px;">
+            <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
+            <div style="font-size: 8px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333; letter-spacing: -0.2px;">Candidate's Signature</div>
+          </div>
         </div>
-        <div class="photo-cap">Candidate's Photograph</div>
-      </div>
-      <div class="photo-sig-box" style="width: 100%; text-align: center; margin-top: auto; padding-bottom: 5px;">
-        <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
-        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333;">Candidate's Signature</div>
-      </div>
-    </div>
-  </div>
+      </td>
+    </tr>
+  </table>
 
   <!-- Signature -->
   <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>

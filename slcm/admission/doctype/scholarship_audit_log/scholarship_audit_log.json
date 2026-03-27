@@ -54,7 +54,7 @@
   {
    "fieldname": "program",
    "fieldtype": "Data",
-   "label": "Program",
+   "label": "Programme",
    "read_only": 1,
    "reqd": 1
   },
@@ -125,7 +125,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-06 12:43:45.740384",
+ "modified": "2026-03-27 09:47:24.871812",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Audit Log",
