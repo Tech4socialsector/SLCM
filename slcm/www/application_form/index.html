@@ -2718,7 +2718,8 @@
                             <div class="form-row cols-2" style="margin-bottom:.75rem;">
                                 <div class="fg">
                                     <label>Have you completed your UG degree <span class="req">*</span></label>
-                                    <select class="fc" name="ug_degree_completion" id="ug_degree_completion">
+                                    <select class="fc" name="ug_degree_completion" id="ug_degree_completion"
+                                        onchange="onUgDegreeCompletionChange()">
                                         <option value="">Select</option>
                                         <option value="UG Degree completed">UG Degree completed</option>
                                         <option value="Final Year of UG Degree">Final Year of UG Degree</option>
@@ -3683,6 +3684,7 @@
 
     // Program from URL (e.g. /admission Apply Now) — pre-fill and lock
     let PREFILL_PROGRAM = {{ (prefill_program or '') | tojson }};
+    let PREFILL_CAMPUS = {{ (prefill_campus or '') | tojson }};
     const PROGRAM_READONLY = {{ 'true' if program_readonly else 'false' }};
 
     // Application already submitted for this cycle — show read-only, block save/submit
@@ -3696,6 +3698,11 @@
 
     // Pre-fill from existing applicant doc
     let formData = {{ applicant_data | tojson }};
+
+    /** HTML attribute escape — defined before degree table helpers (avoid any TDZ / parse-order issues). */
+    function escapeAttr(s) {
+        return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
 
     // ═══════════════════════════════════════════════════════
     //  STEP CONFIGURATION
@@ -4837,6 +4844,39 @@
         if (isPostGrad) {
             document.getElementById('ug_degree_completion').required = true;
         }
+        ensureDegreeRowsForUgCompletion();
+    }
+
+    /**
+     * When "Have you completed your UG degree" has a value (user picked an option or draft was loaded),
+     * ensure at least one UG row exists for PG/Research, and one PG row for Research Course only.
+     */
+    function ensureDegreeRowsForUgCompletion() {
+        const sel = document.getElementById('ug_degree_completion');
+        const completion = ((sel && sel.value) || formData.ug_degree_completion || '').trim();
+        if (!completion) return;
+
+        const levelEl = document.getElementById('program_level');
+        const level = (levelEl && levelEl.value) || formData.program_level || '';
+        const isPostGrad = level === 'Postgraduate' || level === 'Research Course';
+        const isResearch = level === 'Research Course';
+        if (!isPostGrad) return;
+
+        if (!formData.ug_degree_details || formData.ug_degree_details.length === 0) {
+            if (!formData.ug_degree_details) formData.ug_degree_details = [];
+            formData.ug_degree_details.push({ ug_program: '', college: '', year_of_completion: '', ug_cgpa: '', degree_certificate: '', marksheets: '' });
+            renderUgTable();
+        }
+        if (isResearch && (!formData.pg_degree_details || formData.pg_degree_details.length === 0)) {
+            if (!formData.pg_degree_details) formData.pg_degree_details = [];
+            formData.pg_degree_details.push({ pg_program: '', collegeuniversity: '', year_of_completion: '', pg_cgpa: '', pg_degree_certificatebonafide_certificate_to_be_uploaded: '', transcriptsmarksheets_to_be_uploaded: '' });
+            renderPgTable();
+        }
+    }
+
+    function onUgDegreeCompletionChange() {
+        collectFormData();
+        ensureDegreeRowsForUgCompletion();
     }
 
     function onApplicationTypeChange(val) {
@@ -5052,26 +5092,31 @@
         const uploadBtn = currentUrl ? '' : `<button type="button" class="btn-attach" onclick="document.getElementById('fi_${cellId}').click()">⬆ Upload</button>`;
         const downloadBtn = currentUrl ? `<button type="button" class="btn-attach-download" onclick="downloadDegreeFileByRow('${type}',${rowIdx},'${field}'); return false;">Download</button>` : '';
         const deleteBtn = currentUrl ? `<button type="button" class="attach-clear" title="Remove file" onclick="clearDegreeAttach('${cellId}','${type}',${rowIdx},'${field}'); return false;">Delete</button>` : '';
-        const actionRow = (downloadBtn || deleteBtn) ? `<div style="display:flex;gap:5px;">${downloadBtn}${deleteBtn}</div>` : '';
+        const attachCellActionMarkup = (downloadBtn || deleteBtn) ? `<div style="display:flex;gap:5px;">${downloadBtn}${deleteBtn}</div>` : '';
         const formatHint = currentUrl ? '' : '<span class="attach-format-hint">Max 5MB — png, jpeg, jpg, pdf</span>';
         return `<div class="attach-cell" id="${cellId}">
             <input type="file" accept=".pdf,.png,.jpg,.jpeg,image/png,image/jpeg,image/jpg,application/pdf" style="display:none" id="fi_${cellId}" onchange="handleDegreeFileUpload(this,'${cellId}','${type}',${rowIdx},'${field}')">
             ${fnameDisplay}
             ${uploadBtn}
-            ${actionRow}
+            ${attachCellActionMarkup}
             ${formatHint}
         </div>`;
     }
 
     function addDegreeRow(type) {
-        if (type === 'ug') {
-            if (!formData.ug_degree_details) formData.ug_degree_details = [];
-            formData.ug_degree_details.push({ ug_program: '', college: '', year_of_completion: '', ug_cgpa: '', degree_certificate: '', marksheets: '' });
-            renderUgTable();
-        } else {
-            if (!formData.pg_degree_details) formData.pg_degree_details = [];
-            formData.pg_degree_details.push({ pg_program: '', collegeuniversity: '', year_of_completion: '', pg_cgpa: '', pg_degree_certificatebonafide_certificate_to_be_uploaded: '', transcriptsmarksheets_to_be_uploaded: '' });
-            renderPgTable();
+        try {
+            if (type === 'ug') {
+                if (!formData.ug_degree_details) formData.ug_degree_details = [];
+                formData.ug_degree_details.push({ ug_program: '', college: '', year_of_completion: '', ug_cgpa: '', degree_certificate: '', marksheets: '' });
+                renderUgTable();
+            } else if (type === 'pg') {
+                if (!formData.pg_degree_details) formData.pg_degree_details = [];
+                formData.pg_degree_details.push({ pg_program: '', collegeuniversity: '', year_of_completion: '', pg_cgpa: '', pg_degree_certificatebonafide_certificate_to_be_uploaded: '', transcriptsmarksheets_to_be_uploaded: '' });
+                renderPgTable();
+            }
+        } catch (err) {
+            console.error('addDegreeRow', err);
+            showToast('Could not add degree row. Please refresh and try again.', 'error');
         }
     }
 
@@ -5690,6 +5735,12 @@
             formData.program = (programHidden && programHidden.value) ? programHidden.value : PREFILL_PROGRAM;
         }
 
+        if (typeof PREFILL_CAMPUS !== 'undefined' && PREFILL_CAMPUS && !formData.campus) {
+            const campusEl = document.getElementById('campus');
+            const fromDom = campusEl && campusEl.value ? String(campusEl.value).trim() : '';
+            formData.campus = fromDom || PREFILL_CAMPUS;
+        }
+
         // Phone fields
         const phoneFields = ['mobile_number', 'alternate_contact', 'father_mobile', 'mother_mobile', 'guardian_mobile'];
         phoneFields.forEach(f => {
@@ -5893,6 +5944,7 @@
         // Populate UG/PG degree tables from existing saved data
         renderUgTable();
         renderPgTable();
+        ensureDegreeRowsForUgCompletion();
 
         // Apply conditional visibility so fields like work experience years, guardian, reservation sections, etc. show correctly when applicant data is loaded
         applyConditionalVisibility();
@@ -5903,8 +5955,6 @@
             if (typeof toggleWorkExp === 'function') toggleWorkExp(isYes ? 'Yes' : 'No');
         }
     }
-    function escapeAttr(s) { return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
     // ═══════════════════════════════════════════════════════
     //  REVIEW BUILDER
     // ═══════════════════════════════════════════════════════

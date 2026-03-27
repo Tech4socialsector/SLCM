@@ -119,7 +119,8 @@ webform_include_js = {"Foundations for a Legal Education": "public/js/fle_theme.
 # add methods and filters to jinja environment
 jinja = {
 	"methods": [
-		"slcm.admission.utils.jinja.get_file_b64"
+		"slcm.admission.utils.jinja.get_file_b64",
+		"slcm.admission.utils.portal.get_portal_website_branding",
 	],
 # 	"filters": "slcm.utils.jinja_filters"
 }

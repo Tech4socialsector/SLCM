@@ -175,11 +175,50 @@ def get_portal_config():
             "social_links": [],
         }
 
+
+def get_portal_website_branding():
+    """
+    Safe site title + banner for portal Jinja (Website Settings schema varies by Frappe version;
+    field "title" no longer exists — use app_name / title_prefix).
+    """
+    title = ""
+    banner = ""
+    try:
+        if not frappe.db.exists("DocType", "Website Settings"):
+            return {"title": title, "banner_image": banner}
+        meta = frappe.get_meta("Website Settings")
+        for fn in ("app_name", "title_prefix"):
+            if meta.has_field(fn):
+                v = frappe.db.get_single_value("Website Settings", fn)
+                if v and str(v).strip():
+                    title = str(v).strip()
+                    break
+        if meta.has_field("banner_image"):
+            banner = frappe.db.get_single_value("Website Settings", "banner_image") or ""
+    except Exception:
+        pass
+    return {"title": title, "banner_image": banner}
+
+
 def update_website_context(context):
     """
     Globally provides portal_config to all website templates.
+    Never raise: a bad/missing Applicant Portal Config must not 500 public pages.
     """
-    context.portal_config = get_portal_config()
+    try:
+        context.portal_config = get_portal_config()
+    except Exception as e:
+        frappe.log_error(
+            title="update_website_context failed",
+            message=frappe.get_traceback(),
+        )
+        context.portal_config = {
+            "portal_title": "Admissions",
+            "portal_active": 1,
+            "primary_color": "#1a3c6e",
+            "secondary_color": "#c8a14b",
+            "social_links": [],
+        }
 
 @frappe.whitelist(allow_guest=True)
 def api_get_hero_slides():

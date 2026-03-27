@@ -98,6 +98,18 @@ class TestApplicantFeeAssignment(unittest.TestCase):
 		offer.offer_status = "Accepted"
 		offer.offer_letter_pdf = "/files/test_offer.pdf"
 		offer.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
+
+		cohort_name = "TEST-AFA-COHORT-BCA-2026"
+		if not frappe.db.exists("Cohort", cohort_name):
+			ch = frappe.new_doc("Cohort")
+			ch.cohort_code = "TEST-AFAC"
+			ch.cohort_name = cohort_name
+			ch.program = "BCA"
+			ch.academic_year = "2026-27"
+			ch.term_name = "Term 1"
+			ch.start_date = add_days(nowdate(), -120)
+			ch.end_date = add_days(nowdate(), 400)
+			ch.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
 		
 		# 3. Create AFA and mark Paid
 		afa = frappe.new_doc("Applicant Fee Assignment")
@@ -117,6 +129,8 @@ class TestApplicantFeeAssignment(unittest.TestCase):
 		
 		# 4. Create Invoice & Convert
 		invoice_name = create_invoice(afa.name)
+		inv = frappe.get_doc("Fee Invoice", invoice_name)
+		self.assertTrue(inv.enrollment, "Student Enrollment must be linked on Fee Invoice when Cohort exists")
 		
 		# 5. Verify Student Master mapping
 		student_name = frappe.db.get_value("Student Master", {"application_number": applicant.name}, "name")

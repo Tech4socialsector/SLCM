@@ -323,10 +323,13 @@ def create_invoice(docname):
 	if doc.fee_type == "Application Fee":
 		frappe.throw(frappe._("Create Invoice is only for Admission Fee assignments. Application Fee does not create Fee Invoice."))
 
-	if doc.status != "Paid":
+	if doc.status == "Converted":
+		frappe.throw(frappe._("This assignment has already been converted to a student."))
+
+	if doc.status not in ("Paid", "Partially Paid"):
 		frappe.throw(frappe._(
-			"Invoice and conversion are only allowed when the fee has been paid. "
-			"Current status is '{0}'. Please ensure payment is completed before converting to student."
+			"Conversion is only allowed when status is 'Paid' or 'Partially Paid'. "
+			"Current status is '{0}'."
 		).format(doc.status or "unknown"))
 
 	applicant = frappe.get_doc("Applicant", doc.applicant)
@@ -366,52 +369,67 @@ def create_invoice(docname):
 				"Could not create Student record. Please check the Error Log for details. Error: {0}"
 			).format(str(student_err)))
 
-	# ── 2. Student Enrollment ─────────────────────────────────────────────────
-	# enrollment_name = frappe.db.get_value(
-	# 	"Student Enrollment",
-	# 	{"student": student_name, "program": doc.program, "academic_year": doc.academic_year},
-	# 	"name"
-	# )
+	# ── 2. Student Enrollment (optional on Fee Invoice; cohort drives Program / Academic Year) ──
+	enrollment_name = None
+	existing_enr = frappe.get_all(
+		"Student Enrollment",
+		filters={
+			"student": student_name,
+			"program": doc.program,
+			"academic_year": doc.academic_year,
+		},
+		pluck="name",
+		limit=1,
+	)
+	if existing_enr:
+		enrollment_name = existing_enr[0]
 
-	# if not enrollment_name:
-	# 	try:
-	# 		enrollment = frappe.new_doc("Student Enrollment")
-	# 		enrollment.student      = student_name
-	# 		enrollment.program      = doc.program
-	# 		enrollment.academic_year = doc.academic_year
-	# 		enrollment.enrollment_date = nowdate()
+	cohort = None
+	if doc.program and doc.academic_year:
+		cohort = frappe.db.get_value(
+			"Cohort",
+			{"program": doc.program, "academic_year": doc.academic_year},
+			"name",
+		)
 
-	# 		cohort = frappe.db.get_value(
-	# 			"Cohort",
-	# 			{"program": doc.program, "academic_year": doc.academic_year},
-	# 			"name"
-	# 		)
-	# 		if cohort:
-	# 			enrollment.cohort = cohort
+	if not enrollment_name and cohort:
+		try:
+			enrollment = frappe.new_doc("Student Enrollment")
+			enrollment.student = student_name
+			enrollment.cohort = cohort
+			enrollment.enrollment_date = nowdate()
+			enrollment.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
+			enrollment_name = enrollment.name
 
-	# 		enrollment.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
-	# 		enrollment_name = enrollment.name
+			frappe.logger().info(
+				f"[create_invoice] Student Enrollment created: {enrollment_name} "
+				f"| Student: {student_name} | AFA: {docname}"
+			)
 
-	# 		frappe.logger().info(
-	# 			f"[create_invoice] Student Enrollment created: {enrollment_name} "
-	# 			f"| Student: {student_name} | AFA: {docname}"
-	# 		)
-
-	# 	except Exception as enroll_err:
-	# 		frappe.log_error(
-	# 			message=frappe.get_traceback(),
-	# 			title=f"Student Enrollment Creation Failed | Student: {student_name}"
-	# 		)
-	# 		frappe.throw(frappe._(
-	# 			"Could not create Student Enrollment record. "
-	# 			"Please check the Error Log for details. Error: {0}"
-	# 		).format(str(enroll_err)))
+		except Exception as enroll_err:
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=f"Student Enrollment Creation Failed | Student: {student_name}",
+			)
+			frappe.throw(
+				frappe._(
+					"Could not create Student Enrollment record. "
+					"Please check the Error Log for details. Error: {0}"
+				).format(str(enroll_err))
+			)
+	elif not enrollment_name:
+		frappe.throw(
+			frappe._(
+				"Cannot convert to student: no Cohort exists for Program '{0}' and Academic Year '{1}'. "
+				"Create a Cohort for this program and year before converting (Student Enrollment is required)."
+			).format(doc.program or "—", doc.academic_year or "—")
+		)
 
 	# ── 3. Create Fee Invoice ─────────────────────────────────────────────────
 	try:
 		invoice = frappe.new_doc("Fee Invoice")
-		invoice.student                = student_name
-		invoice.enrollment             = enrollment_name
+		invoice.student = student_name
+		invoice.enrollment = enrollment_name
 		invoice.program                = doc.program
 		invoice.academic_year          = doc.academic_year
 		invoice.invoice_date           = nowdate()
@@ -568,56 +586,91 @@ def bulk_convert_to_student(assignments):
 		return {"message": frappe._("No assignments provided")}
 
 	eligible = []
+	skipped = []
 	for name in assignments:
 		if not name:
 			continue
 		afa = frappe.db.get_value(
 			"Applicant Fee Assignment",
 			name,
-			["fee_type", "status", "docstatus"],
+			["fee_type", "status", "docstatus", "name"],
 			as_dict=True,
 		)
 		if not afa:
+			skipped.append({"assignment": name, "reason": frappe._("Not found")})
 			continue
 		if afa.fee_type != "Admission Fee" or afa.docstatus != 1:
+			skipped.append(
+				{
+					"assignment": name,
+					"reason": frappe._("Must be submitted Admission Fee assignment."),
+				}
+			)
 			continue
-		if afa.status != "Paid":
+		if afa.status not in ("Paid", "Partially Paid"):
+			skipped.append(
+				{
+					"assignment": name,
+					"reason": frappe._(
+						"Status must be 'Paid' or 'Partially Paid' (current: {0})."
+					).format(afa.status or "—"),
+				}
+			)
 			continue
 		eligible.append(name)
 
 	if not eligible:
 		return {
 			"message": frappe._(
-				"No eligible assignments to convert. "
-				"Only assignments with status 'Paid' (fee payment completed) can be converted to student."
-			)
+				"No eligible assignments to convert. Only submitted Admission Fee rows with status "
+				"'Paid' or 'Partially Paid' can be converted."
+			),
+			"skipped": skipped,
 		}
 
-	if len(eligible) > 10:
+	# Background queue for multi-record batches (isolated commits + notification)
+	if len(eligible) >= 2:
 		frappe.enqueue(
 			method="slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment.background_bulk_convert_worker",
 			queue="long",
 			assignments=eligible,
 			user=frappe.session.user,
+			timeout=3600,
 			now=frappe.flags.in_test,
 		)
 		return {
 			"queued": True,
 			"message": frappe._(
-				"Large batch ({0} assignments). Processing in the background. "
-				"You will be notified when finished."
+				"{0} assignment(s) queued for background conversion. "
+				"You will get a desk notification when finished; this list will refresh on completion."
 			).format(len(eligible)),
+			"skipped": skipped,
 		}
 
-	return _process_bulk_convert_batch(eligible)
+	out = _process_bulk_convert_batch(eligible)
+	if skipped:
+		out["skipped"] = skipped
+	return out
 
 
-def _process_bulk_convert_batch(assignments):
-	"""Process a list of AFA docnames; return { success: [], errors: [] }."""
+def _process_bulk_convert_batch(assignments, progress_user=None):
+	"""Process a list of AFA docnames; return { success: [], errors: [] }. Commits each success separately."""
 	results = {"success": [], "errors": []}
-	for docname in assignments:
+	total = len(assignments)
+	for idx, docname in enumerate(assignments):
+		if progress_user:
+			frappe.publish_realtime(
+				"bulk_convert_to_student_progress",
+				{
+					"progress": idx + 1,
+					"total": total,
+					"message": frappe._("Converting {0} ({1} / {2})").format(docname, idx + 1, total),
+				},
+				user=progress_user,
+			)
 		try:
 			invoice_name = create_invoice(docname)
+			frappe.db.commit()
 			results["success"].append({"assignment": docname, "invoice": invoice_name})
 		except Exception as e:
 			frappe.db.rollback()
@@ -625,7 +678,7 @@ def _process_bulk_convert_batch(assignments):
 			results["errors"].append({"assignment": docname, "error": err_detail})
 			frappe.log_error(
 				message=frappe.get_traceback(),
-				title=f"Bulk Convert to Student Error | AFA: {docname}"
+				title=f"Bulk Convert to Student Error | AFA: {docname}",
 			)
 	return results
 
@@ -633,22 +686,43 @@ def _process_bulk_convert_batch(assignments):
 def background_bulk_convert_worker(assignments, user):
 	"""Background worker for bulk convert; notifies user when done."""
 	frappe.set_user(user)
-	results = _process_bulk_convert_batch(assignments)
+	results = _process_bulk_convert_batch(assignments, progress_user=user)
 	success_count = len(results["success"])
-	error_count   = len(results["errors"])
+	error_count = len(results["errors"])
 
-	summary_msg = frappe._("Successfully converted {0} applicants to students.").format(success_count)
-	if error_count > 0:
-		summary_msg += " " + frappe._("{0} errors encountered. Check the Error Log for details.").format(error_count)
+	if error_count:
+		summary_raw = frappe._("Converted {0} assignment(s); {1} failed.").format(success_count, error_count)
+	else:
+		summary_raw = frappe._("Successfully converted {0} assignment(s).").format(success_count)
+	summary_msg = frappe.utils.escape_html(summary_raw)
+	detail_lines = []
+	for err in results["errors"][:25]:
+		detail_lines.append(
+			"<p><b>{0}</b>: {1}</p>".format(
+				frappe.utils.escape_html(err.get("assignment") or ""),
+				frappe.utils.escape_html(err.get("error") or ""),
+			)
+		)
+	if len(results["errors"]) > 25:
+		detail_lines.append(
+			"<p><i>"
+			+ frappe.utils.escape_html(
+				frappe._("…and {0} more (see Error Log).").format(len(results["errors"]) - 25)
+			)
+			+ "</i></p>"
+		)
+	err_block = "".join(detail_lines)
 
 	from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+
 	enqueue_create_notification(
 		[user],
 		{
-			"subject": frappe._("Bulk Convert to Student Report"),
+			"subject": frappe._("Bulk Convert to Student — {0} ok, {1} errors").format(success_count, error_count),
 			"email_content": (
 				f"<h4>{summary_msg}</h4>"
-				f"<p>{frappe._('Check Applicant Fee Assignment and Fee Invoice list for details.')}</p>"
+				f"<p>{frappe.utils.escape_html(frappe._('Check Applicant Fee Assignment and Fee Invoice for details.'))}</p>"
+				+ (f"<h5>{frappe.utils.escape_html(frappe._('Errors'))}</h5>{err_block}" if err_block else "")
 			),
 			"type": "Alert",
 			"document_type": "Applicant Fee Assignment",

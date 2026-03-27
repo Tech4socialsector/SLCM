@@ -5,61 +5,50 @@
 {% block theme_vars %}
 <style>
     :root {
-            {
-            % if portal_config %
-        }
-
-        --primary: {
-                {
-                portal_config.get('primary_color', '#1a3c6e') if portal_config.get else (portal_config.primary_color or '#1a3c6e')
+        --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+        --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+        --accent: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+        --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
+        --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
+        --text-1: #1f2937;
+        --text-2: #374151;
+        --text-3: #6b7280;
+        --text-4: #9ca3af;
+        --text: #1a1a2e;
+        --muted: #6c757d;
+        --border: #e5e7eb;
+        --bg: #f3f4f6;
+        --card-bg: #ffffff;
+        --success: #16a34a;
+        --warning: #f59e0b;
+        --danger: #dc2626;
+        --radius: 14px;
             }
-        }
-
-        ;
-
-        --secondary: {
-                {
-                portal_config.get('secondary_color', '#c8a14b') if portal_config.get else (portal_config.secondary_color or '#c8a14b')
-            }
-        }
-
-        ;
-        --success: #38a169;
-        --warning: #ed8936;
-        --info: #3182ce;
-        --danger: #e53e3e;
-
-            {
-            % else %
-        }
-
-        --primary: #1a3c6e;
-        --secondary: #c8a14b;
-        --success: #38a169;
-        --warning: #ed8936;
-        --info: #3182ce;
-        --danger: #e53e3e;
-
-            {
-            % endif %
-        }
-    }
 </style>
 {% endblock %}
 
 {% block page_css %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+    body,
+    .adm-main,
+    .adm-container {
+        font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif !important;
+        background: var(--bg) !important;
+        color: var(--text);
+    }
+
     #offer-detail-wrapper {
         padding: 0;
     }
 
     /* Cards */
     .ui-card {
-        background: #ffffff;
-        border-radius: 16px;
-        border: 1px solid #eef2f7;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        background: linear-gradient(165deg, var(--card-bg) 0%, color-mix(in srgb, var(--card-bg) 92%, var(--bg)) 100%);
+        border-radius: var(--radius, 14px);
+        border: 1px solid var(--border);
+        box-shadow:
+            0 4px 6px rgba(15, 23, 42, 0.04),
+            0 14px 32px rgba(15, 23, 42, 0.07);
         margin-bottom: 24px;
         padding: 24px;
     }
@@ -174,8 +163,10 @@
     }
 
     .summary-item .value.amount {
-        font-size: 1.25rem;
+        font-size: 1.28rem;
         font-weight: 700;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
     }
 
     .fee-row {
@@ -230,7 +221,7 @@
     .btn-download-outline {
         background-color: transparent;
         color: var(--primary);
-        border: 1px solid #eef2f7;
+        border: 1px solid var(--border);
         border-radius: 10px;
         width: 100%;
         padding: 12px;
@@ -689,7 +680,12 @@
     let payment_processed = false;
 
     function format_currency(v, c) {
-        return (c || "INR") + " " + parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        var code = (c || 'INR').toString().toUpperCase();
+        var num = parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (code === 'INR' || !c) {
+            return '\u20B9 ' + num;
+        }
+        return code + ' ' + num;
     }
 
     // Fallback for translation helper
@@ -742,12 +738,12 @@
 
             if (distance > 24 * 60 * 60 * 1000) {
                 // More than 24 hours - show date only
-                label_el.text("{{ _("Offer expiry date") }}");
+                label_el.text({{ _("Offer expiry date") | tojson }});
                 timer_el.text(deadline_str.split(' ')[0]);
                 timer_el.next().hide(); // Hide the redundant deadline line
             } else {
                 // 24 hours or less - show timer
-                label_el.text("{{ _("Offer expiry timer") }}");
+                label_el.text({{ _("Offer expiry timer") | tojson }});
                 timer_el.next().show();
 
                 const hours = Math.floor(distance / (1000 * 60 * 60));

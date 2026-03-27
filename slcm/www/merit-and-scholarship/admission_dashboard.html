@@ -38,12 +38,11 @@ else 'Admissions Open') %}
   _pphoto=_pd.get('candidate_photo','') %} {% set
   _app_id=_pd.get('name','') %} {% set _pfirst=(_pname[0]|upper) if _pname else (_first or 'U' ) %} {% set
   _pmobile=_pd.get('mobile_number','') %} {% set _pdob=_pd.get('date_of_birth','') %} {% set
-  _pgender=_pd.get('gender','') %} {% set _pnation=_pd.get('nationality','') %} {% set
-  _paddr=_pd.get('correspondence_address','') %} {% set _pcity=_pd.get('city','') %} {% set _pstate=_pd.get('state','')
-  %} {% set _ppincode=_pd.get('pincode','') %} {# Profile completion calculation (8 fields) #} {% set
-  _completion_fields=[_pmobile, _pdob, _pgender, _pnation, _paddr, _pcity, _pstate, _ppincode] %} {% set
+  _pgender=_pd.get('gender','') %} {% set
+  _paddr=_pd.get('correspondence_address','') %} {# Profile completion: fields stored on standard User #} {% set
+  _completion_fields=[_pmobile, _pdob, _pgender, _paddr] %} {% set
   _filled_count=namespace(v=0) %} {% for f in _completion_fields %}{% if f %}{% set _filled_count.v=_filled_count.v + 1
-  %}{% endif %}{% endfor %} {% set _completion_pct=((_filled_count.v / 8) * 100) | round | int %} {# Documents #} {% set
+  %}{% endif %}{% endfor %} {% set _completion_pct=((_filled_count.v / 4) * 100) | round | int %} {# Documents #} {% set
   _docs=app_documents or [] %} {% block title %}Dashboard — Admissions{% endblock %} {% block theme_vars %} <style>
   :root {
   --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else
@@ -960,24 +959,8 @@ else 'Admissions Open') %}
                     <p class="field-value {{ '' if _pgender else 'not-set' }}">{{ _pgender or 'Not specified' }}</p>
                   </div>
                   <div>
-                    <p class="field-label">Nationality</p>
-                    <p class="field-value {{ '' if _pnation else 'not-set' }}">{{ _pnation or 'Not set' }}</p>
-                  </div>
-                  <div>
-                    <p class="field-label">Address</p>
+                    <p class="field-label">Location</p>
                     <p class="field-value {{ '' if _paddr else 'not-set' }}">{{ _paddr or 'Not set' }}</p>
-                  </div>
-                  <div>
-                    <p class="field-label">City</p>
-                    <p class="field-value {{ '' if _pcity else 'not-set' }}">{{ _pcity or 'Not set' }}</p>
-                  </div>
-                  <div>
-                    <p class="field-label">State</p>
-                    <p class="field-value {{ '' if _pstate else 'not-set' }}">{{ _pstate or 'Not set' }}</p>
-                  </div>
-                  <div>
-                    <p class="field-label">Pincode</p>
-                    <p class="field-value {{ '' if _ppincode else 'not-set' }}">{{ _ppincode or 'Not set' }}</p>
                   </div>
 
                 </div>
@@ -1443,36 +1426,10 @@ else 'Admissions Open') %}
             <option value="Prefer not to say">Prefer not to say</option>
           </select>
         </div>
-        <div>
-          <label class="modal-label">Nationality</label>
-          <input id="edit-nationality" type="text" class="modal-input" placeholder="e.g. Indian" />
-        </div>
         <div style="grid-column:1/-1;">
-          <label class="modal-label">Correspondence Address</label>
+          <label class="modal-label">Location</label>
           <textarea id="edit-address" rows="2" class="modal-input" style="resize:vertical;"
-            placeholder="Street address, landmark..."></textarea>
-        </div>
-        <div>
-          <label class="modal-label">State</label>
-          <select id="edit-state" class="modal-input" onchange="loadDistricts(this.value)">
-            <option value="">Select State</option>
-            {% for s in states %}
-            <option value="{{ s.name }}">{{ s.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="modal-label">City (District)</label>
-          <select id="edit-city" class="modal-input">
-            <option value="">Select City</option>
-            {% for d in districts %}
-            <option value="{{ d.name }}">{{ d.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="modal-label">Pincode</label>
-          <input id="edit-pincode" type="text" maxlength="6" class="modal-input" placeholder="6-digit pincode" />
+            placeholder="Town, area, or address (saved to User Location)"></textarea>
         </div>
       </div>
       <div id="profile-edit-msg" style="margin-top:14px;font-size:13px;min-height:18px;"></div>
@@ -1490,6 +1447,8 @@ else 'Admissions Open') %}
   {% endblock %}
 
   {% block extra_js %}
+  {# Escape </ so </script> inside JSON cannot close this tag (HTML parses all script types the same). #}
+  <script type="application/json" id="slcm-dashboard-profile-json">{{ ((profile_data or {}) | tojson | string).replace('</', '\\u003c/') | safe }}</script>
   <style>
     @keyframes spin {
       to {
@@ -1690,58 +1649,30 @@ else 'Admissions Open') %}
     // ── Init ──────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
       var urlParams = new URLSearchParams(window.location.search);
-      var panel = urlParams.get('panel') || '{{ active_panel }}' || 'profile';
+      var panel = urlParams.get('panel') || {{ (active_panel or 'profile') | tojson }};
       showPanel(panel);
 
       // Animate progress bar
       var fill = document.getElementById('progress-fill');
-      if (fill) setTimeout(() => fill.style.width = '{{ _completion_pct }}%', 300);
+      if (fill) setTimeout(() => fill.style.width = {{ (_completion_pct | default(0)) | int | tojson }} + '%', 300);
     });
-
-    async function loadDistricts(state, selectedDistrict = null) {
-      const citySelect = document.getElementById('edit-city');
-      if (!state) {
-        citySelect.innerHTML = '<option value="">Select City</option>';
-        return;
-      }
-      citySelect.innerHTML = '<option value="">Loading...</option>';
-      try {
-        const districts = await apiFetch('slcm.api.user.get_districts', { state: state });
-        let html = '<option value="">Select City</option>';
-        districts.forEach(d => {
-          html += `<option value="${d.name}" ${selectedDistrict === d.name ? 'selected' : ''}>${d.name}</option>`;
-        });
-        citySelect.innerHTML = html;
-      } catch (e) {
-        citySelect.innerHTML = '<option value="">Error loading cities</option>';
-      }
-    }
 
     // ── Profile Edit Modal ──────────────────────────────────────
     function openProfileEditModal() {
-      var pd = {{ profile_data_json | safe if profile_data_json else '{}'
-    }};
-    var mobileInput = document.getElementById('edit-mobile');
-    var pincodeInput = document.getElementById('edit-pincode');
+      var pd = {};
+      try {
+        var _pj = document.getElementById('slcm-dashboard-profile-json');
+        if (_pj && _pj.textContent) pd = JSON.parse(_pj.textContent);
+      } catch (e) { pd = {}; }
+      var mobileInput = document.getElementById('edit-mobile');
 
     mobileInput.value = pd.mobile_number || '';
     document.getElementById('edit-dob').value = pd.date_of_birth || '';
     document.getElementById('edit-gender').value = pd.gender || '';
-    document.getElementById('edit-nationality').value = pd.nationality || '';
     document.getElementById('edit-address').value = pd.correspondence_address || '';
-    document.getElementById('edit-state').value = pd.state || '';
-    pincodeInput.value = pd.pincode || '';
 
-    // Prevent letters
-    mobileInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
-    pincodeInput.oninput = function () { this.value = this.value.replace(/[^0-9]/g, ''); };
-
-    // Load districts for the current state
-    if (pd.state) {
-      loadDistricts(pd.state, pd.city);
-    } else {
-      document.getElementById('edit-city').innerHTML = '<option value="">Select City</option>';
-    }
+    // Digits only for mobile (country code may include + in desk; portal keeps numeric)
+    mobileInput.oninput = function () { this.value = this.value.replace(/[^0-9+]/g, ''); };
 
     document.getElementById('profile-edit-msg').textContent = '';
     document.getElementById('profile-edit-modal').style.display = 'flex';
@@ -1765,11 +1696,7 @@ else 'Admissions Open') %}
         mobile_number: document.getElementById('edit-mobile').value.trim(),
         date_of_birth: document.getElementById('edit-dob').value,
         gender: document.getElementById('edit-gender').value,
-        nationality: document.getElementById('edit-nationality').value.trim(),
         correspondence_address: document.getElementById('edit-address').value.trim(),
-        city: document.getElementById('edit-city').value.trim(),
-        state: document.getElementById('edit-state').value.trim(),
-        pincode: document.getElementById('edit-pincode').value.trim(),
       };
 
       // ── Validation ──────────────────────────────────────────────
@@ -1784,34 +1711,40 @@ else 'Admissions Open') %}
         }
       }
 
-      if (args.pincode) {
-        if (!/^[0-9]{6}$/.test(args.pincode)) {
-          msg.textContent = 'Pincode must be exactly 6 digits.';
-          return;
-        }
-      }
-
       btn.disabled = true;
       btn.textContent = 'Saving…';
       msg.textContent = '';
 
       try {
-        const message = await apiFetch('slcm.admission.api.profile.update_profile', args);
+        const res = await apiFetch('slcm.admission.api.profile.update_profile', args);
         btn.disabled = false;
         btn.textContent = 'Save Changes';
-        if (message && message.status === 'ok') {
-          msg.style.color = '#16a34a';
-          msg.textContent = '✓ Profile updated successfully.';
+        if (res && (res.success === true || res.status === 'ok')) {
+          msg.textContent = '';
+          if (typeof showToast === 'function') {
+            showToast('Profile updated successfully.', 'success');
+          } else {
+            msg.style.color = '#16a34a';
+            msg.textContent = '✓ Profile updated successfully.';
+          }
           setTimeout(() => window.location.reload(), 900);
         } else {
+          var errTxt = (res && res.error) ? String(res.error) : 'Something went wrong. Please try again.';
+          if (typeof showToast === 'function') {
+            showToast(errTxt, 'error');
+          }
           msg.style.color = '#dc2626';
-          msg.textContent = 'Something went wrong. Please try again.';
+          msg.textContent = errTxt;
         }
       } catch (e) {
         btn.disabled = false;
         btn.textContent = 'Save Changes';
+        var em = e.message || 'Error saving. Please try again.';
+        if (typeof showToast === 'function') {
+          showToast(em, 'error');
+        }
         msg.style.color = '#dc2626';
-        msg.textContent = e.message || 'Error saving. Please try again.';
+        msg.textContent = em;
       }
     }
 
@@ -1860,7 +1793,7 @@ else 'Admissions Open') %}
             const fileUrl = data.message.file_url;
             try {
               const message = await apiFetch('slcm.admission.api.profile.update_profile', { user_image: fileUrl });
-              if (message?.status === 'ok') {
+              if (message && (message.success === true || message.status === 'ok')) {
                 statusEl.textContent = '✓ Photo updated';
                 statusEl.style.color = '#16a34a';
 

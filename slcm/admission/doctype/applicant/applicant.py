@@ -1,3 +1,5 @@
+import json
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -245,6 +247,22 @@ class Applicant(Document):
                 except Exception:
                     pass
 
+        # Withdrawn application: Student Master (Current Status) + enrollments
+        if self.application_status == "Withdrawn" and self.has_value_changed("application_status"):
+            try:
+                from slcm.admission.utils.withdrawal_sync import (
+                    sync_student_records_for_withdrawn_application,
+                )
+
+                sync_student_records_for_withdrawn_application(
+                    self.name,
+                    status_remark=_("Application withdrawn"),
+                )
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    f"Withdrawal sync failed for Applicant {self.name}",
+                )
 
     def send_submission_confirmation(self):
         """
@@ -2196,6 +2214,86 @@ def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, a
 
     # SMALL BATCH SYNC
     return background_bulk_worker(applicants, print_format, sync=True)
+
+
+@frappe.whitelist()
+def bulk_convert_applicants_to_student(applicants=None):
+    """
+    Resolve Applicant Fee Assignment (Admission Fee, Paid / Partially Paid) per applicant,
+    then delegate to the same bulk convert pipeline as Applicant Fee Assignment.
+
+    Only applicants with application_status == Fee Paid are eligible (others are skipped with a reason).
+    """
+    from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import (
+        bulk_convert_to_student as bulk_convert_assignments,
+    )
+
+    if isinstance(applicants, str):
+        applicants = json.loads(applicants)
+    if not applicants:
+        return {"message": _("No applicants selected.")}
+
+    eligible_assignments = []
+    skipped = []
+    seen = set()
+
+    for an in applicants:
+        if not an:
+            continue
+        if not frappe.db.exists("Applicant", an):
+            skipped.append({"applicant": an, "reason": _("Applicant not found.")})
+            continue
+        st = frappe.db.get_value("Applicant", an, "application_status")
+        if st != "Fee Paid":
+            skipped.append(
+                {
+                    "applicant": an,
+                    "reason": _("Only applicants with status Fee Paid can be converted (current: {0}).").format(
+                        st or _("—")
+                    ),
+                }
+            )
+            continue
+        rows = frappe.get_all(
+            "Applicant Fee Assignment",
+            filters={"applicant": an, "fee_type": "Admission Fee", "docstatus": 1},
+            fields=["name", "status"],
+            order_by="modified desc",
+        )
+        afa_name = None
+        for r in rows:
+            if r.status in ("Paid", "Partially Paid"):
+                afa_name = r.name
+                break
+        if not afa_name:
+            skipped.append(
+                {
+                    "applicant": an,
+                    "reason": _(
+                        "No submitted Admission Fee assignment in Paid or Partially Paid status was found."
+                    ),
+                }
+            )
+            continue
+        if afa_name not in seen:
+            seen.add(afa_name)
+            eligible_assignments.append(afa_name)
+
+    if not eligible_assignments:
+        return {
+            "message": _(
+                "No eligible applicants. Select applicants with status Fee Paid and a paid or partially paid Admission Fee assignment."
+            ),
+            "skipped": skipped,
+        }
+
+    result = bulk_convert_assignments(eligible_assignments)
+    if not isinstance(result, dict):
+        return result
+    result.setdefault("skipped", [])
+    result["skipped"] = skipped + list(result["skipped"])
+    return result
+
 
 def background_bulk_worker(applicants, print_format, user=None, sync=False):
     """

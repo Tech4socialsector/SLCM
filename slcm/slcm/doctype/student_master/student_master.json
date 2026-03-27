@@ -879,7 +879,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Student Status",
-   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant"
+   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant\nWithdrawn"
   },
   {
    "fieldname": "account_status",
