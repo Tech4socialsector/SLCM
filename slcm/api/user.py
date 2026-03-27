@@ -96,6 +96,36 @@ def register_fle_user(email, mobile_number):
     
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
 
+@frappe.whitelist(allow_guest=True)
+def custom_sign_up(email, full_name, mobile_no, redirect_to=None):
+    if not email or not full_name or not mobile_no:
+        frappe.throw(_("Email, Full Name and Mobile Number are required"))
+
+    if frappe.db.exists("User", email):
+        return 0, _("User with this email already exists.")
+    
+    if frappe.db.exists("User", {"mobile_no": mobile_no}):
+        return 0, _("Mobile number already registered.")
+
+    user = frappe.get_doc({
+        "doctype": "User",
+        "email": email,
+        "first_name": full_name,
+        "mobile_no": mobile_no,
+        "enabled": 1,
+        "send_welcome_email": 1,
+        "user_type": "Website User"
+    })
+    user.flags.ignore_permissions = True
+    user.flags.ignore_password_policy = True
+    user.insert()
+
+    # Add default role
+    default_role = frappe.get_single_value("Portal Settings", "default_role") or "Applicant"
+    user.add_roles(default_role)
+
+    return 1, _("Account created! Check your email to set your password.")
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def update_password_fle(new_password, key, confirm_password=None):
     # Call the core update_password function
@@ -727,8 +757,7 @@ def get_payment_status(docname):
         "payment_status": doc.payment_status,
         "docstatus": doc.docstatus
     }
-
- 
+from frappe.core.doctype.user.user import sign_up
 @frappe.whitelist(allow_guest=True)
 def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
     # Proactively check for existing email or mobile number
@@ -776,3 +805,13 @@ def get_login_redirect():
         return "/app"
     else:
         return "/admission"
+
+@frappe.whitelist()
+def get_login_redirect():
+    if frappe.session.user == "Guest":
+        return ""
+    
+    user_type = frappe.db.get_value("User", frappe.session.user, "user_type") or "Website User"
+    if user_type == "System User":
+        return "/desk"
+    return ""

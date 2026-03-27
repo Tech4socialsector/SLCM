@@ -164,27 +164,16 @@ def _load_program_detail(context, slug):
         frappe.log_error(str(ex),"prog_detail:faculty")
         context.prog_faculty = []
 
-    # Active cycle
-    try:
-        active_cycle_doc = frappe.get_last_doc(
-            "Admission Cycle", filters={"status": "Active"})
-        if active_cycle_doc:
-            context.active_cycle = frappe._dict({
-                "name": active_cycle_doc.name,
-                "admission_year": active_cycle_doc.admission_year,
-                "academic_year": getattr(active_cycle_doc, "academic_year", None) or "",
-                "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
-                "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
-                "application_end": active_cycle_doc.application_end
-            })
-            context.admission_cycle = active_cycle_doc.name
-            context.admission_year = active_cycle_doc.admission_year
-        else:
-            context.active_cycle = None
-            context.admission_cycle = None
+    # Active cycle details for detail view
+    if context.active_cycle:
+        context.admission_cycle = context.active_cycle.name
+        # admission_year might not be in context.active_cycle if not fetched in get_context
+        # but Admission Cycle doc has it.
+        try:
+            context.admission_year = frappe.db.get_value("Admission Cycle", context.active_cycle.name, "admission_year")
+        except:
             context.admission_year = None
-    except Exception:
-        context.active_cycle = None
+    else:
         context.admission_cycle = None
         context.admission_year = None
 
@@ -227,21 +216,29 @@ def _load_program_detail(context, slug):
     context.user_app_status = ""
     if frappe.session.user and frappe.session.user != "Guest":
         try:
+            filters = {
+                "email":   frappe.session.user,
+                "program": prog.name
+            }
+            if context.active_cycle:
+                filters["admission_cycle"] = context.active_cycle.name
+
             _recs = frappe.get_all(
                 "Applicant",
-                filters={
-                    "email":   frappe.session.user,
-                    "program": prog.name
-                },
+                filters=filters,
                 fields=["name", "application_status"],
                 order_by="creation desc",
                 limit=1
             )
             if not _recs:
-                # fallback: scan all user apps for program name match
+                # fallback: scan all user apps for program name match in this cycle
+                f2 = {"email": frappe.session.user}
+                if context.active_cycle:
+                    f2["admission_cycle"] = context.active_cycle.name
+
                 _all = frappe.get_all(
                     "Applicant",
-                    filters={"email": frappe.session.user},
+                    filters=f2,
                     fields=["name", "program", "application_status"],
                     order_by="creation desc",
                     limit=30
@@ -355,6 +352,58 @@ def get_context(context):
     except Exception:
         _slug = ""
 
+    # ── 1. Active Admission Cycle ────────────────────────────────────
+    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    active_cycle = None
+    if active_cycle_name:
+        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name, ignore_permissions=True)
+        active_cycle = frappe._dict({
+            "name": active_cycle_doc.name,
+            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
+            "application_end": getattr(active_cycle_doc, "application_end", None)
+        })
+
+    context.active_cycle = active_cycle
+    context.today = frappe.utils.getdate(frappe.utils.today())
+
+    # ── 2. Is application window open? ───────────────────────────────
+    app_open = False
+    if active_cycle:
+        _start = active_cycle.get('cycle_start_date')
+        _end = active_cycle.get('cycle_end_date')
+        if (not _start or context.today >= _start) and (not _end or context.today <= _end):
+            app_open = True
+    context.app_open = app_open
+
+    # ── 3. user_app_map: program_name → {app_name, status} ──
+    context.user_app_map = {}
+    context.has_any_application = False
+    if frappe.session.user and frappe.session.user != "Guest":
+        try:
+            filters = {"email": frappe.session.user}
+            if active_cycle:
+                filters["admission_cycle"] = active_cycle.name
+
+            _uapps = frappe.get_all(
+                "Applicant",
+                filters=filters,
+                fields=["name", "program", "application_status"],
+                order_by="creation desc",
+                limit=50
+            )
+            for _ua in _uapps:
+                _key = (_ua.get("program") or "").strip()
+                if _key and _key not in context.user_app_map:
+                    context.user_app_map[_key] = {
+                        "app_name": _ua.get("name") or "",
+                        "status":   _ua.get("application_status") or ""
+                    }
+            if context.user_app_map:
+                context.has_any_application = True
+        except Exception:
+            context.user_app_map = {}
+
     if _slug:
         _load_program_detail(context, _slug)
         context.show_detail = True
@@ -365,7 +414,7 @@ def get_context(context):
 
     from slcm.admission.utils.portal import get_portal_config
 
-    # ── 1. Portal Config ─────────────────────────────────────────────
+    # ── 4. Portal Config ─────────────────────────────────────────────
     portal_config = get_portal_config()
     context.portal_config = portal_config
 
@@ -378,7 +427,7 @@ def get_context(context):
     except Exception:
         context.social_links = []
 
-    # ── 2. Maintenance mode shortcut ────────────────────────────────
+    # ── 5. Maintenance mode shortcut ────────────────────────────────
     if not portal_config.get("portal_active", 1):
         context.programs     = []
         context.stats        = {}
@@ -388,31 +437,6 @@ def get_context(context):
         context.no_cache      = 1
         context.title         = portal_config.get("portal_title", "Admissions")
         return
-
-    # ── 3. Active Admission Cycle ────────────────────────────────────
-    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
-    if active_cycle_name:
-        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name, ignore_permissions=True)
-        active_cycle = frappe._dict({
-            "name": active_cycle_doc.name,
-            "admission_year": active_cycle_doc.admission_year,
-            "academic_year": getattr(active_cycle_doc, "academic_year", None) or "",
-            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
-            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
-            "application_end": active_cycle_doc.application_end
-        })
-    else:
-        active_cycle = None
-
-    context.today = frappe.utils.getdate(frappe.utils.today())
-
-    # ── 4. Is application window open? ───────────────────────────────
-    app_open = False
-    if active_cycle:
-        _start = active_cycle.get('cycle_start_date')
-        _end = active_cycle.get('cycle_end_date')
-        if (not _start or context.today >= _start) and (not _end or context.today <= _end):
-            app_open = True
 
     # ── 5. Programs & Announcements ──────────────────────────────────
     try:
@@ -433,28 +457,6 @@ def get_context(context):
         active_cycle_name = active_cycle.name if active_cycle else ""
         
         context.programs = programs
-
-        # ── user_app_map: program_name → {app_name, status} ──
-        context.user_app_map = {}
-        if frappe.session.user and frappe.session.user != "Guest":
-            try:
-                _uapps = frappe.get_all(
-                    "Applicant",
-                    filters={"email": frappe.session.user},
-                    fields=["name", "program", "application_status"],
-                    order_by="creation desc",
-                    limit=50
-                )
-                for _ua in _uapps:
-                    _key = (_ua.get("program") or "").strip()
-                    if _key and _key not in context.user_app_map:
-                        context.user_app_map[_key] = {
-                            "app_name": _ua.get("name") or "",
-                            "status":   _ua.get("application_status") or ""
-                        }
-            except Exception:
-                context.user_app_map = {}
-
     except Exception as e:
         frappe.log_error(title="Portal Index", message=f"fetch failed: {e}")
         context.programs = []

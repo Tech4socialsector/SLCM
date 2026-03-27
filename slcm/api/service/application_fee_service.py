@@ -209,16 +209,7 @@ def get_application_fee_details(applicant_name):
 		frappe.db.set_value("Applicant", applicant_name, "application_fee_amount", fee_amount)
 		frappe.db.commit()
 
-	afa = frappe.db.get_value(
-		"Applicant Fee Assignment",
-		{"applicant": applicant_name, "fee_type": "Application Fee", "status": ["!=", "Cancelled"]},
-		["name", "final_payable_amount", "status"],
-		as_dict=True
-	)
-
 	status = applicant.application_fee_status or "Pending"
-	if afa and afa.status == "Paid":
-		status = "Paid"
 
 	payment_gateway = get_payment_gateway_for_application_fee(
 		applicant.program, applicant.admission_cycle

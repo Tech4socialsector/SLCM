@@ -14,7 +14,6 @@
   "program",
   "column_break_app_1",
   "payment_request",
-  "applicant_payment_receipt",
   "amount_paid",
   "razorpay_id",
   "section_cancellation",
@@ -66,7 +65,7 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
+   "label": "Programme",
    "options": "Program",
    "read_only": 1
   },
@@ -195,7 +194,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-19 11:02:25.760922",
+ "modified": "2026-03-26 15:30:24.556776",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cancellation",

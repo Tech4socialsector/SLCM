@@ -43,7 +43,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program",
    "reqd": 1
   },
@@ -171,9 +171,9 @@
   }
  ],
  "links": [],
- "modified": "2026-03-20 14:10:51.901284",
+ "modified": "2026-03-26 15:28:35.122303",
  "modified_by": "Administrator",
- "module": "SLCM",
+ "module": "slcm",
  "name": "Fee Structure",
  "naming_rule": "Expression",
  "owner": "Administrator",
@@ -228,6 +228,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "fee_structure_name",
- "custom": 0
+ "title_field": "fee_structure_name"
 }

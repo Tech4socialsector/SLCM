@@ -277,36 +277,35 @@ def get_context(context):
         frappe.log_error(str(ex), "prog_detail:eligibility_rules")
         context.eligibility_rules = []
 
-    # ── User's existing application for this program ────────────
-    context.user_app_name = ""
+    # ── user application status ───────────────────────────────────
+    context.user_app_name   = ""
     context.user_app_status = ""
+    context.has_any_application = False
     if frappe.session.user and frappe.session.user != "Guest":
         try:
-            _recs = frappe.get_all(
+            # Only consider applications in the active cycle
+            filters = {"email": frappe.session.user}
+            if context.active_cycle:
+                filters["admission_cycle"] = context.active_cycle.name
+
+            _all = frappe.get_all(
                 "Applicant",
-                filters={"email": frappe.session.user, "program": prog_name},
-                fields=["name", "application_status"],
-                order_by="creation desc",
-                limit=1,
+                filters=filters,
+                fields=["name", "program", "application_status"],
+                order_by="creation desc"
             )
-            if not _recs:
-                _all = frappe.get_all(
-                    "Applicant",
-                    filters={"email": frappe.session.user},
-                    fields=["name", "program", "application_status"],
-                    order_by="creation desc",
-                    limit=30,
-                )
+            
+            if _all:
+                context.has_any_application = True
+                # 2. Match for this specific program
                 for _a in _all:
                     _p = (_a.get("program") or "").strip().lower()
-                    _t = (prog_name or "").strip().lower()
+                    _t = (prog.name or "").strip().lower()
                     _s = (slug or "").strip().lower()
                     if _p == _t or _p == _s:
-                        _recs = [_a]
+                        context.user_app_name   = _a.get("name") or ""
+                        context.user_app_status = _a.get("application_status") or ""
                         break
-            if _recs:
-                context.user_app_name = _recs[0].get("name") or ""
-                context.user_app_status = _recs[0].get("application_status") or ""
         except Exception as _ex:
             frappe.log_error(title="prog_detail_app_lookup", message=str(_ex))
 

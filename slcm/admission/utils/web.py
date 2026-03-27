@@ -1,5 +1,7 @@
 import frappe
 from frappe import _
+from frappe.utils import strip_html
+from urllib.parse import quote
 
 @frappe.whitelist(allow_guest=True)
 def get_base64_image(url):
@@ -100,92 +102,171 @@ def check_existing_application(admission_cycle=None):
         }
     return {"exists": False, "name": ""}
 
+def _portal_ann_read_cache_key(user: str) -> str:
+    return f"slcm_portal_ann_read::{user}"
+
+
+def _get_portal_announcement_read_ids(user: str) -> set:
+    raw = frappe.cache().get_value(_portal_ann_read_cache_key(user))
+    if isinstance(raw, list):
+        return set(raw)
+    return set()
+
+
+def _portal_href_for_notification_log(document_type, document_name, link) -> str:
+    """Map Desk Notification Log reference to applicant portal routes."""
+    link = (link or "").strip()
+    if link.startswith("/"):
+        return link
+    dt = (document_type or "").strip()
+    dn = (document_name or "").strip()
+
+    if dt == "Applicant" and dn:
+        return f"/my-applications?app={quote(dn, safe='')}"
+
+    if dt == "Offer Letter" and dn:
+        return f"/offer_letter/offer-letter-detail?offer={quote(dn, safe='')}"
+
+    if dt in ("Scholarship Application", "Scholarship Scheme", "Scholarship Utilization"):
+        return "/merit-and-scholarship/scholarships"
+
+    if "Scholarship" in dt:
+        return "/merit-and-scholarship/scholarships"
+
+    if dt == "User" and dn:
+        return "/merit-and-scholarship/admission_dashboard?panel=profile"
+
+    return "/merit-and-scholarship/admission_dashboard"
+
+
 @frappe.whitelist(methods=["POST", "GET"])
 def mark_notifications_read(names=None):
-    """Marks unread notifications as read. If names provided, only those."""
+    """Mark Notification Log rows read for the current session user."""
     user = frappe.session.user
     if user == "Guest":
-        return
+        return {"success": False}
 
     try:
-        if not names: return
+        if not names:
+            return {"success": True}
         if isinstance(names, str):
             import json as _json
+
             try:
                 names = _json.loads(names)
             except Exception:
                 names = [names]
 
-        # Get applicant records for this user to ensure they own these notifications
-        applicant_names = frappe.get_all(
-            "Applicant",
-            filters={"email": user},
-            pluck="name"
-        )
-        if not applicant_names:
-            return
-            
-        filters = {
-            "applicant": ["in", applicant_names],
-            "name": ["in", names]
-        }
+        for name in names:
+            if not name:
+                continue
+            if frappe.db.exists("Notification Log", {"name": name, "for_user": user}):
+                frappe.db.set_value("Notification Log", name, "read", 1)
 
-        frappe.db.set_value(
-            "Applicant Notification",
-            filters,
-            "is_read", 1
-        )
         frappe.db.commit()
         return {"success": True}
     except Exception as e:
         frappe.log_error(f"mark_notifications_read failed: {e}", "Portal")
         return {"success": False}
 
+
+@frappe.whitelist(methods=["POST", "GET"])
+def mark_portal_announcement_read(name=None):
+    """Persist 'read' for a portal announcement (badge count) for this user."""
+    user = frappe.session.user
+    if user == "Guest" or not name:
+        return {"success": False}
+    try:
+        reads = list(_get_portal_announcement_read_ids(user))
+        if name not in reads:
+            reads.append(name)
+            frappe.cache().set_value(
+                _portal_ann_read_cache_key(user), reads, expires_in_sec=86400 * 365
+            )
+        return {"success": True}
+    except Exception as e:
+        frappe.log_error(f"mark_portal_announcement_read failed: {e}", "Portal")
+        return {"success": False}
+
+
 @frappe.whitelist(methods=["POST", "GET"])
 def get_portal_notifications():
+    """
+    Notifications: Frappe Desk Notification Log for session user.
+    Announcements: Portal Announcement with per-user read state (cache).
+    """
     try:
         user = frappe.session.user
         if user == "Guest":
             return {"notifications": [], "announcements": []}
 
-        # Get applicant records for this user
-        applicant_names = frappe.get_all(
-            "Applicant",
-            filters={"email": user},
-            pluck="name"
+        read_ann = _get_portal_announcement_read_ids(user)
+
+        logs = frappe.get_all(
+            "Notification Log",
+            filters={"for_user": user},
+            fields=[
+                "name",
+                "subject",
+                "document_type",
+                "document_name",
+                "read",
+                "creation",
+                "type",
+                "link",
+                "email_content",
+            ],
+            order_by="creation desc",
+            limit=40,
+            ignore_permissions=True,
         )
 
         notifications = []
-        if applicant_names:
-            notifications = frappe.get_all(
-                "Applicant Notification",
-                filters={"applicant": ["in", applicant_names]},
-                fields=["name", "notification_type as title", "message", "is_read",
-                        "created_on as creation", "owner", "announcement"],
-                order_by="created_on desc",
-                limit=15
+        for row in logs:
+            msg = strip_html(row.get("email_content") or "")
+            if len(msg) > 320:
+                msg = msg[:317] + "…"
+            notifications.append(
+                {
+                    "name": row.name,
+                    "title": row.subject or _("Notification"),
+                    "message": msg,
+                    "is_read": 1 if row.read else 0,
+                    "creation": str(row.creation),
+                    "source": "desk",
+                    "document_type": row.document_type,
+                    "document_name": row.document_name,
+                    "portal_href": _portal_href_for_notification_log(
+                        row.document_type, row.document_name, row.link
+                    ),
+                    "notification_type": row.type or "Alert",
+                    "owner_fullname": "",
+                }
             )
-            for n in notifications:
-                try:
-                    n["owner_fullname"] = frappe.db.get_value("User", n.owner, "full_name") or n.owner
-                    if n.announcement:
-                        n["image"] = frappe.db.get_value("Portal Announcement", n.announcement, "featured_image")
-                except:
-                    n["owner_fullname"] = ""
 
         announcements = frappe.get_all(
             "Portal Announcement",
-            filters={"is_active": 1},
-            fields=["name", "title", "publish_date", "announcement_type",
-                    "summary as content", "featured_image as image", "owner"],
+            filters={"is_active": 1, "status": "Published"},
+            fields=[
+                "name",
+                "title",
+                "publish_date",
+                "announcement_type",
+                "summary as content",
+                "featured_image as image",
+                "owner",
+            ],
             order_by="publish_date desc",
-            limit=10
+            limit=20,
         )
         for a in announcements:
             try:
-                a["owner_fullname"] = frappe.db.get_value("User", a.owner, "full_name") or a.owner
-            except:
+                a["owner_fullname"] = (
+                    frappe.db.get_value("User", a.owner, "full_name") or a.owner
+                )
+            except Exception:
                 a["owner_fullname"] = ""
+            a["is_read"] = 1 if a.name in read_ann else 0
 
         return {"notifications": notifications, "announcements": announcements}
     except Exception as e:

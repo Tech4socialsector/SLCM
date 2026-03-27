@@ -55,9 +55,9 @@ class ApplicantFeeAssignment(Document):
 		Fetches the total approved scholarship amount for this applicant + cycle
 		and stores it directly in the scholarship_amount field.
 		No Fee Component link row is added — scholarship is tracked as a separate field.
-		Application Fee assignments do not apply scholarship.
+		Admission Fee assignments do NOT apply scholarship; scholarship applies only to Application Fee.
 		"""
-		if self.fee_type == "Application Fee" or not self.applicant or not self.admission_cycle:
+		if self.fee_type == "Admission Fee" or not self.applicant or not self.admission_cycle:
 			return
 
 		total_benefit = frappe.db.sql("""
@@ -76,6 +76,7 @@ class ApplicantFeeAssignment(Document):
 		"""
 		Sums all fee component rows to get the base total,
 		then deducts scholarship_amount to compute final_payable_amount.
+		Scholarship is only deducted for Application Fee assignments.
 		"""
 		base_total = 0
 		for row in self.fee_components:
@@ -87,7 +88,11 @@ class ApplicantFeeAssignment(Document):
 			base_total += row.total_amount
 
 		self.total_amount = base_total
-		self.final_payable_amount = base_total - flt(self.scholarship_amount)
+		# Only deduct scholarship for Application Fee; Admission Fee is paid in full
+		if self.fee_type != "Admission Fee":
+			self.final_payable_amount = base_total - flt(self.scholarship_amount)
+		else:
+			self.final_payable_amount = base_total
 
 	def validate_status_change(self):
 		if self.status == "Converted" and not self.fee_invoice:
@@ -362,45 +367,45 @@ def create_invoice(docname):
 			).format(str(student_err)))
 
 	# ── 2. Student Enrollment ─────────────────────────────────────────────────
-	enrollment_name = frappe.db.get_value(
-		"Student Enrollment",
-		{"student": student_name, "program": doc.program, "academic_year": doc.academic_year},
-		"name"
-	)
+	# enrollment_name = frappe.db.get_value(
+	# 	"Student Enrollment",
+	# 	{"student": student_name, "program": doc.program, "academic_year": doc.academic_year},
+	# 	"name"
+	# )
 
-	if not enrollment_name:
-		try:
-			enrollment = frappe.new_doc("Student Enrollment")
-			enrollment.student      = student_name
-			enrollment.program      = doc.program
-			enrollment.academic_year = doc.academic_year
-			enrollment.enrollment_date = nowdate()
+	# if not enrollment_name:
+	# 	try:
+	# 		enrollment = frappe.new_doc("Student Enrollment")
+	# 		enrollment.student      = student_name
+	# 		enrollment.program      = doc.program
+	# 		enrollment.academic_year = doc.academic_year
+	# 		enrollment.enrollment_date = nowdate()
 
-			cohort = frappe.db.get_value(
-				"Cohort",
-				{"program": doc.program, "academic_year": doc.academic_year},
-				"name"
-			)
-			if cohort:
-				enrollment.cohort = cohort
+	# 		cohort = frappe.db.get_value(
+	# 			"Cohort",
+	# 			{"program": doc.program, "academic_year": doc.academic_year},
+	# 			"name"
+	# 		)
+	# 		if cohort:
+	# 			enrollment.cohort = cohort
 
-			enrollment.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
-			enrollment_name = enrollment.name
+	# 		enrollment.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
+	# 		enrollment_name = enrollment.name
 
-			frappe.logger().info(
-				f"[create_invoice] Student Enrollment created: {enrollment_name} "
-				f"| Student: {student_name} | AFA: {docname}"
-			)
+	# 		frappe.logger().info(
+	# 			f"[create_invoice] Student Enrollment created: {enrollment_name} "
+	# 			f"| Student: {student_name} | AFA: {docname}"
+	# 		)
 
-		except Exception as enroll_err:
-			frappe.log_error(
-				message=frappe.get_traceback(),
-				title=f"Student Enrollment Creation Failed | Student: {student_name}"
-			)
-			frappe.throw(frappe._(
-				"Could not create Student Enrollment record. "
-				"Please check the Error Log for details. Error: {0}"
-			).format(str(enroll_err)))
+	# 	except Exception as enroll_err:
+	# 		frappe.log_error(
+	# 			message=frappe.get_traceback(),
+	# 			title=f"Student Enrollment Creation Failed | Student: {student_name}"
+	# 		)
+	# 		frappe.throw(frappe._(
+	# 			"Could not create Student Enrollment record. "
+	# 			"Please check the Error Log for details. Error: {0}"
+	# 		).format(str(enroll_err)))
 
 	# ── 3. Create Fee Invoice ─────────────────────────────────────────────────
 	try:

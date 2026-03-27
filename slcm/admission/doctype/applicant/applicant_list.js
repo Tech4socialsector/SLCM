@@ -1,117 +1,73 @@
-// frappe.listview_settings['Applicant'] = {
-//     onload: function (listview) {
-//         listview.page.add_inner_button(__("Generate Offers"), function () {
-//             new frappe.ui.form.MultiSelectDialog({
-//                 doctype: "Applicant",
-//                 target: listview,
-//                 setters: {
-//                     application_status: "Selected",
-//                     academic_year: null,
-//                     campus: null,
-//                     admission_cycle: null,
-//                     program: null
-//                 },
-//                 add_filters_group: 1,
-//                 primary_action_label: __("Generate Offers"),
-//                 secondary_action_label: __("New Applicant"),
-//                 secondary_action() {
-//                     frappe.new_doc("Applicant");
-//                 },
-//                 get_query() {
-//                     return {
-//                         filters: {
-//                             application_status: "Selected",
-//                             docstatus: 0
-//                         }
-//                     };
-//                 },
-//                 action(selections) {
-//                     if (!selections || selections.length === 0) {
-//                         frappe.msgprint(__("Please select at least one applicant."));
-//                         return;
-//                     }
+frappe.listview_settings['Applicant'] = {
+    refresh: function (listview) {
+        listview.page.add_inner_button(__("Bulk Download Forms"), function () {
+            // Safer way to get filter values
+            const get_val = (fieldname) => {
+                if (listview.filter_area && listview.filter_area.get_filter_value) {
+                    return listview.filter_area.get_filter_value(fieldname);
+                }
+                return null;
+            };
 
-//                     // Hide the dialog
-//                     this.dialog.hide();
+            let d = new frappe.ui.Dialog({
+                title: __("Bulk Download Application Forms"),
+                fields: [
+                    { label: __("Campus"), fieldname: "campus", fieldtype: "Link", options: "Campus", default: get_val("campus") },
+                    { label: __("Program"), fieldname: "program", fieldtype: "Link", options: "Program", default: get_val("program") },
+                    { label: __("Admission Cycle"), fieldname: "admission_cycle", fieldtype: "Link", options: "Admission Cycle", default: get_val("admission_cycle") },
+                    { label: __("Academic Year"), fieldname: "academic_year", fieldtype: "Link", options: "Academic Year", default: get_val("academic_year") },
+                    { label: __("Admission Year"), fieldname: "admission_year", fieldtype: "Link", options: "Admission Year", default: get_val("admission_year") },
+                    { label: __("Status"), fieldname: "application_status", fieldtype: "Link", options: "Applicant Status", default: get_val("application_status") },
+                    { fieldtype: "Section Break" },
+                    { 
+                        label: __("Print Format"), 
+                        fieldname: "print_format", 
+                        fieldtype: "Link", 
+                        options: "Print Format", 
+                        default: "Applicant Application Form",
+                        get_query: () => {
+                            return { filters: { doc_type: "Applicant" } };
+                        }
+                    }
+                ],
+                primary_action_label: __("Generate ZIP"),
+                primary_action(values) {
+                    d.hide();
+                    
+                    frappe.dom.freeze(__("Preparing Bulk Download..."));
+                    
+                    frappe.call({
+                        method: "slcm.admission.doctype.applicant.applicant.get_bulk_applications_zip",
+                        args: values,
+                        callback: function (r) {
+                            frappe.dom.unfreeze();
+                            if (r.message && r.message.queued) {
+                                frappe.show_progress(__("Starting Download"), 0, 100, __("Preparing background task..."));
+                            } else if (r.message && r.message.file_url) {
+                                // Sync success
+                                window.open(r.message.file_url);
+                                frappe.show_alert({ message: __("Generated {0} forms.", [r.message.success]), indicator: 'green' });
+                            }
+                        }
+                    });
+                }
+            });
+            d.show();
+        });
 
-//                     // Show Progress - FIXED typo
-//                     const total = selections.length;
-//                     frappe.show_progress(__("Generating Offer Letters"), 0, total, __("Initializing..."));
+        // LISTEN FOR PROGRESS
+        frappe.realtime.on("bulk_download_progress", (data) => {
+            frappe.show_progress(__("Generating ZIP"), data.progress, data.total, data.message);
+        });
 
-//                     let processed = 0;
-//                     let success_count = 0;
-//                     let error_count = 0;
-//                     let summary_log = [];
-
-//                     /**
-//                      * We process selections in chunks or one by one to show real progress.
-//                      * Calling the bulk API in a loop for granular progress tracking.
-//                      */
-//                     const processNextBatch = () => {
-//                         if (processed >= total) {
-//                             // Completion logic
-//                             frappe.show_progress(__("Generating Offer Letters"), total, total, __("Process Completed."));
-
-//                             setTimeout(() => {
-//                                 frappe.hide_progress();
-
-//                                 // Use Frappe standard formatting for translations
-//                                 let message = __("Successfully generated {0} offers.", [success_count]);
-//                                 if (error_count > 0) {
-//                                     message += "<br><br>" + __("<b>{0} errors encountered:</b>", [error_count]);
-//                                     message += '<div style="max-height: 200px; overflow-y: auto; font-size: 11px; margin-top: 10px; background: #fff5f5; border: 1px solid #ffcccc; padding: 10px; border-radius: 4px;">';
-//                                     message += summary_log.join("<br>");
-//                                     message += '</div>';
-//                                 }
-
-//                                 frappe.msgprint({
-//                                     title: __("Bulk Offer Generation Report"),
-//                                     message: message,
-//                                     indicator: error_count > 0 ? 'orange' : 'green',
-//                                 });
-//                             }, 800);
-//                             return;
-//                         }
-
-//                         const current_applicant = selections[processed];
-//                         frappe.show_progress(
-//                             __("Generating Offer Letters"),
-//                             processed + 1,
-//                             total,
-//                             __("Generating for {0}...", [current_applicant])
-//                         );
-
-//                         frappe.call({
-//                             method: "slcm.api.service.bulk_generate_offers",
-//                             args: {
-//                                 applicants: [current_applicant]
-//                             },
-//                             callback: function (r) {
-//                                 if (r.message) {
-//                                     const result = r.message;
-//                                     if (result.success && result.success.length > 0) {
-//                                         success_count++;
-//                                     }
-//                                     if (result.errors && result.errors.length > 0) {
-//                                         error_count++;
-//                                         summary_log.push(`<b>${current_applicant}:</b> ${result.errors[0].error}`);
-//                                     }
-//                                 }
-//                                 processed++;
-//                                 processNextBatch();
-//                             },
-//                             error: function (err) {
-//                                 error_count++;
-//                                 summary_log.push(`<b>${current_applicant}:</b> Connection or Server Error`);
-//                                 processed++;
-//                                 processNextBatch();
-//                             }
-//                         });
-//                     };
-
-//                     processNextBatch();
-//                 }
-//             });
-//         });
-//     }
-// };
+        // AUTO-DOWNLOAD ON COMPLETION
+        frappe.realtime.on("bulk_download_complete", (data) => {
+            if (data.doctype === "Applicant") {
+                frappe.hide_progress();
+                if (data.file_url) {
+                    window.open(data.file_url);
+                }
+            }
+        });
+    }
+};

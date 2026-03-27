@@ -327,6 +327,144 @@
     background: var(--bg);
   }
 
+  /* ── Next step above progress bar (inside summary card) ───── */
+  .ma-progress-next {
+    margin: 0;
+    padding: 20px 20px 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    background: transparent;
+    min-height: 1.6em;
+  }
+
+  .ma-progress-next-row {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    max-width: 100%;
+    text-align: left;
+    /* 1.5s loop (~1s readable + fades, ~0.5s hidden); icon + text fade together */
+    animation: ma-progress-next-visibility 1.5s ease-in-out infinite;
+  }
+
+  .ma-progress-next-ico {
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+    color: #d97706;
+    font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
+  }
+
+  .ma-progress-next-text--blink {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    color: #0d47a1;
+    animation: ma-progress-next-colors 18s ease-in-out infinite;
+  }
+  
+  /* Next steps card: announcement chip + dynamic text (no blink) */
+  .ns-cycle-next-highlight {
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+    margin-bottom: 6px;
+  }
+
+  .ns-announce-wrap {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 8px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d97706;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .ns-announce-wrap .material-symbols-outlined {
+    font-size: 20px;
+    font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
+  }
+
+  .ns-next-step-dynamic {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--text-2, #334155);
+    padding-top: 0;
+    text-align: left;
+  }
+
+  .nextsteps-list .ns-empty-hint {
+    padding: 12px 22px 16px;
+    font-size: 13px;
+    color: var(--text-4);
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  @keyframes ma-progress-next-visibility {
+    0% {
+      opacity: 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    58.67% {
+      opacity: 1;
+    }
+    66.67% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ma-progress-next-colors {
+    0% {
+      color: #b71c1c;
+    }
+    16.66% {
+      color: #0d47a1;
+    }
+    33.33% {
+      color: #00695c;
+    }
+    50% {
+      color: #6a1b9a;
+    }
+    66.66% {
+      color: #e65100;
+    }
+    83.33% {
+      color: #01579b;
+    }
+    100% {
+      color: #b71c1c;
+    }
+  }
+
+  .stage-status-sub.stage-status-paid {
+    color: var(--success) !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+  }
+
   /* ── Stage Tracker ───────────────────────────────────────── */
   .stage-track-wrap {
     padding: 24px 26px 20px;
@@ -527,13 +665,48 @@
     font-weight: 400;
   }
 
+  /* ── Animated Offer Button ── */
+  .btn-qs-offer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 16px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    animation: qs-pulse 2s infinite;
+    border: 1px solid transparent;
+  }
+
+  @keyframes qs-pulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(var(--qs-pulse-rgb, 0, 0, 0), 0.4);
+    }
+    70% {
+      transform: scale(1.03);
+      box-shadow: 0 0 0 8px rgba(var(--qs-pulse-rgb, 0, 0, 0), 0);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(var(--qs-pulse-rgb, 0, 0, 0), 0);
+    }
+  }
+
+  .btn-qs-offer:hover {
+    transform: translateY(-1px);
+    filter: brightness(0.95);
+  }
+
   @media (max-width: 620px) {
     .quick-status-grid {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr !important;
     }
 
-    .qs-item:nth-child(2) {
-      border-right: none;
+    .qs-item:nth-child(2n) {
+      border-right: none !important;
     }
   }
 
@@ -586,7 +759,7 @@
   }
 
   .merit-stat-value {
-    font-size: clamp(34px, 8vw, 50px);
+    font-size: clamp(34px, 8vw, 40px);
     font-weight: 800;
     line-height: 1;
     color: var(--primary);
@@ -1581,6 +1754,208 @@
     font-size: 17px;
   }
 
+  /* ── Modern Premium Card Enhancements ───────────────────── */
+  .et-card {
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .et-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: var(--primary-mid);
+  }
+
+  .et-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: linear-gradient(to right, #f8fafc, #ffffff);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .et-title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .et-icon-box {
+    width: 38px;
+    height: 38px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .et-title-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.01em;
+  }
+
+  .et-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .et-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .et-badge.scheduled {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+
+  .et-body {
+    padding: 20px;
+  }
+
+  .et-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 32px;
+  }
+
+  .et-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .et-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-4);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .et-value {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text-1);
+    line-height: 1.4;
+  }
+
+  .et-value.accent {
+    color: var(--danger);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .et-value.highlight {
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  .et-address-box {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    gap: 12px;
+  }
+
+  .et-loc-icon {
+    width: 32px;
+    height: 32px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .et-address-content {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+
+  .et-map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 11.5px;
+    margin-top: 6px;
+    padding: 2px 0;
+    border-bottom: 1.5px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .et-map-link:hover {
+    border-bottom-color: var(--primary);
+    gap: 6px;
+  }
+
+  .btn-download-premium {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(var(--primary-rgb, 29, 78, 216), 0.2);
+    transition: all 0.2s;
+  }
+
+  .btn-download-premium:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(var(--primary-rgb, 29, 78, 216), 0.3);
+    opacity: 0.95;
+  }
+
+  @media (max-width: 600px) {
+    .et-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .et-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .et-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .btn-download-premium {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
   /* ── Responsive Enhancements ────────────────────────────── */
   @media (max-width: 992px) {
     .ma-inner {
@@ -1634,7 +2009,7 @@
     }
 
     .quick-status-grid {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr !important;
     }
 
     .qs-item {
@@ -1666,6 +2041,26 @@
   @media (max-width: 600px) {
     .pef-row {
       grid-template-columns: 1fr !important;
+    }
+
+    .ma-progress-next {
+      padding: 4px 14px 6px;
+    }
+
+    .ma-progress-next-row {
+      gap: 8px;
+    }
+
+    .ma-progress-next-ico {
+      font-size: 20px;
+    }
+
+    .ma-progress-next-text--blink {
+      font-size: 15px;
+    }
+
+    .ns-next-step-dynamic {
+      font-size: 12px;
     }
 
     .stage-track-wrap {
@@ -1865,47 +2260,51 @@ or _app.current_stage)) or _status %}
             </div>
           </div>
 
-          <div class="app-header-right" style="flex-direction:row; align-items:center; gap:10px;">
-            {% if cancellation_details %}
-              {% set _cstat = cancellation_details.status %}
-              {% set _bg = '#fee2e2' if _cstat == 'Initiated' else ('#ffedd5' if _cstat == 'Approved' else '#dcfce7') %}
-              {% set _clr = '#991b1b' if _cstat == 'Initiated' else ('#9a3412' if _cstat == 'Approved' else '#166534') %}
-              <div class="cancellation-status-badge" style="display:flex; align-items:center; gap:8px; background:{{ _bg }}; color:{{ _clr }}; padding:6px 14px; border-radius:30px; font-size:12px; font-weight:700; border:1px solid {{ _clr }}40;">
-                <span class="material-symbols-outlined" style="font-size:16px;">cancel_presentation</span>
-                Withdrawal: {{ _cstat }}
-              </div>
-            {% elif payment_details %}
-            <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}')" 
-              class="btn-withdraw-application" title="Withdraw your application and request refund"
-              style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
-              <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
-              Withdraw Application
-            </button>
-            {% endif %}
+          <div class="app-header-right" style="flex-direction:column; align-items:flex-end; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+              {% if cancellation_details %}
+                {% set _cstat = cancellation_details.status %}
+                {% set _bg = '#fee2e2' if _cstat == 'Initiated' else ('#ffedd5' if _cstat == 'Approved' else '#dcfce7') %}
+                {% set _clr = '#991b1b' if _cstat == 'Initiated' else ('#9a3412' if _cstat == 'Approved' else '#166534') %}
+                <div class="cancellation-status-badge" style="display:flex; align-items:center; gap:8px; background:{{ _bg }}; color:{{ _clr }}; padding:6px 14px; border-radius:30px; font-size:12px; font-weight:700; border:1px solid {{ _clr }}40;">
+                  <span class="material-symbols-outlined" style="font-size:16px;">cancel_presentation</span>
+                  Withdrawal: {{ _cstat }}
+                </div>
+              {% elif payment_details %}
+              <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}')" 
+                class="btn-withdraw-application" title="Withdraw your application and request refund"
+                style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
+                <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
+                Withdraw Application
+              </button>
+              {% endif %}
 
-            <a href="/applicant-form/{{ _appid }}" class="btn-edit-application"
-              title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
-              <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
-              {{ 'View' if not is_editable else 'Edit' }}
-            </a>
-            
-            {% if app_name_param %}
-            <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
-              target="_blank" class="btn-download" title="Download application" 
-              style="padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
-              <span class="material-symbols-outlined" style="margin:0;">download</span>
-            </a>
-            {% endif %}
-            
-            {% if offer_letter_url %}
-            <a href="{{ offer_letter_url }}" target="_blank" class="btn-download" title="Download offer letter"
-              style="background:var(--text-1); color:white; border-color:var(--text-1); padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
-              <span class="material-symbols-outlined" style="margin:0;">drafts</span>
-            </a>
-            {% endif %}
+              <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
+                title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
+                <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
+                {{ 'View' if not is_editable else 'Edit' }}
+              </a>
+              
+              {% if app_name_param %}
+              <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
+                target="_blank" class="btn-download" title="Download application" 
+                style="padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; min-width:unset;">
+                <span class="material-symbols-outlined" style="margin:0;">download</span>
+              </a>
+              {% endif %}
+            </div>
           </div>
         </div>
       </div>
+
+      {% if cycle_next_step_message %}
+      <div class="ma-progress-next fade-up" style="animation-delay:.04s;" role="status" aria-live="polite">
+        <div class="ma-progress-next-row">
+          <span class="material-symbols-outlined ma-progress-next-ico" aria-hidden="true">campaign</span>
+          <span class="ma-progress-next-text--blink">{{ cycle_next_step_message | e }}</span>
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Stage Tracker -->
       {% if _stages %}
@@ -1951,7 +2350,14 @@ or _app.current_stage)) or _status %}
               <span class="stage-arrow">→</span>
               {% endif %}
             </div>
-            <span class="stage-label {{ _sstate }}">{{ _slabel }}</span>
+            <span class="stage-label {{ _sstate }}">
+              <div class="stage-name-main">{{ s.display_name if s is mapping else _slabel }}</div>
+              {% if s is mapping and s.status_label %}
+              <div class="stage-status-sub{% if s.status_label == 'Paid' %} stage-status-paid{% endif %}" style="font-size: 8px; font-weight: 400; margin-top: 2px; opacity: 0.8;">
+                {{ s.status_label }}
+              </div>
+              {% endif %}
+            </span>
             {% if s.is_exempted %}
               <span class="exemption-badge">Exempted</span>
             {% endif %}
@@ -1963,7 +2369,7 @@ or _app.current_stage)) or _status %}
       {% endif %}
 
       <!-- Quick Status Row -->
-      <div class="quick-status-grid">
+      <div class="quick-status-grid" style="grid-template-columns: repeat({{ 4 if offer_name else 3 }}, 1fr);">
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined">person</span>
@@ -1995,6 +2401,34 @@ or _app.current_stage)) or _status %}
           <span class="qs-value muted">Pending</span>
           {% endif %}
         </div>
+        {% if offer_name %}
+        <div class="qs-item">
+          <span class="qs-label">
+            <span class="material-symbols-outlined">mail</span>
+            Offer Letter
+          </span>
+          <span class="qs-value">
+              {% set _display_status = offer_status %}
+              {% if offer_status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
+              {% elif offer_status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
+              {% elif offer_status == 'Payment Completed' %}{% set _display_status = 'Offer Accepted' %}
+              {% elif offer_status == 'Expired' %}{% set _display_status = 'Offer Expired' %}
+              {% elif offer_status == 'Rejected' %}{% set _display_status = 'Offer Declined' %}
+              {% elif offer_status == 'Withdrawn' %}{% set _display_status = 'Offer Withdrawn' %}
+              {% endif %}
+
+              {% set _obg, _oclr, _orgb = ('#e0f2fe', '#0369a1', '3, 105, 161') if offer_status == 'Issued' 
+                             else (('#d1fae5', '#065f46', '6, 95, 70') if offer_status in ['Accepted', 'Payment Completed'] 
+                             else (('#fef3c7', '#92400e', '146, 64, 14') if offer_status == 'Expired' 
+                             else ('#fee2e2', '#991b1b', '153, 27, 27'))) %}
+              
+              <a href="/offer_letter/offer-letter-detail?offer={{ offer_name }}" class="btn-qs-offer"
+                 style="background: {{ _obg }}; color: {{ _oclr }}; border-color: {{ _oclr }}40; --qs-pulse-rgb: {{ _orgb }};">
+                {{ _display_status }}
+              </a>
+          </span>
+        </div>
+        {% endif %}
       </div>
 
 
@@ -2042,14 +2476,14 @@ or _app.current_stage)) or _status %}
           <a href="/api/method/slcm.admission.utils.web.download_refund_receipt?refund_request={{ cancellation_details.refund_request }}" target="_blank" class="btn-download" 
              style="padding: 0 16px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; background: {{ status_color }}; color: white; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: all 0.2s;">
             <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
-            Download Receipt
+            Refund Receipt
           </a>
         </div>
         {% endif %}
       </div>
       
       <div class="ma-card-body" style="padding: 24px;">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+        <div class="grid grid-cols-1 gap-8" style="display: grid; grid-template-columns: 1fr;">
           
           <!-- Column 1: Status -->
           <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -2069,7 +2503,7 @@ or _app.current_stage)) or _status %}
                 </div>
                 <div style="text-align: right;">
                   <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
-                  <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.format(cancellation_details.requested_on, "Datetime") }}</div>
+                  <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.utils.get_datetime(cancellation_details.requested_on).strftime("%d-%m-%Y %I:%M:%S %p") if cancellation_details.requested_on else "—" }}</div>
                 </div>
               </div>
 
@@ -2077,12 +2511,18 @@ or _app.current_stage)) or _status %}
               <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed {{ card_border }}; display: flex; justify-content: space-between; align-items: flex-end;">
                 <div>
                   <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refund Amount</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #334155;">{{ frappe.format(cancellation_details.refund_amount, "Currency", cancellation_details.currency or "INR") }}</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #334155; display: flex; align-items: baseline; gap: 8px;">
+                    {{ frappe.format(cancellation_details.refund_amount, "Currency", cancellation_details.currency or "INR") }}
+                    {% if cancellation_details.amount_paid %}
+                      {% set percentage = (cancellation_details.refund_amount / cancellation_details.amount_paid * 100)|round(0)|int %}
+                      <span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">{{ percentage }}% Refund</span>
+                    {% endif %}
+                  </div>
                 </div>
                 {% if cancellation_details.refund_date and r_status in ['Processed', 'Completed'] %}
                 <div style="text-align: right;">
                   <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refunded On</div>
-                  <div style="font-size: 11px; font-weight: 700; color: #16a34a;">{{ frappe.format(cancellation_details.refund_date, "Datetime") }}</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #16a34a;">{{ frappe.utils.get_datetime(cancellation_details.refund_date).strftime("%d-%m-%Y %I:%M:%S %p") if cancellation_details.refund_date else "—" }}</div>
                 </div>
                 {% endif %}
               </div>
@@ -2091,20 +2531,6 @@ or _app.current_stage)) or _status %}
           </div>
 
 
-          <!-- Column 2: Reason -->
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; color: #991b1b; font-weight: 700; font-size: 12px; text-transform: none; letter-spacing: 0.05em;">
-              <span class="material-symbols-outlined" style="font-size: 18px;">description</span>
-              Withdrawal Details
-            </div>
-            
-            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #fecaca; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                 <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Reason</div>
-                 <div style="font-size: 13px; font-weight: 500; color: #475569; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                   {{ cancellation_details.cancellation_reason or '—' }}
-                 </div>
-            </div>
-          </div>
           
         </div>
 
@@ -2251,17 +2677,29 @@ or _app.current_stage)) or _status %}
          ║  ENTRANCE TEST CARD                          ║
          ╚══════════════════════════════════════════════╝ -->
     {% if et_doc %}
-    <div class="ma-card fade-up" style="animation-delay:.18s">
-      <div class="ma-card-head">
-        <div class="ma-card-title">
-          <span class="ico"><span class="material-symbols-outlined">edit_document</span></span>
-          Entrance Test
+    <div class="et-card fade-up" style="animation-delay:.18s">
+      {% set current_alloc_status = et_doc.re_allocation_status if et_is_rescheduled else et_doc.allocation_status %}
+      <div class="et-header">
+        <div class="et-title-area">
+          <div class="et-icon-box">
+            <span class="material-symbols-outlined">edit_document</span>
+          </div>
+          <span class="et-title-text">Entrance Test</span>
         </div>
-        <span class="status-badge" style="background:#dbeafe;color:#1d4ed8">
-          {{ et_doc.entrance_test_status|title }}
-        </span>
+        <div class="et-actions">
+          <span class="et-badge scheduled">
+            {{ (et_doc.entrance_test_status or 'Scheduled')|capitalize }}
+          </span>
+          {% if current_alloc_status == "Allocated" and not et_show_result %}
+          <button onclick="downloadAdmitCard()" class="btn-download-premium">
+            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+            Download Admit Card
+          </button>
+          {% endif %}
+        </div>
       </div>
-      <div class="ma-card-body">
+
+      <div class="et-body">
         {% if et_show_result %}
         <div class="result-banner">
           <div class="result-banner-head">
@@ -2284,52 +2722,42 @@ or _app.current_stage)) or _status %}
           </div>
         </div>
         {% else %}
-        {% set current_alloc_status = et_doc.re_allocation_status if et_is_rescheduled else et_doc.allocation_status %}
         {% if current_alloc_status == "Allocated" %}
-        <div
-          style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
-          <div>
-            <div style="font-size:11px;color:var(--text-4);font-weight:600;margin-bottom:3px">
-              Exam centre</div>
-            <div style="font-size:15px;font-weight:600;color:var(--text-1)">{{ et_doc.re_center_name if
-              et_is_rescheduled else et_doc.center_name }}</div>
+        <div class="et-grid">
+          <div class="et-field">
+            <span class="et-label">Exam centre</span>
+            <span class="et-value">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</span>
           </div>
-          <button onclick="downloadAdmitCard()"
-            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;color:white;background:var(--primary);cursor:pointer;font-family:'Poppins',sans-serif">
-            <span class="material-symbols-outlined" style="font-size:17px">download</span>
-            Download admit card
-          </button>
-        </div>
-        <div class="info-grid-2">
-          <div class="info-tile">
-            <div class="info-tile-label">Test date</div>
-            <div class="info-tile-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else
-              et_doc.allocation_date) }}</div>
+          <div class="et-field">
+            <span class="et-label">Test date</span>
+            <span class="et-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date) }}</span>
           </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Reporting time</div>
-            <div class="info-tile-value red">{{ et_reporting_time }}</div>
+          <div class="et-field">
+            <span class="et-label">Reporting time</span>
+            <span class="et-value accent">
+              <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+              {{ et_reporting_time }}
+            </span>
           </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Room / hall</div>
-            <div class="info-tile-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name }}</div>
+          <div class="et-field">
+            <span class="et-label">Seat number</span>
+            <span class="et-value highlight">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}</span>
           </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Seat number</div>
-            <div class="info-tile-value blue">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}
-            </div>
+          <div class="et-field">
+            <span class="et-label">Room / hall</span>
+            <span class="et-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name or '—' }}</span>
           </div>
         </div>
-        <div
-          style="display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:10px;padding:12px;margin-top:12px;border:1px solid var(--border)">
-          <span class="material-symbols-outlined"
-            style="font-size:17px;color:var(--text-4);flex-shrink:0;margin-top:1px">location_on</span>
-          <div style="flex:1">
-            <span style="font-size:12px;color:var(--text-2);display:block;margin-bottom:4px">{{ et_doc.re_center_address if et_is_rescheduled else
-              et_doc.center_address }}</span>
+
+        <div class="et-address-box">
+          <div class="et-loc-icon">
+            <span class="material-symbols-outlined" style="font-size:18px;">location_on</span>
+          </div>
+          <div class="et-address-content">
+            {{ et_doc.re_center_address if et_is_rescheduled else et_doc.center_address }}
             {% if et_location %}
-            <a href="#" onclick="openMap('{{ et_location | escape }}'); return false;" 
-               style="font-size:11px;color:var(--primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+            <br>
+            <a href="#" onclick="openMap('{{ et_location | escape }}'); return false;" class="et-map-link">
                <span class="material-symbols-outlined" style="font-size:14px">map</span>
                View on Map
             </a>
@@ -2396,7 +2824,7 @@ or _app.current_stage)) or _status %}
     <!-- ╔══════════════════════════════════════════════╗
          ║  ELIGIBILITY RESULT CARD                     ║
          ╚══════════════════════════════════════════════╝ -->
-    {% if eligibility_result %}
+    {% if eligibility_result and eligibility_result.name %}
     <div class="ma-card fade-up" style="animation-delay:.24s; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4);">
       <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5);">
         <div class="ma-card-title">
@@ -2528,7 +2956,13 @@ or _app.current_stage)) or _status %}
           <div class="seat-info-box">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
               <span class="seat-prog-name">{{ _prog }}</span>
-              <span class="merit-chip" style="position: static;">{{ r.selection_status }}</span>
+              {% if r.selection_status == 'Rejected' %}
+              <span class="merit-chip" style="position: static; background:#fee2e2; color:#991b1b;">Rejected</span>
+              {% elif r.selection_status == 'Waitlisted' %}
+              <span class="merit-chip" style="position: static; background:#fef9c3; color:#854d0e;">Waitlisted</span>
+              {% else %}
+              <span class="merit-chip" style="position: static;">Selected</span>
+              {% endif %}
             </div>
             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);">
               <div
@@ -2546,19 +2980,7 @@ or _app.current_stage)) or _status %}
             {% endif %} -->
           </div>
 
-          {% if r.selection_status in ['Selected','Offered'] %}
-          <!-- Accept/Decline buttons commented out intentionally -->
-          {% elif r.selection_status == 'Accepted' %}
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">
-            <span class="material-symbols-outlined"
-              style="color:#16a34a;font-size:28px;display:block;margin-bottom:4px">check_circle</span>
-            <span style="font-size:13px;font-weight:600;color:#166534">Seat Accepted</span>
-          </div>
-          {% else %}
-          <div style="padding:12px 0;text-align:center">
-            <span style="font-size:13px;font-weight:500;color:var(--text-3)">Status: {{ r.selection_status }}</span>
-          </div>
-          {% endif %}
+
           {% else %}
           <div style="padding:12px 0">
             <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
@@ -2632,6 +3054,14 @@ or _app.current_stage)) or _status %}
         </div>
 
         <div class="nextsteps-list">
+          {% if cycle_next_step_message %}
+          <div class="ns-item ns-cycle-next-highlight">
+            <div class="ns-check done">
+              <span class="material-symbols-outlined" style="font-size:14px">check</span>
+            </div>
+            <span class="ns-next-step-dynamic">{{ cycle_next_step_message | e }}</span>
+          </div>
+          {% endif %}
           {% if _steps %}
           {% for step in _steps %}
           {% set _stext = step.text if step is mapping else step['text'] %}
@@ -2651,19 +3081,8 @@ or _app.current_stage)) or _status %}
             </span>
           </div>
           {% endfor %}
-          {% else %}
-          <div class="ns-item">
-            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Pay admission fee</span>
-          </div>
-          <div class="ns-item">
-            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Upload original documents</span>
-          </div>
-          <div class="ns-item">
-            <div class="ns-check done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
-            <span class="ns-text">Attend orientation</span>
-          </div>
+          {% elif not cycle_next_step_message %}
+          <div class="ns-empty-hint">No next steps are configured for your current stage. Check this page for updates or contact admissions if you need help.</div>
           {% endif %}
         </div>
 

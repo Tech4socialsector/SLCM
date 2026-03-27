@@ -7,13 +7,14 @@
  "engine": "InnoDB",
  "field_order": [
   "status",
-  "stage_type"
+  "stage_type",
+  "status_type"
  ],
  "fields": [
   {
    "fieldname": "status",
    "fieldtype": "Data",
-   "label": "Status",
+   "label": "Status Name",
    "unique": 1
   },
   {
@@ -21,13 +22,19 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Stage Type",
-   "options": "\nApplication\nScreening\nExam\nInterview\nEvaluation\nMerit\nDocument\nFee\nOffer\nEnrollment"
+   "options": "\nApplication\nEntrance Test\nInterview\nMerit\nSeat Allocation\nOffer Letter\nAdmission Fee\nEnrollment"
+  },
+  {
+   "fieldname": "status_type",
+   "fieldtype": "Select",
+   "label": "Status Type",
+   "options": "\nActive\nComplete\nClosed"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 16:36:24.072653",
+ "modified": "2026-03-26 10:46:58.241426",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Status",

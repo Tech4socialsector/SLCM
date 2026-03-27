@@ -134,8 +134,277 @@ def get_context(context):
         )
         raise frappe.Redirect
 
-    frappe.local.flags.redirect_location = "/admission"
-    raise frappe.Redirect
+        if existing:
+            # If user came from Apply Now (no ?applicant=), redirect to existing application in My Applications
+            if not applicant_name:
+                frappe.local.flags.redirect_location = "/my-applications?app=" + existing.get("name", "")
+                raise frappe.Redirect
+            doc = frappe.get_doc("Applicant", existing.name)
+            context.applicant_data = frappe.parse_json(frappe.as_json(doc))
+            context.application_submitted = (doc.application_status == "Submitted")
+            context.application_editable = is_application_editable(doc)
+    except frappe.Redirect:
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Application Form — Get Applicant")
+        context.applicant_data = {}
+
+    app_data = context.applicant_data or {}
+    
+    # --- Fetch Offer Letter for this applicant ---
+    context.offer_name = ""
+    context.offer_status = ""
+    if app_data.get("name"):
+        offer_letter = frappe.get_all("Offer Letter", 
+            filters={"applicant": app_data.get("name")},
+            fields=["name", "offer_status"],
+            order_by="creation desc",
+            limit=1,
+            ignore_permissions=True
+        )
+        if offer_letter:
+            context.offer_name = offer_letter[0].name
+            context.offer_status = offer_letter[0].offer_status
+
+    if app_data.get("name") and app_data.get("application_status") != "Submitted":
+        context.prefill_program = app_data.get("program") or session_sel.get("program") or prefill_prog
+        context.prefill_admission_cycle = app_data.get("admission_cycle") or session_sel.get("admission_cycle") or prefill_cycle
+        context.prefill_campus = app_data.get("campus") or session_sel.get("campus") or ""
+        context.prefill_program_level = app_data.get("program_level") or session_sel.get("program_level") or ""
+        context.prefill_intake_type = app_data.get("intake_type") or session_sel.get("intake_type") or ""
+        context.prefill_academic_year = app_data.get("academic_year") or ""
+        context.prefill_admission_year = app_data.get("admission_year") or ""
+    else:
+        context.prefill_program = session_sel.get("program") or prefill_prog
+        context.prefill_admission_cycle = session_sel.get("admission_cycle") or prefill_cycle
+        context.prefill_campus = session_sel.get("campus") or ""
+        context.prefill_program_level = session_sel.get("program_level") or ""
+        context.prefill_intake_type = session_sel.get("intake_type") or ""
+        context.prefill_academic_year = ""
+        context.prefill_admission_year = ""
+
+    context.program_readonly = True  # Always lock: user must select from listing
+
+    # Display name for the program (shown at top of form for information)
+    program_code = context.prefill_program or (app_data.get("program") if app_data else None)
+    if program_code:
+        context.program_display_name = (
+            frappe.db.get_value("Program", program_code, "program_name") or program_code
+        )
+    else:
+        context.program_display_name = ""
+
+    # ── Academic + Admission year from Admission Cycle (before seeding) ──
+    if context.prefill_admission_cycle:
+        try:
+            ad_year, ac_year = frappe.db.get_value(
+                "Admission Cycle",
+                context.prefill_admission_cycle,
+                ["admission_year", "academic_year"],
+            ) or (None, None)
+        except Exception:
+            ad_year, ac_year = (None, None)
+
+        # Only fill from cycle when not already present on existing application
+        if not getattr(context, "prefill_admission_year", None) and ad_year:
+            context.prefill_admission_year = ad_year
+        if not context.prefill_academic_year and ac_year:
+            context.prefill_academic_year = ac_year or ""
+
+    # When no existing application for this cycle, seed applicant_data with locked values and default Draft
+    if not context.applicant_data or not context.applicant_data.get("name"):
+        context.application_editable = True  # New application is editable
+        context.applicant_data = dict(context.applicant_data or {})
+        context.applicant_data.setdefault("program", context.prefill_program)
+        context.applicant_data.setdefault("admission_cycle", context.prefill_admission_cycle)
+        context.applicant_data.setdefault("campus", context.prefill_campus or "")
+        context.applicant_data.setdefault("program_level", context.prefill_program_level or "")
+        context.applicant_data.setdefault("academic_year", context.prefill_academic_year or "")
+        context.applicant_data.setdefault("admission_year", context.prefill_admission_year or "")
+        context.applicant_data.setdefault("application_type", context.prefill_intake_type or "")
+        context.applicant_data.setdefault("docstatus", 0)
+        context.applicant_data.setdefault("application_status", "Draft")
+        # Prefill mobile from User if not set (default country code +91)
+        user_mobile = frappe.db.get_value("User", user, "mobile_no")
+        if user_mobile and not context.applicant_data.get("mobile_number"):
+            mobile_str = (user_mobile or "").strip()
+            if mobile_str and not mobile_str.startswith("+"):
+                context.applicant_data.setdefault("mobile_number", "+91" + mobile_str.lstrip("0"))
+            else:
+                context.applicant_data.setdefault("mobile_number", mobile_str or "+91")
+
+    # When application is submitted, these fields/sections stay read-only (no edit on submitted application)
+    context.readonly_after_submit = [
+        "email", "candidate_name", "mobile_number",
+        "father_name", "father_email", "father_mobile", "father_occupation",
+        "mother_name", "mother_email", "mother_mobile", "mother_occupation",
+        "guardian_name", "guardian_mobile", "guardian_email",
+        "correspondence_address", "city", "state", "pincode",
+        "class_x_school", "class_x_board", "class_x_year_of_completion", "class_x_percentage", "class_x_cgpa",
+        "class_xii_name_of_examination", "class_xii_school", "class_xii_board", "class_xii_year_of_completion", "hsc_group", "hsc_percentage",
+        "national_test_name", "percentage", "ug_degree_completion",
+        "first_preference", "second_preference", "third_preference",
+        "whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "reservation_category",
+        "caste_certificate", "ews_certificate", "pwd_certificate",
+        "ka_study_7yrs", "ka_defence_child", "ka_govt_child", "ka_ais_child", "ka_capf_child",
+        "ka_study_7yrs_certificate", "ka_defence_child_certificate", "ka_govt_child_certificate",
+        "ka_ais_child_certificate", "ka_capf_child_certificate",
+    ]
+
+    # ── Programs (for UG/PG degree link selects in the form) ─────────────
+    try:
+        # level_of_study is the correct fieldname; program_level is null for PG/Research
+        try:
+            raw_programs = frappe.get_all(
+                "Program",
+                fields=["name", "level_of_study"],
+                filters={"program_status": "Active"},
+                order_by="name asc"
+            )
+        except Exception:
+            raw_programs = frappe.get_all(
+                "Program",
+                fields=["name", "level_of_study"],
+                order_by="name asc"
+            )
+        # Expose as program_level so the JS filter (p.program_level === 'Undergraduate' etc.) works
+        context.programs = [
+            {"name": p.name, "program_level": p.level_of_study or ""}
+            for p in raw_programs
+        ]
+    except Exception:
+        context.programs = []
+
+    # ── Campuses: from Admission Cycle Program (this cycle + program only) ──
+    try:
+        acp_rows = frappe.get_all(
+            "Admission Cycle Program",
+            filters={
+                "parent": context.prefill_admission_cycle,
+                "program": context.prefill_program,
+                "is_active": 1,
+            },
+            fields=["campus"],
+            order_by="idx asc"
+        )
+        campus_ids = [r.get("campus") for r in (acp_rows or []) if r.get("campus")]
+        if campus_ids:
+            context.campuses = frappe.get_all(
+                "Campus",
+                fields=["name", "campus_name"],
+                filters={"name": ["in", campus_ids], "is_active": 1},
+                order_by="campus_name asc"
+            ) or []
+        else:
+            # No campus in ACP: allow all active campuses for backward compatibility
+            context.campuses = frappe.get_all(
+                "Campus",
+                fields=["name", "campus_name"],
+                filters={"is_active": 1},
+                order_by="campus_name asc"
+            ) or []
+    except Exception:
+        context.campuses = []
+
+    # ── Entrance Test Providers (for Test Centre preference dropdowns) ──
+    try:
+        context.entrance_test_providers = frappe.get_all(
+            "Entrance Test Provider",
+            fields=["name", "provider_name"],
+            filters={"active": 1},
+            order_by="provider_name asc"
+        )
+    except Exception:
+        context.entrance_test_providers = []
+
+    # ── Academic Years; ensure prefill year is in list ──────────────────
+    try:
+        context.academic_years = frappe.get_all(
+            "Academic Year",
+            fields=["name"],
+            order_by="name desc"
+        ) or []
+        if context.prefill_academic_year and not any(
+            (y.get("name") or y.name) == context.prefill_academic_year
+            for y in context.academic_years
+        ):
+            context.academic_years = [{"name": context.prefill_academic_year}] + list(context.academic_years)
+    except Exception:
+        context.academic_years = []
+
+    # ── Admission Cycles (active only); ensure prefill cycle is in list ─
+    try:
+        context.admission_cycles = frappe.get_all(
+            "Admission Cycle",
+            fields=["name"],
+            filters={"status": "Active"},
+            order_by="name desc"
+        ) or []
+        if context.prefill_admission_cycle and not any(
+            (c.get("name") or c.name) == context.prefill_admission_cycle
+            for c in context.admission_cycles
+        ):
+            context.admission_cycles = [{"name": context.prefill_admission_cycle}] + list(context.admission_cycles)
+    except Exception:
+        context.admission_cycles = []
+
+    # ── Nationalities ─────────────────────────────────────────────────
+    try:
+        context.nationalities = frappe.get_all(
+            "Country",
+            fields=["name"],
+            order_by="name asc"
+        )
+    except Exception:
+        context.nationalities = []
+
+    # ── HSC Groups ────────────────────────────────────────────────────
+    try:
+        context.hsc_groups = frappe.get_all("HSC Groups", fields=["name"], order_by="name asc")
+    except Exception:
+        context.hsc_groups = []
+
+    # ── National Tests ────────────────────────────────────────────────
+    try:
+        context.national_tests = frappe.get_all("National Test", fields=["name"], order_by="name asc")
+    except Exception:
+        context.national_tests = []
+
+    # ── States: from State DocType filtered by country (Nationality) ─────
+    # State doctype has state_name, country. Initial states when applicant has nationality.
+    app_data = context.get("applicant_data") or {}
+    if app_data.get("nationality"):
+        context.initial_states = _get_states_for_country(app_data.get("nationality"))
+    else:
+        context.initial_states = []
+
+    # ── Cities: from City DocType filtered by state ─────────────────────
+    if app_data.get("state"):
+        context.initial_cities = _get_cities_for_state(app_data.get("state"))
+    else:
+        context.initial_cities = []
+
+    # ── Form config: admission cycle → entrance test / program levels ───
+    # Used to show/hide sections by program (e.g. PhD section only for Research Course)
+    context.form_config = get_form_config_for_cycles()
+
+    # ── UG final year note: from Applicant doc (if set) else default from DocType field options ──
+    try:
+        meta = frappe.get_meta("Applicant")
+        default_note = (meta.get_field("ug_final_year_note").options or "") if meta and meta.get_field("ug_final_year_note") else ""
+    except Exception:
+        default_note = ""
+    context.ug_final_year_note = (app_data.get("ug_final_year_note") or default_note or "").strip()
+
+    # ── Test centre allocation note: from Applicant doc (if set) else default from DocType field options ──
+    try:
+        meta_tc = frappe.get_meta("Applicant")
+        default_tc_note = (meta_tc.get_field("test_center_allocation_note").options or "") if meta_tc and meta_tc.get_field("test_center_allocation_note") else ""
+    except Exception:
+        default_tc_note = ""
+    context.test_center_allocation_note = (app_data.get("test_center_allocation_note") or default_tc_note or "").strip()
+
+    return context
 
 
 def _get_states_for_country(country_name):

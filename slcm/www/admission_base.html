@@ -1340,7 +1340,9 @@
 
         function updateBadge() {
             if (!_panelData) return;
-            var unread = (_panelData.notifications || []).filter(n => !n.is_read).length;
+            var uDesk = (_panelData.notifications || []).filter(function (n) { return !n.is_read; }).length;
+            var uAnn = (_panelData.announcements || []).filter(function (a) { return !a.is_read; }).length;
+            var unread = uDesk + uAnn;
             var badge = document.getElementById('bellBadge');
             if (badge) {
                 if (unread > 0) {
@@ -1350,6 +1352,32 @@
                     badge.style.display = 'none';
                 }
             }
+        }
+
+        function escPanel(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        async function markDeskNotificationRead(name) {
+            if (_panelData && _panelData.notifications) {
+                _panelData.notifications.forEach(function (n) { if (n.name === name) n.is_read = 1; });
+                updateBadge();
+            }
+            try {
+                await apiFetch('slcm.admission.utils.web.mark_notifications_read', { names: [name] });
+            } catch (e) { }
+        }
+
+        async function panelRowClickNotif(ev, name, href) {
+            if (ev) ev.preventDefault();
+            await markDeskNotificationRead(name);
+            window.location.href = href || '/merit-and-scholarship/admission_dashboard';
+        }
+
+        function panelRowClickAnn(ev, name) {
+            if (ev) ev.preventDefault();
+            window.location.href = '/announcement/' + encodeURIComponent(name);
         }
 
         function renderPanelContent() {
@@ -1382,92 +1410,86 @@
                 var title = item.title || item.message || 'Notification';
                 var date = item.creation || item.publish_date || '';
                 var annType = item.announcement_type || item.notification_type || '';
-                var href = annType ? '/announcement/' + item.name : '#';
                 var createdBy = item.owner_fullname || item.owner || '';
 
-                // Avatar: image if available, else colored circle with initials
                 var avatarHtml;
                 if (item.image) {
-                    avatarHtml = '<img src="' + item.image + '" ' +
+                    avatarHtml = '<img src="' + escPanel(item.image) + '" ' +
                         'style="width:40px;height:40px;border-radius:50%;' +
                         'object-fit:cover;flex-shrink:0;">';
                 } else {
-                    // Color based on type
                     var colors = {
                         'Event': ['#dbeafe', '#1e40af'],
                         'Announcement': ['#fef3c7', '#92400e'],
                         'Alert': ['#fee2e2', '#991b1b'],
+                        'Mention': ['#e0e7ff', '#4338ca'],
+                        'Share': ['#fce7f3', '#9d174d'],
+                        'Assignment': ['#ffedd5', '#9a3412'],
+                        'Energy Point': ['#d1fae5', '#065f46'],
                         'Info': ['#d1fae5', '#065f46'],
                     };
                     var colorPair = colors[annType] || ['var(--primary-light)', 'var(--primary)'];
-                    var initial = title.charAt(0).toUpperCase();
+                    var initial = (title.charAt(0) || 'N').toUpperCase();
                     avatarHtml = '<div style="width:40px;height:40px;border-radius:50%;' +
                         'background:' + colorPair[0] + ';color:' + colorPair[1] + ';' +
                         'flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
-                        'font-weight:700;font-size:16px;">' + initial + '</div>';
+                        'font-weight:700;font-size:16px;">' + escPanel(initial) + '</div>';
                 }
 
-                // Indicator: tick if read, dot if unread
                 var indicator = isUnread
                     ? '<span style="width:20px;height:20px;border-radius:50%;' +
-                    'border:2px solid var(--primary);flex-shrink:0;' +
-                    'margin-top:6px;display:flex;align-items:center;' +
-                    'justify-content:center;" title="Mark as read">' +
-                    '<span style="width:7px;height:7px;border-radius:50%;' +
-                    'background:var(--primary);"></span></span>'
-                    : '<span style="width:20px;height:20px;border-radius:50%;' +
-                    'background:#d1fae5;flex-shrink:0;margin-top:6px;' +
+                    'border:2px solid var(--primary);flex-shrink:0;margin-top:6px;' +
                     'display:flex;align-items:center;justify-content:center;">' +
-                    '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"' +
-                    ' stroke="#065f46" stroke-width="3"><polyline points="20 6 9 17 4 12"/>' +
-                    '</svg></span>';
+                    '<span style="width:7px;height:7px;border-radius:50%;background:var(--primary);"></span></span>'
+                    : '<span style="width:20px;height:20px;border-radius:50%;background:#d1fae5;' +
+                    'flex-shrink:0;margin-top:6px;display:flex;align-items:center;justify-content:center;">' +
+                    '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="3">' +
+                    '<polyline points="20 6 9 17 4 12"/></svg></span>';
 
                 var metaLine = '';
                 if (date || createdBy || annType) {
                     var parts = [];
-                    if (annType) parts.push('<span style="background:var(--primary-light);' +
-                        'color:var(--primary);border-radius:10px;padding:1px 6px;' +
-                        'font-size:10px;font-weight:600;text-transform:none;">' +
-                        annType + '</span>');
-                    if (createdBy) parts.push(createdBy);
-                    if (date) parts.push(date.split(' ')[0]);
-                    metaLine = '<div style="font-size:11px;color:var(--muted);' +
-                        'margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
-                        parts.join(' · ') + '</div>';
+                    if (annType) {
+                        parts.push('<span style="background:var(--primary-light);color:var(--primary);' +
+                            'border-radius:10px;padding:1px 6px;font-size:10px;font-weight:600;">' +
+                            escPanel(annType) + '</span>');
+                    }
+                    if (createdBy) parts.push(escPanel(createdBy));
+                    if (date) parts.push(escPanel(String(date).split(' ')[0]));
+                    metaLine = '<div style="font-size:11px;color:var(--muted);margin-top:3px;' +
+                        'display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' + parts.join(' · ') + '</div>';
                 }
 
-                var fullPageLink = (annType && href !== '#')
-                    ? '<a href="' + href + '" style="font-size:11px;color:var(--primary);' +
-                    'text-decoration:none;margin-top:6px;display:inline-block;font-weight:600;">' +
-                    'View full page →</a>'
-                    : '';
+                var msgBlock = '';
+                if (_panelTab === 'notif' && item.message) {
+                    msgBlock = '<div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.35;">' +
+                        escPanel(item.message) + '</div>';
+                }
+
+                var rowClick = '';
+                if (_panelTab === 'notif') {
+                    var ph = item.portal_href || '/merit-and-scholarship/admission_dashboard';
+                    rowClick = 'onclick="panelRowClickNotif(event, ' + JSON.stringify(item.name) + ', ' + JSON.stringify(ph) + ')"';
+                } else {
+                    rowClick = 'onclick="panelRowClickAnn(event, ' + JSON.stringify(item.name) + ')"';
+                }
+
+                var fullPageLink = (_panelTab === 'ann' && annType)
+                    ? '<div style="font-size:11px;color:var(--primary);margin-top:6px;font-weight:600;">Open announcement →</div>'
+                    : (_panelTab === 'notif'
+                        ? '<div style="font-size:11px;color:var(--primary);margin-top:6px;font-weight:600;">Open →</div>'
+                        : '');
 
                 return '<div style="padding:12px 16px;border-bottom:1px solid var(--border);' +
-                    'background:' + bg + ';cursor:pointer;" ' +
-                    'onclick="' + (href !== '#' ? 'window.location=\'' + href + '\'' :
-                        'markItemRead(\'' + item.name + '\')') + '">' +
+                    'background:' + bg + ';cursor:pointer;" ' + rowClick + '>' +
                     '<div style="display:flex;align-items:flex-start;gap:10px;">' +
                     avatarHtml +
                     '<div style="flex:1;min-width:0;">' +
                     '<div style="font-size:13px;font-weight:' + (isUnread ? '600' : '400') + ';' +
-                    'color:var(--text);line-height:1.4;">' + title + '</div>' +
-                    metaLine +
-                    fullPageLink +
-                    '</div>' +
-                    indicator +
-                    '</div></div>';
+                    'color:var(--text);line-height:1.4;">' + escPanel(title) + '</div>' +
+                    msgBlock + metaLine + fullPageLink +
+                    '</div>' + indicator + '</div></div>';
             }).join('');
-        }
-
-        async function markItemRead(name) {
-            if (_panelData && _panelData.notifications) {
-                _panelData.notifications.forEach(n => { if (n.name === name) n.is_read = 1; });
-                updateBadge();
-                renderPanelContent();
-            }
-            try {
-                await apiFetch('slcm.admission.utils.web.mark_notifications_read', { names: [name] });
-            } catch (e) { }
         }
 
         window.doLogout = function () {

@@ -59,7 +59,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program",
    "read_only": 1
   },
@@ -201,7 +201,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-24 13:03:27.507951",
+ "modified": "2026-03-26 14:35:23.556035",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Payment Receipt",

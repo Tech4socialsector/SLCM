@@ -295,9 +295,7 @@ def get_context(context):
             
             if _ap:
                 context.profile_data["name"] = _ap[0].name
-                context.profile_data["application_status"] = _ap[0].application_status
-                # DO NOT overwrite candidate_photo from Applicant to User
-                # Requirement 3: Profile image (User.user_image) and Application form image (Applicant.candidate_photo) are separate.
+                # Application fields stay off profile_data — profile UI is User-only; status lives on application cards.
                 context.applicant_record = _ap[0]
 
             context.profile_data_json = frappe.as_json(context.profile_data)

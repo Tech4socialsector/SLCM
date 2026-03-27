@@ -300,6 +300,8 @@ class Applicant(Document):
             or "Admissions Office"
         )
 
+        admission_portal_url = frappe.utils.get_url("/admission")
+
         # ── PDF attachment ────────────────────────────────────────────────
         try:
             pdf_content = frappe.get_print(
@@ -328,11 +330,11 @@ class Applicant(Document):
         body {{
         font-family: Arial, sans-serif;
         font-size: 14px;
-        color: #920c24;
+        color: #000000;
         line-height: 1.6;
         margin: 0;
         padding: 0;
-        background: #f5f5f0;
+        background: #f4f4f4;
         }}
         .wrapper {{
         max-width: 620px;
@@ -340,10 +342,10 @@ class Applicant(Document):
         background: #ffffff;
         border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #d3d1c7;
+        border: 1px solid #e0e0e0;
         }}
         .header {{
-        background: #1D9E75;
+        background: #920c24;
         padding: 28px 32px;
         text-align: center;
         }}
@@ -354,14 +356,14 @@ class Applicant(Document):
         font-weight: 600;
         }}
         .header p {{
-        color: #9FE1CB;
+        color: rgba(255,255,255,0.88);
         font-size: 13px;
         margin: 0;
         }}
         .badge {{
         display: inline-block;
         background: #ffffff;
-        color: #0F6E56;
+        color: #920c24;
         font-size: 13px;
         font-weight: 600;
         padding: 6px 18px;
@@ -374,24 +376,62 @@ class Applicant(Document):
         }}
         .greeting {{
         font-size: 15px;
-        color: #2c2c2a;
+        color: #000000;
         margin-bottom: 12px;
+        font-weight: 600;
         }}
         .intro {{
         font-size: 14px;
-        color: #5f5e5a;
-        margin-bottom: 24px;
+        color: #000000;
+        margin-bottom: 20px;
         line-height: 1.7;
+        }}
+        .intro strong {{
+        color: #920c24;
+        }}
+        .notify-next {{
+        font-size: 14px;
+        color: #000000;
+        background: #fafafa;
+        border-left: 3px solid #920c24;
+        border-radius: 0 6px 6px 0;
+        padding: 14px 18px;
+        margin: 0 0 24px 0;
+        line-height: 1.65;
+        }}
+        .cta-wrap {{
+        text-align: center;
+        margin: 8px 0 28px 0;
+        }}
+        .cta-link {{
+        display: inline-block;
+        background: #920c24;
+        color: #ffffff !important;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 14px 32px;
+        border-radius: 8px;
+        text-decoration: none;
+        letter-spacing: 0.02em;
+        }}
+        .cta-fallback {{
+        font-size: 12px;
+        color: #333333;
+        margin-top: 12px;
+        word-break: break-all;
+        }}
+        .cta-fallback a {{
+        color: #920c24;
         }}
         .section-title {{
         font-size: 11px;
         font-weight: 700;
-        color: #888780;
+        color: #920c24;
         text-transform: uppercase;
         letter-spacing: 0.8px;
         margin: 24px 0 10px 0;
         padding-bottom: 6px;
-        border-bottom: 1px solid #ebe9e2;
+        border-bottom: 1px solid #e8e8e8;
         }}
         .detail-table {{
         width: 100%;
@@ -400,39 +440,40 @@ class Applicant(Document):
         .detail-table tr td {{
         padding: 7px 0;
         font-size: 13px;
-        border-bottom: 1px solid #f1efe8;
+        border-bottom: 1px solid #eeeeee;
         vertical-align: top;
         }}
         .detail-table tr:last-child td {{
         border-bottom: none;
         }}
         .detail-table td.label {{
-        color: #888780;
+        color: #333333;
         width: 44%;
         padding-right: 12px;
         }}
         .detail-table td.value {{
-        color: #2c2c2a;
+        color: #000000;
         font-weight: 500;
         }}
         .status-pill {{
         display: inline-block;
-        background: #E1F5EE;
-        color: #085041;
+        background: #fbe9ec;
+        color: #920c24;
         font-size: 12px;
         font-weight: 600;
         padding: 3px 12px;
         border-radius: 20px;
         }}
         .next-steps {{
-        background: #f1efe8;
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
         border-radius: 6px;
         padding: 16px 20px;
         margin: 24px 0;
         }}
         .next-steps p {{
         font-size: 13px;
-        color: #444441;
+        color: #000000;
         margin: 0 0 8px 0;
         font-weight: 600;
         }}
@@ -442,34 +483,34 @@ class Applicant(Document):
         }}
         .next-steps ul li {{
         font-size: 13px;
-        color: #5f5e5a;
+        color: #000000;
         margin-bottom: 5px;
         line-height: 1.6;
         }}
         .attachment-note {{
-        background: #E6F1FB;
-        border-left: 3px solid #378ADD;
+        background: #fafafa;
+        border-left: 3px solid #920c24;
         border-radius: 0 6px 6px 0;
         padding: 12px 16px;
         font-size: 13px;
-        color: #0C447C;
+        color: #000000;
         margin: 20px 0;
         }}
         .footer {{
-        background: #f1efe8;
+        background: #fafafa;
         padding: 20px 32px;
         text-align: center;
-        border-top: 1px solid #d3d1c7;
+        border-top: 1px solid #e0e0e0;
         }}
         .footer p {{
         font-size: 12px;
-        color: #888780;
+        color: #333333;
         margin: 4px 0;
         }}
         .footer .university-name {{
         font-size: 13px;
         font-weight: 600;
-        color: #444441;
+        color: #000000;
         margin-bottom: 6px;
         }}
     </style>
@@ -492,6 +533,18 @@ class Applicant(Document):
             <strong>{self.name}</strong> for all future correspondence.
             A copy of your completed application form is attached to this email.
         </p>
+
+        <p class="notify-next">
+            <strong style="color:#920c24;">What happens next?</strong><br>
+            The admissions office will notify you by email about the next steps in your application process.
+            Please monitor your inbox (including spam or promotions folders) for further updates.
+        </p>
+
+        <div class="cta-wrap">
+        <a class="cta-link" href="{admission_portal_url}" target="_blank" rel="noopener noreferrer">Continue to admission portal</a>
+        <p class="cta-fallback">If the button does not work, copy this link into your browser:<br>
+        <a href="{admission_portal_url}" target="_blank" rel="noopener noreferrer">{admission_portal_url}</a></p>
+        </div>
 
         <div class="section-title">Application details</div>
         <table class="detail-table">
@@ -571,10 +624,6 @@ class Applicant(Document):
             <td class="label">Class XII percentage</td>
             <td class="value">{f"{self.hsc_percentage}%" if self.hsc_percentage else '—'}</td>
             </tr>
-            <tr>
-            <td class="label">Academic summary</td>
-            <td class="value">{academic_line or '—'}</td>
-            </tr>
         </table>
 
         <div class="section-title">Reservation / category</div>
@@ -605,7 +654,9 @@ class Applicant(Document):
             </tr>
             <tr>
             <td class="label">Fee amount</td>
-            <td class="value">{"&#8377;" + frappe.utils.fmt_money(self.application_fee_amount, currency="INR") if self.application_fee_amount else '—'}</td>
+            <td class="value">
+                {frappe.utils.fmt_money(self.application_fee_amount, currency="INR") if self.application_fee_amount else '—'}
+            </td>
             </tr>
         </table>
 
@@ -616,14 +667,12 @@ class Applicant(Document):
         </div>
 
         <div class="next-steps">
-            <p>What happens next?</p>
+            <p>Reminders</p>
             <ul>
-            <li>Your application will be reviewed for eligibility.</li>
-            <li>Admit card details will be communicated once the
-                test schedule is confirmed.</li>
-            <li>Track your application status by logging in to
-                the applicant portal.</li>
-            <li>Keep all original documents ready for verification.</li>
+            <li>Your application will be reviewed for eligibility; admissions will email you when there are updates.</li>
+            <li>Admit card and test details will be shared once the schedule is confirmed.</li>
+            <li>Log in to the admission portal anytime to track your application status.</li>
+            <li>Keep original documents ready for verification when asked.</li>
             </ul>
         </div>
 
@@ -633,7 +682,7 @@ class Applicant(Document):
         <p class="university-name">{institution_name}</p>
         <p>This is an auto-generated email. Please do not reply directly.</p>
         <p>For queries, contact the admissions helpdesk.</p>
-        <p style="margin-top:10px;font-size:11px;color:#b4b2a9;">
+        <p style="margin-top:10px;font-size:11px;color:#555555;">
             Application ID: {self.name} &nbsp;|&nbsp;
             Generated: {frappe.utils.now_datetime().strftime('%d %b %Y, %I:%M %p')}
         </p>
@@ -2106,3 +2155,137 @@ def notify_stage_entry(applicant_doc, stage):
         frappe.db.commit()
     except Exception as e:
         frappe.log_error(f"notify_stage_entry failed: {e}", "Stage Notification")
+
+@frappe.whitelist()
+def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, academic_year=None, admission_year=None, application_status=None, print_format=None):
+    """
+    Whitelisted entry point for bulk applicant form download.
+    Filters applicants, generates PDFs using selected print format, and returns a ZIP.
+    Handles small batches synchronously and large batches via background queue.
+    """
+    filters = {}
+    if campus: filters["campus"] = campus
+    if program: filters["program"] = program
+    if admission_cycle: filters["admission_cycle"] = admission_cycle
+    if academic_year: filters["academic_year"] = academic_year
+    if admission_year: filters["admission_year"] = admission_year
+    if application_status: filters["application_status"] = application_status
+
+    applicants = frappe.get_all("Applicant", filters=filters, pluck="name")
+
+    if not applicants:
+        frappe.throw(_("No applicants found matching the selected filters."))
+
+    if not print_format:
+        print_format = "Applicant Application Form"
+
+    # LARGE BATCH HANDLING (> 10)
+    if len(applicants) > 10:
+        frappe.enqueue(
+            "slcm.admission.doctype.applicant.applicant.background_bulk_worker",
+            applicants=applicants,
+            print_format=print_format,
+            user=frappe.session.user,
+            queue='long',
+            timeout=3600
+        )
+        return {
+            "queued": True,
+            "message": _("Large batch detected ({0} applicants). Processing started in the background. You will receive a notification when finished.").format(len(applicants))
+        }
+
+    # SMALL BATCH SYNC
+    return background_bulk_worker(applicants, print_format, sync=True)
+
+def background_bulk_worker(applicants, print_format, user=None, sync=False):
+    """
+    Worker function to generate PDFs and package into ZIP.
+    """
+    import zipfile
+    from io import BytesIO
+    from frappe.utils.file_manager import save_file
+
+    total = len(applicants)
+    success_count = 0
+    errors = []
+    
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for i, name in enumerate(applicants):
+            try:
+                # Update progress for background jobs
+                if not sync:
+                    frappe.publish_realtime("bulk_download_progress", {
+                        "progress": i + 1,
+                        "total": total,
+                        "message": _("Generating PDF for {0}").format(name)
+                    }, user=user)
+
+                pdf_content = frappe.get_print(
+                    doctype="Applicant",
+                    name=name,
+                    print_format=print_format,
+                    as_pdf=True
+                )
+                
+                # Fetch applicant ID for filename
+                applicant_id = frappe.db.get_value("Applicant", name, "applicant_id") or name
+                zip_file.writestr(f"{applicant_id}.pdf", pdf_content)
+                success_count += 1
+                
+            except Exception as e:
+                errors.append({"applicant": name, "error": str(e)})
+
+    if success_count == 0:
+        error_msg = _("Failed to generate any PDFs. Errors: {0}").format(len(errors))
+        if sync: frappe.throw(error_msg)
+        return
+
+    # Save ZIP File
+    zip_buffer.seek(0)
+    file_name = f"Applicant_Forms_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    saved_file = save_file(file_name, zip_buffer.getvalue(), "Applicant", "Bulk Download", is_private=1)
+
+    if sync:
+        return {"file_url": saved_file.file_url, "success": success_count, "errors": errors}
+
+    # Background cleanup and notification
+    notification_content = f"""
+        <div style="font-family: sans-serif; padding: 5px;">
+            <h4 style="color: #1a202c; margin-bottom: 12px;">{_('Bulk Form Generation Report')}</h4>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <span style="background: #f0fff4; color: #2f855a; padding: 4px 10px; border-radius: 4px; border: 1px solid #c6f6d5; font-weight: bold; font-size: 12px;">
+                    {success_count} {_('Generated')}
+                </span>
+                <span style="background: { '#fff5f5' if errors else '#f7fafc' }; color: { '#c53030' if errors else '#718096' }; padding: 4px 10px; border-radius: 4px; border: 1px solid { '#fed7d7' if errors else '#edf2f7' }; font-weight: bold; font-size: 12px;">
+                    {len(errors)} {_('Failed')}
+                </span>
+            </div>
+            <p style="font-size: 13px; color: #4a5568;">{_('Your ZIP archive is ready for download.')}</p>
+            <div style="margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 12px;">
+                <a href="{saved_file.file_url}" target="_blank" style="background: #1a202c; color: #ffffff !important; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">
+                    {_('Download ZIP')}
+                </a>
+            </div>
+        </div>
+    """
+
+    from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+    enqueue_create_notification([user], {
+        "subject": _("Bulk Applicant Forms Ready"),
+        "email_content": notification_content,
+        "type": "Alert",
+        "document_type": "Applicant"
+    })
+
+    frappe.publish_realtime("bulk_download_complete", {
+        "file_url": saved_file.file_url,
+        "doctype": "Applicant"
+    }, user=user)
+
+    frappe.publish_realtime("msgprint", {
+        "message": _("Successfully generated {0} application forms.").format(success_count),
+        "title": _("Download Ready"),
+        "indicator": "green" if not errors else "orange",
+        "primary_action": {"label": _("Download ZIP"), "action": f"window.open('{saved_file.file_url}')"}
+    }, user=user)

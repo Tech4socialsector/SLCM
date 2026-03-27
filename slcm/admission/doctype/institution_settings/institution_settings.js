@@ -9,9 +9,9 @@ frappe.ui.form.on("Institution Settings", {
                 '<span style="color:green;font-weight:bold;">✓ Institution is active and configured.</span>'
             );
         }
-        frm.add_custom_button("Open Setup Wizard", function() {
-            frappe.set_route("admission-setup-wizard");
-        });
+        // frm.add_custom_button("Open Setup Wizard", function() {
+        //     frappe.set_route("admission-setup-wizard");
+        // });
     },
     enable_multi_campus: function(frm) {
         frappe.show_alert({
