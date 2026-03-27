@@ -653,10 +653,21 @@ def bulk_convert_to_student(assignments):
 	return out
 
 
-def _process_bulk_convert_batch(assignments):
+def _process_bulk_convert_batch(assignments, progress_user=None):
 	"""Process a list of AFA docnames; return { success: [], errors: [] }. Commits each success separately."""
 	results = {"success": [], "errors": []}
-	for docname in assignments:
+	total = len(assignments)
+	for idx, docname in enumerate(assignments):
+		if progress_user:
+			frappe.publish_realtime(
+				"bulk_convert_to_student_progress",
+				{
+					"progress": idx + 1,
+					"total": total,
+					"message": frappe._("Converting {0} ({1} / {2})").format(docname, idx + 1, total),
+				},
+				user=progress_user,
+			)
 		try:
 			invoice_name = create_invoice(docname)
 			frappe.db.commit()
@@ -675,7 +686,7 @@ def _process_bulk_convert_batch(assignments):
 def background_bulk_convert_worker(assignments, user):
 	"""Background worker for bulk convert; notifies user when done."""
 	frappe.set_user(user)
-	results = _process_bulk_convert_batch(assignments)
+	results = _process_bulk_convert_batch(assignments, progress_user=user)
 	success_count = len(results["success"])
 	error_count = len(results["errors"])
 
