@@ -688,6 +688,11 @@
   body {
     overflow-x: hidden;
   }
+
+  /* Remove white strip between sticky nav and hero slideshow (adm-container default padding-top: 12px) */
+  .adm-main > .adm-container {
+    padding-top: 0 !important;
+  }
 </style>
 {% endblock %}
 
@@ -738,10 +743,10 @@
   </a>
 </div>
 {% else %}
-<div style="background:#f5f7f8;margin:0 -20px 0;padding-bottom:52px;">
+<div style="background:#f5f7f8;margin:0 -20px 0;padding:12px 0 52px;">
   <div style="max-width:1200px;margin:0 auto;padding:0 20px;">
     <!-- BREADCRUMB -->
-    <div style="padding:16px 0 0;">
+    <div style="padding:4px 0 0;">
       <a href="/admission" style="display:inline-flex;align-items:center;gap:6px;
               font-size:13px;font-weight:600;color:#64748b;text-decoration:none;"
         onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">

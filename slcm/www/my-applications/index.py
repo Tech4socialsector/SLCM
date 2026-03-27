@@ -54,6 +54,7 @@ def get_context(context):
     context.title        = "My Application"
     context.show_detail  = False
     context.applicant    = None
+    context.hide_application_next_steps = False
 
     # ── Tab routing ───────────────────────────────────────────────
     _tab = frappe.request.args.get("tab") if frappe.request else None
@@ -732,6 +733,26 @@ def get_context(context):
                 }
                 context.interview_attendance_options = ["Confirm Attendance", "Decline Interview Invitation", "Request Rescheduling"]
         except Exception: pass
+
+        # Terminal / closed: no "next step" banner, card, or portal-config step list
+        _closed_app_statuses = frozenset({"Withdrawn", "Rejected"})
+        hide_next = False
+        if (applicant.application_status or "") in _closed_app_statuses:
+            hide_next = True
+        _cd = context.get("cancellation_details")
+        if _cd:
+            _cstat = _cd.get("status") if hasattr(_cd, "get") else getattr(_cd, "status", None)
+            if (_cstat or "") == "Completed":
+                hide_next = True
+        for _st in context.get("stage_tracker") or []:
+            _state = _st.get("state") if isinstance(_st, dict) else getattr(_st, "state", None)
+            if _state == "closed":
+                hide_next = True
+                break
+        context.hide_application_next_steps = hide_next
+        if hide_next:
+            context.cycle_next_step_message = ""
+            context.next_steps = []
 
         context.show_detail = True
         context.title = f"Application Details: {_app_name}"

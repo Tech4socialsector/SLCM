@@ -3,8 +3,14 @@
 
 frappe.listview_settings['Applicant Fee Assignment'] = {
 	onload: function (listview) {
+		frappe.realtime.on("bulk_convert_to_student_progress", function (data) {
+			if (frappe.get_route_str() === "List/Applicant Fee Assignment") {
+				frappe.show_progress(__("Converting to Student"), data.progress, data.total, data.message || "");
+			}
+		});
 		frappe.realtime.on("bulk_convert_to_student_done", function (data) {
 			if (frappe.get_route_str() === "List/Applicant Fee Assignment") {
+				frappe.hide_progress();
 				const s = data.success != null ? data.success : 0;
 				const e = data.errors != null ? data.errors : 0;
 				frappe.show_alert({

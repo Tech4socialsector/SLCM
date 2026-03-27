@@ -3697,6 +3697,11 @@
     // Pre-fill from existing applicant doc
     let formData = {{ applicant_data | tojson }};
 
+    /** HTML attribute escape — defined before degree table helpers (avoid any TDZ / parse-order issues). */
+    function escapeAttr(s) {
+        return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     // ═══════════════════════════════════════════════════════
     //  STEP CONFIGURATION
     // ═══════════════════════════════════════════════════════
@@ -5052,26 +5057,31 @@
         const uploadBtn = currentUrl ? '' : `<button type="button" class="btn-attach" onclick="document.getElementById('fi_${cellId}').click()">⬆ Upload</button>`;
         const downloadBtn = currentUrl ? `<button type="button" class="btn-attach-download" onclick="downloadDegreeFileByRow('${type}',${rowIdx},'${field}'); return false;">Download</button>` : '';
         const deleteBtn = currentUrl ? `<button type="button" class="attach-clear" title="Remove file" onclick="clearDegreeAttach('${cellId}','${type}',${rowIdx},'${field}'); return false;">Delete</button>` : '';
-        const actionRow = (downloadBtn || deleteBtn) ? `<div style="display:flex;gap:5px;">${downloadBtn}${deleteBtn}</div>` : '';
+        const attachCellActionMarkup = (downloadBtn || deleteBtn) ? `<div style="display:flex;gap:5px;">${downloadBtn}${deleteBtn}</div>` : '';
         const formatHint = currentUrl ? '' : '<span class="attach-format-hint">Max 5MB — png, jpeg, jpg, pdf</span>';
         return `<div class="attach-cell" id="${cellId}">
             <input type="file" accept=".pdf,.png,.jpg,.jpeg,image/png,image/jpeg,image/jpg,application/pdf" style="display:none" id="fi_${cellId}" onchange="handleDegreeFileUpload(this,'${cellId}','${type}',${rowIdx},'${field}')">
             ${fnameDisplay}
             ${uploadBtn}
-            ${actionRow}
+            ${attachCellActionMarkup}
             ${formatHint}
         </div>`;
     }
 
     function addDegreeRow(type) {
-        if (type === 'ug') {
-            if (!formData.ug_degree_details) formData.ug_degree_details = [];
-            formData.ug_degree_details.push({ ug_program: '', college: '', year_of_completion: '', ug_cgpa: '', degree_certificate: '', marksheets: '' });
-            renderUgTable();
-        } else {
-            if (!formData.pg_degree_details) formData.pg_degree_details = [];
-            formData.pg_degree_details.push({ pg_program: '', collegeuniversity: '', year_of_completion: '', pg_cgpa: '', pg_degree_certificatebonafide_certificate_to_be_uploaded: '', transcriptsmarksheets_to_be_uploaded: '' });
-            renderPgTable();
+        try {
+            if (type === 'ug') {
+                if (!formData.ug_degree_details) formData.ug_degree_details = [];
+                formData.ug_degree_details.push({ ug_program: '', college: '', year_of_completion: '', ug_cgpa: '', degree_certificate: '', marksheets: '' });
+                renderUgTable();
+            } else if (type === 'pg') {
+                if (!formData.pg_degree_details) formData.pg_degree_details = [];
+                formData.pg_degree_details.push({ pg_program: '', collegeuniversity: '', year_of_completion: '', pg_cgpa: '', pg_degree_certificatebonafide_certificate_to_be_uploaded: '', transcriptsmarksheets_to_be_uploaded: '' });
+                renderPgTable();
+            }
+        } catch (err) {
+            console.error('addDegreeRow', err);
+            showToast('Could not add degree row. Please refresh and try again.', 'error');
         }
     }
 
@@ -5903,8 +5913,6 @@
             if (typeof toggleWorkExp === 'function') toggleWorkExp(isYes ? 'Yes' : 'No');
         }
     }
-    function escapeAttr(s) { return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
     // ═══════════════════════════════════════════════════════
     //  REVIEW BUILDER
     // ═══════════════════════════════════════════════════════

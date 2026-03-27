@@ -901,6 +901,11 @@
     gap: 18px;
   }
 
+  .doc-nextsteps-grid.doc-nextsteps-grid--docs-only {
+    grid-template-columns: 1fr;
+    max-width: 720px;
+  }
+
   @media (max-width: 680px) {
     .doc-nextsteps-grid {
       grid-template-columns: 1fr;
@@ -2297,7 +2302,7 @@ or _app.current_stage)) or _status %}
         </div>
       </div>
 
-      {% if cycle_next_step_message %}
+      {% if not hide_application_next_steps and cycle_next_step_message %}
       <div class="ma-progress-next fade-up" style="animation-delay:.04s;" role="status" aria-live="polite">
         <div class="ma-progress-next-row">
           <span class="material-symbols-outlined ma-progress-next-ico" aria-hidden="true">campaign</span>
@@ -2993,7 +2998,7 @@ or _app.current_stage)) or _status %}
     <!-- ╔══════════════════════════════════════════════╗
          ║  DOCUMENTS + NEXT STEPS                      ║
          ╚══════════════════════════════════════════════╝ -->
-    <div class="doc-nextsteps-grid fade-up" style="animation-delay:.36s">
+    <div class="doc-nextsteps-grid fade-up{% if hide_application_next_steps %} doc-nextsteps-grid--docs-only{% endif %}" style="animation-delay:.36s">
 
       <!-- Documents Checklist -->
       <div class="ma-card">
@@ -3044,6 +3049,7 @@ or _app.current_stage)) or _status %}
         </div>
       </div><!-- end documents card -->
 
+      {% if not hide_application_next_steps %}
       <!-- Next Steps -->
       <div class="ma-card">
         <div class="ma-card-head">
@@ -3095,6 +3101,7 @@ or _app.current_stage)) or _status %}
         </div>
         {% endif %}
       </div><!-- end next steps card -->
+      {% endif %}
 
     </div><!-- end doc-nextsteps-grid -->
 
