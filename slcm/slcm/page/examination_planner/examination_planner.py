@@ -19,6 +19,6 @@ def get_assessment_types():
 	return frappe.get_all(
 		"Exam Assessment Type",
 		filters={"is_active": 1},
-		fields=["name", "type_name"],
+		fields=["name", "type_name", "assessment_type"],
 		order_by="type_name asc",
 	)

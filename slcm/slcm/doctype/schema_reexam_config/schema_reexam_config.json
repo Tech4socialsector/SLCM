@@ -31,15 +31,14 @@
    "fieldname": "re_exam_type_category",
    "fieldtype": "Select",
    "label": "Re-Exam Type Category",
-   "options": "Assessment\nReExam/Makeup Assessment"
+   "options": "Assessment\nReExam/Makeup Assessment\nComponent"
   },
   {
    "fieldname": "assessment_type",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Assessment Type",
-   "options": "Exam Assessment Type",
-   "reqd": 1
+   "options": "Exam Assessment Type"
   },
   {
    "fieldname": "label",

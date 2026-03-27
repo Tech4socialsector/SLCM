@@ -12,9 +12,17 @@ frappe.ui.form.on('Evaluation Schema', {
 		_hide_flat_sections(frm);
 		_ensure_dyn_area(frm);
 		_load_and_render(frm);
+		frm.set_query('component', 'schema_components', function(doc, _cdt, cdn) {
+			const selected = (doc.schema_components || [])
+				.filter(r => r.name !== cdn && r.component)
+				.map(r => r.component);
+			return selected.length
+				? { filters: [['name', 'not in', selected]] }
+				: {};
+		});
 	},
 
-	total_marks(frm) {}
+	total_marks(_frm) {}
 });
 
 frappe.ui.form.on('Evaluation Schema Component', {
@@ -203,6 +211,9 @@ function _inject_styles() {
 			gap: 14px;
 			margin-bottom: 12px;
 		}
+		#es-dynamic-sections .es-subst-grid.es-subst-grid-3 {
+			grid-template-columns: 1fr 1fr 1fr;
+		}
 		#es-dynamic-sections .es-sf-label {
 			display: block;
 			font-size: 10.5px;
@@ -227,6 +238,23 @@ function _inject_styles() {
 			color: #94a3b8;
 			font-style: italic;
 			padding: 16px;
+		}
+		#es-dynamic-sections .es-inp-at-selected {
+			border-color: #22c55e !important;
+			background: #f0fdf4 !important;
+			color: #15803d !important;
+			font-weight: 600;
+		}
+		#es-dynamic-sections .es-reexam-mode {
+			padding: 4px 10px;
+			border: 1px solid #6366f1;
+			color: #4f46e5;
+			font-weight: 600;
+			background: #eef2ff;
+			border-radius: 5px;
+			font-size: 12px;
+			cursor: pointer;
+			min-width: 175px;
 		}
 	`;
 	document.head.appendChild(s);
@@ -350,6 +378,7 @@ function _render_assess_sec(frm, $area, comp, lbl, ctype, eff_marks) {
 
 	const existing = (frm.doc.assessment_configs || []).filter(r => r.component === comp);
 	(existing.length ? existing : [{}]).forEach(r => _add_assess_row(frm, $sec, comp, r));
+	_refresh_at_options($sec);
 	_upd_assess_sum($sec);
 
 	$sec.on('click', '.es-add-row', () => _add_assess_row(frm, $sec, comp, {}));
@@ -365,9 +394,11 @@ function _add_assess_row(frm, $sec, comp, data) {
 	}
 	const fn = frow.name;
 
-	const at_opts = (frm._ep_atypes || []).map(a =>
-		`<option value="${a.name}" ${(data.assessment_type || '') === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
-	).join('');
+	const at_opts = (frm._ep_atypes || [])
+		.filter(a => a.assessment_type !== 'ReExam/Makeup Assessment')
+		.map(a =>
+			`<option value="${a.name}" ${(data.assessment_type || '') === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
+		).join('');
 
 	const $row = $(`
 		<tr data-fn="${fn}">
@@ -402,6 +433,11 @@ function _add_assess_row(frm, $sec, comp, data) {
 	`);
 	$sec.find('.es-tbody').append($row);
 
+	const _upd_at_indicator = () => {
+		const $at = $row.find('[name=at]');
+		$at.val() ? $at.addClass('es-inp-at-selected') : $at.removeClass('es-inp-at-selected');
+	};
+
 	const sync = () => {
 		const wt  = parseFloat($row.find('[name=wt]').val()) || 0;
 		const max = parseFloat($row.find('[name=max]').val()) || 0;
@@ -420,16 +456,37 @@ function _add_assess_row(frm, $sec, comp, data) {
 			r.weightage               = wt;
 			r.enrollment              = $row.find('[name=enroll]').val();
 		}
+		_upd_at_indicator();
+		_refresh_at_options($sec);
 		_upd_assess_sum($sec);
 		frm.dirty();
 	};
 
+	_upd_at_indicator();
+	_refresh_at_options($sec);
 	$row.find('input, select').on('change input', sync);
 	$row.on('click', '.es-del', () => {
 		frm.doc.assessment_configs = (frm.doc.assessment_configs || []).filter(x => x.name !== fn);
 		$row.remove();
+		_refresh_at_options($sec);
 		_upd_assess_sum($sec);
 		frm.dirty();
+	});
+}
+
+function _refresh_at_options($sec) {
+	const selected = [];
+	$sec.find('.es-tbody [name=at]').each(function() {
+		const v = $(this).val();
+		if (v) selected.push(v);
+	});
+	$sec.find('.es-tbody [name=at]').each(function() {
+		const $sel = $(this);
+		const own = $sel.val();
+		$sel.find('option').each(function() {
+			const v = $(this).val();
+			$(this).prop('disabled', !!(v && v !== own && selected.includes(v)));
+		});
 	});
 }
 
@@ -454,6 +511,9 @@ function _upd_assess_sum($sec) {
 /* ── Re-Exam section ─────────────────────────────── */
 
 function _render_reexam_sec(frm, $area, comp, lbl, ctype, comp_name) {
+	const existing = (frm.doc.reexam_configs || []).filter(r => r.component === comp);
+	const defaultMode = (existing[0] && existing[0].re_exam_type_category) || 'Assessment';
+
 	const $sec = $(`
 		<div class="es-sub-section" data-comp="${comp}">
 			<div class="es-card-hdr">
@@ -461,13 +521,20 @@ function _render_reexam_sec(frm, $area, comp, lbl, ctype, comp_name) {
 					<span class="es-sect-title">${_esc(comp_name || comp)} | ${_esc(lbl)}</span>
 					${_badge(ctype)}
 				</div>
-				<button class="es-add-btn es-add-row">+ Add</button>
+				<div style="display:flex;align-items:center;gap:8px;">
+					<select class="es-reexam-mode">
+						<option value="Assessment" ${defaultMode === 'Assessment' ? 'selected' : ''}>Assessment</option>
+						<option value="ReExam/Makeup Assessment" ${defaultMode === 'ReExam/Makeup Assessment' ? 'selected' : ''}>ReExam / Makeup</option>
+						<option value="Component" ${defaultMode === 'Component' ? 'selected' : ''}>Component</option>
+					</select>
+					<button class="es-add-btn es-add-row">+ Add</button>
+				</div>
 			</div>
 			<div class="es-tbl-wrap">
 				<table class="es-tbl">
 					<thead>
 						<tr>
-							<th style="min-width:130px;">Assessment Type</th>
+							<th class="es-col-first" style="min-width:130px;">${defaultMode === 'Component' ? 'Component' : 'Assessment Type'}</th>
 							<th style="min-width:100px;">Label</th>
 							<th style="min-width:100px;">Maximum Marks</th>
 							<th style="min-width:80px;">Min Marks</th>
@@ -483,46 +550,92 @@ function _render_reexam_sec(frm, $area, comp, lbl, ctype, comp_name) {
 	`);
 	$area.append($sec);
 
-	const existing = (frm.doc.reexam_configs || []).filter(r => r.component === comp);
-	(existing.length ? existing : [{}]).forEach(r => _add_reexam_row(frm, $sec, comp, r));
+	(existing.length ? existing : [{ re_exam_type_category: defaultMode }])
+		.forEach(r => _add_reexam_row(frm, $sec, comp, r));
 
-	$sec.on('click', '.es-add-row', () => _add_reexam_row(frm, $sec, comp, {}));
+	$sec.on('click', '.es-add-row', () => {
+		const mode = $sec.find('.es-reexam-mode').val();
+		_add_reexam_row(frm, $sec, comp, { re_exam_type_category: mode });
+	});
+
+	$sec.on('change', '.es-reexam-mode', function() {
+		const mode = $(this).val();
+		$sec.find('.es-col-first').text(mode === 'Component' ? 'Component' : 'Assessment Type');
+		const rows = (frm.doc.reexam_configs || []).filter(r => r.component === comp);
+		rows.forEach(r => { r.re_exam_type_category = mode; });
+		$sec.find('.es-tbody').empty();
+		if (rows.length) {
+			rows.forEach(r => _add_reexam_row(frm, $sec, comp, r));
+		} else {
+			_add_reexam_row(frm, $sec, comp, { re_exam_type_category: mode });
+		}
+		frm.dirty();
+	});
 }
 
 function _add_reexam_row(frm, $sec, comp, data) {
+	const mode = data.re_exam_type_category
+		|| $sec.find('.es-reexam-mode').val()
+		|| 'Assessment';
+
 	let frow = data.name
 		? (frm.doc.reexam_configs || []).find(r => r.name === data.name)
 		: null;
 	if (!frow) {
 		frow = frappe.model.add_child(frm.doc, 'Schema Reexam Config', 'reexam_configs');
 		frow.component = comp;
+		frow.re_exam_type_category = mode;
 	}
 	const fn = frow.name;
 
-	const at_opts = (frm._ep_atypes || []).map(a =>
-		`<option value="${a.name}" ${(data.assessment_type || '') === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
-	).join('');
-
-	const _non_reexam = (frm.doc.schema_components || []).filter(cr => {
+	/* ── first column HTML based on mode ── */
+	const _non_reexam_comps = (frm.doc.schema_components || []).filter(cr => {
 		const _ct = _comp_type(frm, cr.component);
 		return _ct !== 'Re Exam' && _ct !== 'Makeup';
 	});
-	const sub_opts = _non_reexam.map(cr => {
+	const sub_opts = _non_reexam_comps.map(cr => {
 		const _ci = (frm._ep_components || []).find(c => c.name === cr.component);
 		const _disp = cr.label || (_ci ? _ci.component_name : cr.component);
 		return `<option value="${cr.component}" ${(data.substitute_for || '') === cr.component ? 'selected' : ''}>${_disp}</option>`;
 	}).join('');
 
-	const show_sub = data.substitute_for ? '' : 'display:none;';
-	const sub_lbl  = data.substitute_for ? 'Hide Substitution Settings ▲' : 'Show Substitution Settings ▼';
+	/* ── helper: assessment options for a given component ── */
+	const _get_comp_at_opts = (compVal, selAt) => {
+		return (frm.doc.assessment_configs || [])
+			.filter(r => r.component === compVal && r.assessment_type)
+			.map(r => {
+				const at = (frm._ep_atypes || []).find(a => a.name === r.assessment_type);
+				const lbl = at ? (at.type_name || at.name) : r.assessment_type;
+				return `<option value="${r.assessment_type}" ${selAt === r.assessment_type ? 'selected' : ''}>${lbl}</option>`;
+			}).join('');
+	};
+
+	let firstColHtml;
+	if (mode === 'Component') {
+		const init_at_opts = data.substitute_for
+			? _get_comp_at_opts(data.substitute_for, data.assessment_type || '')
+			: '';
+		firstColHtml = `
+			<select name="comp_link" class="es-inp" style="min-width:120px;">
+				<option value="">— Select —</option>${sub_opts}
+			</select>
+			<select name="at" class="es-inp" style="min-width:120px;margin-top:4px;">
+				<option value="">— Select Assessment —</option>${init_at_opts}
+			</select>`;
+	} else {
+		const at_opts = (frm._ep_atypes || [])
+			.filter(a => a.assessment_type === mode)
+			.map(a =>
+				`<option value="${a.name}" ${(data.assessment_type || '') === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
+			).join('');
+		firstColHtml = `<select name="at" class="es-inp" style="min-width:120px;">
+			<option value="">— Select —</option>${at_opts}
+		</select>`;
+	}
 
 	const $main = $(`
 		<tr data-fn="${fn}">
-			<td>
-				<select name="at" class="es-inp" style="min-width:120px;">
-					<option value="">— Select —</option>${at_opts}
-				</select>
-			</td>
+			<td>${firstColHtml}</td>
 			<td><input name="lbl" class="es-inp" value="${_esc(data.label || '')}" placeholder="Label"/></td>
 			<td><input name="max" type="number" class="es-inp" value="${data.maximum_marks || ''}" placeholder="0"/></td>
 			<td><input name="min" type="number" class="es-inp" value="${data.minimum_marks || 0}" placeholder="0"/></td>
@@ -536,14 +649,29 @@ function _add_reexam_row(frm, $sec, comp, data) {
 			<td><button class="es-del-btn es-del" title="Remove row">×</button></td>
 		</tr>
 	`);
+	$sec.find('.es-tbody').append($main);
+
+	if (mode === 'Component') {
+		$main.find('[name=comp_link]').on('change', function() {
+			$main.find('[name=at]').html(
+				`<option value="">— Select Assessment —</option>${_get_comp_at_opts($(this).val(), '')}`
+			);
+		});
+	}
+
+	/* ── Substitution settings row (shown in all modes; sub_for hidden in Component mode) ── */
+	const show_sub = (mode !== 'Component' && data.substitute_for) ? '' : 'display:none;';
+	const sub_lbl  = (mode !== 'Component' && data.substitute_for)
+		? 'Hide Substitution Settings ▲'
+		: 'Show Substitution Settings ▼';
 
 	const $subst = $(`
 		<tr data-fn="${fn}-s" class="es-subst-row">
 			<td colspan="7" style="padding:0;">
 				<div class="es-subst-toggle-bar es-subst-toggle">${sub_lbl}</div>
 				<div class="es-subst-body" style="${show_sub}">
-					<div class="es-subst-grid">
-						<div>
+					<div class="es-subst-grid${mode === 'Component' ? ' es-subst-grid-3' : ''}">
+						<div ${mode === 'Component' ? 'style="display:none;"' : ''}>
 							<span class="es-sf-label">Substitute For</span>
 							<select name="sub_for" class="es-inp">
 								<option value="">— Select Component —</option>${sub_opts}
@@ -574,8 +702,7 @@ function _add_reexam_row(frm, $sec, comp, data) {
 			</td>
 		</tr>
 	`);
-
-	$sec.find('.es-tbody').append($main).append($subst);
+	$sec.find('.es-tbody').append($subst);
 
 	$subst.on('click', '.es-subst-toggle', () => {
 		const $body = $subst.find('.es-subst-body');
@@ -588,16 +715,22 @@ function _add_reexam_row(frm, $sec, comp, data) {
 	const sync = () => {
 		const r = (frm.doc.reexam_configs || []).find(x => x.name === fn);
 		if (!r) return;
-		r.component            = comp;
-		r.assessment_type      = $main.find('[name=at]').val();
-		r.label                = $main.find('[name=lbl]').val();
-		r.maximum_marks        = parseFloat($main.find('[name=max]').val()) || 0;
-		r.minimum_marks        = parseFloat($main.find('[name=min]').val()) || 0;
-		r.passing_marks        = parseFloat($main.find('[name=pass]').val()) || 0;
-		r.enrollment           = $main.find('[name=enroll]').val();
-		r.substitute_for       = $subst.find('[name=sub_for]').val() || null;
+		r.component             = comp;
+		r.re_exam_type_category = $sec.find('.es-reexam-mode').val() || mode;
+		r.label                 = $main.find('[name=lbl]').val();
+		r.maximum_marks         = parseFloat($main.find('[name=max]').val()) || 0;
+		r.minimum_marks         = parseFloat($main.find('[name=min]').val()) || 0;
+		r.passing_marks         = parseFloat($main.find('[name=pass]').val()) || 0;
+		r.enrollment            = $main.find('[name=enroll]').val();
+		if (mode === 'Component') {
+			r.substitute_for   = $main.find('[name=comp_link]').val() || null;
+			r.assessment_type  = $main.find('[name=at]').val() || null;
+		} else {
+			r.assessment_type  = $main.find('[name=at]').val();
+			r.substitute_for   = $subst.find('[name=sub_for]').val() || null;
+		}
 		r.substitute_weightage = parseFloat($subst.find('[name=sub_wt]').val()) || 100;
-		const _sub_cr = (frm.doc.schema_components || []).find(c => c.component === r.substitute_for);
+		const _sub_cr      = (frm.doc.schema_components || []).find(c => c.component === r.substitute_for);
 		const _sub_eff_max = _sub_cr ? (_sub_cr.effective_max_marks || 0) : 0;
 		const _eff = r.substitute_for
 			? Math.round((r.substitute_weightage / 100) * _sub_eff_max * 100) / 100
