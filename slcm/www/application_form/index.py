@@ -134,20 +134,35 @@ def get_context(context):
         )
         raise frappe.Redirect
 
-        if existing:
-            # If user came from Apply Now (no ?applicant=), redirect to existing application in My Applications
-            if not applicant_name:
-                frappe.local.flags.redirect_location = "/my-applications?app=" + existing.get("name", "")
-                raise frappe.Redirect
-            doc = frappe.get_doc("Applicant", existing.name)
-            context.applicant_data = frappe.parse_json(frappe.as_json(doc))
-            context.application_submitted = (doc.application_status == "Submitted")
-            context.application_editable = is_application_editable(doc)
-    except frappe.Redirect:
-        raise
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "Application Form — Get Applicant")
-        context.applicant_data = {}
+    user = frappe.session.user
+    email = frappe.db.get_value("User", user, "email") or user
+    prefill_prog = url_program or sp or ""
+    prefill_cycle = url_cycle or sc or ""
+
+    context.applicant_data = {}
+    context.application_submitted = False
+    context.application_editable = True
+
+    if prefill_prog and prefill_cycle:
+        try:
+            existing_rows = frappe.get_all(
+                "Applicant",
+                filters={
+                    "admission_cycle": prefill_cycle,
+                    "program": prefill_prog,
+                    "email": email,
+                },
+                fields=["name"],
+                limit=1,
+            )
+            if existing_rows:
+                doc = frappe.get_doc("Applicant", existing_rows[0].name)
+                context.applicant_data = frappe.parse_json(frappe.as_json(doc))
+                context.application_submitted = doc.application_status == "Submitted"
+                context.application_editable = is_application_editable(doc)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Application Form — Get Applicant")
+            context.applicant_data = {}
 
     app_data = context.applicant_data or {}
     

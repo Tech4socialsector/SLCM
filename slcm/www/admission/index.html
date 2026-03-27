@@ -864,47 +864,6 @@
     </div>
   </div>
 
-  {# ══ GALLERY STRIP ══ #}
-  {% if _media %}
-  <section class="pd-gallery-section pd-fade" style="padding:24px 0 0 0; animation-delay:0.08s;">
-    <div class="pd-gallery-strip" id="pdGalleryStrip">
-      {% for item in _media %}
-      {% set _loop_index = loop.index0 %}
-      <div class="pd-gthumb"
-           onclick="pdGalleryOpen({{ _loop_index }})"
-           title="{{ item.caption or item.type }}">
-        {% if item.type == "Image" %}
-          <img src="{{ item.url }}" alt="{{ item.caption or 'Image' }}"
-               loading="lazy"
-               style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-        {% else %}
-        <a href="{{ '/application_form?program=' ~ (program.name if program else '') ~ '&admission_cycle=' ~ (active_cycle.name if active_cycle else '') if _is_cycle_active else 'javascript:void(0)' }}"
-          style="display:inline-flex;align-items:center;gap:8px;
-                    padding:10px 24px;border-radius:10px;font-size:13px;
-                    font-weight:700;color:white;text-decoration:none;
-                    background:var(--primary);
-                    box-shadow:0 4px 12px -2px rgba(26,60,110,0.3);
-                    {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
-          {% if _is_cycle_active %} onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'" {% endif
-          %}>
-          {{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}
-        </a>
-        {% endif %}
-        {% else %}
-        <a href="{{ '/login?redirect-to=/application_form' if _is_cycle_active else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:8px;
-                  padding:10px 24px;border-radius:10px;font-size:13px;
-                  font-weight:700;color:white;text-decoration:none;
-                  background:var(--primary);
-                  box-shadow:0 4px 12px -2px rgba(26,60,110,0.3);
-                  {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}" {%
-          if _is_cycle_active %} onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'" {% endif
-          %}>
-          {{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}
-        </a>
-        {% endif %}
-      </div>
-    </div>
-
     {# ══ GALLERY STRIP ══ #}
     {% if _media %}
     <section class="pd-gallery-section pd-fade" style="padding:24px 0 0 0; animation-delay:0.08s;">
