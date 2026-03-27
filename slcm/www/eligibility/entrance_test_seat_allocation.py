@@ -245,7 +245,6 @@ body {{
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }}
-img {{ max-width: none !important; }}
 .card-page {{
   width: 710px;
   margin: 0 auto;
@@ -291,8 +290,25 @@ img {{ max-width: none !important; }}
 .title-row {{ text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }}
 .title-row .t1 {{ font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }}
 .title-row .t2 {{ font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }}
-.info-wrap {{ border: 1.5px solid #888; margin: 12px 14px; display: flex; }}
-.info-tbl {{ flex: 1; border-collapse: collapse; }}
+.info-wrap-tbl {{ 
+  width: calc(100% - 28px); 
+  margin: 12px 14px; 
+  border: 1.5px solid #888; 
+  border-collapse: collapse;
+}}
+.info-tbl-cell {{ 
+  vertical-align: top;
+}}
+.photo-col-cell {{ 
+  width: 140px; 
+  vertical-align: top; 
+  border-left: 1.5px solid #888; 
+  padding: 10px 8px;
+}}
+.info-tbl {{ 
+  width: 100%;
+  border-collapse: collapse; 
+}}
 .info-tbl tr {{ border-bottom: 1px solid #ccc; }}
 .info-tbl tr:last-child {{ border-bottom: none; }}
 .info-tbl td {{ padding: 5.5px 8px; font-size: 12.5px; vertical-align: middle; line-height: 1.5; }}
@@ -307,16 +323,18 @@ img {{ max-width: none !important; }}
   display: inline-block; border: 1px solid #4caf50; color: #1b5e20; background: #f0fdf0;
   font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px;
 }}
-.photo-col {{ 
+.photo-col-cell {{ 
   width: 140px; 
-  flex-shrink: 0; 
   border-left: 1.5px solid #888; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: space-between; 
-  padding: 10px 8px; 
-  min-height: 250px; 
+  padding: 10px 8px;
+  height: 250px;
+}}
+.photo-inner-wrap {{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
 }}
 .photo-box-inner {{
   display: flex;
@@ -335,9 +353,7 @@ img {{ max-width: none !important; }}
   justify-content: center; 
 }}
 .photo-frame img {{ 
-  width: 100%; 
-  height: 100%; 
-  object-fit: cover; 
+  display: block;
 }}
 .photo-ph {{ font-size: 36px; color: #aaa; text-align: center; line-height: 150px; }}
 .photo-cap {{
@@ -372,39 +388,45 @@ img {{ max-width: none !important; }}
     <div class="t1">Admit Card ({val(f_test)})</div>
     <div class="t2">Admission to {val(doc.program_level) if doc.program_level else "the Programme"} &nbsp;|&nbsp; {val(doc.academic_year)} &nbsp;|&nbsp; {val(doc.admission_cycle)}</div>
   </div>
-  <div class="info-wrap">
-    <table class="info-tbl">
-      <tbody>
-        <tr><td class="lb">Admit Card Number</td><td class="sp">:</td><td class="vl"><strong>{val(admit_no)}</strong></td></tr>
-        <tr><td class="lb">Candidate's Name</td><td class="sp">:</td><td class="vl">{val(doc.candidate_name)}</td></tr>
-        <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">{val(dob)}</td></tr>
-        <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">{val(doc.father_name)}</td></tr>
-        <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">{val(doc.mother_name)}</td></tr>
-        <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">{val(doc.gender)}</td></tr>
-        <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">{val(doc.program)}</td></tr>
-        <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(doc.applicant)}</td></tr>
-        <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">{exam_date_time}</td></tr>
-        <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
-        <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">{val(f_seat)}</span></td></tr>
-        <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">{val(f_room)}{f'&nbsp; (Code:&nbsp;{esc(f_code)})' if f_code and f_code.strip() else ""}</td></tr>
-        <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">{val(f_building)}{f'&nbsp; &middot;&nbsp; Floor:&nbsp;{esc(f_floor)}' if f_floor and f_floor.strip() else ""}</td></tr>
-        <tr><td class="lb">Allocation Status</td><td class="sp">:</td><td class="vl"><span class="status-pill">{val(f_status)}</span></td></tr>
-        <tr><td class="lb">Test Centre Name &amp;&nbsp;Address</td><td class="sp">:</td><td class="vl" style="font-size:11.5px;">{centre_full}</td></tr>
-      </tbody>
-    </table>
-    <div class="photo-col">
-      <div class="photo-box-inner">
-        <div class="photo-frame">
-          {f'<img src="{profile_image_url}" alt="Candidate Photo">' if profile_image_url else '<div class="photo-ph">👤</div>'}
+  <table class="info-wrap-tbl">
+    <tr>
+      <td class="info-tbl-cell">
+        <table class="info-tbl">
+          <tbody>
+            <tr><td class="lb">Admit Card Number</td><td class="sp">:</td><td class="vl"><strong>{val(admit_no)}</strong></td></tr>
+            <tr><td class="lb">Candidate's Name</td><td class="sp">:</td><td class="vl">{val(doc.candidate_name)}</td></tr>
+            <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">{val(dob)}</td></tr>
+            <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">{val(doc.father_name)}</td></tr>
+            <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">{val(doc.mother_name)}</td></tr>
+            <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">{val(doc.gender)}</td></tr>
+            <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">{val(doc.program)}</td></tr>
+            <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(doc.applicant)}</td></tr>
+            <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">{exam_date_time}</td></tr>
+            <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
+            <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">{val(f_seat)}</span></td></tr>
+            <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">{val(f_room)}{f'&nbsp; (Code:&nbsp;{esc(f_code)})' if f_code and f_code.strip() else ""}</td></tr>
+            <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">{val(f_building)}{f'&nbsp; &middot;&nbsp; Floor:&nbsp;{esc(f_floor)}' if f_floor and f_floor.strip() else ""}</td></tr>
+            <tr><td class="lb">Allocation Status</td><td class="sp">:</td><td class="vl"><span class="status-pill">{val(f_status)}</span></td></tr>
+            <tr><td class="lb">Test Centre Name &amp; Address</td><td class="sp">:</td><td class="vl" style="font-size:11.5px;">{centre_full}</td></tr>
+          </tbody>
+        </table>
+      </td>
+      <td class="photo-col-cell">
+        <div class="photo-inner-wrap">
+          <div class="photo-box-inner" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div class="photo-frame">
+              {f'<img src="{profile_image_url}" alt="Candidate Photo" width="120" height="150" style="width: 120px; height: 150px; object-fit: cover; display: block;">' if profile_image_url else '<div class="photo-ph">👤</div>'}
+            </div>
+            <div class="photo-cap">Candidate's Photograph</div>
+          </div>
+          <div class="photo-sig-box" style="width: 100%; text-align: center; padding-bottom: 5px;">
+            <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
+            <div style="font-size: 8px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333; letter-spacing: -0.2px;">Candidate's Signature</div>
+          </div>
         </div>
-        <div class="photo-cap">Candidate's Photograph</div>
-      </div>
-      <div class="photo-sig-box" style="width: 100%; text-align: center; margin-top: auto; padding-bottom: 5px;">
-        <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
-        <div style="font-size: 8.5px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333;">Candidate's Signature</div>
-      </div>
-    </div>
-  </div>
+      </td>
+    </tr>
+  </table>
   <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>
   <table class="sig-tbl">
     <tr>

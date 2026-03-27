@@ -53,14 +53,14 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Program Level",
+   "label": "Programme Level",
    "options": "\nUndergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "program",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program"
   },
   {
@@ -105,7 +105,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 12:03:25.598378",
+ "modified": "2026-03-27 09:46:28.852239",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme Mapping",

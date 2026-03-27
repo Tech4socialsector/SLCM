@@ -549,10 +549,9 @@ class SeatAllocation(Document):
         if self.status != "Published":
             frappe.throw("Seat Allocation is not currently published.")
 
-        self.status = "Allocated"
-        self.published_on = None
-        self.published_by = None
-        self.save()
+        self.db_set("status", "Allocated")
+        self.db_set("published_on", None)
+        self.db_set("published_by", None)
 
         # Revert Applicant status
         selection_statuses = ["Selected", "Waitlisted", "Rejected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
