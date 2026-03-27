@@ -49,7 +49,15 @@ function _injectCSS() {
 		/* Application ID + status row (inside web-form title h1) */
 		'.slcm-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;' +
 			'line-height:1.25;margin:0;}',
-		'#slcm-app-heading-id{flex:0 1 auto;margin:0;min-width:0;}',
+		'#slcm-app-heading-id{flex:0 1 auto;margin:0;min-width:0;' +
+			'font-size:clamp(1.2rem,2.4vw,1.65rem);font-weight:800;color:var(--slcm-primary,#1a3c6e);' +
+			'letter-spacing:-.02em;line-height:1.2;}',
+		'.web-form .control-label,.web-form .frappe-control > label.control-label,' +
+			'.frappe-control .control-label{font-weight:600;color:#0f172a;font-size:13px;margin-bottom:6px;}',
+		/* Section Break: no heavy rule on every section (parity with “line only on page break”) */
+		'.web-form .form-page .section-head,.web-form .form-page .form-section .section-head{' +
+			'border-bottom:none!important;box-shadow:none!important;padding-bottom:6px!important;margin-top:10px!important;}',
+		/* (Visual separator for next wizard page REMOVED: No border top style on form-page) */
 		'#slcm-app-heading-meta{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px 10px;' +
 			'flex:0 1 auto;margin:0;}',
 		'#slcm-app-status-label{font-size:13px;font-weight:500;color:#334155;line-height:1.2;' +
@@ -90,11 +98,10 @@ function _injectCSS() {
 			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--slcm-primary,#1a73e8);' +
 			'background:#fff;color:var(--slcm-primary,#1a73e8);cursor:pointer;transition:background .15s;}',
 		'#slcm-fee-receipt-btn:hover{background:color-mix(in srgb,var(--slcm-primary,#1a73e8) 8%,#fff);}',
-		/* Student Photo — always-visible preview (edit + read-only / all statuses) */
+		/* Student Photo — square preview only; default Frappe attach styling (no dashed wrapper override) */
 		'.slcm-candidate-photo-preview{margin:0 0 14px;display:flex;align-items:flex-start;}',
-		'.slcm-candidate-photo-preview img{display:block;width:128px;height:128px;object-fit:cover;' +
-			'border-radius:50%;border:3px solid #e2e8f0;box-shadow:0 2px 10px rgba(0,0,0,.1);background:#f8fafc;}',
-		/* Preview is prepended before .form-group → order: preview, label, then Attach + help (not label under button/description) */
+		'.slcm-candidate-photo-preview img{display:block;width:140px;height:140px;object-fit:cover;' +
+			'border-radius:0;border:2px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);background:#f8fafc;}',
 		'.frappe-control[data-fieldname="candidate_photo"] > .form-group{' +
 			'display:flex!important;flex-direction:column!important;align-items:stretch!important;}',
 		'.frappe-control[data-fieldname="candidate_photo"] > .form-group > .clearfix{margin-bottom:8px;}',
@@ -176,34 +183,40 @@ function _injectCSS() {
 		'.adm-wf-footer-links a:hover{color:#fff;}',
 				'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
 			'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
-		/* ── Stepper / Tabs ───────────────────────────────────────── */
-		'#slcm-stepper-wrap{padding:20px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}',
+		/* ── Stepper — pill strip + step numbers (pages from Page Break fields; no fixed icons) ── */
+		'#slcm-stepper-wrap{padding:15px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}',
 		'#slcm-stepper-wrap::-webkit-scrollbar{display:none;}',
-		'.slcm-stepper{display:flex;align-items:center;justify-content:space-between;min-width:max-content;padding:0 10px;gap:10px;}',
-		'.slcm-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;position:relative;min-width:110px;transition:all 0.3s ease;}',
-		'.slcm-step-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
-			'font-size:14px;font-weight:700;border:2px solid #cbd5e1;background:#fff;color:#64748b;z-index:2;transition:all 0.3s ease;}',
-		'.slcm-step-label{font-size:12px;font-weight:600;color:#64748b;text-align:center;white-space:nowrap;transition:all 0.3s ease;}',
-		/* Line between circles */
-		'.slcm-step:not(:last-child)::after{content:"";position:absolute;top:16px;left:calc(50% + 20px);width:calc(100% - 40px);' +
-			'height:2px;background:#e2e8f0;z-index:1;}',
-		/* Active Step (Blue) */
-		'.slcm-step.active .slcm-step-circle{border-color:var(--slcm-primary,#1a73e8);background:var(--slcm-primary,#1a73e8);color:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--slcm-primary,#1a73e8) 15%,transparent);}',
-		'.slcm-step.active .slcm-step-label{color:var(--slcm-primary,#1a73e8);}',
-		/* Completed Step (Green) */
+		'.slcm-stepper{display:flex;align-items:flex-start;justify-content:space-between;min-width:max-content;padding:0 6px;gap:8px;}',
+		'.slcm-step{flex:1;display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
+			'min-width:104px;max-width:220px;transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
+			'border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
+		/* Completed step: green */
+		'.slcm-step.completed:not(.active){background:#ecfdf5;border-color:#bbf7d0;}',
 		'.slcm-step.completed .slcm-step-circle{border-color:#22c55e;background:#22c55e;color:#fff;}',
 		'.slcm-step.completed .slcm-step-label{color:#15803d;}',
-		'.slcm-step.completed:not(:last-child)::after{background:#22c55e;}',
-		/* Non-Draft: all stages complete (green); current stays green with a ring */
-		'#slcm-stepper-wrap.slcm-stepper-post-draft .slcm-step.active .slcm-step-circle{' +
-			'border-color:#16a34a;background:#22c55e;color:#fff;' +
-			'box-shadow:0 0 0 4px color-mix(in srgb,#22c55e 22%,transparent);}',
-		'#slcm-stepper-wrap.slcm-stepper-post-draft .slcm-step.active .slcm-step-label{color:#15803d;}',
-		'#slcm-stepper-wrap.slcm-stepper-post-draft .slcm-step:not(:last-child)::after{background:#22c55e;}',
-		'#slcm-stepper-wrap.slcm-stepper-post-draft .slcm-step:hover .slcm-step-circle{border-color:#16a34a;}',
-		/* Hover effect */
-		'.slcm-step:hover .slcm-step-circle{border-color:var(--slcm-primary,#1a73e8);}',
-		'.slcm-step.completed:hover .slcm-step-circle{border-color:#22c55e;}',
+		'.slcm-step.completed:not(.active) .slcm-step-label{color:#166534;}',
+		'.slcm-step.completed:not(:last-child)::after{background:#86efac;}',
+		/* Active step: blue */
+		'.slcm-step.active{background:#e0ecfa;border-color:#2471f3;}',
+		'.slcm-step.active .slcm-step-circle{border-color:#2471f3;background:#2471f3;color:#fff;' +
+			'box-shadow:0 0 0 4px rgba(36,113,243,0.13);}',
+		'.slcm-step.active .slcm-step-label{color:#1e3a8a;}',
+		/* Default step: light gray */
+		'.slcm-step:not(.active):not(.completed){background:#f3f4f6;border-color:#e5e7eb;}',
+		'.slcm-step:not(.active):not(.completed) .slcm-step-circle{border-color:#e5e7eb;background:#fff;color:#9ca3af;}',
+		'.slcm-step:not(.active):not(.completed) .slcm-step-label{color:#9ca3af;}',
+		/* Common styles */
+		'.slcm-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
+			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
+		'.slcm-step-label{font-size:10px;font-weight:700;text-align:left;line-height:1.25;' +
+			'white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
+		/* Connector only between wizard pages (each .slcm-step = one page) — omit on last step */
+		'.slcm-step:not(:last-child)::after{content:"";position:absolute;top:50%;transform:translateY(-50%);left:calc(100% - 6px);width:20px;' +
+			'height:2px;background:#e5e7eb;z-index:1;}',
+		/* Hover effects (just border brighten on active and completed) */
+		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
+		'.slcm-step.completed:hover .slcm-step-circle{border-color:#16a34a;}',
+		'.slcm-step:hover .slcm-step-circle{border-color:#1e40af;}',
 		/* Air between title / back row and stepper card */
 		'.web-form-container:has(#slcm-stepper-wrap) .web-form-header{' +
 			'padding-bottom:16px;margin-bottom:4px;border-bottom:1px solid #f1f5f9;}',
@@ -1921,11 +1934,41 @@ function setupNumericFieldRestriction() {
 	// Select common numeric field types used in SLCM (Int, Float, Currency, Percent)
 	var NUMERIC_TYPES = ['Int', 'Float', 'Currency', 'Percent'];
 
+	function _slcmNumericWrapper(el) {
+		if (!el || !el.closest) return null;
+		return el.closest('.frappe-control[data-fieldtype], [data-fieldtype]');
+	}
+
+	// keydown backup: keypress does not run for all keys / IME paths
+	document.body.addEventListener(
+		'keydown',
+		function (e) {
+			var input = e.target;
+			if (!input || input.tagName !== 'INPUT') return;
+			var ctrl = _slcmNumericWrapper(input);
+			var ft = ctrl ? ctrl.getAttribute('data-fieldtype') : null;
+			if (!ft || NUMERIC_TYPES.indexOf(ft) === -1) return;
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
+			var code = e.keyCode;
+			if (code === 8 || code === 9 || code === 13 || code === 27 || code === 46) return;
+			if (code >= 35 && code <= 40) return;
+			var key = e.key || '';
+			if (key.length === 1) {
+				if (/\d/.test(key)) return;
+				if ((ft === 'Float' || ft === 'Currency' || ft === 'Percent') && key === '.' && input.value.indexOf('.') === -1) {
+					return;
+				}
+				e.preventDefault();
+			}
+		},
+		true
+	);
+
 	document.body.addEventListener('keypress', function (e) {
 		var input = e.target;
-		if (!input || input.tagName !== 'INPUT' && input.tagName !== 'SELECT') return;
+		if (!input || input.tagName !== 'INPUT') return;
 
-		var ctrl = input.closest('[data-fieldtype]');
+		var ctrl = _slcmNumericWrapper(input);
 		var ft = ctrl ? ctrl.getAttribute('data-fieldtype') : null;
 
 		if (!ft || NUMERIC_TYPES.indexOf(ft) === -1) return;
@@ -1956,7 +1999,7 @@ function setupNumericFieldRestriction() {
 		var input = e.target;
 		if (!input || input.tagName !== 'INPUT') return;
 
-		var ctrl = input.closest('[data-fieldtype]');
+		var ctrl = _slcmNumericWrapper(input);
 		var ft = ctrl ? ctrl.getAttribute('data-fieldtype') : null;
 
 		if (!ft || NUMERIC_TYPES.indexOf(ft) === -1) return;
@@ -2064,7 +2107,7 @@ function setupPhoneValidation() {
 		_slcmApplyPhoneDigitCap(input);
 	}, true);
 
-	// Block typing extra digits (maxlength is not always enforced for type="tel")
+	// Block non-digits in national segment; cap length (maxlength is not always enforced for type="tel")
 	document.body.addEventListener('keydown', function (e) {
 		var input = e.target;
 		if (!input || input.tagName !== 'INPUT' || !_slcmPhoneCtrl(input)) return;
@@ -2075,7 +2118,10 @@ function setupPhoneValidation() {
 		var isDigit =
 			(k >= 48 && k <= 57) || (k >= 96 && k <= 105) ||
 			(e.key && e.key.length === 1 && /\d/.test(e.key));
-		if (!isDigit) return;
+		if (!isDigit) {
+			e.preventDefault();
+			return;
+		}
 		var ctrl = _slcmPhoneCtrl(input);
 		var info = _slcmPhoneIsdLengths(ctrl);
 		var limit = info ? info.limit : 15;
@@ -2275,6 +2321,88 @@ function _slcmTryPatchDateOfBirth(wf) {
 	}
 }
 
+/**
+ * All Date controls: block letters / stray chars in the text input (flatpickr still works via picker).
+ */
+function setupWebFormDateInputSanitize() {
+	function dateInput(el) {
+		return (
+			el &&
+			el.tagName === 'INPUT' &&
+			el.closest &&
+			el.closest('.frappe-control[data-fieldtype="Date"], [data-fieldtype="Date"]')
+		);
+	}
+	function stripBad(input) {
+		var v = input.value || '';
+		var cleaned = v.replace(/[^\d\-/.]/g, '');
+		if (cleaned !== v) input.value = cleaned;
+	}
+	document.body.addEventListener(
+		'keydown',
+		function (e) {
+			var input = e.target;
+			if (!dateInput(input)) return;
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
+			var code = e.keyCode;
+			var key = e.key || '';
+			if (key === 'Tab' || key === 'Enter' || code === 8 || code === 9 || code === 27 || code === 46) return;
+			if (code >= 35 && code <= 40) return;
+			if (key.length === 1 && /[\d\-/.]/.test(key)) return;
+			if (key.length === 1) {
+				e.preventDefault();
+			}
+		},
+		true
+	);
+	document.body.addEventListener(
+		'input',
+		function (e) {
+			var input = e.target;
+			if (!dateInput(input)) return;
+			stripBad(input);
+		},
+		true
+	);
+	document.body.addEventListener(
+		'paste',
+		function (e) {
+			var input = e.target;
+			if (!dateInput(input)) return;
+			setTimeout(function () {
+				stripBad(input);
+			}, 0);
+		},
+		true
+	);
+}
+
+/**
+ * New web form: Int/Float often hydrate as 0; clear so controls look empty unless the user typed 0.
+ */
+function slcmClearDefaultZeroNumericFields() {
+	var wf = window.frappe && frappe.web_form;
+	if (!wf || !wf.is_new || wf.allow_incomplete) return;
+	var fields = wf.fields || [];
+	for (var i = 0; i < fields.length; i++) {
+		var df = fields[i];
+		if (!df || !df.fieldname) continue;
+		if (df.fieldtype !== 'Int' && df.fieldtype !== 'Float') continue;
+		if (df.read_only || df.hidden) continue;
+		var v;
+		try {
+			v = wf.get_value(df.fieldname);
+		} catch (e) {
+			continue;
+		}
+		if (v === 0 || v === 0.0) {
+			try {
+				wf.set_value(df.fieldname, '');
+			} catch (e2) {}
+		}
+	}
+}
+
 function setupDateOfBirthWebForm() {
 	function tick() {
 		var wf = window.frappe && frappe.web_form;
@@ -2357,6 +2485,7 @@ frappe.ready(function () {
 	setupAttachFieldValidation();
 	setupNumericFieldRestriction();
 	setupPhoneValidation();
+	setupWebFormDateInputSanitize();
 	
 	// Submit intercept (retry: web form may attach after this script's first frappe.ready)
 	interceptSubmit();
@@ -2379,6 +2508,27 @@ frappe.ready(function () {
 			clearInterval(_attachSecTimer);
 		}
 	}, 100);
+
+	var _zeroHookN = 0;
+	var _zeroHookTimer = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.events && wf.events.on && !wf._slcmZeroNumericAfterLoad) {
+			wf._slcmZeroNumericAfterLoad = true;
+			wf.events.on('after_load', function () {
+				setTimeout(slcmClearDefaultZeroNumericFields, 0);
+				setTimeout(slcmClearDefaultZeroNumericFields, 500);
+			});
+			clearInterval(_zeroHookTimer);
+		} else if (++_zeroHookN > 120) {
+			clearInterval(_zeroHookTimer);
+		}
+	}, 100);
+
+	var _zeroPollN = 0;
+	var _zeroPollTimer = setInterval(function () {
+		slcmClearDefaultZeroNumericFields();
+		if (++_zeroPollN > 40) clearInterval(_zeroPollTimer);
+	}, 250);
 
 	setTimeout(function () {
 		// Only real field wrappers — inputs/buttons also carry data-fieldname and must not get a prepended label
@@ -2437,12 +2587,21 @@ function _renderStepper(wf) {
 	// ── 2. Build stepper HTML ──────────────────────────────────────────────
 	let html = '<div id="slcm-stepper-wrap"><div class="slcm-stepper">';
 	steps.forEach(function (step, i) {
-		html += `
-			<div class="slcm-step" data-index="${i}" title="${step.label}">
-				<div class="slcm-step-circle">${i + 1}</div>
-				<div class="slcm-step-label">${step.label}</div>
-			</div>
-		`;
+		var lbl = step.label || '';
+		var safeTitle = lbl.replace(/"/g, '&quot;').replace(/</g, '&lt;');
+		html +=
+			'<div class="slcm-step" data-index="' +
+			i +
+			'" title="' +
+			safeTitle +
+			'">' +
+			'<div class="slcm-step-circle">' +
+			(i + 1) +
+			'</div>' +
+			'<div class="slcm-step-label">' +
+			_esc(lbl) +
+			'</div>' +
+			'</div>';
 	});
 	html += '</div></div>';
 
@@ -2538,15 +2697,22 @@ function _renderStepper(wf) {
 				setTimeout(updateStepperUI, 50);
 			} else {
 				var base = __('Please fill all required fields before proceeding.');
-				var detail =
-					check.missing && check.missing.length
-						? ' ' + __('Missing') + ': ' + check.missing.join(', ')
-						: '';
-				var fullMsg = base + detail;
-				if (fullMsg.length > 220 && typeof frappe !== 'undefined' && frappe.msgprint) {
-					showValidationDialog(fullMsg);
+				if (check.missing && check.missing.length && typeof frappe !== 'undefined' && frappe.msgprint) {
+					frappe.msgprint({
+						title: __('Required fields'),
+						message:
+							_esc(base) +
+							'<br><br><ul><li>' +
+							check.missing
+								.map(function (lab) {
+									return _esc(lab);
+								})
+								.join('</li><li>') +
+							'</li></ul>',
+						indicator: 'red',
+					});
 				} else {
-					showToast(fullMsg, 'error', check.missing.length ? 10000 : 6500);
+					showToast(base, 'error', 6500);
 				}
 			}
 		} else {
@@ -2691,40 +2857,66 @@ function _slcmHighlightRequiredCheckFields(missing, on) {
 	});
 }
 
+/**
+ * Replace WebForm.validate_section: core only walks .form-control, so Attach / Attach Image
+ * and required Check boxes are skipped. Use _validateStage (same rules as stepper) plus df.invalid.
+ */
 function patchWebFormValidateSectionForAttach() {
 	var wf = window.frappe && frappe.web_form;
 	if (!wf || typeof wf.validate_section !== 'function' || wf._slcmValidateSectionAttachPatched) {
 		return;
 	}
 	wf._slcmValidateSectionAttachPatched = true;
-	var orig = wf.validate_section.bind(wf);
 	wf.validate_section = function () {
-		var base = orig();
-		if (!base) return false;
-		var missingAtt = _slcmCollectEmptyRequiredAttachOnPage(this);
-		var missingChk = _slcmCollectEmptyRequiredCheckOnPage(this);
-		if (!missingAtt.length && !missingChk.length) return true;
-		_slcmHighlightRequiredAttachFields(missingAtt, true);
-		_slcmHighlightRequiredCheckFields(missingChk, true);
-		var labels = missingAtt
-			.map(function (m) {
-				return __(m.label);
-			})
-			.concat(
-				missingChk.map(function (m) {
-					return __(m.label);
-				})
-			);
-		frappe.msgprint({
-			title: __('Error', null, 'Title of the error message in web form'),
-			message:
+		if (this.allow_incomplete) return true;
+
+		var me = this;
+		var $page = $(me.get_page(me.current_section));
+		var invalid_values = [];
+		$page.find('.form-control').each(function () {
+			var fieldname = $(this).attr('data-fieldname');
+			if (!fieldname) return;
+			var field = me.fields_dict[fieldname];
+			if (field && field.df && field.df.invalid) {
+				invalid_values.push(__(field.df.label));
+			}
+		});
+
+		var stage = _validateStage(me, $page);
+
+		var message = '';
+		if (invalid_values.length) {
+			message +=
+				__('Invalid values for fields:', null, 'Error message in web form') +
+				'<br><br><ul><li>' +
+				invalid_values
+					.map(function (lab) {
+						return _esc(lab);
+					})
+					.join('</li><li>') +
+				'</li></ul>';
+		}
+		if (!stage.ok && stage.missing && stage.missing.length) {
+			message +=
 				__('Mandatory fields required:', null, 'Error message in web form') +
 				'<br><br><ul><li>' +
-				labels.join('<li>') +
-				'</ul>',
-			indicator: 'orange',
-		});
-		return false;
+				stage.missing
+					.map(function (lab) {
+						return _esc(lab);
+					})
+					.join('</li><li>') +
+				'</li></ul>';
+		}
+
+		if (invalid_values.length || !stage.ok) {
+			frappe.msgprint({
+				title: __('Error', null, 'Title of the error message in web form'),
+				message: message,
+				indicator: 'orange',
+			});
+			return false;
+		}
+		return true;
 	};
 }
 
@@ -2786,6 +2978,8 @@ function _validateStage(wf, $page) {
 		let empty;
 		if (df.fieldtype === 'Check') {
 			empty = _slcmCheckValueUnchecked(val);
+		} else if (df.fieldtype === 'Attach' || df.fieldtype === 'Attach Image') {
+			empty = _slcmWebFormAttachValueEmpty(val);
 		} else {
 			empty =
 				val === undefined ||
