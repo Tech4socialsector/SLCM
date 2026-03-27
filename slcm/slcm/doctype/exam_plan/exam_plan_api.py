@@ -4,10 +4,6 @@
 import frappe
 
 
-def get_context(context):
-	context.no_cache = 1
-
-
 @frappe.whitelist()
 def get_exam_plans(search=None):
 	filters = {}
@@ -214,7 +210,6 @@ def save_schema(data):
 	doc.total_marks = data.get("total_marks", 100)
 	doc.passing_marks = data.get("passing_marks", 0)
 
-	# Update schema components
 	doc.set("schema_components", [])
 	for c in data.get("schema_components", []):
 		doc.append(
@@ -229,7 +224,6 @@ def save_schema(data):
 			},
 		)
 
-	# Update assessment configs
 	doc.set("assessment_configs", [])
 	for a in data.get("assessment_configs", []):
 		doc.append(
@@ -248,7 +242,6 @@ def save_schema(data):
 			},
 		)
 
-	# Update reexam configs
 	doc.set("reexam_configs", [])
 	for r in data.get("reexam_configs", []):
 		doc.append(
@@ -341,12 +334,7 @@ def get_courses_for_plan(exam_plan, search=""):
 
 @frappe.whitelist()
 def save_course_schema(exam_plan, assignments):
-	"""Create or update Course Schema Assignment records.
-
-	Fields not present in the assignment dict are left unchanged (partial update).
-	Passing ``null`` / ``None`` explicitly clears that field.
-	Records where both fields become null are automatically deleted.
-	"""
+	"""Create or update Course Schema Assignment records."""
 	import json
 
 	_SKIP = "__SKIP__"
@@ -359,7 +347,6 @@ def save_course_schema(exam_plan, assignments):
 		if not course:
 			continue
 
-		# Distinguish "not supplied" from "explicitly null"
 		eval_schema  = asgn.get("evaluation_schema", _SKIP)
 		grade_schema = asgn.get("grade_schema",      _SKIP)
 
@@ -393,7 +380,6 @@ def save_course_schema(exam_plan, assignments):
 						   WHERE name=%s""",
 						(new_ev, new_gr, frappe.session.user, existing)
 					)
-					# Log the change if anything actually changed
 					if old_ev != new_ev or old_gr != new_gr:
 						try:
 							log = frappe.new_doc("Schema Change Log")
@@ -407,7 +393,7 @@ def save_course_schema(exam_plan, assignments):
 							log.changed_on = frappe.utils.now()
 							log.insert(ignore_permissions=True)
 						except Exception:
-							pass  # Never block the main save due to logging failure
+							pass
 		else:
 			ev = eval_schema  if eval_schema  != _SKIP else None
 			gr = grade_schema if grade_schema != _SKIP else None

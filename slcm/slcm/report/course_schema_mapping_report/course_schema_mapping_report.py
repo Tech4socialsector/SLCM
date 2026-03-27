@@ -14,49 +14,61 @@ def execute(filters=None):
 def get_columns():
 	return [
 		{
+			"label": "Exam Plan",
+			"fieldname": "exam_plan",
+			"fieldtype": "Link",
+			"options": "Exam Plan",
+			"width": 180,
+		},
+		{
+			"label": "Term",
+			"fieldname": "term",
+			"fieldtype": "Data",
+			"width": 130,
+		},
+		{
 			"label": "Course Code",
 			"fieldname": "course_code",
 			"fieldtype": "Data",
-			"width": 120,
+			"width": 110,
 		},
 		{
 			"label": "Course Name",
 			"fieldname": "course_name",
-			"fieldtype": "Link",
-			"options": "Course",
-			"width": 220,
+			"fieldtype": "Data",
+			"width": 200,
 		},
 		{
 			"label": "Department",
 			"fieldname": "department_name",
 			"fieldtype": "Data",
-			"width": 160,
+			"width": 150,
 		},
 		{
 			"label": "Credits",
 			"fieldname": "credit_value",
 			"fieldtype": "Float",
-			"width": 80,
+			"width": 75,
 		},
 		{
 			"label": "Evaluation Schema",
 			"fieldname": "evaluation_schema",
 			"fieldtype": "Link",
 			"options": "Evaluation Schema",
-			"width": 200,
+			"width": 180,
 		},
 		{
 			"label": "Max Marks",
 			"fieldname": "max_marks",
-			"fieldtype": "Float",
-			"width": 100,
+			"fieldtype": "Data",
+			"width": 90,
 		},
 		{
 			"label": "Grade Schema",
 			"fieldname": "grade_schema",
 			"fieldtype": "Link",
 			"options": "Grading Schema",
-			"width": 200,
+			"width": 180,
 		},
 		{
 			"label": "Mapping Status",
@@ -68,84 +80,120 @@ def get_columns():
 
 
 def get_data(filters):
-	exam_plan = filters.get("exam_plan")
-	mapping_status_filter = filters.get("mapping_status")
-	search = filters.get("search") or ""
+	exam_plan_filter  = filters.get("exam_plan")
+	status_filter     = filters.get("mapping_status")
+	search            = filters.get("search") or ""
 
-	# Base course query
-	conditions = ""
+	# ── 1. Load exam plan → term map ──────────────────────────────────────
+	ep_rows = frappe.db.sql(
+		"SELECT name, term FROM `tabExam Plan`",
+		as_dict=True,
+	)
+	ep_term = {r["name"]: (r["term"] or "") for r in ep_rows}
+
+	# ── 2. Fetch assignments ──────────────────────────────────────────────
+	if exam_plan_filter:
+		asgn_rows = frappe.db.sql(
+			"""
+			SELECT exam_plan, course, evaluation_schema, grade_schema
+			FROM `tabCourse Schema Assignment`
+			WHERE exam_plan = %(ep)s
+			""",
+			{"ep": exam_plan_filter},
+			as_dict=True,
+		)
+	else:
+		asgn_rows = frappe.db.sql(
+			"""
+			SELECT exam_plan, course, evaluation_schema, grade_schema
+			FROM `tabCourse Schema Assignment`
+			""",
+			as_dict=True,
+		)
+
+	# course → list of assignment rows (a course can be in multiple plans)
+	from collections import defaultdict
+	asgn_map = defaultdict(list)
+	for r in asgn_rows:
+		asgn_map[r["course"]].append(r)
+
+	# ── 3. Fetch courses ──────────────────────────────────────────────────
+	search_cond = ""
 	values = {}
 	if search:
-		conditions = "WHERE (c.course_name LIKE %(search)s OR c.course_code LIKE %(search)s)"
-		values["search"] = f"%{search}%"
+		search_cond = "WHERE course_name LIKE %(s)s OR course_code LIKE %(s)s"
+		values["s"] = f"%{search}%"
 
 	courses = frappe.db.sql(
 		f"""
-		SELECT
-			c.name,
-			c.course_code,
-			c.course_name,
-			c.department_name,
-			c.credit_value
-		FROM `tabCourse` c
-		{conditions}
-		ORDER BY c.course_name ASC
+		SELECT name, course_code, course_name, department_name, credit_value
+		FROM `tabCourse`
+		{search_cond}
+		ORDER BY course_name ASC
 		""",
 		values,
 		as_dict=True,
 	)
 
-	# Fetch schema assignments for this exam plan
-	asgn_map = {}
-	if exam_plan:
-		try:
-			rows = frappe.db.sql(
-				"""
-				SELECT course, evaluation_schema, grade_schema
-				FROM `tabCourse Schema Assignment`
-				WHERE exam_plan = %(ep)s
-				""",
-				{"ep": exam_plan},
-				as_dict=True,
-			)
-			asgn_map = {r["course"]: r for r in rows}
-		except Exception:
-			pass
+	# ── 4. Cache max_marks per evaluation schema ──────────────────────────
+	schema_marks = {}
 
-	# Build result rows
+	# ── 5. Build rows ─────────────────────────────────────────────────────
 	data = []
 	for c in courses:
-		asgn = asgn_map.get(c["name"], {})
-		ev = asgn.get("evaluation_schema") or ""
-		gr = asgn.get("grade_schema") or ""
+		assignments = asgn_map.get(c["name"], [])
 
-		if ev and gr:
-			status = "Fully Mapped"
-		elif ev or gr:
-			status = "Partially Mapped"
+		if assignments:
+			# One output row per (course × exam plan) assignment
+			for asgn in assignments:
+				ev = asgn.get("evaluation_schema") or ""
+				gr = asgn.get("grade_schema") or ""
+				ep = asgn.get("exam_plan") or ""
+
+				status = "Fully Mapped" if (ev and gr) else "Partially Mapped"
+
+				if status_filter and status != status_filter:
+					continue
+
+				if ev:
+					if ev not in schema_marks:
+						schema_marks[ev] = (
+							frappe.db.get_value("Evaluation Schema", ev, "total_marks") or ""
+						)
+					max_marks = schema_marks[ev]
+				else:
+					max_marks = ""
+
+				data.append({
+					"exam_plan":       ep,
+					"term":            ep_term.get(ep, ""),
+					"course_code":     c.get("course_code") or "",
+					"course_name":     c.get("course_name") or c.get("name"),
+					"department_name": c.get("department_name") or "",
+					"credit_value":    c.get("credit_value") or 0,
+					"evaluation_schema": ev or None,
+					"max_marks":       max_marks,
+					"grade_schema":    gr or None,
+					"mapping_status":  status,
+				})
 		else:
-			status = "Not Mapped"
+			# Course has no assignment — only show if status_filter allows it
+			if status_filter and status_filter != "Not Mapped":
+				continue
 
-		# Apply mapping_status filter
-		if mapping_status_filter and status != mapping_status_filter:
-			continue
-
-		max_marks = ""
-		if ev:
-			max_marks = frappe.db.get_value("Evaluation Schema", ev, "total_marks") or ""
-
-		data.append(
-			{
-				"course_code": c.get("course_code") or "",
-				"course_name": c.get("name"),
+			# When an exam_plan is selected show the plan; otherwise leave blank
+			data.append({
+				"exam_plan":       exam_plan_filter or "",
+				"term":            ep_term.get(exam_plan_filter, "") if exam_plan_filter else "",
+				"course_code":     c.get("course_code") or "",
+				"course_name":     c.get("course_name") or c.get("name"),
 				"department_name": c.get("department_name") or "",
-				"credit_value": c.get("credit_value") or 0,
-				"evaluation_schema": ev or None,
-				"max_marks": max_marks,
-				"grade_schema": gr or None,
-				"mapping_status": status,
-			}
-		)
+				"credit_value":    c.get("credit_value") or 0,
+				"evaluation_schema": None,
+				"max_marks":       "",
+				"grade_schema":    None,
+				"mapping_status":  "Not Mapped",
+			})
 
 	return data
 

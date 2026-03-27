@@ -413,7 +413,7 @@ function _csm_notify($ov, msg, type) {
 function _csm_load(exam_plan, search, $ov) {
 	$ov.find('.csm-tbody').html('<tr><td colspan="8" class="csm-loading">Loading…</td></tr>');
 	frappe.call({
-		method: 'slcm.slcm.page.examination_planner.examination_planner.get_courses_for_plan',
+		method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.get_courses_for_plan',
 		args: { exam_plan, search },
 		callback: r => {
 			const courses = r.message || [];
@@ -582,7 +582,7 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 		if (_loaded) return;
 		_loaded = true;
 		frappe.call({
-			method: 'slcm.slcm.page.examination_planner.examination_planner.get_schemas',
+			method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.get_schemas',
 			args: {},
 			callback: r => {
 				_evalAll = (r.message || []).map(x => ({ name: x.name, label: x.schema_name || x.name }));
@@ -657,7 +657,7 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 
 		const $btn = $bd.find('.csm-pnl-apply').prop('disabled', true).text('Saving…');
 		frappe.call({
-			method: 'slcm.slcm.page.examination_planner.examination_planner.save_course_schema',
+			method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.save_course_schema',
 			args: { exam_plan, assignments: JSON.stringify(assignments) },
 			callback: r => {
 				if (r && r.exc) {
@@ -788,7 +788,7 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 		if (doEval && doGrade) {
 			// Full unmap — delete the record entirely
 			frappe.call({
-				method: 'slcm.slcm.page.examination_planner.examination_planner.unmap_course_schema',
+				method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.unmap_course_schema',
 				args: { exam_plan, courses: JSON.stringify(selected) },
 				callback: done
 			});
@@ -801,7 +801,7 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 				return obj;
 			});
 			frappe.call({
-				method: 'slcm.slcm.page.examination_planner.examination_planner.save_course_schema',
+				method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.save_course_schema',
 				args: { exam_plan, assignments: JSON.stringify(assignments) },
 				callback: done
 			});

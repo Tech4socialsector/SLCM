@@ -10,7 +10,7 @@
    "label": "Exam Components by Type"
   }
  ],
- "content": "[{\"id\":\"em-hdr-cards\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Overview</span>\",\"col\":12}},{\"id\":\"em-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Exam Plans\",\"col\":4}},{\"id\":\"em-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Exam Plans\",\"col\":4}},{\"id\":\"em-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Courses Mapped\",\"col\":4}},{\"id\":\"em-nc-4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Evaluation Schemas\",\"col\":4}},{\"id\":\"em-nc-5\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Grading Schemas\",\"col\":4}},{\"id\":\"em-nc-6\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Schema Changes\",\"col\":4}},{\"id\":\"em-sp-0\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-charts\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Analytics</span>\",\"col\":12}},{\"id\":\"em-ch-1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Exam Plans by Status\",\"col\":6}},{\"id\":\"em-ch-2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Exam Components by Type\",\"col\":6}},{\"id\":\"em-sp-1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-masters\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Masters</span>\",\"col\":12}},{\"id\":\"em-sc-5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Component\",\"col\":3}},{\"id\":\"em-sc-6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Assessment Type\",\"col\":3}},{\"id\":\"em-sp-4\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-planning\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Examination Planning</span>\",\"col\":12}},{\"id\":\"em-sc-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Examination Planner\",\"col\":3}},{\"id\":\"em-sc-2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Plan\",\"col\":3}},{\"id\":\"em-sp-2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-evaluation\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Evaluation &amp; Grading</span>\",\"col\":12}},{\"id\":\"em-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Evaluation Schema\",\"col\":3}},{\"id\":\"em-sc-4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Grading Schema\",\"col\":3}},{\"id\":\"em-sp-3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"qmbzjHmwWn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Schema Mapping</b></span>\",\"col\":12}},{\"id\":\"U-a8ePeul4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Plan to Map Schema\",\"col\":3}},{\"id\":\"em-sc-csa\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Schema Assignment\",\"col\":3}},{\"id\":\"em-sc-scl\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Schema Change Log\",\"col\":3}},{\"id\":\"FWSyzrRR5e\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-reports\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports</span>\",\"col\":12}},{\"id\":\"em-sc-r1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Schema Mapping Report\",\"col\":3}},{\"id\":\"em-sc-r2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Schema Change Audit\",\"col\":3}}]",
+ "content": "[{\"id\":\"em-hdr-cards\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Overview</span>\",\"col\":12}},{\"id\":\"em-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Exam Plans\",\"col\":4}},{\"id\":\"em-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Exam Plans\",\"col\":4}},{\"id\":\"em-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Courses Mapped\",\"col\":4}},{\"id\":\"em-nc-4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Evaluation Schemas\",\"col\":4}},{\"id\":\"em-nc-5\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Grading Schemas\",\"col\":4}},{\"id\":\"em-nc-6\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Schema Changes\",\"col\":4}},{\"id\":\"em-sp-0\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-charts\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Analytics</span>\",\"col\":12}},{\"id\":\"em-ch-1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Exam Plans by Status\",\"col\":6}},{\"id\":\"em-ch-2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Exam Components by Type\",\"col\":6}},{\"id\":\"em-sp-1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-masters\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Examination Planning</span>\",\"col\":12}},{\"id\":\"em-sc-5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Component\",\"col\":3}},{\"id\":\"em-sc-6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Assessment Type\",\"col\":3}},{\"id\":\"em-sc-2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Plan\",\"col\":3}},{\"id\":\"em-sp-4\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-evaluation\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Evaluation &amp; Grading</span>\",\"col\":12}},{\"id\":\"em-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Evaluation Schema\",\"col\":3}},{\"id\":\"em-sc-4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Grading Schema\",\"col\":3}},{\"id\":\"em-sp-3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"qmbzjHmwWn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Schema Mapping</b></span>\",\"col\":12}},{\"id\":\"U-a8ePeul4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Exam Plan to Map Schema\",\"col\":3}},{\"id\":\"em-sc-csa\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Schema Assignment\",\"col\":3}},{\"id\":\"em-sc-scl\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Schema Change Log\",\"col\":3}},{\"id\":\"FWSyzrRR5e\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"em-hdr-reports\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports</span>\",\"col\":12}},{\"id\":\"em-sc-r1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Schema Mapping Report\",\"col\":3}},{\"id\":\"em-sc-r2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Schema Change Audit\",\"col\":3}}]",
  "creation": "2026-03-26 22:08:30.836569",
  "custom_blocks": [],
  "docstatus": 0,
@@ -18,7 +18,7 @@
  "for_user": "",
  "hide_custom": 0,
  "icon": "file-text",
- "idx": 0,
+ "idx": 1,
  "indicator_color": "red",
  "is_hidden": 0,
  "label": "Examination Management",
@@ -132,7 +132,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-26 22:32:43.336747",
+ "modified": "2026-03-27 10:30:37.507941",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Examination Management",
@@ -176,13 +176,6 @@
    "link_to": "Exam Plan",
    "stats_filter": "[]",
    "type": "DocType"
-  },
-  {
-   "color": "Red",
-   "doc_view": "",
-   "label": "Examination Planner",
-   "link_to": "examination-planner",
-   "type": "Page"
   },
   {
    "color": "Blue",
