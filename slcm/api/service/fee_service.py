@@ -782,15 +782,17 @@ class FeeService:
 
             fee_amount = flt(applicant.application_fee_amount)
             if fee_amount <= 0:
-                create_application_fee_assignment(applicant_name)
-                applicant.reload()
-                fee_amount = flt(applicant.application_fee_amount)
+                from slcm.api.service.application_fee_service import get_application_fee_for_category, _get_applicant_category
+                category = _get_applicant_category(applicant_name)
+                fee_amount = get_application_fee_for_category(applicant.program, applicant.admission_cycle, category)
+                if fee_amount > 0:
+                    frappe.db.set_value("Applicant", applicant_name, "application_fee_amount", fee_amount)
+                    applicant.application_fee_amount = fee_amount
+            
             if fee_amount <= 0:
                 frappe.throw(_("Application fee amount is zero. No payment required."))
 
-            afa_name = create_application_fee_assignment(applicant_name)
-            afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
-            actual_payable = flt(afa.final_payable_amount)
+            actual_payable = fee_amount
 
             from slcm.api.service.application_fee_service import get_payment_gateway_for_application_fee
             gateway = (
@@ -873,14 +875,7 @@ class FeeService:
                 response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature}
             )
 
-            afa_name = frappe.db.get_value("Applicant Fee Assignment", {
-                "applicant": applicant_name,
-                "fee_type": "Application Fee",
-                "status": ["!=", "Cancelled"]
-            }, "name")
-            if afa_name:
-                frappe.db.set_value("Applicant Fee Assignment", afa_name, "status", "Paid")
-
+            # No AFA for Application Fee anymore
             frappe.db.set_value("Applicant", applicant_name, "application_fee_status", "Paid")
             frappe.db.commit()
 
@@ -895,63 +890,39 @@ class FeeService:
             bank_name=None, cheque_number=None, cheque_date=None, upi_id=None, remarks=None):
         """Generates Applicant Payment Receipt for application fee."""
         try:
-            afa_name = frappe.db.get_value("Applicant Fee Assignment", {
-                "applicant": applicant_doc.name,
-                "fee_type": "Application Fee",
-                "status": ["!=", "Cancelled"]
-            }, "name")
-            if not afa_name:
-                return None
-            afa_doc = frappe.get_doc("Applicant Fee Assignment", afa_name)
+            from slcm.api.service.application_fee_service import get_application_fee_for_category, _get_applicant_category
+            category = _get_applicant_category(applicant_doc.name)
+            fee_amount = get_application_fee_for_category(applicant_doc.program, applicant_doc.admission_cycle, category)
+            
             receipt = frappe.new_doc("Applicant Payment Receipt")
             receipt.applicant = applicant_doc.name
             receipt.program = applicant_doc.program
-            receipt.academic_year = afa_doc.academic_year
+            receipt.academic_year = applicant_doc.academic_year
             receipt.payment_date = frappe.utils.today()
             receipt.transaction_id = transaction_id
             receipt.payment_mode = payment_mode
-            # Will recompute from fee_components (including scholarship) below
-            receipt.total_amount = flt(applicant_doc.application_fee_amount)
+            receipt.total_amount = flt(fee_amount)
             receipt.currency = frappe.defaults.get_global_default("currency") or "INR"
             receipt.bank_name = bank_name
             receipt.cheque_number = cheque_number
             receipt.cheque_date = cheque_date
             receipt.upi_id = upi_id
             receipt.remarks = remarks
+            
             pr = frappe.db.get_value("Payment Request", {"transaction_id": transaction_id}, "name")
             if pr:
                 receipt.payment_reference = pr
-            from frappe.utils import flt as _flt
+                
+            receipt.append("fee_components", {
+                "fee_component": "Application Fee",
+                "component_name": "Application Fee",
+                "amount": fee_amount,
+                "is_taxable": 0,
+                "tax_rate": 0,
+                "tax_amount": 0,
+                "total_amount": fee_amount
+            })
 
-            total_from_components = 0
-            for row in afa_doc.fee_components:
-                total_from_components += flt(row.total_amount or row.amount or 0)
-                receipt.append("fee_components", {
-                    "fee_component": row.fee_component,
-                    "component_name": row.component_name,
-                    "amount": row.amount,
-                    "is_taxable": row.is_taxable,
-                    "tax_rate": row.tax_rate,
-                    "tax_amount": row.tax_amount,
-                    "total_amount": row.total_amount
-                })
-
-            # Include scholarship benefit line when applicable so receipts show it
-            if getattr(afa_doc, "scholarship_applied", 0) and _flt(getattr(afa_doc, "scholarship_amount", 0)) > 0:
-                total_from_components -= _flt(afa_doc.scholarship_amount or 0)
-                receipt.append("fee_components", {
-                    "fee_component": "Scholarship",
-                    "component_name": "Scholarship Benefit",
-                    "amount": -_flt(afa_doc.scholarship_amount),
-                    "is_taxable": 0,
-                    "tax_rate": 0,
-                    "tax_amount": 0,
-                    "total_amount": -_flt(afa_doc.scholarship_amount),
-                })
-
-            # Ensure Total Amount matches the net of all components (including scholarship)
-            if total_from_components:
-                receipt.total_amount = total_from_components
             receipt.insert(ignore_permissions=True)
             receipt.submit()
             return receipt.name
@@ -967,23 +938,6 @@ class FeeService:
         applicant = frappe.get_doc("Applicant", applicant_name)
         if applicant.application_fee_status == "Paid":
             frappe.throw(_("Application fee has already been paid."))
-
-        afa_name = frappe.db.get_value("Applicant Fee Assignment", {
-            "applicant": applicant_name,
-            "fee_type": "Application Fee",
-            "status": ["!=", "Cancelled"]
-        }, "name")
-        if not afa_name:
-            from slcm.api.service.application_fee_service import create_application_fee_assignment
-            create_application_fee_assignment(applicant_name)
-            afa_name = frappe.db.get_value("Applicant Fee Assignment", {
-                "applicant": applicant_name,
-                "fee_type": "Application Fee",
-                "status": ["!=", "Cancelled"]
-            }, "name")
-
-        afa = frappe.get_doc("Applicant Fee Assignment", afa_name)
-        afa.db_set("status", "Paid")
 
         gateway = "Manual Payment"
         FeeService._update_payment_request_for_applicant(

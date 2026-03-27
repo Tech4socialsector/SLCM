@@ -476,7 +476,7 @@ def get_context(context):
              if context.cancellation_details.get("refund_request"):
                  refund = frappe.db.get_value("Refund Request", 
                      context.cancellation_details.refund_request, 
-                     ["refund_amount", "refund_date", "status", "applicant_payment_receipt"], 
+                     ["refund_amount", "amount_paid", "refund_date", "status", "applicant_payment_receipt"], 
                      as_dict=True
                  )
                  if refund:

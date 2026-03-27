@@ -181,8 +181,7 @@ def generate_merit_for_level(cycle, campus, program_level):
         app = frappe.get_doc("Eligibility Result", name)
         total_score = calculate_merit_with_rule(app, rule)
 
-        if total_score < rule.minimum_marks:
-            continue
+        status = "Selected" if total_score >= rule.minimum_marks else "Rejected"
 
         merit.append("merit_applicants", {
             "applicant_id": app.applicant_id,
@@ -192,10 +191,10 @@ def generate_merit_for_level(cycle, campus, program_level):
             "hsc_percentage": app.get("hsc_percentage") or 0,
             "entrance_score": app.get("entrance_test_score") or 0,
             "interview_score": app.get("interview_score") or 0,
-            "ug_cgpa": 0,
-            "pg_cgpa": 0,
+            "ug_cgpa": app.get("ug_cgpa") or 0,
+            "pg_cgpa": app.get("pg_cgpa") or 0,
             "total_score": total_score,
-            "status": "Selected"
+            "status": status
         })
 
     if not merit.merit_applicants:

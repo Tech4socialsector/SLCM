@@ -55,9 +55,9 @@ class ApplicantFeeAssignment(Document):
 		Fetches the total approved scholarship amount for this applicant + cycle
 		and stores it directly in the scholarship_amount field.
 		No Fee Component link row is added — scholarship is tracked as a separate field.
-		Application Fee assignments do not apply scholarship.
+		Admission Fee assignments do NOT apply scholarship; scholarship applies only to Application Fee.
 		"""
-		if self.fee_type == "Application Fee" or not self.applicant or not self.admission_cycle:
+		if self.fee_type == "Admission Fee" or not self.applicant or not self.admission_cycle:
 			return
 
 		total_benefit = frappe.db.sql("""
@@ -76,6 +76,7 @@ class ApplicantFeeAssignment(Document):
 		"""
 		Sums all fee component rows to get the base total,
 		then deducts scholarship_amount to compute final_payable_amount.
+		Scholarship is only deducted for Application Fee assignments.
 		"""
 		base_total = 0
 		for row in self.fee_components:
@@ -87,7 +88,11 @@ class ApplicantFeeAssignment(Document):
 			base_total += row.total_amount
 
 		self.total_amount = base_total
-		self.final_payable_amount = base_total - flt(self.scholarship_amount)
+		# Only deduct scholarship for Application Fee; Admission Fee is paid in full
+		if self.fee_type != "Admission Fee":
+			self.final_payable_amount = base_total - flt(self.scholarship_amount)
+		else:
+			self.final_payable_amount = base_total
 
 	def validate_status_change(self):
 		if self.status == "Converted" and not self.fee_invoice:
