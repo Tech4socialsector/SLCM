@@ -1,6 +1,8 @@
+import re
+
 import frappe
 from frappe import _
-from frappe.utils import strip_html
+from frappe.utils import cint, strip_html
 from urllib.parse import quote
 
 @frappe.whitelist(allow_guest=True)
@@ -113,30 +115,68 @@ def _get_portal_announcement_read_ids(user: str) -> set:
     return set()
 
 
-def _portal_href_for_notification_log(document_type, document_name, link) -> str:
+def _append_query_param(url: str, key: str, value: str) -> str:
+    if not url or not key or not value:
+        return url or ""
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}{key}={quote(str(value), safe='')}"
+
+
+def _extract_offer_letter_id_from_text(text: str) -> str | None:
+    if not text:
+        return None
+    m = re.search(r"\b(OL-APP-[A-Za-z0-9.\-_]+)\b", text)
+    return m.group(1) if m else None
+
+
+def _resolve_offer_letter_for_portal(document_type, document_name, subject, email_content) -> str:
+    """Resolve Offer Letter name from link fields or OL-APP-* in subject/body."""
+    plain = strip_html(email_content or "")
+    blob = " ".join(x for x in (subject or "", plain) if x)
+    extracted = _extract_offer_letter_id_from_text(blob)
+    if extracted and frappe.db.exists("Offer Letter", extracted):
+        return extracted
+    dn = (document_name or "").strip()
+    if dn and frappe.db.exists("Offer Letter", dn):
+        return dn
+    if (document_type or "").strip() == "Offer Letter" and dn:
+        return dn
+    return ""
+
+
+def _portal_href_for_notification_log(
+    document_type,
+    document_name,
+    link,
+    subject=None,
+    email_content=None,
+    notif_log_name=None,
+) -> str:
     """Map Desk Notification Log reference to applicant portal routes."""
     link = (link or "").strip()
     if link.startswith("/"):
-        return link
-    dt = (document_type or "").strip()
-    dn = (document_name or "").strip()
+        base = link
+    else:
+        dt = (document_type or "").strip()
+        dn = (document_name or "").strip()
 
-    if dt == "Applicant" and dn:
-        return f"/my-applications?app={quote(dn, safe='')}"
+        ol = _resolve_offer_letter_for_portal(dt, dn, subject, email_content)
+        if ol:
+            base = f"/offer_letter/offer-letter-detail?offer={quote(ol, safe='')}"
+        elif dt == "Applicant" and dn:
+            base = f"/my-applications?app={quote(dn, safe='')}"
+        elif dt in ("Scholarship Application", "Scholarship Scheme", "Scholarship Utilization"):
+            base = "/merit-and-scholarship/scholarships"
+        elif "Scholarship" in dt:
+            base = "/merit-and-scholarship/scholarships"
+        elif dt == "User" and dn:
+            base = "/merit-and-scholarship/admission_dashboard?panel=profile"
+        else:
+            base = "/merit-and-scholarship/admission_dashboard"
 
-    if dt == "Offer Letter" and dn:
-        return f"/offer_letter/offer-letter-detail?offer={quote(dn, safe='')}"
-
-    if dt in ("Scholarship Application", "Scholarship Scheme", "Scholarship Utilization"):
-        return "/merit-and-scholarship/scholarships"
-
-    if "Scholarship" in dt:
-        return "/merit-and-scholarship/scholarships"
-
-    if dt == "User" and dn:
-        return "/merit-and-scholarship/admission_dashboard?panel=profile"
-
-    return "/merit-and-scholarship/admission_dashboard"
+    if notif_log_name:
+        base = _append_query_param(base, "notif", notif_log_name)
+    return base
 
 
 @frappe.whitelist(methods=["POST", "GET"])
@@ -190,17 +230,41 @@ def mark_portal_announcement_read(name=None):
 
 
 @frappe.whitelist(methods=["POST", "GET"])
-def get_portal_notifications():
+def get_portal_notifications(notif_page=None, ann_page=None, page_length=None):
     """
-    Notifications: Frappe Desk Notification Log for session user.
-    Announcements: Portal Announcement with per-user read state (cache).
+    Notifications: Desk Notification Log for session user (paginated).
+    Announcements: Portal Announcement with per-user read state (paginated).
     """
     try:
         user = frappe.session.user
         if user == "Guest":
             return {"notifications": [], "announcements": []}
 
+        pl = cint(page_length) or 10
+        pl = max(5, min(pl, 50))
+        np = cint(notif_page) or 0
+        ap = cint(ann_page) or 0
+        if np < 0:
+            np = 0
+        if ap < 0:
+            ap = 0
+
         read_ann = _get_portal_announcement_read_ids(user)
+
+        notif_total = frappe.db.count("Notification Log", filters={"for_user": user})
+        notif_unread_count = frappe.db.count(
+            "Notification Log", filters={"for_user": user, "read": 0}
+        )
+
+        ann_filters = {"is_active": 1, "status": "Published"}
+        ann_total = frappe.db.count("Portal Announcement", filters=ann_filters)
+        ann_all_names = frappe.get_all(
+            "Portal Announcement",
+            filters=ann_filters,
+            pluck="name",
+            limit_page_length=500,
+        )
+        ann_unread_count = sum(1 for n in ann_all_names if n not in read_ann)
 
         logs = frappe.get_all(
             "Notification Log",
@@ -217,7 +281,8 @@ def get_portal_notifications():
                 "email_content",
             ],
             order_by="creation desc",
-            limit=40,
+            limit_start=np * pl,
+            limit_page_length=pl,
             ignore_permissions=True,
         )
 
@@ -237,7 +302,12 @@ def get_portal_notifications():
                     "document_type": row.document_type,
                     "document_name": row.document_name,
                     "portal_href": _portal_href_for_notification_log(
-                        row.document_type, row.document_name, row.link
+                        row.document_type,
+                        row.document_name,
+                        row.link,
+                        subject=row.subject,
+                        email_content=row.get("email_content"),
+                        notif_log_name=row.name,
                     ),
                     "notification_type": row.type or "Alert",
                     "owner_fullname": "",
@@ -246,7 +316,7 @@ def get_portal_notifications():
 
         announcements = frappe.get_all(
             "Portal Announcement",
-            filters={"is_active": 1, "status": "Published"},
+            filters=ann_filters,
             fields=[
                 "name",
                 "title",
@@ -257,7 +327,8 @@ def get_portal_notifications():
                 "owner",
             ],
             order_by="publish_date desc",
-            limit=20,
+            limit_start=ap * pl,
+            limit_page_length=pl,
         )
         for a in announcements:
             try:
@@ -268,7 +339,17 @@ def get_portal_notifications():
                 a["owner_fullname"] = ""
             a["is_read"] = 1 if a.name in read_ann else 0
 
-        return {"notifications": notifications, "announcements": announcements}
+        return {
+            "notifications": notifications,
+            "announcements": announcements,
+            "notif_total": notif_total,
+            "ann_total": ann_total,
+            "notif_page": np,
+            "ann_page": ap,
+            "page_length": pl,
+            "notif_unread_count": notif_unread_count,
+            "ann_unread_count": ann_unread_count,
+        }
     except Exception as e:
         frappe.log_error(f"get_portal_notifications failed: {e}", "Portal")
         return {"notifications": [], "announcements": []}

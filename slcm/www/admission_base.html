@@ -1,11 +1,14 @@
-{% set ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
+{# Website Settings: no "title" field in current Frappe — use app_name / title_prefix via helper. #}
+{% set _wsb = get_portal_website_branding() %}
+{% set ws_title = _wsb.title %}
+{% set ws_banner = _wsb.banner_image %}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Admissions{% endblock %} — {{ ws.title or "SLCM" }}</title>
+    <title>{% block title %}Admissions{% endblock %} — {{ ws_title or "SLCM" }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
@@ -171,6 +174,43 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 0 24px;
+        }
+
+        .panel-pager {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 14px 16px 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .panel-pager button {
+            pointer-events: auto;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .panel-pager button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .panel-pager button.panel-pager-active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
         }
 
         /* Responsive container logic */
@@ -607,8 +647,8 @@
 
     <nav class="adm-nav">
         <a href="/admission" class="adm-nav-brand">
-            {% if ws.banner_image %}<img src="{{ ws.banner_image }}" alt="Logo">{% endif %}
-            {{ _pc_title or ws.title or "Admissions" }}
+            {% if ws_banner %}<img src="{{ ws_banner }}" alt="Logo">{% endif %}
+            {{ _pc_title or ws_title or "Admissions" }}
         </a>
         <div class="adm-nav-links">
             <a href="/admission" class="nav-hide-mobile">Admission</a>
@@ -843,7 +883,7 @@
     </main>
     {% else %}
     <main class="adm-main">
-        <div class="adm-container">
+        <div class="adm-container" style="padding-top:12px;">
             {% block content %}{% endblock %}
         </div>
     </main>
@@ -978,7 +1018,8 @@
         }
     </style>
 
-    {% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+    {# portal_config comes from update_website_context; never load Singles via get_doc here (Guest / prod perms). #}
+    {% set _pc = portal_config if (portal_config is defined and portal_config) else {} %}
     {% set _f_addr = (_pc.get('footer_address') if _pc.get else _pc.footer_address) or '' %}
     {% set _f_phone = (_pc.get('footer_phone') if _pc.get else _pc.footer_phone) or '' %}
     {% set _f_email = (_pc.get('footer_email') or _pc.get('contact_email')) if _pc.get else (_pc.footer_email or _pc.contact_email) or '' %}
@@ -998,10 +1039,11 @@
 
     {# Fallback if cycle query returns nothing #}
     {% if not _f_programs %}
+    {# Avoid program_status: older DBs without that column would 500 the whole page. #}
     {% set _f_programs = frappe.db.sql("""
     SELECT program_name as name, COALESCE(program_slug, name) as slug
     FROM `tabProgram`
-    WHERE program_status = 'Active' OR program_status IS NULL
+    ORDER BY modified DESC
     LIMIT 5
     """, as_dict=1) %}
     {% endif %}
@@ -1195,16 +1237,16 @@
         </div>
 
         <!-- Panel footer -->
-        <div style="padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;text-align:center;">
+        <!-- <div style="padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;text-align:center;">
             <a href="/admission" style="font-size:13px;color:var(--primary);
                                         font-weight:600;text-decoration:none;">
                 View all announcements →
             </a>
-        </div>
+        </div> -->
     </div>
 
     <div id="toast-container"
-        style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;">
+        style="position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:10050;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;max-width:min(440px,94vw);">
     </div>
 
     <div id="confirm-overlay" class="confirm-overlay-premium" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
@@ -1228,8 +1270,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-        window.csrf_token = "{{ frappe.session.csrf_token }}";
-        window.session_user = "{{ frappe.session.user }}";
+        window.csrf_token = {{ frappe.session.csrf_token | tojson }};
+        window.session_user = {{ frappe.session.user | tojson }} || 'Guest';
 
         async function apiFetch(method, args) {
             const r = await fetch('/api/method/' + method, {
@@ -1256,10 +1298,24 @@
             var colors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' };
             var icons = { success: '✓', error: '✕', info: 'ℹ' };
             var t = document.createElement('div');
-            t.style.cssText = 'background:#fff;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:14px;pointer-events:all;min-width:240px;border-left:4px solid ' + (colors[type] || '#3b82f6');
-            t.innerHTML = '<span style="color:' + (colors[type] || '#3b82f6') + ';font-weight:700;font-size:16px;">' + (icons[type] || 'ℹ') + '</span><span>' + message + '</span>';
+            t.style.cssText = 'background:#fff;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.12);padding:12px 18px;display:flex;align-items:center;gap:10px;font-size:14px;pointer-events:auto;min-width:260px;max-width:100%;border-left:4px solid ' + (colors[type] || '#3b82f6');
+            var ic = document.createElement('span');
+            ic.style.cssText = 'color:' + (colors[type] || '#3b82f6') + ';font-weight:700;font-size:16px;flex-shrink:0;';
+            ic.textContent = icons[type] || 'ℹ';
+            var tx = document.createElement('span');
+            tx.style.cssText = 'word-break:break-word;';
+            tx.textContent = String(message == null ? '' : message);
+            t.appendChild(ic);
+            t.appendChild(tx);
             var c = document.getElementById('toast-container');
-            if (c) { c.appendChild(t); setTimeout(function () { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function () { t.remove(); }, 300); }, 3500); }
+            if (c) {
+                c.appendChild(t);
+                setTimeout(function () {
+                    t.style.opacity = '0';
+                    t.style.transition = 'opacity 0.3s';
+                    setTimeout(function () { t.remove(); }, 300);
+                }, 4000);
+            }
         }
 
         function showConfirm(message, onConfirm) {
@@ -1277,6 +1333,9 @@
         // Announcements Slide Panel Logic
         var _panelTab = 'notif';
         var _panelData = null;
+        var _notifPage = 0;
+        var _annPage = 0;
+        var PANEL_PAGE_SIZE = 10;
 
         function openAnnPanel() {
             var panel = document.getElementById('ann-panel');
@@ -1285,7 +1344,7 @@
             panel.classList.add('panel-open');
             overlay.style.display = 'block';
             document.body.style.overflow = 'hidden';
-            if (!_panelData) loadPanelData();
+            loadPanelData();
         }
 
         function closeAnnPanel() {
@@ -1325,7 +1384,11 @@
 
             try {
                 if (window.session_user && window.session_user !== 'Guest') {
-                    _panelData = await apiFetch('slcm.admission.utils.web.get_portal_notifications', {});
+                    _panelData = await apiFetch('slcm.admission.utils.web.get_portal_notifications', {
+                        notif_page: _notifPage,
+                        ann_page: _annPage,
+                        page_length: PANEL_PAGE_SIZE
+                    });
                 } else {
                     const r = await fetch('/api/method/slcm.admission.utils.web.get_public_announcements');
                     const d = await r.json();
@@ -1339,17 +1402,25 @@
         }
 
         function updateBadge() {
+            var badgeEl = document.getElementById('bellBadge');
+            if (window.session_user === 'Guest') {
+                if (badgeEl) badgeEl.style.display = 'none';
+                return;
+            }
             if (!_panelData) return;
-            var uDesk = (_panelData.notifications || []).filter(function (n) { return !n.is_read; }).length;
-            var uAnn = (_panelData.announcements || []).filter(function (a) { return !a.is_read; }).length;
+            var uDesk = (_panelData.notif_unread_count != null)
+                ? _panelData.notif_unread_count
+                : (_panelData.notifications || []).filter(function (n) { return !n.is_read; }).length;
+            var uAnn = (_panelData.ann_unread_count != null)
+                ? _panelData.ann_unread_count
+                : (_panelData.announcements || []).filter(function (a) { return !a.is_read; }).length;
             var unread = uDesk + uAnn;
-            var badge = document.getElementById('bellBadge');
-            if (badge) {
+            if (badgeEl) {
                 if (unread > 0) {
-                    badge.style.display = 'flex';
-                    badge.textContent = unread > 99 ? '99+' : String(unread);
+                    badgeEl.style.display = 'flex';
+                    badgeEl.textContent = unread > 99 ? '99+' : String(unread);
                 } else {
-                    badge.style.display = 'none';
+                    badgeEl.style.display = 'none';
                 }
             }
         }
@@ -1359,20 +1430,130 @@
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        async function markDeskNotificationRead(name) {
-            if (_panelData && _panelData.notifications) {
-                _panelData.notifications.forEach(function (n) { if (n.name === name) n.is_read = 1; });
-                updateBadge();
-            }
-            try {
-                await apiFetch('slcm.admission.utils.web.mark_notifications_read', { names: [name] });
-            } catch (e) { }
+        function escAttr(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;');
         }
 
-        async function panelRowClickNotif(ev, name, href) {
+        function bindPanelRowClicks() {
+            var pc = document.getElementById('panel-content');
+            if (!pc || pc.getAttribute('data-slcm-row-bound') === '1') return;
+            pc.setAttribute('data-slcm-row-bound', '1');
+            pc.addEventListener('click', function (ev) {
+                var annMarkBtn = ev.target.closest('.slcm-ann-mark-read');
+                if (annMarkBtn) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    var an = annMarkBtn.getAttribute('data-slcm-an');
+                    if (an) panelMarkAnnReadOnly(an);
+                    return;
+                }
+                var markBtn = ev.target.closest('.slcm-notif-mark-read');
+                if (markBtn) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    var mnid = markBtn.getAttribute('data-slcm-nn');
+                    if (mnid) panelMarkNotifReadOnly(mnid);
+                    return;
+                }
+                var nRow = ev.target.closest('.slcm-notif-panel-row');
+                if (nRow) {
+                    var nid = nRow.getAttribute('data-slcm-nn');
+                    var href = nRow.getAttribute('data-slcm-nh');
+                    if (nid !== null && href !== null) {
+                        panelRowClickNotif(ev, nid, href);
+                    }
+                    return;
+                }
+                var aRow = ev.target.closest('.slcm-ann-panel-row');
+                if (aRow) {
+                    var an = aRow.getAttribute('data-slcm-an');
+                    if (an !== null) {
+                        panelRowClickAnn(ev, an);
+                    }
+                }
+            });
+        }
+
+        function buildPanelPager() {
+            if (!_panelData || window.session_user === 'Guest') return '';
+            var pl = _panelData.page_length || PANEL_PAGE_SIZE;
+            if (_panelTab === 'notif') {
+                var total = _panelData.notif_total || 0;
+                var page = _panelData.notif_page || 0;
+                if (total <= pl) return '';
+                var pages = Math.max(1, Math.ceil(total / pl));
+                var html = '<div class="panel-pager"><span>Page ' + (page + 1) + ' / ' + pages + ' · ' + total + ' total</span>';
+                html += '<button type="button" ' + (page <= 0 ? 'disabled' : '') + ' onclick="goPanelNotifPage(' + (page - 1) + ')">Prev</button>';
+                html += '<button type="button" ' + (page >= pages - 1 ? 'disabled' : '') + ' onclick="goPanelNotifPage(' + (page + 1) + ')">Next</button></div>';
+                return html;
+            }
+            if (_panelTab === 'ann') {
+                var totalA = _panelData.ann_total || 0;
+                var pageA = _panelData.ann_page || 0;
+                if (totalA <= pl) return '';
+                var pagesA = Math.max(1, Math.ceil(totalA / pl));
+                var h = '<div class="panel-pager"><span>Page ' + (pageA + 1) + ' / ' + pagesA + ' · ' + totalA + ' total</span>';
+                h += '<button type="button" ' + (pageA <= 0 ? 'disabled' : '') + ' onclick="goPanelAnnPage(' + (pageA - 1) + ')">Prev</button>';
+                h += '<button type="button" ' + (pageA >= pagesA - 1 ? 'disabled' : '') + ' onclick="goPanelAnnPage(' + (pageA + 1) + ')">Next</button></div>';
+                return h;
+            }
+            return '';
+        }
+
+        function goPanelNotifPage(p) {
+            _notifPage = Math.max(0, p);
+            loadPanelData();
+        }
+
+        function goPanelAnnPage(p) {
+            _annPage = Math.max(0, p);
+            loadPanelData();
+        }
+
+        window.goPanelNotifPage = goPanelNotifPage;
+        window.goPanelAnnPage = goPanelAnnPage;
+
+        async function panelMarkNotifReadOnly(nid) {
+            if (!nid || window.session_user === 'Guest') return;
+            try {
+                await apiFetch('slcm.admission.utils.web.mark_notifications_read', { names: [nid] });
+                showToast('Marked as read.', 'success');
+                await loadPanelData();
+            } catch (err) {
+                showToast((err && err.message) ? err.message : 'Could not mark as read.', 'error');
+            }
+        }
+
+        async function panelMarkAnnReadOnly(name) {
+            if (!name || window.session_user === 'Guest') return;
+            try {
+                await apiFetch('slcm.admission.utils.web.mark_portal_announcement_read', { name: name });
+                showToast('Marked as read.', 'success');
+                await loadPanelData();
+            } catch (err) {
+                showToast((err && err.message) ? err.message : 'Could not mark as read.', 'error');
+            }
+        }
+
+        function panelRowClickNotif(ev, name, href) {
             if (ev) ev.preventDefault();
-            await markDeskNotificationRead(name);
-            window.location.href = href || '/merit-and-scholarship/admission_dashboard';
+            var dest = href || '/merit-and-scholarship/admission_dashboard';
+            if (!name || window.session_user === 'Guest') {
+                window.location.href = dest;
+                return;
+            }
+            (async function () {
+                try {
+                    await apiFetch('slcm.admission.utils.web.mark_notifications_read', { names: [name] });
+                } catch (e) {
+                    console.error(e);
+                }
+                window.location.href = dest;
+            })();
         }
 
         function panelRowClickAnn(ev, name) {
@@ -1466,22 +1647,39 @@
                         escPanel(item.message) + '</div>';
                 }
 
-                var rowClick = '';
+                var rowDataAttrs = '';
                 if (_panelTab === 'notif') {
                     var ph = item.portal_href || '/merit-and-scholarship/admission_dashboard';
-                    rowClick = 'onclick="panelRowClickNotif(event, ' + JSON.stringify(item.name) + ', ' + JSON.stringify(ph) + ')"';
+                    rowDataAttrs = ' class="slcm-notif-panel-row" data-slcm-nn="' + escAttr(item.name) + '" data-slcm-nh="' + escAttr(ph) + '"';
                 } else {
-                    rowClick = 'onclick="panelRowClickAnn(event, ' + JSON.stringify(item.name) + ')"';
+                    rowDataAttrs = ' class="slcm-ann-panel-row" data-slcm-an="' + escAttr(item.name) + '"';
                 }
 
-                var fullPageLink = (_panelTab === 'ann' && annType)
-                    ? '<div style="font-size:11px;color:var(--primary);margin-top:6px;font-weight:600;">Open announcement →</div>'
-                    : (_panelTab === 'notif'
-                        ? '<div style="font-size:11px;color:var(--primary);margin-top:6px;font-weight:600;">Open →</div>'
-                        : '');
+                var markReadBtn = '';
+                if (isUnread) {
+                    if (_panelTab === 'notif') {
+                        markReadBtn = '<button type="button" class="slcm-notif-mark-read" data-slcm-nn="' + escAttr(item.name) + '"' +
+                            ' style="font-size:11px;font-weight:600;color:var(--muted);background:none;border:none;padding:0;' +
+                            'cursor:pointer;text-decoration:underline;">Mark as read</button>';
+                    } else {
+                        markReadBtn = '<button type="button" class="slcm-ann-mark-read" data-slcm-an="' + escAttr(item.name) + '"' +
+                            ' style="font-size:11px;font-weight:600;color:var(--muted);background:none;border:none;padding:0;' +
+                            'cursor:pointer;text-decoration:underline;">Mark as read</button>';
+                    }
+                }
+                var fullPageLink = '';
+                if (_panelTab === 'ann') {
+                    fullPageLink = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:6px;">' +
+                        markReadBtn +
+                        '<span style="font-size:11px;color:var(--primary);font-weight:600;">Open announcement →</span></div>';
+                } else if (_panelTab === 'notif') {
+                    fullPageLink = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:6px;">' +
+                        markReadBtn +
+                        '<span style="font-size:11px;color:var(--primary);font-weight:600;">Open →</span></div>';
+                }
 
                 return '<div style="padding:12px 16px;border-bottom:1px solid var(--border);' +
-                    'background:' + bg + ';cursor:pointer;" ' + rowClick + '>' +
+                    'background:' + bg + ';cursor:pointer;"' + rowDataAttrs + '>' +
                     '<div style="display:flex;align-items:flex-start;gap:10px;">' +
                     avatarHtml +
                     '<div style="flex:1;min-width:0;">' +
@@ -1489,7 +1687,7 @@
                     'color:var(--text);line-height:1.4;">' + escPanel(title) + '</div>' +
                     msgBlock + metaLine + fullPageLink +
                     '</div>' + indicator + '</div></div>';
-            }).join('');
+            }).join('') + buildPanelPager();
         }
 
         window.doLogout = function () {
@@ -1528,6 +1726,8 @@
             if (window.session_user !== 'Guest') {
                 loadPanelData();
             }
+
+            bindPanelRowClicks();
 
             // ── Mobile drawer ─────────────────────────────────────────────
             function toggleDrawer() {

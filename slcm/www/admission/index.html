@@ -688,6 +688,11 @@
   body {
     overflow-x: hidden;
   }
+
+  /* Remove white strip between sticky nav and hero slideshow (adm-container default padding-top: 12px) */
+  .adm-main > .adm-container {
+    padding-top: 0 !important;
+  }
 </style>
 {% endblock %}
 
@@ -738,10 +743,10 @@
   </a>
 </div>
 {% else %}
-<div style="background:#f5f7f8;margin:0 -20px 0;padding-bottom:52px;">
+<div style="background:#f5f7f8;margin:0 -20px 0;padding:12px 0 52px;">
   <div style="max-width:1200px;margin:0 auto;padding:0 20px;">
     <!-- BREADCRUMB -->
-    <div style="padding:16px 0 0;">
+    <div style="padding:4px 0 0;">
       <a href="/admission" style="display:inline-flex;align-items:center;gap:6px;
               font-size:13px;font-weight:600;color:#64748b;text-decoration:none;"
         onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">
@@ -1348,8 +1353,7 @@
   <div class="mb-8 p-4 rounded-xl border border-amber-200 bg-amber-50 flex items-center gap-3 fade-card">
     <span class="material-symbols-outlined text-amber-600">info</span>
     <p class="text-sm font-semibold text-amber-800">
-      Note: applications for the current cycle will close on {{ frappe.utils.formatdate(active_cycle.cycle_end_date, "dd
-      MMM yyyy") }}.
+      Note: applications for the current cycle will close on {{ frappe.utils.formatdate(active_cycle.cycle_end_date, "dd MMM yyyy") }}.
     </p>
   </div>
   {% endif %}
@@ -1567,9 +1571,10 @@
           {% set _edate = e.get('event_date') or e.get('publish_date') if e.get else (e.event_date or e.publish_date) %}
           {% set _etime = e.get('event_time') or '' if e.get else (e.event_time or '') %}
           {% set _evenue = e.get('event_venue') or '' if e.get else (e.event_venue or '') %}
+          {% set _eurl = '/announcement/' ~ (e.get('name') if e.get else e.name) %}
           <div class="evt-card fade-card cursor-pointer rounded-2xl p-6 shadow-sm"
             style="background:#1e293b;color:white;"
-            onclick="window.location='/announcement/{{ e.get('name') if e.get else e.name }}'">
+            onclick="window.location.href={{ _eurl | tojson }}">
             <div class="mb-4 text-xs font-bold uppercase tracking-wider" style="color:var(--secondary)">{{ _etype }}
             </div>
             <h5 class="text-lg font-bold text-white">{{ e.get('title') if e.get else e.title }}</h5>
@@ -1611,15 +1616,7 @@
 
 <!-- GALLERY MODAL JS -->
 <script>
-  const _pdMedia = [
-    {% for item in (prog_media or[]) %}
-  {
-    type: "{{ item.type }}",
-      url: "{{ item.url | replace('"', '\\"') }}",
-        caption: "{{ (item.caption or '') | replace('"', '\\"') }}"
-  } {% if not loop.last %}, {% endif %}
-  {% endfor %}
-];
+  const _pdMedia = {{ (prog_media or []) | tojson | safe }};
 
   let _pdCurrent = 0;
 
@@ -1739,15 +1736,7 @@
   }
 
   // ── New Gallery JS ───────────────────────────────────────────────────
-  const _pdMedia = [
-    {% for item in (prog_media or[]) %}
-  {
-    type: "{{ item.type }}",
-      url: "{{ item.url | replace('"', '\\"') }}",
-        caption: "{{ (item.caption or '') | replace('"', '\\"') }}"
-  } {% if not loop.last %}, {% endif %}
-  {% endfor %}
-];
+  const _pdMedia = {{ (prog_media or []) | tojson | safe }};
 
   let _pdCurrent = 0;
 

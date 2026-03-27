@@ -201,7 +201,7 @@ slcm.utils.show_offer_reminder_dialog = function (offers) {
                                             <input type="checkbox" id="reminder-select-all" checked>
                                         </th>
                                         <th>${__('Applicant')}</th>
-                                        <th>${__('Program')}</th>
+                                        <th>${__('Programme')}</th>
                                         <th>${__('Deadline')}</th>
                                     </tr>
                                 </thead>

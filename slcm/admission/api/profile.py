@@ -13,8 +13,52 @@ PROFILE_FIELD_MAP = {
     "address": "correspondence_address",
     "city": "city",
     "state": "state",
-    "pincode": "pincode"
+    "pincode": "pincode",
 }
+
+# Portal / code uses date_of_birth + address; standard Frappe User uses birth_date + location.
+USER_WRITE_COLUMN_ALIASES = {
+    "date_of_birth": ("date_of_birth", "birth_date"),
+    "address": ("address", "location"),
+}
+
+
+def _user_table_columns():
+    try:
+        return set(frappe.db.get_table_columns("User"))
+    except Exception:
+        return set()
+
+
+def _resolve_user_write_columns(user_update_dict, table_cols):
+    """Map logical User field names to actual tabUser columns."""
+    out = {}
+    for fn, fv in user_update_dict.items():
+        if fn in USER_WRITE_COLUMN_ALIASES:
+            for cand in USER_WRITE_COLUMN_ALIASES[fn]:
+                if cand in table_cols:
+                    out[cand] = fv
+                    break
+            continue
+        if fn in table_cols:
+            out[fn] = fv
+    return out
+
+
+def _user_dob_value(user_doc):
+    v = getattr(user_doc, "date_of_birth", None) or getattr(user_doc, "birth_date", None)
+    if not v:
+        return ""
+    if isinstance(v, str):
+        return v
+    if hasattr(v, "strftime"):
+        return v.strftime("%Y-%m-%d")
+    return str(v)
+
+
+def _user_address_value(user_doc):
+    v = getattr(user_doc, "address", None) or getattr(user_doc, "location", None)
+    return v or ""
 
 @frappe.whitelist()
 def get_user_profile_data():
@@ -32,14 +76,14 @@ def get_user_profile_data():
         "full_name": user_doc.full_name,
         "email": user_doc.email,
         "mobile_no": getattr(user_doc, "mobile_no", ""),
-        "date_of_birth": getattr(user_doc, "date_of_birth", ""),
+        "date_of_birth": _user_dob_value(user_doc),
         "gender": user_doc.gender,
         "nationality": getattr(user_doc, "nationality", ""),
-        "address": getattr(user_doc, "address", ""),
+        "address": _user_address_value(user_doc),
         "city": getattr(user_doc, "city", ""),
         "state": getattr(user_doc, "state", ""),
         "pincode": getattr(user_doc, "pincode", ""),
-        "user_image": user_doc.user_image
+        "user_image": user_doc.user_image,
     }
     
     return {"success": True, "data": data}
@@ -81,15 +125,33 @@ def update_user_profile(**kwargs):
     if not user_update_dict:
         return {"success": False, "error": "No valid fields provided for profile update."}
 
+    table_cols = _user_table_columns()
+    safe_updates = _resolve_user_write_columns(user_update_dict, table_cols)
+    skipped = []
+    for fn in user_update_dict:
+        if fn in USER_WRITE_COLUMN_ALIASES:
+            if not any(c in table_cols for c in USER_WRITE_COLUMN_ALIASES[fn]):
+                skipped.append(fn)
+        elif fn not in table_cols:
+            skipped.append(fn)
+
+    if not safe_updates:
+        return {
+            "success": False,
+            "error": "No valid profile fields exist on User for this site (add custom fields or use standard User fields).",
+        }
+
     try:
-        # Update User
-        frappe.db.set_value("User", user, user_update_dict)
-        
-        # COMMIT Requirement 2b: "don't Sync those same fields back to Applicant doctype"
-        # We only update User.
-        
+        user_doc = frappe.get_doc("User", user)
+        user_doc.update(safe_updates)
+        user_doc.save(ignore_permissions=True)
+
         frappe.db.commit()
-        return {"success": True, "status": "ok"}
+        return {
+            "success": True,
+            "status": "ok",
+            "skipped_fields": skipped,
+        }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "User profile update failed")
         return {"success": False, "error": str(e)}
