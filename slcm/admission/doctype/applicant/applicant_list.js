@@ -13,7 +13,7 @@ frappe.listview_settings['Applicant'] = {
                 title: __("Bulk Download Application Forms"),
                 fields: [
                     { label: __("Campus"), fieldname: "campus", fieldtype: "Link", options: "Campus", default: get_val("campus") },
-                    { label: __("Program"), fieldname: "program", fieldtype: "Link", options: "Program", default: get_val("program") },
+                    { label: __("Programme"), fieldname: "program", fieldtype: "Link", options: "Program", default: get_val("program") },
                     { label: __("Admission Cycle"), fieldname: "admission_cycle", fieldtype: "Link", options: "Admission Cycle", default: get_val("admission_cycle") },
                     { label: __("Academic Year"), fieldname: "academic_year", fieldtype: "Link", options: "Academic Year", default: get_val("academic_year") },
                     { label: __("Admission Year"), fieldname: "admission_year", fieldtype: "Link", options: "Admission Year", default: get_val("admission_year") },

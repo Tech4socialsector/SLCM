@@ -360,6 +360,46 @@ class FeeService:
             return {"status": "failed", "message": str(e)}
 
     @staticmethod
+    def _resolve_payment_receipt_print_format(applicant_name, campus=None):
+        """
+        Print Format name from Program Reservation Policy (same rules as portal download_receipt).
+        """
+        if not applicant_name:
+            return None
+        try:
+            app = frappe.get_doc("Applicant", applicant_name)
+        except Exception:
+            return None
+        if not app.admission_cycle or not app.program:
+            return None
+        campus = campus or app.campus
+        policy_name = None
+        if campus:
+            policy_name = frappe.db.get_value(
+                "Admission Cycle Program",
+                {
+                    "parent": app.admission_cycle,
+                    "program": app.program,
+                    "campus": campus,
+                    "is_active": 1,
+                },
+                "reservation_policy",
+            )
+        if not policy_name:
+            policy_name = frappe.db.get_value(
+                "Admission Cycle Program",
+                {
+                    "parent": app.admission_cycle,
+                    "program": app.program,
+                    "is_active": 1,
+                },
+                "reservation_policy",
+            )
+        if not policy_name:
+            return None
+        return frappe.db.get_value("Program Reservation Policy", policy_name, "payment_receipt_template")
+
+    @staticmethod
     def generate_receipt(offer_doc, transaction_id, payment_mode, 
                         bank_name=None, cheque_number=None, cheque_date=None, 
                         upi_id=None, remarks=None):
@@ -461,7 +501,13 @@ class FeeService:
             # Ensure the header Total Amount reflects scholarship-adjusted sum
             if total_from_components:
                 receipt.total_amount = total_from_components
-            
+
+            tpl = FeeService._resolve_payment_receipt_print_format(
+                offer_doc.applicant, getattr(offer_doc, "campus", None)
+            )
+            if tpl:
+                receipt.payment_receipt_template = tpl
+
             receipt.insert(ignore_permissions=True)
             receipt.submit()
             

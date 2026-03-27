@@ -33,10 +33,12 @@
 
     /* Cards */
     .ui-card {
-        background: #ffffff;
-        border-radius: 16px;
-        border: 1px solid #eef2f7;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        background: linear-gradient(165deg, #ffffff 0%, #f9fafb 100%);
+        border-radius: 18px;
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        box-shadow:
+            0 4px 6px rgba(15, 23, 42, 0.04),
+            0 14px 32px rgba(15, 23, 42, 0.07);
         margin-bottom: 24px;
         padding: 24px;
     }
@@ -131,8 +133,10 @@
     }
 
     .summary-item .value.amount {
-        font-size: 1.25rem;
+        font-size: 1.28rem;
         font-weight: 700;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
     }
 
     .fee-row {
@@ -513,7 +517,12 @@
     let payment_processed = false;
 
     function format_currency(v, c) {
-        return (c || "INR") + " " + parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        var code = (c || 'INR').toString().toUpperCase();
+        var num = parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (code === 'INR' || !c) {
+            return '\u20B9 ' + num;
+        }
+        return code + ' ' + num;
     }
 
     // Fallback for translation helper
@@ -566,12 +575,12 @@
 
             if (distance > 24 * 60 * 60 * 1000) {
                 // More than 24 hours - show date only
-                label_el.text("{{ _("Offer expiry date") }}");
+                label_el.text({{ _("Offer expiry date") | tojson }});
                 timer_el.text(deadline_str.split(' ')[0]);
                 timer_el.next().hide(); // Hide the redundant deadline line
             } else {
                 // 24 hours or less - show timer
-                label_el.text("{{ _("Offer expiry timer") }}");
+                label_el.text({{ _("Offer expiry timer") | tojson }});
                 timer_el.next().show();
 
                 const hours = Math.floor(distance / (1000 * 60 * 60));
