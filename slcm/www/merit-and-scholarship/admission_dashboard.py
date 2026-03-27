@@ -1,4 +1,5 @@
 import frappe
+from slcm.admission.api.profile import _user_address_value, _user_dob_value
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 from slcm.admission.utils.portal import get_portal_config
 from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard, get_applied_scholarships_for_dashboard
@@ -263,10 +264,10 @@ def get_context(context):
                 "candidate_name": user_doc.full_name,
                 "email": user_doc.email,
                 "mobile_number": getattr(user_doc, "mobile_no", ""),
-                "date_of_birth": getattr(user_doc, "date_of_birth", ""),
+                "date_of_birth": _user_dob_value(user_doc),
                 "gender": user_doc.gender,
                 "nationality": getattr(user_doc, "nationality", ""),
-                "correspondence_address": getattr(user_doc, "address", ""),
+                "correspondence_address": _user_address_value(user_doc),
                 "city": getattr(user_doc, "city", ""),
                 "state": getattr(user_doc, "state", ""),
                 "pincode": getattr(user_doc, "pincode", ""),
@@ -358,19 +359,5 @@ def get_context(context):
 
     # ── Active panel from URL param ───────────────────────────────────
     context.active_panel = frappe.form_dict.get('panel', 'applications')
-
-    # ── States and Districts ─────────────────────────────────────────
-    try:
-        context.states = frappe.get_all("State", fields=["name"], order_by="name asc")
-        # Pre-load districts if state is already set
-        if context.profile_data and context.profile_data.get("state"):
-            context.districts = frappe.get_all("District", 
-                filters={"state": context.profile_data.get("state")},
-                fields=["name"], order_by="name asc")
-        else:
-            context.districts = []
-    except Exception:
-        context.states = []
-        context.districts = []
 
     return context

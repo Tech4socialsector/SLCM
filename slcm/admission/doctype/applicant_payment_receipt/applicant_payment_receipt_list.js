@@ -20,7 +20,7 @@ frappe.listview_settings['Applicant Payment Receipt'] = {
 				title: __('Bulk Download Fee Receipts'),
 				fields: [
 					{
-						label: __('Program'),
+						label: __('Programme'),
 						fieldname: 'program',
 						fieldtype: 'Link',
 						options: 'Program'

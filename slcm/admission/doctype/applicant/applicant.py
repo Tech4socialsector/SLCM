@@ -229,6 +229,22 @@ class Applicant(Document):
                 except Exception:
                     pass
 
+        # Withdrawn application: Student Master (Current Status) + enrollments
+        if self.application_status == "Withdrawn" and self.has_value_changed("application_status"):
+            try:
+                from slcm.admission.utils.withdrawal_sync import (
+                    sync_student_records_for_withdrawn_application,
+                )
+
+                sync_student_records_for_withdrawn_application(
+                    self.name,
+                    status_remark=_("Application withdrawn"),
+                )
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    f"Withdrawal sync failed for Applicant {self.name}",
+                )
 
     def send_submission_confirmation(self):
         """

@@ -68,6 +68,9 @@
         if (fb) { fb.style.display = 'block'; fb.style.color = '#6b7280'; fb.textContent = 'Saving…'; }
         try {
             await apiFetch('slcm.admission.utils.web.mark_portal_announcement_read', { name: annName });
+            if (typeof showToast === 'function') {
+                showToast('Announcement marked as read.', 'success');
+            }
             var wrap = document.getElementById('ann-mark-wrap');
             if (wrap) {
                 wrap.innerHTML = '<p id="ann-mark-status" style="margin:0;font-size:14px;color:#065f46;display:flex;align-items:center;gap:8px;">' +
@@ -76,7 +79,11 @@
             }
         } catch (e) {
             btn.disabled = false;
-            if (fb) { fb.style.color = '#dc2626'; fb.textContent = (e && e.message) ? e.message : 'Could not save. Try again.'; }
+            var errm = (e && e.message) ? e.message : 'Could not save. Try again.';
+            if (typeof showToast === 'function') {
+                showToast(errm, 'error');
+            }
+            if (fb) { fb.style.color = '#dc2626'; fb.textContent = errm; }
         }
     });
 })();
