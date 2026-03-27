@@ -2829,7 +2829,7 @@ or _app.current_stage)) or _status %}
     <!-- ╔══════════════════════════════════════════════╗
          ║  ELIGIBILITY RESULT CARD                     ║
          ╚══════════════════════════════════════════════╝ -->
-    {% if eligibility_result %}
+    {% if eligibility_result and eligibility_result.name %}
     <div class="ma-card fade-up" style="animation-delay:.24s; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4);">
       <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5);">
         <div class="ma-card-title">
