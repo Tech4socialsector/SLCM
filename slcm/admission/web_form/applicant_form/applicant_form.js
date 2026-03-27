@@ -528,17 +528,11 @@ function resolveApplicationFeeStatus() {
 	return s || '';
 }
 
-/** Mirror server PORTAL_LOCKED_APPLICATION_STATUSES (Draft / Rejected stay editable). */
+/** Mirror server: portal edits only while status is Draft. */
 function slcmApplicationPortalLocked() {
 	var s = (resolveField('application_status') || '').trim();
 	if (!s) return false;
-	var locked = {
-		Submitted: true,
-		'Interview Excempted': true,
-		'Entrance Test Exempted': true,
-		'Excempted Entrance Test And Interview': true,
-	};
-	return !!locked[s];
+	return s.toLowerCase() !== 'draft';
 }
 
 /** Progressive stepper (grey/blue/green) only while status is Draft; any other status = application was finalized. */
@@ -1570,7 +1564,7 @@ function interceptSubmit() {
 			).first();
 			var bt = ($sb.text() || '').trim().toLowerCase();
 			if (bt === 'submit' || bt.indexOf('submit') !== -1) {
-				showToast('This application has already been submitted.', 'info');
+				showToast('This application cannot be edited in its current status.', 'info');
 				return false;
 			}
 		}

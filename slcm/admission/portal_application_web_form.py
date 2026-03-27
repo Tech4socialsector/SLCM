@@ -1,24 +1,18 @@
 """
-Applicant portal web form: which application_status values are read-only on the website.
+Applicant portal web form: portal editing is allowed only while application_status is Draft.
 """
 
 import frappe
-
-# Match post-submit outcomes on Applicant (Draft / Rejected stay editable).
-PORTAL_LOCKED_APPLICATION_STATUSES = frozenset(
-	{
-		"Submitted",
-		"Interview Excempted",
-		"Entrance Test Exempted",
-		"Excempted Entrance Test And Interview",
-	}
-)
 
 _PATCHED = False
 
 
 def applicant_portal_application_locked(application_status: str | None) -> bool:
-	return (application_status or "").strip() in PORTAL_LOCKED_APPLICATION_STATUSES
+	"""True when the portal must not allow edits (any settled status, including Withdrawn)."""
+	s = (application_status or "").strip()
+	if not s:
+		return False
+	return s.casefold() != "draft"
 
 
 def patch_web_form_get_context_once() -> None:

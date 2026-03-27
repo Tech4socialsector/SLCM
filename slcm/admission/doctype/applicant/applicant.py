@@ -25,7 +25,7 @@ class Applicant(Document):
         if not applicant_portal_application_locked(prev):
             return
         frappe.throw(
-            _("This application has been submitted and cannot be edited."),
+            _("Only draft applications can be edited on the portal."),
             title=_("Not allowed"),
         )
 

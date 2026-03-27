@@ -7,8 +7,8 @@ from frappe.utils import flt, strip_html
 
 def get_context(context):
     """
-    Locked (submitted) applicants: force view mode; redirect /edit → read-only URL.
-    Draft/Rejected remain editable (allow_edit on Web Form + no is_read flag).
+    Non-Draft applicants: force view mode; redirect /edit → read-only URL.
+    Only Draft remains editable on the portal.
     """
     from slcm.admission.portal_application_web_form import applicant_portal_application_locked
 
@@ -18,6 +18,8 @@ def get_context(context):
         return None
 
     status = (ref.get("application_status") or "").strip()
+    if not status:
+        status = (frappe.db.get_value("Applicant", doc_name, "application_status") or "").strip()
     if not applicant_portal_application_locked(status):
         return None
 
@@ -477,7 +479,7 @@ def switch_applicant_program(applicant_name, program):
         return {"status": "error", "message": _("You do not have permission to update this application.")}
 
     st = (doc.application_status or "").strip()
-    if st not in ("", "Draft", "Rejected"):
+    if st != "Draft":
         return {"status": "error", "message": _("Only draft applications can change programme here.")}
 
     payload = doc.get_eligibility_suggestion_payload()
@@ -507,8 +509,6 @@ def switch_applicant_program(applicant_name, program):
 
     doc.evaluation_status = ""
     doc.rejected_reason = ""
-    if (doc.application_status or "").strip() == "Rejected":
-        doc.application_status = "Draft"
 
     if doc.program and doc.admission_cycle:
         try:
