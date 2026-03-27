@@ -9,12 +9,14 @@
   "section_break_basic",
   "provider_code",
   "provider_name",
+  "column_break_qjww",
   "provider_type",
   "campus",
   "active",
   "section_break_contact",
   "contact_person",
   "contact_number",
+  "column_break_xbyv",
   "email",
   "user",
   "section_break_infra",
@@ -144,12 +146,20 @@
    "fieldname": "location",
    "fieldtype": "Geolocation",
    "label": "Location"
+  },
+  {
+   "fieldname": "column_break_qjww",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_xbyv",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 14:36:51.131234",
+ "modified": "2026-03-27 16:57:12.308270",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",
