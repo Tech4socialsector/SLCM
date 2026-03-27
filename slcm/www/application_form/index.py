@@ -8,6 +8,31 @@ from slcm.utils.phone_utils import sanitize_phone_for_frappe
 from slcm.admission.utils.portal import is_application_editable
 
 
+def _portal_unique_campuses_for_program_cycle(program, admission_cycle):
+    """Ordered campus names from Admission Cycle Program. Website Users often lack Campus read permission."""
+    program = (program or "").strip()
+    admission_cycle = (admission_cycle or "").strip()
+    if not program or not admission_cycle:
+        return []
+    rows = frappe.get_all(
+        "Admission Cycle Program",
+        filters={
+            "parent": admission_cycle,
+            "program": program,
+            "is_active": 1,
+        },
+        fields=["campus"],
+        order_by="idx asc",
+        ignore_permissions=True,
+    )
+    out = []
+    for r in rows or []:
+        c = (r.get("campus") or "").strip()
+        if c and c not in out:
+            out.append(c)
+    return out
+
+
 # ═══════════════════════════════════════════════════════════════════
 #  START APPLICATION (from admission listing only — sets session, no URL)
 # ═══════════════════════════════════════════════════════════════════
@@ -283,35 +308,50 @@ def get_context(context):
         context.programs = []
 
     # ── Campuses: from Admission Cycle Program (this cycle + program only) ──
+    # ignore_permissions: portal users are often Website User only (no Campus DocType read).
     try:
-        acp_rows = frappe.get_all(
-            "Admission Cycle Program",
-            filters={
-                "parent": context.prefill_admission_cycle,
-                "program": context.prefill_program,
-                "is_active": 1,
-            },
-            fields=["campus"],
-            order_by="idx asc"
+        campus_ids = _portal_unique_campuses_for_program_cycle(
+            context.prefill_program, context.prefill_admission_cycle
         )
-        campus_ids = [r.get("campus") for r in (acp_rows or []) if r.get("campus")]
         if campus_ids:
-            context.campuses = frappe.get_all(
-                "Campus",
-                fields=["name", "campus_name"],
-                filters={"name": ["in", campus_ids], "is_active": 1},
-                order_by="campus_name asc"
-            ) or []
+            fetched = (
+                frappe.get_all(
+                    "Campus",
+                    fields=["name", "campus_name"],
+                    filters={"name": ["in", campus_ids], "is_active": 1},
+                    order_by="campus_name asc",
+                    ignore_permissions=True,
+                )
+                or []
+            )
+            order_map = {n: i for i, n in enumerate(campus_ids)}
+            fetched.sort(key=lambda x: order_map.get(x.get("name"), 999))
+            context.campuses = fetched
         else:
             # No campus in ACP: allow all active campuses for backward compatibility
-            context.campuses = frappe.get_all(
-                "Campus",
-                fields=["name", "campus_name"],
-                filters={"is_active": 1},
-                order_by="campus_name asc"
-            ) or []
+            context.campuses = (
+                frappe.get_all(
+                    "Campus",
+                    fields=["name", "campus_name"],
+                    filters={"is_active": 1},
+                    order_by="campus_name asc",
+                    ignore_permissions=True,
+                )
+                or []
+            )
     except Exception:
         context.campuses = []
+
+    # Single campus for this program+cycle: prefill so save payload is never blank
+    if len(context.campuses or []) == 1:
+        sole = (context.campuses[0].get("name") or "").strip()
+        if sole:
+            if not (context.prefill_campus or "").strip():
+                context.prefill_campus = sole
+            ad = context.get("applicant_data") or {}
+            if isinstance(ad, dict) and not (ad.get("campus") or "").strip():
+                ad["campus"] = sole
+                context.applicant_data = ad
 
     # ── Entrance Test Providers (for Test Centre preference dropdowns) ──
     try:
@@ -645,30 +685,36 @@ def save_form(data):
         for key in ("application_fee_status", "application_fee_amount"):
             scalar_data.pop(key, None)
 
+    prog = (scalar_data.get("program") or getattr(doc, "program", None) or "").strip()
+    cyc = (scalar_data.get("admission_cycle") or getattr(doc, "admission_cycle", None) or "").strip()
+    inc_campus = scalar_data.get("campus")
+    inc_campus = (inc_campus or "").strip() if isinstance(inc_campus, str) else ""
+    if not inc_campus and prog and cyc:
+        camps = _portal_unique_campuses_for_program_cycle(prog, cyc)
+        if len(camps) == 1:
+            scalar_data["campus"] = camps[0]
+
     try:
         doc.update(scalar_data)
 
-        # ── SYNC SESSION: Update session selection if program changed ──
-        # This ensures that browser refreshes or reloads show the newly selected program.
-        if scalar_data.get("program"):
-            # ── RESET REJECTED STATUS ──
-            # If switching program, reset the failure state so it can be re-evaluated.
-            # This also ensures the child table block below (line ~660) runs by setting status back to 'Draft'.
-            if doc.application_status == "Rejected":
-                doc.application_status = "Draft"
-                doc.evaluation_status = "Not Evaluated"
-                doc.rejected_reason = ""
-                # Clear child table cache to avoid merge conflicts
-                for ct in ["ug_degree_details", "pg_degree_details", "categories"]:
-                    doc.set(ct, [])
+        # Rejected + programme change: reset so user can re-submit
+        if scalar_data.get("program") and doc.application_status == "Rejected":
+            doc.application_status = "Draft"
+            doc.evaluation_status = "Not Evaluated"
+            doc.rejected_reason = ""
+            for ct in ["ug_degree_details", "pg_degree_details", "categories"]:
+                doc.set(ct, [])
 
-            sel = frappe.session.get("application_form_selection") or {}
+        # Same cache key as start_application / get_context (not frappe.session dict)
+        sid = frappe.session.sid
+        sel = frappe.cache().hget("application_form_selection", sid) or {}
+        if scalar_data.get("program"):
             sel["program"] = (scalar_data.get("program") or "").strip()
-            if scalar_data.get("admission_cycle"):
-                sel["admission_cycle"] = (scalar_data.get("admission_cycle") or "").strip()
-            if scalar_data.get("campus"):
-                sel["campus"] = (scalar_data.get("campus") or "").strip()
-            frappe.session["application_form_selection"] = sel
+        if scalar_data.get("admission_cycle"):
+            sel["admission_cycle"] = (scalar_data.get("admission_cycle") or "").strip()
+        if scalar_data.get("campus"):
+            sel["campus"] = (scalar_data.get("campus") or "").strip()
+        frappe.cache().hset("application_form_selection", sid, sel)
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "save_form — doc.update")
