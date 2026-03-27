@@ -4,6 +4,86 @@
 import frappe
 
 
+# ── Settings helper ────────────────────────────────────────────────────────────
+
+def _get_settings():
+	"""Return Examination Settings as a dict with safe defaults."""
+	try:
+		s = frappe.get_single("Examination Settings")
+		return {
+			"require_both_schemas":      int(s.require_both_schemas or 0),
+			"allow_partial_mapping":     int(s.allow_partial_mapping if s.allow_partial_mapping is not None else 1),
+			"default_evaluation_schema": s.default_evaluation_schema or "",
+			"default_grade_schema":      s.default_grade_schema or "",
+			"schema_lock_date":          str(s.schema_lock_date) if s.schema_lock_date else "",
+			"lock_override_role":        s.lock_override_role or "",
+			"require_change_reason":     int(s.require_change_reason or 0),
+			"notify_on_schema_change":   int(s.notify_on_schema_change or 0),
+			"notify_on_unmap":           int(s.notify_on_unmap or 0),
+			"notification_recipients":   s.notification_recipients or "",
+			"enable_change_log":         int(s.enable_change_log if s.enable_change_log is not None else 1),
+			"log_retention_months":      int(s.log_retention_months or 12),
+			"default_reexam_enrollment": s.default_reexam_enrollment or "Auto",
+			"reexam_max_marks_cap":      float(s.reexam_max_marks_cap or 0),
+			"courses_per_page":          int(s.courses_per_page or 500),
+			"show_unmapped_courses":     int(s.show_unmapped_courses if s.show_unmapped_courses is not None else 1),
+		}
+	except Exception:
+		return {
+			"require_both_schemas": 0, "allow_partial_mapping": 1,
+			"default_evaluation_schema": "", "default_grade_schema": "",
+			"schema_lock_date": "", "lock_override_role": "",
+			"require_change_reason": 0,
+			"notify_on_schema_change": 0, "notify_on_unmap": 0,
+			"notification_recipients": "",
+			"enable_change_log": 1, "log_retention_months": 12,
+			"default_reexam_enrollment": "Auto", "reexam_max_marks_cap": 0,
+			"courses_per_page": 500, "show_unmapped_courses": 1,
+		}
+
+
+def _check_lock(settings):
+	"""Throw if schemas are locked for current user."""
+	lock_date = settings.get("schema_lock_date")
+	if not lock_date:
+		return
+	today = frappe.utils.getdate(frappe.utils.today())
+	if today >= frappe.utils.getdate(lock_date):
+		override_role = settings.get("lock_override_role")
+		if override_role and frappe.db.exists("Has Role", {
+			"parent": frappe.session.user, "role": override_role
+		}):
+			return
+		frappe.throw(
+			f"Schemas are locked as of {lock_date}. No changes are allowed.",
+			title="Schema Locked"
+		)
+
+
+def _send_notification(settings, subject, message):
+	"""Send email notification to configured recipients."""
+	recipients_raw = settings.get("notification_recipients", "")
+	recipients = [r.strip() for r in recipients_raw.split(",") if r.strip()]
+	if not recipients:
+		return
+	try:
+		frappe.sendmail(
+			recipients=recipients,
+			subject=subject,
+			message=message,
+			now=True,
+		)
+	except Exception:
+		pass  # Never block the main operation due to notification failure
+
+
+# ── Public API ─────────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def get_exam_settings():
+	return _get_settings()
+
+
 @frappe.whitelist()
 def get_exam_plans(search=None):
 	filters = {}
@@ -127,55 +207,49 @@ def get_schema_detail(name):
 	components = []
 	for c in doc.schema_components:
 		comp_type = frappe.db.get_value("Exam Component", c.component, "component_type") or "Custom"
-		components.append(
-			{
-				"name": c.name,
-				"component": c.component,
-				"component_type": comp_type,
-				"label": c.label,
-				"effective_max_marks": c.effective_max_marks,
-				"weightage": c.weightage,
-				"passing_marks": c.passing_marks,
-				"consider_for_pass_fail": c.consider_for_pass_fail,
-			}
-		)
+		components.append({
+			"name": c.name,
+			"component": c.component,
+			"component_type": comp_type,
+			"label": c.label,
+			"effective_max_marks": c.effective_max_marks,
+			"weightage": c.weightage,
+			"passing_marks": c.passing_marks,
+			"consider_for_pass_fail": c.consider_for_pass_fail,
+		})
 	assessment_configs = []
 	for a in doc.assessment_configs:
 		at_type = frappe.db.get_value("Exam Assessment Type", a.assessment_type, "assessment_type") or "Assessment"
-		assessment_configs.append(
-			{
-				"name": a.name,
-				"component": a.component,
-				"assessment_type": a.assessment_type,
-				"assessment_type_category": at_type,
-				"label": a.label,
-				"effective_marks": a.effective_marks,
-				"maximum_marks": a.maximum_marks,
-				"minimum_marks": a.minimum_marks,
-				"passing_marks": a.passing_marks,
-				"consider_for_pass_fail": a.consider_for_pass_fail,
-				"weightage": a.weightage,
-				"enrollment": a.enrollment,
-			}
-		)
+		assessment_configs.append({
+			"name": a.name,
+			"component": a.component,
+			"assessment_type": a.assessment_type,
+			"assessment_type_category": at_type,
+			"label": a.label,
+			"effective_marks": a.effective_marks,
+			"maximum_marks": a.maximum_marks,
+			"minimum_marks": a.minimum_marks,
+			"passing_marks": a.passing_marks,
+			"consider_for_pass_fail": a.consider_for_pass_fail,
+			"weightage": a.weightage,
+			"enrollment": a.enrollment,
+		})
 	reexam_configs = []
 	for r in doc.reexam_configs:
-		reexam_configs.append(
-			{
-				"name": r.name,
-				"component": r.component,
-				"re_exam_type_category": r.re_exam_type_category,
-				"assessment_type": r.assessment_type,
-				"label": r.label,
-				"maximum_marks": r.maximum_marks,
-				"minimum_marks": r.minimum_marks,
-				"passing_marks": r.passing_marks,
-				"enrollment": r.enrollment,
-				"substitute_for": r.substitute_for,
-				"substitute_weightage": r.substitute_weightage,
-				"effective_marks": r.effective_marks,
-			}
-		)
+		reexam_configs.append({
+			"name": r.name,
+			"component": r.component,
+			"re_exam_type_category": r.re_exam_type_category,
+			"assessment_type": r.assessment_type,
+			"label": r.label,
+			"maximum_marks": r.maximum_marks,
+			"minimum_marks": r.minimum_marks,
+			"passing_marks": r.passing_marks,
+			"enrollment": r.enrollment,
+			"substitute_for": r.substitute_for,
+			"substitute_weightage": r.substitute_weightage,
+			"effective_marks": r.effective_marks,
+		})
 	return {
 		"name": doc.name,
 		"schema_name": doc.schema_name,
@@ -191,7 +265,6 @@ def get_schema_detail(name):
 @frappe.whitelist()
 def save_schema(data):
 	import json
-
 	if isinstance(data, str):
 		data = json.loads(data)
 
@@ -212,54 +285,45 @@ def save_schema(data):
 
 	doc.set("schema_components", [])
 	for c in data.get("schema_components", []):
-		doc.append(
-			"schema_components",
-			{
-				"component": c.get("component"),
-				"label": c.get("label", ""),
-				"effective_max_marks": c.get("effective_max_marks", 0),
-				"weightage": c.get("weightage", 100),
-				"passing_marks": c.get("passing_marks", 0),
-				"consider_for_pass_fail": c.get("consider_for_pass_fail", 0),
-			},
-		)
+		doc.append("schema_components", {
+			"component": c.get("component"),
+			"label": c.get("label", ""),
+			"effective_max_marks": c.get("effective_max_marks", 0),
+			"weightage": c.get("weightage", 100),
+			"passing_marks": c.get("passing_marks", 0),
+			"consider_for_pass_fail": c.get("consider_for_pass_fail", 0),
+		})
 
 	doc.set("assessment_configs", [])
 	for a in data.get("assessment_configs", []):
-		doc.append(
-			"assessment_configs",
-			{
-				"component": a.get("component"),
-				"assessment_type": a.get("assessment_type"),
-				"label": a.get("label", ""),
-				"effective_marks": a.get("effective_marks", 0),
-				"maximum_marks": a.get("maximum_marks", 0),
-				"minimum_marks": a.get("minimum_marks", 0),
-				"passing_marks": a.get("passing_marks", 0),
-				"consider_for_pass_fail": a.get("consider_for_pass_fail", 0),
-				"weightage": a.get("weightage", 100),
-				"enrollment": a.get("enrollment", "Auto"),
-			},
-		)
+		doc.append("assessment_configs", {
+			"component": a.get("component"),
+			"assessment_type": a.get("assessment_type"),
+			"label": a.get("label", ""),
+			"effective_marks": a.get("effective_marks", 0),
+			"maximum_marks": a.get("maximum_marks", 0),
+			"minimum_marks": a.get("minimum_marks", 0),
+			"passing_marks": a.get("passing_marks", 0),
+			"consider_for_pass_fail": a.get("consider_for_pass_fail", 0),
+			"weightage": a.get("weightage", 100),
+			"enrollment": a.get("enrollment", "Auto"),
+		})
 
 	doc.set("reexam_configs", [])
 	for r in data.get("reexam_configs", []):
-		doc.append(
-			"reexam_configs",
-			{
-				"component": r.get("component"),
-				"re_exam_type_category": r.get("re_exam_type_category", "Assessment"),
-				"assessment_type": r.get("assessment_type"),
-				"label": r.get("label", ""),
-				"maximum_marks": r.get("maximum_marks", 0),
-				"minimum_marks": r.get("minimum_marks", 0),
-				"passing_marks": r.get("passing_marks", 0),
-				"enrollment": r.get("enrollment", "Manual"),
-				"substitute_for": r.get("substitute_for"),
-				"substitute_weightage": r.get("substitute_weightage", 100),
-				"effective_marks": r.get("effective_marks", 0),
-			},
-		)
+		doc.append("reexam_configs", {
+			"component": r.get("component"),
+			"re_exam_type_category": r.get("re_exam_type_category", "Assessment"),
+			"assessment_type": r.get("assessment_type"),
+			"label": r.get("label", ""),
+			"maximum_marks": r.get("maximum_marks", 0),
+			"minimum_marks": r.get("minimum_marks", 0),
+			"passing_marks": r.get("passing_marks", 0),
+			"enrollment": r.get("enrollment", "Manual"),
+			"substitute_for": r.get("substitute_for"),
+			"substitute_weightage": r.get("substitute_weightage", 100),
+			"effective_marks": r.get("effective_marks", 0),
+		})
 
 	if doc.is_new():
 		doc.insert(ignore_permissions=True)
@@ -280,7 +344,10 @@ def get_terms():
 
 @frappe.whitelist()
 def get_courses_for_plan(exam_plan, search=""):
-	"""Return all courses with their schema assignments for the given exam plan."""
+	"""Return courses with their schema assignments for the given exam plan."""
+	settings = _get_settings()
+	page_length = settings.get("courses_per_page") or 500
+
 	if search:
 		courses = frappe.db.sql(
 			"""
@@ -288,9 +355,9 @@ def get_courses_for_plan(exam_plan, search=""):
 			FROM `tabCourse`
 			WHERE course_name LIKE %(s)s OR course_code LIKE %(s)s
 			ORDER BY course_name ASC
-			LIMIT 500
+			LIMIT %(limit)s
 			""",
-			{"s": f"%{search}%"},
+			{"s": f"%{search}%", "limit": page_length},
 			as_dict=True,
 		)
 	else:
@@ -298,10 +365,10 @@ def get_courses_for_plan(exam_plan, search=""):
 			"Course",
 			fields=["name", "course_name", "course_code", "department_name", "credit_value"],
 			order_by="course_name asc",
-			page_length=500,
+			page_length=page_length,
 		)
 
-	# Fetch existing assignments for this plan
+	# Fetch existing assignments
 	asgn_map = {}
 	try:
 		assignments = frappe.db.sql(
@@ -333,14 +400,27 @@ def get_courses_for_plan(exam_plan, search=""):
 
 
 @frappe.whitelist()
-def save_course_schema(exam_plan, assignments):
+def save_course_schema(exam_plan, assignments, reason=None):
 	"""Create or update Course Schema Assignment records."""
 	import json
 
-	_SKIP = "__SKIP__"
+	settings = _get_settings()
 
+	# ── Lock check ──────────────────────────────────────────────────────────
+	_check_lock(settings)
+
+	# ── Require change reason ───────────────────────────────────────────────
+	if settings.get("require_change_reason") and not reason:
+		frappe.throw(
+			"A change reason is required. Please enter a justification for the schema change.",
+			title="Change Reason Required"
+		)
+
+	_SKIP = "__SKIP__"
 	if isinstance(assignments, str):
 		assignments = json.loads(assignments)
+
+	changed_courses = []
 
 	for asgn in assignments:
 		course = asgn.get("course")
@@ -370,7 +450,15 @@ def save_course_schema(exam_plan, assignments):
 				old_ev = cur.get("evaluation_schema")
 				old_gr = cur.get("grade_schema")
 				new_ev = update.get("evaluation_schema", old_ev)
-				new_gr = update.get("grade_schema",      old_gr)
+				new_gr = update.get("grade_schema", old_gr)
+
+				# ── Require both schemas check ──────────────────────────────
+				if settings.get("require_both_schemas") and (not new_ev or not new_gr):
+					frappe.throw(
+						f"Both Evaluation Schema and Grade Schema are required for course '{course}'.",
+						title="Both Schemas Required"
+					)
+
 				if not new_ev and not new_gr:
 					frappe.delete_doc("Course Schema Assignment", existing, ignore_permissions=True)
 				else:
@@ -380,7 +468,7 @@ def save_course_schema(exam_plan, assignments):
 						   WHERE name=%s""",
 						(new_ev, new_gr, frappe.session.user, existing)
 					)
-					if old_ev != new_ev or old_gr != new_gr:
+					if (old_ev != new_ev or old_gr != new_gr) and settings.get("enable_change_log"):
 						try:
 							log = frappe.new_doc("Schema Change Log")
 							log.exam_plan = exam_plan
@@ -391,12 +479,22 @@ def save_course_schema(exam_plan, assignments):
 							log.new_grade_schema = new_gr or ""
 							log.changed_by = frappe.session.user
 							log.changed_on = frappe.utils.now()
+							log.reason = reason or ""
 							log.insert(ignore_permissions=True)
+							changed_courses.append(course)
 						except Exception:
 							pass
 		else:
 			ev = eval_schema  if eval_schema  != _SKIP else None
 			gr = grade_schema if grade_schema != _SKIP else None
+
+			# ── Require both schemas check (new record) ─────────────────────
+			if settings.get("require_both_schemas") and not (ev and gr):
+				frappe.throw(
+					f"Both Evaluation Schema and Grade Schema are required for course '{course}'.",
+					title="Both Schemas Required"
+				)
+
 			if ev or gr:
 				doc = frappe.new_doc("Course Schema Assignment")
 				doc.exam_plan         = exam_plan
@@ -404,8 +502,24 @@ def save_course_schema(exam_plan, assignments):
 				doc.evaluation_schema = ev
 				doc.grade_schema      = gr
 				doc.insert(ignore_permissions=True)
+				changed_courses.append(course)
 
 	frappe.db.commit()
+
+	# ── Notification ────────────────────────────────────────────────────────
+	if changed_courses and settings.get("notify_on_schema_change"):
+		course_list = ", ".join(changed_courses)
+		_send_notification(
+			settings,
+			subject=f"Schema Mapped: {exam_plan}",
+			message=(
+				f"Schema was mapped/updated for the following course(s) in "
+				f"<b>{exam_plan}</b>:<br><br>{course_list}"
+				+ (f"<br><br><b>Reason:</b> {reason}" if reason else "")
+				+ f"<br><br><b>Changed by:</b> {frappe.session.user}"
+			),
+		)
+
 	return True
 
 
@@ -413,6 +527,9 @@ def save_course_schema(exam_plan, assignments):
 def unmap_course_schema(exam_plan, courses):
 	"""Delete Course Schema Assignment records for the given courses."""
 	import json
+
+	settings = _get_settings()
+	_check_lock(settings)
 
 	if isinstance(courses, str):
 		courses = json.loads(courses)
@@ -426,4 +543,34 @@ def unmap_course_schema(exam_plan, courses):
 			frappe.delete_doc("Course Schema Assignment", row[0], ignore_permissions=True)
 
 	frappe.db.commit()
+
+	# ── Notification ────────────────────────────────────────────────────────
+	if settings.get("notify_on_unmap"):
+		course_list = ", ".join(courses)
+		_send_notification(
+			settings,
+			subject=f"Schema Unmapped: {exam_plan}",
+			message=(
+				f"Schema was unmapped for the following course(s) in "
+				f"<b>{exam_plan}</b>:<br><br>{course_list}"
+				f"<br><br><b>Unmapped by:</b> {frappe.session.user}"
+			),
+		)
+
 	return True
+
+
+@frappe.whitelist()
+def purge_old_change_logs():
+	"""Delete Schema Change Log entries older than the configured retention period."""
+	settings = _get_settings()
+	months = settings.get("log_retention_months") or 12
+	cutoff = frappe.utils.add_months(frappe.utils.now_datetime(), -months)
+	old_logs = frappe.db.sql(
+		"SELECT name FROM `tabSchema Change Log` WHERE creation < %s",
+		(cutoff,),
+	)
+	for (name,) in old_logs:
+		frappe.delete_doc("Schema Change Log", name, ignore_permissions=True)
+	frappe.db.commit()
+	return len(old_logs)

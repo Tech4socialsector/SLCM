@@ -262,6 +262,46 @@ function _csm_inject_styles() {
 		table.csm-tbl th.csm-sort-asc .csm-sort-icon,
 		table.csm-tbl th.csm-sort-desc .csm-sort-icon { color: #6366f1; }
 
+		/* ── Lock banner ── */
+		.csm-lock-banner {
+			background: #fff7ed; border: 1px solid #fed7aa;
+			border-radius: 7px; padding: 10px 16px;
+			font-size: 12.5px; color: #9a3412; font-weight: 600;
+			margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+		}
+		.csm-lock-banner .csm-lock-icon { font-size: 15px; }
+
+		/* ── Change reason textarea ── */
+		.csm-reason-wrap { margin-top: 14px; display: none; }
+		.csm-reason-wrap.csm-reason-visible { display: block; }
+		.csm-reason-lbl {
+			font-size: 11px; font-weight: 700; color: #64748b;
+			text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+			display: flex; align-items: center; gap: 5px;
+		}
+		.csm-reason-lbl .csm-req { color: #dc2626; }
+		.csm-reason-input {
+			width: 100%; border: 1px solid #d1d5db; border-radius: 7px;
+			padding: 9px 12px; font-size: 13px; color: #374151;
+			resize: vertical; min-height: 72px; box-sizing: border-box;
+			font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s;
+		}
+		.csm-reason-input:focus {
+			outline: none; border-color: #6366f1;
+			box-shadow: 0 0 0 2px rgba(99,102,241,0.12);
+		}
+		.csm-reason-input.csm-input-error { border-color: #dc2626; box-shadow: 0 0 0 2px rgba(220,38,38,0.1); }
+
+		/* ── Unmapped toggle button ── */
+		.csm-btn-toggle {
+			padding: 8px 16px; font-size: 12.5px; font-weight: 600;
+			background: #f8fafc; color: #64748b;
+			border: 1px solid #d1d5db; border-radius: 6px;
+			cursor: pointer; transition: all 0.15s; white-space: nowrap;
+		}
+		.csm-btn-toggle:hover { background: #f1f5f9; border-color: #94a3b8; }
+		.csm-btn-toggle.csm-toggle-active { background: #eef2ff; color: #6366f1; border-color: #a5b4fc; }
+
 		/* ── Unmap checkboxes ── */
 		.csm-unmap-opts { margin-bottom: 4px; }
 		.csm-unmap-item {
@@ -312,6 +352,7 @@ function _csm_open(exam_plan, exam_name) {
 						<input type="text" class="csm-search" placeholder="Search by Course Name or Course Code..."/>
 					</div>
 					<div class="csm-btn-group">
+						<button class="csm-btn-toggle csm-do-toggle" title="Toggle unmapped courses visibility">Show All</button>
 						<button class="csm-btn-map csm-do-map">Map Schema</button>
 						<button class="csm-btn-unmap csm-do-unmap">Unmap Schema</button>
 					</div>
@@ -389,7 +430,51 @@ function _csm_open(exam_plan, exam_name) {
 		_csm_show_unmap_panel(exam_plan, sel, $ov);
 	});
 
-	_csm_load(exam_plan, '', $ov);
+	// Toggle unmapped courses
+	$ov.find('.csm-do-toggle').on('click', function () {
+		const cur = !!$ov.data('_showUnmapped');
+		const next = !cur;
+		$ov.data('_showUnmapped', next);
+		$(this).text(next ? 'Unmapped Only' : 'Show All')
+			.toggleClass('csm-toggle-active', !next);
+		_csm_sort_render($ov);
+	});
+
+	// Fetch settings, then load courses
+	frappe.call({
+		method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.get_exam_settings',
+		callback: r => {
+			const settings = r.message || {};
+			$ov.data('_settings', settings);
+
+			// Apply show_unmapped_courses default
+			const showUnmapped = settings.show_unmapped_courses !== undefined
+				? !!settings.show_unmapped_courses : true;
+			$ov.data('_showUnmapped', showUnmapped);
+			const $toggleBtn = $ov.find('.csm-do-toggle');
+			$toggleBtn.text(showUnmapped ? 'Unmapped Only' : 'Show All')
+				.toggleClass('csm-toggle-active', !showUnmapped);
+
+			// Apply lock date
+			const lockDate = settings.schema_lock_date;
+			if (lockDate && frappe.datetime.get_today() >= lockDate) {
+				$ov.find('.csm-notify').before(
+					`<div class="csm-lock-banner"><span class="csm-lock-icon">🔒</span>` +
+					`Schema changes are locked as of ${lockDate}. Contact your administrator to make changes.</div>`
+				);
+				$ov.find('.csm-do-map, .csm-do-unmap').prop('disabled', true)
+					.css({ opacity: 0.45, cursor: 'not-allowed' });
+			}
+
+			_csm_load(exam_plan, '', $ov);
+		},
+		error: () => {
+			// Settings unavailable — proceed normally
+			$ov.data('_showUnmapped', true);
+			$ov.find('.csm-do-toggle').text('Unmapped Only');
+			_csm_load(exam_plan, '', $ov);
+		}
+	});
 }
 
 /* ── Inline notification (inside overlay) ─────────── */
@@ -418,7 +503,6 @@ function _csm_load(exam_plan, search, $ov) {
 		callback: r => {
 			const courses = r.message || [];
 			$ov.data('_courses', courses);
-			$ov.find('.csm-count-bar').text(`${courses.length} course(s)`);
 			$ov.find('.csm-chk-all').prop('checked', false);
 			_csm_sort_render($ov);
 		}
@@ -426,7 +510,12 @@ function _csm_load(exam_plan, search, $ov) {
 }
 
 function _csm_sort_render($ov) {
-	const courses = ($ov.data('_courses') || []).slice();
+	let courses = ($ov.data('_courses') || []).slice();
+	// Filter: when showUnmapped is false, show only unmapped (no both schemas)
+	if (!$ov.data('_showUnmapped')) {
+		courses = courses.filter(c => !c.evaluation_schema || !c.grade_schema);
+	}
+	$ov.find('.csm-count-bar').text(`${courses.length} course(s)`);
 	const col = $ov.data('_sortCol');
 	const dir = $ov.data('_sortDir') || 'asc';
 	if (col) {
@@ -565,6 +654,11 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 							<option value="">Loading…</option>
 						</select>
 					</div>
+					<!-- Change reason (shown when require_change_reason is on) -->
+					<div class="csm-reason-wrap" id="csm-reason-wrap">
+						<div class="csm-reason-lbl">Change Reason <span class="csm-req">*</span></div>
+						<textarea class="csm-reason-input" id="csm-reason-input" placeholder="Enter a reason for this schema change…"></textarea>
+					</div>
 					<div class="csm-panel-footer">
 						<button class="csm-panel-btn-cancel csm-pnl-back">${alreadyMapped ? 'Back' : 'Cancel'}</button>
 						<button class="csm-panel-btn-apply csm-pnl-apply">Apply</button>
@@ -576,6 +670,7 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 
 	$('body').append($bd);
 
+	const settings = $ov.data('_settings') || {};
 	let _evalAll = [], _gradeAll = [], _loaded = false;
 
 	const _load_dropdowns = () => {
@@ -587,7 +682,8 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 			callback: r => {
 				_evalAll = (r.message || []).map(x => ({ name: x.name, label: x.schema_name || x.name }));
 				_fill_select($bd.find('#csm-eval-select'), _evalAll, '-- Select Evaluation Schema --');
-				if (preEval) $bd.find('#csm-eval-select').val(preEval);
+				const defEval = settings.default_evaluation_schema || '';
+				$bd.find('#csm-eval-select').val(preEval || defEval || '');
 			}
 		});
 		frappe.call({
@@ -596,7 +692,8 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 			callback: r => {
 				_gradeAll = (r.message || []).map(x => ({ name: x.name, label: x.schema_name || x.name }));
 				_fill_select($bd.find('#csm-grade-select'), _gradeAll, '-- Select Grade Schema --');
-				if (preGrade) $bd.find('#csm-grade-select').val(preGrade);
+				const defGrade = settings.default_grade_schema || '';
+				$bd.find('#csm-grade-select').val(preGrade || defGrade || '');
 			}
 		});
 	};
@@ -622,6 +719,9 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 		$bd.find('#csm-map-confirm').show();
 		$bd.find('#csm-map-edit').show();
 		$bd.find('.csm-pnl-back').show();
+		if (settings.require_change_reason) {
+			$bd.find('#csm-reason-wrap').addClass('csm-reason-visible');
+		}
 		_load_dropdowns();
 	});
 
@@ -630,6 +730,8 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 			$bd.find('#csm-map-readonly').show();
 			$bd.find('#csm-map-confirm').hide();
 			$bd.find('#csm-map-edit').hide();
+			$bd.find('#csm-reason-wrap').removeClass('csm-reason-visible');
+			$bd.find('#csm-reason-input').val('').removeClass('csm-input-error');
 		} else {
 			$bd.remove();
 		}
@@ -648,6 +750,24 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 			return;
 		}
 
+		// Validate: require_both_schemas
+		if (settings.require_both_schemas && (!evalSel || !gradeSel)) {
+			$bd.find('#csm-map-edit .csm-panel-section:first').prepend(
+				'<div class="csm-change-confirm" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b;margin-bottom:10px;">Both Evaluation Schema and Grade Schema are required.</div>'
+			);
+			setTimeout(() => $bd.find('.csm-change-confirm[style*=fee2e2]').remove(), 3000);
+			return;
+		}
+
+		// Validate: require_change_reason (only when changing an existing mapping)
+		const $reasonInput = $bd.find('#csm-reason-input');
+		const reason = ($reasonInput.val() || '').trim() || null;
+		if (settings.require_change_reason && alreadyMapped && !reason) {
+			$reasonInput.addClass('csm-input-error').focus();
+			setTimeout(() => $reasonInput.removeClass('csm-input-error'), 2500);
+			return;
+		}
+
 		const assignments = selected.map(course => {
 			const obj = { course };
 			if (evalSel)  obj.evaluation_schema = evalSel;
@@ -658,7 +778,7 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 		const $btn = $bd.find('.csm-pnl-apply').prop('disabled', true).text('Saving…');
 		frappe.call({
 			method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.save_course_schema',
-			args: { exam_plan, assignments: JSON.stringify(assignments) },
+			args: { exam_plan, assignments: JSON.stringify(assignments), reason: reason || '' },
 			callback: r => {
 				if (r && r.exc) {
 					$btn.prop('disabled', false).text('Apply');
@@ -695,6 +815,12 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 		? courseNames[0]
 		: `${courseNames.length} courses`;
 
+	// Read current mapped values for display
+	const curEval  = selected.length === 1
+		? ($ov.find(`tr[data-course="${selected[0]}"]`).attr('data-eval')  || '') : '';
+	const curGrade = selected.length === 1
+		? ($ov.find(`tr[data-course="${selected[0]}"]`).attr('data-grade') || '') : '';
+
 	const hasEval  = selected.some(c => !!$ov.find(`tr[data-course="${c}"]`).attr('data-eval'));
 	const hasGrade = selected.some(c => !!$ov.find(`tr[data-course="${c}"]`).attr('data-grade'));
 
@@ -705,19 +831,19 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 
 	const evalChk = hasEval ? `
 		<label class="csm-unmap-item">
-			<input type="checkbox" id="csm-unmap-eval" checked/>
+			<input type="checkbox" id="csm-unmap-eval"/>
 			<div class="csm-unmap-item-text">
 				<div class="csm-unmap-item-title">Unmap Evaluation Schema</div>
-				<div class="csm-unmap-item-sub">Removes the evaluation schema assignment</div>
+				<div class="csm-unmap-item-sub">${_esc(curEval) || 'Currently mapped'}</div>
 			</div>
 		</label>` : '';
 
 	const gradeChk = hasGrade ? `
 		<label class="csm-unmap-item">
-			<input type="checkbox" id="csm-unmap-grade" checked/>
+			<input type="checkbox" id="csm-unmap-grade"/>
 			<div class="csm-unmap-item-text">
 				<div class="csm-unmap-item-title">Unmap Grade Schema</div>
-				<div class="csm-unmap-item-sub">Removes the grading schema assignment</div>
+				<div class="csm-unmap-item-sub">${_esc(curGrade) || 'Currently mapped'}</div>
 			</div>
 		</label>` : '';
 

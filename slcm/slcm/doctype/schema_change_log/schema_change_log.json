@@ -15,7 +15,9 @@
   "old_grade_schema",
   "section_break_new",
   "new_evaluation_schema",
-  "new_grade_schema"
+  "new_grade_schema",
+  "section_reason",
+  "reason"
  ],
  "fields": [
   {
@@ -80,6 +82,16 @@
    "fieldname": "new_grade_schema",
    "fieldtype": "Data",
    "label": "New Grade Schema"
+  },
+  {
+   "fieldname": "section_reason",
+   "fieldtype": "Section Break",
+   "label": "Change Reason"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
   }
  ],
  "index_web_pages_for_search": 0,
