@@ -433,7 +433,7 @@ def get_context(context):
                             "link_label": (step.get("link_label") if hasattr(step,"get") else step.link_label) or "",
                         })
             if not _next_steps:
-                _next_steps = [{"text": "Complete all steps before your cycle deadline", "is_link": 0}]
+                _next_steps = [{"text": "Stay updated and follow all required steps", "is_link": 0}]
             context.next_steps = _next_steps
             context.support_name  = _pc.get("support_name") or ""
             context.support_role  = _pc.get("support_role") or ""
