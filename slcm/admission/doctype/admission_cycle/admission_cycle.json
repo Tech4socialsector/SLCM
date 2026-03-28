@@ -11,6 +11,7 @@
   "admission_year",
   "academic_year",
   "approval_reference",
+  "allow_multiple_applications",
   "col_break_basic",
   "status",
   "max_schemes_per_applicant",
@@ -54,7 +55,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Cycle name",
+   "label": "Cycle Name",
    "reqd": 1,
    "unique": 1
   },
@@ -62,7 +63,7 @@
    "fieldname": "cycle_code",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Cycle code",
+   "label": "Cycle Code",
    "reqd": 1,
    "unique": 1
   },
@@ -70,7 +71,7 @@
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission year",
+   "label": "Admission Year",
    "options": "Admission Year",
    "reqd": 1
   },
@@ -99,7 +100,8 @@
    "description": "Reference number for this cycle's approval",
    "fieldname": "approval_reference",
    "fieldtype": "Data",
-   "label": "Approval reference"
+   "hidden": 1,
+   "label": "Approval Reference"
   },
   {
    "description": "Add all programmes offered in this cycle. These appear on the applicant portal.",
@@ -151,14 +153,14 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
-   "label": "Academic year",
+   "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
   },
   {
    "fieldname": "cycle_start_date",
    "fieldtype": "Date",
-   "label": "Cycle start date",
+   "label": "Cycle Start date",
    "reqd": 1
   },
   {
@@ -296,10 +298,17 @@
    "label": "Next Step Note",
    "mandatory_depends_on": "eval: doc.enrolled",
    "placeholder": "After Enrollment"
+  },
+  {
+   "default": "0",
+   "description": "If enable an applicant can apply multiple application for programmes in this cycle",
+   "fieldname": "allow_multiple_applications",
+   "fieldtype": "Check",
+   "label": "Allow Multiple Applications"
   }
  ],
  "links": [],
- "modified": "2026-03-27 12:46:57.090139",
+ "modified": "2026-03-28 10:12:01.631303",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

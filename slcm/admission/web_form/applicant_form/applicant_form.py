@@ -4,6 +4,24 @@ import frappe
 from frappe import _
 from frappe.utils import flt, strip_html
 
+from slcm.admission.utils.multiprogram_applicant import (
+    build_multiprogram_profile_copy_payload,
+    pop_multiprogram_profile_copy_from_cache,
+    store_multiprogram_profile_copy_in_cache,
+)
+
+
+@frappe.whitelist(allow_guest=False)
+def pop_multiprogram_profile_copy():
+    """
+    One-shot payload from server cache when opening /applicant-form/new for a second programme
+    in the same cycle (allow_multiple_applications). Consumed on read.
+    """
+    if frappe.session.user == "Guest":
+        return {}
+    out = pop_multiprogram_profile_copy_from_cache()
+    return out if isinstance(out, dict) else {}
+
 
 def get_context(context):
     """
@@ -15,6 +33,14 @@ def get_context(context):
     ref = context.get("reference_doc") or {}
     doc_name = ref.get("name") or context.get("doc_name")
     if not doc_name:
+        # New form: e.g. login redirect straight to /applicant-form/new?program=... (no /application_form hop)
+        q = frappe.form_dict or {}
+        prog = (q.get("program") or "").strip()
+        cyc = (q.get("admission_cycle") or "").strip()
+        if prog and cyc and frappe.session.user != "Guest":
+            email = frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user
+            payload = build_multiprogram_profile_copy_payload(email, cyc, prog)
+            store_multiprogram_profile_copy_in_cache(payload)
         return None
 
     status = (ref.get("application_status") or "").strip()
@@ -396,14 +422,21 @@ def check_eligibility(applicant_name):
             plain = doc.rejected_reason or ""
             plain = strip_html(plain)
             plain = unescape(plain or "")
-            plain = " ".join(plain.split())
+            _paras = []
+            for _p in plain.split("\n\n"):
+                _t = " ".join(_p.split())
+                if _t:
+                    _paras.append(_t)
+            plain = "\n\n".join(_paras)
             if len(plain) > 2400:
                 plain = plain[:2397] + "..."
             suggestions = doc.get_eligibility_suggestion_payload()
+            sections = getattr(doc, "_slcm_failure_sections", None) or []
             return {
                 "status": "Ineligible",
                 "message": plain or _("You do not meet the eligibility criteria for the selected program."),
                 "failure_reason": plain or _("You do not meet the eligibility criteria for the selected program."),
+                "failure_sections": sections,
                 "suggestions": suggestions,
             }
 
@@ -415,12 +448,19 @@ def check_eligibility(applicant_name):
         # Unexpected throw while portal flag was off or from another validation path
         plain = strip_html(str(e))
         plain = unescape(plain or "")
-        plain = " ".join(plain.split())
+        _paras = []
+        for _p in plain.split("\n\n"):
+            _t = " ".join(_p.split())
+            if _t:
+                _paras.append(_t)
+        plain = "\n\n".join(_paras)
+        doc2 = frappe.get_doc("Applicant", applicant_name)
         return {
             "status": "Ineligible",
             "message": plain or _("You do not meet the eligibility criteria for the selected program."),
             "failure_reason": plain or _("You do not meet the eligibility criteria for the selected program."),
-            "suggestions": frappe.get_doc("Applicant", applicant_name).get_eligibility_suggestion_payload(),
+            "failure_sections": getattr(doc2, "_slcm_failure_sections", None) or [],
+            "suggestions": doc2.get_eligibility_suggestion_payload(),
         }
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Web Form — check_eligibility Error")
@@ -432,11 +472,13 @@ def _portal_program_row(program, admission_cycle):
     Admission Cycle Program row fields for portal; program_level falls back to
     Program.level_of_study (Program has no program_level field).
     """
-    out = {"program_level": None, "intake_type": None, "campus": None}
+    out = {"program_level": None, "intake_type": None, "campus": None, "program_label": None}
     program = (program or "").strip()
     admission_cycle = (admission_cycle or "").strip()
     if not program:
         return out
+    prog_title = (frappe.db.get_value("Program", program, "program_name") or "").strip()
+    out["program_label"] = prog_title or program
     if admission_cycle:
         acp = frappe.db.get_value(
             "Admission Cycle Program",

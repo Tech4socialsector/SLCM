@@ -899,10 +899,12 @@ class Applicant(Document):
         if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
             self.evaluation_status = ""
             self.rejected_reason = ""
+            self._slcm_failure_sections = None
             self._clear_national_test_flags()
             return
 
         try:
+            self._slcm_failure_sections = None
             # ── STEP 0: National Test Exemption ─────────────────────────────
             national_test_result = self._evaluate_national_test_exemption()
 
@@ -1289,6 +1291,7 @@ class Applicant(Document):
         Returns (is_eligible: bool, failure_message: str)
         """
         original_program = self.program
+        prev_failure_sections = getattr(self, "_slcm_failure_sections", None)
         try:
             self.program = program_name
 
@@ -1329,10 +1332,9 @@ class Applicant(Document):
                 "Program Eligibility Check Error — {0}".format(program_name)
             )
             return False, _("Error during eligibility check")
-
         finally:
-            # Always restore original — even if exception occurs
             self.program = original_program
+            self._slcm_failure_sections = prev_failure_sections
 
     # ──────────────────────────────────────────────
     # NATIONAL TEST EXEMPTION
@@ -1442,17 +1444,30 @@ class Applicant(Document):
     # STEP 2 — Multi-category priority engine
     # ──────────────────────────────────────────────
 
-    def _build_rule_failure_reason(self, base_rule, required_val):
+    def _allowed_hsc_groups_for_rule(self, rule_name):
+        rows = frappe.db.sql("""
+            SELECT hsc_groups
+            FROM `tabHSC Groups Mapping`
+            WHERE parent = %(rule_name)s
+              AND parenttype = 'Eligibility Rule'
+              AND hsc_groups IS NOT NULL
+              AND hsc_groups != ''
+        """, {"rule_name": rule_name}, as_dict=True)
+        return [
+            row.hsc_groups.strip()
+            for row in rows
+            if row.get("hsc_groups")
+        ]
+
+    def _build_rule_failure_reason(self, base_rule, applied_threshold, cat_row=None):
         """
-        Constructs a detailed failure reason for a specific rule failure.
-        Captures: Required vs Secured scores/CGPA and Ineligible HSC Group details.
+        Human-readable failure copy for applicants (no internal rule IDs).
+        Uses short titled sections and bullet lines; joined with newlines for the portal modal.
         """
-        reasons = []
         qualification_level = base_rule.get("qualification_level") or "Academic"
-        rule_type           = base_rule.get("rule_type")
-        operator            = base_rule.get("operator") or ">="
-        
-        # Determine unit symbol
+        rule_type = base_rule.get("rule_type")
+        operator = base_rule.get("operator") or ">="
+
         unit = ""
         is_cgpa = (rule_type == "CGPA" or "cgpa" in (base_rule.get("unit_type") or "").lower())
         if is_cgpa:
@@ -1460,67 +1475,115 @@ class Applicant(Document):
         else:
             unit = "%"
 
-        # Special label for XII as HSE
-        display_level = "HSE (Class XII)" if qualification_level == "XII" else qualification_level
-
-        # 1. Academic Threshold Check (Score/Percentage/CGPA)
+        display_level = "HSC (Class XII)" if qualification_level == "XII" else qualification_level
+        baseline = self.get_required_academic_value(base_rule)
         applicant_val = self._get_applicant_value(base_rule)
-        
-        # If a required value exists, check if it failed due to low score.
-        # Hide the score comparison if Secured is 0.0 (confusing placeholders for missing data)
-        # unless it's a specific requirement for entry.
-        if required_val and applicant_val > 0 and not self._compare(applicant_val, required_val, operator):
-            # User specifically asked for "required percentage [val] and you have to mention what they are secured"
-            reasons.append(_("{0} Score — Required: {1}{2}, Secured: {3}{2}").format(
-                display_level, required_val, unit, applicant_val
-            ))
 
-        # 2. Non-percentage checks (HSC Group / Degree)
-        if not self._evaluate_non_percentage_checks(base_rule):
-            # HSC Group failure detail
+        score_failed = bool(
+            applied_threshold
+            and applicant_val > 0
+            and not self._compare(applicant_val, applied_threshold, operator)
+        )
+        non_pct_failed = not self._evaluate_non_percentage_checks(base_rule)
+
+        blocks = []
+
+        # ── Block 1: Reservation / general + marks (when score is the issue) ──
+        score_lines = []
+        if cat_row and (cat_row.get("category") or "").strip():
+            cat = (cat_row.get("category") or "").strip()
+            score_lines.append(_("Reservation category"))
+            score_lines.append(_("• Category: {0}").format(cat))
+            if applied_threshold is not None:
+                score_lines.append(
+                    _("• Minimum required for your category ({0}): {1}{2}").format(
+                        display_level, flt(applied_threshold), unit
+                    )
+                )
+            if baseline is not None and (
+                applied_threshold is None or flt(baseline) != flt(applied_threshold)
+            ):
+                score_lines.append(
+                    _("• Programme baseline for general-category applicants ({0}): {1}{2}").format(
+                        display_level, flt(baseline), unit
+                    )
+                )
+            if score_failed:
+                score_lines.append(
+                    _("• You secured ({0}): {1}{2}").format(display_level, flt(applicant_val), unit)
+                )
+            elif applied_threshold and applicant_val <= 0:
+                score_lines.append(
+                    _("• Your {0} marks were not found or are zero; minimum required is {1}{2}.").format(
+                        display_level, flt(applied_threshold), unit
+                    )
+                )
+        else:
+            score_lines.append(_("Academic requirement (general)"))
+            if applied_threshold is not None:
+                score_lines.append(
+                    _("• Minimum required ({0}): {1}{2}").format(display_level, flt(applied_threshold), unit)
+                )
+            if score_failed:
+                score_lines.append(
+                    _("• You secured ({0}): {1}{2}").format(display_level, flt(applicant_val), unit)
+                )
+            elif applied_threshold and applicant_val <= 0:
+                score_lines.append(
+                    _("• Your {0} marks were not found or are zero; minimum required is {1}{2}.").format(
+                        display_level, flt(applied_threshold), unit
+                    )
+                )
+
+        if cat_row and (cat_row.get("category") or "").strip():
+            blocks.append("\n".join(score_lines))
+        elif len(score_lines) > 1:
+            blocks.append("\n".join(score_lines))
+
+        # ── Block 2: HSC group / degree rules ──
+        if non_pct_failed:
             if rule_type == "HSC Group" and not self._check_hsc_group_eligibility(base_rule.name):
-                # Get applicant's secured group
                 applicant_group = (getattr(self, "hsc_group", None) or "").strip() or _("Not provided")
-                # Mention the ineligible group as requested
-                reasons.append(_("Ineligible {0} Group: '{1}' is not allowed for this program.").format(display_level, applicant_group))
-            
-            # Detailed mismatch for Allowed Degrees
+                allowed_g = self._allowed_hsc_groups_for_rule(base_rule.name)
+                glines = [_("{0} stream / group").format(display_level)]
+                if allowed_g:
+                    glines.append(_("• Allowed: {0}").format(", ".join(allowed_g)))
+                glines.append(_("• You have: {0}").format(applicant_group))
+                blocks.append("\n".join(glines))
             else:
-                # 1. Fetch allowed degrees directly from DB
-                rule_allowed = frappe.get_all("Eligibility Allowed Degree", 
-                                            filters={"parent": base_rule.name}, 
-                                            pluck="degree_name")
-                
-                # 2. Identify Applicant's studied degrees
+                rule_allowed = frappe.get_all(
+                    "Eligibility Allowed Degree",
+                    filters={"parent": base_rule.name},
+                    pluck="degree_name",
+                )
                 applicant_studied = []
                 if qualification_level == "Undergraduate":
-                    applicant_studied = [r.ug_program for r in (self.get("ug_degree_details") or []) if r.ug_program]
+                    applicant_studied = [
+                        r.ug_program for r in (self.get("ug_degree_details") or []) if r.ug_program
+                    ]
                 elif qualification_level == "Postgraduate":
-                    applicant_studied = [r.pg_program for r in (self.get("pg_degree_details") or []) if r.pg_program]
-                
-                # 3. Construct the message
+                    applicant_studied = [
+                        r.pg_program for r in (self.get("pg_degree_details") or []) if r.pg_program
+                    ]
+                studied_val = ", ".join(applicant_studied) if applicant_studied else _("Not provided")
                 if rule_allowed:
-                    # e.g. "Required Undergraduate Degree: BCA"
-                    req_msg = _("Required {0} Degree: {1}").format(display_level, ", ".join(rule_allowed))
-                    
-                    # e.g. "But you have studied: B.A English"
-                    studied_val = ", ".join(applicant_studied) if applicant_studied else _("Not provided")
-                    usr_msg = _("But you have studied: {0}").format(studied_val)
-                    
-                    # Combine with pipe for the toast bullet renderer
-                    reasons.append(f"{req_msg} | {usr_msg}")
-                elif not reasons:
-                    # Fallback generic mismatch message only if no other details exist
-                    reasons.append(_("Program mismatch for {0} qualification.").format(display_level))
+                    dlines = [_("{0} qualification — degrees").format(display_level)]
+                    dlines.append(_("• Allowed: {0}").format(", ".join(rule_allowed)))
+                    dlines.append(_("• You have: {0}").format(studied_val))
+                    blocks.append("\n".join(dlines))
+                elif not blocks:
+                    blocks.append(_("Program mismatch for {0} qualification.").format(display_level))
 
-        # 3. Custom message from rule (e.g. "this is an ineligible message. ajay basker")
         custom_rule_msg = (base_rule.get("ineligible_message") or "").strip()
         if custom_rule_msg:
-            # Avoid repeating the exact same message
-            if custom_rule_msg not in reasons:
-                reasons.append(custom_rule_msg)
+            norm_blocks = "\n\n".join(blocks)
+            if custom_rule_msg not in norm_blocks:
+                blocks.append(custom_rule_msg)
 
-        return " | ".join(reasons)
+        if not blocks:
+            return ""
+
+        return "\n\n".join(blocks)
 
     def _evaluate_mapping_with_category_priority(self, mapping):
         """
@@ -1529,6 +1592,10 @@ class Applicant(Document):
         AND the 'General' (default) path using 'OR' logic.
 
         Result: Eligible if ANY (Category, Rule) combination passes.
+
+        Portal messaging: if the applicant matches at least one reservation row on this mapping,
+        ineligibility details only include failures for those matched category paths — not the
+        generic General path (still evaluated for eligibility, omitted from the message).
         """
         mapping_name = mapping.get("name")
         failure_msg  = (mapping.get("failure_message") or "").strip() or \
@@ -1596,25 +1663,35 @@ class Applicant(Document):
                     return True, ""
                 else:
                     # If this specific rule failed, collect its detailed failure reason
-                    rule_msg = self._build_rule_failure_reason(base_rule, required_val)
+                    rule_msg = self._build_rule_failure_reason(
+                        base_rule, required_val, cat_row=cat_row
+                    )
                     if rule_msg:
-                        # Append with Pipe separator
-                        ineligible_messages.append(rule_msg)
+                        if matched_categories:
+                            if cat_row is not None:
+                                ineligible_messages.append(rule_msg)
+                        else:
+                            ineligible_messages.append(rule_msg)
 
         # If all paths and all rules failed, combine the mapping-level failure_message
         # with the specific ineligible_message(s) from the rules.
+        mapping_heading = _("Summary")
+        detail_heading = _("Eligibility details")
+        self._slcm_failure_sections = [
+            {"heading": mapping_heading, "body": failure_msg},
+        ]
         final_message = failure_msg
-        if ineligible_messages:
-            # deduplicate and handle multi-part messages
-            unique_parts = []
-            for m in ineligible_messages:
-                parts = [p.strip() for p in (m or "").split("|") if p.strip()]
-                for p in parts:
-                    if p and p not in unique_parts:
-                        unique_parts.append(p)
-            
-            if unique_parts:
-                final_message = f"{failure_msg} | {' | '.join(unique_parts)}"
+        unique_parts = []
+        for m in ineligible_messages:
+            m = (m or "").strip()
+            if m and m not in unique_parts:
+                unique_parts.append(m)
+
+        if unique_parts:
+            self._slcm_failure_sections.append(
+                {"heading": detail_heading, "body": "\n\n".join(unique_parts)}
+            )
+            final_message = failure_msg + "\n\n" + "\n\n".join(unique_parts)
 
         return False, final_message
 

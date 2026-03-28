@@ -88,11 +88,15 @@ function _injectCSS() {
 		/* Top-bar: Back (left) + Receipt icon-btn (right) */
 		'#slcm-form-topbar{display:flex;align-items:center;justify-content:space-between;' +
 			'padding:8px 4px 4px;margin-bottom:4px;}',
+		'#slcm-form-topbar-left{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;flex:1;min-width:0;}',
 		'#slcm-back-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
 			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #cbd5e1;' +
 			'background:#f8fafc;color:#334155;cursor:pointer;text-decoration:none;' +
 			'transition:background .15s,border-color .15s;}',
 		'#slcm-back-btn:hover{background:#f1f5f9;border-color:#94a3b8;color:#1e293b;}',
+		'#slcm-applying-for-wrap{font-size:14px;line-height:1.45;color:#475569;min-width:0;}',
+		'#slcm-applying-for-wrap .slcm-applying-for-lbl{font-weight:600;color:#64748b;margin-right:6px;}',
+		'#slcm-applying-for-prog{color:#0f172a;font-weight:700;}',
 		'#slcm-fee-receipt-wrap{display:flex;align-items:center;}',
 		'#slcm-fee-receipt-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
 			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--slcm-primary,#1a73e8);' +
@@ -129,6 +133,12 @@ function _injectCSS() {
 			'border-left:4px solid #e11d48;border-radius:10px;margin-bottom:18px;}',
 		'.slcm-ee-alert-dot{width:10px;height:10px;background:#e11d48;border-radius:50%;flex-shrink:0;margin-top:4px;}',
 		'.slcm-ee-alert-text{font-size:14px;line-height:1.55;color:#334155;}',
+		'.slcm-ee-sec{margin-bottom:16px;}',
+		'.slcm-ee-sec:last-child{margin-bottom:0;}',
+		'.slcm-ee-sec-title{margin:0 0 8px;font-size:13px;font-weight:700;color:#0f172a;letter-spacing:.02em;}',
+		'.slcm-ee-sec-body{font-size:14px;line-height:1.55;color:#334155;}',
+		'.slcm-ee-sec-body .slcm-ee-sec-p{margin:0 0 10px;}',
+		'.slcm-ee-sec-body .slcm-ee-sec-p:last-child{margin-bottom:0;}',
 		'.slcm-ee-subhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:8px;}',
 		'.slcm-ee-subhead strong{font-size:15px;color:#0f172a;}',
 		'.slcm-ee-meta{font-size:12px;color:#64748b;}',
@@ -223,11 +233,14 @@ function _injectCSS() {
 		'.web-form-container:has(#slcm-stepper-wrap) #slcm-stepper-wrap{' +
 			'background:#fff;border:1px solid #e2e8f0;border-bottom:none;border-radius:12px 12px 0 0;' +
 			'margin:16px 0 0;padding:20px 16px 28px;position:relative;z-index:1;}',
+		/* overflow:visible so Link/Awesomplete dropdowns are not clipped; rounded corners come from border-radius on this form */
 		'.web-form-container:has(#slcm-stepper-wrap) form.web-form{' +
 			'border:1px solid #e2e8f0!important;border-top:1px solid #eef2f6!important;' +
 			'border-radius:0 0 12px 12px!important;background:#fff!important;margin-top:0!important;' +
-			'overflow:hidden;}',
+			'overflow-x:hidden;overflow-y:visible;}',
 		'.web-form-container:has(#slcm-stepper-wrap) form.web-form .web-form-body{border-top:none!important;}',
+		/* Child-table Link dropdowns extend below the grid; core .form-grid uses overflow-y:hidden */
+		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
 		/* Field error highlight */
 		'.slcm-field-error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}',
 		/* Small Text / Long Text / Text — taller textarea (Address etc.) */
@@ -845,10 +858,85 @@ var _feeReceiptBtnInFlight = false;
 var _SVG_BACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>';
 var _SVG_DOWNLOAD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 
+/** Server-provided Program.program_name keyed by program id (from get_program_portal_derivatives). */
+var _slcmProgramLabelCache = { id: '', label: '' };
+
+function _slcmEnsureApplyingForWrap(bar) {
+	var left = document.getElementById('slcm-form-topbar-left');
+	if (!left) {
+		left = document.createElement('div');
+		left.id = 'slcm-form-topbar-left';
+		var back = document.getElementById('slcm-back-btn');
+		if (back && back.parentNode === bar) {
+			bar.removeChild(back);
+			left.appendChild(back);
+		}
+		var apply = document.createElement('div');
+		apply.id = 'slcm-applying-for-wrap';
+		apply.setAttribute('aria-live', 'polite');
+		apply.innerHTML =
+			'<span class="slcm-applying-for-lbl">' +
+			__('Applying for:') +
+			'</span> ' +
+			'<strong id="slcm-applying-for-prog"></strong>';
+		left.appendChild(apply);
+		bar.insertBefore(left, bar.firstChild);
+	} else if (!document.getElementById('slcm-applying-for-wrap')) {
+		var apply2 = document.createElement('div');
+		apply2.id = 'slcm-applying-for-wrap';
+		apply2.setAttribute('aria-live', 'polite');
+		apply2.innerHTML =
+			'<span class="slcm-applying-for-lbl">' +
+			__('Applying for:') +
+			'</span> ' +
+			'<strong id="slcm-applying-for-prog"></strong>';
+		left.appendChild(apply2);
+	}
+}
+
+/** Update “Applying for: …” next to Back (uses Program name from server when available). */
+function syncTopBarApplyingFor() {
+	var bar = document.getElementById('slcm-form-topbar');
+	if (!bar) {
+		return;
+	}
+	_slcmEnsureApplyingForWrap(bar);
+	var wrap = document.getElementById('slcm-applying-for-wrap');
+	var strong = document.getElementById('slcm-applying-for-prog');
+	if (!wrap || !strong) {
+		return;
+	}
+	var pid = (resolveField('program') || '').trim();
+	if (!pid) {
+		wrap.style.display = 'none';
+		strong.textContent = '';
+		return;
+	}
+	wrap.style.display = '';
+	var label = '';
+	if (_slcmProgramLabelCache.id === pid && _slcmProgramLabelCache.label) {
+		label = _slcmProgramLabelCache.label;
+	}
+	if (!label) {
+		try {
+			var $inp = $('.web-form [data-fieldname="program"] input').first();
+			if ($inp.length) {
+				label = ($inp.val() || '').trim();
+			}
+		} catch (e) {}
+	}
+	if (!label) {
+		label = pid;
+	}
+	strong.textContent = label;
+}
+
 /** Ensure the top-bar strip (Back left, Receipt right) exists above the web-form head. */
 function _ensureTopBar() {
 	var existing = document.getElementById('slcm-form-topbar');
 	if (existing) {
+		_slcmEnsureApplyingForWrap(existing);
+		syncTopBarApplyingFor();
 		return document.getElementById('slcm-fee-receipt-wrap');
 	}
 
@@ -864,19 +952,34 @@ function _ensureTopBar() {
 	var bar = document.createElement('div');
 	bar.id = 'slcm-form-topbar';
 
-	// ── Back button (left) ──────────────────────────────────────────
+	// ── Back + “Applying for” (left) ─────────────────────────────────
+	var topLeft = document.createElement('div');
+	topLeft.id = 'slcm-form-topbar-left';
+
 	var backBtn = document.createElement('a');
 	backBtn.id = 'slcm-back-btn';
 	backBtn.href = '/admission';
 	backBtn.title = 'Back to My Applications';
 	backBtn.innerHTML = _SVG_BACK + '<span>Back</span>';
 
+	var applyWrap = document.createElement('div');
+	applyWrap.id = 'slcm-applying-for-wrap';
+	applyWrap.setAttribute('aria-live', 'polite');
+	applyWrap.innerHTML =
+		'<span class="slcm-applying-for-lbl">' +
+		__('Applying for:') +
+		'</span> ' +
+		'<strong id="slcm-applying-for-prog"></strong>';
+
+	topLeft.appendChild(backBtn);
+	topLeft.appendChild(applyWrap);
+	bar.appendChild(topLeft);
+
 	// ── Receipt placeholder (right) — filled later when receipt is ready ──
 	var receiptWrap = document.createElement('div');
 	receiptWrap.id = 'slcm-fee-receipt-wrap';
 	receiptWrap.style.display = 'none'; // hidden until receipt is confirmed
 
-	bar.appendChild(backBtn);
 	bar.appendChild(receiptWrap);
 
 	if ($head.is('form') || ($head.prop('tagName') || '').toLowerCase() === 'form') {
@@ -886,6 +989,7 @@ function _ensureTopBar() {
 	} else {
 		$head.before(bar);
 	}
+	syncTopBarApplyingFor();
 	return receiptWrap;
 }
 
@@ -988,13 +1092,18 @@ var _programDerivTimer = null;
 /** When Program or Admission Cycle changes, refresh program_level / intake_type / campus (server). */
 function scheduleProgramPortalDerivatives() {
 	clearTimeout(_programDerivTimer);
+	syncTopBarApplyingFor();
 	_programDerivTimer = setTimeout(function () {
 		var wf = window.frappe && frappe.web_form;
 		if (!wf || typeof wf.get_value !== 'function' || typeof wf.set_value !== 'function') {
 			return;
 		}
 		var program = wf.get_value('program');
-		if (!program) return;
+		if (!program) {
+			_slcmProgramLabelCache = { id: '', label: '' };
+			syncTopBarApplyingFor();
+			return;
+		}
 
 		frappe.call({
 			method: 'slcm.admission.web_form.applicant_form.applicant_form.get_program_portal_derivatives',
@@ -1005,12 +1114,17 @@ function scheduleProgramPortalDerivatives() {
 			callback: function (r) {
 				var d = r && r.message;
 				if (!d) return;
+				if (program && d.program_label) {
+					_slcmProgramLabelCache.id = program;
+					_slcmProgramLabelCache.label = d.program_label;
+				}
 				try {
 					if (d.program_level) wf.set_value('program_level', d.program_level);
 					if (d.intake_type) wf.set_value('intake_type', d.intake_type);
 					if (d.campus) wf.set_value('campus', d.campus);
 				} catch (e) {}
 				scheduleFeeUpdate();
+				syncTopBarApplyingFor();
 			},
 		});
 	}, 320);
@@ -1041,6 +1155,50 @@ function _slcmEscapeHtml(s) {
 	var d = document.createElement('div');
 	d.textContent = s == null ? '' : String(s);
 	return d.innerHTML;
+}
+
+function _slcmEscapeAttr(s) {
+	if (s == null) {
+		return '';
+	}
+	return String(s)
+		.replace(/&/g, '&amp;')
+		.replace(/"/g, '&quot;')
+		.replace(/</g, '&lt;');
+}
+
+/** Web Form success_url without leading / is resolved under /applicant-form/ — force site-root paths. */
+function _slcmNormalizePortalPath(url) {
+	if (!url || typeof url !== 'string') {
+		return '';
+	}
+	var u = url.trim();
+	if (!u) {
+		return '';
+	}
+	if (/^https?:\/\//i.test(u) || u.indexOf('//') === 0) {
+		return u;
+	}
+	if (u.charAt(0) === '/') {
+		return u;
+	}
+	return '/' + u;
+}
+
+function _slcmFormatEeSectionBody(text) {
+	if (!text) {
+		return '';
+	}
+	return text
+		.split(/\n\n+/)
+		.map(function (para) {
+			return (
+				'<p class="slcm-ee-sec-p">' +
+				_slcmEscapeHtml(para).replace(/\n/g, '<br>') +
+				'</p>'
+			);
+		})
+		.join('');
 }
 
 /**
@@ -1099,7 +1257,39 @@ function showEligibilityEvaluationModal(applicantName, res) {
 	}
 
 	var reasonEl = document.getElementById('slcm-ee-reason');
-	if (reasonEl) reasonEl.textContent = reason;
+	var sections = (res && res.failure_sections) || [];
+	if (reasonEl) {
+		if (sections.length) {
+			reasonEl.innerHTML = sections
+				.map(function (sec) {
+					var h = sec.heading || '';
+					var b = sec.body || '';
+					return (
+						'<div class="slcm-ee-sec">' +
+						(h
+							? '<h4 class="slcm-ee-sec-title">' + _slcmEscapeHtml(h) + '</h4>'
+							: '') +
+						'<div class="slcm-ee-sec-body">' +
+						_slcmFormatEeSectionBody(b) +
+						'</div></div>'
+					);
+				})
+				.join('');
+		} else if (reason.indexOf('|') !== -1) {
+			reasonEl.innerHTML = reason
+				.split('|')
+				.map(function (p) {
+					return (
+						'<p class="slcm-ee-sec-p" style="margin:0 0 8px;">' +
+						_slcmEscapeHtml(p.trim()) +
+						'</p>'
+					);
+				})
+				.join('');
+		} else {
+			reasonEl.innerHTML = _slcmFormatEeSectionBody(reason);
+		}
+	}
 
 	var wrap = document.getElementById('slcm-ee-programs-wrap');
 	if (!wrap) return;
@@ -1404,6 +1594,7 @@ function _doFinalSubmit(applicantName) {
 
 /** Premium Success Modal */
 function _showSuccessModal(title, message, nextUrl) {
+	var absDash = _slcmNormalizePortalPath(nextUrl);
 	var modalId = 'slcm-success-modal';
 	var modal = document.getElementById(modalId);
 	if (!modal) {
@@ -1424,18 +1615,30 @@ function _showSuccessModal(title, message, nextUrl) {
 				'<h2 style="margin:0 0 12px;font-size:24px;font-weight:800;color:#0f172a;line-height:1.2;">' + _slcmEscapeHtml(title) + '</h2>' +
 				'<div style="font-size:15px;line-height:1.6;color:#475569;margin-bottom:32px;">' + message.replace(/\n/g, '<br>') + '</div>' +
 				'<div style="display:flex;flex-direction:column;gap:12px;">' +
-					(nextUrl
-						? '<a href="' + nextUrl + '" style="display:flex;align-items:center;justify-content:center;gap:8px;' +
+					(absDash
+						? '<a id="slcm-success-goto" href="' +
+						  _slcmEscapeAttr(absDash) +
+						  '" style="display:flex;align-items:center;justify-content:center;gap:8px;' +
 						  'background:var(--slcm-primary,#1a3c6e);color:#fff;padding:14px;border-radius:12px;' +
 						  'font-weight:700;text-decoration:none;font-size:16px;transition:all 0.2s;">' +
 						  '<span>Go to Dashboard</span><span style="font-family:Material Symbols Outlined;font-size:20px;">arrow_forward</span></a>'
-						: '') +
+						: '<a id="slcm-success-goto" href="#" style="display:none;"></a>') +
 					'<button id="slcm-success-close" style="background:#f1f5f9;color:#475569;border:none;' +
 					'padding:14px;border-radius:12px;font-weight:600;cursor:pointer;font-size:15px;">' +
 					(nextUrl ? 'Stay on Page' : 'Close and Refresh') + '</button>' +
 				'</div>' +
 			'</div>';
 		document.body.appendChild(modal);
+	} else {
+		var goExisting = document.getElementById('slcm-success-goto');
+		if (goExisting) {
+			if (absDash) {
+				goExisting.setAttribute('href', absDash);
+				goExisting.style.display = '';
+			} else {
+				goExisting.style.display = 'none';
+			}
+		}
 	}
 
 	// Internal slide-up animation
@@ -2238,24 +2441,65 @@ function applyQueryStringPrefill() {
 		clearInterval(t);
 		if (!isNewApplicantWebForm()) return;
 
-		var pairs = [
-			['program', 'program'],
-			['admission_cycle', 'admission_cycle'],
-			['campus', 'campus'],
-			['intake_type', 'intake_type'],
-			['admission_year', 'admission_year'],
-			['academic_year', 'academic_year'],
-			['program_level', 'program_level'],
-		];
-		pairs.forEach(function (x) {
-			var v = params.get(x[0]);
-			if (v) {
-				try {
-					wf.set_value(x[1], v);
-				} catch (e) {}
-			}
+		function applyQueryPairs() {
+			var pairs = [
+				['program', 'program'],
+				['admission_cycle', 'admission_cycle'],
+				['campus', 'campus'],
+				['intake_type', 'intake_type'],
+				['admission_year', 'admission_year'],
+				['academic_year', 'academic_year'],
+				['program_level', 'program_level'],
+			];
+			pairs.forEach(function (x) {
+				var v = params.get(x[0]);
+				if (v) {
+					try {
+						wf.set_value(x[1], v);
+					} catch (e) {}
+				}
+			});
+			scheduleFeeUpdate();
+		}
+
+		// Never re-apply Application Info / programme-derived fields from a prior Applicant;
+		// those come from the URL and get_program_portal_derivatives (Program + cycle).
+		var SLCM_COPY_SKIP_FIELDS = {
+			program: 1,
+			admission_cycle: 1,
+			admission_year: 1,
+			academic_year: 1,
+			campus: 1,
+			program_level: 1,
+			application_type: 1,
+			intake_type: 1,
+			application_status: 1,
+		};
+
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.pop_multiprogram_profile_copy',
+			callback: function (r) {
+				var payload = r.message;
+				if (payload && typeof payload === 'object') {
+					Object.keys(payload).forEach(function (k) {
+						if (k.indexOf('__') === 0) return;
+						if (SLCM_COPY_SKIP_FIELDS[k]) return;
+						var v = payload[k];
+						if (v === undefined || v === null) return;
+						if (Array.isArray(v) && v.length === 0) return;
+						try {
+							wf.set_value(k, v);
+						} catch (e) {}
+					});
+				}
+				applyQueryPairs();
+				scheduleProgramPortalDerivatives();
+			},
+			error: function () {
+				applyQueryPairs();
+				scheduleProgramPortalDerivatives();
+			},
 		});
-		scheduleFeeUpdate();
 	}, 80);
 }
 
@@ -2439,6 +2683,96 @@ function setupSlcmFieldErrorClear() {
 	);
 }
 
+/**
+ * Frappe grid_row repositions Awesomplete for Link cells using getBoundingClientRect mixed with
+ * jQuery .offset() (viewport vs document), so lists jump to the top after scroll. Core also uses
+ * overflow on .form-grid. Re-anchor the list with position:fixed under the focused input.
+ */
+function setupSlcmWebFormAwesompletePositionFix() {
+	var scrollHandler = null;
+
+	function detachScroll() {
+		if (!scrollHandler) {
+			return;
+		}
+		window.removeEventListener('scroll', scrollHandler, true);
+		document.querySelectorAll('.web-form').forEach(function (el) {
+			el.removeEventListener('scroll', scrollHandler);
+		});
+		scrollHandler = null;
+	}
+
+	function placeListUnderInput(input) {
+		if (!input || !input.getAttribute) {
+			return;
+		}
+		var listId = input.getAttribute('aria-owns');
+		if (!listId || listId.indexOf('awesomplete_list_') !== 0) {
+			return;
+		}
+		var ul = document.getElementById(listId);
+		if (!ul || ul.hasAttribute('hidden')) {
+			return;
+		}
+		var rect = input.getBoundingClientRect();
+		if (!rect.width && !rect.height) {
+			return;
+		}
+		$(ul).css({
+			position: 'fixed',
+			left: Math.round(rect.left) + 'px',
+			top: Math.round(rect.bottom + 2) + 'px',
+			width: Math.max(250, Math.round(rect.width)) + 'px',
+			zIndex: 10050,
+			maxHeight: 'min(60vh, 300px)',
+			overflowY: 'auto',
+		});
+	}
+
+	function resetListStyles(input) {
+		var listId = input && input.getAttribute && input.getAttribute('aria-owns');
+		if (!listId) {
+			return;
+		}
+		var ul = document.getElementById(listId);
+		if (!ul) {
+			return;
+		}
+		$(ul).css({
+			position: '',
+			left: '',
+			top: '',
+			width: '',
+			zIndex: '',
+			maxHeight: '',
+			overflowY: '',
+		});
+	}
+
+	$(document).on('awesomplete-open', '.web-form input[aria-owns^="awesomplete_list_"]', function () {
+		var input = this;
+		var run = function () {
+			placeListUnderInput(input);
+		};
+		requestAnimationFrame(run);
+		setTimeout(run, 0);
+		setTimeout(run, 320);
+		detachScroll();
+		scrollHandler = function () {
+			placeListUnderInput(input);
+		};
+		window.addEventListener('scroll', scrollHandler, true);
+		document.querySelectorAll('.web-form').forEach(function (el) {
+			el.addEventListener('scroll', scrollHandler, { passive: true });
+		});
+	});
+
+	$(document).on('awesomplete-close', '.web-form input[aria-owns^="awesomplete_list_"]', function () {
+		resetListStyles(this);
+		detachScroll();
+	});
+}
+
 // ───────────────────────────────────────────────────────────────────
 //  BOOTSTRAP
 // ───────────────────────────────────────────────────────────────────
@@ -2446,6 +2780,7 @@ frappe.ready(function () {
 	_injectCSS();
 	_injectAdmissionShell();
 	setupSlcmFieldErrorClear();
+	setupSlcmWebFormAwesompletePositionFix();
 
 	try {
 		$('#eligibility-alert-box').remove();
@@ -2463,7 +2798,10 @@ frappe.ready(function () {
 		if (wf && typeof wf.on === 'function') {
 			clearInterval(_bindProgTimer);
 			try {
-				wf.on('program', scheduleProgramPortalDerivatives);
+				wf.on('program', function () {
+					syncTopBarApplyingFor();
+					scheduleProgramPortalDerivatives();
+				});
 				wf.on('admission_cycle', scheduleProgramPortalDerivatives);
 			} catch (e) {}
 		} else if (_bindProgN > 120) {
@@ -2480,6 +2818,14 @@ frappe.ready(function () {
 	setupSaveDraftButton();
 
 	setupApplicationFeeReceiptDownload();
+	if (window.frappe && frappe.web_form && frappe.web_form.events && frappe.web_form.events.on) {
+		try {
+			frappe.web_form.events.on('after_load', function () {
+				_ensureTopBar();
+				scheduleProgramPortalDerivatives();
+			});
+		} catch (e) {}
+	}
 	setupSubmittedFormUX();
 	setupCandidatePhotoPreview();
 	setupAttachFieldValidation();

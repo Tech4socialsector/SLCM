@@ -206,6 +206,10 @@ def get_context(context):
         context.admission_year = None
         context.academic_year = ""
 
+    context.allow_multiple_applications = bool(
+        int(getattr(context.active_cycle, "allow_multiple_applications", 0) or 0)
+    ) if context.active_cycle else False
+
     ac_campus = ""
     ac_intake = ""
     ac_prog_level = (context.prog_level or "").strip()
@@ -355,3 +359,4 @@ def _set_empty_context(context, slug):
     context.apply_web_form_login_url = "/login?redirect-to=/admission"
     context.user_app_name = ""
     context.user_app_status = ""
+    context.allow_multiple_applications = False

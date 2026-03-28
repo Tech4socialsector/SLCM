@@ -3,7 +3,7 @@
  "creation": "2026-02-27 16:08:10.355871",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "header_icon": "file-check",
+ "header_icon": "book-heart",
  "idx": 0,
  "items": [
   {
@@ -244,11 +244,11 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-23 17:39:08.175208",
+ "modified": "2026-03-28 15:02:26.025904",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "Offer Letter",
+ "name": "Offer Letters",
  "owner": "Administrator",
  "standard": 1,
- "title": "Offer Letter"
+ "title": "Offer Letters"
 }

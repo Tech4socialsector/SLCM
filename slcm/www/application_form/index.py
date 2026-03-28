@@ -6,6 +6,40 @@ from frappe.utils import flt, now, nowdate, strip_html
 
 from slcm.utils.phone_utils import sanitize_phone_for_frappe
 from slcm.admission.utils.portal import is_application_editable
+from slcm.admission.utils.multiprogram_applicant import (
+    applicant_dict_for_multiprogram_copy,
+    build_multiprogram_profile_copy_payload,
+    store_multiprogram_profile_copy_in_cache,
+)
+
+
+def _redirect_portal_to_applicant_web_form(program, admission_cycle, extra_q):
+    """
+    Always send users to /applicant-form/new with query prefills.
+    When allow_multiple_applications applies, cache a one-shot profile copy for the web form.
+    """
+    from slcm.admission.utils.portal import build_applicant_form_new_url
+
+    program = (program or "").strip()
+    admission_cycle = (admission_cycle or "").strip()
+    extra_q = extra_q or {}
+    user = frappe.session.user
+    email = frappe.db.get_value("User", user, "email") or user
+    payload = build_multiprogram_profile_copy_payload(email, admission_cycle, program)
+    store_multiprogram_profile_copy_in_cache(payload)
+    ad_year, ac_year = frappe.db.get_value(
+        "Admission Cycle", admission_cycle, ["admission_year", "academic_year"]
+    ) or ("", "")
+    frappe.local.flags.redirect_location = build_applicant_form_new_url(
+        program,
+        admission_cycle,
+        campus=(extra_q.get("campus") or "").strip(),
+        intake_type=(extra_q.get("intake_type") or "").strip(),
+        admission_year=(extra_q.get("admission_year") or "").strip() or (ad_year or ""),
+        academic_year=(extra_q.get("academic_year") or "").strip() or (ac_year or ""),
+        program_level=(extra_q.get("program_level") or "").strip(),
+    )
+    raise frappe.Redirect
 
 
 def _portal_unique_campuses_for_program_cycle(program, admission_cycle):
@@ -40,10 +74,8 @@ def _portal_unique_campuses_for_program_cycle(program, admission_cycle):
 @frappe.whitelist(allow_guest=False)
 def start_application(program=None, admission_cycle=None, campus=None, program_level=None, intake_type=None):
     """
-    Legacy helper: validate program + cycle and redirect to the Applicant web form with prefills.
+    Validate program + cycle and redirect to the Applicant web form (/applicant-form/new) with prefills.
     """
-    from slcm.admission.utils.portal import build_applicant_form_new_url
-
     if frappe.session.user == "Guest":
         frappe.local.flags.redirect_location = "/login?redirect-to=/admission"
         raise frappe.Redirect
@@ -59,20 +91,15 @@ def start_application(program=None, admission_cycle=None, campus=None, program_l
     if not exists:
         frappe.local.flags.redirect_location = "/admission"
         raise frappe.Redirect
-    # Store in session (Frappe session data is server-side)
-    # We use frappe.local.session.data for persistent custom fields in some versions,
-    # but for widest compatibility with standard Website Users, we can use frappe.cache().hset
-    sel = {
-        "program": program,
-        "admission_cycle": admission_cycle,
-        "campus": (campus or "").strip() or None,
-        "program_level": (program_level or "").strip() or None,
-        "intake_type": (intake_type or "").strip() or None,
-    }
-    frappe.cache().hset("application_form_selection", frappe.session.sid, sel)
-    
-    frappe.local.flags.redirect_location = "/application_form"
-    raise frappe.Redirect
+    _redirect_portal_to_applicant_web_form(
+        program,
+        admission_cycle,
+        {
+            "campus": (campus or "").strip(),
+            "intake_type": (intake_type or "").strip(),
+            "program_level": (program_level or "").strip(),
+        },
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -83,8 +110,6 @@ def get_context(context):
     """
     Builds the Jinja context for the application form web page.
     """
-    from slcm.admission.utils.portal import build_applicant_form_new_url
-
     if frappe.session.user == "Guest":
         frappe.local.flags.redirect_location = "/login?redirect-to=/admission"
         raise frappe.Redirect
@@ -110,6 +135,9 @@ def get_context(context):
             frappe.local.flags.redirect_location = "/my-applications"
             raise frappe.Redirect
 
+    user = frappe.session.user
+    email = frappe.db.get_value("User", user, "email") or user
+
     url_program = (frappe.form_dict.get("program") or "").strip()
     url_cycle = (frappe.form_dict.get("admission_cycle") or "").strip()
     if url_program and url_cycle:
@@ -117,22 +145,10 @@ def get_context(context):
             "Admission Cycle Program",
             {"parent": url_cycle, "program": url_program, "is_active": 1},
         ):
-            q = frappe.form_dict
-            ad_year, ac_year = frappe.db.get_value(
-                "Admission Cycle", url_cycle, ["admission_year", "academic_year"]
-            ) or ("", "")
-            frappe.local.flags.redirect_location = build_applicant_form_new_url(
-                url_program,
-                url_cycle,
-                campus=(q.get("campus") or "").strip(),
-                intake_type=(q.get("intake_type") or "").strip(),
-                admission_year=(q.get("admission_year") or "").strip() or (ad_year or ""),
-                academic_year=(q.get("academic_year") or "").strip() or (ac_year or ""),
-                program_level=(q.get("program_level") or "").strip(),
-            )
+            _redirect_portal_to_applicant_web_form(url_program, url_cycle, frappe.form_dict)
+        else:
+            frappe.local.flags.redirect_location = "/admission"
             raise frappe.Redirect
-        frappe.local.flags.redirect_location = "/admission"
-        raise frappe.Redirect
 
     session_sel = (
         frappe.session.get("application_form_selection") or {}
@@ -145,22 +161,7 @@ def get_context(context):
         "Admission Cycle Program",
         {"parent": sc, "program": sp, "is_active": 1},
     ):
-        ad_year, ac_year = frappe.db.get_value(
-            "Admission Cycle", sc, ["admission_year", "academic_year"]
-        ) or ("", "")
-        frappe.local.flags.redirect_location = build_applicant_form_new_url(
-            sp,
-            sc,
-            campus=(session_sel.get("campus") or "") if session_sel.get("campus") else "",
-            intake_type=(session_sel.get("intake_type") or "") if session_sel.get("intake_type") else "",
-            admission_year=ad_year or "",
-            academic_year=ac_year or "",
-            program_level=(session_sel.get("program_level") or "") if session_sel.get("program_level") else "",
-        )
-        raise frappe.Redirect
-
-    user = frappe.session.user
-    email = frappe.db.get_value("User", user, "email") or user
+        _redirect_portal_to_applicant_web_form(sp, sc, session_sel)
     prefill_prog = url_program or sp or ""
     prefill_cycle = url_cycle or sc or ""
 
@@ -185,6 +186,28 @@ def get_context(context):
                 context.applicant_data = frappe.parse_json(frappe.as_json(doc))
                 context.application_submitted = doc.application_status == "Submitted"
                 context.application_editable = is_application_editable(doc)
+            else:
+                allow_multi = int(
+                    frappe.db.get_value(
+                        "Admission Cycle", prefill_cycle, "allow_multiple_applications"
+                    )
+                    or 0
+                )
+                if allow_multi:
+                    other = frappe.get_all(
+                        "Applicant",
+                        filters={
+                            "email": email,
+                            "admission_cycle": prefill_cycle,
+                            "program": ["!=", prefill_prog],
+                        },
+                        fields=["name"],
+                        order_by="modified desc",
+                        limit=1,
+                    )
+                    if other:
+                        src = frappe.get_doc("Applicant", other[0].name)
+                        context.applicant_data = applicant_dict_for_multiprogram_copy(src)
         except Exception:
             frappe.log_error(frappe.get_traceback(), "Application Form — Get Applicant")
             context.applicant_data = {}
@@ -215,11 +238,20 @@ def get_context(context):
         context.prefill_academic_year = app_data.get("academic_year") or ""
         context.prefill_admission_year = app_data.get("admission_year") or ""
     else:
+        _q = frappe.form_dict
         context.prefill_program = session_sel.get("program") or prefill_prog
         context.prefill_admission_cycle = session_sel.get("admission_cycle") or prefill_cycle
-        context.prefill_campus = session_sel.get("campus") or ""
-        context.prefill_program_level = session_sel.get("program_level") or ""
-        context.prefill_intake_type = session_sel.get("intake_type") or ""
+        context.prefill_campus = (
+            session_sel.get("campus")
+            or (_q.get("campus") or "").strip()
+            or ""
+        )
+        context.prefill_program_level = (
+            session_sel.get("program_level") or (_q.get("program_level") or "").strip() or ""
+        )
+        context.prefill_intake_type = (
+            session_sel.get("intake_type") or (_q.get("intake_type") or "").strip() or ""
+        )
         context.prefill_academic_year = ""
         context.prefill_admission_year = ""
 
@@ -633,17 +665,46 @@ def save_form(data):
         return {"error": _("Admission cycle is required. Please select a program from the admission listing.")}
 
     try:
-        existing_name = frappe.db.get_value(
-            "Applicant",
-            {"email": user_email, "admission_cycle": admission_cycle},
-            "name",
+        allow_multi = int(
+            frappe.db.get_value(
+                "Admission Cycle", admission_cycle, "allow_multiple_applications"
+            )
+            or 0
         )
-        if not existing_name:
+        program = (sanitized.get("program") or data.get("program") or "").strip()
+
+        if allow_multi and program:
             existing_name = frappe.db.get_value(
                 "Applicant",
-                {"owner": user, "admission_cycle": admission_cycle},
+                {
+                    "email": user_email,
+                    "admission_cycle": admission_cycle,
+                    "program": program,
+                },
                 "name",
             )
+            if not existing_name:
+                existing_name = frappe.db.get_value(
+                    "Applicant",
+                    {
+                        "owner": user,
+                        "admission_cycle": admission_cycle,
+                        "program": program,
+                    },
+                    "name",
+                )
+        else:
+            existing_name = frappe.db.get_value(
+                "Applicant",
+                {"email": user_email, "admission_cycle": admission_cycle},
+                "name",
+            )
+            if not existing_name:
+                existing_name = frappe.db.get_value(
+                    "Applicant",
+                    {"owner": user, "admission_cycle": admission_cycle},
+                    "name",
+                )
     except Exception:
         existing_name = None
 

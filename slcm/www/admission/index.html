@@ -1445,7 +1445,7 @@
             <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
             Applied
           </a>
-          {% elif has_any_application %}
+          {% elif has_any_application and not (allow_multiple_applications|default(false)) %}
           <a href="javascript:void(0)" style="display:inline-flex;align-items:center;gap:6px;
                         padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                         text-decoration:none;color:#fff;

@@ -335,6 +335,7 @@ def _set_empty_pd_context(context, slug):
     context.support_email    = "admissions@nlsiu.ac.in"
     context.apply_web_form_url = "/admission"
     context.apply_web_form_login_url = "/login?redirect-to=/admission"
+    context.allow_multiple_applications = False
 
 def get_context(context):
     # ── Route detection: /admission vs /admission/[slug] ─────────────
@@ -362,7 +363,7 @@ def get_context(context):
             row = frappe.db.get_value(
                 "Admission Cycle",
                 active_cycle_name,
-                ["cycle_start_date", "cycle_end_date"],
+                ["cycle_start_date", "cycle_end_date", "allow_multiple_applications"],
                 as_dict=True,
             ) or {}
             active_cycle = frappe._dict({
@@ -374,12 +375,16 @@ def get_context(context):
                 if row.get("cycle_end_date")
                 else None,
                 "application_end": None,
+                "allow_multiple_applications": int(row.get("allow_multiple_applications") or 0),
             })
     except Exception:
         frappe.log_error(frappe.get_traceback(), "admission get_context: active_cycle")
         active_cycle = None
 
     context.active_cycle = active_cycle
+    context.allow_multiple_applications = bool(
+        active_cycle.get("allow_multiple_applications")
+    ) if active_cycle else False
     context.today = frappe.utils.getdate(frappe.utils.today())
 
     # ── 2. Is application window open? ───────────────────────────────
@@ -449,6 +454,7 @@ def get_context(context):
         context.announcements = []
         context.active_cycle  = None
         context.app_open      = False
+        context.allow_multiple_applications = False
         context.no_cache      = 1
         context.title         = portal_config.get("portal_title", "Admissions")
         return
