@@ -173,7 +173,7 @@ def send_merit_published_notifications(doc):
                 message_body = f"""
                     <p>The merit list <strong>"{doc.name}"</strong> has been published.</p>
                     <p>Your rank and merit score are now available. Please check your result and admission status.</p>
-                    <p><a href="/my-applications" style="color: #16a34a; font-weight: bold;">Click here to view your result.</a></p>
+                    <p><a href="/my-applications?app={row.applicant_id}" style="color: #16a34a; font-weight: bold;">Click here to view your result.</a></p>
                 """
                 
                 frappe.get_doc({
@@ -185,7 +185,7 @@ def send_merit_published_notifications(doc):
                     "document_type": "Merit List",
                     "document_name": doc.name,
                     "from_user": frappe.session.user,
-                    "link": "/my-applications"
+                    "link": f"/my-applications?app={row.applicant_id}"
                 }).insert(ignore_permissions=True)
             except Exception:
                 # Silently fail for individual notification logs if one user has issues
