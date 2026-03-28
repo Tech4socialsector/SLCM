@@ -545,6 +545,8 @@ def get_context(context):
         except Exception: pass
 
         # Merit (fallback): pull from published Merit List if applicant_results pipeline didn't return it
+        context.merit_list_published_date = ""
+        context.merit_total_applicants = 0
         try:
             _need_merit = True
             if context.all_merit and isinstance(context.all_merit, list):
@@ -563,13 +565,18 @@ def get_context(context):
                         "campus": applicant.campus,
                         "program_level": applicant.program_level or None,
                     },
-                    fields=["name"],
+                    fields=["name", "modified"],
                     order_by="modified desc",
                     limit=1,
                     ignore_permissions=True,
                 )
                 if ml_rows:
                     ml = frappe.get_doc("Merit List", ml_rows[0].name, ignore_permissions=True)
+                    # Store published date & total count
+                    context.merit_list_published_date = frappe.utils.format_date(
+                        ml_rows[0].get("modified"), "d MMMM yyyy"
+                    ) if ml_rows[0].get("modified") else ""
+                    context.merit_total_applicants = len(ml.merit_applicants or [])
                     row = next((r for r in (ml.merit_applicants or []) if r.applicant_id == _app_name), None)
                     if row:
                         context.all_merit = [{
@@ -578,6 +585,31 @@ def get_context(context):
                             "status": row.status,
                             "program_rank": row.program_rank,
                         }]
+            else:
+                # Merit already populated — try to fetch the published date from the Merit List
+                try:
+                    _ml_date_row = frappe.get_all(
+                        "Merit List",
+                        filters={
+                            "docstatus": 1,
+                            "status": "Published",
+                            "admission_cycle": applicant.admission_cycle,
+                            "campus": applicant.campus,
+                            "program_level": applicant.program_level or None,
+                        },
+                        fields=["name", "modified"],
+                        order_by="modified desc",
+                        limit=1,
+                        ignore_permissions=True,
+                    )
+                    if _ml_date_row:
+                        context.merit_list_published_date = frappe.utils.format_date(
+                            _ml_date_row[0].get("modified"), "d MMMM yyyy"
+                        ) if _ml_date_row[0].get("modified") else ""
+                        _ml_doc_tmp = frappe.get_doc("Merit List", _ml_date_row[0].name, ignore_permissions=True)
+                        context.merit_total_applicants = len(_ml_doc_tmp.merit_applicants or [])
+                except Exception:
+                    pass
         except Exception as ex:
             frappe.log_error(str(ex), "my_applications merit list fallback")
 
