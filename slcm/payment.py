@@ -193,6 +193,9 @@ def razorpay_webhook():
 	pr.db_set("status", system_status)
 	if gateway_status == "captured":
 		pr.db_set("paid_on", frappe.utils.now_datetime())
+		if payment_id:
+			# Align with client verify path so Applicant Payment Receipt can link Payment Request
+			pr.db_set("transaction_id", payment_id)
 	# Mark webhook received for terminal states to prevent duplicate processing
 	if gateway_status in terminal_states:
 		pr.db_set("webhook_received", 1)
@@ -200,14 +203,24 @@ def razorpay_webhook():
 	del frappe.flags.payment_request_status_from_backend
 
 	if gateway_status == "captured":
-		# Trigger seat lock / admission confirmation
+		# Trigger seat lock / admission confirmation (Offer Letter only)
 		try:
 			from slcm.admission.seat_lock import lock_seat_after_payment
-			lock_seat_after_payment(pr)
+			lock_seat_after_payment(frappe.get_doc("Payment Request", pr_name))
 		except Exception as e:
 			frappe.log_error(
 				message=frappe.get_traceback(),
 				title=_("Seat Lock After Payment Failed"),
+			)
+		# Application fee: Applicant-linked Payment Request → receipt + applicant status
+		try:
+			from slcm.api.service.fee_service import FeeService
+			FeeService.sync_application_fee_after_gateway_capture(pr_name)
+			frappe.db.commit()
+		except Exception as e:
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=_("Application Fee Webhook Sync Failed"),
 			)
 
 	frappe.response["http_status_code"] = 200

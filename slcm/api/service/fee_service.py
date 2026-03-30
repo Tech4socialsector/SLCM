@@ -892,14 +892,29 @@ class FeeService:
             bank_name=None, cheque_number=None, cheque_date=None, upi_id=None, remarks=None):
         """Generates Applicant Payment Receipt for application fee."""
         try:
+            existing = frappe.db.sql(
+                """
+                SELECT name FROM `tabApplicant Payment Receipt`
+                WHERE applicant = %s AND docstatus = 1 AND IFNULL(offer_letter, '') = ''
+                ORDER BY creation DESC LIMIT 1
+                """,
+                applicant_doc.name,
+            )
+            if existing:
+                return existing[0][0]
+
             from slcm.api.service.application_fee_service import get_application_fee_for_category, _get_applicant_category
             category = _get_applicant_category(applicant_doc.name)
-            fee_amount = get_application_fee_for_category(applicant_doc.program, applicant_doc.admission_cycle, category)
-            
+            fee_amount = flt(
+                get_application_fee_for_category(applicant_doc.program, applicant_doc.admission_cycle, category)
+            )
+            if fee_amount <= 0:
+                fee_amount = flt(applicant_doc.application_fee_amount or 0)
+
             receipt = frappe.new_doc("Applicant Payment Receipt")
             receipt.applicant = applicant_doc.name
             receipt.program = applicant_doc.program
-            receipt.academic_year = afa_doc.academic_year
+            receipt.academic_year = getattr(applicant_doc, "academic_year", None) or None
             tpl = get_payment_receipt_template_for_policy(
                 applicant_doc.program, applicant_doc.admission_cycle
             )
@@ -915,8 +930,19 @@ class FeeService:
             receipt.cheque_date = cheque_date
             receipt.upi_id = upi_id
             receipt.remarks = remarks
-            
+
             pr = frappe.db.get_value("Payment Request", {"transaction_id": transaction_id}, "name")
+            if not pr:
+                pr = frappe.db.get_value(
+                    "Payment Request",
+                    {
+                        "reference_doctype": "Applicant",
+                        "reference_name": applicant_doc.name,
+                        "status": "Paid",
+                    },
+                    "name",
+                    order_by="modified desc",
+                )
             if pr:
                 receipt.payment_reference = pr
                 
@@ -936,6 +962,36 @@ class FeeService:
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Application Fee Receipt Generation Failed")
             return None
+
+    @staticmethod
+    def sync_application_fee_after_gateway_capture(pr_name):
+        """
+        Razorpay webhook marks Payment Request Paid before client verify runs.
+        For application fee (reference Applicant), set applicant paid and create receipt. Idempotent.
+        """
+        if not pr_name:
+            return
+        pr = frappe.get_doc("Payment Request", pr_name)
+        if pr.reference_doctype != "Applicant" or not pr.reference_name:
+            return
+        if (pr.status or "").strip() != "Paid":
+            return
+        applicant_name = pr.reference_name
+        dup = frappe.db.sql(
+            """
+            SELECT name FROM `tabApplicant Payment Receipt`
+            WHERE applicant = %s AND docstatus = 1 AND IFNULL(offer_letter, '') = ''
+            LIMIT 1
+            """,
+            applicant_name,
+        )
+        if dup:
+            return
+        applicant = frappe.get_doc("Applicant", applicant_name)
+        if (applicant.application_fee_status or "").strip() != "Paid":
+            frappe.db.set_value("Applicant", applicant_name, "application_fee_status", "Paid")
+        pay_ref = (getattr(pr, "razorpay_payment_id", None) or pr.transaction_id or "").strip() or pr.name
+        FeeService._generate_application_fee_receipt(applicant, pay_ref, "Online")
 
     @staticmethod
     @frappe.whitelist()
