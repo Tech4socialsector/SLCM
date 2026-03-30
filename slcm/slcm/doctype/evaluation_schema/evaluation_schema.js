@@ -612,15 +612,9 @@ function _add_reexam_row(frm, $sec, comp, data) {
 
 	let firstColHtml;
 	if (mode === 'Component') {
-		const init_at_opts = data.substitute_for
-			? _get_comp_at_opts(data.substitute_for, data.assessment_type || '')
-			: '';
 		firstColHtml = `
 			<select name="comp_link" class="es-inp" style="min-width:120px;">
 				<option value="">— Select —</option>${sub_opts}
-			</select>
-			<select name="at" class="es-inp" style="min-width:120px;margin-top:4px;">
-				<option value="">— Select Assessment —</option>${init_at_opts}
 			</select>`;
 	} else {
 		const at_opts = (frm._ep_atypes || [])
@@ -651,17 +645,27 @@ function _add_reexam_row(frm, $sec, comp, data) {
 	`);
 	$sec.find('.es-tbody').append($main);
 
-	if (mode === 'Component') {
-		$main.find('[name=comp_link]').on('change', function() {
-			$main.find('[name=at]').html(
-				`<option value="">— Select Assessment —</option>${_get_comp_at_opts($(this).val(), '')}`
-			);
-		});
-	}
-
-	/* ── Substitution settings row (shown in all modes; sub_for hidden in Component mode) ── */
-	const show_sub = (mode !== 'Component' && data.substitute_for) ? '' : 'display:none;';
-	const sub_lbl  = (mode !== 'Component' && data.substitute_for)
+	/* ── Substitution settings row ── */
+	const init_comp_at_opts = (mode === 'Component' && data.substitute_for)
+		? _get_comp_at_opts(data.substitute_for, data.assessment_type || '')
+		: '';
+	const init_sub_at_opts = (mode !== 'Component' && data.substitute_for)
+		? _get_comp_at_opts(data.substitute_for, '')
+		: '';
+	const firstSubColHtml = mode === 'Component'
+		? `<span class="es-sf-label">Select Assessment</span>
+			<select name="comp_at" class="es-inp">
+				<option value="">— Select Assessment —</option>${init_comp_at_opts}
+			</select>`
+		: `<span class="es-sf-label">Substitute For</span>
+			<select name="sub_for" class="es-inp">
+				<option value="">— Select Component —</option>${sub_opts}
+			</select>
+			<select name="sub_at" class="es-inp" style="margin-top:4px;">
+				<option value="">— Select Assessment —</option>${init_sub_at_opts}
+			</select>`;
+	const show_sub = (mode === 'Component' || data.substitute_for) ? '' : 'display:none;';
+	const sub_lbl  = (mode === 'Component' || data.substitute_for)
 		? 'Hide Substitution Settings ▲'
 		: 'Show Substitution Settings ▼';
 
@@ -670,13 +674,8 @@ function _add_reexam_row(frm, $sec, comp, data) {
 			<td colspan="7" style="padding:0;">
 				<div class="es-subst-toggle-bar es-subst-toggle">${sub_lbl}</div>
 				<div class="es-subst-body" style="${show_sub}">
-					<div class="es-subst-grid${mode === 'Component' ? ' es-subst-grid-3' : ''}">
-						<div ${mode === 'Component' ? 'style="display:none;"' : ''}>
-							<span class="es-sf-label">Substitute For</span>
-							<select name="sub_for" class="es-inp">
-								<option value="">— Select Component —</option>${sub_opts}
-							</select>
-						</div>
+					<div class="es-subst-grid">
+						<div>${firstSubColHtml}</div>
 						<div>
 							<span class="es-sf-label">Weightage</span>
 							<div style="display:flex;align-items:center;gap:4px;">
@@ -723,11 +722,11 @@ function _add_reexam_row(frm, $sec, comp, data) {
 		r.passing_marks         = parseFloat($main.find('[name=pass]').val()) || 0;
 		r.enrollment            = $main.find('[name=enroll]').val();
 		if (mode === 'Component') {
-			r.substitute_for   = $main.find('[name=comp_link]').val() || null;
-			r.assessment_type  = $main.find('[name=at]').val() || null;
+			r.substitute_for  = $main.find('[name=comp_link]').val() || null;
+			r.assessment_type = $subst.find('[name=comp_at]').val() || null;
 		} else {
-			r.assessment_type  = $main.find('[name=at]').val();
-			r.substitute_for   = $subst.find('[name=sub_for]').val() || null;
+			r.assessment_type = $main.find('[name=at]').val();
+			r.substitute_for  = $subst.find('[name=sub_for]').val() || null;
 		}
 		r.substitute_weightage = parseFloat($subst.find('[name=sub_wt]').val()) || 100;
 		const _sub_cr      = (frm.doc.schema_components || []).find(c => c.component === r.substitute_for);
@@ -743,6 +742,20 @@ function _add_reexam_row(frm, $sec, comp, data) {
 
 	$main.find('input, select').on('change input', sync);
 	$subst.find('input, select').on('change input', sync);
+
+	if (mode === 'Component') {
+		$main.find('[name=comp_link]').on('change', function() {
+			$subst.find('[name=comp_at]').html(
+				`<option value="">— Select Assessment —</option>${_get_comp_at_opts($(this).val(), '')}`
+			);
+		});
+	} else {
+		$subst.find('[name=sub_for]').on('change', function() {
+			$subst.find('[name=sub_at]').html(
+				`<option value="">— Select Assessment —</option>${_get_comp_at_opts($(this).val(), '')}`
+			);
+		});
+	}
 
 	$main.on('click', '.es-del', () => {
 		frm.doc.reexam_configs = (frm.doc.reexam_configs || []).filter(x => x.name !== fn);
