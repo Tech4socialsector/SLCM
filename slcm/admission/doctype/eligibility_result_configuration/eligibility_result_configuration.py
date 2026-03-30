@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import getdate, now, get_url
+import traceback
 
 
 class EligibilityResultConfiguration(Document):
@@ -211,7 +212,7 @@ class EligibilityResultConfiguration(Document):
                 try:
                     _send_eligibility_result_email(res)
                 except Exception:
-                    frappe.log_error(title=f"Eligibility Result Email Failed: {res.name}")
+                    frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email Failed: {res.name}")
 
             frappe.db.sql("""
                 UPDATE `tabApplicant` 
@@ -281,50 +282,34 @@ class EligibilityResultConfiguration(Document):
 
 
 def _send_eligibility_result_email(res):
-    """Send a premium masterpiece eligibility result notification to the applicant."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
-    performance_html = f"""
-    <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-        <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Assessment Summary:</h4>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-            <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Entrance Score:</td><td style="padding: 4px 0; font-weight: 700;">{res.entrance_test_score or 0} / 100</td></tr>
-            <tr><td style="padding: 4px 0; color: #586069;">Interview Score:</td><td style="padding: 4px 0; font-weight: 700;">{res.interview_score or 0} / 100</td></tr>
-            <tr><td style="padding: 4px 0; color: #586069;">Result Status:</td><td style="padding: 4px 0; font-weight: 700; color: #28a745; font-size: 16px;">{res.result_status or 'Qualified'}</td></tr>
-        </table>
-    </div>
-    """
+    """Send an eligibility result notification using a configurable template."""
+    try:
+        template_name = "Eligibility Result"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
+            return
 
-    subject = f"Eligibility Result Notification – {res.candidate_name or res.applicant_id}"
-    
-    msg = f"""
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
-        <p style="margin-top: 0;">Dear {res.candidate_name or res.applicant_id},</p>
-        <p>Greetings from the Admissions Office.</p>
-        <p>We are pleased to inform you that your eligibility assessment for the academic session has been completed. Your result is now available for review.</p>
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Programme Details:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{res.applicant_id}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Programme:</td><td style="padding: 4px 0; font-weight: 700;">{res.program or '—'}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{res.campus or '—'}</td></tr>
-            </table>
-        </div>
-        {performance_html}
-        <p>You may access your detailed result, including section-wise performance and Mark Sheet, by logging into the admission portal using the link provided below.</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Full Result & Portal</a>
-        </div>
-        <p>Please note that further stages of the admission process, such as merit selection and counseling, will be communicated to you separately.</p>
-        <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
-        <p>We appreciate your participation and wish you the very best for the upcoming stages.</p>
-    </div>
-    """
+        template = frappe.get_doc("Email Template", template_name)
+        
+        # Prepare arguments for Jinja
+        doc_dict = res.as_dict()
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
 
-    frappe.sendmail(
-        recipients=[res.email],
-        subject=subject,
-        message=msg,
-        reference_doctype="Eligibility Result",
-        reference_name=res.name
-    )
+        subject = frappe.render_template(template.subject, args)
+        message_body = template.response_html if template.use_html else template.response
+        
+        if message_body:
+            message = frappe.render_template(message_body, args)
+            frappe.sendmail(
+                recipients=[res.email],
+                subject=subject,
+                content=message,
+                reference_doctype="Eligibility Result",
+                reference_name=res.name,
+                now=True
+            )
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email Failed: {res.name}")
