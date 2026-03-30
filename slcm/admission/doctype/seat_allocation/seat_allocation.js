@@ -3,6 +3,18 @@
 
 frappe.ui.form.on("Seat Allocation", {
 
+    setup(frm) {
+        frm.set_query("merit_list", () => {
+            let filters = {
+                "docstatus": 1 // Only submitted merit lists
+            };
+            if (frm.doc.admission_cycle) filters.admission_cycle = frm.doc.admission_cycle;
+            if (frm.doc.campus) filters.campus = frm.doc.campus;
+            if (frm.doc.program_level) filters.program_level = frm.doc.program_level;
+            return { filters: filters };
+        });
+    },
+
     merit_list(frm) {
         // Auto-fill Admission Cycle, Campus, Program Level from the selected Merit List
         if (frm.doc.merit_list) {

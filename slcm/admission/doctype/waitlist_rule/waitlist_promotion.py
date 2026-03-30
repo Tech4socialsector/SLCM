@@ -59,10 +59,14 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
     return result
 
 
-def _get_latest_seat_allocation(admission_cycle: str, campus: str):
+def _get_latest_seat_allocation(admission_cycle: str, campus: str, program_level: str = None):
+    filters = {"admission_cycle": admission_cycle, "campus": campus, "docstatus": ["<", 2]}
+    if program_level:
+        filters["program_level"] = program_level
+        
     name = frappe.db.get_value(
         "Seat Allocation",
-        {"admission_cycle": admission_cycle, "campus": campus, "docstatus": ["<", 2]},
+        filters,
         "name",
         order_by="modified desc",
     )
@@ -97,7 +101,7 @@ def process_waitlist(rule_doc, ignore_cutoff=False):
     if not ignore_cutoff and rule_doc.upgrade_cutoff_date and getdate(now_datetime()) > getdate(rule_doc.upgrade_cutoff_date):
         return
 
-    seat_alloc = _get_latest_seat_allocation(rule_doc.admission_cycle, rule_doc.campus)
+    seat_alloc = _get_latest_seat_allocation(rule_doc.admission_cycle, rule_doc.campus, rule_doc.program_level)
     if not seat_alloc:
         return
 
@@ -303,19 +307,23 @@ def run_scheduled_waitlist():
             frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")
 
 
-def process_waitlist_background(admission_cycle: str, campus: str, now: bool = False):
+def process_waitlist_background(admission_cycle: str, campus: str, program_level: str = None, now: bool = False):
     """
     Background worker to run waitlist promotion for all active automatic rules 
-    for a specific cycle and campus.
+    for a specific cycle, campus and program level.
     """
+    filters = {
+        "status": "Active",
+        "admission_cycle": admission_cycle,
+        "campus": campus,
+        "upgrade_frequency": "Automatic"
+    }
+    if program_level:
+        filters["program_level"] = program_level
+
     rule_names = frappe.get_all(
         "Waitlist Rule",
-        filters={
-            "status": "Active",
-            "admission_cycle": admission_cycle,
-            "campus": campus,
-            "upgrade_frequency": "Automatic"
-        },
+        filters=filters,
         pluck="name",
     )
 

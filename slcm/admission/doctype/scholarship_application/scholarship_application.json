@@ -2,6 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-26 12:18:00",
+ "default_view": "Kanban",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -202,7 +203,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-27 09:47:04.431347",
+ "modified": "2026-03-30 10:50:35.975896",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Application",

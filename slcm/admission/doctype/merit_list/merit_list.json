@@ -37,7 +37,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program level",
+   "label": "Programme level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
@@ -76,7 +76,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-23 12:28:27.298620",
+ "modified": "2026-03-30 14:35:45.179719",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List",
