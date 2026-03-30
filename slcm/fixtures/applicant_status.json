@@ -2,11 +2,11 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-23 17:54:59.265542",
+  "modified": "2026-03-30 12:29:14.369703",
   "name": "Entrance Test Excempted",
-  "stage_type": "Exam",
+  "stage_type": "Entrance Test",
   "status": "Entrance Test Excempted",
-  "status_type": null
+  "status_type": "Complete"
  },
  {
   "docstatus": 0,
@@ -16,24 +16,6 @@
   "stage_type": "Interview",
   "status": "Interview Excempted",
   "status_type": "Complete"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-11 22:00:34.490709",
-  "name": "Excempted Entrance Test And Interview",
-  "stage_type": null,
-  "status": "Excempted Entrance Test And Interview",
-  "status_type": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-11 14:43:34.365668",
-  "name": "Accepted",
-  "stage_type": null,
-  "status": "Accepted",
-  "status_type": null
  },
  {
   "docstatus": 0,
@@ -52,24 +34,6 @@
   "stage_type": "Seat Allocation",
   "status": "Seat Waitlisted",
   "status_type": "Active"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-11 09:37:16.017258",
-  "name": "Selected",
-  "stage_type": null,
-  "status": "Selected",
-  "status_type": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-11 09:37:56.172795",
-  "name": "Waitlisted",
-  "stage_type": null,
-  "status": "Waitlisted",
-  "status_type": null
  },
  {
   "docstatus": 0,
@@ -227,11 +191,11 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:19:28.618103",
+  "modified": "2026-03-30 12:29:04.637411",
   "name": "Entrance Test Rejected",
-  "stage_type": "Exam",
+  "stage_type": "Entrance Test",
   "status": "Entrance Test Rejected",
-  "status_type": null
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,

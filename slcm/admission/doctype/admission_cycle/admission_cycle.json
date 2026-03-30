@@ -346,11 +346,18 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "default": "0",
+   "description": "If enable an applicant can apply multiple application for programmes in this cycle",
+   "fieldname": "allow_multiple_applications",
+   "fieldtype": "Check",
+   "label": "Allow Multiple Applications"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-28 16:01:48.007216",
+ "modified": "2026-03-30 12:26:22.409055",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
