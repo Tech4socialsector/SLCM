@@ -1,3 +1,69 @@
+function slcm_build_admission_cycle_conflict_message(overlaps) {
+	if (!overlaps || !overlaps.length) {
+		return "";
+	}
+	const intro = __("The selected date range overlaps with an existing admission cycle:");
+	const bullets = overlaps.map((row) => {
+		const safeLabel = frappe.utils.escape_html(row.cycle_name || row.name || "");
+		const linkHtml = frappe.utils.get_form_link(
+			"Admission Cycle",
+			row.name,
+			true,
+			safeLabel
+		);
+		const sd = frappe.utils.escape_html(
+			row.start_label ||
+				(row.cycle_start_date
+					? frappe.datetime.str_to_user(row.cycle_start_date, false, true)
+					: "—")
+		);
+		const ed = frappe.utils.escape_html(
+			row.end_label ||
+				(row.cycle_end_date
+					? frappe.datetime.str_to_user(row.cycle_end_date, false, true)
+					: "—")
+		);
+		return `• ${linkHtml}: ${sd} ${__("to")} ${ed}`;
+	});
+	const footer = __("Please adjust the dates to avoid overlapping periods.");
+	return `${intro}<br><br>${bullets.join("<br>")}<br><br>${footer}`;
+}
+
+function slcm_check_admission_cycle_date_overlap(frm) {
+	if (!frm.doc.cycle_start_date || !frm.doc.cycle_end_date) {
+		return;
+	}
+	frappe.call({
+		method: "slcm.admission.doctype.admission_cycle.admission_cycle.check_admission_cycle_date_overlap",
+		args: {
+			name: frm.doc.name,
+			cycle_start_date: frm.doc.cycle_start_date,
+			cycle_end_date: frm.doc.cycle_end_date,
+		},
+		callback(r) {
+			const m = r && r.message;
+			if (!m || m.valid) {
+				return;
+			}
+			let body;
+			if (m.overlaps && m.overlaps.length) {
+				body = slcm_build_admission_cycle_conflict_message(m.overlaps);
+			} else {
+				body =
+					(m.message && String(m.message).replace(/\n/g, "<br>")) ||
+					__("These dates overlap another admission cycle.");
+			}
+			frappe.msgprint({
+				title: __("Admission Cycle Dates Conflict"),
+				message: body,
+				indicator: "red",
+			});
+		},
+	});
+}
+
+const slcm_debounced_cycle_overlap = frappe.utils.debounce(slcm_check_admission_cycle_date_overlap, 350);
+
 frappe.ui.form.on("Admission Cycle", {
 
     refresh: function (frm) {
@@ -163,6 +229,11 @@ frappe.ui.form.on("Admission Cycle", {
                 minDate: new Date(frm.doc.cycle_start_date),
             });
         }
+        slcm_debounced_cycle_overlap(frm);
+    },
+
+    cycle_end_date: function (frm) {
+        slcm_debounced_cycle_overlap(frm);
     },
 
 
