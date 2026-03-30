@@ -440,20 +440,23 @@ class ScholarshipApplication(Document):
 		if not self.applicant_id or not self.admission_cycle:
 			return
 
-		# Query matching AFA
+		# Query matching AFA specifically for Admission Fee
 		afa_data = frappe.db.get_value("Applicant Fee Assignment", {
 			"applicant": self.applicant_id,
 			"admission_cycle": self.admission_cycle,
+			"fee_type": "Admission Fee",
 			"docstatus": ["!=", 2]
 		}, ["name", "total_amount"], as_dict=True)
 
 		if not afa_data:
+			# If no Admission Fee assignment exists yet, we don't sync
 			return
 
 		afa_name = afa_data.name
 		total_amount = flt(afa_data.total_amount)
 		
 		# Calculate cumulative scholarship amount from ALL OTHER approved applications
+		# for this specific applicant in this cycle.
 		other_scholarships = frappe.db.sql("""
 			SELECT SUM(calculated_benefit)
 			FROM `tabScholarship Application`

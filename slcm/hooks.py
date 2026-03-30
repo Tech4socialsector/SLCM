@@ -47,6 +47,12 @@ fixtures = [
     },
     {
         "doctype": "Merit Component",
+    },
+    {
+        "doctype": "Email Template",
+        "filters": [
+            ["name", "in", ["Scholarship Updates", "Merit List Template", "Seat Allocation Result Notification"]]
+        ]
     }
 ]
 # Apps  

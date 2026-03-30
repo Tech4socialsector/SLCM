@@ -182,6 +182,15 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-24 10:17:36.798558",
+  "name": "Draft",
+  "stage_type": "Application",
+  "status": "Draft",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-26 13:31:13.101719",
   "name": "Fee Paid",
   "stage_type": "Admission Fee",
@@ -214,23 +223,5 @@
   "stage_type": "Interview",
   "status": "Interview Exempted",
   "status_type": "Closed"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:11:21.023982",
-  "name": "Submitted",
-  "stage_type": "Application",
-  "status": "Submitted",
-  "status_type": "Complete"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:29:09.782574",
-  "name": "Draft",
-  "stage_type": "Application",
-  "status": "Draft",
-  "status_type": "Active"
  }
 ]
