@@ -890,6 +890,20 @@ def save_form(data):
 
             frappe.db.commit()
 
+            # Cache print PDF on Applicant.application_form (portal users often lack Print permission during hooks).
+            try:
+                from slcm.admission.doctype.applicant.applicant import (
+                    ensure_application_form_pdf_for_applicant,
+                )
+
+                ensure_application_form_pdf_for_applicant(doc.name)
+                frappe.db.commit()
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    "save_form — ensure_application_form_pdf_for_applicant after portal submit",
+                )
+
             # Resolve program and campus for success page display (name, not ID)
             program_name = ""
             campus_name = ""

@@ -1,4 +1,5 @@
 import json
+from contextlib import contextmanager
 
 import frappe
 from frappe import _
@@ -8,6 +9,17 @@ from slcm.admission.portal_application_web_form import (
 	applicant_portal_application_locked,
 )
 from slcm.admission.utils.regulatory import log_audit_trail
+
+# Statuses treated as "submitted" for confirmation email, PDF cache, etc.
+APPLICATION_SUBMITTED_STATUSES = frozenset(
+    {
+        "Submitted",
+        "Interview Excempted",
+        "Entrance Test Exempted",
+        "Excempted Entrance Test And Interview",
+    }
+)
+
 
 class Applicant(Document):
 
@@ -183,18 +195,10 @@ class Applicant(Document):
         self.flags.old_application_status = doc_before.application_status if doc_before else None
 
     def on_update(self):
-        # Statuses that mean "student has submitted" (including exemption statuses)
-        _SUBMITTED_STATUSES = frozenset({
-            "Submitted",
-            "Interview Excempted",
-            "Entrance Test Exempted",
-            "Excempted Entrance Test And Interview",
-        })
-
         old_status = self.flags.get("old_application_status")
         just_submitted = (
             old_status == "Draft"
-            and self.application_status in _SUBMITTED_STATUSES
+            and self.application_status in APPLICATION_SUBMITTED_STATUSES
             and self.has_value_changed("application_status")
         )
 
@@ -284,6 +288,25 @@ class Applicant(Document):
                     frappe.get_traceback(),
                     f"Applicant {self.name} — sync_application_fee_assignment_for_applicant",
                 )
+
+        # PDF snapshot for bulk download: fill when missing (desk-created Submitted rows,
+        # or if submission email PDF step failed). Skips when ``application_form`` already set.
+        if (
+            self.name
+            and self.application_status in APPLICATION_SUBMITTED_STATUSES
+            and not getattr(self.flags, "in_application_form_cache_job", False)
+        ):
+            if not frappe.db.get_value("Applicant", self.name, "application_form"):
+                self.flags.in_application_form_cache_job = True
+                try:
+                    ensure_application_form_pdf_for_applicant(self.name)
+                except Exception:
+                    frappe.log_error(
+                        frappe.get_traceback(),
+                        f"ensure_application_form_pdf_for_applicant failed for {self.name}",
+                    )
+                finally:
+                    self.flags.in_application_form_cache_job = False
 
     def send_submission_confirmation(self):
         """
@@ -420,12 +443,14 @@ class Applicant(Document):
 
         # ── PDF attachment using dynamic print format ─────────────────────────
         try:
-            pdf_content = frappe.get_print(
-                doctype="Applicant",
-                name=self.name,
-                print_format=print_format_name,
-                as_pdf=True
-            )
+            with _ignore_print_permissions():
+                pdf_content = frappe.get_print(
+                    doctype="Applicant",
+                    name=self.name,
+                    print_format=print_format_name,
+                    as_pdf=True,
+                )
+            save_application_form_pdf_to_applicant(self, pdf_content)
             attachments = [{
                 "fname": f"Application_Form_{self.applicant_id or self.name}.pdf",
                 "fcontent": pdf_content
@@ -2287,6 +2312,17 @@ def set_intake_type(doc, method=None):
         if intake:
             doc.intake_type = intake
 
+@contextmanager
+def _ignore_print_permissions():
+    """Server-side PDF generation (portal/desk hooks) must not depend on Print permission."""
+    prev = getattr(frappe.flags, "ignore_print_permissions", False)
+    frappe.flags.ignore_print_permissions = True
+    try:
+        yield
+    finally:
+        frappe.flags.ignore_print_permissions = prev
+
+
 def notify_stage_entry(applicant_doc, stage):
     """
     Called when applicant enters a new stage.
@@ -2310,24 +2346,175 @@ def notify_stage_entry(applicant_doc, stage):
     except Exception as e:
         frappe.log_error(f"notify_stage_entry failed: {e}", "Stage Notification")
 
+
+def resolve_application_form_print_format_for_cycle(cycle_name):
+    """Print format name for Applicant PDF (matches submission email resolution)."""
+    default = "Applicant Application Form"
+    if not cycle_name:
+        return default
+    fmt = frappe.db.get_value(
+        "Admission Cycle",
+        {"name": cycle_name, "status": "Active"},
+        "application_form_template",
+    )
+    if not fmt:
+        fmt = frappe.db.get_value("Admission Cycle", cycle_name, "application_form_template")
+    return fmt or default
+
+
+def ensure_application_form_pdf_for_applicant(applicant_name):
+    """
+    Generate application-form PDF and attach to ``application_form`` when still empty.
+    Used for desk-created applicants (never Draft) and when the email path did not persist the file.
+    """
+    if not applicant_name or not frappe.db.exists("Applicant", applicant_name):
+        return
+    if frappe.db.get_value("Applicant", applicant_name, "application_form"):
+        return
+    status = frappe.db.get_value("Applicant", applicant_name, "application_status")
+    if (status or "").strip() not in APPLICATION_SUBMITTED_STATUSES:
+        return
+    doc = frappe.get_doc("Applicant", applicant_name, check_permission=False)
+    print_format_name = resolve_application_form_print_format_for_cycle(doc.admission_cycle)
+    try:
+        with _ignore_print_permissions():
+            pdf_content = frappe.get_print(
+                doctype="Applicant",
+                name=applicant_name,
+                print_format=print_format_name,
+                as_pdf=True,
+            )
+        save_application_form_pdf_to_applicant(doc, pdf_content)
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"ensure_application_form_pdf_for_applicant get_print failed for {applicant_name}",
+        )
+
+
+def _clear_application_form_attachment_files(applicant_name):
+    for fn in frappe.get_all(
+        "File",
+        filters={
+            "attached_to_doctype": "Applicant",
+            "attached_to_name": applicant_name,
+            "attached_to_field": "application_form",
+        },
+        pluck="name",
+    ):
+        try:
+            frappe.delete_doc("File", fn, force=1, ignore_permissions=True)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"Clear application_form File {fn} for {applicant_name}",
+            )
+
+
+def save_application_form_pdf_to_applicant(applicant_doc, pdf_content):
+    """Persist submission PDF on ``Applicant.application_form`` for cached bulk download."""
+    if not pdf_content or not getattr(applicant_doc, "name", None):
+        return
+    try:
+        from frappe.utils.file_manager import save_file
+
+        _clear_application_form_attachment_files(applicant_doc.name)
+        fname = f"Application_Form_{applicant_doc.applicant_id or applicant_doc.name}.pdf"
+        file_doc = save_file(
+            fname,
+            pdf_content,
+            "Applicant",
+            applicant_doc.name,
+            decode=False,
+            is_private=0,
+            df="application_form",
+        )
+        # ``save_file`` creates the File row but does not set the parent Attach field on Applicant.
+        if file_doc and getattr(file_doc, "file_url", None):
+            frappe.db.set_value(
+                "Applicant",
+                applicant_doc.name,
+                "application_form",
+                file_doc.file_url,
+                update_modified=False,
+            )
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"save_application_form_pdf_to_applicant failed for {applicant_doc.name}",
+        )
+
+
+def read_stored_application_form_pdf(applicant_name):
+    """Return cached PDF bytes from ``application_form`` attachment, or None."""
+    if not applicant_name:
+        return None
+    files = frappe.get_all(
+        "File",
+        filters={
+            "attached_to_doctype": "Applicant",
+            "attached_to_name": applicant_name,
+            "attached_to_field": "application_form",
+        },
+        pluck="name",
+        order_by="creation desc",
+        limit=1,
+    )
+    if not files:
+        url = frappe.db.get_value("Applicant", applicant_name, "application_form")
+        if not url:
+            return None
+        alt = frappe.get_all("File", filters={"file_url": url}, pluck="name", limit=1)
+        if not alt:
+            return None
+        files = alt
+    try:
+        fdoc = frappe.get_doc("File", files[0])
+        return fdoc.get_content()
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"read_stored_application_form_pdf failed for {applicant_name}",
+        )
+        return None
+
+
 @frappe.whitelist()
 def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, academic_year=None, admission_year=None, application_status=None, print_format=None):
     """
     Whitelisted entry point for bulk applicant form download.
-    Filters applicants, generates PDFs using selected print format, and returns a ZIP.
-    Handles small batches synchronously and large batches via background queue.
+    Draft applications are never included. Prefer cached ``application_form`` PDF when set;
+    otherwise generate with the selected print format.
     """
-    filters = {}
-    if campus: filters["campus"] = campus
-    if program: filters["program"] = program
-    if admission_cycle: filters["admission_cycle"] = admission_cycle
-    if academic_year: filters["academic_year"] = academic_year
-    if admission_year: filters["admission_year"] = admission_year
-    if application_status: filters["application_status"] = application_status
+    if application_status and (application_status or "").strip() == "Draft":
+        frappe.throw(_("Bulk download cannot include applications in Draft status."))
 
-    applicants = frappe.get_all("Applicant", filters=filters, pluck="name")
+    filters = {}
+    if campus:
+        filters["campus"] = campus
+    if program:
+        filters["program"] = program
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_year:
+        filters["admission_year"] = admission_year
+    if application_status:
+        filters["application_status"] = application_status
+
+    rows = frappe.get_all("Applicant", filters=filters, fields=["name", "application_status"])
+    applicants = [
+        r.name
+        for r in rows
+        if (r.application_status or "").strip() != "Draft"
+    ]
 
     if not applicants:
+        if rows:
+            frappe.throw(
+                _("All matching applications are in Draft status and cannot be downloaded.")
+            )
         frappe.throw(_("No applicants found matching the selected filters."))
 
     if not print_format:
@@ -2433,11 +2620,8 @@ def bulk_convert_applicants_to_student(applicants=None):
 
 def background_bulk_worker(applicants, print_format, user=None, sync=False):
     """
-    Worker function to generate PDFs and package into ZIP.
-
-    Performance note: each applicant is rendered with ``frappe.get_print(..., as_pdf=True)``.
-    That is sequential and CPU/subprocess-heavy (HTML → PDF per row). Total time grows
-    roughly linearly with count; batching DB lookups here only trims minor overhead.
+    Build ZIP of application forms. Uses ``Applicant.application_form`` when set (fast);
+    otherwise falls back to ``frappe.get_print(..., as_pdf=True)``.
     """
     import zipfile
     from io import BytesIO
@@ -2446,6 +2630,8 @@ def background_bulk_worker(applicants, print_format, user=None, sync=False):
     total = len(applicants)
     success_count = 0
     errors = []
+    from_cache_count = 0
+    generated_count = 0
 
     # One query for filenames — avoids N get_value round-trips (small vs PDF cost).
     id_rows = frappe.get_all(
@@ -2459,20 +2645,34 @@ def background_bulk_worker(applicants, print_format, user=None, sync=False):
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for i, name in enumerate(applicants):
             try:
-                # Update progress for background jobs
-                if not sync:
-                    frappe.publish_realtime("bulk_download_progress", {
-                        "progress": i + 1,
-                        "total": total,
-                        "message": _("Generating PDF for {0}").format(name)
-                    }, user=user)
+                pdf_content = read_stored_application_form_pdf(name)
+                if pdf_content:
+                    from_cache_count += 1
+                    prog_msg = _("Adding cached form for {0}").format(name)
+                else:
+                    if not sync:
+                        prog_msg = _("Generating PDF for {0}").format(name)
+                    with _ignore_print_permissions():
+                        pdf_content = frappe.get_print(
+                            doctype="Applicant",
+                            name=name,
+                            print_format=print_format,
+                            as_pdf=True,
+                        )
+                    generated_count += 1
+                    if not sync:
+                        prog_msg = _("Generated PDF for {0}").format(name)
 
-                pdf_content = frappe.get_print(
-                    doctype="Applicant",
-                    name=name,
-                    print_format=print_format,
-                    as_pdf=True
-                )
+                if not sync:
+                    frappe.publish_realtime(
+                        "bulk_download_progress",
+                        {
+                            "progress": i + 1,
+                            "total": total,
+                            "message": prog_msg,
+                        },
+                        user=user,
+                    )
 
                 applicant_id = id_by_name.get(name) or name
                 zip_file.writestr(f"{applicant_id}.pdf", pdf_content)
@@ -2492,15 +2692,24 @@ def background_bulk_worker(applicants, print_format, user=None, sync=False):
     saved_file = save_file(file_name, zip_buffer.getvalue(), "Applicant", "Bulk Download", is_private=1)
 
     if sync:
-        return {"file_url": saved_file.file_url, "success": success_count, "errors": errors}
+        return {
+            "file_url": saved_file.file_url,
+            "success": success_count,
+            "errors": errors,
+            "from_cache": from_cache_count,
+            "generated_live": generated_count,
+        }
 
     # Background cleanup and notification
     notification_content = f"""
         <div style="font-family: sans-serif; padding: 5px;">
             <h4 style="color: #1a202c; margin-bottom: 12px;">{_('Bulk Form Generation Report')}</h4>
+            <p style="font-size: 12px; color: #718096; margin: 0 0 10px 0;">
+                {_('{0} from stored PDF, {1} generated live.').format(from_cache_count, generated_count)}
+            </p>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <span style="background: #f0fff4; color: #2f855a; padding: 4px 10px; border-radius: 4px; border: 1px solid #c6f6d5; font-weight: bold; font-size: 12px;">
-                    {success_count} {_('Generated')}
+                    {success_count} {_('Included')}
                 </span>
                 <span style="background: { '#fff5f5' if errors else '#f7fafc' }; color: { '#c53030' if errors else '#718096' }; padding: 4px 10px; border-radius: 4px; border: 1px solid { '#fed7d7' if errors else '#edf2f7' }; font-weight: bold; font-size: 12px;">
                     {len(errors)} {_('Failed')}
@@ -2523,14 +2732,27 @@ def background_bulk_worker(applicants, print_format, user=None, sync=False):
         "document_type": "Applicant"
     })
 
-    frappe.publish_realtime("bulk_download_complete", {
-        "file_url": saved_file.file_url,
-        "doctype": "Applicant"
-    }, user=user)
+    frappe.publish_realtime(
+        "bulk_download_complete",
+        {
+            "file_url": saved_file.file_url,
+            "doctype": "Applicant",
+            "success": success_count,
+            "from_cache": from_cache_count,
+            "generated_live": generated_count,
+        },
+        user=user,
+    )
 
-    frappe.publish_realtime("msgprint", {
-        "message": _("Successfully generated {0} application forms.").format(success_count),
-        "title": _("Download Ready"),
-        "indicator": "green" if not errors else "orange",
-        "primary_action": {"label": _("Download ZIP"), "action": f"window.open('{saved_file.file_url}')"}
-    }, user=user)
+    frappe.publish_realtime(
+        "msgprint",
+        {
+            "message": _(
+                "ZIP with {0} application form(s) is ready. If you are on the Applicant list, "
+                "a download dialog will appear; otherwise use the desk notification link."
+            ).format(success_count),
+            "title": _("Bulk download ready"),
+            "indicator": "green" if not errors else "orange",
+        },
+        user=user,
+    )
