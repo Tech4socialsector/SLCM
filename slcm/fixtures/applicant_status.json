@@ -2,29 +2,11 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-23 17:54:59.265542",
-  "name": "Entrance Test Excempted",
-  "stage_type": "Exam",
-  "status": "Entrance Test Excempted",
-  "status_type": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:10:53.730631",
-  "name": "Interview Excempted",
+  "modified": "2026-03-27 13:23:29.831950",
+  "name": "Interview Sheduled",
   "stage_type": "Interview",
-  "status": "Interview Excempted",
-  "status_type": "Complete"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-11 22:00:34.490709",
-  "name": "Excempted Entrance Test And Interview",
-  "stage_type": null,
-  "status": "Excempted Entrance Test And Interview",
-  "status_type": null
+  "status": "Interview Sheduled",
+  "status_type": "Active"
  },
  {
   "docstatus": 0,
@@ -38,7 +20,7 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:11:02.870732",
+  "modified": "2026-03-27 13:24:02.205366",
   "name": "Entrance Test Allocated",
   "stage_type": "Entrance Test",
   "status": "Entrance Test Allocated",
@@ -218,11 +200,29 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-24 10:17:36.798558",
+  "name": "Draft",
+  "stage_type": "Application",
+  "status": "Draft",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-26 13:31:13.101719",
   "name": "Fee Paid",
   "stage_type": "Admission Fee",
   "status": "Fee Paid",
   "status_type": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-24 10:19:42.488659",
+  "name": "Submitted",
+  "stage_type": "Application",
+  "status": "Submitted",
+  "status_type": null
  },
  {
   "docstatus": 0,
@@ -250,23 +250,5 @@
   "stage_type": "Interview",
   "status": "Interview Exempted",
   "status_type": "Closed"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:11:21.023982",
-  "name": "Submitted",
-  "stage_type": "Application",
-  "status": "Submitted",
-  "status_type": "Complete"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:29:09.782574",
-  "name": "Draft",
-  "stage_type": "Application",
-  "status": "Draft",
-  "status_type": "Active"
  }
 ]
