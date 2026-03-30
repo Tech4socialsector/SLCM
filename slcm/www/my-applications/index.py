@@ -1,6 +1,9 @@
 import frappe
 from slcm.admission.utils.portal import get_portal_config, is_application_editable
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
+from slcm.admission.web_form.applicant_form.applicant_form import (
+    _latest_application_fee_receipt_for_portal,
+)
 
 login_required = True
 
@@ -124,6 +127,7 @@ def get_context(context):
     context.admission_cycle_end_date_formatted = ""
     context.next_steps_for_display = []
     context.next_steps_idle_hint = NEXT_STEPS_IDLE_HINT
+    context.fee_receipt_ready = False
 
     # ── Tab routing ───────────────────────────────────────────────
     _tab = frappe.request.args.get("tab") if frappe.request else None
@@ -692,6 +696,9 @@ def get_context(context):
             frappe.log_error(str(ex), "my_applications merit list fallback")
 
         context.fee_payment_status = applicant.get("application_fee_status") or ""
+        context.fee_receipt_ready = False
+        if (context.fee_payment_status or "").strip() == "Paid":
+            context.fee_receipt_ready = bool(_latest_application_fee_receipt_for_portal(_app_name))
 
         # Interview
         context.interview_status = ""
@@ -930,11 +937,17 @@ def get_context(context):
             if payment_name:
                 _payment_details = frappe.db.get_value("Fee Payment", payment_name, ["name", "amount", "payment_date"], as_dict=True)
 
+        _fee_st = (app_doc.application_fee_status or "").strip()
         summary = {
             "name": app_doc.name,
             "is_editable": is_application_editable(app_doc),
             "offer_name": _offer_name or "",
             "payment_details": _payment_details,
+            "application_fee_status": _fee_st,
+            "fee_receipt_ready": (
+                _fee_st == "Paid"
+                and bool(_latest_application_fee_receipt_for_portal(app_doc.name))
+            ),
             "header": {
                 "program_name": program_name,
                 "applicant_id": app_doc.name,

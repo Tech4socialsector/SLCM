@@ -183,6 +183,25 @@
     font-size: 18px;
   }
 
+  /* Application fee row: status + icon-only receipt (same rhythm as header .btn-download) */
+  .qs-fee-value-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .qs-fee-value-row .btn-download {
+    flex-shrink: 0;
+  }
+
+  /* Same blink timing as .ma-progress-next-row; color stays .qs-value.success */
+  .qs-fee-status--blink {
+    animation: ma-progress-next-visibility 1.5s ease-in-out infinite;
+  }
+
   /* ── Status badge ────────────────────────────────────────── */
   .status-badge {
     display: inline-flex;
@@ -2861,13 +2880,23 @@ or _app.current_stage)) or _status %}
             <span class="material-symbols-outlined"></span>
             Application fee
           </span>
-          {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
-          <span class="qs-value success">{{ fee_payment_status }}</span>
-          {% elif fee_payment_status %}
-          <span class="qs-value pending">{{ fee_payment_status }}</span>
-          {% else %}
-          <span class="qs-value muted">Pending</span>
-          {% endif %}
+          <div class="qs-fee-value-row">
+            {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
+            <span class="qs-value success qs-fee-status--blink">{{ fee_payment_status }}</span>
+            {% if fee_receipt_ready and app_name_param %}
+            <a href="/api/method/slcm.admission.web_form.applicant_form.applicant_form.download_portal_application_fee_receipt?applicant_name={{ app_name_param | urlencode }}"
+              target="_blank" rel="noopener noreferrer" class="btn-download"
+              title="Download Application Fee receipt."
+              style="padding:0;width:40px;height:30px;display:flex;align-items:center;justify-content:center;min-width:unset;">
+              <span class="material-symbols-outlined" style="margin:0;">download</span>
+            </a>
+            {% endif %}
+            {% elif fee_payment_status %}
+            <span class="qs-value pending">{{ fee_payment_status }}</span>
+            {% else %}
+            <span class="qs-value muted">Pending</span>
+            {% endif %}
+          </div>
         </div>
         {% if offer_name %}
         <div class="qs-item">
