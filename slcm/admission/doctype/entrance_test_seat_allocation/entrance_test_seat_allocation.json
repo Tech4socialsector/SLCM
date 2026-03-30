@@ -11,6 +11,7 @@
   "profile",
   "entrance_test_list",
   "academic_year",
+  "column_break_vfst",
   "admission_cycle",
   "campus",
   "program_level",
@@ -18,6 +19,7 @@
   "applicant",
   "candidate_name",
   "program",
+  "column_break_okdo",
   "email",
   "gender",
   "date_of_birth",
@@ -25,6 +27,7 @@
   "section_break_hynq",
   "mother_name",
   "father_name",
+  "column_break_pqoh",
   "father_mobile_number",
   "exempts_entrance_test",
   "exempts_interview",
@@ -482,12 +485,24 @@
    "fieldname": "re_admit_card_download",
    "fieldtype": "Attach",
    "label": "Re Admit Card Download "
+  },
+  {
+   "fieldname": "column_break_vfst",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_okdo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_pqoh",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 14:45:49.245549",
+ "modified": "2026-03-30 10:44:00.996913",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
