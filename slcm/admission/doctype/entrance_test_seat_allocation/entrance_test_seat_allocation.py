@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 import json
 import traceback
 from frappe.model.document import Document
@@ -196,8 +197,12 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
         order_by="score_obtained desc"
     )
 
+    total_attended = len(attended_records)
     for i, rec in enumerate(attended_records, start=1):
         frappe.db.set_value("Entrance Test Seat Allocation", rec.name, "entrance_test_rank", i, update_modified=False)
+        if i % 10 == 0 or i == total_attended:
+            percent = (i / total_attended) * 50
+            frappe.publish_progress(percent, title=_("Update Ranking"))
 
     frappe.db.commit()
 
@@ -218,7 +223,16 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
     )
 
     count = 0
-    for rec in all_records:
+    total = len(all_records)
+    for i, rec in enumerate(all_records):
+        percent = 50 + ((float(i + 1) / total) * 50)
+        frappe.publish_progress(
+            percent, 
+            title=_("Update Ranking"), 
+            description=f"Notifying {i + 1} of {total}"
+        )
+
+
         doc = frappe.get_doc("Entrance Test Seat Allocation", rec.name)
         
         # Resolve email
@@ -238,6 +252,10 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
             except Exception:
                 frappe.log_error(title=f"Result Email Failed: {doc.name}")
 
+        if i % 10 == 0:
+            frappe.db.commit()
+
+    frappe.db.commit()
     return count
 
 
@@ -269,8 +287,9 @@ def _send_result_notification_email(doc, email):
                 content=message,
                 reference_doctype="Entrance Test Seat Allocation",
                 reference_name=doc.name,
-                now=True
+                now=False
             )
+
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Result Email Failed: {doc.name}")
 
@@ -302,8 +321,18 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
         provider_docs.append(pdoc)
 
     count = 0
-    for name in applicants:
+    total = len(applicants)
+    for i, name in enumerate(applicants):
+        # Publish progress
+        percent = (float(i + 1) / total * 100)
+        frappe.publish_progress(
+            percent, 
+            title=_("Rescheduling Applicants..."), 
+            description=f"Processing {i + 1} of {total}"
+        )
+
         doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+
 
         # Update reschedule fields
         doc.is_rescheduled = 1
@@ -354,6 +383,9 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
                 title="Reschedule Email Skipped"
             )
 
+        if i % 10 == 0:
+            frappe.db.commit()
+
         count += 1
 
     frappe.db.commit()
@@ -391,7 +423,8 @@ def _send_reschedule_email(doc, email):
                 content=message,
                 reference_doctype="Entrance Test Seat Allocation",
                 reference_name=doc.name,
-                now=True
+                now=False
             )
+
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Reschedule Email Failed: {doc.name}")

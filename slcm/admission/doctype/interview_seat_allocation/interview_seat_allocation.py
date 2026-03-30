@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 import json
 import traceback
 from frappe.model.document import Document
@@ -142,11 +143,15 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
         order_by="interview_score desc"
     )
 
+    total_attended = len(attended_records)
     for i, rec in enumerate(attended_records, start=1):
         frappe.db.set_value("Interview Seat Allocation", rec.name, {
             "rank": i,
             "result_published": 1
         }, update_modified=False)
+        if i % 10 == 0 or i == total_attended:
+            percent = (i / total_attended) * 50 # First 50% for ranking
+            frappe.publish_progress(percent, title=_("Update Ranking"))
 
     frappe.db.commit()
 
@@ -170,11 +175,13 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
     total = len(all_records)
     for i, rec in enumerate(all_records):
         # Publish progress
+        percent = 50 + ((float(i + 1) / total) * 50)
         frappe.publish_progress(
-            float(i + 1) / total * 100, 
-            title="Sending Interview Results...", 
+            percent, 
+            title=_("Update Ranking"), 
             description=f"Notifying {i + 1} of {total}"
         )
+
 
         doc = frappe.get_doc("Interview Seat Allocation", rec.name)
         
@@ -199,9 +206,10 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
             except Exception:
                 frappe.log_error(message=traceback.format_exc(), title=f"Interview Result Email Failed: {doc.name}")
         
-        if i % 5 == 0:
+        if i % 10 == 0:
             frappe.db.commit()
 
+    frappe.db.commit()
     return count
 
 
@@ -233,7 +241,7 @@ def _send_result_notification_email(doc, email):
                 content=message,
                 reference_doctype="Interview Seat Allocation",
                 reference_name=doc.name,
-                now=True
+                now=False
             )
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Interview Result Email Failed: {doc.name}")
@@ -260,13 +268,15 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
     total = len(applicants)
     for i, name in enumerate(applicants):
         # Publish progress
+        percent = (float(i + 1) / total * 100)
         frappe.publish_progress(
-            float(i + 1) / total * 100, 
-            title="Rescheduling Interviews...", 
+            percent, 
+            title=_("Rescheduling Interviews..."), 
             description=f"Processing {i + 1} of {total}"
         )
 
         doc = frappe.get_doc("Interview Seat Allocation", name)
+
 
         doc.is_rescheduled = 1
         doc.re_interview_staff_member = interview_staff
@@ -374,7 +384,7 @@ def _send_reschedule_email(doc, email):
                 content=message,
                 reference_doctype="Interview Seat Allocation",
                 reference_name=doc.name,
-                now=True
+                now=False
             )
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Interview Reschedule Email Failed: {doc.name}")

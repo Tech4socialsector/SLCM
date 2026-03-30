@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 import json
 import re
 import traceback
@@ -73,7 +74,8 @@ class InterviewList(Document):
             # Publish progress to the UI
             frappe.publish_progress(
                 float(i + 1) / total_applicants * 100, 
-                title="Allocating Interview Slots...", 
+                title=_("Generating Interview Slots..."),
+
                 description=f"Processing {i + 1} of {total_applicants}"
             )
 
