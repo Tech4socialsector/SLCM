@@ -59,7 +59,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Program",
-   "options": "Program",
+   "options": "Cohort",
    "read_only": 1
   },
   {
@@ -166,10 +166,12 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "delete": 1,
    "read": 1,
    "role": "System Manager"
   },
   {
+   "delete": 1,
    "read": 1,
    "role": "SLCM Registrar"
   }

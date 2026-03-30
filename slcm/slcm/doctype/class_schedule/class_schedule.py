@@ -423,21 +423,20 @@ def get_events(start, end, filters=None):
 
     # Base Query
     query = """
-        SELECT 
-            name, 
-            class_configuration, 
+        SELECT
+            name,
+            class_configuration,
             course,
             instructor,
-            schedule_date, 
-            from_time, 
-            to_time, 
-            room,
+            schedule_date,
+            from_time,
+            to_time,
             venue,
             color,
             title,
             student_group
         FROM `tabClass Schedule`
-        WHERE 
+        WHERE
             schedule_date BETWEEN %(start)s AND %(end)s
             AND docstatus < 2
     """
@@ -458,11 +457,10 @@ def get_events(start, end, filters=None):
         
         title = d.title
         if not title:
-            # Fallback title: Course (Room)
             parts = [d.course, d.instructor]
             title = " - ".join([p for p in parts if p])
-            if d.room:
-                title += f" ({d.room})"
+            if d.venue:
+                title += f" ({d.venue})"
 
         result.append({
             "name": d.name,
@@ -470,10 +468,10 @@ def get_events(start, end, filters=None):
             "title": title,
             "start": start_dt,
             "end": end_dt,
-            "color": d.color or "#3498db", # Default blue
+            "color": d.color or "#3498db",
             "allDay": 0,
             "extendedProps": {
-                "room": d.room,
+                "venue": d.venue,
                 "instructor": d.instructor,
                 "student_group": d.student_group
             }

@@ -5,5 +5,5 @@ import frappe
 from frappe.model.document import Document
 
 
-class ExamComponent(Document):
+class CourseSchemaAssignment(Document):
 	pass

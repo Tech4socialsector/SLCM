@@ -1,0 +1,117 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:schema_name",
+ "creation": "2026-03-26 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "schema_name",
+  "description",
+  "total_marks",
+  "passing_marks",
+  "section_break_components",
+  "schema_components",
+  "section_break_assessments",
+  "assessment_configs",
+  "section_break_reexam",
+  "reexam_configs"
+ ],
+ "fields": [
+  {
+   "fieldname": "schema_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Schema Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "default": "100",
+   "fieldname": "total_marks",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Marks",
+   "reqd": 1
+  },
+  {
+   "default": "40",
+   "fieldname": "passing_marks",
+   "fieldtype": "Float",
+   "label": "Passing Marks"
+  },
+  {
+   "fieldname": "section_break_components",
+   "fieldtype": "Section Break",
+   "label": "Components"
+  },
+  {
+   "fieldname": "schema_components",
+   "fieldtype": "Table",
+   "label": "Schema Components",
+   "options": "Evaluation Schema Component"
+  },
+  {
+   "fieldname": "section_break_assessments",
+   "fieldtype": "Section Break",
+   "label": "Assessment Configuration"
+  },
+  {
+   "fieldname": "assessment_configs",
+   "fieldtype": "Table",
+   "label": "Assessment Configuration",
+   "options": "Schema Assessment Config"
+  },
+  {
+   "fieldname": "section_break_reexam",
+   "fieldtype": "Section Break",
+   "label": "Re-Exam Configuration"
+  },
+  {
+   "fieldname": "reexam_configs",
+   "fieldtype": "Table",
+   "label": "Re-Exam Configuration",
+   "options": "Schema Reexam Config"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-26 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Evaluation Schema",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "schema_name"
+}
