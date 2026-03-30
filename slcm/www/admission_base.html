@@ -1034,7 +1034,8 @@
     FROM `tabAdmission Cycle Program` cp
     LEFT JOIN `tabProgram` p ON p.name = cp.program
     WHERE cp.parent = (SELECT name FROM `tabAdmission Cycle` WHERE status = 'Active' LIMIT 1)
-    LIMIT 5
+    ORDER BY cp.idx ASC, cp.program ASC
+    LIMIT 100
     """, as_dict=1) %}
 
     {# Fallback if cycle query returns nothing #}
@@ -1044,7 +1045,7 @@
     SELECT program_name as name, COALESCE(program_slug, name) as slug
     FROM `tabProgram`
     ORDER BY modified DESC
-    LIMIT 5
+    LIMIT 100
     """, as_dict=1) %}
     {% endif %}
 
@@ -1104,10 +1105,14 @@
                             <div>
                                 <h4 class="footer-title">Programme</h4>
                                 <ul class="footer-links">
-                                    {% for p in _f_programs %}
+                                    {% for p in _f_programs[:4] %}
                                     <li><a href="/admission/{{ p.slug }}">{{ p.name }}</a></li>
                                     {% endfor %}
+                                    {% if _f_programs|length > 4 %}
+                                    <li><a href="/admission#programs">View all programmes</a></li>
+                                    {% elif _f_programs|length > 0 %}
                                     <li><a href="/admission">Browse all</a></li>
+                                    {% endif %}
                                 </ul>
                             </div>
                             <div>

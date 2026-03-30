@@ -417,6 +417,29 @@
     text-align: center;
   }
 
+  .ns-application-end-panel {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 10px;
+    padding: 6px 0 10px;
+  }
+
+  .ns-application-end-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-1, #1e293b);
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .ns-application-end-body {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.55;
+    color: var(--text-2, #475569);
+    margin: 0;
+  }
+
   @keyframes ma-progress-next-visibility {
     0% {
       opacity: 0;
@@ -463,6 +486,44 @@
     color: var(--success) !important;
     font-weight: 700 !important;
     opacity: 1 !important;
+  }
+
+  /* ── Application closed (replaces stage tracker) ──────────── */
+  .ma-application-closed {
+    padding: 24px 26px 20px;
+    position: relative;
+  }
+
+  .ma-application-closed-inner {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 18px 20px;
+    border-radius: 12px;
+    border: 1px solid #fecaca;
+    background: linear-gradient(to bottom, #ffffff, #fff1f2);
+  }
+
+  .ma-application-closed-icon {
+    font-size: 28px;
+    color: var(--danger);
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .ma-application-closed-title {
+    margin: 0 0 8px 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-0, #111827);
+    line-height: 1.35;
+  }
+
+  .ma-application-closed-body {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--text-2, #4b5563);
   }
 
   /* ── Stage Tracker ───────────────────────────────────────── */
@@ -1132,23 +1193,151 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px;
+    align-items: stretch;
   }
 
   .doc-nextsteps-grid.doc-nextsteps-grid--docs-only {
     grid-template-columns: 1fr;
-    max-width: 720px;
+    max-width: none;
+    width: 100%;
   }
 
-  @media (max-width: 680px) {
+  @media (max-width: 900px) {
     .doc-nextsteps-grid {
       grid-template-columns: 1fr;
     }
   }
 
-  /* Document list */
+  /* Document list (default: single column, e.g. profile) */
   .doc-list {
     display: flex;
     flex-direction: column;
+  }
+
+  /* Application detail — checklist fills card below header (matches sibling card height) */
+  .ma-doc-checklist-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .ma-doc-checklist-card .ma-card-head {
+    flex-shrink: 0;
+  }
+
+  .ma-doc-checklist-card .doc-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: minmax(0, 1fr);
+    align-content: stretch;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .ma-doc-checklist-card .doc-list .doc-row {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    gap: 8px;
+    padding: 9px 12px 9px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    box-sizing: border-box;
+  }
+
+  .ma-doc-checklist-card .doc-list .doc-row:nth-child(odd) {
+    border-right: 1px solid #f1f5f9;
+  }
+
+  .ma-doc-checklist-card .doc-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .ma-doc-checklist-card .doc-checkbox.checked::after {
+    font-size: 10px;
+  }
+
+  .ma-doc-checklist-card .doc-name {
+    font-size: 11px;
+    font-weight: 600;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.01em;
+  }
+
+  .ma-doc-checklist-card .doc-view-link {
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  .ma-doc-checklist-card .doc-row-actions {
+    flex-shrink: 0;
+    gap: 6px !important;
+  }
+
+  .ma-doc-checklist-card .doc-row .material-symbols-outlined {
+    font-size: 16px !important;
+  }
+
+  @media (max-width: 768px) {
+    .ma-doc-checklist-card {
+      height: auto;
+    }
+
+    .ma-doc-checklist-card .doc-list {
+      flex: none;
+      grid-template-columns: 1fr;
+      grid-auto-rows: auto;
+    }
+
+    .ma-doc-checklist-card .doc-list .doc-row {
+      height: auto;
+    }
+
+    .ma-doc-checklist-card .doc-list .doc-row:nth-child(odd) {
+      border-right: none;
+    }
+
+    .ma-doc-checklist-card .doc-list .doc-row {
+      padding: 10px 16px;
+    }
+
+    .ma-doc-checklist-card .doc-name {
+      font-size: 12px;
+    }
+  }
+
+  /* Next steps card: pin deadline row to bottom when beside checklist */
+  .ma-card.ma-card--nextsteps {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .nextsteps-card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .ma-card--nextsteps .nextsteps-list {
+    flex: 1 1 auto;
+    padding-bottom: 8px;
+  }
+
+  .ma-card--nextsteps .ns-deadline-row {
+    margin-top: auto;
+    flex-shrink: 0;
   }
 
   .doc-row {
@@ -1288,10 +1477,10 @@
   .ns-deadline-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 22px;
+    gap: 10px;
+    padding: 14px 22px 16px;
     border-top: 1px solid var(--border);
-    margin-top: 4px;
+    background: linear-gradient(to bottom, #fafafa, #ffffff);
   }
 
   .ns-deadline-row .material-symbols-outlined {
@@ -2281,6 +2470,16 @@
       grid-template-columns: 1fr !important;
     }
 
+    .nextsteps-list {
+      padding: 14px 16px;
+      gap: 12px;
+    }
+
+    .ns-deadline-row {
+      padding: 12px 16px 14px;
+      gap: 8px;
+    }
+
     .ma-progress-next {
       padding: 4px 14px 6px;
     }
@@ -2299,6 +2498,27 @@
 
     .ns-next-step-dynamic {
       font-size: 12px;
+    }
+
+    .ma-application-closed {
+      padding: 20px 16px 16px;
+    }
+
+    .ma-application-closed-inner {
+      padding: 16px 14px;
+      gap: 12px;
+    }
+
+    .ma-application-closed-icon {
+      font-size: 24px;
+    }
+
+    .ma-application-closed-title {
+      font-size: 1rem;
+    }
+
+    .ma-application-closed-body {
+      font-size: 0.875rem;
     }
 
     .stage-track-wrap {
@@ -2544,8 +2764,18 @@ or _app.current_stage)) or _status %}
       </div>
       {% endif %}
 
-      <!-- Stage Tracker -->
-      {% if _stages %}
+      <!-- Stage Tracker (hidden when application is in a closed / terminal portal state) -->
+      {% if application_closed_message %}
+      <div class="ma-application-closed fade-up" style="animation-delay:.04s;" role="status" aria-live="polite">
+        <div class="ma-application-closed-inner">
+          <span class="material-symbols-outlined ma-application-closed-icon" aria-hidden="true">info</span>
+          <div class="ma-application-closed-text">
+            <h3 class="ma-application-closed-title">{{ application_closed_message.title | e }}</h3>
+            <p class="ma-application-closed-body">{{ application_closed_message.body | e }}</p>
+          </div>
+        </div>
+      </div>
+      {% elif _stages %}
       <div class="stage-track-wrap">
         {% set ns = namespace(done=0, stopped=false) %}
         {% for s in _stages %}
@@ -3251,10 +3481,12 @@ or _app.current_stage)) or _status %}
     <!-- ╔══════════════════════════════════════════════╗
          ║  DOCUMENTS + NEXT STEPS                      ║
          ╚══════════════════════════════════════════════╝ -->
+    {% set _ns_deadline_dup = "Complete all steps before your cycle deadline" %}
+    {% set _steps_vis = next_steps_for_display if next_steps_for_display is defined else [] %}
     <div class="doc-nextsteps-grid fade-up{% if hide_application_next_steps %} doc-nextsteps-grid--docs-only{% endif %}" style="animation-delay:.36s">
 
       <!-- Documents Checklist -->
-      <div class="ma-card">
+      <div class="ma-card ma-doc-checklist-card">
         <div class="ma-card-head">
           <div class="ma-card-title">
             <span class="ico"><span class="material-symbols-outlined">folder_open</span></span>
@@ -3279,8 +3511,8 @@ or _app.current_stage)) or _status %}
             style="cursor:default;"
             {% endif %}>
             <div class="doc-checkbox {% if _is_done %}checked{% endif %}"></div>
-            <span class="doc-name">{{ doc.document_name }}</span>
-            <div style="display:flex; align-items:center; gap:10px;">
+            <span class="doc-name" title="{{ doc.document_name | e }}">{{ doc.document_name }}</span>
+            <div class="doc-row-actions" style="display:flex; align-items:center; gap:10px;">
               {% if doc.file_url %}
               <a href="{{ doc.file_url }}" target="_blank" class="doc-view-link"
                 onclick="event.stopPropagation()">View</a>
@@ -3303,57 +3535,75 @@ or _app.current_stage)) or _status %}
       </div><!-- end documents card -->
 
       {% if not hide_application_next_steps %}
-      <!-- Next Steps -->
-      <div class="ma-card">
+      <!-- Next steps (active) or Application Progress End (closed / terminal) -->
+      <div class="ma-card ma-card--nextsteps">
         <div class="ma-card-head">
           <div class="ma-card-title">
+            {% if application_closed_message %}
+            <span class="ico"><span class="material-symbols-outlined">flag</span></span>
+            Application Progress End
+            {% else %}
             <span class="ico"><span class="material-symbols-outlined">task_alt</span></span>
             Next steps
+            {% endif %}
           </div>
         </div>
 
-        <div class="nextsteps-list">
-          {% if cycle_next_step_message %}
-          <div class="ns-item ns-cycle-next-highlight">
-            <div class="ns-check done">
-              <span class="material-symbols-outlined" style="font-size:14px">check</span>
+        <div class="nextsteps-card-body">
+          <div class="nextsteps-list">
+            {% if application_closed_message %}
+            <div class="ns-item ns-application-end-panel">
+              <h4 class="ns-application-end-title">{{ application_closed_message.title | e }}</h4>
+              <p class="ns-application-end-body">{{ application_closed_message.body | e }}</p>
             </div>
-            <span class="ns-next-step-dynamic">{{ cycle_next_step_message | e }}</span>
+            {% else %}
+            {% if cycle_next_step_message %}
+            <div class="ns-item ns-cycle-next-highlight">
+              <div class="ns-check done">
+                <span class="material-symbols-outlined" style="font-size:14px">check</span>
+              </div>
+              <span class="ns-next-step-dynamic">{{ cycle_next_step_message | e }}</span>
+            </div>
+            {% endif %}
+            {% if _steps_vis %}
+            {% for step in _steps_vis %}
+            {% set _stext = step.text if step is mapping else step['text'] %}
+            {% set _sislink = step.is_link if step is mapping else step['is_link'] %}
+            {% set _slurl = step.link_url if step is mapping else step['link_url'] %}
+            {% set _slabel = step.link_label if step is mapping else step['link_label'] %}
+            <div class="ns-item">
+              <div class="ns-check done">
+                <span class="material-symbols-outlined" style="font-size:14px">check</span>
+              </div>
+              <span class="ns-text">
+                {% if _sislink and _slurl %}
+                <a href="{{ _slurl }}" style="color:var(--primary);font-weight:600">{{ _slabel or _stext }}</a>
+                {% else %}
+                {{ _stext }}
+                {% endif %}
+              </span>
+            </div>
+            {% endfor %}
+            {% elif not cycle_next_step_message %}
+            <div class="ns-empty-hint">{{ (next_steps_idle_hint if next_steps_idle_hint is defined else '') | e }}</div>
+            {% endif %}
+            {% endif %}
           </div>
-          {% endif %}
-          {% if _steps %}
-          {% for step in _steps %}
-          {% set _stext = step.text if step is mapping else step['text'] %}
-          {% set _sislink = step.is_link if step is mapping else step['is_link'] %}
-          {% set _slurl = step.link_url if step is mapping else step['link_url'] %}
-          {% set _slabel = step.link_label if step is mapping else step['link_label'] %}
-          <div class="ns-item">
-            <div class="ns-check done">
-              <span class="material-symbols-outlined" style="font-size:14px">check</span>
-            </div>
-            <span class="ns-text">
-              {% if _sislink and _slurl %}
-              <a href="{{ _slurl }}" style="color:var(--primary);font-weight:600">{{ _slabel or _stext }}</a>
+
+          {% if not application_closed_message %}
+          <div class="ns-deadline-row" role="note">
+            <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+            <span class="ns-deadline-text">
+              {% if admission_cycle_end_date_formatted %}
+              Complete all steps before <strong>{{ admission_cycle_end_date_formatted | e }}</strong>
               {% else %}
-              {{ _stext }}
+              Complete all steps before <strong>your cycle deadline</strong>
               {% endif %}
             </span>
           </div>
-          {% endfor %}
-          {% elif not cycle_next_step_message %}
-          <div class="ns-empty-hint">No next steps are configured for your current stage. Check this page for updates or contact admissions if you need help.</div>
           {% endif %}
         </div>
-
-        {% if _steps %}
-        <div class="ns-deadline-row">
-          <span class="material-symbols-outlined">calendar_today</span>
-          <span class="ns-deadline-text">
-            Complete all steps before <strong>your cycle deadline{{ cycle_end_date }}</strong>
-          </span>
-        </div>
-        {% endif %}
-      </div><!-- end next steps card -->
+      </div><!-- end next steps / progress end card -->
       {% endif %}
 
     </div><!-- end doc-nextsteps-grid -->
