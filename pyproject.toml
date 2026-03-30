@@ -3,56 +3,23 @@ name = "slcm"
 description = "Student Life Cycle Management"
 requires-python = ">=3.10,<3.15"
 readme = "README.md"
-requires-python = ">=3.10"
 dynamic = ["version"]
- 
+
 authors = [
     { name = "Nishanth", email = "nishanth.a@azimpremjifoundation.org" },
     { name = "TFSS", email = "tech4socialsector@azimpremjifoundation.org" }
 ]
- 
+
 dependencies = [
-    # "frappe~=15.0.0" # Installed and managed by bench.
     "qrcode[pil]>=7.4.2",
     "Pillow>=10.2.0"
 ]
- 
+
 [build-system]
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
- 
+
 [tool.bench.frappe-dependencies]
 frappe = ">=15,<18"
 qrcode = "~=7.4.2"
 Pillow = "~=10.2.0"
- 
-[tool.bench.dev-dependencies]
-# package_name = "~=1.1.0"
- 
-[tool.ruff]
-line-length = 110
-target-version = "py312"
- 
-[tool.ruff.lint]
-select = ["F", "E", "W", "I", "UP", "B", "RUF"]
-ignore = [
-    "B017",
-    "B018",
-    "B023",
-    "B904",
-    "E101",
-    "E402",
-    "E501",
-    "E741",
-    "F401",
-    "F403",
-    "F405",
-    "F722",
-    "W191",
-]
-typing-modules = ["frappe.types.DF"]
- 
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "tab"
-docstring-code-format = true

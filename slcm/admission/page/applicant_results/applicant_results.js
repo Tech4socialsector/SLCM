@@ -459,6 +459,6 @@ frappe.pages["applicant-results"].on_page_load = function (wrapper) {
     function fmt(v) {
         if (v === null || v === undefined) return "–";
         const n = parseFloat(v);
-        return isNaN(n) ? v : (Number.isInteger(n) ? n : n.toFixed(2));
+        return isNaN(n) ? v : (Number.isInteger(n) ? n : n.toFixed(1));
     }
 };

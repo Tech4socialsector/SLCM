@@ -703,7 +703,7 @@
   }
 
   .qs-value {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-1);
     line-height: 1.3;
@@ -953,9 +953,242 @@
     }
   }
 
+  /* ── Merit Standing Card (dark design) ───────────────────── */
+  .merit-standing-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    padding: 18px 18px 0;
+    width: 100%;
+    color: var(--text-1);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .merit-standing-header {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    margin-bottom: 14px;
+  }
+
+
+  .merit-standing-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .merit-standing-stat-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+  }
+
+  .merit-standing-stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+
+  .merit-standing-stat-value {
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text-1);
+  }
+
+  .merit-standing-stat-value.rank-value {
+    font-size: clamp(30px, 7vw, 38px);
+  }
+
+  .merit-standing-stat-value.score-value {
+    font-size: clamp(30px, 7vw, 38px);
+    color: var(--text-1);
+  }
+
+  .rank-hash {
+    font-size: 0.55em;
+    font-weight: 700;
+    vertical-align: super;
+    opacity: 0.7;
+  }
+
+  .merit-top-chip {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #16a34a22;
+    color: #4ade80;
+    border: 1px solid #16a34a55;
+    letter-spacing: 0.04em;
+  }
+
+  .merit-score-sub {
+    font-size: 10px;
+    color: #6b7280;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+
+  /* Score distribution bar */
+  .merit-score-dist {
+    margin-bottom: 0;
+    padding: 0 0 14px;
+  }
+
+  .merit-score-dist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+
+  .merit-score-dist-value {
+    font-weight: 700;
+    color: #4ade80;
+  }
+
+  .merit-score-bar-track {
+    height: 7px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .merit-score-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #16a34a, #4ade80);
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(.16,1,.3,1);
+  }
+
+  .merit-score-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-4);
+    font-weight: 500;
+  }
+
+  /* Footer */
+  .merit-standing-footer {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    font-size: 11px;
+    color: #166534;
+    font-weight: 500;
+  }
+
+
+  .merit-standing-footer strong {
+    color: #15803d;
+    font-weight: 700;
+  }
+
+  .merit-standing-footer-ico {
+    font-size: 16px;
+    color: #16a34a;
+    flex-shrink: 0;
+  }
+
+  /* ── merit-seat: two-column layout using result-score-box style ── */
+  .merit-seat-body {
+    display: flex;
+    gap: 0;
+    padding: 18px 20px 20px;
+    align-items: stretch;
+  }
+
+  .merit-seat-col {
+    flex: 1;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .merit-seat-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+
+
+  .ms2-vdivider {
+    width: 1px;
+    background: var(--border);
+    margin: 4px 0;
+    opacity: 0.6;
+  }
+
+  .ms2-date {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #166534;
+    font-weight: 500;
+  }
+
+  .ms2-date strong {
+    color: #15803d;
+    font-weight: 700;
+  }
+
+  .ms2-pending {
+    font-size: 12px;
+    color: var(--text-4);
+    margin: 0;
+    padding: 4px 0;
+  }
+
+  @media (max-width: 768px) {
+    .merit-seat-body {
+      flex-direction: column;
+      padding: 16px;
+    }
+    .ms2-vdivider {
+      width: 100%;
+      height: 1px;
+      margin: 12px 0;
+    }
+    .merit-seat-col {
+      padding: 0;
+    }
+  }
+
+
   /* ╔═══════════════════════════════════╗
      ║  DOCUMENTS + NEXT STEPS           ║
      ╚═══════════════════════════════════╝ */
+
   .doc-nextsteps-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1415,7 +1648,7 @@
   }
 
   .result-score-box .lbl {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-3);
     font-weight: 700;
     text-transform: none;
@@ -1423,7 +1656,7 @@
   }
 
   .result-score-box .val {
-    font-size: 22px;
+    font-size: 26px;
     font-weight: 800;
     color: var(--text-1);
   }
@@ -3148,82 +3381,102 @@ or _app.current_stage)) or _status %}
     <!-- ╔══════════════════════════════════════════════╗
          ║  MERIT RESULT & SEAT ALLOCATION              ║
          ╚══════════════════════════════════════════════╝ -->
+    {% if all_merit and all_merit|length > 0 %}
     <div class="ma-card merit-seat-card fade-up" style="animation-delay:.30s">
-      <div class="ma-card-head">
+      <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5); display: flex; justify-content: space-between; align-items: center;">
         <div class="ma-card-title">
           <span class="ico"><span class="material-symbols-outlined">military_tech</span></span>
           Merit Result and Seat Allocation
         </div>
+        {% set r = (all_results[0] if all_results and all_results|length > 0 else {}) %}
+        {% if r.selection_status %}
+          <span class="result-banner-badge" style="{% if r.selection_status == 'Rejected' %}background:#fee2e2;color:#991b1b;{% elif r.selection_status == 'Waitlisted' %}background:#fef9c3;color:#854d0e;{% endif %}">
+            {% if r.selection_status == 'Rejected' %}Rejected{% elif r.selection_status == 'Waitlisted' %}Waitlisted{% else %}Selected{% endif %}
+          </span>
+        {% endif %}
+
       </div>
-      <div class="ma-card-body">
-        <!-- Left: Merit -->
-        <div class="merit-panel">
-          {% if all_merit and all_merit|length > 0 and all_merit[0].overall_rank and all_merit[0].total_score %}
-            {% set m = all_merit[0] %}
-            <div class="merit-stat-row">
-              <div class="merit-stat">
-                <span class="merit-stat-label">Overall rank</span>
-                <span class="merit-stat-value">{{ m.overall_rank }}</span>
-                <span class="merit-chip" style="position: static; margin-top: 8px;">{{ m.status or 'Selected' }}</span>
-              </div>
-              <div class="merit-stat">
-                <span class="merit-stat-label">Merit score</span>
-                <span class="merit-stat-value score">{{ m.total_score }}</span>
-              </div>
+
+
+      <!-- Merit + Seat grid body -->
+      <div class="merit-seat-body">
+
+        <!-- ── Left: Merit result ── -->
+        <div class="merit-seat-col">
+          <div class="merit-seat-section-title">Merit result</div>
+          {% set m = all_merit[0] %}
+          <div class="result-score-grid" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));">
+            <div class="result-score-box">
+              <div class="lbl">Overall rank</div>
+              <div class="val">{{ m.overall_rank or '—' }}</div>
             </div>
-          {% else %}
-            <div style="padding:8px 0; text-align: center; display: flex; flex-direction: column; align-items: center;">
-              <span class="merit-stat-label" style="display:block;margin-bottom:4px">Overall rank</span>
-              <span style="font-size:24px;font-weight:700;color:var(--text-4)">—</span>
-              <p style="font-size:11px;color:var(--text-4);margin-top:4px">Merit list not yet published</p>
+            <div class="result-score-box">
+              <div class="lbl">Merit score</div>
+              <div class="val">{{ (m.total_score | round(1)) if m.total_score else '—' }} <small style="font-size:15px;color:var(--text-3)">/ 100</small></div>
             </div>
+          </div>
+          {% if merit_list_published_date %}
+          <div class="ms2-date" style="margin-top:10px">
+            <span class="material-symbols-outlined" style="font-size:14px;color:#16a34a">check_circle</span>
+            Published on <strong>{{ merit_list_published_date }}</strong>
+          </div>
           {% endif %}
         </div>
 
-        <!-- Right: Seat -->
-        <div class="seat-panel">
-          <div
-            style="font-size: 11px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 8px;">
-            Seat allocation result</div>
+        <!-- ── Vertical divider ── -->
+        <div class="ms2-vdivider"></div>
+
+        <!-- ── Right: Seat allocation ── -->
+        <div class="merit-seat-col">
+          <div class="merit-seat-section-title">Seat allocation result</div>
           {% if all_results and all_results|length > 0 %}
-          {% set r = all_results[0] %}
-
-          <div class="seat-info-box">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-              <span class="seat-prog-name">{{ _prog }}</span>
-              {% if r.selection_status == 'Rejected' %}
-              <span class="merit-chip" style="position: static; background:#fee2e2; color:#991b1b;">Rejected</span>
-              {% elif r.selection_status == 'Waitlisted' %}
-              <span class="merit-chip" style="position: static; background:#fef9c3; color:#854d0e;">Waitlisted</span>
-              {% else %}
-              <span class="merit-chip" style="position: static;">Selected</span>
-              {% endif %}
-            </div>
-            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);">
-              <div
-                style="font-size: 11px; text-transform: none; letter-spacing: 0.08em; color: var(--text-4); font-weight: 700; margin-bottom: 4px;">
-                Allocated category</div>
-              <div
-                style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: white; padding: 4px 12px; border-radius: 8px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 12px -2px rgba(26,60,110,0.25);">
-                {{ r.allocated_category or 'General' }}
+            {% set r = all_results[0] %}
+            <style>
+              .seat-alloc-grid {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 14px;
+              }
+              .seat-alloc-grid.has-3 {
+                grid-template-columns: 2fr 1fr 1fr;
+              }
+              @media (max-width: 600px) {
+                .seat-alloc-grid, .seat-alloc-grid.has-3 {
+                  grid-template-columns: 1fr !important;
+                }
+              }
+            </style>
+            <div class="seat-alloc-grid {% if r.allocated_category and r.seat_type %}has-3{% endif %}">
+              <div class="result-score-box">
+                <div class="lbl">Programme</div>
+                <div class="val" style="font-size:14px;line-height:1.3">{{ _prog }}</div>
               </div>
-            </div>
-            <!-- {% if payment_details and payment_details.payment_date %}
-            <div class="seat-deadline">
-              Accept before: <strong>{{ payment_details.payment_date }}</strong>
-            </div>
-            {% endif %} -->
-          </div>
 
+              {% if r.allocated_category %}
+              <div class="result-score-box">
+                <div class="lbl">Category</div>
+                <div class="val" style="font-size:15px">{{ r.allocated_category|title }}</div>
+              </div>
+              {% endif %}
 
+              {% if r.seat_type %}
+              <div class="result-score-box">
+                <div class="lbl">Seat type</div>
+                <div class="val" style="font-size:15px">{{ r.seat_type|title }}</div>
+              </div>
+              {% endif %}
+
+            </div>
           {% else %}
-          <div style="padding:12px 0">
-            <p style="font-size:12px;color:var(--text-4)">Allocation results pending.</p>
-          </div>
+            <p class="ms2-pending">Seat allocation pending</p>
           {% endif %}
-        </div><!-- end seat-panel -->
-      </div><!-- end ma-card-body -->
+        </div>
+
+      </div><!-- end merit-seat-body -->
+
     </div><!-- end merit-seat-card -->
+    {% endif %}
+
 
     <!-- ╔══════════════════════════════════════════════╗
          ║  DOCUMENTS + NEXT STEPS                      ║
@@ -3690,7 +3943,7 @@ LIST / DASHBOARD VIEW
         </div>
         <div class="qs-item">
           <span class="qs-label"><span class="material-symbols-outlined">military_tech</span>Merit score</span>
-          <span class="qs-value {% if h.merit_score %}{% else %}muted{% endif %}">{{ h.merit_score or 'Pending'
+          <span class="qs-value {% if h.merit_score %}{% else %}muted{% endif %}">{{ (h.merit_score | round(1)) if h.merit_score else 'Pending'
             }}</span>
         </div>
         <div class="qs-item">

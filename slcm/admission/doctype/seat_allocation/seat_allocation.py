@@ -210,6 +210,7 @@ class SeatAllocation(Document):
             "slcm.admission.doctype.waitlist_rule.waitlist_promotion.process_waitlist_background",
             admission_cycle=self.admission_cycle,
             campus=self.campus,
+            program_level=self.program_level,
             now=frappe.flags.in_test,
             enqueue_after_commit=True
         )
@@ -344,10 +345,11 @@ class SeatAllocation(Document):
         if not frappe.db.exists("Waitlist Rule", {
             "campus": self.campus,
             "admission_cycle": self.admission_cycle,
+            "program_level": self.program_level,
             "status": "Active"
         }):
             frappe.throw(
-                f"No active Waitlist Rule found for Campus '{self.campus}' and Admission Cycle '{self.admission_cycle}'. "
+                f"No active Waitlist Rule found for Campus '{self.campus}', Program Level '{self.program_level}' and Admission Cycle '{self.admission_cycle}'. "
                 "Please create an active Waitlist Rule before running allocation.",
                 title="Missing Waitlist Rule"
             )
@@ -388,7 +390,7 @@ class SeatAllocation(Document):
 
             # Get waitlist percentage from active Waitlist Rule (campus wide)
             waitlist_percent = 50.0
-            rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "status": "Active"}, fields=["waitlist_percentage"])
+            rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "program_level": self.program_level, "status": "Active"}, fields=["waitlist_percentage"])
             if rules:
                 val = rules[0].waitlist_percentage
                 waitlist_percent = val if val is not None else 50.0
