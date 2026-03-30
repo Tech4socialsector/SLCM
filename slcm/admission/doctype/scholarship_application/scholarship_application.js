@@ -1,6 +1,11 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
+/**
+ * Scholarship Application Form Script
+ */
+
+// ─── Form View Events ────────────────────────────────────────────────────────
 frappe.ui.form.on("Scholarship Application", {
     setup(frm) {
         frm.add_fetch("applicant_id", "candidate_name", "applicant_name");

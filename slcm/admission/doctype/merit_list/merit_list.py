@@ -142,8 +142,118 @@ def publish_merit_list(merit_list_name):
         "reason": f"Merit List {merit_list_name} published by {frappe.session.user}"
     }).insert(ignore_permissions=True)
 
+    # Trigger notifications
+    try:
+        send_merit_published_emails(doc)
+        send_merit_published_notifications(doc)
+    except Exception as e:
+        frappe.log_error(f"Failed to send merit list notifications for {merit_list_name}: {str(e)}\n\n{frappe.get_traceback()}", "Merit List Notification Error")
+        frappe.msgprint(f"Merit List published, but there was an error sending notifications. Check Error Log for details.", indicator='orange')
+
     frappe.db.commit()
     return {"status": "Published"}
+
+
+def send_merit_published_notifications(doc):
+    """
+    Creates Notification Log entries for all applicants in the merit list.
+    """
+    for row in doc.merit_applicants:
+        if not row.applicant_id:
+            continue
+            
+        applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+        if not applicant_email:
+            continue
+            
+        # The applicant's email is used as their User ID in the portal
+        if frappe.db.exists("User", applicant_email):
+            try:
+                # Custom Title and Message as requested by the user
+                message_body = f"""
+                    <p>The merit list <strong>"{doc.name}"</strong> has been published.</p>
+                    <p>Your rank and merit score are now available. Please check your result and admission status.</p>
+                    <p><a href="/my-applications?app={row.applicant_id}" style="color: #16a34a; font-weight: bold;">Click here to view your result.</a></p>
+                """
+                
+                frappe.get_doc({
+                    "doctype": "Notification Log",
+                    "subject": "Merit List Published",
+                    "for_user": applicant_email,
+                    "type": "Alert",
+                    "email_content": message_body,
+                    "document_type": "Merit List",
+                    "document_name": doc.name,
+                    "from_user": frappe.session.user,
+                    "link": f"/my-applications?app={row.applicant_id}"
+                }).insert(ignore_permissions=True)
+            except Exception:
+                # Silently fail for individual notification logs if one user has issues
+                pass
+
+
+def send_merit_published_emails(doc):
+    """
+    Sends notification emails to all applicants in the merit list using 'Merit List Template'.
+    """
+    template_name = "Merit List Template"
+    
+    # Use formatted date
+    pub_date = frappe.utils.format_date(doc.modified or frappe.utils.now(), "dd MMMM yyyy")
+
+    for row in doc.merit_applicants:
+        if not row.applicant_id:
+            continue
+
+        applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+        if not applicant_email:
+            continue
+
+        # Prepare context for the template
+        context = {
+            "candidate_name": row.candidate_name,
+            "merit_list_name": doc.name,
+            "overall_rank": row.overall_rank or "—",
+            "total_score": row.total_score or "0",
+            "published_date": pub_date,
+            "portal_link": frappe.utils.get_url("/my-applications")
+        }
+
+        # Fetch and render template from the 'Email Template' DocType
+        if not frappe.db.exists("Email Template", template_name):
+            continue
+            
+        template_doc = frappe.get_doc("Email Template", template_name)
+        
+        # Determine the content field correctly based on 'use_html' toggle
+        if template_doc.get("use_html"):
+            template_body = template_doc.response_html
+        else:
+            template_body = template_doc.response
+            
+        if not template_body:
+            # Fallback for some versions/configurations
+            template_body = template_doc.get("message")
+            
+        if not template_body:
+            continue
+
+        template_subject = template_doc.subject or "Merit List Published"
+        rendered_subject = frappe.render_template(template_subject, context)
+        rendered_content = frappe.render_template(template_body, context)
+
+        if not rendered_content:
+            continue
+
+        # Send email
+        frappe.sendmail(
+            recipients=[applicant_email],
+            subject=rendered_subject,
+            message=rendered_content,
+            delayed=True,
+            reference_doctype="Merit List",
+            reference_name=doc.name
+        )
 
 
 @frappe.whitelist()

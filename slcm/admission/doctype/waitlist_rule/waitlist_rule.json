@@ -9,6 +9,7 @@
   "rule_name",
   "admission_cycle",
   "campus",
+  "program_level",
   "upgrade_frequency",
   "waitlist_percentage",
   "upgrade_cutoff_date",
@@ -40,6 +41,14 @@
    "in_list_view": 1,
    "label": "Campus",
    "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Programme level",
+   "options": "Undergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
   },
   {
@@ -92,7 +101,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-16 12:07:10.597206",
+ "modified": "2026-03-30 14:40:50.424260",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Waitlist Rule",

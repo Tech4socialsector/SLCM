@@ -1,6 +1,17 @@
 import frappe
-from frappe.utils import now
- 
+from frappe.utils import now, get_url, fmt_money, flt, nowdate
+
+try:
+    from slcm.admission.utils.notifications import log_communication
+except ImportError:
+    log_communication = None
+
+try:
+    from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
+except ImportError:
+    log_admission_action = None
+
+
 def notify_status_change(applicant, program, old_status, new_status, allocation_name, admission_cycle=None, row=None):
     """
     Sends an email notification to the applicant about a status change
@@ -11,7 +22,7 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     except frappe.DoesNotExistError:
         frappe.logger().error(f"Notification error: Eligibility Result '{applicant}' not found.")
         return
- 
+
     # Resolve email: Try Eligibility Result first, then fallback to Applicant
     email = getattr(applicant_doc, "email", None) or getattr(applicant_doc, "email_id", None)
     
@@ -19,11 +30,11 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         email = frappe.db.get_value("Applicant", applicant_doc.applicant_id, "email")
         if email:
             frappe.logger().info(f"Notification: Using fallback email from Applicant {applicant_doc.applicant_id} for {applicant}")
- 
+
     if not email:
         frappe.logger().warning(f"Notification skipped: No email found for applicant {applicant} (ID: {applicant_doc.applicant_id})")
         return
- 
+
     # Fetch and render the Email Template record
     template_name = "Seat Allocation Result Notification"
     if not frappe.db.exists("Email Template", template_name):
@@ -32,22 +43,35 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         if not frappe.db.exists("Email Template", template_name):
             frappe.logger().error(f"Notification error: Email Template '{template_name}' not found.")
             return
- 
+
     template = frappe.get_doc("Email Template", template_name)
     
+    # Determine the content field correctly based on 'use_html' toggle
+    if template.get("use_html"):
+        template_body = template.response_html
+    else:
+        template_body = template.response
+        
+    if not template_body:
+        template_body = template.get("message")
+        
+    if not template_body:
+        frappe.logger().error(f"Notification error: Email Template '{template_name}' has no content.")
+        return
+
     # Construct combined context for the template (it expects 'doc')
     doc_context = applicant_doc.as_dict()
     if row:
-        doc_context.update(row.as_dict())
-    else:
-        # Fallback fields if called manually without a row
-        doc_context.update({
-            "selection_status": new_status,
-            "program": program,
-            "admission_cycle": admission_cycle,
-            "applicant": applicant
-        })
- 
+        row_dict = row.as_dict()
+        # Ensure child table values take precedence (selection status, etc.)
+        doc_context.update({k: v for k, v in row_dict.items() if v is not None})
+    
+    # Ensure admission_cycle and program are in the context even if not in ER/Row
+    if admission_cycle and not doc_context.get("admission_cycle"):
+        doc_context["admission_cycle"] = admission_cycle
+    if program and not doc_context.get("program"):
+        doc_context["program"] = program
+
     # Force Candidate Name resolution if missing or None
     raw_name = doc_context.get("candidate_name") or applicant_doc.candidate_name
     if not raw_name and doc_context.get("applicant_id"):
@@ -60,20 +84,20 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         
     doc_context["candidate_name"] = safe_name
     doc_context["applicant_name"] = safe_name
+    doc_context["applicant_id"] = applicant_doc.applicant_id or applicant
 
     # Resolve Merit Total Score for context
     merit_total_score = doc_context.get("total_score")
     if merit_total_score is None:
         # Try fetching from Merit List Applicant for this cycle
         merit_total_score = frappe.db.get_value("Merit List Applicant", {
-            "applicant": applicant,
+            "applicant": doc_context.get("applicant_id"),
             "parentfield": "merit_applicants"
         }, "total_score")
     
     # Format if number
     if merit_total_score is not None:
         try:
-            from frappe.utils import flt
             merit_total_score = flt(merit_total_score, 3)
         except:
             pass
@@ -81,15 +105,18 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     doc_context["merit_total_score"] = merit_total_score
     doc_context["total_score"] = merit_total_score
 
-    from frappe.utils import get_url
-    
+    # Re-map status for convenience
+    status_label = new_status
+    if status_label == "Selected" and doc_context.get("allocation_type") == "Waitlisted":
+        status_label = "Waitlisted" # Edge case safety
+         
     args = {
         "doc": doc_context,
         "candidate_name": safe_name,
         "applicant_name": safe_name,
-        "program": program,
-        "admission_cycle": admission_cycle,
-        "status": new_status,
+        "program": program or doc_context.get("program"),
+        "admission_cycle": admission_cycle or doc_context.get("admission_cycle"),
+        "status": status_label,
         "old_status": old_status,
         "new_status": new_status,
         "allocation_name": allocation_name,
@@ -98,14 +125,32 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         "get_url": get_url,
         "base_url": get_url()
     }
- 
+
     try:
         subject = frappe.render_template(template.subject, args)
-        message = frappe.render_template(template.response, args)
+        message = frappe.render_template(template_body, args)
     except Exception as e:
-        frappe.logger().error(f"Notification error (Jinja rendering) for {applicant}: {e}")
+        frappe.logger().error(f"Notification error (Jinja rendering) for {applicant}: {e}\n{frappe.get_traceback()}")
         return
- 
+
+    # Create internal system notification (bell icon)
+    try:
+        from_user = frappe.session.user if frappe.session.user != "Guest" else "Administrator"
+        if frappe.db.exists("User", email):
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": f"Seat Allocation Status: {status_label}",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": f"Your status for Seat Allocation {allocation_name} has been updated to <strong>{status_label}</strong>. <br><br> <a href='/my-applications?app={applicant_doc.applicant_id}'>Click here to view details.</a>",
+                "document_type": "Seat Allocation",
+                "document_name": allocation_name,
+                "from_user": from_user,
+                "link": f"/my-applications?app={applicant_doc.applicant_id}"
+            }).insert(ignore_permissions=True)
+    except Exception as e:
+        frappe.logger().error(f"Notification Log error for {applicant}: {e}")
+
     # Enqueue the email sending with pre-rendered content
     try:
         if frappe.flags.in_test:
@@ -131,39 +176,39 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         frappe.logger().info(f"Notification queued: Email to {email} for status {new_status}")
 
         # Log specialized communication
-        from slcm.admission.utils.notifications import log_communication
-        log_communication(
-            applicant=applicant,
-            communication_type="Email",
-            category="Seat Allocation",
-            subject=subject,
-            content=message,
-            reference_doctype="Seat Allocation",
-            reference_name=allocation_name
-        )
+        if log_communication:
+            log_communication(
+                applicant=applicant,
+                communication_type="Email",
+                category="Seat Allocation",
+                subject=subject,
+                content=message,
+                reference_doctype="Seat Allocation",
+                reference_name=allocation_name
+            )
     except Exception as e:
         frappe.logger().error(f"Notification error (enqueue/sendmail) for {applicant}: {e}")
         return
- 
+
     # Log to Admission Audit Log
     try:
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_admission_action
-        log_admission_action(
-            reference_doctype="Seat Allocation",
-            reference_name=allocation_name,
-            applicant=applicant,
-            program=program,
-            action_type="Notification Sent",
-            old_value=old_status,
-            new_value=new_status,
-            remarks=f"Email notification ('{template_name}' template record) sent to {email}."
-        )
-    except ImportError:
-        frappe.logger().warning("Notification: Could not import log_admission_action, skipping audit log.")
+        if log_admission_action:
+            log_admission_action(
+                reference_doctype="Seat Allocation",
+                reference_name=allocation_name,
+                applicant=applicant,
+                program=program,
+                action_type="Notification Sent",
+                old_value=old_status,
+                new_value=new_status,
+                remarks=f"Email notification ('{template_name}' template record) sent to {email}."
+            )
+        else:
+            frappe.logger().warning("Notification: log_admission_action not found, skipping audit log.")
     except Exception as e:
         frappe.logger().error(f"Notification error (audit log) for {applicant}: {e}")
- 
- 
+
+
 def notify_published_allocation(allocation_name):
     """
     Sends email notifications ONLY to the applicants listed in the 
@@ -176,7 +221,7 @@ def notify_published_allocation(allocation_name):
         return
 
     frappe.logger().info(f"Notification: Publishing {allocation_name}. Notifying {len(allocation.selection_applicant)} applicants.")
- 
+
     for row in allocation.selection_applicant:
         notify_status_change(
             applicant=row.applicant_id,
@@ -188,9 +233,11 @@ def notify_published_allocation(allocation_name):
             row=row
         )
 
+
 def notify_scholarship_status(application_name):
     """
     Sends a professionally designed HTML email notification to scholarship applicant.
+    Now uses 'Scholarship Updates' Email Template for easy customization.
     """
     app = frappe.get_doc("Scholarship Application", application_name)
     
@@ -198,111 +245,159 @@ def notify_scholarship_status(application_name):
     if not email:
         return
 
-    from frappe.utils import get_url, fmt_money
     scheme_name = frappe.db.get_value("Scholarship Scheme", app.scholarship_scheme, "scheme_name")
     benefit_amount = fmt_money(app.calculated_benefit) if app.calculated_benefit else "0.00"
-    portal_url = "https://apfslcm.boscosofttech.com/merit-and-scholarship/scholarships"
+    portal_url = get_url("/merit-and-scholarship/scholarships")
     
-    # Common CSS Styles for the Email
-    email_styles = """
-        <style>
-            .email-container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
-            .header { background-color: #1a3c6e; color: #ffffff; padding: 30px; text-align: center; }
-            .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
-            .content { padding: 40px; background-color: #ffffff; }
-            .status-badge { display: inline-block; padding: 6px 12px; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: 12px; margin-bottom: 20px; }
-            .status-approved { background-color: #d1fae5; color: #065f46; }
-            .status-rejected { background-color: #fee2e2; color: #991b1b; }
-            .details-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin: 25px 0; }
-            .label { font-weight: bold; color: #64748b; font-size: 13px; }
-            .value { font-weight: bold; color: #1e293b; font-size: 14px; }
-            .button { display: inline-block; background-color: #1a3c6e; color: #ffffff !important; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
-            .footer { background-color: #f1f5f9; color: #64748b; padding: 20px; text-align: center; font-size: 12px; }
-        </style>
-    """
+    template_name = "Scholarship Updates"
+    
+    # Lazy Setup: Create the template if it doesn't exist
+    if not frappe.db.exists("Email Template", template_name):
+        _create_scholarship_template(template_name)
 
-    if app.status == "Approved":
-        subject = f"Congratulations! Your Scholarship for {scheme_name} is Approved"
-        body_content = f"""
-            <div class="status-badge status-approved">Application Approved</div>
-            <p>Dear <strong>{app.applicant_name}</strong>,</p>
-            <p>On behalf of the Scholarship Committee, we are pleased to inform you that your application for the <strong>{scheme_name}</strong> has been officially approved.</p>
+    template = frappe.get_doc("Email Template", template_name)
+    
+    # Prepare Context
+    context = {
+        "doc": app,
+        "scheme_name": scheme_name,
+        "benefit_amount": benefit_amount,
+        "portal_url": portal_url,
+        "status": app.status,
+    }
+    
+    # Fetch Content based on use_html toggle
+    if template.get("use_html"):
+        template_body = template.response_html
+    else:
+        template_body = template.response
+        
+    if not template_body:
+        template_body = template.get("message")
+
+    try:
+        # Render the template
+        subject = frappe.render_template(template.subject, context)
+        message = frappe.render_template(template_body, context)
+        
+        frappe.enqueue(
+            method=frappe.sendmail,
+            queue="short",
+            recipients=[email],
+            subject=subject or f"Scholarship Application Update – {scheme_name}",
+            message=message,
+            reference_doctype="Scholarship Application",
+            reference_name=app.name,
+            now=frappe.flags.in_test
+        )
+    except Exception as e:
+        frappe.logger().error(f"Scholarship Notification error for {app.name}: {e}\n{frappe.get_traceback()}")
+    
+    # Create internal system notification (bell icon)
+    try:
+        from_user = frappe.session.user if frappe.session.user != "Guest" else "Administrator"
+        if frappe.db.exists("User", email):
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": f"Scholarship Status: {app.status}",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": f"Your scholarship application for <strong>{scheme_name}</strong> has been <strong>{app.status}</strong>. <br><br> <a href='/my-applications?app={app.applicant_id}'>Click here to view details.</a>",
+                "document_type": "Scholarship Application",
+                "document_name": app.name,
+                "from_user": from_user,
+                "link": f"/my-applications?app={app.applicant_id}"
+            }).insert(ignore_permissions=True)
+    except Exception as e:
+        frappe.logger().error(f"Scholarship Notification Log error for {app.name}: {e}")
+
+
+def _create_scholarship_template(name):
+    """Hidden helper to bootstrap the scholarship template with premium styling."""
+    try:
+        html = f"""
+<style>
+    .email-container {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }}
+    .header {{ background-color: #1a3c6e; color: #ffffff; padding: 30px; text-align: center; }}
+    .header h1 {{ margin: 0; font-size: 24px; letter-spacing: 1px; }}
+    .content {{ padding: 40px; background-color: #ffffff; }}
+    .status-badge {{ display: inline-block; padding: 6px 12px; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: 12px; margin-bottom: 20px; }}
+    .status-approved {{ background-color: #d1fae5; color: #065f46; }}
+    .status-rejected {{ background-color: #fee2e2; color: #991b1b; }}
+    .details-box {{ background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin: 25px 0; }}
+    .label {{ font-weight: bold; color: #64748b; font-size: 13px; }}
+    .value {{ font-weight: bold; color: #1e293b; font-size: 14px; }}
+    .button {{ display: inline-block; background-color: #1a3c6e; color: #ffffff !important; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }}
+    .footer {{ background-color: #f1f5f9; color: #64748b; padding: 20px; text-align: center; font-size: 12px; }}
+</style>
+
+<div class='email-container'>
+    <div class='header'>
+        <h1>SCHOLARSHIP BOARD</h1>
+    </div>
+    <div class='content'>
+        {{% if doc.status == 'Approved' %}}
+            <div class='status-badge status-approved'>Application Approved</div>
+            <p>Dear <strong>{{{{ doc.applicant_name }}}}</strong>,</p>
+            <p>On behalf of the Scholarship Committee, we are pleased to inform you that your application for the <strong>{{{{ scheme_name strip }}}}</strong> has been officially approved.</p>
             
-            <div class="details-box">
-                <table style="width: 100%; border-collapse: collapse;">
+            <div class='details-box'>
+                <table style='width: 100%; border-collapse: collapse;'>
                     <tr>
-                        <td style="padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;">Application ID:</td>
-                        <td style="padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;">{app.name}</td>
+                        <td style='padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;'>Application ID:</td>
+                        <td style='padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;'>{{{{ doc.name }}}}</td>
                     </tr>
                     <tr>
-                        <td style="padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;">Scholarship Scheme:</td>
-                        <td style="padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;">{scheme_name}</td>
+                        <td style='padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;'>Scholarship Scheme:</td>
+                        <td style='padding: 10px 0; border-bottom: 1px solid #edf2f7; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;'>{{{{ scheme_name }}}}</td>
                     </tr>
                     <tr>
-                        <td style="padding: 10px 0; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;">Approved Benefit:</td>
-                        <td style="padding: 10px 0; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;">{benefit_amount}</td>
+                        <td style='padding: 10px 0; font-weight: bold; color: #64748b; font-size: 13px; text-align: left;'>Approved Benefit:</td>
+                        <td style='padding: 10px 0; font-weight: bold; color: #1e293b; font-size: 14px; text-align: right;'>{{{{ benefit_amount }}}}</td>
                     </tr>
                 </table>
             </div>
             
             <p>The approved benefit has been automatically applied to your Fee Assignment. You may log in to the student portal to view your updated fee details and complete any pending formalities.</p>
             
-            <div style="text-align: center;">
-                <a href="{portal_url}" class="button">View on Admission Portal</a>
+            <div style='text-align: center;'>
+                <a href='{{{{ portal_url }}}}' class='button'>View on Admission Portal</a>
             </div>
-        """
-    else:
-        subject = f"Notification regarding your Scholarship Application: {scheme_name}"
-        body_content = f"""
-            <div class="status-badge status-rejected">Application Not Selected</div>
-            <p>Dear <strong>{app.applicant_name}</strong>,</p>
-            <p>Thank you for your application for the <strong>{scheme_name}</strong>. After a comprehensive review of all submissions, we regret to inform you that we are unable to grant your scholarship request at this time.</p>
+        {{% else %}}
+            <div class='status-badge status-rejected'>Application Not Selected</div>
+            <p>Dear <strong>{{{{ doc.applicant_name }}}}</strong>,</p>
+            <p>Thank you for your application for the <strong>{{{{ scheme_name }}}}</strong>. After a comprehensive review of all submissions, we regret to inform you that we are unable to grant your scholarship request at this time.</p>
             
-            <div class="details-box">
-                <p class="label" style="margin-bottom: 5px;">Reason for Decision:</p>
-                <p class="value" style="color: #991b1b;">{app.rejection_reason or 'Eligibility criteria not met / Limited budget availability'}</p>
+            <div class='details-box'>
+                <p class='label' style='margin-bottom: 5px;'>Reason for Decision:</p>
+                <p class='value' style='color: #991b1b;'>{{{{ doc.rejection_reason or 'Eligibility criteria not met / Limited budget availability' }}}}</p>
             </div>
             
             <p>Although you were not selected for this specific scheme, we encourage you to explore other financial aid opportunities available on the admission portal.</p>
             
-            <div style="text-align: center;">
-                <a href="{portal_url}" class="button">Check Other Schemes</a>
+            <div style='text-align: center;'>
+                <a href='{{{{ portal_url }}}}' class='button'>Check Other Schemes</a>
             </div>
-        """
-
-    full_html = f"""
-        <html>
-            <head>{email_styles}</head>
-            <body>
-                <div class="email-container">
-                    <div class="header">
-                        <h1>SCHOLARSHIP BOARD</h1>
-                    </div>
-                    <div class="content">
-                        {body_content}
-                    </div>
-                    <div class="footer">
-                        <p>&copy; {frappe.utils.nowdate()[:4]} University Admissions Office. All rights reserved.</p>
-                        <p>This is an automated notification. Please do not reply directly to this email.</p>
-                    </div>
-                </div>
-            </body>
-        </html>
-    """
-
-    try:
-        frappe.enqueue(
-            method=frappe.sendmail,
-            queue="short",
-            recipients=[email],
-            subject=subject,
-            message=full_html,
-            reference_doctype="Scholarship Application",
-            reference_name=app.name,
-            now=frappe.flags.in_test
-        )
+        {{% endif %}}
+    </div>
+    <div class='footer'>
+        <p>&copy; {nowdate()[:4]} University Admissions Office. All rights reserved.</p>
+        <p>This is an automated notification. Please do not reply directly to this email.</p>
+    </div>
+</div>
+"""
+        frappe.get_doc({
+            "doctype": "Email Template",
+            "name": name,
+            "template_name": name,
+            "subject": "Scholarship Application Update – {{ scheme_name }}",
+            "use_html": 1,
+            "response_html": html,
+            "owner": "Administrator"
+        }).insert(ignore_permissions=True)
+        frappe.db.commit()
     except Exception as e:
-        frappe.logger().error(f"Scholarship Notification send error for {app.name}: {e}")
+        frappe.logger().error(f"Error bootstrapping Scholarship email template: {e}")
 
 
 def notify_refund_processed(refund_request_name):
@@ -320,7 +415,6 @@ def notify_refund_processed(refund_request_name):
         frappe.logger().warning(f"Refund Notification skipped: No email found for applicant {refund.applicant}")
         return
 
-    from frappe.utils import fmt_money
     refund_amount_str = fmt_money(refund.refund_amount)
     
     subject = f"Refund Processed Successfully - {refund.name}"
@@ -382,7 +476,7 @@ def notify_refund_processed(refund_request_name):
                         {body_html}
                     </div>
                     <div class="footer">
-                        <p>&copy; {frappe.utils.nowdate()[:4]} University Admissions. All rights reserved.</p>
+                        <p>&copy; {nowdate()[:4]} University Admissions. All rights reserved.</p>
                         <p>This is an automated transaction confirmation.</p>
                     </div>
                 </div>
@@ -402,8 +496,24 @@ def notify_refund_processed(refund_request_name):
             now=frappe.flags.in_test
         )
         frappe.logger().info(f"Refund Notification queued for {refund.name} to {email}")
+
+        # Create internal system notification (bell icon)
+        try:
+            from_user = frappe.session.user if frappe.session.user != "Guest" else "Administrator"
+            if frappe.db.exists("User", email):
+                frappe.get_doc({
+                    "doctype": "Notification Log",
+                    "subject": "Refund Processed Successfully",
+                    "for_user": email,
+                    "type": "Alert",
+                    "email_content": f"Your refund request <strong>{refund.name}</strong> has been successfully processed for the amount of <strong>{refund_amount_str}</strong>. <br><br> <a href='/my-applications?app={refund.applicant}'>Click here to view details.</a>",
+                    "document_type": "Refund Request",
+                    "document_name": refund.name,
+                    "from_user": from_user,
+                    "link": f"/my-applications?app={refund.applicant}"
+                }).insert(ignore_permissions=True)
+        except Exception as e:
+            frappe.logger().error(f"Refund Notification Log error for {refund.name}: {e}")
+
     except Exception as e:
         frappe.logger().error(f"Refund Notification error for {refund.name}: {e}")
-
-
-
