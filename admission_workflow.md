@@ -52,29 +52,29 @@ graph TD
     B --> C{Initial Review}
     C -->|Incomplete| D[Request Missing Documents]
     D --> B
-    C -->|Complete| E[Move to Assessment]
+    C -->|Complete| E[Move to Entrance Exam]
     
     E --> F[Document Verification]
     F --> G{Verification Status}
     G -->|Failed| H[Reject Application]
-    G -->|Passed| I[Schedule Assessment]
+    G -->|Passed| I[Schedule Entrance Exam]
     
     I --> J[Merit Evaluation]
     J --> K[Interview/Test]
     K --> L[Score Compilation]
     
     L --> M{Evaluation Result}
-    M -->|Merit Pass| N[Generate Admission Decision]
+    M -->|Merit Pass| N[Generate Admit Card]
     M -->|Merit Fail| O[Provisional Admission]
     
     N --> P{Approval}
     O --> P
-    P -->|Approved| Q[Generate Admission Letter]
+    P -->|Approved| Q[Generate Admit Letter]
     P -->|Rejected| H
     
     Q --> R[Awaiting Confirmation]
     R --> S{Applicant Decision}
-    S -->|Accept| T[Process Payment]
+    S -->|Accept| T[Scholarship & Process Payment]
     S -->|Decline| U[Admission Cancelled]
     
     T --> V{Payment Status}
