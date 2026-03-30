@@ -115,5 +115,14 @@
   "stage_code": "Interview",
   "stage_name": "Interview",
   "stage_type": "Interview"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
+  "modified": "2026-03-10 20:57:28.298259",
+  "name": "Admission Confirmed",
+  "stage_code": "Confirmed",
+  "stage_name": "Admission Confirmed",
+  "stage_type": null
  }
 ]

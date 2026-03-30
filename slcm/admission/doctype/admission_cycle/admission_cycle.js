@@ -13,9 +13,25 @@ frappe.ui.form.on("Admission Cycle", {
             return {
                 filters: {
                     is_active: 1
-                }
+                } 
             };
         });
+
+
+        const today = new Date(frappe.datetime.get_today());
+
+        if (frm.fields_dict.cycle_start_date && frm.fields_dict.cycle_start_date.datepicker) {
+            frm.fields_dict.cycle_start_date.datepicker.update({
+                minDate: today,
+            });
+        }
+
+        if (frm.fields_dict.cycle_end_date && frm.fields_dict.cycle_end_date.datepicker) {
+            let until_min = frm.doc.cycle_start_date ? new Date(frm.doc.cycle_start_date) : today;
+            frm.fields_dict.cycle_end_date.datepicker.update({
+                minDate: until_min,
+            });
+        }
 
         // Status indicator
         const colors = { "Draft": "gray", "Active": "green", "Closed": "red" };
@@ -41,14 +57,6 @@ frappe.ui.form.on("Admission Cycle", {
             }
         }
 
-        // Set date constraints
-        frm.set_df_property("cycle_start_date", "options", {
-            minDate: frappe.datetime.get_today()
-        });
-        frm.set_df_property("cycle_end_date", "options", {
-            minDate: frm.doc.cycle_start_date || frappe.datetime.get_today()
-        });
-
         // Set queries for Admission Cycle Stage child table
         const stage_status_fields = ["activate_status", "completed_status", "closed_status"];
         stage_status_fields.forEach(field => {
@@ -69,9 +77,27 @@ frappe.ui.form.on("Admission Cycle", {
         if (!frm.is_new()) {
             if (frm.doc.status === "Draft") {
                 frm.add_custom_button(__("Activate"), function () {
-                    frappe.confirm(
-                        __("Activate this cycle? Only one cycle can be Active at a time."),
-                        function () {
+                    // Check for existing active cycle conflict first
+                    frappe.db.get_value("Admission Cycle", {
+                        status: "Active",
+                        name: ["!=", frm.doc.name]
+                    }, "cycle_name", (r) => {
+                        if (r && r.cycle_name) {
+                            frappe.msgprint({
+                                message: __("Cycle <b>{0}</b> is already Active. Close it before activating this one.", [r.cycle_name]),
+                                title: __("Active Cycle Conflict"),
+                                indicator: "red",
+                                primary_action: {
+                                    label: __("Go to {0}", [r.cycle_name]),
+                                    action: () => {
+                                        frappe.set_route("Form", "Admission Cycle", r.cycle_name);
+                                    }
+                                }
+                            });
+                            return;
+                        }
+
+                        const activate_cycle = () => {
                             frappe.call({
                                 method: "frappe.client.set_value",
                                 args: {
@@ -80,10 +106,24 @@ frappe.ui.form.on("Admission Cycle", {
                                     fieldname: "status",
                                     value: "Active"
                                 },
-                                callback: function () { frm.reload_doc(); }
+                                callback: function () {
+                                    frm.reload_doc();
+                                }
                             });
-                        }
-                    );
+                        };
+
+                        const msg = frm.doc.docstatus === 0
+                            ? __("Activate this cycle? (This will also Submit the document).")
+                            : __("Activate this cycle?");
+
+                        frappe.confirm(msg, () => {
+                            if (frm.doc.docstatus === 0) {
+                                frm.save("Submit").then(activate_cycle);
+                            } else {
+                                activate_cycle();
+                            }
+                        });
+                    });
                 }, __("Actions"));
             }
 
@@ -117,42 +157,15 @@ frappe.ui.form.on("Admission Cycle", {
             }, 5);
         }
     },
-
     cycle_start_date: function (frm) {
-        if (frm.doc.cycle_start_date) {
-            if (frm.doc.cycle_start_date < frappe.datetime.get_today()) {
-                frappe.msgprint(__("Cycle Start Date cannot be in the past."));
-                frm.set_value("cycle_start_date", null);
-            } else {
-                if (frm.doc.cycle_end_date && frm.doc.cycle_start_date > frm.doc.cycle_end_date) {
-                    frappe.msgprint(__("Cycle Start Date cannot be after Cycle End Date."));
-                    frm.set_value("cycle_start_date", null);
-                }
-                // Update minDate for end date picker
-                frm.set_df_property("cycle_end_date", "options", {
-                    minDate: frm.doc.cycle_start_date
-                });
-            }
-        } else {
-            frm.set_df_property("cycle_end_date", "options", {
-                minDate: frappe.datetime.get_today()
+        if (frm.doc.cycle_start_date && frm.fields_dict.cycle_end_date && frm.fields_dict.cycle_end_date.datepicker) {
+            frm.fields_dict.cycle_end_date.datepicker.update({
+                minDate: new Date(frm.doc.cycle_start_date),
             });
         }
     },
 
-    cycle_end_date: function (frm) {
-        if (frm.doc.cycle_end_date) {
-            const min_date = frm.doc.cycle_start_date || frappe.datetime.get_today();
-            if (frm.doc.cycle_end_date < min_date) {
-                if (frm.doc.cycle_end_date < frappe.datetime.get_today()) {
-                    frappe.msgprint(__("Cycle End Date cannot be in the past."));
-                } else {
-                    frappe.msgprint(__("Cycle End Date cannot be before Cycle Start Date."));
-                }
-                frm.set_value("cycle_end_date", null);
-            }
-        }
-    }
+
 });
 
 frappe.ui.form.on("Admission Cycle Program", {

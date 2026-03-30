@@ -19,8 +19,13 @@ class AdmissionCycle(Document):
             )
             if existing:
                 frappe.throw(
-                    f"Cycle <b>{existing}</b> is already Active. "
-                    f"Close it before activating this one."
+                    msg=f"Cycle <b>{existing}</b> is already Active. Close it before activating this one.",
+                    title="Active Cycle Conflict",
+                    primary_action={
+                        "label": f"Go to {existing}",
+                        "client_action": "frappe.set_route",
+                        "args": ["Form", "Admission Cycle", existing]
+                    }
                 )
 
     def _validate_programs(self):

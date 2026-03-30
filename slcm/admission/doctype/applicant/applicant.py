@@ -267,11 +267,30 @@ class Applicant(Document):
     def send_submission_confirmation(self):
         """
         Sends a formatted confirmation email on application submission.
-        Attaches the 'Applicant Application Form' print format as PDF.
-        Called from on_update() when status transitions Draft → Submitted.
+        - Email template fetched from active Admission Cycle's `email_template` field
+        - Print format fetched from active Admission Cycle's `application_form_template` field
+        - System notification created via Notification Log (no new DocType)
+        - Falls back to hardcoded HTML if no template is configured on the cycle
         """
 
-        # ── Reservation summary ──────────────────────────────────────────
+        # ── Fetch active Admission Cycle config ──────────────────────────────
+        cycle_name = self.admission_cycle  # already linked on the applicant
+
+        email_template_name = None
+        print_format_name = "Applicant Application Form"  # default fallback
+
+        if cycle_name:
+            cycle = frappe.db.get_value(
+                "Admission Cycle",
+                {"name": cycle_name, "status": "Active"},
+                ["email_template", "application_form_template"],
+                as_dict=True
+            )
+            if cycle:
+                email_template_name = cycle.get("email_template")
+                print_format_name = cycle.get("application_form_template") or print_format_name
+
+        # ── Reservation summary ──────────────────────────────────────────────
         reservation_parts = []
         if self.whether_scstobc_ncl:
             reservation_parts.append(self.whether_scstobc_ncl)
@@ -282,11 +301,10 @@ class Applicant(Document):
         if self.karnataka_category:
             reservation_parts.append(f"Karnataka: {self.karnataka_category}")
         reservation_summary = (
-            ", ".join(reservation_parts) if reservation_parts
-            else "General (Unreserved)"
+            ", ".join(reservation_parts) if reservation_parts else "General (Unreserved)"
         )
 
-        # ── Test center preference summary ───────────────────────────────
+        # ── Test center preference summary ───────────────────────────────────
         test_centers = []
         if self.first_preference:
             test_centers.append(f"1st: {self.first_preference}")
@@ -294,12 +312,9 @@ class Applicant(Document):
             test_centers.append(f"2nd: {self.second_preference}")
         if self.third_preference:
             test_centers.append(f"3rd: {self.third_preference}")
-        test_center_summary = (
-            " | ".join(test_centers) if test_centers
-            else "Not specified"
-        )
+        test_center_summary = " | ".join(test_centers) if test_centers else "Not specified"
 
-        # ── Program-level academic summary ───────────────────────────────
+        # ── Program-level academic summary ───────────────────────────────────
         academic_line = ""
         if self.program_level == "UG":
             academic_line = (
@@ -312,7 +327,7 @@ class Applicant(Document):
         elif self.program_level == "PhD":
             academic_line = f"PhD Program Type: {self.phd_program_type or '—'}"
 
-        # ── Institution name (dynamic for multi-university support) ──────
+        # ── Institution name ─────────────────────────────────────────────────
         institution_name = (
             frappe.db.get_single_value("Institution Settings", "institution_name")
             or "Admissions Office"
@@ -320,404 +335,427 @@ class Applicant(Document):
 
         admission_portal_url = frappe.utils.get_url("/admission")
 
-        # ── PDF attachment ────────────────────────────────────────────────
+        # ── Institution logo ──────────────────────────────────────────────────
+        institution_logo = frappe.db.get_single_value("Institution Settings", "logo") or ""
+        # Convert to full URL if it's a file path
+        if institution_logo and not institution_logo.startswith("http"):
+            institution_logo = frappe.utils.get_url(institution_logo)
+
+        # ── Context dict for template rendering ──────────────────────────────
+        template_context = {
+            "doc": self,
+            "applicant_id": self.name,
+            "candidate_name": self.candidate_name,
+            "program": self.program or "—",
+            "program_level": self.program_level or "—",
+            "application_type": self.application_type or "—",
+            "admission_cycle": self.admission_cycle or "—",
+            "campus": self.campus or "—",
+            "application_status": self.application_status or "Submitted",
+            "date_of_birth": frappe.utils.formatdate(self.date_of_birth) if self.date_of_birth else "—",
+            "gender": self.gender or "—",
+            "mobile_number": self.mobile_number or "—",
+            "nationality": self.nationality or "—",
+            "city": self.city or "—",
+            "state": self.state or "—",
+            "class_x_school": self.class_x_school or "—",
+            "class_x_percentage": f"{self.class_x_percentage}%" if self.class_x_percentage else "—",
+            "class_xii_school": self.class_xii_school or "—",
+            "hsc_percentage": f"{self.hsc_percentage}%" if self.hsc_percentage else "—",
+            "reservation_summary": reservation_summary,
+            "annual_house_hold_income": self.annual_house_hold_income or "—",
+            "test_center_summary": test_center_summary,
+            "application_fee_status": self.application_fee_status or "—",
+            "application_fee_amount": (
+                frappe.utils.fmt_money(self.application_fee_amount, currency="INR")
+                if self.application_fee_amount else "—"
+            ),
+            "institution_name": institution_name,
+            "institution_logo": institution_logo,
+            "admission_portal_url": admission_portal_url,
+            "generated_on": frappe.utils.now_datetime().strftime("%d %b %Y, %I:%M %p"),
+        }
+
+        # ── Resolve email subject and body ────────────────────────────────────
+        email_subject = f"Application Submitted — {self.name} | {self.program or 'Admissions'}"
+        html_body = None
+
+        if email_template_name:
+            try:
+                email_template = frappe.get_doc("Email Template", email_template_name)
+                # Render subject and response using Jinja
+                email_subject = frappe.render_template(email_template.subject, template_context)
+                html_body = frappe.render_template(email_template.response, template_context)
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    f"Email template render failed for {self.applicant_id}, falling back to default"
+                )
+                html_body = None  # will fall through to hardcoded below
+
+        # ── Fallback to hardcoded HTML if no template or render failed ────────
+        if not html_body:
+            html_body = self._build_default_email_html(template_context)
+
+        # ── PDF attachment using dynamic print format ─────────────────────────
         try:
             pdf_content = frappe.get_print(
                 doctype="Applicant",
                 name=self.name,
-                print_format="Applicant Application Form",
+                print_format=print_format_name,
                 as_pdf=True
             )
             attachments = [{
-                "fname": f"Application_Form_{self.applicant_id}.pdf",
+                "fname": f"Application_Form_{self.applicant_id or self.name}.pdf",
                 "fcontent": pdf_content
             }]
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),
-                f"PDF generation failed for {self.applicant_id}"
+                f"PDF generation failed for {self.applicant_id} using format '{print_format_name}'"
             )
             attachments = []
 
-        # ── Email body ────────────────────────────────────────────────────
-        html_body = f"""<!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="UTF-8">
-    <style>
-        body {{
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        color: #000000;
-        line-height: 1.6;
-        margin: 0;
-        padding: 0;
-        background: #f4f4f4;
-        }}
-        .wrapper {{
-        max-width: 620px;
-        margin: 32px auto;
-        background: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid #e0e0e0;
-        }}
-        .header {{
-        background: #920c24;
-        padding: 28px 32px;
-        text-align: center;
-        }}
-        .header h1 {{
-        color: #ffffff;
-        font-size: 20px;
-        margin: 0 0 4px 0;
-        font-weight: 600;
-        }}
-        .header p {{
-        color: rgba(255,255,255,0.88);
-        font-size: 13px;
-        margin: 0;
-        }}
-        .badge {{
-        display: inline-block;
-        background: #ffffff;
-        color: #920c24;
-        font-size: 13px;
-        font-weight: 600;
-        padding: 6px 18px;
-        border-radius: 20px;
-        margin-top: 14px;
-        letter-spacing: 0.5px;
-        }}
-        .body {{
-        padding: 28px 32px;
-        }}
-        .greeting {{
-        font-size: 15px;
-        color: #000000;
-        margin-bottom: 12px;
-        font-weight: 600;
-        }}
-        .intro {{
-        font-size: 14px;
-        color: #000000;
-        margin-bottom: 20px;
-        line-height: 1.7;
-        }}
-        .intro strong {{
-        color: #920c24;
-        }}
-        .notify-next {{
-        font-size: 14px;
-        color: #000000;
-        background: #fafafa;
-        border-left: 3px solid #920c24;
-        border-radius: 0 6px 6px 0;
-        padding: 14px 18px;
-        margin: 0 0 24px 0;
-        line-height: 1.65;
-        }}
-        .cta-wrap {{
-        text-align: center;
-        margin: 8px 0 28px 0;
-        }}
-        .cta-link {{
-        display: inline-block;
-        background: #920c24;
-        color: #ffffff !important;
-        font-size: 14px;
-        font-weight: 700;
-        padding: 14px 32px;
-        border-radius: 8px;
-        text-decoration: none;
-        letter-spacing: 0.02em;
-        }}
-        .cta-fallback {{
-        font-size: 12px;
-        color: #333333;
-        margin-top: 12px;
-        word-break: break-all;
-        }}
-        .cta-fallback a {{
-        color: #920c24;
-        }}
-        .section-title {{
-        font-size: 11px;
-        font-weight: 700;
-        color: #920c24;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin: 24px 0 10px 0;
-        padding-bottom: 6px;
-        border-bottom: 1px solid #e8e8e8;
-        }}
-        .detail-table {{
-        width: 100%;
-        border-collapse: collapse;
-        }}
-        .detail-table tr td {{
-        padding: 7px 0;
-        font-size: 13px;
-        border-bottom: 1px solid #eeeeee;
-        vertical-align: top;
-        }}
-        .detail-table tr:last-child td {{
-        border-bottom: none;
-        }}
-        .detail-table td.label {{
-        color: #333333;
-        width: 44%;
-        padding-right: 12px;
-        }}
-        .detail-table td.value {{
-        color: #000000;
-        font-weight: 500;
-        }}
-        .status-pill {{
-        display: inline-block;
-        background: #fbe9ec;
-        color: #920c24;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 3px 12px;
-        border-radius: 20px;
-        }}
-        .next-steps {{
-        background: #fafafa;
-        border: 1px solid #e8e8e8;
-        border-radius: 6px;
-        padding: 16px 20px;
-        margin: 24px 0;
-        }}
-        .next-steps p {{
-        font-size: 13px;
-        color: #000000;
-        margin: 0 0 8px 0;
-        font-weight: 600;
-        }}
-        .next-steps ul {{
-        margin: 0;
-        padding-left: 18px;
-        }}
-        .next-steps ul li {{
-        font-size: 13px;
-        color: #000000;
-        margin-bottom: 5px;
-        line-height: 1.6;
-        }}
-        .attachment-note {{
-        background: #fafafa;
-        border-left: 3px solid #920c24;
-        border-radius: 0 6px 6px 0;
-        padding: 12px 16px;
-        font-size: 13px;
-        color: #000000;
-        margin: 20px 0;
-        }}
-        .footer {{
-        background: #fafafa;
-        padding: 20px 32px;
-        text-align: center;
-        border-top: 1px solid #e0e0e0;
-        }}
-        .footer p {{
-        font-size: 12px;
-        color: #333333;
-        margin: 4px 0;
-        }}
-        .footer .university-name {{
-        font-size: 13px;
-        font-weight: 600;
-        color: #000000;
-        margin-bottom: 6px;
-        }}
-    </style>
-    </head>
-    <body>
-    <div class="wrapper">
-
-        <div class="header">
-        <h1>Application Submitted Successfully</h1>
-        <p>Your application has been received</p>
-        <div class="badge">{self.name}</div>
-        </div>
-
-        <div class="body">
-
-        <p class="greeting">Dear {self.candidate_name},</p>
-        <p class="intro">
-            Your application to <strong>{self.program or 'the program'}</strong>
-            has been successfully submitted. Please keep your Application ID
-            <strong>{self.name}</strong> for all future correspondence.
-            A copy of your completed application form is attached to this email.
-        </p>
-
-        <p class="notify-next">
-            <strong style="color:#920c24;">What happens next?</strong><br>
-            The admissions office will notify you by email about the next steps in your application process.
-            Please monitor your inbox (including spam or promotions folders) for further updates.
-        </p>
-
-        <div class="cta-wrap">
-        <a class="cta-link" href="{admission_portal_url}" target="_blank" rel="noopener noreferrer">Continue to admission portal</a>
-        <p class="cta-fallback">If the button does not work, copy this link into your browser:<br>
-        <a href="{admission_portal_url}" target="_blank" rel="noopener noreferrer">{admission_portal_url}</a></p>
-        </div>
-
-        <div class="section-title">Application details</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Program applied</td>
-            <td class="value">{self.program or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Program level</td>
-            <td class="value">{self.program_level or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Application type</td>
-            <td class="value">{self.application_type or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Admission cycle</td>
-            <td class="value">{self.admission_cycle or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Campus</td>
-            <td class="value">{self.campus or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Current status</td>
-            <td class="value">
-                <span class="status-pill">
-                {self.application_status or 'Submitted'}
-                </span>
-            </td>
-            </tr>
-        </table>
-
-        <div class="section-title">Personal details</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Full name</td>
-            <td class="value">{self.candidate_name}</td>
-            </tr>
-            <tr>
-            <td class="label">Date of birth</td>
-            <td class="value">{frappe.utils.formatdate(self.date_of_birth) if self.date_of_birth else '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Gender</td>
-            <td class="value">{self.gender or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Mobile</td>
-            <td class="value">{self.mobile_number or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Nationality</td>
-            <td class="value">{self.nationality or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Correspondence</td>
-            <td class="value">{self.city or '—'}, {self.state or '—'}</td>
-            </tr>
-        </table>
-
-        <div class="section-title">Academic details</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Class X school</td>
-            <td class="value">{self.class_x_school or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Class X percentage</td>
-            <td class="value">{f"{self.class_x_percentage}%" if self.class_x_percentage else '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Class XII school</td>
-            <td class="value">{self.class_xii_school or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Class XII percentage</td>
-            <td class="value">{f"{self.hsc_percentage}%" if self.hsc_percentage else '—'}</td>
-            </tr>
-        </table>
-
-        <div class="section-title">Reservation / category</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Category</td>
-            <td class="value">{reservation_summary}</td>
-            </tr>
-            <tr>
-            <td class="label">Annual household income</td>
-            <td class="value">{self.annual_house_hold_income or '—'}</td>
-            </tr>
-        </table>
-
-        <div class="section-title">Test center preferences</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Preferences</td>
-            <td class="value">{test_center_summary}</td>
-            </tr>
-        </table>
-
-        <div class="section-title">Application fee</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Fee status</td>
-            <td class="value">{self.application_fee_status or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Fee amount</td>
-            <td class="value">
-                {frappe.utils.fmt_money(self.application_fee_amount, currency="INR") if self.application_fee_amount else '—'}
-            </td>
-            </tr>
-        </table>
-
-        <div class="attachment-note">
-            Your completed <strong>Application Form</strong> is attached to
-            this email as a PDF. Please save it for your records and bring a
-            printed copy if required during document verification.
-        </div>
-
-        <div class="next-steps">
-            <p>Reminders</p>
-            <ul>
-            <li>Your application will be reviewed for eligibility; admissions will email you when there are updates.</li>
-            <li>Admit card and test details will be shared once the schedule is confirmed.</li>
-            <li>Log in to the admission portal anytime to track your application status.</li>
-            <li>Keep original documents ready for verification when asked.</li>
-            </ul>
-        </div>
-
-        </div>
-
-        <div class="footer">
-        <p class="university-name">{institution_name}</p>
-        <p>This is an auto-generated email. Please do not reply directly.</p>
-        <p>For queries, contact the admissions helpdesk.</p>
-        <p style="margin-top:10px;font-size:11px;color:#555555;">
-            Application ID: {self.name} &nbsp;|&nbsp;
-            Generated: {frappe.utils.now_datetime().strftime('%d %b %Y, %I:%M %p')}
-        </p>
-        </div>
-
-    </div>
-    </body>
-    </html>"""
-
+        # ── Send email ────────────────────────────────────────────────────────
         frappe.sendmail(
             recipients=[self.email],
-            subject=f"Application Submitted — {self.name} | {self.program or 'Admissions'}",
+            subject=email_subject,
             message=html_body,
             attachments=attachments,
             now=True
         )
 
+        # ── System notification (Notification Log — no new DocType) ──────────
+        self._create_system_notification(institution_name)
+
+
+    def _create_system_notification(self, institution_name):
+        """
+        Creates a Frappe Notification Log entry so the bell icon in the desk
+        shows a notification to the Admission Admin role.
+        No new DocType required — uses the built-in Notification Log.
+        """
+        try:
+            # Notify all users who have the Admission Admin role
+            admin_users = frappe.get_all(
+                "Has Role",
+                filters={"role": "Admission Admin", "parenttype": "User"},
+                pluck="parent"
+            )
+
+            # Also notify the applicant if they have a user account
+            applicant_user = frappe.db.get_value("User", {"email": self.email}, "name")
+            
+            notify_users = set(admin_users)
+            if applicant_user:
+                notify_users.add(applicant_user)
+
+            for user in notify_users:
+                # Skip system/guest users
+                if user in ("Administrator", "Guest"):
+                    continue
+
+                if user == applicant_user:
+                    subject = f"Application Submitted Successfully — {self.name}"
+                    msg = (
+                        f"Dear <b>{self.candidate_name}</b>,<br><br>"
+                        f"Your application for <b>{self.program or 'N/A'}</b> has been successfully submitted (ID: {self.name}).<br>"
+                        f"Track your status in the admission portal."
+                    )
+                else:
+                    subject = f"New Application Submitted — {self.name}"
+                    msg = (
+                        f"<b>{self.candidate_name}</b> has submitted their application "
+                        f"for <b>{self.program or 'N/A'}</b> "
+                        f"(Cycle: {self.admission_cycle or 'N/A'}, "
+                        f"Campus: {self.campus or 'N/A'}).<br><br>"
+                        f"Application ID: <b>{self.name}</b><br>"
+                        f"Status: <b>{self.application_status or 'Submitted'}</b>"
+                    )
+
+                notification = frappe.get_doc({
+                    "doctype": "Notification Log",
+                    "subject": subject,
+                    "email_content": msg,
+                    "for_user": user,
+                    "from_user": frappe.session.user if user != applicant_user else "Administrator",
+                    "document_type": "Applicant",
+                    "document_name": self.name,
+                    "type": "Alert",
+                    "read": 0,
+                })
+                notification.insert(ignore_permissions=True)
+
+            frappe.db.commit()
+
+        except Exception:
+            # Non-fatal — log but don't break the submission flow
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"System notification failed for {self.name}"
+            )
+
+
+    def _build_default_email_html(self, ctx):
+        """
+        Returns the hardcoded HTML email body as a fallback when no
+        Email Template is configured on the Admission Cycle.
+        """
+        html_template = """
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    body {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 14px;
+        color: #1a1a1a;
+        line-height: 1.7;
+        margin: 0;
+        padding: 0;
+        background: #f0f0f0;
+    }
+    .wrapper {
+        max-width: 600px;
+        margin: 32px auto;
+        background: #ffffff;
+        border: 1px solid #cccccc;
+    }
+    .header {
+        background: #920c24;
+        padding: 24px 32px;
+        text-align: center;
+    }
+    .header img {
+        max-height: 56px;
+        margin-bottom: 10px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .header h1 {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: normal;
+        letter-spacing: 0.04em;
+        margin: 0;
+        font-family: Georgia, serif;
+    }
+    .header .sub {
+        color: rgba(255,255,255,0.80);
+        font-size: 12px;
+        margin-top: 4px;
+        font-family: Arial, sans-serif;
+    }
+    .content {
+        padding: 32px 40px;
+        font-family: Arial, sans-serif;
+    }
+    .content p {
+        margin: 0 0 16px 0;
+        font-size: 14px;
+        color: #1a1a1a;
+    }
+    .ref-box {
+        background: #f7f7f7;
+        border: 1px solid #dddddd;
+        border-left: 4px solid #920c24;
+        padding: 14px 18px;
+        margin: 20px 0;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        color: #1a1a1a;
+    }
+    .ref-box strong {
+        display: block;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #666666;
+        margin-bottom: 6px;
+    }
+    .ref-box .ref-id {
+        font-size: 17px;
+        font-weight: bold;
+        color: #920c24;
+        letter-spacing: 0.04em;
+    }
+    .steps-title {
+        font-size: 13px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #555555;
+        border-bottom: 1px solid #dddddd;
+        padding-bottom: 6px;
+        margin: 28px 0 14px 0;
+    }
+    .step-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .step-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+        font-size: 13px;
+        color: #1a1a1a;
+    }
+    .step-num {
+        background: #920c24;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: bold;
+        min-width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+    .cta-wrap {
+        text-align: center;
+        margin: 28px 0 8px 0;
+    }
+    .cta-link {
+        display: inline-block;
+        background: #920c24;
+        color: #ffffff !important;
+        font-size: 13px;
+        font-weight: bold;
+        padding: 11px 28px;
+        text-decoration: none;
+        letter-spacing: 0.03em;
+        font-family: Arial, sans-serif;
+    }
+    .cta-fallback {
+        text-align: center;
+        font-size: 11px;
+        color: #888888;
+        margin-top: 8px;
+        word-break: break-all;
+    }
+    .cta-fallback a {
+        color: #920c24;
+    }
+    .attachment-note {
+        background: #fffbf0;
+        border: 1px solid #e8ddb5;
+        padding: 11px 16px;
+        font-size: 13px;
+        color: #4a3c00;
+        margin: 24px 0 0 0;
+    }
+    .footer {
+        background: #f7f7f7;
+        border-top: 1px solid #dddddd;
+        padding: 18px 40px;
+        text-align: center;
+    }
+    .footer .inst-name {
+        font-size: 13px;
+        font-weight: bold;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+        font-family: Georgia, serif;
+    }
+    .footer p {
+        font-size: 11px;
+        color: #888888;
+        margin: 3px 0;
+        font-family: Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div class="header">
+        {% if institution_logo %}
+        <img src="{{ institution_logo }}" alt="{{ institution_name }}">
+        {% endif %}
+        <h1>{{ institution_name }}</h1>
+        <div class="sub">Office of Admissions</div>
+    </div>
+
+    <div class="content">
+
+        <p>Dear {{ candidate_name }},</p>
+
+        <p>
+            We acknowledge receipt of your application to
+            <strong>{{ institution_name }}</strong> for the
+            <strong>{{ program }}</strong> programme
+            for the admission cycle <strong>{{ admission_cycle }}</strong>.
+        </p>
+
+        <div class="ref-box">
+            <strong>Your Application Reference</strong>
+            <span class="ref-id">{{ applicant_id }}</span>
+            <span style="font-size:12px;color:#555555;margin-top:4px;display:block;">
+                Please quote this reference in all correspondence with the Admissions Office.
+            </span>
+        </div>
+
+        <p>
+            Your completed application form is attached to this email as a PDF.
+            Please retain it for your records.
+        </p>
+
+        <div class="steps-title">What happens next</div>
+        <ul class="step-list">
+            <li>
+                <span class="step-num">1</span>
+                <span>Your application will be reviewed for eligibility. You will be notified by email if any documents or information are required.</span>
+            </li>
+            <li>
+                <span class="step-num">2</span>
+                <span>Shortlisted candidates will receive details regarding the entrance test or interview, as applicable to your programme.</span>
+            </li>
+            <li>
+                <span class="step-num">3</span>
+                <span>Admit card and examination schedule details will be communicated to eligible candidates in due course.</span>
+            </li>
+            <li>
+                <span class="step-num">4</span>
+                <span>You may track the status of your application and complete any pending actions by logging into the admission portal.</span>
+            </li>
+        </ul>
+
+        <div class="cta-wrap">
+            <a class="cta-link" href="{{ admission_portal_url }}" target="_blank" rel="noopener noreferrer">
+                Track Your Application
+            </a>
+        </div>
+        <p class="cta-fallback">
+            If the button does not open, copy this link into your browser:<br>
+            <a href="{{ admission_portal_url }}">{{ admission_portal_url }}</a>
+        </p>
+
+        <div class="attachment-note">
+            <strong>Note:</strong> Please check your spam or promotions folder if you do not receive further communications. Keep your original documents ready for verification when requested.
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p class="inst-name">{{ institution_name }}</p>
+        <p>This is a system-generated email. Please do not reply to this message.</p>
+        <p>For assistance, contact the Admissions Helpdesk.</p>
+        <p style="margin-top:8px;">
+            Ref: {{ applicant_id }} &nbsp;|&nbsp; Generated: {{ generated_on }}
+        </p>
+    </div>
+
+</div>
+</body>
+</html>
+"""
+        return frappe.render_template(html_template, ctx)
     # ──────────────────────────────────────────────
     # APPLICANT CATEGORY HELPER
     # ──────────────────────────────────────────────

@@ -35,6 +35,10 @@
   "after_admission_fee",
   "enrolled",
   "after_enroll",
+  "section_break_jwca",
+  "email_template",
+  "column_break_njek",
+  "application_form_template",
   "section_break_programs",
   "programs",
   "section_break_stages",
@@ -42,7 +46,8 @@
   "section_break_rounds",
   "enable_multiple_rounds",
   "section_break_remarks",
-  "remarks"
+  "remarks",
+  "amended_from"
  ],
  "fields": [
   {
@@ -80,13 +85,15 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Active",
+   "allow_on_submit": 1,
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nActive\nClosed",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -99,9 +106,9 @@
   {
    "description": "Reference number for this cycle's approval",
    "fieldname": "approval_reference",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Approval Reference"
+   "fieldtype": "Select",
+   "label": "Approval reference",
+   "options": "\nAdmission Committee\nVice Chancellor"
   },
   {
    "description": "Add all programmes offered in this cycle. These appear on the applicant portal.",
@@ -164,6 +171,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "cycle_end_date",
    "fieldtype": "Date",
    "label": "Cycle end date",
@@ -236,6 +244,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.submitted",
    "fieldname": "after_submitted",
    "fieldtype": "Data",
@@ -244,6 +253,7 @@
    "placeholder": "After Application Submitted"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.entrance_test",
    "fieldname": "after_entrance_test",
    "fieldtype": "Data",
@@ -252,6 +262,7 @@
    "placeholder": "After Entrance Test Completed"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.intereview",
    "fieldname": "after_interview",
    "fieldtype": "Data",
@@ -260,6 +271,7 @@
    "placeholder": "After interview Completed"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.merit",
    "fieldname": "after_merit",
    "fieldtype": "Data",
@@ -268,6 +280,7 @@
    "placeholder": "After Merit Published"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.seat_allocation",
    "fieldname": "after_seat_allocation",
    "fieldtype": "Data",
@@ -276,6 +289,7 @@
    "placeholder": "After Seat Allocation Completed"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.offer_letter",
    "fieldname": "after_offer_letter",
    "fieldtype": "Data",
@@ -284,6 +298,7 @@
    "placeholder": "After Offer Letter Issued"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.admission_fee",
    "fieldname": "after_admission_fee",
    "fieldtype": "Data",
@@ -292,6 +307,7 @@
    "placeholder": "After Admission Fee Paid"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.enrolled",
    "fieldname": "after_enroll",
    "fieldtype": "Data",
@@ -300,15 +316,41 @@
    "placeholder": "After Enrollment"
   },
   {
-   "default": "0",
-   "description": "If enable an applicant can apply multiple application for programmes in this cycle",
-   "fieldname": "allow_multiple_applications",
-   "fieldtype": "Check",
-   "label": "Allow Multiple Applications"
+   "fieldname": "section_break_jwca",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Application Submitted Email Template",
+   "options": "Email Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_njek",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "application_form_template",
+   "fieldtype": "Link",
+   "label": "Application Form Template",
+   "options": "Print Format",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Admission Cycle",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-03-28 10:12:01.631303",
+ "modified": "2026-03-28 16:01:48.007216",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
