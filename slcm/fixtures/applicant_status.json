@@ -2,6 +2,33 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-27 13:23:29.831950",
+  "name": "Interview Sheduled",
+  "stage_type": "Interview",
+  "status": "Interview Sheduled",
+  "status_type": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-11 14:43:34.365668",
+  "name": "Accepted",
+  "stage_type": null,
+  "status": "Accepted",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-27 13:24:02.205366",
+  "name": "Entrance Test Allocated",
+  "stage_type": "Entrance Test",
+  "status": "Entrance Test Allocated",
+  "status_type": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-26 13:09:00.622129",
   "name": "Seat Waitlisted",
   "stage_type": "Seat Allocation",
