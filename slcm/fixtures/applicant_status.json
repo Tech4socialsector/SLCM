@@ -2,6 +2,15 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-30 10:11:21.023982",
+  "name": "Submitted",
+  "stage_type": "Application",
+  "status": "Submitted",
+  "status_type": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-30 12:29:14.369703",
   "name": "Entrance Test Excempted",
   "stage_type": "Entrance Test",
@@ -182,11 +191,11 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:17:36.798558",
+  "modified": "2026-03-30 17:47:58.723154",
   "name": "Draft",
   "stage_type": "Application",
   "status": "Draft",
-  "status_type": null
+  "status_type": "Active"
  },
  {
   "docstatus": 0,
