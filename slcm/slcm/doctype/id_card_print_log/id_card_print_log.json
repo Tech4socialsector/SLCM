@@ -166,10 +166,12 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "delete": 1,
    "read": 1,
    "role": "System Manager"
   },
   {
+   "delete": 1,
    "read": 1,
    "role": "SLCM Registrar"
   }
