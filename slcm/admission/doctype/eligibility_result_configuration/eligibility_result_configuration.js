@@ -9,7 +9,7 @@ frappe.ui.form.on("Eligibility Result Configuration", {
                         method: "generate_result",
                         doc: frm.doc,
                         freeze: true,
-                        freeze_message: __("Generating Results..."),
+                        freeze_message: __("Starting result generation..."),
                         callback: function (r) {
                             if (r.message && typeof r.message === 'object') {
                                 let m = r.message;
