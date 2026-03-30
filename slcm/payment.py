@@ -150,12 +150,20 @@ def razorpay_webhook():
 		)
 		return
 
-	# Find Payment Request by razorpay_order_id
-	pr_name = frappe.db.get_value(
-		"Payment Request",
-		{"razorpay_order_id": order_id},
-		"name",
-	)
+	# Find Payment Request by razorpay_order_id (fallback: legacy rows only had transaction_id)
+	pr_name = None
+	if order_id:
+		pr_name = frappe.db.get_value(
+			"Payment Request",
+			{"razorpay_order_id": order_id},
+			"name",
+		)
+		if not pr_name:
+			pr_name = frappe.db.get_value(
+				"Payment Request",
+				{"transaction_id": order_id},
+				"name",
+			)
 	if not pr_name:
 		frappe.log_error(
 			message="Razorpay webhook: no Payment Request for order_id={0}".format(order_id),

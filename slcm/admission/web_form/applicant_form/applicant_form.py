@@ -283,6 +283,18 @@ def save_applicant_draft(data, ignore_mandatory=True):
         else:
             doc.save()
         frappe.db.commit()
+        try:
+            from slcm.api.service.application_fee_service import (
+                sync_application_fee_assignment_for_applicant,
+            )
+
+            sync_application_fee_assignment_for_applicant(doc.name)
+            frappe.db.commit()
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                "save_applicant_draft — sync_application_fee_assignment_for_applicant",
+            )
         return {
             "status":  "success",
             "name":    doc.name,
@@ -366,6 +378,18 @@ def submit_applicant(applicant_name):
             doc.reload()
             doc.submit()
         frappe.db.commit()
+        try:
+            from slcm.api.service.application_fee_service import (
+                sync_application_fee_assignment_for_applicant,
+            )
+
+            sync_application_fee_assignment_for_applicant(doc.name)
+            frappe.db.commit()
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                "submit_applicant — sync_application_fee_assignment_for_applicant",
+            )
         return {
             "status": "success",
             "name": doc.name,
@@ -579,6 +603,19 @@ def switch_applicant_program(applicant_name, program):
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "switch_applicant_program")
         return {"status": "error", "message": str(ex)}
+
+    try:
+        from slcm.api.service.application_fee_service import (
+            sync_application_fee_assignment_for_applicant,
+        )
+
+        sync_application_fee_assignment_for_applicant(doc.name)
+        frappe.db.commit()
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            "switch_applicant_program — sync_application_fee_assignment_for_applicant",
+        )
 
     return {
         "status": "success",

@@ -74,9 +74,9 @@ class ApplicantFeeAssignment(Document):
 
 	def calculate_totals(self):
 		"""
-		Sums all fee component rows to get the base total,
-		then deducts scholarship_amount to compute final_payable_amount.
-		Scholarship is only deducted for Application Fee assignments.
+		Sum fee component rows (Admission Fee and Application Fee both use the child table).
+		Scholarship is deducted only for Application Fee assignments.
+		Mirrors ``application_fee`` from the grid total for Application Fee type.
 		"""
 		base_total = 0
 		for row in self.fee_components:
@@ -88,9 +88,10 @@ class ApplicantFeeAssignment(Document):
 			base_total += row.total_amount
 
 		self.total_amount = base_total
-		# Only deduct scholarship for Application Fee; Admission Fee is paid in full
+		if self.fee_type == "Application Fee":
+			self.application_fee = base_total
 		if self.fee_type != "Admission Fee":
-			self.final_payable_amount = base_total - flt(self.scholarship_amount)
+			self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
 		else:
 			self.final_payable_amount = base_total
 
@@ -101,11 +102,21 @@ class ApplicantFeeAssignment(Document):
 
 	def before_submit(self):
 		if not self.fee_components:
-			frappe.throw(frappe._("At least one Fee Component is required."))
+			frappe.throw(frappe._("At least one Fee Component row is required."))
 
 		for row in self.fee_components:
-			if flt(row.amount) <= 0:
-				frappe.throw(frappe._("Amount for {0} must be positive.").format(row.component_name or row.fee_component))
+			if flt(row.amount) < 0:
+				frappe.throw(
+					frappe._("Amount for {0} cannot be negative.").format(
+						row.component_name or row.fee_component
+					)
+				)
+			if self.fee_type == "Admission Fee" and flt(row.amount) <= 0:
+				frappe.throw(
+					frappe._("Amount for {0} must be positive.").format(
+						row.component_name or row.fee_component
+					)
+				)
 
 		self.status = "Assigned"
 

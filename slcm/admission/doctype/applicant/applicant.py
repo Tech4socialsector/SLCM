@@ -264,6 +264,27 @@ class Applicant(Document):
                     f"Withdrawal sync failed for Applicant {self.name}",
                 )
 
+        if self.name and any(
+            self.has_value_changed(f)
+            for f in (
+                "application_fee_status",
+                "program",
+                "admission_cycle",
+                "application_fee_amount",
+            )
+        ):
+            try:
+                from slcm.api.service.application_fee_service import (
+                    sync_application_fee_assignment_for_applicant,
+                )
+
+                sync_application_fee_assignment_for_applicant(self.name)
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    f"Applicant {self.name} — sync_application_fee_assignment_for_applicant",
+                )
+
     def send_submission_confirmation(self):
         """
         Sends a formatted confirmation email on application submission.
@@ -2413,6 +2434,10 @@ def bulk_convert_applicants_to_student(applicants=None):
 def background_bulk_worker(applicants, print_format, user=None, sync=False):
     """
     Worker function to generate PDFs and package into ZIP.
+
+    Performance note: each applicant is rendered with ``frappe.get_print(..., as_pdf=True)``.
+    That is sequential and CPU/subprocess-heavy (HTML → PDF per row). Total time grows
+    roughly linearly with count; batching DB lookups here only trims minor overhead.
     """
     import zipfile
     from io import BytesIO
@@ -2421,7 +2446,15 @@ def background_bulk_worker(applicants, print_format, user=None, sync=False):
     total = len(applicants)
     success_count = 0
     errors = []
-    
+
+    # One query for filenames — avoids N get_value round-trips (small vs PDF cost).
+    id_rows = frappe.get_all(
+        "Applicant",
+        filters={"name": ["in", applicants]},
+        fields=["name", "applicant_id"],
+    )
+    id_by_name = {r.name: (r.applicant_id or r.name) for r in id_rows}
+
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for i, name in enumerate(applicants):
@@ -2440,12 +2473,11 @@ def background_bulk_worker(applicants, print_format, user=None, sync=False):
                     print_format=print_format,
                     as_pdf=True
                 )
-                
-                # Fetch applicant ID for filename
-                applicant_id = frappe.db.get_value("Applicant", name, "applicant_id") or name
+
+                applicant_id = id_by_name.get(name) or name
                 zip_file.writestr(f"{applicant_id}.pdf", pdf_content)
                 success_count += 1
-                
+
             except Exception as e:
                 errors.append({"applicant": name, "error": str(e)})
 

@@ -171,6 +171,8 @@ frappe.listview_settings['Applicant'] = {
 		});
 	},
 	refresh: function (listview) {
+		// Bulk ZIP is built on the server (get_bulk_applications_zip → background_bulk_worker).
+		// Slowness for many applicants is sequential PDF generation per row, not this list script.
 		listview.page.add_inner_button(__("Bulk Download Forms"), function () {
 			// Safer way to get filter values
 			const get_val = (fieldname) => {
