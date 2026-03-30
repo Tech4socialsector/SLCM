@@ -35,16 +35,19 @@ class InterviewSeatAllocation(Document):
             if status_changed:
                 self._sync_applicant_status()
 
-        # Fetch categories from Applicant if newly set or empty
-        # Priority: Seat Allocation category (if already filled) vs Applicant's categories
+        # FETCH CATEGORIES CORRECTLY
         if self.applicant and (not self.category or self.is_new()):
-            from slcm.admission.doctype.applicant.applicant import Applicant
-            app_doc = frappe.get_doc("Applicant", self.applicant)
-            app_categories = app_doc._get_applicant_categories()
-            # Re-initialize the child table ONLY if it's currently empty
-            if not self.category:
-                for cat in app_categories:
-                    self.append("category", {"category": cat})
+            try:
+                from slcm.admission.doctype.applicant.applicant import Applicant
+                app_doc = frappe.get_doc("Applicant", self.applicant)
+                app_categories = app_doc._get_applicant_categories()
+                # Re-initialize the child table ONLY if it's currently empty
+                if not self.category:
+                    self.set("category", [])
+                    for cat in app_categories:
+                        self.append("category", {"category": cat})
+            except Exception:
+                pass
 
     def _sync_applicant_status(self):
         """
@@ -164,7 +167,15 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
     )
 
     count = 0
-    for rec in all_records:
+    total = len(all_records)
+    for i, rec in enumerate(all_records):
+        # Publish progress
+        frappe.publish_progress(
+            float(i + 1) / total * 100, 
+            title="Sending Interview Results...", 
+            description=f"Notifying {i + 1} of {total}"
+        )
+
         doc = frappe.get_doc("Interview Seat Allocation", rec.name)
         
         # Set result_published for all notified candidates
@@ -187,6 +198,9 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
                 count += 1
             except Exception:
                 frappe.log_error(message=traceback.format_exc(), title=f"Interview Result Email Failed: {doc.name}")
+        
+        if i % 5 == 0:
+            frappe.db.commit()
 
     return count
 
@@ -238,11 +252,20 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
         frappe.throw("Reason for Reschedule is mandatory.")
 
     # Validate interview_date is not in the past
-    if interview_date and get_datetime(interview_date) < now_datetime():
-        frappe.throw("New Interview Date cannot be in the past. Please select today or a future date.")
+    if allocation_date := interview_date:
+        if get_datetime(allocation_date) < now_datetime():
+            frappe.throw("New Interview Date cannot be in the past. Please select today or a future date.")
 
     count = 0
-    for name in applicants:
+    total = len(applicants)
+    for i, name in enumerate(applicants):
+        # Publish progress
+        frappe.publish_progress(
+            float(i + 1) / total * 100, 
+            title="Rescheduling Interviews...", 
+            description=f"Processing {i + 1} of {total}"
+        )
+
         doc = frappe.get_doc("Interview Seat Allocation", name)
 
         doc.is_rescheduled = 1
@@ -314,11 +337,9 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
                     message=traceback.format_exc(),
                     title=f"Interview Reschedule Email Failed: {doc.name}"
                 )
-        else:
-            frappe.log_error(
-                message=f"No email found for applicant {doc.applicant} (record: {doc.name}). Reschedule email was not sent.",
-                title="Interview Reschedule Email Skipped"
-            )
+        
+        if i % 5 == 0:
+            frappe.db.commit()
 
         count += 1
     frappe.db.commit()
