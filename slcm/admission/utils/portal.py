@@ -3,6 +3,54 @@ import json
 from frappe.utils import now, add_days, getdate, today, get_datetime
 
 
+def build_applicant_form_new_url(
+    program,
+    admission_cycle="",
+    campus="",
+    intake_type="",
+    admission_year="",
+    academic_year="",
+    program_level="",
+):
+    """Public website URL for a new Applicant web form with query-string prefills."""
+    from urllib.parse import urlencode
+
+    parts = {
+        "program": program or "",
+        "admission_cycle": admission_cycle or "",
+        "campus": campus or "",
+        "intake_type": intake_type or "",
+        "admission_year": admission_year or "",
+        "academic_year": academic_year or "",
+        "program_level": program_level or "",
+    }
+    q = urlencode({k: v for k, v in parts.items() if v})
+    return f"/applicant-form/new?{q}" if q else "/applicant-form/new"
+
+
+def build_login_redirect_to_applicant_form_new(
+    program,
+    admission_cycle="",
+    campus="",
+    intake_type="",
+    admission_year="",
+    academic_year="",
+    program_level="",
+):
+    from urllib.parse import quote
+
+    path = build_applicant_form_new_url(
+        program,
+        admission_cycle,
+        campus=campus,
+        intake_type=intake_type,
+        admission_year=admission_year,
+        academic_year=academic_year,
+        program_level=program_level,
+    )
+    return "/login?redirect-to=" + quote(path, safe="/")
+
+
 # ── CONFIG ────────────────────────────────────────────────────────
 @frappe.whitelist(allow_guest=True)
 def api_get_portal_config():

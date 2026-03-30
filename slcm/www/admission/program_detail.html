@@ -309,7 +309,7 @@
           <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
           Applied
         </a>
-        {% elif has_any_application %}
+        {% elif has_any_application and not (allow_multiple_applications|default(false)) %}
         <a href="javascript:void(0)" style="display:inline-flex;align-items:center;gap:8px;
                       padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
                       text-decoration:none;color:#fff;
@@ -916,7 +916,7 @@
                 onmouseout="this.style.opacity='1'">
                 Applied
               </a>
-              {% elif has_any_application %}
+              {% elif has_any_application and not (allow_multiple_applications|default(false)) %}
               <a href="javascript:void(0)" style="display:block;width:100%;padding:13px;text-align:center;
                             border-radius:10px;background:#94a3b8;color:white;
                             font-weight:700;font-size:14px;text-decoration:none;

@@ -153,6 +153,7 @@
   "section_break_portal",
   "application_fee_status",
   "application_fee_amount",
+  "application_form",
   "fee_waived_by",
   "fee_waived_on",
   "column_break_fcum",
@@ -981,6 +982,13 @@
    "fieldname": "application_fee_amount",
    "fieldtype": "Currency",
    "label": "Application fee amount",
+   "read_only": 1
+  },
+  {
+   "description": "PDF snapshot generated when the application is first submitted. Bulk download uses this file for speed when present.",
+   "fieldname": "application_form",
+   "fieldtype": "Attach",
+   "label": "Application Form (PDF)",
    "read_only": 1
   },
   {

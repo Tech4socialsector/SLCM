@@ -9,6 +9,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "align-start-vertical",
    "indent": 0,
    "keep_closed": 0,
    "label": "Fee Structure",
@@ -20,6 +21,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "album",
    "indent": 0,
    "keep_closed": 0,
    "label": "Applicant Fee Assignment",
@@ -31,6 +33,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "briefcase-business",
    "indent": 0,
    "keep_closed": 0,
    "label": "Payment Gateway",
@@ -42,6 +45,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "bolt",
    "indent": 0,
    "keep_closed": 0,
    "label": "Razorpay Settings",
@@ -53,6 +57,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "baggage-claim",
    "indent": 0,
    "keep_closed": 0,
    "label": "Payment Request",
@@ -75,6 +80,7 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "dashboard-list",
    "indent": 0,
    "keep_closed": 0,
    "label": "Refund Dashboard",
@@ -86,6 +92,7 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "captions-off",
    "indent": 0,
    "keep_closed": 0,
    "label": "Admission Cancellation",
@@ -97,6 +104,7 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "message-square-quote",
    "indent": 0,
    "keep_closed": 0,
    "label": "Refund Policy",
@@ -108,6 +116,7 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "folder-symlink",
    "indent": 0,
    "keep_closed": 0,
    "label": "Refund Request",
@@ -119,6 +128,7 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "backpack",
    "indent": 0,
    "keep_closed": 0,
    "label": "Refund Transaction",
@@ -128,7 +138,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-26 10:51:27.965359",
+ "modified": "2026-03-28 09:39:50.411990",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Admission Fee",

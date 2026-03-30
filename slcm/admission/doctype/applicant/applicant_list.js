@@ -1,5 +1,40 @@
 // Copyright (c) 2026, TFSS and contributors
 
+/** ZIP is ready: confirm + Download (avoids popup blockers from async window.open). */
+function slcm_applicant_bulk_zip_download_dialog(file_url, stats) {
+	if (!file_url) {
+		return;
+	}
+	const fullUrl = frappe.urllib.get_full_url(file_url);
+	let body = "<p>" + __("Your ZIP archive is ready.") + "</p>";
+	if (stats && stats.success != null) {
+		body =
+			"<p>" + __("Added {0} application form(s) to the ZIP.", [stats.success]) + "</p>";
+		if (stats.from_cache != null && stats.generated_live != null) {
+			body +=
+				'<p class="text-muted small">' +
+				__("{0} from stored PDF, {1} generated live.", [stats.from_cache, stats.generated_live]) +
+				"</p>";
+		}
+	}
+	body +=
+		'<p class="text-muted small">' +
+		__("Click Download to open the file in a new tab (or save it). If nothing happens, check the browser popup blocker.") +
+		"</p>";
+	frappe.msgprint({
+		title: __("Application forms ZIP ready"),
+		message: body,
+		indicator: "green",
+		primary_action: {
+			label: __("Download"),
+			action() {
+				frappe.hide_msgprint();
+				window.open(fullUrl, "_blank");
+			},
+		},
+	});
+}
+
 frappe.listview_settings['Applicant'] = {
 	onload: function (listview) {
 		frappe.realtime.on("bulk_convert_to_student_progress", function (data) {
@@ -36,14 +71,18 @@ frappe.listview_settings['Applicant'] = {
 
 		frappe.realtime.on("bulk_download_progress", (data) => {
 			if (frappe.get_route_str() === "List/Applicant") {
-				frappe.show_progress(__("Generating ZIP"), data.progress, data.total, data.message);
+				frappe.show_progress(__("Building ZIP"), data.progress, data.total, data.message);
 			}
 		});
 		frappe.realtime.on("bulk_download_complete", (data) => {
 			if (data.doctype === "Applicant" && frappe.get_route_str() === "List/Applicant") {
 				frappe.hide_progress();
 				if (data.file_url) {
-					window.open(data.file_url);
+					slcm_applicant_bulk_zip_download_dialog(data.file_url, {
+						success: data.success,
+						from_cache: data.from_cache,
+						generated_live: data.generated_live,
+					});
 				}
 			}
 		});
@@ -171,6 +210,8 @@ frappe.listview_settings['Applicant'] = {
 		});
 	},
 	refresh: function (listview) {
+		// Bulk ZIP: server zips cached Application Form PDFs when present; missing PDFs are rendered then.
+		// Draft applications are never included (even if list filters would match them).
 		listview.page.add_inner_button(__("Bulk Download Forms"), function () {
 			// Safer way to get filter values
 			const get_val = (fieldname) => {
@@ -183,6 +224,14 @@ frappe.listview_settings['Applicant'] = {
 			let d = new frappe.ui.Dialog({
 				title: __("Bulk Download Application Forms"),
 				fields: [
+					{
+						fieldname: "bulk_download_info",
+						fieldtype: "HTML",
+						options:
+							"<p class='text-muted small' style='margin-bottom:12px'>" +
+							__("Draft applications are excluded. Submitted applications use the stored Application Form PDF when available (faster); otherwise the selected print format is used to generate a PDF.") +
+							"</p>",
+					},
 					{ label: __("Campus"), fieldname: "campus", fieldtype: "Link", options: "Campus", default: get_val("campus") },
 					{ label: __("Programme"), fieldname: "program", fieldtype: "Link", options: "Program", default: get_val("program") },
 					{ label: __("Admission Cycle"), fieldname: "admission_cycle", fieldtype: "Link", options: "Admission Cycle", default: get_val("admission_cycle") },
@@ -212,13 +261,21 @@ frappe.listview_settings['Applicant'] = {
 						args: values,
 						callback: function (r) {
 							frappe.dom.unfreeze();
+							if (r.exc) {
+								return;
+							}
 							if (r.message && r.message.queued) {
 								frappe.show_progress(__("Starting Download"), 0, 100, __("Preparing background task..."));
 							} else if (r.message && r.message.file_url) {
-								// Sync success
-								window.open(r.message.file_url);
-								frappe.show_alert({ message: __("Generated {0} forms.", [r.message.success]), indicator: 'green' });
+								slcm_applicant_bulk_zip_download_dialog(r.message.file_url, {
+									success: r.message.success,
+									from_cache: r.message.from_cache,
+									generated_live: r.message.generated_live,
+								});
 							}
+						},
+						error: function () {
+							frappe.dom.unfreeze();
 						},
 					});
 				},

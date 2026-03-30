@@ -17,6 +17,13 @@ frappe.ui.form.on("Offer Configuration", {
                 }
             }
         }),
+            frm.set_query('admission_cycle', function () {
+                return {
+                    filters: {
+                        'status': 'Active'
+                    }
+                }
+            }),
             frm.set_query('email_template', function () {
                 return {
                     filters: {

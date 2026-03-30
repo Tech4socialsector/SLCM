@@ -43,6 +43,30 @@ frappe.ui.form.on("Portal Announcement", {
                 });
             }, __("Actions"));
         }
+
+        // Date constraints
+        const today = new Date(frappe.datetime.get_today());
+
+        if (frm.fields_dict.publish_date && frm.fields_dict.publish_date.datepicker) {
+            frm.fields_dict.publish_date.datepicker.update({
+                minDate: today,
+            });
+        }
+
+        if (frm.fields_dict.expiry_date && frm.fields_dict.expiry_date.datepicker) {
+            let until_min = frm.doc.publish_date ? new Date(frm.doc.publish_date) : today;
+            frm.fields_dict.expiry_date.datepicker.update({
+                minDate: until_min,
+            });
+        }
+    },
+
+    publish_date: function (frm) {
+        if (frm.doc.publish_date && frm.fields_dict.expiry_date && frm.fields_dict.expiry_date.datepicker) {
+            frm.fields_dict.expiry_date.datepicker.update({
+                minDate: new Date(frm.doc.publish_date),
+            });
+        }
     },
 
     announcement_type: function (frm) {

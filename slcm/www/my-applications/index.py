@@ -1,8 +1,76 @@
 import frappe
 from slcm.admission.utils.portal import get_portal_config, is_application_editable
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
+from slcm.admission.web_form.applicant_form.applicant_form import (
+    _latest_application_fee_receipt_for_portal,
+)
 
 login_required = True
+
+# Portal copy when application is closed / terminal (replaces stage tracker).
+_APPLICATION_CLOSED_PORTAL_MESSAGES = {
+    "Rejected": (
+        "Application Submission – Rejected",
+        "Your application has been reviewed and was not selected for further consideration. Thank you for your interest.",
+    ),
+    "Entrance Test Rejected": (
+        "Entrance Test – Rejected",
+        "You did not qualify in the entrance test. We appreciate your effort and encourage you to apply again in the future.",
+    ),
+    "Interview Rejected": (
+        "Interview – Rejected",
+        "After the interview evaluation, your application was not selected for the next stage. Thank you for your time and participation.",
+    ),
+    "Seat Rejected": (
+        "Seat Allocation – Rejected",
+        "We regret to inform you that a seat could not be allocated based on the current selection criteria.",
+    ),
+    "Offer Declined": (
+        "Offer Declined",
+        "You have declined the admission offer. If this was unintentional, please contact the admissions office.",
+    ),
+    "Offer Expired": (
+        "Offer Expired",
+        "The admission offer has expired as the acceptance deadline has passed.",
+    ),
+    "Withdrawn": (
+        "Application Withdrawn",
+        "Your application has been successfully withdrawn as per your request.",
+    ),
+}
+
+_NEXT_STEPS_DEADLINE_PLACEHOLDER = "Complete all steps before your cycle deadline"
+
+NEXT_STEPS_IDLE_HINT = (
+    "Complete the requirements for your current stage to move forward in the admission process. "
+    "Please check this page for updates — our team will share the next steps with you soon."
+)
+
+
+def _next_steps_without_deadline_placeholder(next_steps):
+    if not next_steps:
+        return []
+    out = []
+    for s in next_steps:
+        t = (s.get("text") if isinstance(s, dict) else getattr(s, "text", None)) or ""
+        if t.strip() != _NEXT_STEPS_DEADLINE_PLACEHOLDER:
+            out.append(s)
+    return out
+
+
+def _application_closed_portal_message(application_status, status_type):
+    """Return {"title", "body"} when the detail view should hide the stage tracker and show a closed panel."""
+    app_status = (application_status or "").strip()
+    st_type = (status_type or "").strip()
+    if app_status in _APPLICATION_CLOSED_PORTAL_MESSAGES:
+        title, body = _APPLICATION_CLOSED_PORTAL_MESSAGES[app_status]
+        return {"title": title, "body": body}
+    if st_type == "Closed" and app_status:
+        return {
+            "title": app_status,
+            "body": "Please contact the admissions office if you have questions about your application.",
+        }
+    return None
 
 
 def _set_offer_letter_entries(context):
@@ -55,6 +123,11 @@ def get_context(context):
     context.show_detail  = False
     context.applicant    = None
     context.hide_application_next_steps = False
+    context.application_closed_message = None
+    context.admission_cycle_end_date_formatted = ""
+    context.next_steps_for_display = []
+    context.next_steps_idle_hint = NEXT_STEPS_IDLE_HINT
+    context.fee_receipt_ready = False
 
     # ── Tab routing ───────────────────────────────────────────────
     _tab = frappe.request.args.get("tab") if frappe.request else None
@@ -369,16 +442,11 @@ def get_context(context):
 
                 if last_completed_idx >= 0:
                     last_st = stages_with_state[last_completed_idx]
-                    if last_st.get("stage_type") == "Application":
-                        # Fixed portal copy after application is submitted (ignores misconfigured cycle notes)
-                        context.cycle_next_step_message = (
-                            "You have successfully submitted the application. "
-                            "Our team will notify you soon regarding the entrance test."
-                        )
-                    else:
-                        af = (last_st.get("after_field") or "").strip()
-                        if af:
-                            context.cycle_next_step_message = (cycle_doc.get(af) or "").strip()
+                    af = (last_st.get("after_field") or "").strip()
+                    if af:
+                        _note = (cycle_doc.get(af) or "").strip()
+                        if _note:
+                            context.cycle_next_step_message = _note
         except Exception as e:
             frappe.log_error(f"Stage tracker context error: {e}")
 
@@ -418,6 +486,7 @@ def get_context(context):
         context.stage_tracker = stages_with_state
 
         # ── Next steps ─────────────────────────────────────────────
+        _portal_app_status = applicant.get("application_status") or "Draft"
         try:
             _pc = frappe.get_doc("Applicant Portal Config")
             _next_steps = []
@@ -425,7 +494,7 @@ def get_context(context):
                 all_steps = (_pc.get("stage_next_steps") or [])
                 for step in all_steps:
                     sn = (step.get("stage_name") if hasattr(step,"get") else step.stage_name) or ""
-                    if sn.lower() == str(current).lower():
+                    if sn.lower() == str(_portal_app_status).lower():
                         _next_steps.append({
                             "text":       (step.get("step_text") if hasattr(step,"get") else step.step_text) or "",
                             "is_link":    (step.get("is_link") if hasattr(step,"get") else step.is_link) or 0,
@@ -433,7 +502,7 @@ def get_context(context):
                             "link_label": (step.get("link_label") if hasattr(step,"get") else step.link_label) or "",
                         })
             if not _next_steps:
-                _next_steps = [{"text": "Stay updated and follow all required steps", "is_link": 0}]
+                _next_steps = [{"text": _NEXT_STEPS_DEADLINE_PLACEHOLDER, "is_link": 0}]
             context.next_steps = _next_steps
             context.support_name  = _pc.get("support_name") or ""
             context.support_role  = _pc.get("support_role") or ""
@@ -441,6 +510,19 @@ def get_context(context):
             context.campus_image  = _pc.get("hero_image") or ""
         except Exception as ex:
             frappe.log_error(str(ex), "my_applications detail context next steps")
+
+        try:
+            _cycle_end = frappe.db.get_value(
+                "Admission Cycle",
+                {"status": "Active"},
+                "cycle_end_date",
+            )
+            if _cycle_end:
+                context.admission_cycle_end_date_formatted = frappe.utils.format_date(
+                    _cycle_end, "MMMM d, yyyy"
+                )
+        except Exception:
+            pass
 
         context.app_narrative = applicant.get("remarks") or ""
         context.submission_date = frappe.utils.format_date(applicant.creation, "MMMM d, yyyy")
@@ -614,6 +696,9 @@ def get_context(context):
             frappe.log_error(str(ex), "my_applications merit list fallback")
 
         context.fee_payment_status = applicant.get("application_fee_status") or ""
+        context.fee_receipt_ready = False
+        if (context.fee_payment_status or "").strip() == "Paid":
+            context.fee_receipt_ready = bool(_latest_application_fee_receipt_for_portal(_app_name))
 
         # Interview
         context.interview_status = ""
@@ -766,25 +851,36 @@ def get_context(context):
                 context.interview_attendance_options = ["Confirm Attendance", "Decline Interview Invitation", "Request Rescheduling"]
         except Exception: pass
 
-        # Terminal / closed: no "next step" banner, card, or portal-config step list
-        _closed_app_statuses = frozenset({"Withdrawn", "Rejected"})
+        _closed_meta = frappe.db.get_value(
+            "Applicant Status",
+            applicant.application_status,
+            ["status_type"],
+            as_dict=True,
+        ) or {}
+        context.application_closed_message = _application_closed_portal_message(
+            applicant.application_status,
+            _closed_meta.get("status_type"),
+        )
+        if context.application_closed_message:
+            context.cycle_next_step_message = ""
+            context.next_steps = []
+
+        # Hide sidebar only when admission cancellation is completed (refund workflow).
+        # Closed / rejected applicants still see "Application Progress End" with portal copy.
         hide_next = False
-        if (applicant.application_status or "") in _closed_app_statuses:
-            hide_next = True
         _cd = context.get("cancellation_details")
         if _cd:
             _cstat = _cd.get("status") if hasattr(_cd, "get") else getattr(_cd, "status", None)
             if (_cstat or "") == "Completed":
                 hide_next = True
-        for _st in context.get("stage_tracker") or []:
-            _state = _st.get("state") if isinstance(_st, dict) else getattr(_st, "state", None)
-            if _state == "closed":
-                hide_next = True
-                break
         context.hide_application_next_steps = hide_next
         if hide_next:
             context.cycle_next_step_message = ""
             context.next_steps = []
+
+        context.next_steps_for_display = _next_steps_without_deadline_placeholder(
+            context.get("next_steps")
+        )
 
         context.show_detail = True
         context.title = f"Application Details: {_app_name}"
@@ -841,11 +937,17 @@ def get_context(context):
             if payment_name:
                 _payment_details = frappe.db.get_value("Fee Payment", payment_name, ["name", "amount", "payment_date"], as_dict=True)
 
+        _fee_st = (app_doc.application_fee_status or "").strip()
         summary = {
             "name": app_doc.name,
             "is_editable": is_application_editable(app_doc),
             "offer_name": _offer_name or "",
             "payment_details": _payment_details,
+            "application_fee_status": _fee_st,
+            "fee_receipt_ready": (
+                _fee_st == "Paid"
+                and bool(_latest_application_fee_receipt_for_portal(app_doc.name))
+            ),
             "header": {
                 "program_name": program_name,
                 "applicant_id": app_doc.name,

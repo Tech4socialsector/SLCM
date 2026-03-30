@@ -175,8 +175,7 @@
    "fieldtype": "Table",
    "in_standard_filter": 1,
    "label": "Fee Components",
-   "options": "Applicant Fee Component Child",
-   "reqd": 1
+   "options": "Applicant Fee Component Child"
   },
   {
    "fieldname": "remarks_section",
@@ -198,7 +197,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-26 14:40:21.796966",
+ "modified": "2026-03-30 15:28:32.282677",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",

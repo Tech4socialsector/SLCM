@@ -458,7 +458,8 @@
                 padding: 9px 6px;
             }
 
-            #ann-filters {
+            #ann-filters,
+            #notif-filters {
                 padding: 6px 10px !important;
                 gap: 4px !important;
             }
@@ -1034,7 +1035,8 @@
     FROM `tabAdmission Cycle Program` cp
     LEFT JOIN `tabProgram` p ON p.name = cp.program
     WHERE cp.parent = (SELECT name FROM `tabAdmission Cycle` WHERE status = 'Active' LIMIT 1)
-    LIMIT 5
+    ORDER BY cp.idx ASC, cp.program ASC
+    LIMIT 100
     """, as_dict=1) %}
 
     {# Fallback if cycle query returns nothing #}
@@ -1044,7 +1046,7 @@
     SELECT program_name as name, COALESCE(program_slug, name) as slug
     FROM `tabProgram`
     ORDER BY modified DESC
-    LIMIT 5
+    LIMIT 100
     """, as_dict=1) %}
     {% endif %}
 
@@ -1104,10 +1106,14 @@
                             <div>
                                 <h4 class="footer-title">Programme</h4>
                                 <ul class="footer-links">
-                                    {% for p in _f_programs %}
+                                    {% for p in _f_programs[:4] %}
                                     <li><a href="/admission/{{ p.slug }}">{{ p.name }}</a></li>
                                     {% endfor %}
+                                    {% if _f_programs|length > 4 %}
+                                    <li><a href="/admission#programs">View all programmes</a></li>
+                                    {% elif _f_programs|length > 0 %}
                                     <li><a href="/admission">Browse all</a></li>
+                                    {% endif %}
                                 </ul>
                             </div>
                             <div>
@@ -1202,6 +1208,15 @@
             </button>
         </div>
 
+        <!-- Notification filters (read state only) -->
+        <div id="notif-filters" style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:8px 12px;
+            border-bottom:1px solid var(--border);flex-shrink:0;">
+            <span style="font-size:11px;color:var(--muted);font-weight:600;">Filter:</span>
+            <button type="button" class="ann-filter-btn notif-read-filter active" data-read="all" onclick="setNotifReadFilter('all', this)">All</button>
+            <button type="button" class="ann-filter-btn notif-read-filter" data-read="unread" onclick="setNotifReadFilter('unread', this)">Unread</button>
+            <button type="button" class="ann-filter-btn notif-read-filter" data-read="read" onclick="setNotifReadFilter('read', this)">Read</button>
+        </div>
+
         <!-- Announcement filters -->
         <div id="ann-filters" style="display:none;padding:8px 12px;
             border-bottom:1px solid var(--border);
@@ -1209,22 +1224,22 @@
             <span style="font-size:11px;color:var(--muted);font-weight:600;">
                 Filter:
             </span>
-            <button class="ann-filter-btn active" data-type="all" onclick="setAnnFilter('all', this)">
+            <button type="button" class="ann-filter-btn active" data-type="all" onclick="setAnnFilter('all', this)">
                 All
             </button>
-            <button class="ann-filter-btn" data-type="Event" onclick="setAnnFilter('Event', this)">
+            <button type="button" class="ann-filter-btn" data-type="Event" onclick="setAnnFilter('Event', this)">
                 Event
             </button>
-            <button class="ann-filter-btn" data-type="Announcement" onclick="setAnnFilter('Announcement', this)">
+            <button type="button" class="ann-filter-btn" data-type="Announcement" onclick="setAnnFilter('Announcement', this)">
                 Announcement
             </button>
-            <button class="ann-filter-btn" data-type="Alert" onclick="setAnnFilter('Alert', this)">
+            <button type="button" class="ann-filter-btn" data-type="Alert" onclick="setAnnFilter('Alert', this)">
                 Alert
             </button>
-            <button class="ann-filter-btn" data-type="Notice" onclick="setAnnFilter('Notice', this)">
+            <button type="button" class="ann-filter-btn" data-type="Notice" onclick="setAnnFilter('Notice', this)">
                 Notice
             </button>
-            <button class="ann-filter-btn" data-type="News" onclick="setAnnFilter('News', this)">
+            <button type="button" class="ann-filter-btn" data-type="News" onclick="setAnnFilter('News', this)">
                 News
             </button>
         </div>
@@ -1336,6 +1351,7 @@
         var _notifPage = 0;
         var _annPage = 0;
         var PANEL_PAGE_SIZE = 10;
+        var _notifReadFilter = 'all';
 
         function openAnnPanel() {
             var panel = document.getElementById('ann-panel');
@@ -1362,6 +1378,10 @@
                 document.getElementById('tab-' + t).classList.toggle('active', t === tab);
             });
 
+            var notifBar = document.getElementById('notif-filters');
+            if (notifBar) {
+                notifBar.style.display = (tab === 'notif') ? 'flex' : 'none';
+            }
             var filterBar = document.getElementById('ann-filters');
             if (filterBar) {
                 filterBar.style.display = (tab === 'ann') ? 'flex' : 'none';
@@ -1372,8 +1392,16 @@
         var _annFilter = 'all';
         function setAnnFilter(type, btn) {
             _annFilter = type;
-            document.querySelectorAll('.ann-filter-btn').forEach(function (b) {
+            document.querySelectorAll('#ann-filters .ann-filter-btn').forEach(function (b) {
                 b.classList.toggle('active', b.getAttribute('data-type') === type);
+            });
+            renderPanelContent();
+        }
+
+        function setNotifReadFilter(val, btn) {
+            _notifReadFilter = val;
+            document.querySelectorAll('.notif-read-filter').forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-read') === val);
             });
             renderPanelContent();
         }
@@ -1574,14 +1602,31 @@
                 ? (_panelData.notifications || [])
                 : (_panelData.announcements || []);
 
-            var items = (_panelTab === 'ann' && _annFilter !== 'all')
-                ? rawItems.filter(function (i) { return (i.announcement_type || '') === _annFilter; })
-                : rawItems;
+            var items;
+            if (_panelTab === 'notif') {
+                items = rawItems.slice();
+                if (_notifReadFilter === 'unread') {
+                    items = items.filter(function (i) { return i.is_read === 0 || i.is_read === false; });
+                } else if (_notifReadFilter === 'read') {
+                    items = items.filter(function (i) { return i.is_read === 1 || i.is_read === true; });
+                }
+            } else {
+                items = (_annFilter !== 'all')
+                    ? rawItems.filter(function (i) { return (i.announcement_type || '') === _annFilter; })
+                    : rawItems;
+            }
 
             if (items.length === 0) {
+                var emptyMsg;
+                if (_panelTab === 'notif') {
+                    emptyMsg = (rawItems.length === 0)
+                        ? 'No notifications yet.'
+                        : 'No notifications match the selected filters.';
+                } else {
+                    emptyMsg = 'No announcements matching this filter.';
+                }
                 content.innerHTML = '<div style="padding:48px 20px;text-align:center;color:var(--muted);font-size:13px;">' +
-                    (_panelTab === 'notif' ? 'No notifications yet.' : 'No announcements matching this filter.') +
-                    '</div>';
+                    emptyMsg + '</div>';
                 return;
             }
 
@@ -1603,6 +1648,8 @@
                         'Event': ['#dbeafe', '#1e40af'],
                         'Announcement': ['#fef3c7', '#92400e'],
                         'Alert': ['#fee2e2', '#991b1b'],
+                        'Notice': ['#e0f2fe', '#0369a1'],
+                        'News': ['#f3e8ff', '#6b21a8'],
                         'Mention': ['#e0e7ff', '#4338ca'],
                         'Share': ['#fce7f3', '#9d174d'],
                         'Assignment': ['#ffedd5', '#9a3412'],
