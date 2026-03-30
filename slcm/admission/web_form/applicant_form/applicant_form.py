@@ -28,6 +28,9 @@ def get_context(context):
     Non-Draft applicants: force view mode; redirect /edit → read-only URL.
     Only Draft remains editable on the portal.
     """
+    # Hide Frappe’s default web-form breadcrumb ("Back > APP-…"); custom bar stays in applicant_form.js.
+    context.no_breadcrumbs = True
+
     from slcm.admission.portal_application_web_form import applicant_portal_application_locked
 
     ref = context.get("reference_doc") or {}

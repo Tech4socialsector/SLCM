@@ -12,7 +12,7 @@
  "anonymous": 0,
  "apply_document_permissions": 0,
  "banner_image": "",
- "breadcrumbs": "[{\"label\": _(\"Back\"), \"route\":\"admission\"}]",
+ "breadcrumbs": "",
  "button_label": "Submit",
  "client_script": "",
  "condition_json": "[]",
