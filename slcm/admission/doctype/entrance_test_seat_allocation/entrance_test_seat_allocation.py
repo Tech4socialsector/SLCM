@@ -242,9 +242,45 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
 
 
 def _send_result_notification_email(doc, email):
-    """Send a premium masterpiece result/rank notification email to the applicant."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
+    """Send a result/rank notification email to the applicant using a configurable template."""
+    try:
+        template_name = "Entrance Test Result"
+        portal_url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        
+        if frappe.db.exists("Email Template", template_name):
+            template = frappe.get_doc("Email Template", template_name)
+            
+            # Prepare arguments for Jinja
+            doc_dict = doc.as_dict()
+            args = {
+                "doc": doc_dict,
+                "portal_url": portal_url
+            }
+
+            subject = frappe.render_template(template.subject, args)
+            message_body = template.response_html if template.use_html else template.response
+            
+            if message_body:
+                message = frappe.render_template(message_body, args)
+                frappe.sendmail(
+                    recipients=[email],
+                    subject=subject,
+                    content=message,
+                    reference_doctype="Entrance Test Seat Allocation",
+                    reference_name=doc.name,
+                    now=True
+                )
+                return
+
+        # Fallback to hardcoded masterpiece if template doesn't exist or is empty
+        _send_result_notification_email_fallback(doc, email, portal_url)
+        
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Result Email Failed: {doc.name}")
+
+
+def _send_result_notification_email_fallback(doc, email, url):
+    """Fallback hardcoded result email logic."""
     # Determine Status and Accents
     is_absent = (doc.entrance_test_status == "Absent")
     accent_color = "#d73a49" if is_absent else "#28a745"
@@ -279,11 +315,8 @@ def _send_result_notification_email(doc, email):
     msg = f"""
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
         <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
-        
         <p>Greetings from the Admissions Office.</p>
-        
         <p>We would like to inform you that the results of your Entrance Test have been officially processed. Your performance details are provided below for your reference.</p>
-        
         <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
             <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Applicant Details:</h4>
             <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
@@ -292,19 +325,13 @@ def _send_result_notification_email(doc, email):
                 <tr><td style="padding: 4px 0; color: #586069;">Status:</td><td style="padding: 4px 0; font-weight: 700; color: {accent_color};">{status_text}</td></tr>
             </table>
         </div>
-
         {performance_html}
-        
         <p>You may access your detailed result, including section-wise performance and additional information, by logging into the admission portal using the link provided below.</p>
-        
         <div style="text-align: center; margin: 30px 0;">
             <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Result</a>
         </div>
-        
         <p>Please note that further stages of the admission process, if applicable, will be communicated to you separately.</p>
-        
         <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
-        
         <p>We appreciate your participation and wish you the very best for the next stages of the admission process.</p>
     </div>
     """
@@ -404,9 +431,48 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
 
 
 def _send_reschedule_email(doc, email):
-    """Send a premium masterpiece reschedule notification email to the applicant."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
+    """Send a reschedule notification email to the applicant using a configurable template."""
+    try:
+        template_name = "Entrance Test Reschedule"
+        portal_url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        
+        if frappe.db.exists("Email Template", template_name):
+            template = frappe.get_doc("Email Template", template_name)
+            
+            # Prepare arguments for Jinja
+            doc_dict = doc.as_dict()
+            # Convert child table to list of dicts for Jinja
+            doc_dict["re_assigned_preferences"] = [p.as_dict() for p in doc.re_assigned_preferences]
+            
+            args = {
+                "doc": doc_dict,
+                "portal_url": portal_url
+            }
+
+            subject = frappe.render_template(template.subject, args)
+            message_body = template.response_html if template.use_html else template.response
+            
+            if message_body:
+                message = frappe.render_template(message_body, args)
+                frappe.sendmail(
+                    recipients=[email],
+                    subject=subject,
+                    content=message,
+                    reference_doctype="Entrance Test Seat Allocation",
+                    reference_name=doc.name,
+                    now=True
+                )
+                return
+
+        # Fallback to hardcoded masterpiece if template doesn't exist or is empty
+        _send_reschedule_email_fallback(doc, email, portal_url)
+
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Reschedule Email Failed: {doc.name}")
+
+
+def _send_reschedule_email_fallback(doc, email, url):
+    """Fallback hardcoded reschedule email logic."""
     # Format Centers List
     centers_html = ""
     if getattr(doc, 're_assigned_preferences', None):
@@ -436,11 +502,8 @@ def _send_reschedule_email(doc, email):
     msg = f"""
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
         <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
-        
         <p>Greetings from the Admissions Office.</p>
-        
         <p>We are writing to inform you that your Entrance Test has been successfully rescheduled. You are now required to select your preferred test center for the new schedule.</p>
-        
         <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
             <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Rescheduled Test Details:</h4>
             <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
@@ -450,28 +513,19 @@ def _send_reschedule_email(doc, email):
                 <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{doc.campus}</td></tr>
             </table>
         </div>
-
         {reason_html}
-
         <div style="margin: 20px 0;">
             <h4 style="margin-top: 0; margin-bottom: 8px; color: #1b1f23; font-size: 15px;">Available Test Centers:</h4>
-            <div style="padding-left: 2px;">
-                {centers_html}
-            </div>
+            <div style="padding-left: 2px;">{centers_html}</div>
         </div>
-        
         <p style="font-size: 12.5px; color: #6a737d; font-style: italic; margin-bottom: 25px;">
             Kindly note that test center allocation is based on availability and will be offered on a first-come, first-served basis. Once a test center is selected, changes will not be permitted.
         </p>
-
         <p>You are requested to log in to the admission portal and complete your test center selection at the earliest.</p>
-        
         <div style="text-align: center; margin: 30px 0;">
             <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">Select Test Center</a>
         </div>
-        
         <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
-        
         <p>We wish you the very best for your upcoming entrance test.</p>
     </div>
     """
@@ -483,3 +537,4 @@ def _send_reschedule_email(doc, email):
         reference_doctype="Entrance Test Seat Allocation",
         reference_name=doc.name
     )
+
