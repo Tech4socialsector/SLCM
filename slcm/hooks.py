@@ -61,7 +61,8 @@ fixtures = [
                 "Interview Allocation",
                 "Entrance Test Result",
                 "Entrance Test Reschedule",
-                "Entrance Test Allocation"
+                "Entrance Test Allocation",
+                "Application Submitted Email"
             ]]
         ]
     }
