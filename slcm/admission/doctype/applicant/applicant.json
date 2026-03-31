@@ -27,7 +27,6 @@
   "application_status",
   "program",
   "admission_cycle",
-  "applicant_id",
   "column_break_rynw",
   "admission_year",
   "academic_year",
@@ -35,6 +34,7 @@
   "campus",
   "section_break_azsq",
   "title",
+  "applicant_id",
   "section_break_rnvz",
   "rejected_reason",
   "parent_and_guardian_details",
@@ -963,6 +963,7 @@
   {
    "fieldname": "applicant_id",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Applicant Id"
   },
   {
@@ -1122,7 +1123,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-24 15:01:47.353825",
+ "modified": "2026-03-31 10:20:01.539387",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
