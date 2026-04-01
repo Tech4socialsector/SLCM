@@ -1,0 +1,204 @@
+{
+ "actions": [],
+ "autoname": "field:programme_name",
+ "creation": "2026-03-31 15:21:22.257002",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "programme_name",
+  "programme_code",
+  "route",
+  "fee_indian",
+  "fee_foreign",
+  "contact_email",
+  "column_break_uuau",
+  "published",
+  "banner_image",
+  "admission_status",
+  "duration",
+  "instructions_text",
+  "instructions_link",
+  "section_break_mjih",
+  "course",
+  "overview_tab",
+  "show_overview_tab",
+  "overview",
+  "eligibility_tab",
+  "show_eligibility_tab",
+  "eligibility",
+  "section_break_smyn",
+  "show_apply_introduction",
+  "apply_intro"
+ ],
+ "fields": [
+  {
+   "fieldname": "programme_name",
+   "fieldtype": "Data",
+   "label": "Programme Name",
+   "unique": 1
+  },
+  {
+   "fieldname": "programme_code",
+   "fieldtype": "Data",
+   "label": "Programme Code"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route",
+   "read_only": 1
+  },
+  {
+   "fieldname": "banner_image",
+   "fieldtype": "Attach Image",
+   "label": "Banner Image"
+  },
+  {
+   "fieldname": "admission_status",
+   "fieldtype": "Select",
+   "label": "Admission Status",
+   "options": "\nOpen\nClosed"
+  },
+  {
+   "fieldname": "duration",
+   "fieldtype": "Int",
+   "label": "Duration",
+   "length": 2,
+   "non_negative": 1
+  },
+  {
+   "fieldname": "fee_indian",
+   "fieldtype": "Currency",
+   "label": "Fee (Indian Nationals)",
+   "precision": "1"
+  },
+  {
+   "fieldname": "fee_foreign",
+   "fieldtype": "Currency",
+   "label": "Fee (Foreign Nationals)",
+   "precision": "1"
+  },
+  {
+   "depends_on": "eval: doc.show_overview_tab",
+   "fieldname": "overview",
+   "fieldtype": "Text Editor",
+   "label": "Overview",
+   "mandatory_depends_on": "eval: doc.show_overview_tab"
+  },
+  {
+   "depends_on": "eval: doc.show_apply_introduction",
+   "fieldname": "apply_intro",
+   "fieldtype": "Text Editor",
+   "label": "Apply Intro",
+   "mandatory_depends_on": "eval: doc.show_apply_introduction"
+  },
+  {
+   "depends_on": "eval: doc.show_eligibility_tab",
+   "fieldname": "eligibility",
+   "fieldtype": "Text Editor",
+   "label": "Eligibility",
+   "mandatory_depends_on": "eval: doc.show_eligibility_tab"
+  },
+  {
+   "fieldname": "contact_email",
+   "fieldtype": "Data",
+   "label": "Contact Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "instructions_text",
+   "fieldtype": "Data",
+   "label": "Instructions Text"
+  },
+  {
+   "fieldname": "instructions_link",
+   "fieldtype": "Data",
+   "label": "Instructions Link"
+  },
+  {
+   "default": "0",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Published"
+  },
+  {
+   "fieldname": "column_break_uuau",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_smyn",
+   "fieldtype": "Section Break",
+   "label": "Apply Introduction"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "eligibility_tab",
+   "fieldtype": "Section Break",
+   "label": "Eligibility"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "overview_tab",
+   "fieldtype": "Section Break",
+   "label": "Overview"
+  },
+  {
+   "fieldname": "section_break_mjih",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Table MultiSelect",
+   "label": "Course",
+   "options": "PACE Programme Course Table"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_overview_tab",
+   "fieldtype": "Check",
+   "label": "Show Overview Tab"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_eligibility_tab",
+   "fieldtype": "Check",
+   "label": "Show Eligibility Tab"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_apply_introduction",
+   "fieldtype": "Check",
+   "label": "Show Apply Introduction"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-31 17:30:52.112335",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Programme",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "programme_name"
+}
