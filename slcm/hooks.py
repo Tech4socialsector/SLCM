@@ -51,7 +51,18 @@ fixtures = [
     {
         "doctype": "Email Template",
         "filters": [
-            ["name", "in", ["Scholarship Updates", "Merit List Template", "Seat Allocation Result Notification"]]
+            ["name", "in", [
+                "Scholarship Updates",
+                "Merit List Template",
+                "Seat Allocation Result Notification",
+                "Eligibility Result",
+                "Interview Result",
+                "Interview Reschedule",
+                "Interview Allocation",
+                "Entrance Test Result",
+                "Entrance Test Reschedule",
+                "Entrance Test Allocation"
+            ]]
         ]
     }
 ]

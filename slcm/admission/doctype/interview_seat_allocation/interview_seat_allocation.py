@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 import json
 import traceback
 from frappe.model.document import Document
@@ -35,16 +36,19 @@ class InterviewSeatAllocation(Document):
             if status_changed:
                 self._sync_applicant_status()
 
-        # Fetch categories from Applicant if newly set or empty
-        # Priority: Seat Allocation category (if already filled) vs Applicant's categories
+        # FETCH CATEGORIES CORRECTLY
         if self.applicant and (not self.category or self.is_new()):
-            from slcm.admission.doctype.applicant.applicant import Applicant
-            app_doc = frappe.get_doc("Applicant", self.applicant)
-            app_categories = app_doc._get_applicant_categories()
-            # Re-initialize the child table ONLY if it's currently empty
-            if not self.category:
-                for cat in app_categories:
-                    self.append("category", {"category": cat})
+            try:
+                from slcm.admission.doctype.applicant.applicant import Applicant
+                app_doc = frappe.get_doc("Applicant", self.applicant)
+                app_categories = app_doc._get_applicant_categories()
+                # Re-initialize the child table ONLY if it's currently empty
+                if not self.category:
+                    self.set("category", [])
+                    for cat in app_categories:
+                        self.append("category", {"category": cat})
+            except Exception:
+                pass
 
     def _sync_applicant_status(self):
         """
@@ -139,11 +143,15 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
         order_by="interview_score desc"
     )
 
+    total_attended = len(attended_records)
     for i, rec in enumerate(attended_records, start=1):
         frappe.db.set_value("Interview Seat Allocation", rec.name, {
             "rank": i,
             "result_published": 1
         }, update_modified=False)
+        if i % 10 == 0 or i == total_attended:
+            percent = (i / total_attended) * 50 # First 50% for ranking
+            frappe.publish_progress(percent, title=_("Update Ranking"))
 
     frappe.db.commit()
 
@@ -164,7 +172,17 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
     )
 
     count = 0
-    for rec in all_records:
+    total = len(all_records)
+    for i, rec in enumerate(all_records):
+        # Publish progress
+        percent = 50 + ((float(i + 1) / total) * 50)
+        frappe.publish_progress(
+            percent, 
+            title=_("Update Ranking"), 
+            description=f"Notifying {i + 1} of {total}"
+        )
+
+
         doc = frappe.get_doc("Interview Seat Allocation", rec.name)
         
         # Set result_published for all notified candidates
@@ -186,97 +204,52 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
                 _send_result_notification_email(doc, email)
                 count += 1
             except Exception:
-                frappe.log_error(title=f"Interview Result Email Failed: {doc.name}")
+                frappe.log_error(message=traceback.format_exc(), title=f"Interview Result Email Failed: {doc.name}")
+        
+        if i % 10 == 0:
+            frappe.db.commit()
 
+    frappe.db.commit()
     return count
 
 
 def _send_result_notification_email(doc, email):
-    """Send a premium masterpiece result/rank notification email to the applicant for Interview."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
-    # Determine Status and Accents
-    is_absent = (doc.interview_status == "Absent")
-    accent_color = "#d73a49" if is_absent else "#0366d6"
-    
-    # Resolve Result Status
-    result_status = getattr(doc, "interview_result_status", None)
-    status_text = "Absent" if is_absent else (result_status or doc.interview_status or "Processed")
-    
-    # Performance Section HTML
-    if is_absent:
-        performance_html = f"""
-        <div style="background-color: #fff5f5; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #ffe3e3;">
-            <p style="margin: 0; color: #d73a49; font-weight: 600; font-size: 14px;">Notice: Interview Absence</p>
-            <p style="margin: 5px 0 0 0; color: #586069; font-size: 13px;">Our records indicate that you were marked as absent for this interview session. As no evaluation was recorded, a final score and rank have not been assigned.</p>
-        </div>
-        """
-    else:
-        interview_score = doc.interview_score or 0
-        rank = doc.rank or "—"
-        
-        performance_html = f"""
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Performance Summary:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Interview Score:</td><td style="padding: 4px 0; font-weight: 700;">{interview_score}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Final Rank:</td><td style="padding: 4px 0; font-weight: 700; color: #28a745; font-size: 16px;">{rank}</td></tr>
-            </table>
-        </div>
-        """
+    """Send a result/rank notification email using a configurable template for Interview."""
+    try:
+        template_name = "Interview Result"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
+            return
 
-    subject = "Admission Interview Result Notification"
-    
-    msg = f"""
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
-        <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
+        template = frappe.get_doc("Email Template", template_name)
         
-        <p>Greetings from the Admissions Office.</p>
-        
-        <p>We would like to inform you that the results of your admission interview have been officially processed. Your performance details are provided below for your reference.</p>
-        
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Applicant Details:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{doc.applicant}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Interview Session:</td><td style="padding: 4px 0; font-weight: 700;">{doc.interview_list or '—'}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Status:</td><td style="padding: 4px 0; font-weight: 700; color: {accent_color};">{status_text}</td></tr>
-            </table>
-        </div>
+        # Prepare arguments for Jinja
+        doc_dict = doc.as_dict()
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
 
-        {performance_html}
+        subject = frappe.render_template(template.subject, args)
+        message_body = template.response_html if template.use_html else template.response
         
-        <p>You may access your detailed interview evaluation, including feedback and scoring breakdown, by logging into the admission portal using the link provided below.</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Interview Result</a>
-        </div>
-        
-        <p>Please note that further updates regarding your admission status or next steps will be communicated to you in due course.</p>
-        
-        <p>If you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
-        
-        <p>We appreciate your participation in the interview process and wish you the very best.</p>
-    </div>
-    """
-
-    frappe.sendmail(
-        recipients=[email],
-        subject=subject,
-        message=msg,
-        reference_doctype="Interview Seat Allocation",
-        reference_name=doc.name
-    )
+        if message_body:
+            message = frappe.render_template(message_body, args)
+            frappe.sendmail(
+                recipients=[email],
+                subject=subject,
+                content=message,
+                reference_doctype="Interview Seat Allocation",
+                reference_name=doc.name,
+                now=False
+            )
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Interview Result Email Failed: {doc.name}")
 
 
 @frappe.whitelist()
 def reschedule_applicants(applicants, interview_staff=None, interview_date=None, interview_time=None, reschedule_reason=None):
     """Reschedule one or more Interview Seat Allocation records.
-
-    * ``applicants`` should be a list of names (or JSON string).
-    * ``interview_staff`` optionally selects a new interviewer.
-    * ``interview_date``/``interview_time`` specify the new slot.
-    * ``reschedule_reason`` is mandatory as it is emailed to candidates.
     """
     if isinstance(applicants, str):
         applicants = json.loads(applicants)
@@ -287,12 +260,23 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
         frappe.throw("Reason for Reschedule is mandatory.")
 
     # Validate interview_date is not in the past
-    if interview_date and get_datetime(interview_date) < now_datetime():
-        frappe.throw("New Interview Date cannot be in the past. Please select today or a future date.")
+    if allocation_date := interview_date:
+        if get_datetime(allocation_date) < now_datetime():
+            frappe.throw("New Interview Date cannot be in the past. Please select today or a future date.")
 
     count = 0
-    for name in applicants:
+    total = len(applicants)
+    for i, name in enumerate(applicants):
+        # Publish progress
+        percent = (float(i + 1) / total * 100)
+        frappe.publish_progress(
+            percent, 
+            title=_("Rescheduling Interviews..."), 
+            description=f"Processing {i + 1} of {total}"
+        )
+
         doc = frappe.get_doc("Interview Seat Allocation", name)
+
 
         doc.is_rescheduled = 1
         doc.re_interview_staff_member = interview_staff
@@ -363,11 +347,9 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
                     message=traceback.format_exc(),
                     title=f"Interview Reschedule Email Failed: {doc.name}"
                 )
-        else:
-            frappe.log_error(
-                message=f"No email found for applicant {doc.applicant} (record: {doc.name}). Reschedule email was not sent.",
-                title="Interview Reschedule Email Skipped"
-            )
+        
+        if i % 5 == 0:
+            frappe.db.commit()
 
         count += 1
     frappe.db.commit()
@@ -375,70 +357,34 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
 
 
 def _send_reschedule_email(doc, email):
-    """Send a premium masterpiece interview reschedule notification email to the applicant."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
-    # Format Date and Time
-    formatted_date = "To be communicated"
-    formatted_time = "To be communicated"
-    if doc.re_interview_date:
-        try:
-            formatted_date = format_date(doc.re_interview_date)
-        except:
-            formatted_date = str(doc.re_interview_date)
-            
-    if doc.re_interview_time:
-        try:
-            formatted_time = format_time(doc.re_interview_time)
-        except:
-            formatted_time = str(doc.re_interview_time)
+    """Send an interview reschedule notification email using a configurable template."""
+    try:
+        template_name = "Interview Reschedule"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
+            return
 
-    reason_html = ""
-    if doc.reschedule_reason:
-        reason_html = f"""
-        <div style="background-color: #fffbdd; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #f9eda5;">
-            <p style="margin: 0; color: #735c0f; font-weight: 600; font-size: 14px;">Reason for Rescheduling:</p>
-            <p style="margin: 5px 0 0 0; color: #586069; font-size: 13px;">{doc.reschedule_reason}</p>
-        </div>
-        """
+        template = frappe.get_doc("Email Template", template_name)
+        
+        # Prepare arguments for Jinja
+        doc_dict = doc.as_dict()
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
 
-    subject = "Admission Interview Rescheduled – Action Required"
-    
-    msg = f"""
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
-        <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
+        subject = frappe.render_template(template.subject, args)
+        message_body = template.response_html if template.use_html else template.response
         
-        <p>Greetings from the Admissions Office.</p>
-        
-        <p>We are writing to inform you that your admission interview has been successfully rescheduled. The details of your new interview session are provided below.</p>
-        
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">New Interview Details:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Date:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_date}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Time:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_time}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Venue / Address:</td><td style="padding: 4px 0; font-weight: 700;">{doc.re_interview_address or 'To be communicated'}</td></tr>
-            </table>
-        </div>
-
-        {reason_html}
-
-        <p>Please log in to the admission portal to view your updated interview details and confirm your attendance.</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Interview Details</a>
-        </div>
-        
-        <p>If you require any assistance or have queries regarding your rescheduled interview, please contact the Admissions Office.</p>
-        
-        <p>We wish you the very best for your interview.</p>
-    </div>
-    """
-
-    frappe.sendmail(
-        recipients=[email],
-        subject=subject,
-        message=msg,
-        reference_doctype="Interview Seat Allocation",
-        reference_name=doc.name
-    )
+        if message_body:
+            message = frappe.render_template(message_body, args)
+            frappe.sendmail(
+                recipients=[email],
+                subject=subject,
+                content=message,
+                reference_doctype="Interview Seat Allocation",
+                reference_name=doc.name,
+                now=False
+            )
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Interview Reschedule Email Failed: {doc.name}")

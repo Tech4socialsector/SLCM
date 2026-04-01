@@ -2,6 +2,42 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-11 14:41:22.044734",
+  "name": "Interview Sheduled",
+  "stage_type": null,
+  "status": "Interview Sheduled",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-11 14:43:34.365668",
+  "name": "Accepted",
+  "stage_type": null,
+  "status": "Accepted",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-11 09:37:16.017258",
+  "name": "Selected",
+  "stage_type": null,
+  "status": "Selected",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-11 09:37:56.172795",
+  "name": "Waitlisted",
+  "stage_type": null,
+  "status": "Waitlisted",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-30 10:11:21.023982",
   "name": "Submitted",
   "stage_type": "Application",
@@ -15,15 +51,6 @@
   "name": "Entrance Test Excempted",
   "stage_type": "Entrance Test",
   "status": "Entrance Test Excempted",
-  "status_type": "Complete"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:10:53.730631",
-  "name": "Interview Excempted",
-  "stage_type": "Interview",
-  "status": "Interview Excempted",
   "status_type": "Complete"
  },
  {
@@ -83,11 +110,11 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:13:28.297485",
+  "modified": "2026-03-31 10:07:11.585526",
   "name": "Offer Expired",
   "stage_type": "Offer Letter",
   "status": "Offer Expired",
-  "status_type": "Complete"
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,
@@ -227,10 +254,10 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 12:55:58.587017",
+  "modified": "2026-03-31 10:06:49.495059",
   "name": "Interview Exempted",
   "stage_type": "Interview",
   "status": "Interview Exempted",
-  "status_type": "Closed"
+  "status_type": "Complete"
  }
 ]
