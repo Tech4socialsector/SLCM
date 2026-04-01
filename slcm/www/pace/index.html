@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>NLSIU PACE | Professional and Continuing Education</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584141",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#c8c6c6",
+                        "surface-container-low": "#f3f4f5",
+                        "on-secondary-container": "#745c00",
+                        "surface-variant": "#e1e3e4",
+                        "surface-container": "#edeeef",
+                        "background": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "tertiary-fixed": "#e4e2e2",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed": "#ffe088",
+                        "inverse-primary": "#ffb3b5",
+                        "surface": "#f8f9fa",
+                        "on-tertiary-container": "#a9a8a7",
+                        "outline-variant": "#e0bfbf",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e1e3e4",
+                        "primary-container": "#800020",
+                        "tertiary": "#272727",
+                        "primary": "#570013",
+                        "inverse-surface": "#2e3132",
+                        "primary-fixed-dim": "#ffb3b5",
+                        "secondary-fixed-dim": "#e9c349",
+                        "on-primary-fixed": "#40000b",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1d",
+                        "surface-bright": "#f8f9fa",
+                        "on-primary-fixed-variant": "#8e0f28",
+                        "on-secondary-fixed-variant": "#574500",
+                        "secondary-container": "#fed65b",
+                        "surface-dim": "#d9dadb",
+                        "outline": "#8c7071",
+                        "secondary": "#735c00",
+                        "surface-tint": "#af2b3e",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#241a00",
+                        "tertiary-container": "#3d3d3d",
+                        "primary-fixed": "#ffdada",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-primary-container": "#ff828a",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    fontFamily: {
+                        "headline": ["Newsreader", "serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                    scale: {
+                        '102': '1.02',
+                    },
+                    animation: {
+                        'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'blink': 'blink 1.5s step-end infinite',
+                    },
+                    keyframes: {
+                        'pulse-subtle': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.5 },
+                        },
+                        'blink': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0 },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(87, 0, 19, 0.95) 0%, rgba(128, 0, 32, 0.8) 100%);
+        }
+
+        .editorial-shadow {
+            box-shadow: 0px 40px 80px -20px rgba(25, 28, 29, 0.1);
+        }
+
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal-up.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .cross-edge-mask {
+            clip-path: polygon(0 0, 100% 5%, 100% 100%, 0 95%);
+        }
+
+        .program-card-shadow {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+        }
+
+        .program-card:hover .program-card-shadow {
+            box-shadow: 0 30px 60px -15px rgba(87, 0, 19, 0.12);
+        }
+
+        .faq-transition {
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+
+        .input-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-transition:focus {
+            box-shadow: inset 0 2px 4px 0 rgba(87, 0, 19, 0.05);
+        }
+
+        .hidden-program {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .visible-program {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .ticker-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .ticker {
+            display: inline-block;
+            animation: ticker 40s linear infinite;
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface font-body antialiased overflow-x-hidden">
+    <!-- TopNavBar -->
+    <nav class="fixed top-0 w-full z-[100] bg-white/90 backdrop-blur-xl border-b border-surface-variant/30">
+        <div class="flex justify-between items-center px-8 lg:px-16 py-5 max-w-screen-2xl mx-auto">
+            <div class="flex items-center gap-4">
+                <span class="text-3xl font-headline font-bold tracking-tight text-primary">NLSIU PACE</span>
+            </div>
+            <!-- Desktop Navigation -->
+            <div class="hidden lg:flex items-center gap-10">
+                <a class="text-primary border-b-2 border-secondary pb-1 text-xs uppercase tracking-[0.2em] font-bold"
+                    href="#">About</a>
+                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
+                    href="#">Programmes</a>
+                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
+                    href="#">Admissions</a>
+                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
+                    href="#">FAQs</a>
+                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
+                    href="#">Contact Us</a>
+                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
+                    href="#">Alumni</a>
+            </div>
+            <div class="flex items-center gap-6">
+                <button
+                    class="bg-primary text-white px-8 py-2.5 rounded-sm font-label text-xs uppercase tracking-[0.2em] font-bold hover:bg-primary-container transition-all hover:shadow-lg active:scale-95">
+                    myNLS
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="relative pt-20">
+        <!-- Latest Updates Ticker -->
+        <div class="bg-secondary-container py-3 border-b border-secondary/10 overflow-hidden">
+            <div class="max-w-[1400px] mx-auto px-8 flex items-center gap-8">
+                <div class="flex items-center gap-3 shrink-0">
+                    <span class="material-symbols-outlined text-secondary text-lg">campaign</span>
+                    <span
+                        class="text-[10px] font-bold tracking-[0.2em] text-on-secondary-fixed uppercase flex items-center gap-2">
+                        Latest Updates
+                        <span
+                            class="inline-block px-1.5 py-0.5 bg-primary text-white text-[8px] rounded-sm animate-blink">NEW</span>
+                    </span>
+                </div>
+                <div class="ticker-wrap flex-grow">
+                    <div class="ticker text-xs font-medium text-on-secondary-fixed space-x-12 flex">
+                        <span>• FLE 2024 admissions is now live until August 15th.</span>
+                        <span>• NLSIU ranks #1 in NIRF Law category for the seventh consecutive year.</span>
+                        <span>• New PG Diploma in Digital Laws and Policy introduced.</span>
+                        <span>• FLE 2024 admissions is now live until August 15th.</span>
+                        <span>• NLSIU ranks #1 in NIRF Law category for the seventh consecutive year.</span>
+                        <span>• New PG Diploma in Digital Laws and Policy introduced.</span>
+                    </div>
+                </div>
+                <a class="shrink-0 text-[10px] font-black tracking-widest text-primary uppercase border-b-2 border-primary/20 hover:border-primary transition-all"
+                    href="#">View All News</a>
+            </div>
+        </div>
+        <!-- Hero Section -->
+        <section class="relative min-h-[90vh] flex items-center overflow-hidden">
+            <div class="absolute inset-0 z-0">
+                <img alt="Academic Institution" class="w-full h-full object-cover scale-105"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ" />
+                <div class="absolute inset-0 hero-gradient"></div>
+                <!-- Diagonal Accent Overlay -->
+                <div
+                    class="absolute top-0 right-0 w-1/3 h-full bg-primary/20 -skew-x-12 translate-x-1/2 pointer-events-none">
+                </div>
+            </div>
+            <div class="relative z-10 max-w-7xl mx-auto px-8 w-full">
+                <div class="max-w-4xl reveal-up active">
+                    <div class="flex items-center gap-4 mb-6">
+                        <span
+                            class="inline-flex items-center px-4 py-1.5 bg-secondary-container text-on-secondary-fixed rounded-full font-label text-[10px] tracking-[0.25em] uppercase font-black shadow-lg border border-secondary/20">
+                            Enrolling Now for 2024
+                        </span>
+                    </div>
+                    <h1 class="text-3xl md:text-4xl lg:text-4xl font-headline text-white leading-snug mb-8">
+                        Admissions Open |
+                        <span class="text-secondary-fixed italic">Foundations for a Legal Education (FLE) Course</span>
+                    </h1>
+                    <p class="text-lg md:text-xl text-white/80 font-body leading-relaxed mb-10 max-w-2xl font-light">
+                        Designed for individuals seeking to bridge the gap between diverse professional backgrounds and
+                        the rigors of legal thought. Start your journey at India's premier law university.
+                    </p>
+                    <div class="flex flex-wrap gap-8">
+                        <button
+                            class="bg-secondary-container text-on-secondary-fixed px-10 py-4 rounded-sm font-label text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-secondary hover:text-white hover:-translate-y-1 shadow-xl">
+                            Apply Now
+                        </button>
+                        <button
+                            class="group flex items-center gap-4 border-b border-white/40 pb-2 text-white font-label text-xs font-bold uppercase tracking-[0.2em] hover:border-white transition-all">
+                            View Prospectus
+                            <span
+                                class="material-symbols-outlined transition-transform group-hover:translate-x-2">arrow_right_alt</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Cross-Edge Bottom Decoration -->
+            <div class="absolute bottom-0 left-0 w-full h-12 bg-background cross-edge-mask z-20"></div>
+        </section>
+        <!-- Explore all Programmes & Courses Section (Intro) -->
+        <section class="pt-12 pb-24 bg-white relative z-30 reveal-up">
+            <div class="max-w-[1200px] mx-auto px-8">
+                <h2 class="text-center text-4xl font-headline text-primary mb-16 leading-tight">Explore all Programmes
+                    &amp; Courses</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                    <!-- Master's Degree -->
+                    <div class="flex flex-col items-center text-center group">
+                        <div class="mb-6">
+                            <span class="material-symbols-outlined text-primary text-5xl font-light">school</span>
+                        </div>
+                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Master's Degree</h3>
+                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Two-year Master of
+                            Business Laws programme tailored for lawyers and managers. Online &amp; hybrid format.</p>
+                    </div>
+                    <!-- Postgraduate Diplomas -->
+                    <div class="flex flex-col items-center text-center group">
+                        <div class="mb-6">
+                            <span
+                                class="material-symbols-outlined text-primary text-5xl font-light">workspace_premium</span>
+                        </div>
+                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Postgraduate Diplomas</h3>
+                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">One-year online &amp;
+                            hybrid diplomas in specialized domains like Human Rights and Cyber Law.</p>
+                    </div>
+                    <!-- Executive & Corporate -->
+                    <div class="flex flex-col items-center text-center group">
+                        <div class="mb-6">
+                            <span class="material-symbols-outlined text-primary text-5xl font-light">groups</span>
+                        </div>
+                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Executive &amp; Corporate</h3>
+                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Crafted learning material
+                            for officials in hybrid, online, and in-person professional formats.</p>
+                    </div>
+                    <!-- Certificate Course -->
+                    <div class="flex flex-col items-center text-center group">
+                        <div class="mb-6">
+                            <span class="material-symbols-outlined text-primary text-5xl font-light">verified</span>
+                        </div>
+                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Certificate Course</h3>
+                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Foundations for a Legal
+                            Education (FLE) designed for high school to law school transitions.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Program Grid -->
+        <section class="py-24 px-8 max-w-[1400px] mx-auto relative z-30">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-10 reveal-up">
+                <div class="max-w-2xl">
+                    <h2 class="text-4xl md:text-5xl font-headline text-primary mb-6 leading-tight">Continuing Education
+                        Programmes</h2>
+                    <div class="w-20 h-1 bg-secondary mb-6"></div>
+                    <p class="text-on-surface-variant text-lg leading-relaxed font-light">Rigorous curricula designed
+                        for professionals, delivered through a flexible digital environment that maintains the NLSIU
+                        standard of excellence.</p>
+                </div>
+                <!-- <div class="flex gap-4">
+                    <button
+                        class="p-4 border border-primary/20 hover:bg-primary hover:text-white transition-all rounded-full group">
+                        <span class="material-symbols-outlined text-2xl">west</span>
+                    </button>
+                    <button
+                        class="p-4 border border-primary/20 hover:bg-primary hover:text-white transition-all rounded-full group">
+                        <span class="material-symbols-outlined text-2xl">east</span>
+                    </button>
+                </div> -->
+            </div>
+            <!-- Program Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 reveal-up mb-16" id="program-grid">
+            </div>
+            <!-- Load More Section -->
+            <div class="mt-16 flex flex-col items-center gap-6 reveal-up" id="load-more-container">
+                <div class="flex flex-col items-center gap-2">
+                    <span class="text-[10px] font-bold tracking-[0.2em] text-on-surface/40 uppercase">PAGE <span
+                            id="page-indicator">1 / 2</span></span>
+                    <button
+                        class="flex items-center justify-center gap-3 px-12 py-6 bg-surface-container-high hover:bg-surface-variant text-on-surface-variant font-bold text-sm uppercase tracking-widest rounded-xl transition-all group"
+                        id="load-more-btn">
+                        Load More Programs
+                        <span
+                            class="material-symbols-outlined text-lg transition-transform group-hover:translate-y-1">expand_more</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        <!-- Social & News Integration -->
+        <section class="bg-surface-container-low py-32 relative overflow-hidden">
+            <div class="max-w-[1400px] mx-auto px-8 relative z-10">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-20 items-start">
+                    <div class="lg:col-span-5 reveal-up">
+                        <span class="text-xs font-bold tracking-[0.3em] uppercase text-secondary mb-6 block">COMMUNITY
+                            FEED</span>
+                        <h2 class="text-5xl font-headline text-primary mb-8 italic leading-tight">Voices of
+                            <br />Academic <br />Excellence</h2>
+                        <p class="text-xl text-on-surface-variant mb-10 font-light leading-relaxed">Stay updated with
+                            the latest news, webinars, and scholarly insights from the NLSIU PACE faculty and student
+                            body.</p>
+                        <div class="space-y-8">
+                            <div
+                                class="bg-white p-8 rounded-sm editorial-shadow border-l-8 border-primary transition-all hover:scale-[1.01] cursor-default relative overflow-hidden">
+                                <div class="absolute top-4 right-6 flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-rose-600 rounded-full animate-pulse-subtle"></span>
+                                    <span
+                                        class="text-[10px] font-bold text-rose-600 tracking-widest uppercase">LIVE</span>
+                                </div>
+                                <p class="text-[10px] font-bold tracking-widest text-on-surface/40 uppercase mb-3">2
+                                    hours ago</p>
+                                <p class="text-xl font-headline text-on-surface leading-relaxed italic">"The Future of
+                                    Corporate Mediation in India" — Join our live webinar tomorrow at 4 PM IST.</p>
+                                <a class="mt-4 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary group"
+                                    href="#">Register Now <span
+                                        class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">trending_flat</span></a>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="aspect-square overflow-hidden rounded-sm group relative cursor-pointer">
+                                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBN01PKvNgFMntf4YGU-srqIrpPG0SrIQuiVccQt4sQiABT0KP2s5qTRDDtBETeAJMbu5IsUZHOwoswLDPr5nuHO5ygJESSJ44s0CBgBwmNgttazWgTweVtPBjC3FH0wMsBtbCZqkX-vPKPGjctZWhqHooRVwX_dWLNxFS75Ud35K90TFhqje40HDi44LIoLIDzLDxp5dplDjnhvUifdguHRQ7xWLMRSD1haB7on21WhWHjXzztbEON-zmcUVJzBMJl6Fek9F0lt70" />
+                                </div>
+                                <div class="aspect-square overflow-hidden rounded-sm group relative cursor-pointer">
+                                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5ExsXDXU373V74SZA1aPjbPMfh7152XPnPWa-PjXLd6YIxewxb1LDlM3QtJA0l3Du2N0ttOBRomtXAZJHje3mr4owdbJUtztbbf_4TqS-dquAX2dTI8eynrzhJGoyt65o23NSGSyBDGP472cCwO273qilvmin1gLYWQROkHXXB8lR7dCnKu65TKAIcRrbp2TsZp9HKjlz3QYob0uDevBDnClRqRcVthvsAnVvsmPTxHXh_fNnNrsQeAChC2qqQ3u9Bapab0wmbGU" />
+                                </div>
+                                <div class="aspect-square overflow-hidden rounded-sm group relative cursor-pointer">
+                                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_2LzQCt4Bpqw8mRh55Yt8xQzD7IpbmT9DJXhIbFwknJE0Xns4PFJt3g-khDdI5gy2g5AOS3084wCpuV_AKsOZluYoHQoCZxKzP2JQ3T9q6aLkaxjIy2kMLhtRJfAslPR1ppxdrFMVbtUszsJpAqVWsvW0IgK1fNTRodz8K3TnvlbzvQiPsI03mSYTwUWPHbMY363udqB7EFRLpFOT5-vYBhApeiDs2CXIfiCBj6kVSjX65ffzqHb2vNk_X-ohVNmfbvUgdGDopwY" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Inquiry Form -->
+                    <div class="lg:col-span-7 lg:-mt-12 reveal-up">
+                        <div class="bg-white p-12 lg:p-16 editorial-shadow border border-surface-variant/30 relative">
+                            <h3 class="text-4xl font-headline text-primary mb-6 italic">Program Inquiry</h3>
+                            <p class="text-on-surface-variant mb-10 text-lg font-light">Complete the form below and our
+                                admissions counselors will curate personalized guidance for your career trajectory.</p>
+                            <form class="space-y-8">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div class="relative group">
+                                        <input
+                                            class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
+                                            id="full-name" placeholder=" " type="text" />
+                                        <label
+                                            class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
+                                            for="full-name">Full Name</label>
+                                    </div>
+                                    <div class="relative group">
+                                        <input
+                                            class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
+                                            id="email" placeholder=" " type="email" />
+                                        <label
+                                            class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
+                                            for="email">Email Address</label>
+                                    </div>
+                                </div>
+                                <div class="relative group">
+                                    <input
+                                        class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
+                                        id="phone" placeholder=" " type="tel" />
+                                    <label
+                                        class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
+                                        for="phone">Phone Number</label>
+                                </div>
+                                <div class="relative group">
+                                    <label
+                                        class="block text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60 mb-2">Program
+                                        of Interest</label>
+                                    <div class="relative">
+                                        <select
+                                            class="w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg appearance-none cursor-pointer pr-10 input-transition">
+                                            <option>Master of Business Laws (MBL)</option>
+                                            <option>PG Diploma in Cyber Law</option>
+                                            <option>PG Diploma in IP Rights</option>
+                                            <option>PG Diploma in Environmental Law</option>
+                                        </select>
+                                        <span
+                                            class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40">expand_more</span>
+                                    </div>
+                                </div>
+                                <div class="pt-6">
+                                    <button
+                                        class="w-full bg-primary text-white py-5 font-label text-xs font-bold uppercase tracking-[0.3em] transition-all hover:bg-primary-container hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 shadow-lg"
+                                        type="submit">
+                                        Submit Request
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- FAQ Section -->
+        <section class="py-32 px-8 max-w-4xl mx-auto reveal-up">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-headline text-primary mb-6">Clarifying Your Path</h2>
+                <div class="w-16 h-1 bg-secondary mx-auto"></div>
+            </div>
+            <div class="space-y-2">
+                <!-- Accordion Item 1 -->
+                <div class="group border-b border-surface-variant/30">
+                    <button
+                        class="w-full py-8 flex justify-between items-center text-left hover:text-primary transition-colors focus:outline-none"
+                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.icon').classList.toggle('rotate-45')">
+                        <span class="text-xl font-headline font-medium tracking-tight">How do the online examinations
+                            work?</span>
+                        <span
+                            class="material-symbols-outlined icon text-on-surface/30 transition-transform text-2xl">add</span>
+                    </button>
+                    <div
+                        class="hidden pb-8 text-on-surface-variant text-lg font-light leading-relaxed max-w-3xl faq-transition">
+                        Examinations are conducted twice a year in a high-fidelity digital proctored environment. Our
+                        secure testing platform ensures academic integrity while providing global accessibility for
+                        professional candidates.
+                    </div>
+                </div>
+                <!-- Accordion Item 2 -->
+                <div class="group border-b border-surface-variant/30">
+                    <button
+                        class="w-full py-8 flex justify-between items-center text-left hover:text-primary transition-colors focus:outline-none"
+                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.icon').classList.toggle('rotate-45')">
+                        <span class="text-xl font-headline font-medium tracking-tight">Is there an age limit for these
+                            programs?</span>
+                        <span
+                            class="material-symbols-outlined icon text-on-surface/30 transition-transform text-2xl">add</span>
+                    </button>
+                    <div
+                        class="hidden pb-8 text-on-surface-variant text-lg font-light leading-relaxed max-w-3xl faq-transition">
+                        No, we champion lifelong learning. Our PACE programs are designed for professionals at any stage
+                        of their career who wish to integrate rigorous legal knowledge into their existing expertise.
+                    </div>
+                </div>
+                <!-- Accordion Item 3 -->
+                <div class="group border-b border-surface-variant/30">
+                    <button
+                        class="w-full py-8 flex justify-between items-center text-left hover:text-primary transition-colors focus:outline-none"
+                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.icon').classList.toggle('rotate-45')">
+                        <span class="text-xl font-headline font-medium tracking-tight">What are the eligibility criteria
+                            for the MBL?</span>
+                        <span
+                            class="material-symbols-outlined icon text-on-surface/30 transition-transform text-2xl">add</span>
+                    </button>
+                    <div
+                        class="hidden pb-8 text-on-surface-variant text-lg font-light leading-relaxed max-w-3xl faq-transition">
+                        Candidates must hold a Bachelor’s degree in any discipline from a recognized university. The
+                        curriculum is structured to accommodate those without prior legal backgrounds, focusing on
+                        functional legal mastery.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Footer -->
+    <footer class="bg-[#2D000A] text-white py-24 overflow-hidden relative">
+        <div class="max-w-[1400px] mx-auto px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-20">
+                <div class="lg:col-span-5">
+                    <span class="text-3xl font-headline font-bold text-white block mb-8 tracking-tight">NLSIU
+                        PACE</span>
+                    <p class="text-white/60 text-lg leading-relaxed mb-8 font-light max-w-md">
+                        Professional and Continuing Education (PACE) is the strategic outreach of NLSIU, dedicated to
+                        democratizing elite legal education for global professionals.
+                    </p>
+                    <div class="flex gap-6">
+                        <a class="w-10 h-10 flex items-center justify-center border border-white/20 rounded-full hover:bg-secondary hover:border-secondary transition-all"
+                            href="#">
+                            <span class="material-symbols-outlined text-lg">public</span>
+                        </a>
+                        <a class="w-10 h-10 flex items-center justify-center border border-white/20 rounded-full hover:bg-secondary hover:border-secondary transition-all"
+                            href="#">
+                            <span class="material-symbols-outlined text-lg">mail</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="lg:col-span-7">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-10">
+                        <div>
+                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
+                                Programmes</h4>
+                            <ul class="space-y-4">
+                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
+                                        href="#">Business Laws (MBL)</a></li>
+                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">Cyber
+                                        Law &amp; Forensics</a></li>
+                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
+                                        href="#">Intellectual Property</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
+                                Resources</h4>
+                            <ul class="space-y-4">
+                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">LMS
+                                        Portal</a></li>
+                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">Digital
+                                        Library</a></li>
+                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
+                                        href="#">Academic Calendar</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
+                                Contact</h4>
+                            <div class="text-white/60 text-xs leading-loose space-y-2 font-light">
+                                <p>Gnana Bharathi Main Rd,<br />Bengaluru, 560072</p>
+                                <p>admissions.pace@nls.ac.in</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8">
+                <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest">© National Law School of India
+                    University. Excellence since 1987.</p>
+                <div class="flex flex-wrap justify-center gap-8">
+                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
+                        href="#">Privacy</a>
+                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
+                        href="#">Terms</a>
+                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
+                        href="#">Sitemap</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script>
+        const PROGRAMMES = [
+            {
+                id: 1,
+                title: "Master of Business Laws (MBL)",
+                category_label: "POSTGRADUATE",
+                description: "A flagship two-year program providing a comprehensive understanding of business law and its impact on corporate governance.",
+                duration: "2 Years",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
+            },
+            {
+                id: 2,
+                title: "PG Diploma in Cyber Law & Forensics",
+                category_label: "DIPLOMA",
+                description: "Bridging the gap between technological advancement and legal regulation in the digital frontier.",
+                duration: "1 Year",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
+            },
+            {
+                id: 3,
+                title: "PG Diploma in IP Rights Law",
+                category_label: "DIPLOMA",
+                description: "Equipping practitioners with specialized knowledge in patent, copyright, and trademark law frameworks.",
+                duration: "1 Year",
+                status: "CLOSED",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAex_cOyWlHi17JDVM7yJsnKrY0FYGiLzilmXl7cHi0_3upqgMAA8hDeEQeThPjFilmWTvi-NGrzb9BMHDuymWDjxYrIlTWq3k6B_BsGgU01GppPqkojPln4_m6OLrN3aC9MxRFczj-CGhgdvDk4O-hV0nZmtLpWeZTeKWADq6nxNeoFW0DrLhrqT7p7_2YmlCwGzrL9AhEvavfU5Euy65tZoNRqGUF_74qjfSZVvEnt15xo-K-z5ngNKePKx8cgnCKuroZxnr0MxY"
+            },
+            {
+                id: 4,
+                title: "PG Diploma in Environmental Law",
+                category_label: "DIPLOMA",
+                description: "Critical legal frameworks for sustainable development and resource management in a global context.",
+                duration: "1 Year",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ"
+            },
+            {
+                id: 5,
+                title: "PG Diploma in Human Rights Law",
+                category_label: "DIPLOMA",
+                description: "Exploration of international and domestic human rights protection mechanisms and legal advocacy.",
+                duration: "1 Year",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
+            },
+            {
+                id: 6,
+                title: "PG Diploma in Medical Law & Ethics",
+                category_label: "DIPLOMA",
+                description: "Intersection of law, medicine, and bioethics, addressing clinical negligence and healthcare regulation.",
+                duration: "1 Year",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
+            },
+            {
+                id: 7,
+                title: "PG Diploma in Consumer Law & Practice",
+                category_label: "DIPLOMA",
+                description: "Advanced study of consumer protection frameworks and dispute resolution in the modern marketplace.",
+                duration: "1 Year",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAex_cOyWlHi17JDVM7yJsnKrY0FYGiLzilmXl7cHi0_3upqgMAA8hDeEQeThPjFilmWTvi-NGrzb9BMHDuymWDjxYrIlTWq3k6B_BsGgU01GppPqkojPln4_m6OLrN3aC9MxRFczj-CGhgdvDk4O-hV0nZmtLpWeZTeKWADq6nxNeoFW0DrLhrqT7p7_2YmlCwGzrL9AhEvavfU5Euy65tZoNRqGUF_74qjfSZVvEnt15xo-K-z5ngNKePKx8cgnCKuroZxnr0MxY"
+            },
+            {
+                id: 8,
+                title: "PG Diploma in Labour Law",
+                category_label: "DIPLOMA",
+                description: "In-depth study of labour codes, social security, and industrial disputes management in the modern economy.",
+                duration: "1 Year",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ"
+            },
+            {
+                id: 9,
+                title: "PG Diploma in Constitutional Law",
+                category_label: "DIPLOMA",
+                description: "Understand the bedrock of Indian democracy. Analyze landmark judgments and constitutional principles with experts.",
+                duration: "1 Year",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
+            },
+            {
+                id: 10,
+                title: "PG Diploma in ADR & Arbitration",
+                category_label: "DIPLOMA",
+                description: "Master the skills of negotiation, mediation, and arbitration. A practical approach to alternative dispute resolution.",
+                duration: "1 Year",
+                status: "OPEN",
+                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
+            }
+        ];
+
+        function renderPage(page) {
+            const grid = document.getElementById('program-grid');
+            const start = (page - 1) * 6;
+            const end = page === 1 ? 6 : 10;
+            const programs = PROGRAMMES.slice(start, end);
+
+            programs.forEach(prog => {
+                const card = document.createElement('div');
+                card.className = "group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active";
+
+                const statusClass = prog.status === 'OPEN' ? 'bg-green-600' : 'bg-neutral-400';
+
+                card.innerHTML = `
+                <div class="relative overflow-hidden aspect-[16/10] z-0">
+                    <img alt="${prog.title}" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="${prog.image_url}">
+                    <div class="absolute top-4 right-4 px-3 py-1 ${statusClass} text-white text-[9px] font-bold uppercase tracking-widest shadow-lg">${prog.status}</div>
+                </div>
+                <div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow">
+                    <span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary uppercase mb-3 block">${prog.category_label}</span>
+                    <h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">${prog.title}</h3>
+                    <p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light">${prog.description}</p>
+                    <div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-on-surface/50">
+                            <span class="material-symbols-outlined text-lg">schedule</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest">${prog.duration}</span>
+                        </div>
+                        <span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform text-xl">arrow_forward</span>
+                    </div>
+                </div>
+            `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Simple intersection observer for scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal-up').forEach(el => observer.observe(el));
+
+        // Load More Logic
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const pageIndicator = document.getElementById('page-indicator');
+
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.innerHTML = 'Loading...';
+
+                setTimeout(() => {
+                    renderPage(2);
+                    pageIndicator.innerText = '2 / 2';
+                    loadMoreBtn.innerHTML = 'All Programs Loaded';
+                    loadMoreBtn.classList.add('cursor-not-allowed', 'bg-neutral-200');
+                }, 800);
+            });
+        }
+
+        // Initialize Page 1
+        renderPage(1);
+    </script>
+</body>
+
+</html>
