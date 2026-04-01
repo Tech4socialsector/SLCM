@@ -90,9 +90,54 @@ def get_columns() -> list[dict]:
 	]
 
 
+def _sum_receipts_by_offer(offer_letters: list[str]) -> dict[str, float]:
+	if not offer_letters:
+		return {}
+	placeholders = ", ".join(["%s"] * len(offer_letters))
+	rows = frappe.db.sql(
+		f"""
+		SELECT offer_letter, SUM(total_amount) AS total_amount
+		FROM `tabApplicant Payment Receipt`
+		WHERE docstatus = 1 AND offer_letter IN ({placeholders})
+		GROUP BY offer_letter
+		""",
+		tuple(offer_letters),
+		as_dict=True,
+	)
+	return {r.offer_letter: flt(r.total_amount) for r in rows}
+
+
+def _sum_application_fee_receipts_by_applicant(applicants: list[str]) -> dict[str, float]:
+	if not applicants:
+		return {}
+	placeholders = ", ".join(["%s"] * len(applicants))
+	rows = frappe.db.sql(
+		f"""
+		SELECT applicant, SUM(total_amount) AS total_amount
+		FROM `tabApplicant Payment Receipt`
+		WHERE docstatus = 1
+			AND applicant IN ({placeholders})
+			AND IFNULL(offer_letter, '') = ''
+		GROUP BY applicant
+		""",
+		tuple(applicants),
+		as_dict=True,
+	)
+	return {r.applicant: flt(r.total_amount) for r in rows}
+
+
 def get_data(filters: dict | None) -> list[dict]:
 	"""Return data for the report based on filters."""
+	filters = dict(filters or {})
 	query_filters = {}
+
+	ft = filters.get("fee_type")
+	if ft is None:
+		query_filters["fee_type"] = "Admission Fee"
+	elif ft == "":
+		pass
+	else:
+		query_filters["fee_type"] = ft
 
 	if filters.get("academic_year"):
 		query_filters["academic_year"] = filters.get("academic_year")
@@ -121,53 +166,67 @@ def get_data(filters: dict | None) -> list[dict]:
 			"program",
 			"assignment_date",
 			"status",
+			"fee_type",
 			"total_amount",
 			"final_payable_amount",
 			"fee_invoice",
-			"offer_letter"
+			"offer_letter",
 		],
-		order_by="assignment_date asc"
+		order_by="assignment_date asc",
 	)
 
-	# Get all unique offer letters to fetch their total receipts
-	offer_letters = list(set(row.offer_letter for row in data if row.offer_letter))
-	offer_paid_map = {}
-	if offer_letters:
-		receipt_data = frappe.get_all(
-			"Applicant Payment Receipt",
-			filters={"offer_letter": ["in", offer_letters], "docstatus": 1},
-			fields=["offer_letter", {"SUM": "total_amount"}],
-			group_by="offer_letter"
-		)
-		for r in receipt_data:
-			offer_paid_map[r.offer_letter] = flt(r.total_amount)
+	invoice_names = list({r.fee_invoice for r in data if r.get("fee_invoice")})
+	invoice_paid_map: dict[str, float] = {}
+	if invoice_names:
+		for inv in frappe.get_all(
+			"Fee Invoice",
+			filters={"name": ["in", invoice_names]},
+			fields=["name", "paid_amount"],
+		):
+			invoice_paid_map[inv.name] = flt(inv.paid_amount)
 
-	# Keep track of how much of each offer's payment has been allocated
-	allocated_paid = {}
+	need_receipt_by_offer = [r for r in data if not r.get("fee_invoice") and r.get("offer_letter")]
+	offer_letters = list({r.offer_letter for r in need_receipt_by_offer})
+	offer_paid_map = _sum_receipts_by_offer(offer_letters)
 
-	# Calculate paid and pending amounts for each assignment
-	for row in data:
+	need_receipt_by_applicant = [
+		r for r in data if not r.get("fee_invoice") and (r.get("fee_type") or "") == "Application Fee"
+	]
+	applicants = list({r.applicant for r in need_receipt_by_applicant})
+	applicant_paid_map = _sum_application_fee_receipts_by_applicant(applicants)
+
+	allocated_offer: dict[str, float] = {}
+	allocated_applicant: dict[str, float] = {}
+
+	ordered = sorted(data, key=lambda x: x.assignment_date or "")
+	for row in ordered:
 		total = flt(row.get("final_payable_amount") or 0)
-		offer_total_paid = offer_paid_map.get(row.offer_letter, 0)
-		
-		# Remaining available paid amount for this offer
-		available_paid = max(0, offer_total_paid - allocated_paid.get(row.offer_letter, 0))
-		
-		# Allocate to this assignment up to its total
-		paid_for_this = min(total, available_paid)
+		if row.get("fee_invoice"):
+			paid_for_this = invoice_paid_map.get(row.fee_invoice, 0)
+		elif (row.get("fee_type") or "") == "Application Fee":
+			pool = applicant_paid_map.get(row.applicant, 0)
+			available = max(0, pool - allocated_applicant.get(row.applicant, 0))
+			paid_for_this = min(total, available)
+			allocated_applicant[row.applicant] = allocated_applicant.get(row.applicant, 0) + paid_for_this
+		elif row.get("offer_letter"):
+			pool = offer_paid_map.get(row.offer_letter, 0)
+			available = max(0, pool - allocated_offer.get(row.offer_letter, 0))
+			paid_for_this = min(total, available)
+			allocated_offer[row.offer_letter] = allocated_offer.get(row.offer_letter, 0) + paid_for_this
+		else:
+			paid_for_this = 0
+
 		row["paid_amount"] = paid_for_this
 		row["pending_amount"] = max(0, total - paid_for_this)
-		
-		# Update allocated record
-		allocated_paid[row.offer_letter] = allocated_paid.get(row.offer_letter, 0) + paid_for_this
-		
-		# Sync display status if inconsistent
+
 		if row["paid_amount"] >= total and row.status not in ["Paid", "Cancelled", "Converted"] and total > 0:
 			row["status"] = "Paid"
-		elif row["paid_amount"] > 0 and row["paid_amount"] < total and row.status != "Partially Paid":
+		elif row["paid_amount"] > 0 and row["paid_amount"] < total and row.status not in (
+			"Partially Paid",
+			"Converted",
+		):
 			row["status"] = "Partially Paid"
 
-	# Sort back to descending date for display
 	data.sort(key=lambda x: x.assignment_date or "", reverse=True)
 	return data
 

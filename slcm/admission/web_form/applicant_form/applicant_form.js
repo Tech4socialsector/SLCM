@@ -193,19 +193,22 @@ function _injectCSS() {
 		'.adm-wf-footer-links a:hover{color:#fff;}',
 				'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
 			'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
-		/* ── Stepper — pill strip + step numbers (pages from Page Break fields; no fixed icons) ── */
+		/* ── Stepper — pills + flex-grow connectors (lines scale with screen width) ── */
 		'#slcm-stepper-wrap{padding:15px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}',
 		'#slcm-stepper-wrap::-webkit-scrollbar{display:none;}',
-		'.slcm-stepper{display:flex;align-items:flex-start;justify-content:space-between;min-width:max-content;padding:0 6px;gap:8px;}',
-		'.slcm-step{flex:1;display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
-			'min-width:104px;max-width:220px;transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
+		'.slcm-stepper{display:flex;align-items:flex-start;justify-content:flex-start;width:100%;min-width:max-content;' +
+			'padding:0 6px;gap:0;--slcm-conn-min:clamp(10px,1.5vw,28px);}',
+		'.slcm-step{flex:0 0 auto;display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
+			'min-width:104px;max-width:min(220px,26vw);transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
 			'border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
+		'.slcm-step-connector{flex:1 1 var(--slcm-conn-min);min-width:var(--slcm-conn-min);height:2px;background:#e5e7eb;' +
+			'align-self:center;border-radius:1px;pointer-events:none;}',
 		/* Completed step: green */
 		'.slcm-step.completed:not(.active){background:#ecfdf5;border-color:#bbf7d0;}',
 		'.slcm-step.completed .slcm-step-circle{border-color:#22c55e;background:#22c55e;color:#fff;}',
 		'.slcm-step.completed .slcm-step-label{color:#15803d;}',
 		'.slcm-step.completed:not(.active) .slcm-step-label{color:#166534;}',
-		'.slcm-step.completed:not(:last-child)::after{background:#86efac;}',
+		'.slcm-step.completed + .slcm-step-connector{background:#86efac;}',
 		/* Active step: blue */
 		'.slcm-step.active{background:#e0ecfa;border-color:#2471f3;}',
 		'.slcm-step.active .slcm-step-circle{border-color:#2471f3;background:#2471f3;color:#fff;' +
@@ -220,9 +223,6 @@ function _injectCSS() {
 			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
 		'.slcm-step-label{font-size:10px;font-weight:700;text-align:left;line-height:1.25;' +
 			'white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
-		/* Connector only between wizard pages (each .slcm-step = one page) — omit on last step */
-		'.slcm-step:not(:last-child)::after{content:"";position:absolute;top:50%;transform:translateY(-50%);left:calc(100% - 6px);width:20px;' +
-			'height:2px;background:#e5e7eb;z-index:1;}',
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
 		'.slcm-step.completed:hover .slcm-step-circle{border-color:#16a34a;}',
@@ -2948,6 +2948,9 @@ function _renderStepper(wf) {
 			_esc(lbl) +
 			'</div>' +
 			'</div>';
+		if (i < steps.length - 1) {
+			html += '<div class="slcm-step-connector" aria-hidden="true"></div>';
+		}
 	});
 	html += '</div></div>';
 
