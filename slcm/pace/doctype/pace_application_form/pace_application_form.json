@@ -1,0 +1,553 @@
+{
+ "actions": [],
+ "allow_guest_to_view": 1,
+ "allow_rename": 1,
+ "creation": "2026-04-01 11:56:14.108891",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_details_tab",
+  "upload_student_photo",
+  "basic_details_section",
+  "title",
+  "last_name",
+  "gender",
+  "category",
+  "column_break_qxps",
+  "first_name",
+  "date_of_birth",
+  "email_address",
+  "nationality",
+  "column_break_fymu",
+  "middle_name",
+  "mobile_number",
+  "applicant_name",
+  "programme",
+  "section_break_yizo",
+  "currently_employed",
+  "organization_name",
+  "differently_abled",
+  "column_break_jvca",
+  "designation",
+  "please_specify",
+  "how_did_you_hear_about_us",
+  "father_details_section",
+  "father_title",
+  "column_break_kxrk",
+  "father_name",
+  "mother_details_section",
+  "mother_title",
+  "column_break_jols",
+  "mother_name",
+  "passport_details_section",
+  "passport_number",
+  "column_break_xgyh",
+  "date_of_expiry",
+  "address_details_tab",
+  "correspondence_address_section",
+  "address_line_1",
+  "address_line_2",
+  "is_permanent_address_same",
+  "column_break_sghy",
+  "city",
+  "district",
+  "state",
+  "country",
+  "pincode",
+  "permanent_address_section",
+  "p_address_line_1",
+  "p_address_line_2",
+  "column_break_apio",
+  "p_city",
+  "p_district",
+  "p_state",
+  "p_country",
+  "p_pincode",
+  "education_details_tab",
+  "ug_details_section",
+  "institution_name",
+  "university",
+  "programme_studied",
+  "year_of_passing",
+  "column_break_yjhz",
+  "result_status",
+  "marking_scheme",
+  "obtained_percentage_cgpa",
+  "upload_documents_tab",
+  "upload_documents_section",
+  "student_signature",
+  "ug_degree_certificate",
+  "self_declaration",
+  "column_break_qsvv",
+  "passport_oci",
+  "govt_id",
+  "declaration_tab",
+  "i_agree",
+  "declaration_html",
+  "date",
+  "amended_from",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Applicant Details"
+  },
+  {
+   "fieldname": "basic_details_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Details"
+  },
+  {
+   "fieldname": "upload_student_photo",
+   "fieldtype": "Attach Image",
+   "label": "Upload Student Photo"
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Select",
+   "label": "Title",
+   "options": "Mr\nMiss\nMrs\nDr\nProf\nMs"
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "First Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "email_address",
+   "fieldtype": "Data",
+   "label": "Email Address",
+   "options": "Email"
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Phone",
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "Gender",
+   "options": "\nMale\nFemale\nOthers",
+   "placeholder": "Select"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "General"
+  },
+  {
+   "fieldname": "currently_employed",
+   "fieldtype": "Select",
+   "label": "Currently Employed",
+   "options": "\nYes\nNo",
+   "placeholder": "Select"
+  },
+  {
+   "depends_on": "eval:doc.currently_employed ==\"Yes\"",
+   "fieldname": "organization_name",
+   "fieldtype": "Data",
+   "label": "Organization Name",
+   "mandatory_depends_on": "eval:doc.currently_employed ==\"Yes\""
+  },
+  {
+   "depends_on": "eval:doc.currently_employed ==\"Yes\"",
+   "fieldname": "designation",
+   "fieldtype": "Data",
+   "label": "Designation",
+   "mandatory_depends_on": "eval:doc.currently_employed ==\"Yes\""
+  },
+  {
+   "fieldname": "differently_abled",
+   "fieldtype": "Select",
+   "label": "Differently-Abled"
+  },
+  {
+   "fieldname": "please_specify",
+   "fieldtype": "Data",
+   "label": "Please Specify (if Any)"
+  },
+  {
+   "fieldname": "how_did_you_hear_about_us",
+   "fieldtype": "Select",
+   "label": "How did you hear about us?"
+  },
+  {
+   "fieldname": "father_details_section",
+   "fieldtype": "Section Break",
+   "label": "Father's Details"
+  },
+  {
+   "fieldname": "father_title",
+   "fieldtype": "Data",
+   "label": "Father's Title"
+  },
+  {
+   "fieldname": "father_name",
+   "fieldtype": "Data",
+   "label": "Father's Name"
+  },
+  {
+   "fieldname": "mother_details_section",
+   "fieldtype": "Section Break",
+   "label": "Mother's Details"
+  },
+  {
+   "fieldname": "mother_title",
+   "fieldtype": "Data",
+   "label": "Mother's Title"
+  },
+  {
+   "fieldname": "mother_name",
+   "fieldtype": "Data",
+   "label": "Mother's Name"
+  },
+  {
+   "fieldname": "passport_details_section",
+   "fieldtype": "Section Break",
+   "label": "Passport Details"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "date_of_expiry",
+   "fieldtype": "Date",
+   "label": "Date of Expiry"
+  },
+  {
+   "fieldname": "address_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Address Details"
+  },
+  {
+   "fieldname": "correspondence_address_section",
+   "fieldtype": "Section Break",
+   "label": "Address for Correspondence"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Select",
+   "label": "State",
+   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal"
+  },
+  {
+   "fieldname": "district",
+   "fieldtype": "Data",
+   "label": "District"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "address_line_1",
+   "fieldtype": "Small Text",
+   "label": "Address Line 1"
+  },
+  {
+   "fieldname": "address_line_2",
+   "fieldtype": "Small Text",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Int",
+   "label": "Pincode",
+   "length": 6,
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_permanent_address_same",
+   "fieldtype": "Check",
+   "label": "Is Permanent Address the Same as Address for Correspondence?"
+  },
+  {
+   "fieldname": "permanent_address_section",
+   "fieldtype": "Section Break",
+   "label": "Permanent Address"
+  },
+  {
+   "fieldname": "p_country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "default": "Karnataka",
+   "fieldname": "p_state",
+   "fieldtype": "Select",
+   "label": "State",
+   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal",
+   "placeholder": "Select"
+  },
+  {
+   "fieldname": "p_district",
+   "fieldtype": "Data",
+   "label": "District"
+  },
+  {
+   "fieldname": "p_city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "p_address_line_1",
+   "fieldtype": "Small Text",
+   "label": "Address Line 1"
+  },
+  {
+   "fieldname": "p_address_line_2",
+   "fieldtype": "Small Text",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "p_pincode",
+   "fieldtype": "Int",
+   "label": "Pincode"
+  },
+  {
+   "fieldname": "education_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Education Details"
+  },
+  {
+   "fieldname": "ug_details_section",
+   "fieldtype": "Section Break",
+   "label": "UG Details"
+  },
+  {
+   "fieldname": "institution_name",
+   "fieldtype": "Data",
+   "label": "Institution Name"
+  },
+  {
+   "fieldname": "university",
+   "fieldtype": "Data",
+   "label": "University"
+  },
+  {
+   "fieldname": "programme_studied",
+   "fieldtype": "Data",
+   "label": "Programme Studied"
+  },
+  {
+   "fieldname": "year_of_passing",
+   "fieldtype": "Date",
+   "label": "Year of Passing"
+  },
+  {
+   "fieldname": "result_status",
+   "fieldtype": "Select",
+   "label": "Result Status",
+   "options": "DECLARED\nWaiting for result"
+  },
+  {
+   "fieldname": "marking_scheme",
+   "fieldtype": "Select",
+   "label": "Marking Scheme",
+   "options": "PERCENTAGE\nCGPA"
+  },
+  {
+   "fieldname": "obtained_percentage_cgpa",
+   "fieldtype": "Percent",
+   "label": "Obtained Percentage/CGPA"
+  },
+  {
+   "fieldname": "upload_documents_tab",
+   "fieldtype": "Tab Break",
+   "label": "Documents"
+  },
+  {
+   "fieldname": "upload_documents_section",
+   "fieldtype": "Section Break",
+   "label": "Upload Documents"
+  },
+  {
+   "fieldname": "declaration_tab",
+   "fieldtype": "Tab Break",
+   "label": "Declaration"
+  },
+  {
+   "default": "0",
+   "fieldname": "i_agree",
+   "fieldtype": "Check",
+   "label": "I AGREE"
+  },
+  {
+   "fieldname": "declaration_html",
+   "fieldtype": "HTML",
+   "label": "Declaration",
+   "options": "<p>I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.</p>"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PACE Application Form",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_qxps",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_fymu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_kxrk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_jols",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_xgyh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_sghy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_apio",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "PACE Programme"
+  },
+  {
+   "fieldname": "section_break_yizo",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_jvca",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_yjhz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "student_signature",
+   "fieldtype": "Attach Image",
+   "label": "Student Signature"
+  },
+  {
+   "fieldname": "ug_degree_certificate",
+   "fieldtype": "Attach",
+   "label": "UG Degree Certificate",
+   "options": "YES\nNO"
+  },
+  {
+   "fieldname": "self_declaration",
+   "fieldtype": "Attach",
+   "label": "Self-signed, Self-declaration Document",
+   "options": "YES\nNO"
+  },
+  {
+   "fieldname": "passport_oci",
+   "fieldtype": "Attach",
+   "label": "Passport / OCI card",
+   "options": "YES\nNO"
+  },
+  {
+   "fieldname": "govt_id",
+   "fieldtype": "Attach",
+   "label": "Govt. ID (Passport for Foreign Nationals)",
+   "options": "YES\nNO"
+  },
+  {
+   "fieldname": "column_break_qsvv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-01 12:54:55.550572",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Application Form",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
