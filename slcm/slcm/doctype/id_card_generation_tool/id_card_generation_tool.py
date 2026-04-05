@@ -331,40 +331,45 @@ class IDCardGenerationTool(Document):
 
 	@frappe.whitelist()
 	def get_preview_html(self, template_name, student):
-		if not template_name or not student:
-			return ""
+		return get_preview_html(template_name, student)
 
-		template = frappe.get_doc("ID Card Template", template_name)
-		student_doc = frappe.get_doc("Student Master", student)
 
-		# Create a dummy ID Card doc for context
-		id_card = frappe.new_doc("ID Card Generation")
-		id_card.student = student
+@frappe.whitelist()
+def get_preview_html(template_name, student):
+	if not template_name or not student:
+		return ""
 
-		# Create context (Flattened)
-		context = student_doc.as_dict()
-		context.update(template.as_dict())
-		context.update(
-			{
-				"doc": id_card,
-				"student": student_doc,
-				"template": template,
-				"college_name": template.institute_name,
-				"logo_url": template.institute_logo,
-				"qr_code_url": None,
-			}
-		)
+	template = frappe.get_doc("ID Card Template", template_name)
+	student_doc = frappe.get_doc("Student Master", student)
 
-		html = "<div class='row'>"
-		if template.front_html:
-			html += "<div class='col-md-6'><h5 class='text-muted'>Front View</h5>"
-			html += f"<div style='border: 1px solid #ddd; padding: 10px; background: white;'>{frappe.render_template(template.front_html, context)}</div>"
-			html += "</div>"
+	# Create a dummy ID Card doc for context
+	id_card = frappe.new_doc("ID Card Generation")
+	id_card.student = student
 
-		if template.back_html:
-			html += "<div class='col-md-6'><h5 class='text-muted'>Back View</h5>"
-			html += f"<div style='border: 1px solid #ddd; padding: 10px; background: white;'>{frappe.render_template(template.back_html, context)}</div>"
-			html += "</div>"
+	# Create context (Flattened)
+	context = student_doc.as_dict()
+	context.update(template.as_dict())
+	context.update(
+		{
+			"doc": id_card,
+			"student": student_doc,
+			"template": template,
+			"college_name": template.institute_name,
+			"logo_url": template.institute_logo,
+			"qr_code_url": None,
+		}
+	)
 
+	html = "<div class='row'>"
+	if template.front_html:
+		html += "<div class='col-md-6'><h5 class='text-muted'>Front View</h5>"
+		html += f"<div style='border: 1px solid #ddd; padding: 10px; background: white;'>{frappe.render_template(template.front_html, context)}</div>"
 		html += "</div>"
-		return html
+
+	if template.back_html:
+		html += "<div class='col-md-6'><h5 class='text-muted'>Back View</h5>"
+		html += f"<div style='border: 1px solid #ddd; padding: 10px; background: white;'>{frappe.render_template(template.back_html, context)}</div>"
+		html += "</div>"
+
+	html += "</div>"
+	return html
