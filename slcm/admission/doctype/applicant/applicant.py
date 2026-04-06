@@ -44,15 +44,12 @@ class Applicant(Document):
         )
 
     def _restrict_program_change_on_submitted_applicant(self):
-        """Programme has allow_on_submit so portal can save after doc is submitted (docstatus 1) while still Draft.
-        Block arbitrary programme changes from Desk once application_status is no longer Draft."""
-        if cint(self.docstatus) != 1 or self.is_new():
-            return
-        if not self.has_value_changed("program"):
+        """Block programme changes only when portal workflow has left Draft (e.g. Submitted), not when only docstatus is 1."""
+        if self.is_new() or not self.has_value_changed("program"):
             return
         if getattr(self.flags, "ignore_validate_update_after_submit", False):
             return
-        if frappe.flags.get("in_web_form") and (self.application_status or "").strip() == "Draft":
+        if not applicant_portal_application_locked((self.application_status or "").strip()):
             return
         frappe.throw(
             _("Changing programme is not allowed after this application has been submitted for review."),
@@ -209,6 +206,15 @@ class Applicant(Document):
             )
 
     def before_save(self):
+        """
+        Stale docstatus=1 on a portal-Draft application triggers Frappe's update-after-submit checks
+        (even when Applicant is not submittable — see patch normalize_applicant_docstatus_not_submittable).
+        """
+        if not self.is_new() and self.name and cint(self.docstatus) == 1:
+            st_db = (frappe.db.get_value(self.doctype, self.name, "application_status") or "").strip()
+            if st_db == "Draft" and (self.application_status or "").strip() == "Draft":
+                self.flags.ignore_validate_update_after_submit = True
+
         if not self.applicant_id:
             self.applicant_id = frappe.generate_hash(length=8).upper()
         doc_before = self.get_doc_before_save()

@@ -1113,6 +1113,7 @@
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
+ "is_submittable": 0,
  "links": [
   {
    "group": "Admission",

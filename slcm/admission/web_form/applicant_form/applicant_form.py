@@ -2,8 +2,9 @@ from html import unescape
 
 import frappe
 from frappe import _
-from frappe.utils import flt, strip_html
+from frappe.utils import cint, flt, strip_html
 
+from slcm.admission.doctype.applicant.applicant import APPLICATION_SUBMITTED_STATUSES
 from slcm.admission.utils.multiprogram_applicant import (
     build_multiprogram_profile_copy_payload,
     pop_multiprogram_profile_copy_from_cache,
@@ -277,6 +278,10 @@ def save_applicant_draft(data, ignore_mandatory=True):
     doc.flags.ignore_permissions = True
     doc.flags.ignore_validate   = ignore_mandatory   # run validators when enforcing mandatory
 
+    # Portal draft API: always bypass Frappe update-after-submit (stale docstatus=1 or programme change after switch).
+    if not doc.is_new():
+        doc.flags.ignore_validate_update_after_submit = True
+
     try:
         if doc.is_new():
             doc.insert()
@@ -346,11 +351,11 @@ def submit_applicant(applicant_name):
         return {"status": "error", "message": _("No permission to submit this application.")}
 
     current_status = (doc.application_status or "").strip()
-    if current_status == "Submitted":
+    if current_status in APPLICATION_SUBMITTED_STATUSES:
         return {
             "status": "success",
             "name": doc.name,
-            "application_status": "Submitted",
+            "application_status": doc.application_status,
             "application_fee_status": doc.application_fee_status or "",
             "message": _("Application is already submitted."),
         }
@@ -371,6 +376,7 @@ def submit_applicant(applicant_name):
     doc.flags.ignore_permissions = True
     doc.flags.ignore_mandatory   = False
     doc.flags.ignore_validate    = False
+    doc.flags.ignore_validate_update_after_submit = True
 
     try:
         doc.save()
@@ -534,6 +540,99 @@ def check_eligibility(applicant_name):
         return {"status": "Error", "message": _("An error occurred during eligibility check.")}
 
 
+def _portal_existing_applicant_same_program_cycle_campus(
+    *,
+    user: str,
+    email: str,
+    program: str,
+    admission_cycle: str,
+    campus: str | None,
+    exclude_name: str,
+):
+    """
+    Another Applicant for the same user (owner or email), same programme, cycle, and campus.
+    Used to block eligibility-modal programme switch when a separate application already exists.
+    """
+    program = (program or "").strip()
+    admission_cycle = (admission_cycle or "").strip()
+    exclude_name = (exclude_name or "").strip()
+    if not program or not admission_cycle or not exclude_name:
+        return None
+    email_norm = (email or "").strip().lower()
+    campus_key = (campus or "").strip()
+    rows = frappe.db.sql(
+        """
+        SELECT name, applicant_id FROM `tabApplicant`
+        WHERE name != %(exclude)s
+          AND program = %(program)s
+          AND admission_cycle = %(cycle)s
+          AND IFNULL(campus, '') = %(campus)s
+          AND docstatus < 2
+          AND (
+                owner = %(user)s
+             OR LOWER(IFNULL(email, '')) = %(email_norm)s
+          )
+        LIMIT 1
+        """,
+        {
+            "exclude": exclude_name,
+            "program": program,
+            "cycle": admission_cycle,
+            "campus": campus_key,
+            "user": user,
+            "email_norm": email_norm,
+        },
+    )
+    return rows[0] if rows else None
+
+
+@frappe.whitelist(allow_guest=False)
+def get_applicant_programs_already_applied(applicant_name):
+    """
+    For the logged-in applicant owner: programme IDs (Program.name) that already have
+    another Applicant in the same admission cycle + campus (used to disable switch UI).
+    """
+    applicant_name = (applicant_name or "").strip()
+    if not applicant_name or not frappe.db.exists("Applicant", applicant_name):
+        return {"already_applied": {}}
+
+    user = frappe.session.user
+    if user == "Guest":
+        return {"already_applied": {}}
+
+    email = frappe.db.get_value("User", user, "email") or user
+    doc = frappe.get_doc("Applicant", applicant_name)
+    if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
+        return {"already_applied": {}}
+
+    cycle = (doc.admission_cycle or "").strip()
+    if not cycle:
+        return {"already_applied": {}}
+
+    acp_rows = frappe.get_all(
+        "Admission Cycle Program",
+        filters={"parent": cycle, "is_active": 1},
+        fields=["program", "campus"],
+    )
+    out = {}
+    for acp in acp_rows:
+        prog = (acp.get("program") or "").strip()
+        if not prog:
+            continue
+        campus = (acp.get("campus") or "").strip() or None
+        dup = _portal_existing_applicant_same_program_cycle_campus(
+            user=user,
+            email=email,
+            program=prog,
+            admission_cycle=cycle,
+            campus=campus,
+            exclude_name=applicant_name,
+        )
+        if dup:
+            out[prog] = ((dup[1] or "").strip() or dup[0])
+    return {"already_applied": out}
+
+
 def _portal_program_row(program, admission_cycle):
     """
     Admission Cycle Program row fields for portal; program_level falls back to
@@ -593,8 +692,8 @@ def switch_applicant_program(applicant_name, program):
 
     payload = doc.get_eligibility_suggestion_payload()
     allowed = False
-    for row in payload.get("programs") or []:
-        if row.get("program") == program and not row.get("selected"):
+    for entry in payload.get("programs") or []:
+        if entry.get("program") == program and not entry.get("selected"):
             allowed = True
             break
     if not allowed:
@@ -606,15 +705,34 @@ def switch_applicant_program(applicant_name, program):
     ):
         return {"status": "error", "message": _("This programme is not open for the current admission cycle.")}
 
-    doc.program = program
+    deriv = _portal_program_row(program, doc.admission_cycle or "")
+    target_campus = (deriv.get("campus") or "").strip() or None
 
-    row = _portal_program_row(program, doc.admission_cycle or "")
-    if row.get("program_level"):
-        doc.program_level = row["program_level"]
-    if row.get("intake_type"):
-        doc.intake_type = row["intake_type"]
-    if row.get("campus"):
-        doc.campus = row["campus"]
+    dup = _portal_existing_applicant_same_program_cycle_campus(
+        user=user,
+        email=email,
+        program=program,
+        admission_cycle=doc.admission_cycle or "",
+        campus=target_campus,
+        exclude_name=doc.name,
+    )
+    if dup:
+        aid = (dup[1] or "").strip() or dup[0]
+        return {
+            "status": "error",
+            "message": _(
+                "You already have an application for this programme in the same admission cycle and campus "
+                "(Application ID: {0}). Switching is not allowed."
+            ).format(aid),
+        }
+
+    doc.program = program
+    if deriv.get("program_level"):
+        doc.program_level = deriv["program_level"]
+    if deriv.get("intake_type"):
+        doc.intake_type = deriv["intake_type"]
+    if deriv.get("campus"):
+        doc.campus = deriv["campus"]
 
     doc.evaluation_status = ""
     doc.rejected_reason = ""
