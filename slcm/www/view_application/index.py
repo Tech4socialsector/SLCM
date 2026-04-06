@@ -4,6 +4,8 @@
 import frappe
 from frappe.utils import formatdate, getdate
 
+from slcm.admission.utils.portal import build_existing_applicant_portal_url, is_application_editable
+
 
 def get_context(context):
     """Build context for the read-only View Application page. Renders applicant data from DB."""
@@ -44,6 +46,13 @@ def get_context(context):
             context.application_fee = get_application_fee_details(doc.name)
         except Exception:
             pass
+
+    _editable = is_application_editable(doc)
+    context.applicant_portal_open_url = build_existing_applicant_portal_url(
+        doc.name,
+        doc.admission_cycle,
+        edit=_editable,
+    )
 
     return context
 

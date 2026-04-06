@@ -33,4 +33,13 @@ frappe.ui.form.on("Merit Generation", {
             },);
         }
     },
+    onload: function(frm) {
+        frm.set_query("admission_cycle", function() {
+            return {
+                filters: {
+                    status: "Active"
+                }
+            };
+        });
+    },
 });

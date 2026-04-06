@@ -22,6 +22,15 @@ frappe.ui.form.on("Merit Rule", {
             frm.set_value("effective_from", "");
         }
     },
+    onload:function(frm){
+        frm.set_query("admission_cycle", function() {
+            return {
+                filters: {
+                    status: "Active"
+                }
+            };
+        });
+    },
     effective_to(frm) {
         if (frm.doc.effective_from && frm.doc.effective_to && frm.doc.effective_to <= frm.doc.effective_from) {
             frappe.msgprint(__("Effective To date must be after Effective From date"));

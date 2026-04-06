@@ -528,6 +528,14 @@ def get_context(context):
         context.submission_date = frappe.utils.format_date(applicant.creation, "MMMM d, yyyy")
         context.app_name_param = _app_name
 
+        from slcm.admission.utils.portal import build_existing_applicant_portal_url
+
+        context.applicant_portal_open_url = build_existing_applicant_portal_url(
+            _app_name,
+            applicant.admission_cycle,
+            edit=context.is_editable,
+        )
+
         # --- Fetch Offer Letter for this applicant ---
         offer_letter = frappe.get_all("Offer Letter", 
             filters={"applicant": applicant.name},

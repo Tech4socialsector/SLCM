@@ -209,6 +209,26 @@ def get_context(context):
     context.allow_multiple_applications = bool(
         int(getattr(context.active_cycle, "allow_multiple_applications", 0) or 0)
     ) if context.active_cycle else False
+    context.today = frappe.utils.getdate(frappe.utils.today())
+    _app_start = (
+        getattr(context.active_cycle, "application_start_date", None)
+        if context.active_cycle else None
+    ) or (
+        getattr(context.active_cycle, "cycle_start_date", None)
+        if context.active_cycle else None
+    )
+    _app_end = (
+        getattr(context.active_cycle, "application_end_date", None)
+        if context.active_cycle else None
+    ) or (
+        getattr(context.active_cycle, "cycle_end_date", None)
+        if context.active_cycle else None
+    )
+    context.app_open = bool(
+        context.active_cycle and
+        (not _app_start or context.today >= frappe.utils.getdate(_app_start)) and
+        (not _app_end or context.today <= frappe.utils.getdate(_app_end))
+    )
 
     ac_campus = ""
     ac_intake = ""

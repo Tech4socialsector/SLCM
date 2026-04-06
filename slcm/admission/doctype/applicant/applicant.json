@@ -178,6 +178,7 @@
    "label": "Application type"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "program",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -185,6 +186,7 @@
    "options": "Program"
   },
   {
+   "allow_on_submit": 1,
    "description": "Auto-set from Program on save",
    "fieldname": "intake_type",
    "fieldtype": "Select",
@@ -931,7 +933,9 @@
    "fieldname": "percentage",
    "fieldtype": "Percent",
    "label": "Score or percentage",
-   "mandatory_depends_on": "eval:doc.national_test_name"
+   "mandatory_depends_on": "eval:doc.national_test_name",
+   "non_negative": 1,
+   "precision": "2"
   },
   {
    "description": "Max 5 MB \u2014 supported formats: png, jpeg, jpg, pdf",
@@ -941,12 +945,14 @@
    "mandatory_depends_on": "eval:doc.national_test_name"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
    "options": "Campus"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -980,6 +986,7 @@
    "options": "Pending\nRequested\nPaid\nWaived"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "application_fee_amount",
    "fieldtype": "Currency",
    "label": "Application fee amount",
@@ -1106,6 +1113,7 @@
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
+ "is_submittable": 0,
  "links": [
   {
    "group": "Admission",
@@ -1123,7 +1131,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-03-31 10:20:01.539387",
+ "modified": "2026-04-06 11:08:43.433335",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -1201,6 +1209,18 @@
    "read": 1,
    "report": 1,
    "role": "Interview Staff Member",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
    "share": 1,
    "write": 1
   }

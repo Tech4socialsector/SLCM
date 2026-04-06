@@ -12,11 +12,14 @@
   "academic_year",
   "approval_reference",
   "allow_multiple_applications",
+  "application_form_type",
   "col_break_basic",
   "status",
   "max_schemes_per_applicant",
   "cycle_start_date",
   "cycle_end_date",
+  "application_start_date",
+  "application_end_date",
   "section_break_ligo",
   "submitted",
   "after_submitted",
@@ -93,7 +96,6 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nActive\nClosed",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -117,6 +119,7 @@
    "label": "Programmes Offered in this Cycle"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "programs",
    "fieldtype": "Table",
    "label": "Programmes",
@@ -353,11 +356,31 @@
    "fieldname": "allow_multiple_applications",
    "fieldtype": "Check",
    "label": "Allow Multiple Applications"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "application_start_date",
+   "fieldtype": "Date",
+   "label": "Application Start Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "application_end_date",
+   "fieldtype": "Date",
+   "label": "Application End Date"
+  },
+  {
+   "default": "Web From",
+   "description": "If web from we can able to customise the fields dynamically",
+   "fieldname": "application_form_type",
+   "fieldtype": "Select",
+   "label": "Application Form Type",
+   "options": "Web From\nCustom From"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-30 12:26:22.409055",
+ "modified": "2026-04-06 15:59:03.361583",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
