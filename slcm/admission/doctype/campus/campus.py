@@ -4,7 +4,16 @@ from frappe.model.document import Document
 
 
 class Campus(Document):
-    pass
+	def validate(self):
+		self.validate_multi_campus()
+
+	def validate_multi_campus(self):
+		if self.is_new():
+			enable_multi_campus = frappe.db.get_single_value("Institution Settings", "enable_multi_campus")
+			if not enable_multi_campus:
+				if frappe.db.count("Campus") > 0:
+					frappe.throw(_("Please first enable the 'Enable Multi Campus' in Institution Settings to create multiple campus records."))
+
 
 	# def validate(self):
 	# 	self.validate_intake_capacity()

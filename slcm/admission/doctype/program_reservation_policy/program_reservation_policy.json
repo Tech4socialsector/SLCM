@@ -10,7 +10,6 @@
   "admission_cycle",
   "program",
   "payment_gateway",
-  "campus",
   "col_break_basic",
   "payment_receipt_template",
   "total_seats",
@@ -44,7 +43,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Admission Cycle",
-   "options": "Admission Cycle"
+   "options": "Admission Cycle",
+   "reqd": 1
   },
   {
    "allow_in_quick_entry": 1,
@@ -55,12 +55,6 @@
    "label": "Programme",
    "options": "Program",
    "reqd": 1
-  },
-  {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "label": "Campus",
-   "options": "Campus"
   },
   {
    "fieldname": "col_break_basic",
@@ -148,7 +142,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-06 14:35:06.229839",
+ "modified": "2026-04-06 17:31:21.518805",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",

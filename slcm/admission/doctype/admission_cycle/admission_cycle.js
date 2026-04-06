@@ -69,8 +69,8 @@ let slcm_multi_campus_enabled = false;
 function slcm_apply_program_campus_field_rules(frm) {
     const grid = frm.fields_dict.programs && frm.fields_dict.programs.grid;
     if (!grid) return;
-    grid.update_docfield_property("campus", "hidden", slcm_multi_campus_enabled ? 0 : 1);
-    grid.update_docfield_property("campus", "reqd", slcm_multi_campus_enabled ? 1 : 0);
+    grid.update_docfield_property("campus", "hidden", 0);
+    grid.update_docfield_property("campus", "reqd", 1);
     frm.refresh_field("programs");
 }
 
@@ -399,7 +399,7 @@ frappe.ui.form.on("Admission Cycle Program", {
 
     add_reservation_policy: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
-        if (slcm_multi_campus_enabled && !row.campus) {
+        if (!row.campus) {
             frappe.msgprint(__("Please select Campus before adding Reservation Policy."));
             return;
         }
@@ -598,11 +598,8 @@ function open_reservation_policy(frm, row) {
 
         // If existing record found, confirm update before saving
         if (existing_policy_name) {
-            const campusLabel = dialog.get_value("campus");
             frappe.confirm(
-                __(campusLabel
-                    ? `A Reservation Policy (<strong>${existing_policy_name}</strong>) already exists for this program and campus <strong>${frappe.utils.escape_html(campusLabel)}</strong>. Do you want to update it?`
-                    : `A Reservation Policy (<strong>${existing_policy_name}</strong>) already exists for this program. Do you want to update it?`),
+                __(`A Reservation Policy (<strong>${existing_policy_name}</strong>) already exists for this program. Do you want to update it?`),
                 () => do_save(),
                 () => { /* user cancelled — do nothing */ }
             );
@@ -617,7 +614,6 @@ function open_reservation_policy(frm, row) {
             args: {
                 admission_cycle: dialog.get_value("admission_cycle"),
                 program: dialog.get_value("program"),
-                campus: dialog.get_value("campus"),
                 total_seats: dialog.get_value("total_seats"),
                 status: dialog.get_value("status"),
                 policy_document: dialog.get_value("policy_document"),
@@ -715,13 +711,11 @@ function open_reservation_policy(frm, row) {
             },
             { fieldtype: "Column Break" },
             {
-                fieldtype: "Link",
-                fieldname: "campus",
-                label: __("Campus"),
-                options: "Campus",
+                fieldtype: "Int",
+                fieldname: "total_seats",
+                label: __("Total Seats"),
                 read_only: 1,
-                hidden: slcm_multi_campus_enabled ? 0 : 1,
-                default: row.campus || ""
+                default: row.seats
             },
             { fieldtype: "Column Break" },
             {
@@ -731,12 +725,6 @@ function open_reservation_policy(frm, row) {
                 options: "Active\nClosed",
                 default: "Active",
                 read_only: 1
-            },
-            { fieldtype: "Column Break" },
-            {
-                fieldtype: "Attach",
-                fieldname: "policy_document",
-                label: __("Policy Document"),
             },
             { fieldtype: "Section Break" },
             {
@@ -756,11 +744,9 @@ function open_reservation_policy(frm, row) {
             },
             { fieldtype: "Column Break" },
             {
-                fieldtype: "Int",
-                fieldname: "total_seats",
-                label: __("Total Seats"),
-                read_only: 1,
-                default: row.seats
+                fieldtype: "Attach",
+                fieldname: "policy_document",
+                label: __("Policy Document"),
             },
             { fieldtype: "Section Break" },
             {
@@ -783,10 +769,9 @@ function open_reservation_policy(frm, row) {
             doctype: "Program Reservation Policy",
             filters: {
                 admission_cycle: frm.doc.name,
-                program: row.program,
-                ...(slcm_multi_campus_enabled ? { campus: row.campus } : {})
+                program: row.program
             },
-            fieldname: ["name", "admission_cycle", "program", "campus", "status", "total_seats", "policy_document", "payment_gateway", "payment_receipt_template"]
+            fieldname: ["name", "admission_cycle", "program", "status", "total_seats", "policy_document", "payment_gateway", "payment_receipt_template"]
         },
         callback(res) {
             if (res.message && res.message.name) {
@@ -813,7 +798,6 @@ function open_reservation_policy(frm, row) {
 
                             dialog.set_value("admission_cycle", doc.admission_cycle);
                             dialog.set_value("program", doc.program);
-                            dialog.set_value("campus", doc.campus || row.campus || "");
                             dialog.set_value("total_seats", doc.total_seats);
                             dialog.set_value("status", doc.status);
                             dialog.set_value("policy_document", doc.policy_document);

@@ -1,20 +1,8 @@
 frappe.ui.form.on("Program Reservation Policy", {
-    refresh(frm) {
-        frappe.db.get_single_value("Institution Settings", "enable_multi_campus")
-            .then((val) => {
-                const enabled = parseInt(val || 0, 10) === 1;
-                frm.set_df_property("campus", "hidden", enabled ? 0 : 1);
-                frm.set_df_property("campus", "reqd", enabled ? 1 : 0);
-                if (!enabled && frm.doc.campus) {
-                    frm.set_value("campus", "");
-                }
-            });
-    },
-});
-
-frappe.ui.form.on("Program Reservation Policy", {
-
     refresh: function (frm) {
+        frm.set_df_property("campus", "hidden", 1);
+        frm.set_df_property("campus", "reqd", 0);
+
         const status_colors = {
             "Draft": "gray", "Active": "green", "Locked": "red"
         };

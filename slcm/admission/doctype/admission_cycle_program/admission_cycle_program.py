@@ -13,10 +13,9 @@ def save_categories(admission_cycle, program, total_seats, status, policy_docume
     if isinstance(reservation_rows, str):
         reservation_rows = json.loads(reservation_rows)
 
-    multi_campus = is_multi_campus_enabled()
-    campus = (campus or "").strip()
-    if multi_campus and not campus:
-        frappe.throw(_("Campus is mandatory when Multi Campus is enabled."))
+    # campus = (campus or "").strip()
+    # if not campus:
+    #     frappe.throw(_("Campus is mandatory."))
 
     # If existing_policy is provided, this is an UPDATE — skip duplicate check
     if existing_policy:
@@ -25,29 +24,24 @@ def save_categories(admission_cycle, program, total_seats, status, policy_docume
         doc = frappe.get_doc("Program Reservation Policy", existing_policy)
     else:
         # NEW record — check for duplicates
-        filters = {"admission_cycle": admission_cycle, "program": program}
-        if multi_campus:
-            filters["campus"] = campus
+        filters = {
+            "admission_cycle": admission_cycle,
+            "program": program
+        }
         existing = frappe.db.get_value(
             "Program Reservation Policy",
             filters,
             "name"
         )
         if existing:
-            if multi_campus:
-                frappe.throw(
-                    _("A reservation policy already exists for {0} in Cycle {1} and Campus {2}.").format(
-                        program, admission_cycle, campus
-                    )
-                )
             frappe.throw(
                 _("A reservation policy already exists for {0} in Cycle {1}. Only one policy per program per cycle is allowed.").format(program, admission_cycle)
             )
         doc = frappe.new_doc("Program Reservation Policy")
         doc.admission_cycle = admission_cycle
         doc.program = program
-    if multi_campus:
-        doc.campus = campus
+
+    # doc.campus = campus
 
     doc.total_seats = total_seats
     doc.status = status

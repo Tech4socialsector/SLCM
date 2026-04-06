@@ -58,13 +58,14 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Leave blank for single-campus institutions",
+   "description": "Select the campus for this program entry",
    "fieldname": "campus",
    "fieldtype": "Link",
-   "hidden": 1,
+   "hidden": 0,
    "in_list_view": 1,
    "label": "Campus",
-   "options": "Campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "fieldname": "seats",
