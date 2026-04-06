@@ -3,6 +3,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import escape_html, getdate
 from frappe.utils.data import format_date, get_link_to_form
+from slcm.admission.utils.institution import is_multi_campus_enabled
 
 
 def _overlap_rows_with_labels(overlaps):
@@ -122,14 +123,30 @@ class AdmissionCycle(Document):
                 )
 
     def _validate_programs(self):
-        """No duplicate program+campus combination in the same cycle."""
+        """Validate duplicate program rows with optional campus constraints."""
+        multi_campus = is_multi_campus_enabled()
         seen = set()
         for row in (self.programs or []):
-            key = (row.program, row.campus or "")
-            if key in seen:
+            campus = (row.campus or "").strip()
+            if multi_campus and not campus:
                 frappe.throw(
-                    f"Program <b>{row.program_name or row.program}</b> "
-                    f"is added more than once in this cycle."
+                    _("Campus is mandatory for Program <b>{0}</b> when Multi Campus is enabled.").format(
+                        row.program_name or row.program or _("Unknown")
+                    )
+                )
+
+            key = (row.program, campus) if multi_campus else (row.program,)
+            if key in seen:
+                if multi_campus:
+                    frappe.throw(
+                        _(
+                            "Duplicate entry: Program <b>{0}</b> with Campus <b>{1}</b> is already added in this cycle."
+                        ).format(row.program_name or row.program, campus)
+                    )
+                frappe.throw(
+                    _("Duplicate entry: Program <b>{0}</b> is already added in this cycle.").format(
+                        row.program_name or row.program
+                    )
                 )
             seen.add(key)
 

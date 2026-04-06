@@ -1377,6 +1377,8 @@
 
     {% set _seats = (p.get('seats') or p.get('total_seats') or 0) if p.get else (p.seats or p.total_seats or 0) %}
     {% set _dur = p.get('duration') or '' if p.get else (p.duration or '') %}
+    {% set _campus_label = p.get('campus_label') or p.get('campus') if p.get else (p.campus_label or p.campus or '') %}
+    {% set _show_campus = (p.get('multi_campus_enabled') and _campus_label) if p.get else (p.multi_campus_enabled and _campus_label) %}
     {% set _level = p.get('program_level') or '' if p.get else (p.program_level or '') %}
     {% set _can = p.get('can_apply') if p.get else p.can_apply %}
     {% set _cur = p.get('current_stage_name') or '' if p.get else (p.current_stage_name or '') %}
@@ -1431,6 +1433,7 @@
         <div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
           <!-- {% if _seats %}<span>👥 {{ _seats }} seats</span>{% endif %} -->
           {% if _dur %}<span>🕐 {{ _dur }}</span>{% endif %}
+          {% if _show_campus %}<span>🏫 {{ _campus_label }}</span>{% endif %}
         </div>
 
         <!-- Buttons -->

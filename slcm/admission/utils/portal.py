@@ -1,6 +1,7 @@
 import frappe
 import json
 from frappe.utils import now, add_days, getdate, today, get_datetime
+from slcm.admission.utils.institution import is_multi_campus_enabled
 
 
 def build_applicant_form_new_url(
@@ -296,6 +297,8 @@ def get_active_programs():
         if not active_cycle:
             return []
 
+        multi_campus = is_multi_campus_enabled()
+
         programs = frappe.get_all(
             "Admission Cycle Program",
             filters={"parent": active_cycle, "is_active": 1},
@@ -343,6 +346,17 @@ def get_active_programs():
         import re as _re
         for p in programs:
             p["admission_cycle"] = active_cycle
+            p["multi_campus_enabled"] = 1 if multi_campus else 0
+            p["campus_label"] = (p.get("campus") or "").strip()
+            if multi_campus and p.get("campus"):
+                try:
+                    campus_title = (
+                        frappe.db.get_value("Campus", p.get("campus"), "campus_name")
+                        or p.get("campus")
+                    )
+                    p["campus_label"] = campus_title
+                except Exception:
+                    p["campus_label"] = p.get("campus")
             # Fetch slug, abbreviation, and other details from Program
             prog_info = frappe.db.get_value("Program", p.program, 
                 ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file"], 

@@ -1,15 +1,21 @@
 import frappe
 from frappe.model.document import Document
+from slcm.admission.utils.institution import is_multi_campus_enabled
 
 
 class ProgramReservationPolicy(Document):
 
     def validate(self):
+        self._validate_campus_requirement()
         self._validate_unique_per_cycle_program()
         self._validate_unique_priorities()
         self._validate_seat_sum()
         self._recalculate_summary()
         self._update_row_available_seats()
+
+    def _validate_campus_requirement(self):
+        if is_multi_campus_enabled() and not (self.campus or "").strip():
+            frappe.throw("Campus is mandatory when Multi Campus is enabled.")
 
     def _validate_unique_priorities(self):
         priorities = []
@@ -23,16 +29,26 @@ class ProgramReservationPolicy(Document):
             priorities.append(row.priority)
 
     def _validate_unique_per_cycle_program(self):
+        multi_campus = is_multi_campus_enabled()
+        filters = {
+            "admission_cycle": self.admission_cycle,
+            "program": self.program,
+            "name": ("!=", self.name or "")
+        }
+        if multi_campus:
+            filters["campus"] = (self.campus or "").strip()
+
         existing = frappe.db.get_value(
             "Program Reservation Policy",
-            {
-                "admission_cycle": self.admission_cycle,
-                "program": self.program,
-                "name": ("!=", self.name or "")
-            },
+            filters,
             "name"
         )
         if existing:
+            if multi_campus:
+                frappe.throw(
+                    f"A reservation policy already exists for "
+                    f"<b>{self.program}</b> in <b>{self.admission_cycle}</b> for campus <b>{self.campus}</b>."
+                )
             frappe.throw(
                 f"A reservation policy already exists for "
                 f"<b>{self.program}</b> in <b>{self.admission_cycle}</b>. "
@@ -77,8 +93,13 @@ class ProgramReservationPolicy(Document):
         try:
             cycle_doc = frappe.get_doc("Admission Cycle", self.admission_cycle)
             changed = False
+            multi_campus = is_multi_campus_enabled()
             for row in (cycle_doc.programs or []):
-                if row.program == self.program:
+                row_campus = (row.campus or "").strip()
+                doc_campus = (self.campus or "").strip()
+                same_program = row.program == self.program
+                same_campus = (row_campus == doc_campus) if multi_campus else True
+                if same_program and same_campus:
                     if row.get("reservation_policy") != self.name:
                         row.reservation_policy = self.name
                         changed = True

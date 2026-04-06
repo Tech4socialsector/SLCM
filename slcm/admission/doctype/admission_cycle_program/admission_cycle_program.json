@@ -61,6 +61,7 @@
    "description": "Leave blank for single-campus institutions",
    "fieldname": "campus",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Campus",
    "options": "Campus"

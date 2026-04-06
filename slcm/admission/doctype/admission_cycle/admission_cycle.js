@@ -64,9 +64,24 @@ function slcm_check_admission_cycle_date_overlap(frm) {
 
 const slcm_debounced_cycle_overlap = frappe.utils.debounce(slcm_check_admission_cycle_date_overlap, 350);
 
+let slcm_multi_campus_enabled = false;
+
+function slcm_apply_program_campus_field_rules(frm) {
+    const grid = frm.fields_dict.programs && frm.fields_dict.programs.grid;
+    if (!grid) return;
+    grid.update_docfield_property("campus", "hidden", slcm_multi_campus_enabled ? 0 : 1);
+    grid.update_docfield_property("campus", "reqd", slcm_multi_campus_enabled ? 1 : 0);
+    frm.refresh_field("programs");
+}
+
 frappe.ui.form.on("Admission Cycle", {
 
     refresh: function (frm) {
+        frappe.db.get_single_value("Institution Settings", "enable_multi_campus")
+            .then((val) => {
+                slcm_multi_campus_enabled = parseInt(val || 0, 10) === 1;
+                slcm_apply_program_campus_field_rules(frm);
+            });
 
         frm.set_query("academic_year", function () {
             return {
@@ -298,8 +313,32 @@ frappe.ui.form.on("Admission Cycle", {
 });
 
 frappe.ui.form.on("Admission Cycle Program", {
+    campus: function (frm, cdt, cdn) {
+        if (!slcm_multi_campus_enabled) return;
+        const row = locals[cdt][cdn];
+        const program = row.program;
+        const campus = row.campus;
+        if (!program || !campus) return;
+
+        const duplicate = (frm.doc.programs || []).find(
+            d => d.name !== row.name && d.program === program && d.campus === campus
+        );
+        if (duplicate) {
+            frappe.msgprint({
+                title: __("Duplicate Entry"),
+                indicator: "red",
+                message: __("Program <b>{0}</b> with campus <b>{1}</b> already exists at row {2}.", [row.program_name || row.program, campus, duplicate.idx])
+            });
+            frappe.model.set_value(cdt, cdn, "campus", "");
+        }
+    },
+
     add_reservation_policy: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
+        if (slcm_multi_campus_enabled && !row.campus) {
+            frappe.msgprint(__("Please select Campus before adding Reservation Policy."));
+            return;
+        }
 
         if (frm.is_new() || frm.is_dirty()) {
             frm.save().then(() => {
@@ -511,6 +550,7 @@ function open_reservation_policy(frm, row) {
             args: {
                 admission_cycle: dialog.get_value("admission_cycle"),
                 program: dialog.get_value("program"),
+                campus: dialog.get_value("campus"),
                 total_seats: dialog.get_value("total_seats"),
                 status: dialog.get_value("status"),
                 policy_document: dialog.get_value("policy_document"),
@@ -608,6 +648,16 @@ function open_reservation_policy(frm, row) {
             },
             { fieldtype: "Column Break" },
             {
+                fieldtype: "Link",
+                fieldname: "campus",
+                label: __("Campus"),
+                options: "Campus",
+                read_only: 1,
+                hidden: slcm_multi_campus_enabled ? 0 : 1,
+                default: row.campus || ""
+            },
+            { fieldtype: "Column Break" },
+            {
                 fieldtype: "Select",
                 fieldname: "status",
                 label: __("Status"),
@@ -664,8 +714,12 @@ function open_reservation_policy(frm, row) {
         method: "frappe.client.get_value",
         args: {
             doctype: "Program Reservation Policy",
-            filters: { admission_cycle: frm.doc.name, program: row.program },
-            fieldname: ["name", "admission_cycle", "status", "total_seats", "policy_document", "payment_gateway", "payment_receipt_template"]
+            filters: {
+                admission_cycle: frm.doc.name,
+                program: row.program,
+                ...(slcm_multi_campus_enabled ? { campus: row.campus } : {})
+            },
+            fieldname: ["name", "admission_cycle", "program", "campus", "status", "total_seats", "policy_document", "payment_gateway", "payment_receipt_template"]
         },
         callback(res) {
             if (res.message && res.message.name) {
@@ -692,6 +746,7 @@ function open_reservation_policy(frm, row) {
 
                             dialog.set_value("admission_cycle", doc.admission_cycle);
                             dialog.set_value("program", doc.program);
+                            dialog.set_value("campus", doc.campus || row.campus || "");
                             dialog.set_value("total_seats", doc.total_seats);
                             dialog.set_value("status", doc.status);
                             dialog.set_value("policy_document", doc.policy_document);
