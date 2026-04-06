@@ -75,16 +75,45 @@ def auto_update_cycle_status():
         fields=["name", "cycle_start_date", "cycle_end_date", "status"]
     )
     today_date = getdate(today())
+    status_updates = []
+    active_candidates = []
+
+    # First pass: compute date-based target status.
     for cycle in cycles:
+        start_date = getdate(cycle.cycle_start_date) if cycle.cycle_start_date else None
+        end_date = getdate(cycle.cycle_end_date) if cycle.cycle_end_date else None
+
         new_status = "Draft"
-        if getdate(cycle.cycle_start_date) <= today_date <= getdate(cycle.cycle_end_date):
+        if start_date and end_date and start_date <= today_date <= end_date:
             new_status = "Active"
-        elif today_date > getdate(cycle.cycle_end_date):
+            active_candidates.append(cycle)
+        elif end_date and today_date > end_date:
             new_status = "Closed"
+
+        status_updates.append((cycle, new_status))
+
+    # Enforce exactly one active cycle at most.
+    # If multiple cycles qualify as Active, keep only one and downgrade others to Draft.
+    if len(active_candidates) > 1:
+        active_candidates_sorted = sorted(
+            active_candidates,
+            key=lambda c: (
+                getdate(c.cycle_start_date) if c.cycle_start_date else getdate("1900-01-01"),
+                getdate(c.cycle_end_date) if c.cycle_end_date else getdate("1900-01-01"),
+                c.name or ""
+            ),
+            reverse=True,
+        )
+        keep_active_name = active_candidates_sorted[0].name
+        status_updates = [
+            (cycle, "Draft" if (new_status == "Active" and cycle.name != keep_active_name) else new_status)
+            for cycle, new_status in status_updates
+        ]
+
+    # Second pass: apply status changes.
+    for cycle, new_status in status_updates:
         if new_status != cycle.status:
-            frappe.db.set_value(
-                "Admission Cycle", cycle.name, "status", new_status
-            )
+            frappe.db.set_value("Admission Cycle", cycle.name, "status", new_status)
             log_audit_trail(
                 "Admission Cycle", cycle.name,
                 "Modified", "status",

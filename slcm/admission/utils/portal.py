@@ -308,6 +308,38 @@ def get_active_programs():
             order_by="program_name asc"
         )
 
+        # Live "application_count" should increase based on Applicants submitted
+        # in the active cycle for each program.
+        # We count Applicant records whose linked Applicant Status is NOT "Closed".
+        received_map = {}
+        try:
+            program_keys = [p.get("program") for p in programs if p.get("program")]
+            program_keys = [pk for pk in program_keys if pk]
+            if program_keys:
+                placeholders = ", ".join(["%s"] * len(program_keys))
+                received_rows = frappe.db.sql(
+                    f"""
+                    SELECT a.program, COUNT(*) AS received
+                    FROM `tabApplicant` a
+                    LEFT JOIN `tabApplicant Status` s
+                        ON s.name = a.application_status
+                    WHERE a.admission_cycle = %s
+                      AND a.program IN ({placeholders})
+                      AND COALESCE(s.status_type, '') != 'Closed'
+                    GROUP BY a.program
+                    """,
+                    [active_cycle] + program_keys,
+                    as_dict=True,
+                ) or []
+                received_map = {
+                    r.get("program"): int(r.get("received") or 0)
+                    for r in received_rows
+                    if r.get("program")
+                }
+        except Exception:
+            # Never break portal rendering due to seat-count issues.
+            received_map = {}
+
         import re as _re
         for p in programs:
             p["admission_cycle"] = active_cycle
@@ -347,14 +379,27 @@ def get_active_programs():
                 p["desc_has_more"] = False
 
             # Fill badge
-            total   = int(p.get("max_applications") or p.get("seats") or 0)
-            received = int(p.get("application_count") or 0)
-            if total > 0:
-                pct = min(100, round((received / total) * 100))
+            max_apps = int(p.get("max_applications") or 0)
+            received = int(received_map.get(p.get("program")) or 0)
+            p["application_count"] = received  # override with live count
+
+            # If max_applications is 0, assume there is no limitation for intake.
+            if max_apps > 0:
+                total = max_apps
+                pct = min(100, round((received / total) * 100)) if total else 0
                 p["fill_pct"] = pct
-                if pct >= 90:
-                    p["fill_badge"] = f"Only {total - received} seats left"
+                p["seats_limit"] = total
+                p["seats_remaining"] = max(0, total - received)
+
+                p["seats_full"] = received >= total
+                p["seats_almost_full"] = (not p["seats_full"]) and pct >= 90
+
+                if p["seats_full"]:
+                    p["fill_badge"] = "Seats Full"
                     p["fill_class"] = "fill-danger"
+                elif p["seats_almost_full"]:
+                    p["fill_badge"] = "Seat Almost Filled"
+                    p["fill_class"] = "fill-warning"
                 elif pct >= 70:
                     p["fill_badge"] = f"{pct}% filled"
                     p["fill_class"] = "fill-warning"
@@ -365,8 +410,12 @@ def get_active_programs():
                     p["fill_badge"] = "Seats available"
                     p["fill_class"] = "fill-success"
             else:
-                p["fill_pct"]   = 0
-                p["fill_badge"] = "Open"
+                p["fill_pct"] = 0
+                p["seats_limit"] = 0
+                p["seats_remaining"] = None
+                p["seats_full"] = False
+                p["seats_almost_full"] = False
+                p["fill_badge"] = "Open Intake"
                 p["fill_class"] = "fill-success"
 
         return programs

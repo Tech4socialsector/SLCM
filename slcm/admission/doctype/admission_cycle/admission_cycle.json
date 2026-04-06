@@ -93,6 +93,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nActive\nClosed",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -357,7 +358,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-06 11:40:37.008212",
+ "modified": "2026-04-06 14:14:29.750644",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
