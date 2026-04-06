@@ -495,6 +495,7 @@
   .programs-grid {
     display: grid;
     gap: 2rem;
+    justify-content: center;
   }
 
   @media (min-width: 1536px) {
@@ -700,6 +701,10 @@
 
 {# Cycle Active Check #}
 {% set _is_cycle_active = app_open %}
+{% set _app_start = active_cycle.application_start_date if active_cycle and active_cycle.application_start_date else (active_cycle.cycle_start_date if active_cycle else None) %}
+{% set _app_end = active_cycle.application_end_date if active_cycle and active_cycle.application_end_date else (active_cycle.cycle_end_date if active_cycle else None) %}
+{% set _is_yet_to_open = active_cycle and _app_start and today < _app_start %}
+{% set _is_closed = active_cycle and _app_end and today > _app_end %}
 
 {% if show_detail %}
 {# ── Program detail view ── #}
@@ -849,7 +854,7 @@
          onmouseover="this.style.opacity='0.88'"
          onmouseout="this.style.opacity='1'"
          {% endif %}>
-        {{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}
+        {{ 'Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
       </a>
       {% else %}
       <a href="{{ apply_web_form_login_url if _is_cycle_active else 'javascript:void(0)' }}"
@@ -863,7 +868,7 @@
          onmouseover="this.style.opacity='0.88'"
          onmouseout="this.style.opacity='1'"
          {% endif %}>
-        {{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}
+        {{ 'Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
       </a>
       {% endif %}
     </div>
@@ -1115,7 +1120,7 @@
                 style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);{{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
                 {% if _is_cycle_active %} onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'" {%
                 endif %}>
-                {{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}
+                {{ 'Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
               </a>
               {% endif %}
               {% else %}
@@ -1123,7 +1128,7 @@
                 style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);{{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
                 {% if _is_cycle_active %} onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'" {%
                 endif %}>
-                {{ 'Apply Now' if _is_cycle_active else 'Admissions Closed' }}
+                {{ 'Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
               </a>
               {% endif %}
               {% if _deadline %}<p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">Application
@@ -1284,7 +1289,6 @@
 <!-- END HERO -->
 
 <!-- ══ ANNOUNCEMENT BANNER ══════════════════════════════════════════ -->
-{% if (_show_ann and _ann_text) or (active_cycle and active_cycle.application_end) %}
 <div class="full-bleed" style="position:relative;z-index:20;margin-top:-48px;">
   <div style="max-width:960px;margin:0 auto;padding:0 16px;">
     <div class="flex flex-col items-center justify-between gap-6 rounded-2xl bg-white p-6 shadow-xl md:flex-row md:p-8"
@@ -1297,24 +1301,25 @@
         <div>
           <h3 class="text-xl font-bold text-slate-900">
             {% if _show_ann and _ann_text %}{{ _ann_text | safe }}
-            {% else %}Admissions {{ active_cycle.name }} Now Open!{% endif %}
+            {% elif active_cycle %}Admissions {{ active_cycle.name }} Now Open!
+            {% else %}Admissions are currently closed.{% endif %}
           </h3>
-          <!-- {% if active_cycle and active_cycle.application_end %}
-          <p class="text-slate-500 text-sm">
-            Applications closing on <strong>{{ frappe.utils.formatdate(active_cycle.application_end, "dd MMM yyyy") }}</strong>
-          </p>
-          {% endif %} -->
         </div>
       </div>
+      {% if active_cycle %}
       <a href="{{ '#programs' if _is_cycle_active else 'javascript:void(0)' }}"
         class="w-full whitespace-nowrap rounded-xl px-8 py-3 font-bold text-white md:w-auto text-center {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
         style="background:var(--primary); {{ 'pointer-events: none;' if not _is_cycle_active else '' }}">
-        {{ 'Apply Today' if _is_cycle_active else 'Admissions Closed' }}
+        {{ 'Apply Today' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
       </a>
+      {% else %}
+      <div class="rounded-xl px-8 py-3 font-bold text-slate-400 bg-slate-100">
+        Stay Tuned
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
-{% endif %}
 <!-- END BANNER -->
 
 <!-- ══ STATS BAR ════════════════════════════════════════════════════ -->
@@ -1343,15 +1348,24 @@
 
 <!-- ══ PROGRAMS ══════════════════════════════════════════════════════ -->
 <section id="programs" class="py-20">
-  {% if active_cycle and active_cycle.cycle_end_date %}
-  <div class="mb-8 p-4 rounded-xl border border-amber-200 bg-amber-50 flex items-center gap-3 fade-card">
-    <span class="material-symbols-outlined text-amber-600">info</span>
-    <p class="text-sm font-semibold text-amber-800">
-      Note: applications for the current cycle will close on {{ frappe.utils.formatdate(active_cycle.cycle_end_date, "dd MMM yyyy") }}.
+  {% if active_cycle and _app_start and _app_end %}
+  <div class="mb-8 p-4 rounded-xl border flex items-center gap-3 fade-card
+    {{ 'border-red-200 bg-red-50' if _is_closed else ('border-amber-200 bg-amber-50' if _is_yet_to_open else 'border-emerald-200 bg-emerald-50') }}">
+    <span class="material-symbols-outlined {{ 'text-red-600' if _is_closed else ('text-amber-600' if _is_yet_to_open else 'text-emerald-600') }}">
+      {{ 'error' if _is_closed else ('schedule' if _is_yet_to_open else 'info') }}
+    </span>
+    <p class="text-sm font-semibold {{ 'text-red-800' if _is_closed else ('text-amber-800' if _is_yet_to_open else 'text-emerald-800') }}">
+      {% if _is_closed %}
+      Note: applications are closed for the current cycle. Application opened on {{ frappe.utils.formatdate(_app_start, "dd MMM yyyy") }} and closed on {{ frappe.utils.formatdate(_app_end, "dd MMM yyyy") }}.
+      {% elif _is_yet_to_open %}
+      Note: applications are yet to open for the current cycle. Application opens on {{ frappe.utils.formatdate(_app_start, "dd MMM yyyy") }} and closes on {{ frappe.utils.formatdate(_app_end, "dd MMM yyyy") }}.
+      {% else %}
+      Note: applications are open for the current cycle. Application opened on {{ frappe.utils.formatdate(_app_start, "dd MMM yyyy") }} and closes on {{ frappe.utils.formatdate(_app_end, "dd MMM yyyy") }}.
+      {% endif %}
     </p>
   </div>
   {% endif %}
-  <div class="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
+  <div class="mb-12 flex flex-col items-center justify-center text-center gap-4">
     <div>
       <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Academic Programmes</h2>
       <p class="mt-2 text-slate-500">
@@ -1376,6 +1390,8 @@
 
     {% set _seats = (p.get('seats') or p.get('total_seats') or 0) if p.get else (p.seats or p.total_seats or 0) %}
     {% set _dur = p.get('duration') or '' if p.get else (p.duration or '') %}
+    {% set _campus_label = p.get('campus_label') or p.get('campus') if p.get else (p.campus_label or p.campus or '') %}
+    {% set _show_campus = (p.get('multi_campus_enabled') and _campus_label) if p.get else (p.multi_campus_enabled and _campus_label) %}
     {% set _level = p.get('program_level') or '' if p.get else (p.program_level or '') %}
     {% set _can = p.get('can_apply') if p.get else p.can_apply %}
     {% set _cur = p.get('current_stage_name') or '' if p.get else (p.current_stage_name or '') %}
@@ -1430,6 +1446,7 @@
         <div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
           <!-- {% if _seats %}<span>👥 {{ _seats }} seats</span>{% endif %} -->
           {% if _dur %}<span>🕐 {{ _dur }}</span>{% endif %}
+          {% if _show_campus %}<span>🏫 {{ _campus_label }}</span>{% endif %}
         </div>
 
         <!-- Buttons -->
@@ -1499,9 +1516,12 @@
     </article>
 
     {% else %}
-    <div class="py-16 text-center text-slate-400" style="grid-column:1/-1">
-      <span class="material-symbols-outlined" style="font-size:48px;display:block;margin-bottom:12px">menu_book</span>
-      No programmes available for this cycle.
+    <div class="col-span-full py-20 flex flex-col items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-6">
+      <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+        <span class="material-symbols-outlined text-slate-300" style="font-size:48px;">menu_book</span>
+      </div>
+      <h3 class="text-xl font-bold text-slate-900 mb-2">No active cycle found</h3>
+      <p class="text-slate-500 max-w-sm">We are not accepting applications at the moment. Please check back later or contact admissions for more information.</p>
     </div>
     {% endfor %}
   </div>

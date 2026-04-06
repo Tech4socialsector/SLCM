@@ -269,11 +269,15 @@ def _load_program_detail(context, slug):
     ac_campus = ""
     ac_intake = ""
     ac_prog_level = (gf("program_level") or "").strip()
+    # Seat-limit flags for the listing and detail views.
+    context.prog_seats_full = False
+    context.prog_seats_almost_full = False
+    context.prog_seats_remaining = None
     if prog_name and context.active_cycle:
         acp = frappe.db.get_value(
             "Admission Cycle Program",
             {"parent": context.active_cycle.name, "program": prog_name, "is_active": 1},
-            ["campus", "intake_type", "program_level"],
+            ["campus", "intake_type", "program_level", "max_applications"],
             as_dict=True,
         )
         if acp:
@@ -281,6 +285,33 @@ def _load_program_detail(context, slug):
             ac_intake = (acp.get("intake_type") or "").strip()
             if acp.get("program_level"):
                 ac_prog_level = (acp.get("program_level") or "").strip()
+
+            max_apps = int(acp.get("max_applications") or 0)
+            try:
+                # Live application count based on Applicants created for this cycle+program.
+                received_rows = frappe.db.sql(
+                    """
+                    SELECT COUNT(*) AS received
+                    FROM `tabApplicant` a
+                    LEFT JOIN `tabApplicant Status` s
+                        ON s.name = a.application_status
+                    WHERE a.admission_cycle = %s
+                      AND a.program = %s
+                      AND COALESCE(s.status_type, '') != 'Closed'
+                    """,
+                    (context.active_cycle.name, prog_name),
+                    as_dict=True,
+                ) or []
+                received = int((received_rows[0] or {}).get("received") or 0) if received_rows else 0
+            except Exception:
+                received = int(acp.get("application_count") or 0) if acp else 0
+
+            # If max_applications is 0, assume there is no limitation for intake.
+            if max_apps > 0:
+                context.prog_seats_remaining = max(0, max_apps - received)
+                context.prog_seats_full = received >= max_apps
+                pct = round((received / max_apps) * 100) if max_apps else 0
+                context.prog_seats_almost_full = (not context.prog_seats_full) and pct >= 90
 
     _cn = context.active_cycle.name if context.active_cycle else ""
     _ay = (context.active_cycle.get("admission_year") if context.active_cycle else "") or ""
@@ -363,7 +394,7 @@ def get_context(context):
             row = frappe.db.get_value(
                 "Admission Cycle",
                 active_cycle_name,
-                ["cycle_start_date", "cycle_end_date", "allow_multiple_applications"],
+                ["cycle_start_date", "cycle_end_date", "application_start_date", "application_end_date", "allow_multiple_applications"],
                 as_dict=True,
             ) or {}
             active_cycle = frappe._dict({
@@ -373,6 +404,12 @@ def get_context(context):
                 else None,
                 "cycle_end_date": frappe.utils.getdate(row.get("cycle_end_date"))
                 if row.get("cycle_end_date")
+                else None,
+                "application_start_date": frappe.utils.getdate(row.get("application_start_date"))
+                if row.get("application_start_date")
+                else None,
+                "application_end_date": frappe.utils.getdate(row.get("application_end_date"))
+                if row.get("application_end_date")
                 else None,
                 "application_end": None,
                 "allow_multiple_applications": int(row.get("allow_multiple_applications") or 0),
@@ -390,8 +427,8 @@ def get_context(context):
     # ── 2. Is application window open? ───────────────────────────────
     app_open = False
     if active_cycle:
-        _start = active_cycle.get('cycle_start_date')
-        _end = active_cycle.get('cycle_end_date')
+        _start = active_cycle.get('application_start_date') or active_cycle.get('cycle_start_date')
+        _end = active_cycle.get('application_end_date') or active_cycle.get('cycle_end_date')
         if (not _start or context.today >= _start) and (not _end or context.today <= _end):
             app_open = True
     context.app_open = app_open

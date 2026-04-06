@@ -3,6 +3,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import escape_html, getdate
 from frappe.utils.data import format_date, get_link_to_form
+from slcm.admission.utils.institution import is_multi_campus_enabled
 
 
 def _overlap_rows_with_labels(overlaps):
@@ -57,6 +58,7 @@ class AdmissionCycle(Document):
 
     def validate(self):
         self._validate_cycle_date_range()
+        self._validate_application_date_range()
         self._validate_cycle_dates_no_overlap()
         self._validate_single_active_cycle()
         self._validate_programs()
@@ -67,6 +69,32 @@ class AdmissionCycle(Document):
         if getdate(self.cycle_start_date) > getdate(self.cycle_end_date):
             frappe.throw(
                 _("Cycle Start Date cannot be after Cycle End Date."),
+                title=_("Invalid dates"),
+            )
+
+    def _validate_application_date_range(self):
+        if not self.application_start_date or not self.application_end_date:
+            return
+        app_start = getdate(self.application_start_date)
+        app_end = getdate(self.application_end_date)
+        cyc_start = getdate(self.cycle_start_date) if self.cycle_start_date else None
+        cyc_end = getdate(self.cycle_end_date) if self.cycle_end_date else None
+
+        if app_start > app_end:
+            frappe.throw(
+                _("Application Start Date cannot be after Application End Date."),
+                title=_("Invalid dates"),
+            )
+
+        if cyc_start and app_start < cyc_start:
+            frappe.throw(
+                _("Application Start Date must be on or after Cycle Start Date."),
+                title=_("Invalid dates"),
+            )
+
+        if cyc_end and app_end > cyc_end:
+            frappe.throw(
+                _("Application End Date must be on or before Cycle End Date."),
                 title=_("Invalid dates"),
             )
 
@@ -122,14 +150,30 @@ class AdmissionCycle(Document):
                 )
 
     def _validate_programs(self):
-        """No duplicate program+campus combination in the same cycle."""
+        """Validate duplicate program rows with optional campus constraints."""
+        multi_campus = is_multi_campus_enabled()
         seen = set()
         for row in (self.programs or []):
-            key = (row.program, row.campus or "")
-            if key in seen:
+            campus = (row.campus or "").strip()
+            if multi_campus and not campus:
                 frappe.throw(
-                    f"Program <b>{row.program_name or row.program}</b> "
-                    f"is added more than once in this cycle."
+                    _("Campus is mandatory for Program <b>{0}</b> when Multi Campus is enabled.").format(
+                        row.program_name or row.program or _("Unknown")
+                    )
+                )
+
+            key = (row.program, campus) if multi_campus else (row.program,)
+            if key in seen:
+                if multi_campus:
+                    frappe.throw(
+                        _(
+                            "Duplicate entry: Program <b>{0}</b> with Campus <b>{1}</b> is already added in this cycle."
+                        ).format(row.program_name or row.program, campus)
+                    )
+                frappe.throw(
+                    _("Duplicate entry: Program <b>{0}</b> is already added in this cycle.").format(
+                        row.program_name or row.program
+                    )
                 )
             seen.add(key)
 
@@ -140,6 +184,17 @@ class AdmissionCycle(Document):
     def on_update(self):
         if not self.flags.in_reservation_sync:
             self._sync_reservation_policies()
+
+    def before_cancel(self):
+        if self.status != "Active":
+            frappe.throw(
+                _("Only Active admission cycles can be cancelled. Current status: {0}").format(self.status),
+                title=_("Invalid Status")
+            )
+
+    def on_cancel(self):
+        self.status = "Closed"
+        self.db_set("status", "Closed")
 
     def _sync_reservation_policies(self):
         """
