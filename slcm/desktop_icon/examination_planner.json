@@ -1,0 +1,22 @@
+{
+ "app": "slcm",
+ "bg_color": "blue",
+ "creation": "2026-04-06 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Examination Planner",
+ "link_to": "Examination Planner",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-04-06 00:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Examination Planner",
+ "owner": "Administrator",
+ "parent_icon": "Examination Management",
+ "restrict_removal": 0,
+ "roles": [],
+ "sidebar": "Examination Planner",
+ "standard": 1
+}

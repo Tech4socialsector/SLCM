@@ -384,11 +384,34 @@ def get_courses_for_plan(exam_plan, search=""):
 	except Exception:
 		pass
 
+	# Fetch enrolled student counts grouped by course for the exam plan's term
+	enrolled_map = {}
+	try:
+		term_name = frappe.db.get_value("Exam Plan", exam_plan, "term")
+		if term_name:
+			enrollment_counts = frappe.db.sql(
+				"""
+				SELECT co.course_title AS course, COUNT(DISTINCT ce.parent) AS enrolled_count
+				FROM `tabCourse Enrollment` ce
+				JOIN `tabStudent Enrollment` se ON ce.parent = se.name
+				JOIN `tabCourse Offering` co ON ce.course_offering = co.name
+				WHERE se.term_name = %(term_name)s
+				  AND (ce.enrollment_status = 'Enrolled' OR ce.enrollment_status IS NULL OR ce.enrollment_status = '')
+				GROUP BY co.course_title
+				""",
+				{"term_name": term_name},
+				as_dict=True,
+			)
+			enrolled_map = {row["course"]: row["enrolled_count"] for row in enrollment_counts}
+	except Exception:
+		pass
+
 	for c in courses:
 		asgn = asgn_map.get(c["name"], {})
 		c["evaluation_schema"] = asgn.get("evaluation_schema") or ""
 		c["grade_schema"] = asgn.get("grade_schema") or ""
 		c["assignment_name"] = asgn.get("name", "")
+		c["enrolled_students"] = enrolled_map.get(c["name"], 0)
 		if asgn.get("evaluation_schema"):
 			c["max_marks"] = (
 				frappe.db.get_value("Evaluation Schema", asgn["evaluation_schema"], "total_marks") or ""

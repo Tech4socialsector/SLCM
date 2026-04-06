@@ -134,6 +134,9 @@ function _csm_inject_styles() {
 		}
 		.csm-badge-eval { background: #dbeafe; color: #1d4ed8; }
 		.csm-badge-grade { background: #dcfce7; color: #15803d; }
+		.csm-badge-sync-success { background: #16a34a; color: #fff; margin-top: 4px; display: inline-block; }
+		.csm-badge-sync-partial { background: #f59e0b; color: #fff; margin-top: 4px; display: inline-block; }
+		.csm-enrolled-count { font-weight: 600; color: #1e293b; }
 		.csm-dash { color: #cbd5e1; }
 		.csm-empty {
 			text-align: center; padding: 48px 16px;
@@ -551,6 +554,19 @@ function _csm_render(courses, $ov) {
 		const gr = c.grade_schema
 			? `<span class="csm-badge csm-badge-grade" title="${_esc(c.grade_schema)}">${_esc(c.grade_schema)}</span>`
 			: '<span class="csm-dash">--</span>';
+
+		// Mapping status badge
+		let syncBadge = '';
+		if (c.evaluation_schema && c.grade_schema) {
+			syncBadge = '<span class="csm-badge csm-badge-sync-success">Sync : Success</span>';
+		} else if (c.evaluation_schema || c.grade_schema) {
+			syncBadge = '<span class="csm-badge csm-badge-sync-partial">Partially Mapped</span>';
+		}
+
+		const enrolledCount = (c.enrolled_students != null && c.enrolled_students !== 0)
+			? `<span class="csm-enrolled-count">${c.enrolled_students}</span>`
+			: '<span class="csm-dash">--</span>';
+
 		$tbody.append(`
 			<tr data-course="${_esc(c.name)}"
 			    data-course-name="${_esc(c.course_name || c.name)}"
@@ -560,10 +576,11 @@ function _csm_render(courses, $ov) {
 				<td>
 					<div class="csm-course-name">${_esc(c.course_name || c.name)}</div>
 					${c.course_code ? `<div class="csm-course-code">${_esc(c.course_code)}</div>` : ''}
+					${syncBadge}
 				</td>
 				<td>${c.credit_value != null ? c.credit_value : '<span class="csm-dash">--</span>'}</td>
 				<td>${c.department_name ? _esc(c.department_name) : '<span class="csm-dash">--</span>'}</td>
-				<td><span class="csm-dash">--</span></td>
+				<td>${enrolledCount}</td>
 				<td>${ev}</td>
 				<td>${c.max_marks !== '' && c.max_marks != null ? c.max_marks : '<span class="csm-dash">--</span>'}</td>
 				<td>${gr}</td>
