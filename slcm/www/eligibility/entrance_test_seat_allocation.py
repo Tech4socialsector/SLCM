@@ -158,7 +158,8 @@ def download_admit_card(allocation_name):
 def get_admit_card_html(doc, is_rescheduled):
     """
     Optimized Admit Card template for A4 single-page rendering.
-    Restores original P2 content while perfecting P1.
+    P1: Full-width Application Details, prominently bordered.
+    P2: Original full instructions restored.
     """
     def esc(v): return escape_html(str(v if v is not None else ""))
     def val(v): return esc(v) if (v and str(v).strip() != "") else "—"
@@ -238,16 +239,15 @@ def get_admit_card_html(doc, is_rescheduled):
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
     }}
-    .p1-container {{
+    .p1-wrapper {{
         width: 210mm;
         height: 297mm;
-        padding: 8mm;
+        padding: 5mm;
         box-sizing: border-box;
-        position: relative;
         background: #fff;
     }}
-    .outer-page-border {{
-        border: 2px solid #333;
+    .p1-border {{
+        border: 2px solid #000;
         width: 100%;
         height: 100%;
         box-sizing: border-box;
@@ -267,7 +267,7 @@ def get_admit_card_html(doc, is_rescheduled):
         width: 65px;
         height: 65px;
         background: #fff;
-        border-radius: 4px;
+        border-radius: 3px;
         text-align: center;
         overflow: hidden;
     }}
@@ -283,30 +283,30 @@ def get_admit_card_html(doc, is_rescheduled):
         font-size: 20px;
         font-weight: bold;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.5px;
         margin-bottom: 2px;
     }}
     .univ-sub {{
         font-size: 11px;
-        opacity: 0.9;
         letter-spacing: 1.5px;
+        opacity: 0.9;
     }}
     .title-banner {{
         background: #f1f1f1;
         text-align: center;
         padding: 8px;
-        border-bottom: 1.5px solid #333;
+        border-bottom: 1px solid #000;
         font-weight: bold;
-        font-size: 13.5px;
+        font-size: 14px;
         text-transform: uppercase;
     }}
     .section-title {{
-        background: #f5f5f5;
+        background: #eee;
         padding: 5px 12px;
         font-weight: bold;
-        font-size: 11.5px;
-        border-top: 1px solid #333;
-        border-bottom: 1px solid #333;
+        font-size: 12px;
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
         color: #000;
     }}
     .data-table {{
@@ -315,126 +315,77 @@ def get_admit_card_html(doc, is_rescheduled):
     }}
     .data-table td {{
         padding: 6px 12px;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #ddd;
         vertical-align: top;
         font-size: 11px;
     }}
-    .label {{
-        font-weight: bold;
-        color: #333;
-        width: 38%;
+    .label {{ font-weight: bold; color: #333; width: 38%; }}
+    .value {{ color: #000; }}
+    
+    .top-info-table {{
+        width: 100%;
+        border-collapse: collapse;
     }}
-    .value {{
-        color: #000;
-    }}
-    .photo-cell {{
+    .photo-area {{
         width: 140px;
         text-align: center;
         padding: 12px;
-        border-left: 1.5px solid #333;
+        border-left: 1px solid #000;
         vertical-align: top;
     }}
     .photo-frame {{
         width: 115px;
         height: 140px;
-        border: 1px solid #333;
+        border: 1px solid #000;
         margin: 0 auto 5px;
         background: #fdfdfd;
         overflow: hidden;
     }}
     .photo-frame img {{
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+        width: 100%; height: 100%; object-fit: cover;
     }}
-    .photo-cap {{
-        font-size: 9.5px;
-        font-style: italic;
-        color: #555;
-    }}
-    .pill {{
-        display: inline-block;
-        padding: 2px 10px;
-        border-radius: 2px;
-        font-weight: bold;
-        font-size: 11px;
-    }}
+    .photo-cap {{ font-size: 9px; font-style: italic; color: #555; }}
+    
+    .pill {{ display: inline-block; padding: 2px 10px; border-radius: 2px; font-weight: bold; font-size: 11px; }}
     .pill-seat {{ background: #002e5b; color: #fff; }}
     .pill-status {{ border: 1px solid #28a745; color: #155724; background: #d4edda; }}
 
     .signature-area {{
         position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        border-top: 2px solid #333;
+        bottom: 0; left: 0; right: 0;
+        border-top: 1px solid #000;
         background: #fff;
     }}
-    .sig-table {{
-        width: 100%;
-        border-collapse: collapse;
-    }}
+    .sig-table {{ width: 100%; border-collapse: collapse; }}
     .sig-table td {{
-        width: 50%;
-        height: 75px;
-        border-right: 1.5px solid #333;
-        padding: 8px;
-        text-align: center;
-        vertical-align: bottom;
-        font-size: 11px;
-        font-weight: bold;
+        width: 50%; height: 80px; text-align: center; vertical-align: bottom;
+        font-size: 11px; font-weight: bold; border-right: 1px solid #000;
+        padding-bottom: 10px;
     }}
-    .sig-table td:last-child {{
-        border-right: none;
-    }}
-    .sig-note {{
-        text-align: center;
-        font-style: italic;
-        font-size: 11px;
-        padding: 6px;
-        border-top: 1px solid #eee;
-    }}
-    .footer-note {{
-        font-size: 9px;
-        color: #666;
-        padding: 6px 12px;
-        border-top: 1px solid #eee;
-    }}
+    .sig-table td:last-child {{ border-right: none; }}
+    .sig-note {{ text-align: center; font-style: italic; font-size: 11px; padding: 6px; }}
+    .footer-note {{ font-size: 9px; color: #666; padding: 6px 12px; border-top: 1px solid #eee; }}
 
-    /* ── ORIGINAL P2 STYLES ────────────────────────────────────── */
-    .p2-container {{
-        width: 210mm;
-        height: 297mm;
-        background: #fff;
-        page-break-before: always;
-        padding: 10mm;
-        box-sizing: border-box;
-    }}
-    .card-page.p2 {{
-        width: 100%;
-        height: 100%;
-        border: 1.5px solid #555;
-        box-sizing: border-box;
-        display: block;
-        position: relative;
-    }}
+    /* Page 2 Style Original */
+    .p2-container {{ width: 210mm; height: 297mm; page-break-before: always; padding: 10mm; box-sizing: border-box; }}
+    .p2-border {{ width: 100%; height: 100%; border: 1.5px solid #555; position: relative; box-sizing: border-box; }}
     .inst-outer {{ border: 1.5px solid #888; margin: 12px 14px 16px; padding: 14px 18px 18px; }}
-    .inst-main-title {{ font-size: 13.5px; font-weight: bold; font-family: Arial, sans-serif; text-align: center; color: #000; margin-bottom: 10px; }}
-    .p2-sec-title {{ font-size: 12.5px; font-weight: bold; font-family: Arial, sans-serif; color: #000; margin: 10px 0 3px; }}
+    .inst-main-title {{ font-size: 13.5px; font-weight: bold; text-align: center; color: #000; margin-bottom: 10px; }}
+    .p2-sec-title {{ font-size: 12.5px; font-weight: bold; color: #000; margin: 10px 0 3px; }}
     .il {{ list-style: none; margin: 0; padding: 0; }}
-    .il > li {{ display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; padding-left: 18px; }}
+    .il > li {{ display: flex; gap: 6px; font-size: 11.5px; color: #000; line-height: 1.65; padding-left: 18px; }}
     .il > li .mk {{ flex-shrink: 0; min-width: 16px; font-weight: bold; }}
     .sl {{ list-style: none; margin: 2px 0 2px 52px; padding: 0; }}
-    .sl li {{ display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; }}
+    .sl li {{ display: flex; gap: 6px; font-size: 11.5px; color: #000; line-height: 1.65; }}
     .sl li .mk {{ flex-shrink: 0; min-width: 22px; font-style: italic; font-weight: bold; }}
-    .pg-footer {{ padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }}
-    .pg-footer span {{ font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }}
+    .p2-footer {{ padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }}
+    .p2-footer span {{ font-size: 8.5px; color: #888; }}
 </style>
 </head>
 <body>
-    <!-- Page 1: Admit Card -->
-    <div class="p1-container">
-        <div class="outer-page-border">
+    <!-- Page 1 -->
+    <div class="p1-wrapper">
+        <div class="p1-border">
             <table class="header-table">
                 <tr>
                     <td style="width: 80px;">
@@ -453,10 +404,9 @@ def get_admit_card_html(doc, is_rescheduled):
 
             <div class="title-banner">ADMIT CARD - {esc(admit_no)}</div>
 
-            <table style="width:100%; border-collapse: collapse;">
+            <table class="top-info-table">
                 <tr>
                     <td style="vertical-align: top;">
-                        <!-- Candidate Information -->
                         <div class="section-title">Candidate Information</div>
                         <table class="data-table">
                             <tr><td class="label">Candidate Name</td><td class="value"><strong>{val(doc.candidate_name)}</strong></td></tr>
@@ -465,17 +415,8 @@ def get_admit_card_html(doc, is_rescheduled):
                             <tr><td class="label">Mother's Name</td><td class="value">{val(doc.mother_name)}</td></tr>
                             <tr><td class="label">Gender</td><td class="value">{val(doc.gender)}</td></tr>
                         </table>
-
-                        <!-- Application Details -->
-                        <div class="section-title">Application Details</div>
-                        <table class="data-table">
-                            <tr><td class="label">Programme Applied</td><td class="value"><strong>{val(doc.program)}</strong></td></tr>
-                            <tr><td class="label">Application Number</td><td class="value">{val(doc.applicant)}</td></tr>
-                            <tr><td class="label">Academic Year</td><td class="value">{val(doc.academic_year)}</td></tr>
-                            <tr><td class="label">Admission Cycle</td><td class="value">{val(doc.admission_cycle)}</td></tr>
-                        </table>
                     </td>
-                    <td class="photo-cell">
+                    <td class="photo-area">
                         <div class="photo-frame">
                             {f'<img src="{profile_image_url}" />' if profile_image_url else '<div style="font-size:60px; color:#ccc; margin-top:35px;">👤</div>'}
                         </div>
@@ -484,7 +425,15 @@ def get_admit_card_html(doc, is_rescheduled):
                 </tr>
             </table>
 
-            <!-- Examination Details -->
+            <!-- Application Details FULL WIDTH -->
+            <div class="section-title">Application Details</div>
+            <table class="data-table">
+                <tr><td class="label">Programme Applied</td><td class="value"><strong>{val(doc.program)}</strong></td></tr>
+                <tr><td class="label">Application Number</td><td class="value">{val(doc.applicant)}</td></tr>
+                <tr><td class="label">Academic Year / Cycle</td><td class="value">{val(doc.academic_year)} &nbsp;|&nbsp; {val(doc.admission_cycle)}</td></tr>
+            </table>
+
+            <!-- Examination Details FULL WIDTH -->
             <div class="section-title">Examination Details</div>
             <table class="data-table">
                 <tr><td class="label">Entrance Test</td><td class="value"><strong>{val(f_test)}</strong></td></tr>
@@ -493,18 +442,17 @@ def get_admit_card_html(doc, is_rescheduled):
                 <tr><td class="label">Reporting Time</td><td class="value">{rep_time_str} (30 mins before start)</td></tr>
             </table>
 
-            <!-- Seat & Venue Details -->
+            <!-- Seat & Venue Details FULL WIDTH -->
             <div class="section-title">Seat & Venue Details</div>
             <table class="data-table">
                 <tr><td class="label">Seat Number</td><td class="value"><span class="pill pill-seat">{val(f_seat)}</span></td></tr>
-                <tr><td class="label">Room / Hall</td><td class="value">{val(f_room)}{f' (Code: {esc(f_code)})' if f_code and f_code.strip() else ""}</td></tr>
-                <tr><td class="label">Building / Floor</td><td class="value">{val(f_building)}{f' - Floor: {esc(f_floor)}' if f_floor and f_floor.strip() else ""}</td></tr>
-                <tr><td class="label">Examination Venue</td><td class="value"><strong>{val(f_center)}</strong><br/><span style="font-size:10px; color: #444;">{val(f_address)}</span></td></tr>
+                <tr><td class="label">Room / Hall / Floor</td><td class="value">{val(f_room)}{f' ({esc(f_code)})' if f_code else ""} &nbsp;|&nbsp; {val(f_building)} ({esc(f_floor)})</td></tr>
+                <tr><td class="label">Examination Venue</td><td class="value"><strong>{val(f_center)}</strong><br/><span style="font-size:10px; color:#555;">{val(f_address)}</span></td></tr>
                 <tr><td class="label">Allocation Status</td><td class="value"><span class="pill pill-status">{val(f_status)}</span></td></tr>
             </table>
 
-            <div style="padding: 15px; font-size: 11px; color: #444; line-height: 1.4;">
-                <strong>Note:</strong> Please bring a printed copy of this admit card along with a valid Government-issued Photo ID proof (Aadhar, PAN, Passport, etc.) to the examination center. No candidate will be allowed entry without these documents.
+            <div style="padding: 15px; font-size: 11px; color: #444; line-height: 1.45;">
+                <strong>Important:</strong> Please bring a printed copy of this admit card with a valid ID proof (Aadhar/PAN/Passport) to the exam center. No entry without these documents.
             </div>
 
             <div class="signature-area">
@@ -516,15 +464,15 @@ def get_admit_card_html(doc, is_rescheduled):
                     </tr>
                 </table>
                 <div class="footer-note">
-                    Ref ID: {esc(doc.name)} &nbsp;|&nbsp; Generated: {esc(issue_date)} &nbsp;|&nbsp; System Generated. No physical signature required.
+                    Ref ID: {esc(doc.name)} &nbsp;|&nbsp; Generated: {esc(issue_date)} &nbsp;|&nbsp; System Generated.
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Page 2: Instructions (ORIGINAL RESTORED) -->
+    <!-- Page 2: Original Full Instructions -->
     <div class="p2-container">
-        <div class="card-page p2">
+        <div class="p2-border">
             <div class="inst-outer">
                 <div class="inst-main-title">Instructions to Candidates</div>
                 <div class="p2-sec-title">1.&nbsp;&nbsp; General Instructions</div>
@@ -553,13 +501,12 @@ def get_admit_card_html(doc, is_rescheduled):
                 <li><span class="mk">ii.</span><span>Government Issued Photo ID (preferably the one uploaded with the application form).</span></li>
                 <li><span class="mk">iii.</span><span>Black or Blue Ballpoint pen.</span></li>
                 <li><span class="mk">iv.</span><span>A transparent water bottle.</span></li>
-                <li><span class="mk">v.</span><span>A face mask (the Candidate may be asked to remove the face mask for ascertainment of identity).</span></li>
-                <li><span class="mk">vi.</span><span>An analogue watch. <strong>Note:</strong> Smart Watches are not permitted.</span></li>
+                <li><span class="mk">v.</span><span>An analogue watch. <strong>Note:</strong> Smart Watches are not permitted.</span></li>
                 </ul>
                 <div class="p2-sec-title">5.&nbsp;&nbsp; Admissions Test Related Instructions</div>
                 <ul class="il">
                 <li><span class="mk">a.</span><span>An attendance sheet will be circulated during the admissions test. The requisite details should be filled in the attendance sheet.</span></li>
-                <li><span class="mk">b.</span><span>Candidates will be provided with a Question Booklet and/or answer sheets. Candidates should use black/blue ball point pen <strong>only</strong> to enter the admit card number and other required details.</span></li>
+                <li><span class="mk">b.</span><span>Candidates will be provided with a Question Booklet and/or answer sheets. Candidates should use black/blue ball point pen only to enter the admit card number and other required details.</span></li>
                 <li><span class="mk">c.</span><span>Candidates must read the instructions provided with the Question Booklet before commencing the test.</span></li>
                 <li><span class="mk">d.</span><span>Candidates should write the details required on the cover page of the Question Booklet.</span></li>
                 <li><span class="mk">e.</span><span>No clarifications can be sought about the Question Booklet from anyone.</span></li>
@@ -576,8 +523,8 @@ def get_admit_card_html(doc, is_rescheduled):
                 <li><span class="mk">c.</span><span>Possession of electronic devices, including mobile phones, headphones, earphones, smart watches, calculators etc., is strictly prohibited in the examination hall.</span></li>
                 </ul>
             </div>
-            <div class="pg-footer">
-                <span>Doc: <strong>{val(doc.name)}</strong> &nbsp;·&nbsp; Generated: <strong>{val(issue_date)}</strong> &nbsp;·&nbsp; System-generated. No physical signature required.</span>
+            <div class="p2-footer">
+                <span>Doc: <strong>{val(doc.name)}</strong> &nbsp;·&nbsp; Gen: <strong>{val(issue_date)}</strong></span>
                 <span>{val(admit_no)}</span>
             </div>
         </div>
