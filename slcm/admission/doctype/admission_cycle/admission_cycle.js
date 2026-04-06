@@ -74,6 +74,28 @@ function slcm_apply_program_campus_field_rules(frm) {
     frm.refresh_field("programs");
 }
 
+function slcm_apply_application_date_bounds(frm) {
+    const cycleStart = frm.doc.cycle_start_date ? new Date(frm.doc.cycle_start_date) : null;
+    const cycleEnd = frm.doc.cycle_end_date ? new Date(frm.doc.cycle_end_date) : null;
+
+    if (frm.fields_dict.application_start_date && frm.fields_dict.application_start_date.datepicker) {
+        frm.fields_dict.application_start_date.datepicker.update({
+            minDate: cycleStart || null,
+            maxDate: cycleEnd || null,
+        });
+    }
+
+    if (frm.fields_dict.application_end_date && frm.fields_dict.application_end_date.datepicker) {
+        const minForAppEnd = frm.doc.application_start_date
+            ? new Date(frm.doc.application_start_date)
+            : (cycleStart || null);
+        frm.fields_dict.application_end_date.datepicker.update({
+            minDate: minForAppEnd,
+            maxDate: cycleEnd || null,
+        });
+    }
+}
+
 frappe.ui.form.on("Admission Cycle", {
 
     refresh: function (frm) {
@@ -113,6 +135,7 @@ frappe.ui.form.on("Admission Cycle", {
                 minDate: until_min,
             });
         }
+        slcm_apply_application_date_bounds(frm);
 
         // Status indicator
         const colors = { "Draft": "gray", "Active": "green", "Closed": "red" };
@@ -302,11 +325,52 @@ frappe.ui.form.on("Admission Cycle", {
                 minDate: new Date(frm.doc.cycle_start_date),
             });
         }
+        slcm_apply_application_date_bounds(frm);
+        if (frm.doc.application_start_date && frm.doc.application_start_date < frm.doc.cycle_start_date) {
+            frm.set_value("application_start_date", frm.doc.cycle_start_date);
+        }
         slcm_debounced_cycle_overlap(frm);
     },
 
     cycle_end_date: function (frm) {
+        slcm_apply_application_date_bounds(frm);
+        if (frm.doc.application_end_date && frm.doc.application_end_date > frm.doc.cycle_end_date) {
+            frm.set_value("application_end_date", frm.doc.cycle_end_date);
+        }
         slcm_debounced_cycle_overlap(frm);
+    },
+    application_start_date: function (frm) {
+        slcm_apply_application_date_bounds(frm);
+        if (frm.doc.cycle_start_date && frm.doc.application_start_date && frm.doc.application_start_date < frm.doc.cycle_start_date) {
+            frappe.msgprint(__("Application Start Date cannot be before Cycle Start Date."));
+            frm.set_value("application_start_date", frm.doc.cycle_start_date);
+            return;
+        }
+        if (frm.doc.cycle_end_date && frm.doc.application_start_date && frm.doc.application_start_date > frm.doc.cycle_end_date) {
+            frappe.msgprint(__("Application Start Date cannot be after Cycle End Date."));
+            frm.set_value("application_start_date", "");
+            return;
+        }
+        if (frm.doc.application_end_date && frm.doc.application_start_date && frm.doc.application_start_date > frm.doc.application_end_date) {
+            frm.set_value("application_end_date", frm.doc.application_start_date);
+        }
+    },
+    application_end_date: function (frm) {
+        slcm_apply_application_date_bounds(frm);
+        if (frm.doc.cycle_end_date && frm.doc.application_end_date && frm.doc.application_end_date > frm.doc.cycle_end_date) {
+            frappe.msgprint(__("Application End Date cannot be after Cycle End Date."));
+            frm.set_value("application_end_date", frm.doc.cycle_end_date);
+            return;
+        }
+        if (frm.doc.cycle_start_date && frm.doc.application_end_date && frm.doc.application_end_date < frm.doc.cycle_start_date) {
+            frappe.msgprint(__("Application End Date cannot be before Cycle Start Date."));
+            frm.set_value("application_end_date", "");
+            return;
+        }
+        if (frm.doc.application_start_date && frm.doc.application_end_date && frm.doc.application_end_date < frm.doc.application_start_date) {
+            frappe.msgprint(__("Application End Date cannot be before Application Start Date."));
+            frm.set_value("application_end_date", frm.doc.application_start_date);
+        }
     },
 
 
@@ -534,8 +598,11 @@ function open_reservation_policy(frm, row) {
 
         // If existing record found, confirm update before saving
         if (existing_policy_name) {
+            const campusLabel = dialog.get_value("campus");
             frappe.confirm(
-                __(`A Reservation Policy (<strong>${existing_policy_name}</strong>) already exists for this program. Do you want to update it?`),
+                __(campusLabel
+                    ? `A Reservation Policy (<strong>${existing_policy_name}</strong>) already exists for this program and campus <strong>${frappe.utils.escape_html(campusLabel)}</strong>. Do you want to update it?`
+                    : `A Reservation Policy (<strong>${existing_policy_name}</strong>) already exists for this program. Do you want to update it?`),
                 () => do_save(),
                 () => { /* user cancelled — do nothing */ }
             );

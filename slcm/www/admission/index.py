@@ -394,7 +394,7 @@ def get_context(context):
             row = frappe.db.get_value(
                 "Admission Cycle",
                 active_cycle_name,
-                ["cycle_start_date", "cycle_end_date", "allow_multiple_applications"],
+                ["cycle_start_date", "cycle_end_date", "application_start_date", "application_end_date", "allow_multiple_applications"],
                 as_dict=True,
             ) or {}
             active_cycle = frappe._dict({
@@ -404,6 +404,12 @@ def get_context(context):
                 else None,
                 "cycle_end_date": frappe.utils.getdate(row.get("cycle_end_date"))
                 if row.get("cycle_end_date")
+                else None,
+                "application_start_date": frappe.utils.getdate(row.get("application_start_date"))
+                if row.get("application_start_date")
+                else None,
+                "application_end_date": frappe.utils.getdate(row.get("application_end_date"))
+                if row.get("application_end_date")
                 else None,
                 "application_end": None,
                 "allow_multiple_applications": int(row.get("allow_multiple_applications") or 0),
@@ -421,8 +427,8 @@ def get_context(context):
     # ── 2. Is application window open? ───────────────────────────────
     app_open = False
     if active_cycle:
-        _start = active_cycle.get('cycle_start_date')
-        _end = active_cycle.get('cycle_end_date')
+        _start = active_cycle.get('application_start_date') or active_cycle.get('cycle_start_date')
+        _end = active_cycle.get('application_end_date') or active_cycle.get('cycle_end_date')
         if (not _start or context.today >= _start) and (not _end or context.today <= _end):
             app_open = True
     context.app_open = app_open

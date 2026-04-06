@@ -58,6 +58,7 @@ class AdmissionCycle(Document):
 
     def validate(self):
         self._validate_cycle_date_range()
+        self._validate_application_date_range()
         self._validate_cycle_dates_no_overlap()
         self._validate_single_active_cycle()
         self._validate_programs()
@@ -68,6 +69,32 @@ class AdmissionCycle(Document):
         if getdate(self.cycle_start_date) > getdate(self.cycle_end_date):
             frappe.throw(
                 _("Cycle Start Date cannot be after Cycle End Date."),
+                title=_("Invalid dates"),
+            )
+
+    def _validate_application_date_range(self):
+        if not self.application_start_date or not self.application_end_date:
+            return
+        app_start = getdate(self.application_start_date)
+        app_end = getdate(self.application_end_date)
+        cyc_start = getdate(self.cycle_start_date) if self.cycle_start_date else None
+        cyc_end = getdate(self.cycle_end_date) if self.cycle_end_date else None
+
+        if app_start > app_end:
+            frappe.throw(
+                _("Application Start Date cannot be after Application End Date."),
+                title=_("Invalid dates"),
+            )
+
+        if cyc_start and app_start < cyc_start:
+            frappe.throw(
+                _("Application Start Date must be on or after Cycle Start Date."),
+                title=_("Invalid dates"),
+            )
+
+        if cyc_end and app_end > cyc_end:
+            frappe.throw(
+                _("Application End Date must be on or before Cycle End Date."),
                 title=_("Invalid dates"),
             )
 
