@@ -54,6 +54,7 @@ class Applicant(Document):
         self._deny_portal_web_form_edit_if_locked()
 
         set_intake_type(self)
+        self._validate_education_percentage_bounds()
 
         if self.application_status == "Submitted" and self.has_value_changed("application_status"):
             self._validate_application_fee_before_submit()
@@ -85,19 +86,21 @@ class Applicant(Document):
                     title="Age Restriction"
                 )
 
-    # def validate_percentages(self):
-    #     if self.class_x_percentage:
-    #         if not 0 <= self.class_x_percentage <= 100:
-    #             frappe.throw(
-    #                 "Class X Percentage must be between 0 and 100.",
-    #                 title="Invalid Percentage"
-    #             )
-    #     if self.class_xii_percentage:
-    #         if not 0 <= self.class_xii_percentage <= 100:
-    #             frappe.throw(
-    #                 "Class XII Percentage must be between 0 and 100.",
-    #                 title="Invalid Percentage"
-    #             )
+    def _validate_education_percentage_bounds(self):
+        """Class X % and HSC % use 0–100 scale (CGPA uses separate fields)."""
+        for fieldname, label in (
+            ("class_x_percentage", _("Class X percentage")),
+            ("hsc_percentage", _("HSC / Class XII percentage")),
+        ):
+            val = getattr(self, fieldname, None)
+            if val is None:
+                continue
+            v = flt(val)
+            if v < 0 or v > 100:
+                frappe.throw(
+                    _("{0} must be between 0 and 100.").format(label),
+                    title=_("Invalid value"),
+                )
 
     def validate_reservation_documents(self):
         if self.ews == "Yes" and not self.ews_certificate:

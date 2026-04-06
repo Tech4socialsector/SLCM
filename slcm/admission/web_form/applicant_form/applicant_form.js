@@ -193,16 +193,16 @@ function _injectCSS() {
 		'.adm-wf-footer-links a:hover{color:#fff;}',
 				'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
 			'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
-		/* ── Stepper — pills + flex-grow connectors (lines scale with screen width) ── */
-		'#slcm-stepper-wrap{padding:15px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}',
+		/* ── Stepper — CSS Grid: max-content columns for pills, 1fr tracks for lines (fills any screen width) ── */
+		'#slcm-stepper-wrap{padding:15px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;width:100%;' +
+			'box-sizing:border-box;}',
 		'#slcm-stepper-wrap::-webkit-scrollbar{display:none;}',
-		'.slcm-stepper{display:flex;align-items:flex-start;justify-content:flex-start;width:100%;min-width:max-content;' +
-			'padding:0 6px;gap:0;--slcm-conn-min:clamp(10px,1.5vw,28px);}',
-		'.slcm-step{flex:0 0 auto;display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
-			'min-width:104px;max-width:min(220px,26vw);transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
+		'.slcm-stepper{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;}',
+		'.slcm-step{display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
+			'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
 			'border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
-		'.slcm-step-connector{flex:1 1 var(--slcm-conn-min);min-width:var(--slcm-conn-min);height:2px;background:#e5e7eb;' +
-			'align-self:center;border-radius:1px;pointer-events:none;}',
+		'.slcm-step-connector{align-self:center;width:100%;min-width:12px;height:2px;background:#e5e7eb;' +
+			'border-radius:1px;pointer-events:none;}',
 		/* Completed step: green */
 		'.slcm-step.completed:not(.active){background:#ecfdf5;border-color:#bbf7d0;}',
 		'.slcm-step.completed .slcm-step-circle{border-color:#22c55e;background:#22c55e;color:#fff;}',
@@ -716,13 +716,31 @@ function handleSaveDraft(opts) {
 				var msg = r && r.message;
 				if (msg && msg.status === 'success') {
 					var wf = frappe.web_form;
-				if (wf && wf.doc && !wf.doc.name && msg.name) {
-					wf.doc.name = msg.name;
-					try {
-						var url = new URL(window.location.href);
-						url.searchParams.set('name', msg.name);
-						window.history.replaceState({}, '', url.toString());
-					} catch (e) {}
+				/*
+				 * Never use /applicant-form/new?name=DOC — Frappe sees form_dict.name and redirects to
+				 * path+/edit → /applicant-form/new/edit (404). Move URL to /applicant-form/DOC/edit without
+				 * full reload so Submit flow can keep awaiting handleSaveDraft.
+				 */
+				if (msg.name) {
+					var p = (window.location.pathname || '').replace(/\/$/, '');
+					if (p.endsWith('/new')) {
+						var rt = (wf && wf.route) || 'applicant-form';
+						var newPath = '/' + rt + '/' + encodeURIComponent(msg.name) + '/edit';
+						try {
+							if (wf && wf.doc) wf.doc.name = msg.name;
+							if (wf) {
+								wf.is_new = false;
+								wf.in_edit_mode = true;
+							}
+							if (typeof frappe !== 'undefined' && frappe.web_form_doc) {
+								frappe.web_form_doc.is_new = false;
+								frappe.web_form_doc.in_edit_mode = true;
+							}
+							window.history.replaceState({}, '', newPath);
+						} catch (e2) {}
+					} else if (wf && wf.doc && !wf.doc.name) {
+						wf.doc.name = msg.name;
+					}
 				}
 				// Set directly on doc — avoids triggering a Frappe field-refresh
 				// cascade that would call set_formatted_input on the phone control
@@ -1069,6 +1087,17 @@ function setupApplicationFeeReceiptDownload() {
 		}
 	}, 400);
 	setInterval(syncApplicationFeeReceiptButton, 1200);
+}
+
+/** Hide Frappe header Edit when URL is already .../edit (my-applications opens this directly). */
+function setupHideRedundantWebFormEdit() {
+	setInterval(function () {
+		try {
+			var path = (window.location.pathname || '').replace(/\/$/, '');
+			if (path.indexOf('/applicant-form/') !== 0 || !/\/edit$/.test(path)) return;
+			$('.web-form-header a.edit-button, .web-form-actions a.edit-button').hide();
+		} catch (e) {}
+	}, 400);
 }
 
 /** Locked portal statuses: hide Submit / Save Draft / Edit (footer still shows Discard / nav where shown). */
@@ -2215,6 +2244,188 @@ function setupNumericFieldRestriction() {
 	});
 }
 
+/** Applicant web form — digit length & numeric bounds (portal). */
+var SLCM_APPLICANT_PINCODE_FIELD = 'pincode';
+var SLCM_APPLICANT_YEAR_4_FIELDS = {
+	class_x_year_of_completion: 1,
+	class_xii_year_of_completion: 1,
+	year_of_completion: 1,
+};
+var SLCM_APPLICANT_MAX10_P2_FIELDS = {
+	class_x_cgpa: 1,
+	class_xii_cgpa: 1,
+	percentage: 1,
+	ug_cgpa: 1,
+	pg_cgpa: 1,
+};
+
+/** Percentage fields (0–100, 2 decimal places) — not CGPA-on-10 scale. */
+var SLCM_APPLICANT_MAX100_P2_FIELDS = {
+	class_x_percentage: 1,
+	hsc_percentage: 1,
+};
+
+function _slcmApplicantFormatRuleField(fieldname) {
+	if (!fieldname) return false;
+	if (fieldname === SLCM_APPLICANT_PINCODE_FIELD) return true;
+	return !!(
+		SLCM_APPLICANT_YEAR_4_FIELDS[fieldname] ||
+		SLCM_APPLICANT_MAX10_P2_FIELDS[fieldname] ||
+		SLCM_APPLICANT_MAX100_P2_FIELDS[fieldname]
+	);
+}
+
+function _slcmApplicantControlFieldname(el) {
+	if (!el || !el.closest) return null;
+	var c = el.closest('.frappe-control[data-fieldname]');
+	return c ? c.getAttribute('data-fieldname') : null;
+}
+
+function _slcmClampDecimalInputEl(input, maxVal, precision) {
+	var s = (input.value || '').trim();
+	if (s === '' || s === '.') return;
+	var n = parseFloat(s);
+	if (Number.isNaN(n)) return;
+	n = Math.max(0, Math.min(maxVal, n));
+	var p = Math.pow(10, precision);
+	n = Math.round(n * p) / p;
+	input.value = String(n);
+}
+
+/**
+ * Server-style format check. @param rawVal string or number from control / get_value.
+ * @returns {string|null} user-facing error line or null if OK / not applicable / empty.
+ */
+function _slcmApplicantFormatError(fieldname, rawVal, label) {
+	var lbl = (label || fieldname || '').trim() || fieldname;
+	if (rawVal === undefined || rawVal === null) return null;
+	var s0 = typeof rawVal === 'string' ? rawVal.trim() : String(rawVal);
+	if (s0 === '') return null;
+
+	if (fieldname === SLCM_APPLICANT_PINCODE_FIELD) {
+		var digits = s0.replace(/\D/g, '');
+		if (digits.length !== 6) {
+			return lbl + ': ' + __('Pincode must be exactly 6 digits');
+		}
+		return null;
+	}
+
+	if (SLCM_APPLICANT_YEAR_4_FIELDS[fieldname]) {
+		if (!/^\d{4}$/.test(s0)) {
+			return lbl + ': ' + __('Year must be exactly 4 digits');
+		}
+		var y = parseInt(s0, 10);
+		if (y < 1900 || y > 2100) {
+			return lbl + ': ' + __('Year must be between 1900 and 2100');
+		}
+		return null;
+	}
+
+	if (SLCM_APPLICANT_MAX100_P2_FIELDS[fieldname]) {
+		var n100 = typeof rawVal === 'number' ? rawVal : parseFloat(s0);
+		if (Number.isNaN(n100)) {
+			return lbl + ': ' + __('Enter a valid number');
+		}
+		if (n100 < 0) {
+			return lbl + ': ' + __('Cannot be negative');
+		}
+		if (n100 > 100) {
+			return lbl + ': ' + __('Cannot be greater than 100');
+		}
+		var rounded100 = Math.round(n100 * 100) / 100;
+		if (Math.abs(n100 - rounded100) > 1e-6) {
+			return lbl + ': ' + __('Use at most 2 decimal places');
+		}
+		return null;
+	}
+
+	if (SLCM_APPLICANT_MAX10_P2_FIELDS[fieldname]) {
+		var n = typeof rawVal === 'number' ? rawVal : parseFloat(s0);
+		if (Number.isNaN(n)) {
+			return lbl + ': ' + __('Enter a valid number');
+		}
+		if (n < 0) {
+			return lbl + ': ' + __('Cannot be negative');
+		}
+		if (n > 10) {
+			return lbl + ': ' + __('Cannot be greater than 10');
+		}
+		var rounded = Math.round(n * 100) / 100;
+		if (Math.abs(n - rounded) > 1e-6) {
+			return lbl + ': ' + __('Use at most 2 decimal places');
+		}
+		return null;
+	}
+
+	return null;
+}
+
+/** Walk visible controls (includes child-table rows; multiple same fieldname allowed). */
+function _slcmValidateApplicantFormatsOnPage(wf, $page, missing) {
+	var errSel = '.form-control, .input-with-feedback, .control-value';
+	$page.find('.frappe-control[data-fieldname]').each(function () {
+		var $w = $(this);
+		if ($w.is(':hidden')) return;
+		var fn = $w.attr('data-fieldname');
+		if (!_slcmApplicantFormatRuleField(fn)) return;
+
+		var $in = $w.find('input:visible, textarea:visible').first();
+		var raw = $in.length ? $in.val() : '';
+		if (raw === undefined || raw === null) raw = '';
+		if (String(raw).trim() === '') return;
+
+		var dfLbl = '';
+		try {
+			var fd = wf.fields_dict && wf.fields_dict[fn];
+			dfLbl = fd && fd.df && fd.df.label ? fd.df.label : '';
+		} catch (e1) { /* child row may omit parent fields_dict */ }
+
+		var err = _slcmApplicantFormatError(fn, raw, dfLbl || fn);
+		if (err) {
+			$w.find(errSel).addClass('slcm-field-error');
+			missing.push(err);
+		}
+	});
+}
+
+function setupApplicantFieldBoundaries() {
+	document.body.addEventListener(
+		'input',
+		function (e) {
+			var t = e.target;
+			if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA')) return;
+			var fn = _slcmApplicantControlFieldname(t);
+			if (!fn) return;
+
+			if (fn === SLCM_APPLICANT_PINCODE_FIELD) {
+				var pd = String(t.value || '').replace(/\D/g, '').slice(0, 6);
+				if (t.value !== pd) t.value = pd;
+				return;
+			}
+			if (SLCM_APPLICANT_YEAR_4_FIELDS[fn]) {
+				var yd = String(t.value || '').replace(/\D/g, '').slice(0, 4);
+				if (t.value !== yd) t.value = yd;
+			}
+		},
+		true
+	);
+
+	document.body.addEventListener(
+		'blur',
+		function (e) {
+			var t = e.target;
+			if (!t || t.tagName !== 'INPUT') return;
+			var fn = _slcmApplicantControlFieldname(t);
+			if (fn && SLCM_APPLICANT_MAX100_P2_FIELDS[fn]) {
+				_slcmClampDecimalInputEl(t, 100, 2);
+			} else if (fn && SLCM_APPLICANT_MAX10_P2_FIELDS[fn]) {
+				_slcmClampDecimalInputEl(t, 10, 2);
+			}
+		},
+		true
+	);
+}
+
 function setupPhoneValidation() {
 	var PHONE_FIELDS = ['mobile_number', 'alternate_contact', 'father_mobile', 'mother_mobile', 'guardian_mobile'];
 
@@ -2816,6 +3027,7 @@ frappe.ready(function () {
 
 	// Save Draft button (re-polls on every step change)
 	setupSaveDraftButton();
+	setupHideRedundantWebFormEdit();
 
 	setupApplicationFeeReceiptDownload();
 	if (window.frappe && frappe.web_form && frappe.web_form.events && frappe.web_form.events.on) {
@@ -2830,6 +3042,7 @@ frappe.ready(function () {
 	setupCandidatePhotoPreview();
 	setupAttachFieldValidation();
 	setupNumericFieldRestriction();
+	setupApplicantFieldBoundaries();
 	setupPhoneValidation();
 	setupWebFormDateInputSanitize();
 	
@@ -2930,8 +3143,20 @@ function _renderStepper(wf) {
 		}
 	});
 
-	// ── 2. Build stepper HTML ──────────────────────────────────────────────
-	let html = '<div id="slcm-stepper-wrap"><div class="slcm-stepper">';
+	// ── 2. Build stepper HTML (grid: pill | growing line | pill | …) ───────
+	var gridCols = [];
+	for (var gi = 0; gi < steps.length; gi++) {
+		gridCols.push('max-content');
+		if (gi < steps.length - 1) {
+			gridCols.push('minmax(12px,1fr)');
+		}
+	}
+	var gridInline =
+		'display:grid;width:100%;max-width:100%;box-sizing:border-box;' +
+		'grid-template-columns:' +
+		gridCols.join(' ') +
+			';align-items:center;column-gap:0;row-gap:10px;';
+	let html = '<div id="slcm-stepper-wrap"><div class="slcm-stepper" style="' + gridInline + '">';
 	steps.forEach(function (step, i) {
 		var lbl = step.label || '';
 		var safeTitle = lbl.replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -3355,6 +3580,8 @@ function _validateStage(wf, $page) {
 			fw.$wrapper && fw.$wrapper.find(errSel).removeClass('slcm-field-error');
 		}
 	});
+
+	_slcmValidateApplicantFormatsOnPage(wf, $page, missing);
 
 	return { ok: missing.length === 0, missing };
 }
