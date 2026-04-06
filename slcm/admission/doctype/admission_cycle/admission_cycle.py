@@ -141,6 +141,17 @@ class AdmissionCycle(Document):
         if not self.flags.in_reservation_sync:
             self._sync_reservation_policies()
 
+    def before_cancel(self):
+        if self.status != "Active":
+            frappe.throw(
+                _("Only Active admission cycles can be cancelled. Current status: {0}").format(self.status),
+                title=_("Invalid Status")
+            )
+
+    def on_cancel(self):
+        self.status = "Closed"
+        self.db_set("status", "Closed")
+
     def _sync_reservation_policies(self):
         """
         Sync total_seats from cycle programs to linked Reservation Policies.
