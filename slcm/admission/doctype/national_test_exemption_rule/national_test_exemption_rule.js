@@ -1,4 +1,13 @@
 frappe.ui.form.on('National Test Exemption Rule', {
+    onload: function (frm) {
+        frm.set_query("admission_cycle", function () {
+            return {
+                filters: {
+                    "status": "Active"
+                }
+            };
+        });
+    },
 
     refresh: function (frm) {
         restrict_dates(frm);
