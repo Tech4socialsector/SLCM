@@ -495,6 +495,7 @@
   .programs-grid {
     display: grid;
     gap: 2rem;
+    justify-content: center;
   }
 
   @media (min-width: 1536px) {
@@ -1284,7 +1285,6 @@
 <!-- END HERO -->
 
 <!-- ══ ANNOUNCEMENT BANNER ══════════════════════════════════════════ -->
-{% if (_show_ann and _ann_text) or (active_cycle and active_cycle.application_end) %}
 <div class="full-bleed" style="position:relative;z-index:20;margin-top:-48px;">
   <div style="max-width:960px;margin:0 auto;padding:0 16px;">
     <div class="flex flex-col items-center justify-between gap-6 rounded-2xl bg-white p-6 shadow-xl md:flex-row md:p-8"
@@ -1297,24 +1297,25 @@
         <div>
           <h3 class="text-xl font-bold text-slate-900">
             {% if _show_ann and _ann_text %}{{ _ann_text | safe }}
-            {% else %}Admissions {{ active_cycle.name }} Now Open!{% endif %}
+            {% elif active_cycle %}Admissions {{ active_cycle.name }} Now Open!
+            {% else %}Admissions are currently closed.{% endif %}
           </h3>
-          <!-- {% if active_cycle and active_cycle.application_end %}
-          <p class="text-slate-500 text-sm">
-            Applications closing on <strong>{{ frappe.utils.formatdate(active_cycle.application_end, "dd MMM yyyy") }}</strong>
-          </p>
-          {% endif %} -->
         </div>
       </div>
+      {% if active_cycle %}
       <a href="{{ '#programs' if _is_cycle_active else 'javascript:void(0)' }}"
         class="w-full whitespace-nowrap rounded-xl px-8 py-3 font-bold text-white md:w-auto text-center {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
         style="background:var(--primary); {{ 'pointer-events: none;' if not _is_cycle_active else '' }}">
         {{ 'Apply Today' if _is_cycle_active else 'Admissions Closed' }}
       </a>
+      {% else %}
+      <div class="rounded-xl px-8 py-3 font-bold text-slate-400 bg-slate-100">
+        Stay Tuned
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
-{% endif %}
 <!-- END BANNER -->
 
 <!-- ══ STATS BAR ════════════════════════════════════════════════════ -->
@@ -1351,7 +1352,7 @@
     </p>
   </div>
   {% endif %}
-  <div class="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
+  <div class="mb-12 flex flex-col items-center justify-center text-center gap-4">
     <div>
       <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Academic Programmes</h2>
       <p class="mt-2 text-slate-500">
@@ -1499,9 +1500,12 @@
     </article>
 
     {% else %}
-    <div class="py-16 text-center text-slate-400" style="grid-column:1/-1">
-      <span class="material-symbols-outlined" style="font-size:48px;display:block;margin-bottom:12px">menu_book</span>
-      No programmes available for this cycle.
+    <div class="col-span-full py-20 flex flex-col items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-6">
+      <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+        <span class="material-symbols-outlined text-slate-300" style="font-size:48px;">menu_book</span>
+      </div>
+      <h3 class="text-xl font-bold text-slate-900 mb-2">No active cycle found</h3>
+      <p class="text-slate-500 max-w-sm">We are not accepting applications at the moment. Please check back later or contact admissions for more information.</p>
     </div>
     {% endfor %}
   </div>

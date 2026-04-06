@@ -72,14 +72,14 @@ def auto_update_cycle_status():
     cycles = frappe.get_all(
         "Admission Cycle",
         filters={"status": ["!=", "Closed"]},
-        fields=["name", "start_date", "end_date", "status"]
+        fields=["name", "cycle_start_date", "cycle_end_date", "status"]
     )
     today_date = getdate(today())
     for cycle in cycles:
         new_status = "Draft"
-        if getdate(cycle.start_date) <= today_date <= getdate(cycle.end_date):
+        if getdate(cycle.cycle_start_date) <= today_date <= getdate(cycle.cycle_end_date):
             new_status = "Active"
-        elif today_date > getdate(cycle.end_date):
+        elif today_date > getdate(cycle.cycle_end_date):
             new_status = "Closed"
         if new_status != cycle.status:
             frappe.db.set_value(

@@ -207,6 +207,19 @@ def update_website_context(context):
     """
     try:
         context.portal_config = get_portal_config()
+        
+        # Issue 2: Fetch active programs for the footer
+        context.footer_programs = frappe.db.sql("""
+            SELECT
+                COALESCE(cp.program_name, p.program_name, cp.program) as name,
+                COALESCE(p.program_slug, cp.program) as slug
+            FROM `tabAdmission Cycle Program` cp
+            LEFT JOIN `tabProgram` p ON p.name = cp.program
+            WHERE cp.parent = (SELECT name FROM `tabAdmission Cycle` WHERE status = 'Active' LIMIT 1)
+            ORDER BY cp.idx ASC, cp.program ASC
+            LIMIT 100
+        """, as_dict=1) or []
+        
     except Exception as e:
         frappe.log_error(
             title="update_website_context failed",
@@ -219,6 +232,7 @@ def update_website_context(context):
             "secondary_color": "#c8a14b",
             "social_links": [],
         }
+        context.footer_programs = []
 
 @frappe.whitelist(allow_guest=True)
 def api_get_hero_slides():

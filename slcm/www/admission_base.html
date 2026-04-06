@@ -1027,28 +1027,8 @@
     {% set _f_title = (_pc.get('portal_title') if _pc.get else _pc.portal_title) or 'Admissions' %}
     {% set _f_powerd_by = (_pc.get('powerd_by') if _pc.get else _pc.powerd_by) or 'boscosoft' %}
 
-    {# Fetch active programs for the footer using robust SQL #}
-    {% set _f_programs = frappe.db.sql("""
-    SELECT
-    COALESCE(cp.program_name, p.program_name, cp.program) as name,
-    COALESCE(p.program_slug, cp.program) as slug
-    FROM `tabAdmission Cycle Program` cp
-    LEFT JOIN `tabProgram` p ON p.name = cp.program
-    WHERE cp.parent = (SELECT name FROM `tabAdmission Cycle` WHERE status = 'Active' LIMIT 1)
-    ORDER BY cp.idx ASC, cp.program ASC
-    LIMIT 100
-    """, as_dict=1) %}
-
-    {# Fallback if cycle query returns nothing #}
-    {% if not _f_programs %}
-    {# Avoid program_status: older DBs without that column would 500 the whole page. #}
-    {% set _f_programs = frappe.db.sql("""
-    SELECT program_name as name, COALESCE(program_slug, name) as slug
-    FROM `tabProgram`
-    ORDER BY modified DESC
-    LIMIT 100
-    """, as_dict=1) %}
-    {% endif %}
+    {# footer_programs comes from update_website_context #}
+    {% set _f_programs = footer_programs or [] %}
 
         <footer class="full-bleed-footer">
             <div class="footer-container">
@@ -1113,6 +1093,8 @@
                                     <li><a href="/admission#programs">View all programmes</a></li>
                                     {% elif _f_programs|length > 0 %}
                                     <li><a href="/admission">Browse all</a></li>
+                                    {% else %}
+                                    <li class="text-sm italic opacity-60">No active programmes</li>
                                     {% endif %}
                                 </ul>
                             </div>
