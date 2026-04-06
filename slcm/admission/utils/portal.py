@@ -3,53 +3,126 @@ import json
 from frappe.utils import now, add_days, getdate, today, get_datetime
 from slcm.admission.utils.institution import is_multi_campus_enabled
 
+# Admission Cycle.application_form_type — DocType option is "Custom From"; accept "Custom Form" if relabelled.
+_CUSTOM_PORTAL_FORM_TYPES = frozenset({"Custom From", "Custom Form"})
+
+
+def admission_cycle_uses_applicant_web_form(cycle_name: str | None) -> bool:
+	"""
+	True → Frappe Web Form (/applicant-form/...).
+	False when cycle uses the legacy /application_form portal page.
+	"""
+	if not cycle_name or not frappe.db.exists("Admission Cycle", cycle_name):
+		return True
+	if not frappe.db.has_column("Admission Cycle", "application_form_type"):
+		return True
+	ft = (frappe.db.get_value("Admission Cycle", cycle_name, "application_form_type") or "").strip()
+	if ft in _CUSTOM_PORTAL_FORM_TYPES:
+		return False
+	return True
+
+
+def build_custom_application_form_url(
+	program,
+	admission_cycle="",
+	campus="",
+	intake_type="",
+	admission_year="",
+	academic_year="",
+	program_level="",
+):
+	"""Public URL for the portal application_form page with query-string prefills."""
+	from urllib.parse import urlencode
+
+	parts = {
+		"program": program or "",
+		"admission_cycle": admission_cycle or "",
+		"campus": campus or "",
+		"intake_type": intake_type or "",
+		"admission_year": admission_year or "",
+		"academic_year": academic_year or "",
+		"program_level": program_level or "",
+	}
+	q = urlencode({k: v for k, v in parts.items() if v})
+	return f"/application_form?{q}" if q else "/application_form"
+
 
 def build_applicant_form_new_url(
-    program,
-    admission_cycle="",
-    campus="",
-    intake_type="",
-    admission_year="",
-    academic_year="",
-    program_level="",
+	program,
+	admission_cycle="",
+	campus="",
+	intake_type="",
+	admission_year="",
+	academic_year="",
+	program_level="",
 ):
-    """Public website URL for a new Applicant web form with query-string prefills."""
-    from urllib.parse import urlencode
+	"""New application entry URL: Web Form or custom portal page, based on Admission Cycle."""
+	if admission_cycle and not admission_cycle_uses_applicant_web_form(admission_cycle):
+		return build_custom_application_form_url(
+			program,
+			admission_cycle,
+			campus=campus,
+			intake_type=intake_type,
+			admission_year=admission_year,
+			academic_year=academic_year,
+			program_level=program_level,
+		)
+	from urllib.parse import urlencode
 
-    parts = {
-        "program": program or "",
-        "admission_cycle": admission_cycle or "",
-        "campus": campus or "",
-        "intake_type": intake_type or "",
-        "admission_year": admission_year or "",
-        "academic_year": academic_year or "",
-        "program_level": program_level or "",
-    }
-    q = urlencode({k: v for k, v in parts.items() if v})
-    return f"/applicant-form/new?{q}" if q else "/applicant-form/new"
+	parts = {
+		"program": program or "",
+		"admission_cycle": admission_cycle or "",
+		"campus": campus or "",
+		"intake_type": intake_type or "",
+		"admission_year": admission_year or "",
+		"academic_year": academic_year or "",
+		"program_level": program_level or "",
+	}
+	q = urlencode({k: v for k, v in parts.items() if v})
+	return f"/applicant-form/new?{q}" if q else "/applicant-form/new"
 
 
 def build_login_redirect_to_applicant_form_new(
-    program,
-    admission_cycle="",
-    campus="",
-    intake_type="",
-    admission_year="",
-    academic_year="",
-    program_level="",
+	program,
+	admission_cycle="",
+	campus="",
+	intake_type="",
+	admission_year="",
+	academic_year="",
+	program_level="",
 ):
-    from urllib.parse import quote
+	from urllib.parse import quote
 
-    path = build_applicant_form_new_url(
-        program,
-        admission_cycle,
-        campus=campus,
-        intake_type=intake_type,
-        admission_year=admission_year,
-        academic_year=academic_year,
-        program_level=program_level,
-    )
-    return "/login?redirect-to=" + quote(path, safe="/")
+	path = build_applicant_form_new_url(
+		program,
+		admission_cycle,
+		campus=campus,
+		intake_type=intake_type,
+		admission_year=admission_year,
+		academic_year=academic_year,
+		program_level=program_level,
+	)
+	return "/login?redirect-to=" + quote(path, safe="/")
+
+
+def build_existing_applicant_portal_url(
+	applicant_name: str,
+	admission_cycle: str | None = None,
+	*,
+	edit: bool = True,
+) -> str:
+	"""Open an existing Applicant from my-applications or view_application."""
+	if not (applicant_name or "").strip():
+		return "/my-applications"
+	name = applicant_name.strip()
+	cycle = (admission_cycle or "").strip()
+	if cycle and not admission_cycle_uses_applicant_web_form(cycle):
+		from urllib.parse import urlencode
+
+		return f"/application_form?{urlencode({'applicant': name})}"
+	if edit:
+		return f"/applicant-form/{name}/edit"
+	return f"/applicant-form/{name}"
 
 
 # ── CONFIG ────────────────────────────────────────────────────────

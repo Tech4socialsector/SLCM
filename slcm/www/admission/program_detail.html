@@ -319,7 +319,7 @@
           Apply now
         </a>
         {% else %}
-        <a href="{{ '/application_form?program=' ~ (program.name if program else '') ~ '&admission_cycle=' ~ (active_cycle.name if active_cycle else '') if _is_cycle_active else 'javascript:void(0)' }}"
+        <a href="{{ apply_web_form_url if _is_cycle_active else 'javascript:void(0)' }}"
           style="display:inline-flex;align-items:center;gap:8px;
                       padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
                       text-decoration:none;color:#fff;
@@ -331,7 +331,7 @@
         </a>
         {% endif %}
         {% else %}
-        <a href="{{ '/login?redirect-to=/application_form' if _is_cycle_active else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:8px;
+        <a href="{{ apply_web_form_login_url if _is_cycle_active else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:8px;
                     padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
                     text-decoration:none;color:#fff;
                     background:var(--primary,#CB2929);transition:opacity .2s;
@@ -933,7 +933,7 @@
                 Apply now
               </a>
               {% else %}
-              <a href="{{ '/application_form?program=' ~ (program.name if program else '') ~ '&admission_cycle=' ~ (active_cycle.name if active_cycle else '') if _is_cycle_active else 'javascript:void(0)' }}"
+              <a href="{{ apply_web_form_url if _is_cycle_active else 'javascript:void(0)' }}"
                 style="display:block;width:100%;padding:13px;text-align:center;
                             border-radius:10px;background:var(--primary);color:white;
                             font-weight:700;font-size:14px;text-decoration:none;
@@ -944,7 +944,7 @@
               </a>
               {% endif %}
               {% else %}
-              <a href="{{ '/login?redirect-to=/application_form' if _is_cycle_active else 'javascript:void(0)' }}" style="display:block;width:100%;padding:13px;text-align:center;
+              <a href="{{ apply_web_form_login_url if _is_cycle_active else 'javascript:void(0)' }}" style="display:block;width:100%;padding:13px;text-align:center;
                           border-radius:10px;background:var(--primary);color:white;
                           font-weight:700;font-size:14px;text-decoration:none;
                           box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);

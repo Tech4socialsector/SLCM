@@ -391,10 +391,21 @@ def get_context(context):
     try:
         active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
         if active_cycle_name:
+            cycle_fields = [
+                "cycle_start_date",
+                "cycle_end_date",
+                "application_start_date",
+                "application_end_date",
+                "allow_multiple_applications",
+                "admission_year",
+                "academic_year",
+            ]
+            if frappe.db.has_column("Admission Cycle", "application_form_type"):
+                cycle_fields.append("application_form_type")
             row = frappe.db.get_value(
                 "Admission Cycle",
                 active_cycle_name,
-                ["cycle_start_date", "cycle_end_date", "application_start_date", "application_end_date", "allow_multiple_applications"],
+                cycle_fields,
                 as_dict=True,
             ) or {}
             active_cycle = frappe._dict({
@@ -413,6 +424,9 @@ def get_context(context):
                 else None,
                 "application_end": None,
                 "allow_multiple_applications": int(row.get("allow_multiple_applications") or 0),
+                "admission_year": row.get("admission_year") or "",
+                "academic_year": row.get("academic_year") or "",
+                "application_form_type": row.get("application_form_type") or "",
             })
     except Exception:
         frappe.log_error(frappe.get_traceback(), "admission get_context: active_cycle")

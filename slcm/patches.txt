@@ -13,5 +13,6 @@ slcm.patches.v2_0.fix_applicant_web_form_breadcrumbs
 slcm.patches.v2_0.enable_applicant_web_form_allow_edit
 slcm.patches.v2_0.enable_applicant_web_form_allow_multiple
 slcm.patches.v2_0.normalize_applicant_docstatus_not_submittable
+slcm.patches.v2_0.admission_cycle_cancelled_set_status_closed
 # Patches added in this section will be executed after doctypes are migrated
 
