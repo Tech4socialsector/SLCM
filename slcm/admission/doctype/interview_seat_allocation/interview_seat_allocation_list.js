@@ -65,6 +65,13 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                             });
                         }
                     });
+                    d.set_query("admission_cycle", function () {
+                        return {
+                            filters: {
+                                "status": "Active"
+                            }
+                        };
+                    });
                     d.show();
                 });
                 ubtn.addClass('btn-update-rank');
@@ -195,6 +202,13 @@ function open_reschedule_dialog(listview) {
     });
 
     d.show();
+    d.set_query("admission_cycle", function () {
+        return {
+            filters: {
+                "status": "Active"
+            }
+        };
+    });
     fetch_absent_applicants(d);
 }
 

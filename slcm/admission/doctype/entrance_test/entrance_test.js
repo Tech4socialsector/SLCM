@@ -2,6 +2,15 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Entrance Test', {
+    onload: function (frm) {
+        frm.set_query("admission_cycle", function () {
+            return {
+                filters: {
+                    "status": "Active"
+                }
+            };
+        });
+    },
 
     refresh: function (frm) {
         restrict_dates(frm);
