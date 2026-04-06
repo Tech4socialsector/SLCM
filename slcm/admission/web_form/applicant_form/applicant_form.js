@@ -1481,7 +1481,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 	}
 
 	var html =
-		'<div id="slcm-wf-eligibility-modal-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">' +
+		'<div id="slcm-wf-eligibility-modal-overlay" style="position:fixed;inset:0;z-index:199000;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">' +
 		'<div style="background:#fff;border-radius:20px;width:100%;max-width:680px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25),0 0 0 1px rgba(0,0,0,0.05);display:flex;flex-direction:column;max-height:90vh;overflow:hidden;">' +
 		'<div style="padding:20px 24px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);border-bottom:1px solid #fecaca;flex-shrink:0;">' +
 		'<div style="display:flex;align-items:center;gap:14px;">' +
@@ -1603,6 +1603,22 @@ function _slcmWfHandleToastProgramSwitch(applicantName, eligibleProgs) {
 	if (!eligibleProgs || !eligibleProgs.length || !applicantName) {
 		return;
 	}
+	_injectCSS();
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.get_applicant_programs_already_applied',
+		args: { applicant_name: applicantName },
+		callback: function (r) {
+			var already = (r.message && r.message.already_applied) || {};
+			_slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, already);
+		},
+		error: function () {
+			_slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, {});
+		},
+	});
+}
+
+function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyApplied) {
+	alreadyApplied = alreadyApplied || {};
 	var eligModal = document.getElementById('slcm-wf-eligibility-modal-overlay');
 	if (eligModal) {
 		eligModal.remove();
@@ -1615,7 +1631,36 @@ function _slcmWfHandleToastProgramSwitch(applicantName, eligibleProgs) {
 	if (existing) {
 		existing.remove();
 	}
+
+	var selectable = eligibleProgs.filter(function (pid) {
+		return !alreadyApplied[pid];
+	});
+
+	if (selectable.length === 0) {
+		showToast(
+			__(
+				'You already have a separate application for each eligible programme in this admission cycle and campus. You cannot switch to another one from here.'
+			),
+			'info',
+			10000
+		);
+		return;
+	}
+
 	if (eligibleProgs.length === 1) {
+		if (alreadyApplied[eligibleProgs[0]]) {
+			showToast(
+				__('This programme is already applied for in the same cycle and campus.') +
+					' (' +
+					__('Application ID') +
+					': ' +
+					_slcmEscapeHtml(String(alreadyApplied[eligibleProgs[0]])) +
+					')',
+				'error',
+				12000
+			);
+			return;
+		}
 		_slcmWfExecuteProgramSwitch(applicantName, eligibleProgs[0]);
 		return;
 	}
@@ -1624,6 +1669,28 @@ function _slcmWfHandleToastProgramSwitch(applicantName, eligibleProgs) {
 		.map(function (p) {
 			var pv = _slcmEscapeAttr(p);
 			var pt = _slcmEscapeHtml(p);
+			var ref = alreadyApplied[p] ? String(alreadyApplied[p]) : '';
+			if (alreadyApplied[p]) {
+				return (
+					'<div class="slcm-wf-switch-opt slcm-wf-switch-opt--applied" data-value="' +
+					pv +
+					'" data-applied="1">' +
+					'<div class="slcm-wf-switch-radio" style="width:18px;height:18px;border:2px solid #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f1f5f9;">' +
+					'<div style="width:8px;height:8px;background:#94a3b8;border-radius:50%;display:none !important;"></div></div>' +
+					'<span style="font-weight:600;color:#64748b;">' +
+					pt +
+					'</span>' +
+					'<span class="slcm-wf-switch-applied-badge">' +
+					__('Applied') +
+					'</span>' +
+					(ref
+						? '<span style="font-size:11px;color:#94a3b8;margin-left:6px;">(' +
+						  _slcmEscapeHtml(ref) +
+						  ')</span>'
+						: '') +
+					'</div>'
+				);
+			}
 			return (
 				'<div class="slcm-wf-switch-opt" data-value="' +
 				pv +
@@ -1668,6 +1735,9 @@ function _slcmWfHandleToastProgramSwitch(applicantName, eligibleProgs) {
 	_injectCSS();
 
 	function selectOpt(el) {
+		if (!el || el.classList.contains('slcm-wf-switch-opt--applied')) {
+			return;
+		}
 		var all = overlay.querySelectorAll('.slcm-wf-switch-opt');
 		for (var i = 0; i < all.length; i++) {
 			all[i].classList.remove('selected');
@@ -1681,7 +1751,7 @@ function _slcmWfHandleToastProgramSwitch(applicantName, eligibleProgs) {
 			selectOpt(this);
 		});
 	}
-	var firstOpt = overlay.querySelector('.slcm-wf-switch-opt');
+	var firstOpt = overlay.querySelector('.slcm-wf-switch-opt:not(.slcm-wf-switch-opt--applied)');
 	if (firstOpt) {
 		selectOpt(firstOpt);
 	}
@@ -1692,8 +1762,8 @@ function _slcmWfHandleToastProgramSwitch(applicantName, eligibleProgs) {
 	cbtn.addEventListener('click', function () {
 		var selectedOpt = overlay.querySelector('.slcm-wf-switch-opt.selected');
 		var newProg = selectedOpt ? selectedOpt.getAttribute('data-value') : null;
-		if (!newProg) {
-			showToast(__('Please select a programme.'), 'error');
+		if (!newProg || (selectedOpt && selectedOpt.getAttribute('data-applied') === '1')) {
+			showToast(__('Please select a programme you have not already applied for.'), 'error', 7000);
 			return;
 		}
 		cbtn.disabled = true;
@@ -1813,97 +1883,127 @@ function showEligibilityEvaluationModal(applicantName, res) {
 	var ec = sug.eligible_count != null ? sug.eligible_count : programs.length;
 	var tc = sug.total_count != null ? sug.total_count : programs.length;
 
-	var rows = programs
-		.map(function (p) {
-			var name = p.program_name || p.program || '';
-			var pid = p.program || '';
-			var sel = !!p.selected;
-			var progCell =
-				'<strong>' +
-				_slcmEscapeHtml(name) +
-				'</strong>' +
-				(sel
-					? ' <span class="slcm-ee-badge">Current</span>'
-					: '');
-			var statusCell =
-				'<span class="slcm-ee-status"><span class="slcm-ee-dot"></span> Eligible</span>';
-			var actionCell = sel
-				? '<span style="color:#94a3b8;font-size:12px;">\u2014</span>'
-				: '<button type="button" class="slcm-ee-switch" data-program="' +
-					_slcmEscapeHtml(pid) +
-					'">Switch</button>';
-			return (
-				'<tr>' +
-				'<td>' +
-				progCell +
-				'</td>' +
-				'<td style="text-align:center;">' +
-				statusCell +
-				'</td>' +
-				'<td style="text-align:center;" class="slcm-ee-td-switch">' +
-				actionCell +
-				'</td>' +
-				'</tr>'
-			);
-		})
-		.join('');
+	function _slcmEeFinishProgramsTable(alreadyApplied) {
+		alreadyApplied = alreadyApplied || {};
+		var rows = programs
+			.map(function (p) {
+				var name = p.program_name || p.program || '';
+				var pid = p.program || '';
+				var sel = !!p.selected;
+				var progCell =
+					'<strong>' +
+					_slcmEscapeHtml(name) +
+					'</strong>' +
+					(sel
+						? ' <span class="slcm-ee-badge">Current</span>'
+						: '');
+				var statusCell =
+					'<span class="slcm-ee-status"><span class="slcm-ee-dot"></span> Eligible</span>';
+				var actionCell;
+				if (sel) {
+					actionCell = '<span style="color:#94a3b8;font-size:12px;">\u2014</span>';
+				} else if (alreadyApplied[pid]) {
+					actionCell =
+						'<span style="display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#e2e8f0;color:#475569;">' +
+						__('Applied') +
+						'</span>' +
+						'<div style="font-size:11px;color:#94a3b8;margin-top:6px;">' +
+						_slcmEscapeHtml(String(alreadyApplied[pid])) +
+						'</div>';
+				} else {
+					actionCell =
+						'<button type="button" class="slcm-ee-switch" data-program="' +
+						_slcmEscapeAttr(pid) +
+						'">Switch</button>';
+				}
+				return (
+					'<tr>' +
+					'<td>' +
+					progCell +
+					'</td>' +
+					'<td style="text-align:center;">' +
+					statusCell +
+					'</td>' +
+					'<td style="text-align:center;" class="slcm-ee-td-switch">' +
+					actionCell +
+					'</td>' +
+					'</tr>'
+				);
+			})
+			.join('');
 
-	wrap.innerHTML =
-		'<div class="slcm-ee-subhead">' +
-		'<strong>Suggested eligible programmes</strong>' +
-		(metaStr ? '<span class="slcm-ee-meta">\u2014 ' + _slcmEscapeHtml(metaStr) + '</span>' : '') +
-		'</div>' +
-		'<div class="slcm-ee-summary">' +
-		'<span class="slcm-ee-dot"></span>' +
-		'<span><strong>' +
-		ec +
-		'</strong> eligible programme' +
-		(ec === 1 ? '' : 's') +
-		' found</span>' +
-		'<span style="color:#94a3b8;">(' +
-		tc +
-		' total at this level)</span>' +
-		'</div>' +
-		'<div style="overflow-x:auto;">' +
-		'<table id="slcm-ee-table">' +
-		'<thead><tr>' +
-		'<th>Programme</th>' +
-		'<th style="text-align:center;">Status</th>' +
-		'<th class="slcm-ee-th-actions">Action</th>' +
-		'</tr></thead>' +
-		'<tbody>' +
-		rows +
-		'</tbody></table></div>';
+		wrap.innerHTML =
+			'<div class="slcm-ee-subhead">' +
+			'<strong>Suggested eligible programmes</strong>' +
+			(metaStr ? '<span class="slcm-ee-meta">\u2014 ' + _slcmEscapeHtml(metaStr) + '</span>' : '') +
+			'</div>' +
+			'<div class="slcm-ee-summary">' +
+			'<span class="slcm-ee-dot"></span>' +
+			'<span><strong>' +
+			ec +
+			'</strong> eligible programme' +
+			(ec === 1 ? '' : 's') +
+			' found</span>' +
+			'<span style="color:#94a3b8;">(' +
+			tc +
+			' total at this level)</span>' +
+			'</div>' +
+			'<div style="overflow-x:auto;">' +
+			'<table id="slcm-ee-table">' +
+			'<thead><tr>' +
+			'<th>Programme</th>' +
+			'<th style="text-align:center;">Status</th>' +
+			'<th class="slcm-ee-th-actions">Action</th>' +
+			'</tr></thead>' +
+			'<tbody>' +
+			rows +
+			'</tbody></table></div>';
 
-	wrap.querySelectorAll('.slcm-ee-switch').forEach(function (btn) {
-		btn.onclick = function () {
-			var prog = btn.getAttribute('data-program');
-			if (!prog || !applicantName) return;
-			btn.disabled = true;
-			frappe.call({
-				method: 'slcm.admission.web_form.applicant_form.applicant_form.switch_applicant_program',
-				args: { applicant_name: applicantName, program: prog },
-				callback: function (r) {
-					var m = r && r.message;
-					if (m && m.status === 'success') {
-						if (modal._slcmClose) modal._slcmClose();
-						showToast(m.message || 'Programme updated.', 'success');
-						window.location.reload();
-					} else {
+		wrap.querySelectorAll('.slcm-ee-switch').forEach(function (btn) {
+			btn.onclick = function () {
+				var prog = btn.getAttribute('data-program');
+				if (!prog || !applicantName) return;
+				btn.disabled = true;
+				frappe.call({
+					method: 'slcm.admission.web_form.applicant_form.applicant_form.switch_applicant_program',
+					args: { applicant_name: applicantName, program: prog },
+					callback: function (r) {
+						var m = r && r.message;
+						if (m && m.status === 'success') {
+							if (modal._slcmClose) modal._slcmClose();
+							showToast(m.message || 'Programme updated.', 'success');
+							window.location.reload();
+						} else {
+							btn.disabled = false;
+							var errTb = (m && m.message) || 'Could not switch programme.';
+							showToast(errTb, 'error', errTb.length > 120 ? 10000 : 4000);
+						}
+					},
+					error: function () {
 						btn.disabled = false;
-						var errTb = (m && m.message) || 'Could not switch programme.';
-						showToast(errTb, 'error', errTb.length > 120 ? 10000 : 4000);
-					}
-				},
-				error: function () {
-					btn.disabled = false;
-					showToast('Could not switch programme.', 'error');
-				},
-			});
-		};
-	});
+						showToast('Could not switch programme.', 'error');
+					},
+				});
+			};
+		});
 
-	modal.classList.add('open');
+		modal.classList.add('open');
+	}
+
+	if (!applicantName) {
+		_slcmEeFinishProgramsTable({});
+		return;
+	}
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.get_applicant_programs_already_applied',
+		args: { applicant_name: applicantName },
+		callback: function (r) {
+			_slcmEeFinishProgramsTable((r.message && r.message.already_applied) || {});
+		},
+		error: function () {
+			_slcmEeFinishProgramsTable({});
+		},
+	});
 }
 
 function _feePayBtnSetLoading(payBtn, loading, label) {

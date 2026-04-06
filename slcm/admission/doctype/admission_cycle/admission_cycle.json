@@ -12,6 +12,7 @@
   "academic_year",
   "approval_reference",
   "allow_multiple_applications",
+  "application_form_type",
   "col_break_basic",
   "status",
   "max_schemes_per_applicant",
@@ -367,11 +368,19 @@
    "fieldname": "application_end_date",
    "fieldtype": "Date",
    "label": "Application End Date"
+  },
+  {
+   "default": "Web From",
+   "description": "If web from we can able to customise the fields dynamically",
+   "fieldname": "application_form_type",
+   "fieldtype": "Select",
+   "label": "Application Form Type",
+   "options": "Web From\nCustom From"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-06 15:35:53.043225",
+ "modified": "2026-04-06 15:59:03.361583",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
