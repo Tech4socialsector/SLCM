@@ -178,6 +178,7 @@
    "label": "Application type"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "program",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -185,6 +186,7 @@
    "options": "Program"
   },
   {
+   "allow_on_submit": 1,
    "description": "Auto-set from Program on save",
    "fieldname": "intake_type",
    "fieldtype": "Select",
@@ -943,12 +945,14 @@
    "mandatory_depends_on": "eval:doc.national_test_name"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
    "options": "Campus"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -982,6 +986,7 @@
    "options": "Pending\nRequested\nPaid\nWaived"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "application_fee_amount",
    "fieldtype": "Currency",
    "label": "Application fee amount",

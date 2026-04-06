@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate
+from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate, cint
 from slcm.admission.portal_application_web_form import (
 	applicant_portal_application_locked,
 )
@@ -43,6 +43,22 @@ class Applicant(Document):
             title=_("Not allowed"),
         )
 
+    def _restrict_program_change_on_submitted_applicant(self):
+        """Programme has allow_on_submit so portal can save after doc is submitted (docstatus 1) while still Draft.
+        Block arbitrary programme changes from Desk once application_status is no longer Draft."""
+        if cint(self.docstatus) != 1 or self.is_new():
+            return
+        if not self.has_value_changed("program"):
+            return
+        if getattr(self.flags, "ignore_validate_update_after_submit", False):
+            return
+        if frappe.flags.get("in_web_form") and (self.application_status or "").strip() == "Draft":
+            return
+        frappe.throw(
+            _("Changing programme is not allowed after this application has been submitted for review."),
+            title=_("Not allowed"),
+        )
+
     def validate(self):
         """
         Runs on every save.
@@ -52,6 +68,7 @@ class Applicant(Document):
         create_or_update_evaluation() is called inside validate_eligibility().
         """
         self._deny_portal_web_form_edit_if_locked()
+        self._restrict_program_change_on_submitted_applicant()
 
         set_intake_type(self)
         self._validate_education_percentage_bounds()
@@ -1578,9 +1595,6 @@ class Applicant(Document):
         # ── Block 1: Reservation / general + marks (when score is the issue) ──
         score_lines = []
         if cat_row and (cat_row.get("category") or "").strip():
-            cat = (cat_row.get("category") or "").strip()
-            score_lines.append(_("Reservation category"))
-            score_lines.append(_("• Category: {0}").format(cat))
             if applied_threshold is not None:
                 score_lines.append(
                     _("• Minimum required for your category ({0}): {1}{2}").format(

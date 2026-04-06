@@ -430,6 +430,64 @@ def after_save(doc, context):
     pass
 
 
+def _check_eligibility_ineligible_response(doc, raw_msg: str) -> dict:
+    """
+    Same message + programs shape as slcm/www/application_form/index.py save_form
+    ValidationError handling (is_eligibility_error, programs, error text rules).
+    """
+    programs = []
+    try:
+        if doc and hasattr(doc, "_build_program_eligibility_data"):
+            programs = doc._build_program_eligibility_data()
+    except Exception:
+        programs = []
+
+    raw_msg = raw_msg or ""
+    lower_msg = raw_msg.lower()
+
+    if "ineligibility alert" in lower_msg or "program options" in lower_msg:
+        try:
+            unescaped = unescape(raw_msg)
+        except Exception:
+            unescaped = raw_msg
+        cleaned = strip_html(unescaped or "") if unescaped else ""
+        cleaned = cleaned.replace("Ineligibility Alert", "").strip()
+        if not cleaned:
+            cleaned = _("You are not eligible for the selected program. Please review the eligibility criteria.")
+        err_text = cleaned
+    elif "|" in raw_msg:
+        err_text = raw_msg
+    else:
+        try:
+            unescaped = unescape(raw_msg)
+        except Exception:
+            unescaped = raw_msg
+        plain = strip_html(unescaped or "") if unescaped else ""
+        # Preserve line breaks: _build_rule_failure_reason uses single \n between bullets.
+        # Joining paragraphs with spaces was collapsing "Reservation…\n• Min…" into one line.
+        _lines = []
+        for _ln in plain.splitlines():
+            _t = " ".join(_ln.split())
+            if _t:
+                _lines.append(_t)
+        err_text = "\n".join(_lines) if _lines else (plain or raw_msg)
+
+    err_text = (err_text or "").strip() or _("You do not meet the eligibility criteria for the selected program.")
+    if len(err_text) > 2400:
+        err_text = err_text[:2397] + "..."
+
+    return {
+        "status": "Ineligible",
+        "message": err_text,
+        "failure_reason": err_text,
+        "error": err_text,
+        "is_eligibility_error": True,
+        "programs": programs,
+        "failure_sections": getattr(doc, "_slcm_failure_sections", None) or [],
+        "suggestions": (doc.get_eligibility_suggestion_payload() if doc else None) or {},
+    }
+
+
 @frappe.whitelist()
 def check_eligibility(applicant_name):
     """
@@ -458,49 +516,19 @@ def check_eligibility(applicant_name):
             doc.flags.skip_eligibility_throw = False
 
         if (doc.evaluation_status or "").strip() == "Ineligible":
-            plain = doc.rejected_reason or ""
-            plain = strip_html(plain)
-            plain = unescape(plain or "")
-            _paras = []
-            for _p in plain.split("\n\n"):
-                _t = " ".join(_p.split())
-                if _t:
-                    _paras.append(_t)
-            plain = "\n\n".join(_paras)
-            if len(plain) > 2400:
-                plain = plain[:2397] + "..."
-            suggestions = doc.get_eligibility_suggestion_payload()
-            sections = getattr(doc, "_slcm_failure_sections", None) or []
-            return {
-                "status": "Ineligible",
-                "message": plain or _("You do not meet the eligibility criteria for the selected program."),
-                "failure_reason": plain or _("You do not meet the eligibility criteria for the selected program."),
-                "failure_sections": sections,
-                "suggestions": suggestions,
-            }
+            return _check_eligibility_ineligible_response(doc, doc.rejected_reason or "")
 
         return {
             "status": "Eligible",
             "message": _("You meet the eligibility criteria for the selected program."),
         }
     except frappe.ValidationError as e:
-        # Unexpected throw while portal flag was off or from another validation path
-        plain = strip_html(str(e))
-        plain = unescape(plain or "")
-        _paras = []
-        for _p in plain.split("\n\n"):
-            _t = " ".join(_p.split())
-            if _t:
-                _paras.append(_t)
-        plain = "\n\n".join(_paras)
+        try:
+            raw_msg = str(e.args[0]) if (e.args and len(e.args) > 0) else str(e)
+        except Exception:
+            raw_msg = str(e)
         doc2 = frappe.get_doc("Applicant", applicant_name)
-        return {
-            "status": "Ineligible",
-            "message": plain or _("You do not meet the eligibility criteria for the selected program."),
-            "failure_reason": plain or _("You do not meet the eligibility criteria for the selected program."),
-            "failure_sections": getattr(doc2, "_slcm_failure_sections", None) or [],
-            "suggestions": doc2.get_eligibility_suggestion_payload(),
-        }
+        return _check_eligibility_ineligible_response(doc2, raw_msg or "")
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Web Form — check_eligibility Error")
         return {"status": "Error", "message": _("An error occurred during eligibility check.")}
@@ -608,6 +636,9 @@ def switch_applicant_program(applicant_name, program):
     doc.flags.ignore_permissions = True
     doc.flags.ignore_mandatory = True
     doc.flags.ignore_validate = True
+    # Submitted Applicant (docstatus=1): Frappe uses update_after_submit and blocks
+    # program changes unless allow_on_submit — portal switch is an explicit allowed path.
+    doc.flags.ignore_validate_update_after_submit = True
     try:
         doc.save()
         frappe.db.commit()

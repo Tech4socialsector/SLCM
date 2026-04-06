@@ -5,7 +5,7 @@
 //    • Save Draft button (always before the Next/Submit primary button)
 //    • Application status badge near the applicant-ID heading
 //    • Toast notifications — top-right
-//    • Submit intercept: mandatory → eligibility (modal if ineligible) → fee/Razorpay → submit
+//    • Submit intercept: mandatory → eligibility (same modal as application_form showEligibilityModal) → fee/Razorpay → submit
 //    • No live eligibility banner; query-string prefill for /applicant-form/new?...
 // ═══════════════════════════════════════════════════════════════════
 
@@ -46,6 +46,29 @@ function _injectCSS() {
 		'#slcm-toast.slcm-error  {background:#fff2f2;border:1.5px solid #fca5a5;color:#991b1b;}',
 		'#slcm-toast.slcm-info   {background:#eff6ff;border:1.5px solid #93c5fd;color:#1e3a5f;}',
 		'#slcm-toast.slcm-warn   {background:#fffbeb;border:1.5px solid #fcd34d;color:#78350f;}',
+		'@keyframes slcm-wf-modal-slide-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}' +
+			/* Portal-themed programme picker (parity with application_form switch overlay) */
+			'#slcm-wf-switch-program-overlay.slcm-portal-switch-shell{' +
+			'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-card{' +
+			'background:#fff;border-radius:24px;width:100%;max-width:440px;padding:32px;' +
+			'box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);animation:slcm-wf-modal-slide-up .3s cubic-bezier(0.16,1,0.3,1);}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt{' +
+			'padding:14px 18px;border:1px solid #e2e8f0;border-radius:12px;cursor:pointer;margin-bottom:10px;' +
+			'transition:all .2s ease;display:flex;align-items:center;gap:12px;background:#fff;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt:hover{border-color:#1a3c6e;background:#f8fafc;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.selected{border-color:#1a3c6e;background:#eff6ff;box-shadow:0 0 0 1px #1a3c6e;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.selected .slcm-wf-switch-radio{border-color:#1a3c6e !important;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.selected .slcm-wf-switch-radio div{display:block !important;}' +
+			'#slcm-wf-switch-opts-container::-webkit-scrollbar{width:4px;}' +
+			'#slcm-wf-switch-opts-container::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn{' +
+			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:700;color:#475569;cursor:pointer;transition:background .15s;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn:hover{background:#e2e8f0;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn{' +
+			'height:52px;border-radius:14px;border:none;background:#1a3c6e;color:#fff;font-weight:700;cursor:pointer;' +
+			'box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:filter .15s;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn:hover:not(:disabled){filter:brightness(1.05);}',
 		/* Application ID + status row (inside web-form title h1) */
 		'.slcm-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;' +
 			'line-height:1.25;margin:0;}',
@@ -1230,6 +1253,399 @@ function _slcmFormatEeSectionBody(text) {
 		.join('');
 }
 
+function _slcmWfGetWebFormField(fieldname) {
+	try {
+		if (frappe.web_form && typeof frappe.web_form.get_value === 'function') {
+			var v = frappe.web_form.get_value(fieldname);
+			if (v !== undefined && v !== null) {
+				return String(v);
+			}
+		}
+	} catch (e) {}
+	return '';
+}
+
+/**
+ * Formats rejected_reason for the eligibility card: supports '|' (portal) or newline-separated
+ * lines from Applicant._build_rule_failure_reason. Omits redundant reservation/category headers.
+ */
+function _slcmFormatIneligibilityAlertBodyForModal(rawMsg) {
+	rawMsg = (rawMsg || '').trim();
+	if (!rawMsg) {
+		return '';
+	}
+	var parts;
+	if (rawMsg.indexOf('|') !== -1) {
+		parts = rawMsg.split('|').map(function (p) { return p.trim(); }).filter(function (p) { return p; });
+	} else {
+		parts = rawMsg.split(/\r?\n/).map(function (p) { return p.trim(); }).filter(function (p) { return p; });
+	}
+	parts = parts.filter(function (p) {
+		if (/^reservation\s+category$/i.test(p)) {
+			return false;
+		}
+		if (/^•?\s*category:\s*/i.test(p)) {
+			return false;
+		}
+		return true;
+	});
+	if (parts.length === 0) {
+		return '';
+	}
+	if (parts.length === 1) {
+		return _slcmEscapeHtml(parts[0]);
+	}
+	function bulletRow(p) {
+		var text = p.replace(/^\s*•\s*/, '');
+		return (
+			'<div style="display:flex;gap:8px;margin-bottom:4px;font-size:0.8125rem;color:#991b1b;">' +
+			'<span style="color:#ef4444;font-weight:bold;">•</span>' +
+			'<span>' +
+			_slcmEscapeHtml(text) +
+			'</span></div>'
+		);
+	}
+	var allBullets = parts.every(function (p) {
+		return /^\s*•/.test(p);
+	});
+	if (allBullets) {
+		return parts.map(bulletRow).join('');
+	}
+	return (
+		'<div style="font-weight:600;margin-bottom:6px;">' +
+		_slcmEscapeHtml(parts[0]) +
+		'</div>' +
+		parts.slice(1).map(bulletRow).join('')
+	);
+}
+
+/**
+ * Port of slcm/www/application_form/index.html showEligibilityModal(eligRes).
+ * Called when check_eligibility returns Ineligible — same table, stats, pipe message, and switch CTA as the application form.
+ */
+function showSlcmApplicantEligibilityModal(applicantName, eligRes) {
+	_injectCSS();
+	var existing = document.getElementById('slcm-wf-eligibility-modal-overlay');
+	if (existing) {
+		existing.remove();
+	}
+
+	var selectedProgram = _slcmWfGetWebFormField('program');
+	var campus = _slcmWfGetWebFormField('campus');
+	var cycle = _slcmWfGetWebFormField('admission_cycle');
+
+	var programs = (eligRes && eligRes.programs) || [];
+	var eligibleCount = programs.filter(function (p) { return p.eligible; }).length;
+	var total = programs.length;
+
+	var sorted = programs
+		.filter(function (p) { return p.program === selectedProgram; })
+		.concat(programs.filter(function (p) { return p.program !== selectedProgram && !p.eligible; }))
+		.concat(programs.filter(function (p) { return p.program !== selectedProgram && p.eligible; }));
+
+	var rowsHtml = '';
+	sorted.forEach(function (p) {
+		var isSelected = p.program === selectedProgram;
+		var isElig = p.eligible;
+		var rowBg = isSelected && !isElig ? '#fff5f5' : isSelected ? '#f0fdf4' : '#fff';
+		var badge = isSelected
+			? '&nbsp;<span style="font-size:10px;padding:2px 8px;background:' +
+			  (isElig ? '#27ae60' : '#e74c3c') +
+			  ';color:#fff;border-radius:10px;font-weight:600;vertical-align:middle;">' +
+			  (isElig ? 'Selected ✓' : 'Choosen Program') +
+			  '</span>'
+			: '';
+		var progDisplay =
+			'<strong style="color:#2c3e50;">' + _slcmEscapeHtml(p.program || '') + '</strong>' + badge;
+		var statusDot =
+			'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px;background:' +
+			(isElig ? '#27ae60' : '#e74c3c') +
+			';"></span>';
+		var statusLabel =
+			'<span style="font-size:13px;font-weight:600;color:' +
+			(isElig ? '#27ae60' : '#e74c3c') +
+			';">' +
+			(isElig ? 'Eligible' : 'Not Eligible') +
+			'</span>';
+
+		var reasonHtml = '';
+		if (!isElig && p.reason) {
+			var pr = (p.reason || '').split('|').map(function (r) { return r.trim(); }).filter(function (r) { return r; });
+			var mainReason = pr[0];
+			var subReasons = pr.slice(1);
+			reasonHtml =
+				'<div style="font-size:11px;color:#888;margin-top:4px;font-style:italic;line-height:1.4;">' +
+				_slcmEscapeHtml(mainReason) +
+				'</div>';
+			if (subReasons.length > 0) {
+				reasonHtml += subReasons
+					.map(function (sr) {
+						return (
+							'<div style="font-size:10px;color:#94a3b8;font-style:normal;margin-top:2px;display:flex;gap:4px;"><span>•</span><span>' +
+							_slcmEscapeHtml(sr) +
+							'</span></div>'
+						);
+					})
+					.join('');
+			}
+		}
+
+		rowsHtml +=
+			'<tr style="background:' +
+			rowBg +
+			';">' +
+			'<td style="padding:10px 12px;vertical-align:middle;border-bottom:1px solid #eee;">' +
+			progDisplay +
+			reasonHtml +
+			'</td>' +
+			'<td style="padding:10px 12px;vertical-align:middle;text-align:center;white-space:nowrap;border-bottom:1px solid #eee;">' +
+			statusDot +
+			statusLabel +
+			'</td>' +
+			'</tr>';
+	});
+
+	if (!rowsHtml) {
+		rowsHtml =
+			'<tr><td colspan="2" style="padding:16px;text-align:center;color:#888;">No program data available.</td></tr>';
+	}
+
+	var mainHeading = 'Not Eligible for ' + _slcmEscapeHtml(selectedProgram);
+
+	var rawMsg = ((eligRes && eligRes.message) || (eligRes && eligRes.error) || '').trim();
+	if (!rawMsg) {
+		rawMsg = 'You do not meet the eligibility criteria for the selected program.';
+	}
+
+	/* Same idea as index.html showEligibilityModal: | OR newline-separated reasons; drop redundant category headers. */
+	var alertBodyHtml = _slcmFormatIneligibilityAlertBodyForModal(rawMsg);
+
+	var switchBlock =
+		eligibleCount > 0
+			? '<div style="margin-top:16px; display:flex; justify-content:center;">' +
+			  '<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:14px;font-weight:700;border:none;border-radius:12px;background:#1a3c6e;color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
+			  '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="margin-right:10px; vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' +
+			  'Switch to an Eligible Programme Instantly' +
+			  '</button></div>'
+			: '';
+
+	var html =
+		'<div id="slcm-wf-eligibility-modal-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">' +
+		'<div style="background:#fff;border-radius:20px;width:100%;max-width:680px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25),0 0 0 1px rgba(0,0,0,0.05);display:flex;flex-direction:column;max-height:90vh;overflow:hidden;">' +
+		'<div style="padding:20px 24px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);border-bottom:1px solid #fecaca;flex-shrink:0;">' +
+		'<div style="display:flex;align-items:center;gap:14px;">' +
+		'<span style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;background:rgba(220,38,38,0.15);border-radius:12px;border:1px solid rgba(220,38,38,0.2);">' +
+		'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+		'</span>' +
+		'<div>' +
+		'<h3 style="margin:0;font-size:1.125rem;font-weight:700;color:#1e293b;letter-spacing:-0.01em;">Eligibility Evaluation Results</h3>' +
+		'<p style="margin:4px 0 0;font-size:0.8125rem;color:#64748b;">Review your programme eligibility below</p>' +
+		'</div></div>' +
+		'<button type="button" class="slcm-wf-eligibility-modal-close" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;color:#64748b;font-size:1.25rem;line-height:1;transition:background 0.15s, color 0.15s;" title="Close">&times;</button>' +
+		'</div>' +
+		'<div style="padding:24px;overflow-y:auto;flex:1;">' +
+		'<div style="margin-bottom:24px;padding:18px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fed7d7 8%);border:1px solid #fecaca;border-radius:14px;box-shadow:0 1px 3px rgba(220,38,38,0.08);">' +
+		'<div style="font-weight:700;font-size:1rem;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:8px;">' +
+		'<span style="width:6px;height:6px;background:#dc2626;border-radius:50%;"></span>' +
+		mainHeading +
+		'</div>' +
+		'<div style="font-size:0.875rem;color:#7f1d1d;line-height:1.6;">' +
+		alertBodyHtml +
+		'</div></div>' +
+		'<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;padding:12px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">' +
+		'<span style="font-weight:600;font-size:0.875rem;color:#334155;">All Programmes at This Level</span>' +
+		'<span style="font-size:0.75rem;color:#94a3b8;">' +
+		_slcmEscapeHtml(campus) +
+		(cycle ? ' &middot; ' + _slcmEscapeHtml(cycle) : '') +
+		'</span>' +
+		'<span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;">' +
+		'<span style="width:8px;height:8px;background:#22c55e;border-radius:50%;"></span>' +
+		'<strong style="color:#15803d;">' +
+		eligibleCount +
+		'</strong> eligible' +
+		'</span>' +
+		'<span style="display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;">' +
+		'<span style="width:8px;height:8px;background:#dc2626;border-radius:50%;"></span>' +
+		'<strong style="color:#b91c1c;">' +
+		(total - eligibleCount) +
+		'</strong> not eligible' +
+		'</span></div>' +
+		'<div style="overflow-x:auto;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">' +
+		'<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">' +
+		'<thead><tr style="background:#f1f5f9;">' +
+		'<th style="padding:14px 18px;text-align:left;font-weight:600;color:#475569;width:70%;border-bottom:2px solid #e2e8f0;">Program</th>' +
+		'<th style="padding:14px 18px;text-align:center;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;">Eligibility</th>' +
+		'</tr></thead><tbody>' +
+		rowsHtml +
+		'</tbody></table></div>' +
+		switchBlock +
+		'</div></div></div>';
+
+	document.body.insertAdjacentHTML('beforeend', html);
+
+	var overlay = document.getElementById('slcm-wf-eligibility-modal-overlay');
+	if (!overlay) {
+		return;
+	}
+
+	function closeModal() {
+		if (overlay && overlay.parentNode) {
+			overlay.remove();
+		}
+	}
+	var closeBtn = overlay.querySelector('.slcm-wf-eligibility-modal-close');
+	if (closeBtn) {
+		closeBtn.onclick = closeModal;
+	}
+
+	var sw = overlay.querySelector('.slcm-wf-modal-switch-btn');
+	if (sw && applicantName) {
+		sw.addEventListener('click', function () {
+			var elist = programs.filter(function (p) { return p.eligible; }).map(function (p) { return p.program; });
+			_slcmWfHandleToastProgramSwitch(applicantName, elist);
+		});
+	}
+}
+
+function _slcmWfExecuteProgramSwitch(applicantName, program, opts) {
+	opts = opts || {};
+	var confirmBtn = opts.confirmBtn;
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.switch_applicant_program',
+		args: { applicant_name: applicantName, program: program },
+		callback: function (r) {
+			var m = r && r.message;
+			var ov = document.getElementById('slcm-wf-switch-program-overlay');
+			if (m && m.status === 'success') {
+				if (ov) {
+					ov.remove();
+				}
+				showToast(m.message || __('Programme updated.'), 'success', 5000);
+				window.location.reload();
+			} else {
+				if (confirmBtn) {
+					confirmBtn.disabled = false;
+					confirmBtn.textContent = __('Update Programme');
+				}
+				showToast((m && m.message) || __('Could not switch programme.'), 'error');
+			}
+		},
+		error: function () {
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				confirmBtn.textContent = __('Update Programme');
+			}
+			showToast(__('Could not switch programme.'), 'error');
+		},
+	});
+}
+
+/** Clears toast and opens switch overlay (index.html handleToastProgramSwitch + saveDraft path → web form API + reload). */
+function _slcmWfHandleToastProgramSwitch(applicantName, eligibleProgs) {
+	if (!eligibleProgs || !eligibleProgs.length || !applicantName) {
+		return;
+	}
+	var eligModal = document.getElementById('slcm-wf-eligibility-modal-overlay');
+	if (eligModal) {
+		eligModal.remove();
+	}
+	var tc = document.getElementById('slcm-portal-toast-container');
+	if (tc) {
+		tc.innerHTML = '';
+	}
+	var existing = document.getElementById('slcm-wf-switch-program-overlay');
+	if (existing) {
+		existing.remove();
+	}
+	if (eligibleProgs.length === 1) {
+		_slcmWfExecuteProgramSwitch(applicantName, eligibleProgs[0]);
+		return;
+	}
+
+	var optionsHtml = eligibleProgs
+		.map(function (p) {
+			var pv = _slcmEscapeAttr(p);
+			var pt = _slcmEscapeHtml(p);
+			return (
+				'<div class="slcm-wf-switch-opt" data-value="' +
+				pv +
+				'">' +
+				'<div class="slcm-wf-switch-radio" style="width:18px;height:18px;border:2px solid #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+				'<div style="width:8px;height:8px;background:#1a3c6e;border-radius:50%;display:none;"></div></div>' +
+				'<span style="font-weight:600;color:#334155;">' +
+				pt +
+				'</span></div>'
+			);
+		})
+		.join('');
+
+	var overlay = document.createElement('div');
+	overlay.id = 'slcm-wf-switch-program-overlay';
+	overlay.className = 'slcm-portal-switch-shell';
+	overlay.style.cssText =
+		'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;';
+	overlay.innerHTML =
+		'<div class="slcm-portal-switch-card">' +
+		'<div style="width:56px;height:56px;background:#f0fdf4;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:#15803d;">' +
+		'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg></div>' +
+		'<h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:800;color:#1a3c6e;letter-spacing:-0.02em;">' +
+		__('Switch Programme') +
+		'</h3>' +
+		'<p style="margin:0 0 24px;font-size:0.95rem;color:#64748b;line-height:1.6;">' +
+		__(
+			'Please select your new eligible programme. Your current data will be automatically successfully synced.'
+		) +
+		'</p>' +
+		'<div id="slcm-wf-switch-opts-container" style="margin-bottom:28px;max-height:280px;overflow-y:auto;padding-right:4px;">' +
+		optionsHtml +
+		'</div>' +
+		'<div class="slcm-portal-switch-actions" style="display:grid;grid-template-columns:1fr 1.5fr;gap:12px;">' +
+		'<button type="button" class="slcm-wf-switch-cancel-btn">' +
+		__('Cancel') +
+		'</button>' +
+		'<button type="button" id="slcm-wf-confirm-switch-btn">' +
+		__('Update Programme') +
+		'</button></div></div>';
+	document.body.appendChild(overlay);
+	_injectCSS();
+
+	function selectOpt(el) {
+		var all = overlay.querySelectorAll('.slcm-wf-switch-opt');
+		for (var i = 0; i < all.length; i++) {
+			all[i].classList.remove('selected');
+		}
+		el.classList.add('selected');
+	}
+
+	var opts = overlay.querySelectorAll('.slcm-wf-switch-opt');
+	for (var j = 0; j < opts.length; j++) {
+		opts[j].addEventListener('click', function () {
+			selectOpt(this);
+		});
+	}
+	var firstOpt = overlay.querySelector('.slcm-wf-switch-opt');
+	if (firstOpt) {
+		selectOpt(firstOpt);
+	}
+	overlay.querySelector('.slcm-wf-switch-cancel-btn').addEventListener('click', function () {
+		overlay.remove();
+	});
+	var cbtn = document.getElementById('slcm-wf-confirm-switch-btn');
+	cbtn.addEventListener('click', function () {
+		var selectedOpt = overlay.querySelector('.slcm-wf-switch-opt.selected');
+		var newProg = selectedOpt ? selectedOpt.getAttribute('data-value') : null;
+		if (!newProg) {
+			showToast(__('Please select a programme.'), 'error');
+			return;
+		}
+		cbtn.disabled = true;
+		cbtn.innerHTML =
+			'<span style="display:inline-block;animation:slcm-spin 1s linear infinite">\u23f3</span> ' +
+			__('Processing\u2026');
+		_slcmWfExecuteProgramSwitch(applicantName, newProg, { confirmBtn: cbtn });
+	});
+}
+
 /**
  * Rich "Eligibility Evaluation Results" dialog (data from check_eligibility API).
  * Includes suggested programmes with Switch — avoids duplicating Frappe server throw UI.
@@ -1739,7 +2155,7 @@ function runSubmitFlow() {
 					var res = r && r.message;
 					if (!res || res.status === 'Ineligible') {
 						_hideSubmitOverlay();
-						showEligibilityEvaluationModal(applicantName, res || {});
+						showSlcmApplicantEligibilityModal(applicantName, res || {});
 						return;
 					}
 					if (res.status === 'Error') {
