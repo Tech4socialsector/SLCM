@@ -141,9 +141,13 @@ class ClassSchedule(Document):
             "session_date": self.schedule_date,
             "session_start_time": self.from_time,
             "session_end_time": self.to_time,
-            "session_type": "Lecture",  # Default to Lecture or similar
+            "session_type": "Lecture",
             "session_status": "Scheduled"
         })
+        # Prevent auto-creation of Student Attendance placeholders.
+        # Records are only created when the teacher explicitly fetches students
+        # or marks attendance via the Student Attendance Tool.
+        doc.flags.skip_auto_attendance = True
         doc.insert(ignore_permissions=True)
 
     def update_attendance_session(self):

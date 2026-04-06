@@ -307,16 +307,7 @@ def mark_attendance(
 	
 	if session_name:
 		attendance_session = session_name
-		# UPDATE STATUS
-		try:
-			session_doc = frappe.get_doc("Attendance Session", session_name)
-			if session_doc.session_status != "Conducted":
-				session_doc.session_status = "Conducted"
-			
-			session_doc.attendance_marked = 1
-			session_doc.save(ignore_permissions=True)
-		except Exception as e:
-			frappe.log_error(message=f"Failed to update session status for {session_name}: {e!s}", title="Update Session Status Error")
+		# Status update is deferred to the final save after the student loop
 
 	else:
 		# Create new Attendance Session if not found (Fallback)
@@ -376,23 +367,30 @@ def mark_attendance(
 	# ---------------------------------------------------------
 
 	def upsert(student_id, status):
-		existing = frappe.db.exists(
-			"Student Attendance",
-			{
-				"student": student_id,
-				"attendance_date": date,
-				"based_on": based_on,
-				"student_group": student_group,
-				"course_schedule": course_schedule,
-				"class_schedule": class_schedule,
-				"office_hours_group": office_hours_group,
-				"docstatus": ("<", 2),
-			},
-		)
+		if attendance_session:
+			existing = frappe.db.exists(
+				"Student Attendance",
+				{"student": student_id, "attendance_session": attendance_session, "docstatus": ("<", 2)},
+			)
+		else:
+			existing = frappe.db.exists(
+				"Student Attendance",
+				{
+					"student": student_id,
+					"attendance_date": date,
+					"based_on": based_on,
+					"student_group": student_group,
+					"course_schedule": course_schedule,
+					"class_schedule": class_schedule,
+					"office_hours_group": office_hours_group,
+					"docstatus": ("<", 2),
+				},
+			)
 
 		if existing:
 			doc = frappe.get_doc("Student Attendance", existing)
 			doc.status = status
+			doc.source = "Manual"  # Upgrade from Auto placeholder to explicitly marked
 			doc.save()
 			return "updated"
 
@@ -412,8 +410,8 @@ def mark_attendance(
 				"program": program,
 				"course": course,
 				"course_offer": course_offering,
-				"academic_year": group.academic_year if group else office_group.academic_year if office_group else schedule.academic_year if schedule else None,
-				"academic_term": group.academic_term if group else office_group.academic_term if office_group else schedule.academic_term if schedule else None,
+				"academic_year": group.academic_year if group else office_group.academic_year if office_group else None,
+				"academic_term": group.academic_term if group else office_group.academic_term if office_group else None,
 				"attendance_session": attendance_session,
 				"instructor": schedule.instructor if schedule else class_sched.instructor if class_sched else office_group.instructor if office_group else None,
 				"room": schedule.room if schedule else class_sched.room if class_sched else None, # Office Hours might not have room in doc
@@ -452,8 +450,11 @@ def mark_attendance(
 	if attendance_session:
 		try:
 			session_doc = frappe.get_doc("Attendance Session", attendance_session)
+			if session_doc.session_status != "Conducted":
+				session_doc.session_status = "Conducted"
+			session_doc.flags.from_student_attendance = True
 			session_doc.update_attendance_summary()
-			session_doc.save()
+			session_doc.save(ignore_permissions=True)
 		except Exception as e:
 			# Don't fail the whole request if summary update fails, just log it
 			frappe.log_error(message=f"Failed to update summary for session {attendance_session}: {e!s}", title="Update Session Summary Error")
