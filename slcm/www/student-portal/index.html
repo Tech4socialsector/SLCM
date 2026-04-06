@@ -1,0 +1,249 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+{# ── No Student Record ─────────────────────────────────────── #}
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Welcome</h1>
+  <p class="sp-page-sub">{{ frappe.session.user }}</p>
+</div>
+<div class="sp-alert sp-alert-warning">
+  <span class="sp-ms">warning</span>
+  <div>
+    <strong>No student record found.</strong><br>
+    Your account is not linked to a student record. Please contact the Registrar's Office.
+  </div>
+</div>
+
+{% else %}
+
+{# ── Greeting ──────────────────────────────────────────────── #}
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">
+    Good {{ 'morning' if frappe.utils.now_datetime().hour < 12 else ('afternoon' if frappe.utils.now_datetime().hour < 17 else 'evening') }},
+    {{ student_name.split()[0] if student_name else 'Student' }}!
+  </h1>
+  <p class="sp-page-sub">
+    {% if current_term %}Term {{ current_term }}{% endif %}
+    {% if academic_year %} &nbsp;·&nbsp; {{ academic_year }}{% endif %}
+    {% if student_status and student_status != 'Active' %}
+      &nbsp;·&nbsp; <span style="color:var(--sp-warning);">{{ student_status }}</span>
+    {% endif %}
+  </p>
+</div>
+
+{# ── Stat Cards ────────────────────────────────────────────── #}
+<div class="sp-stat-grid">
+
+  <div class="sp-stat-card fade-in delay-1">
+    <div class="sp-stat-icon" style="background:{% if avg_attendance >= 75 %}var(--sp-success-bg);color:var(--sp-success){% elif avg_attendance >= 60 %}var(--sp-warning-bg);color:var(--sp-warning){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
+      event_available
+    </div>
+    <div>
+      <div class="sp-stat-label">Avg. Attendance</div>
+      <div class="sp-stat-value" style="color:{% if avg_attendance >= 75 %}var(--sp-success){% elif avg_attendance >= 60 %}var(--sp-warning){% else %}var(--sp-danger){% endif %};">
+        {{ avg_attendance }}%
+      </div>
+      <div class="sp-stat-sub">
+        {% if avg_attendance >= 75 %}On track{% elif avg_attendance >= 60 %}Needs attention{% else %}Critical — below 60%{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card fade-in delay-2">
+    <div class="sp-stat-icon" style="background:#ede9fe;color:#7c3aed;">menu_book</div>
+    <div>
+      <div class="sp-stat-label">Enrolled Courses</div>
+      <div class="sp-stat-value">{{ course_count }}</div>
+      <div class="sp-stat-sub">
+        {% if enrollment %}{{ enrollment.term_name or "Current term" }}{% else %}No active enrollment{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card fade-in delay-3">
+    <div class="sp-stat-icon" style="background:{% if has_dues %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-success-bg);color:var(--sp-success){% endif %};">
+      payments
+    </div>
+    <div>
+      <div class="sp-stat-label">Outstanding Fees</div>
+      <div class="sp-stat-value" style="font-size:20px;color:{% if has_dues %}var(--sp-danger){% else %}var(--sp-success){% endif %};">
+        &#8377;{{ "{:,.0f}".format(total_outstanding) }}
+      </div>
+      <div class="sp-stat-sub">{% if has_dues %}Amount due{% else %}All clear{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card fade-in delay-4">
+    <div class="sp-stat-icon" style="background:var(--sp-info-bg);color:var(--sp-info);">grade</div>
+    <div>
+      <div class="sp-stat-label">CGPA</div>
+      <div class="sp-stat-value">{{ "%.2f"|format(cgpa) if cgpa else "—" }}</div>
+      <div class="sp-stat-sub">{% if batch_year %}Batch {{ batch_year }}{% else %}Academic record{% endif %}</div>
+    </div>
+  </div>
+
+</div>
+
+{# ── Dues Alert ────────────────────────────────────────────── #}
+{% if has_dues %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">payments</span>
+  <div>
+    <strong>Outstanding fee of &#8377;{{ "{:,.0f}".format(total_outstanding) }}.</strong>
+    Please clear dues to avoid issues.
+    <a href="/student-portal/fees" style="font-weight:600;text-decoration:underline;">View Invoices →</a>
+  </div>
+</div>
+{% endif %}
+
+{# ── Content Grid ──────────────────────────────────────────── #}
+<div class="sp-dash-grid">
+
+  {# My Courses (Quick View) #}
+  <div class="sp-card fade-in delay-2">
+    <div class="sp-card-header">
+      <div class="sp-card-title"><span class="sp-ms">menu_book</span> My Courses</div>
+      <a href="/student-portal/courses" class="sp-card-link">View all →</a>
+    </div>
+    <div class="sp-card-body" style="padding-top:8px;">
+      {% if courses_display %}
+        {% for c in courses_display %}
+        <div class="sp-course-mini-row">
+          <div style="overflow:hidden;">
+            <div style="font-size:14px;font-weight:600;color:var(--sp-text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.course_name }}</div>
+            <div style="font-size:12px;color:var(--sp-text-4);margin-top:2px;">{{ c.credits }} Credit{% if c.credits != 1 %}s{% endif %} &nbsp;·&nbsp; {{ c.faculty }}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:13px;font-weight:700;color:{% if c.attendance_pct >= 75 %}var(--sp-success){% elif c.attendance_pct >= 60 %}var(--sp-warning){% elif c.attendance_pct > 0 %}var(--sp-danger){% else %}var(--sp-text-4){% endif %};">
+              {% if c.attendance_pct > 0 %}{{ c.attendance_pct }}%{% else %}—{% endif %}
+            </div>
+            <div style="font-size:11px;color:var(--sp-text-4);">Attendance</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="sp-empty">
+          <span class="sp-ms">menu_book</span>
+          <p class="sp-empty-title">No courses yet</p>
+          <p class="sp-empty-sub">Enrolled courses will appear here.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Right Column #}
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    {# Fee Summary #}
+    <div class="sp-card fade-in delay-3">
+      <div class="sp-card-header">
+        <div class="sp-card-title"><span class="sp-ms">receipt_long</span> Fee Summary</div>
+        <a href="/student-portal/fees" class="sp-card-link">Details →</a>
+      </div>
+      <div class="sp-card-body">
+        {% if fee_invoices %}
+          {% for inv in fee_invoices %}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;{% if not loop.last %}padding-bottom:12px;border-bottom:1px solid var(--sp-border);{% endif %}">
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--sp-text-2);">{{ inv.academic_term or inv.name }}</div>
+              {% if inv.due_date %}
+              <div style="font-size:11px;color:var(--sp-text-4);">Due: {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}</div>
+              {% endif %}
+            </div>
+            <div style="text-align:right;">
+              <span class="sp-badge" style="background:{% if inv.status == 'Paid' %}var(--sp-success-bg);color:var(--sp-success){% elif inv.status == 'Overdue' %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-warning-bg);color:var(--sp-warning){% endif %};">{{ inv.status }}</span>
+              <div style="font-size:12px;color:var(--sp-text-3);margin-top:3px;">&#8377;{{ "{:,.0f}".format(inv.outstanding_amount or 0) }} due</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center;padding:20px;color:var(--sp-text-4);">
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:32px;display:block;margin-bottom:8px;">check_circle</span>
+            No pending invoices
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Enrollment Info #}
+    <div class="sp-card fade-in delay-4">
+      <div class="sp-card-header">
+        <div class="sp-card-title"><span class="sp-ms">school</span> Enrollment</div>
+      </div>
+      <div class="sp-card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div>
+            <div class="sp-info-label">Programme</div>
+            <div style="font-size:13px;font-weight:600;color:var(--sp-text-1);">{{ programme_name or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Department</div>
+            <div style="font-size:13px;font-weight:600;color:var(--sp-text-1);">{{ department or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Batch</div>
+            <div style="font-size:13px;font-weight:600;color:var(--sp-text-1);">{{ batch_year or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Term</div>
+            <div style="font-size:13px;font-weight:600;color:var(--sp-text-1);">{{ current_term or (enrollment.term_name if enrollment else "—") }}</div>
+          </div>
+          {% if enrollment and enrollment.faculty_advisor %}
+          <div style="grid-column:span 2;">
+            <div class="sp-info-label">Faculty Advisor</div>
+            <div style="font-size:13px;font-weight:600;color:var(--sp-text-1);">{{ enrollment.faculty_advisor }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# ── Upcoming Sessions ─────────────────────────────────────── #}
+{% if upcoming_sessions %}
+<div class="sp-card fade-in delay-5">
+  <div class="sp-card-header">
+    <div class="sp-card-title"><span class="sp-ms">calendar_today</span> Upcoming Classes</div>
+  </div>
+  <div class="sp-card-body" style="padding-top:8px;">
+    {% for sess in upcoming_sessions %}
+    <div class="sp-session-chip">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--sp-primary);">{{ sess.course_offering or "—" }}</div>
+        <div style="font-size:12px;color:var(--sp-text-4);">{{ sess.venue or "" }}{% if sess.session_type %} &nbsp;·&nbsp; {{ sess.session_type }}{% endif %}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:13px;font-weight:600;color:var(--sp-text-2);">{{ frappe.utils.formatdate(sess.session_date, "dd MMM") }}</div>
+        {% if sess.start_time %}<div style="font-size:12px;color:var(--sp-text-4);">{{ sess.start_time }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Low Attendance Warning ────────────────────────────────── #}
+{% set ns = namespace(low=0) %}
+{% for s in attendance_summaries %}
+  {% if s.attendance_percentage is not none and s.attendance_percentage < 75 %}
+    {% set ns.low = ns.low + 1 %}
+  {% endif %}
+{% endfor %}
+{% if ns.low > 0 %}
+<div class="sp-alert sp-alert-warning" style="margin-top:20px;">
+  <span class="sp-ms">warning</span>
+  <div>
+    <strong>Attendance Alert:</strong> {{ ns.low }} course{% if ns.low != 1 %}s{% endif %} below 75%.
+    <a href="/student-portal/attendance" style="font-weight:600;text-decoration:underline;">View Details →</a>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}{# end no_student #}
+{% endblock %}

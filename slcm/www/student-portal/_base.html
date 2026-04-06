@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Student Portal{% endblock %} — SLCM</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
+
+  <!-- Student Portal Stylesheet -->
+  <link rel="stylesheet" href="/assets/slcm/css/student_portal.css">
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+{% if is_guest %}
+{# ── Redirect to login ─────────────────────────────────── #}
+<script>window.location.href = "/login?redirect-to=/student-portal";</script>
+
+{% else %}
+{# ── Full Portal Layout ────────────────────────────────── #}
+
+{# ── Top Navbar ──────────────────────────────────────────── #}
+<nav class="sp-nav">
+  <div class="sp-nav-left">
+    <div class="sp-hamburger" id="sp-hamburger" onclick="spToggleSidebar()">
+      <span></span><span></span><span></span>
+    </div>
+    <a href="/student-portal" class="sp-brand">
+      <div class="sp-brand-logo">
+        {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
+        {% if _ws and _ws.banner_image %}
+          <img src="{{ _ws.banner_image }}" alt="Logo">
+        {% else %}
+          SP
+        {% endif %}
+      </div>
+      <span>Student Portal</span>
+    </a>
+  </div>
+
+  <div class="sp-nav-right">
+    <span class="sp-nav-id-badge">{{ student_id or "" }}</span>
+    <div style="position:relative;">
+      <div class="sp-avatar-btn" id="sp-avatar-btn" onclick="spToggleDropdown()">
+        {% if student_photo %}
+          <img src="{{ student_photo }}" alt="{{ student_name }}">
+        {% else %}
+          {{ student_initial or "S" }}
+        {% endif %}
+      </div>
+      <div class="sp-dropdown" id="sp-dropdown">
+        <div class="sp-dropdown-header">
+          <div class="sp-dropdown-name">{{ student_name or frappe.session.user }}</div>
+          <div class="sp-dropdown-email">{{ frappe.session.user }}</div>
+        </div>
+        <a href="/student-portal/profile" class="sp-dropdown-item">
+          <span class="sp-ms">person</span> My Profile
+        </a>
+        <a href="/student-portal" class="sp-dropdown-item">
+          <span class="sp-ms">dashboard</span> Dashboard
+        </a>
+        <hr class="sp-dropdown-divider">
+        <a href="/logout" class="sp-dropdown-item sp-danger">
+          <span class="sp-ms">logout</span> Sign Out
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+{# ── Sidebar Overlay (mobile) ─────────────────────────────── #}
+<div class="sp-sidebar-overlay" id="sp-overlay" onclick="spCloseSidebar()"></div>
+
+{# ── Layout Wrapper ───────────────────────────────────────── #}
+<div class="sp-layout">
+
+  {# ── Sidebar ────────────────────────────────────────────── #}
+  <aside class="sp-sidebar" id="sp-sidebar">
+
+    {# Student Card #}
+    <div class="sp-student-card">
+      <div class="sp-sidebar-avatar">
+        {% if student_photo %}
+          <img src="{{ student_photo }}" alt="{{ student_name }}">
+        {% else %}
+          {{ student_initial or "S" }}
+        {% endif %}
+      </div>
+      <div style="overflow:hidden;">
+        <div class="sp-student-name">{{ student_name or "Student" }}</div>
+        <div class="sp-student-id">{{ student_id or "—" }}</div>
+      </div>
+    </div>
+
+    {# Main Navigation #}
+    <div class="sp-sidebar-section">Main Menu</div>
+
+    <a href="/student-portal"            class="sp-nav-item {% if active_page == 'dashboard'  %}active{% endif %}">
+      <span class="sp-ms">dashboard</span>Dashboard
+    </a>
+    <a href="/student-portal/courses"    class="sp-nav-item {% if active_page == 'courses'    %}active{% endif %}">
+      <span class="sp-ms">menu_book</span>My Courses
+    </a>
+    <a href="/student-portal/attendance" class="sp-nav-item {% if active_page == 'attendance' %}active{% endif %}">
+      <span class="sp-ms">event_available</span>Attendance
+    </a>
+    <a href="/student-portal/fees"       class="sp-nav-item {% if active_page == 'fees'       %}active{% endif %}">
+      <span class="sp-ms">payments</span>Fees &amp; Payments
+    </a>
+
+    <div class="sp-sidebar-section" style="margin-top:18px;">My Info</div>
+
+    <a href="/student-portal/profile"    class="sp-nav-item {% if active_page == 'profile'    %}active{% endif %}">
+      <span class="sp-ms">person</span>My Profile
+    </a>
+
+    {# Programme info #}
+    {% if programme_name or department or batch_year %}
+    <hr class="sp-sidebar-divider">
+    <div class="sp-sidebar-info">
+      {% if programme_name %}
+      <div class="sp-sidebar-info-label">Programme</div>
+      <div class="sp-sidebar-info-value">{{ programme_name }}</div>
+      {% endif %}
+      {% if department %}
+      <div class="sp-sidebar-info-label">Department</div>
+      <div class="sp-sidebar-info-value">{{ department }}</div>
+      {% endif %}
+      {% if batch_year %}
+      <div class="sp-sidebar-info-label">Batch</div>
+      <div class="sp-sidebar-info-value" style="margin-bottom:0;">{{ batch_year }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <hr class="sp-sidebar-divider">
+    <a href="/logout" class="sp-nav-item sp-danger">
+      <span class="sp-ms">logout</span>Sign Out
+    </a>
+  </aside>
+
+  {# ── Main Content ─────────────────────────────────────────── #}
+  <main class="sp-main">
+    {% block content %}{% endblock %}
+  </main>
+
+</div>{# end sp-layout #}
+
+{% endif %}{# end is_guest check #}
+
+<script>
+  function spToggleSidebar() {
+    document.getElementById('sp-sidebar').classList.toggle('open');
+    document.getElementById('sp-overlay').classList.toggle('open');
+  }
+  function spCloseSidebar() {
+    document.getElementById('sp-sidebar').classList.remove('open');
+    document.getElementById('sp-overlay').classList.remove('open');
+  }
+  function spToggleDropdown() {
+    document.getElementById('sp-dropdown').classList.toggle('open');
+  }
+  document.addEventListener('click', function(e) {
+    var btn = document.getElementById('sp-avatar-btn');
+    var dd  = document.getElementById('sp-dropdown');
+    if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+      dd.classList.remove('open');
+    }
+  });
+</script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>
