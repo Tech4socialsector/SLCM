@@ -1,0 +1,22 @@
+{
+ "app": "slcm",
+ "bg_color": "blue",
+ "creation": "2026-04-07 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Examination Result",
+ "link_to": "Examination Result",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-04-07 00:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Examination Result",
+ "owner": "Administrator",
+ "parent_icon": "Examination Management",
+ "restrict_removal": 0,
+ "roles": [],
+ "sidebar": "Examination Result",
+ "standard": 1
+}

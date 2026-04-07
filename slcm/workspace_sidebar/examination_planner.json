@@ -1,11 +1,23 @@
 {
  "app": "slcm",
- "creation": "2026-04-06 10:00:00.000000",
+ "creation": "2026-04-07 10:06:47.525709",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "file-text",
  "idx": 0,
  "items": [
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "layout-panel-top",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Examination Planner",
+   "link_to": "examination-planner",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
+  },
   {
    "child": 0,
    "collapsible": 1,
@@ -19,7 +31,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-06 10:00:00.000000",
+ "modified": "2026-04-07 10:17:12.489179",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Examination Planner",

@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "creation": "2026-04-07 00:00:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "evaluator_type",
+  "evaluator_name",
+  "evaluator_email"
+ ],
+ "fields": [
+  {
+   "default": "Class Faculty",
+   "fieldname": "evaluator_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Evaluator Type",
+   "options": "\nClass Faculty\nCustom",
+   "reqd": 1
+  },
+  {
+   "fieldname": "evaluator_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Evaluator Name",
+   "options": "Faculty"
+  },
+  {
+   "fetch_from": "evaluator_name.email",
+   "fieldname": "evaluator_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Evaluator Email",
+   "options": "Email"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-07 09:52:48.842678",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Result Course Evaluator",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
