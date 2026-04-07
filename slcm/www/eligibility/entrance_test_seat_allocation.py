@@ -157,7 +157,9 @@ def download_admit_card(allocation_name):
 
 def get_admit_card_html(doc, is_rescheduled):
     """
-    EXACT port of generate_admit_card_pdf template from Desk JS.
+    Optimized Admit Card template for A4 single-page rendering.
+    P1: Full-width Application Details, prominently bordered.
+    P2: Original full instructions restored.
     """
     def esc(v): return escape_html(str(v if v is not None else ""))
     def val(v): return esc(v) if (v and str(v).strip() != "") else "—"
@@ -184,7 +186,7 @@ def get_admit_card_html(doc, is_rescheduled):
             return f"data:{mtype};base64,{b64}"
         except Exception: return None
 
-    # Pick fields based on is_rescheduled
+    # Resolve fields
     f_date = doc.re_allocation_date if is_rescheduled else doc.allocation_date
     f_test = (doc.re_entrance_test_name or doc.re_entrance_test_list) if is_rescheduled else (doc.entrance_test_name or doc.entrance_test_list)
     f_seat = doc.re_seat_number if is_rescheduled else doc.seat_number
@@ -196,18 +198,11 @@ def get_admit_card_html(doc, is_rescheduled):
     f_address = doc.re_center_address if is_rescheduled else doc.center_address
     f_status = doc.re_allocation_status if is_rescheduled else doc.allocation_status
 
-    alloc_date = "—"
-    if f_date:
-        try: alloc_date = formatdate(f_date)
-        except: alloc_date = str(f_date)
-
+    alloc_date = formatdate(f_date) if f_date else "—"
     dob = formatdate(doc.date_of_birth) if doc.date_of_birth else "—"
     issue_date = formatdate(nowdate())
 
-    exam_date_time = f"{alloc_date} &nbsp;|&nbsp; As per schedule" if alloc_date != "—" else "As per schedule"
-
     profile_image_url = get_base64_img(doc.profile)
-
     campus_display_name = doc.campus or "Institution of Legal Education"
     campus_logo_url = None
     try:
@@ -216,282 +211,324 @@ def get_admit_card_html(doc, is_rescheduled):
         if campus.logo: campus_logo_url = get_base64_img(campus.logo)
     except: pass
 
-    centre_parts = [f_center, f_address]
-    centre_full = ", ".join([esc(p) for p in centre_parts if p and p.strip()]) or "—"
-
-    header_html = f"""
-        <div class="header">
-          <div class="logo-box">
-            {f'<img src="{campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">' if campus_logo_url else '<div class="logo-inner"><span class="logo-icon">⚖</span><span class="logo-text">LAW<br>SCHOOL</span></div>'}
-          </div>
-          <div class="hdr-center">
-            <div class="univ-name">{esc(campus_display_name)}</div>
-            <div class="univ-sub">OFFICE OF ADMISSIONS &nbsp;&middot;&nbsp; EXAMINATION CELL</div>
-          </div>
-        </div>"""
+    # Reporting time calculation (1 hour before exam)
+    from datetime import timedelta
+    rep_time_str = "09:30 AM"
+    if f_date:
+        try:
+            rep_dt = f_date - timedelta(hours=1)
+            rep_time_str = format_datetime(rep_dt, "hh:mm a")
+        except: pass
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<title>Admit Card - {esc(admit_no)}</title>
 <style>
-*, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
-body {{
-  font-family: "Times New Roman", Times, serif;
-  font-size: 13px;
-  background: #fff;
-  color: #000;
-  print-color-adjust: exact;
-  -webkit-print-color-adjust: exact;
-}}
-.card-page {{
-  width: 710px;
-  margin: 0 auto;
-  background: #fff;
-  border: 1.5px solid #555;
-  page-break-after: always;
-}}
-.header {{
-  background: #7b1c1c;
-  display: flex;
-  align-items: center;
-  padding: 10px 18px;
-  gap: 16px;
-  border-bottom: 3px solid #5a0e0e;
-}}
-.logo-box {{
-  width: 74px;
-  height: 74px;
-  background: #fff;
-  border: 2px solid rgba(255,255,255,0.6);
-  border-radius: 3px;
-  display: flex;
-  align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
-}}
-.logo-box img {{ width: 70px; height: 70px; object-fit: contain; }}
-.logo-inner {{
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-}}
-.logo-icon {{ font-size: 28px; line-height: 1; color: #7b1c1c; }}
-.logo-text {{
-  font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
-  text-align: center; letter-spacing: 0.5px; line-height: 1.2;
-}}
-.hdr-center {{ flex: 1; text-align: center; }}
-.univ-name {{
-  font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
-  text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;
-}}
-.univ-sub {{
-  font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80);
-  letter-spacing: 2.5px; text-transform: uppercase; margin-top: 3px;
-}}
-.title-row {{ text-align: center; padding: 9px 18px 7px; border-bottom: 1.5px solid #bbb; }}
-.title-row .t1 {{ font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }}
-.title-row .t2 {{ font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }}
-.info-wrap-tbl {{ 
-  width: calc(100% - 28px); 
-  margin: 12px 14px; 
-  border: 1.5px solid #888; 
-  border-collapse: collapse;
-}}
-.info-tbl-cell {{ 
-  vertical-align: top;
-}}
-.photo-col-cell {{ 
-  width: 140px; 
-  vertical-align: top; 
-  border-left: 1.5px solid #888; 
-  padding: 10px 8px;
-}}
-.info-tbl {{ 
-  width: 100%;
-  border-collapse: collapse; 
-}}
-.info-tbl tr {{ border-bottom: 1px solid #ccc; }}
-.info-tbl tr:last-child {{ border-bottom: none; }}
-.info-tbl td {{ padding: 5.5px 8px; font-size: 12.5px; vertical-align: middle; line-height: 1.5; }}
-.info-tbl td.lb {{ font-weight: bold; font-family: Arial, sans-serif; width: 36%; white-space: nowrap; color: #000; }}
-.info-tbl td.sp {{ width: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; text-align: center; padding: 0; }}
-.info-tbl td.vl {{ font-family: "Times New Roman", Times, serif; font-size: 13px; color: #000; }}
-.seat-pill {{
-  display: inline-block; background: #1a237e; color: #fff; font-weight: bold;
-  font-family: Arial, sans-serif; font-size: 13px; padding: 2px 14px; border-radius: 2px; letter-spacing: 1px;
-}}
-.status-pill {{
-  display: inline-block; border: 1px solid #4caf50; color: #1b5e20; background: #f0fdf0;
-  font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px;
-}}
-.photo-col-cell {{ 
-  width: 140px; 
-  border-left: 1.5px solid #888; 
-  padding: 10px 8px;
-  height: 250px;
-}}
-.photo-inner-wrap {{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  height: 100%;
-}}
-.photo-box-inner {{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}}
-.photo-frame {{ 
-  width: 120px; 
-  height: 150px; 
-  border: 1.5px solid #555; 
-  overflow: hidden; 
-  background: #eee; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-}}
-.photo-frame img {{ 
-  display: block;
-}}
-.photo-ph {{ font-size: 36px; color: #aaa; text-align: center; line-height: 150px; }}
-.photo-cap {{
-  font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3;
-}}
-.sig-note {{ text-align: center; font-style: italic; font-size: 11.5px; font-family: "Times New Roman", Times, serif; padding: 6px 14px 3px; color: #000; }}
-.sig-tbl {{ border-collapse: collapse; width: calc(100% - 28px); margin: 0 14px 16px; border: 1.5px solid #888; }}
-.sig-tbl td {{ border: 1.5px solid #888; padding: 0; width: 50%; }}
-.sig-cell-inner {{ display: flex; flex-direction: column; }}
-.sig-hdr {{ font-weight: bold; font-family: Arial, sans-serif; font-size: 12px; color: #000; text-align: center; padding: 5px 8px 4px; border-bottom: 1.5px solid #888; display: block; }}
-.sig-body {{ height: 54px; display: block; }}
-.inst-outer {{ border: 1.5px solid #888; margin: 12px 14px 16px; padding: 14px 18px 18px; }}
-.inst-main-title {{ font-size: 13.5px; font-weight: bold; font-family: Arial, sans-serif; text-align: center; color: #000; margin-bottom: 10px; }}
-.sec-title {{ font-size: 12.5px; font-weight: bold; font-family: Arial, sans-serif; color: #000; margin: 10px 0 3px; }}
-.il {{ list-style: none; margin: 0; padding: 0; }}
-.il > li {{ display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; padding-left: 18px; }}
-.il > li .mk {{ flex-shrink: 0; min-width: 16px; }}
-.sl {{ list-style: none; margin: 2px 0 2px 52px; padding: 0; }}
-.sl li {{
-  display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65;
-}}
-.sl li .mk {{ flex-shrink: 0; min-width: 22px; font-style: italic; }}
-.pg-footer {{ padding: 6px 14px 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; }}
-.pg-footer span {{ font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }}
-@media print {{ body {{ background: #fff; margin: 0; }} .card-page {{ width: 100%; margin: 0; border: 1.5px solid #555; }} }}
+    @page {{
+        size: A4;
+        margin: 0;
+    }}
+    body {{
+        font-family: Arial, sans-serif;
+        font-size: 11px;
+        color: #000;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }}
+    .p1-wrapper {{
+        width: 210mm;
+        height: 297mm;
+        padding: 5mm;
+        box-sizing: border-box;
+        background: #fff;
+    }}
+    .p1-border {{
+        border: 2px solid #000;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        position: relative;
+    }}
+    .header-table {{
+        width: 100%;
+        background: #7b1c1c;
+        color: #fff;
+        border-collapse: collapse;
+    }}
+    .header-table td {{
+        padding: 12px 15px;
+        vertical-align: middle;
+    }}
+    .logo-container {{
+        width: 65px;
+        height: 65px;
+        background: #fff;
+        border-radius: 3px;
+        text-align: center;
+        overflow: hidden;
+    }}
+    .logo-container img {{
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }}
+    .univ-info {{
+        text-align: center;
+    }}
+    .univ-name {{
+        font-size: 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 2px;
+    }}
+    .univ-sub {{
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        opacity: 0.9;
+    }}
+    .title-banner {{
+        background: #f1f1f1;
+        text-align: center;
+        padding: 8px;
+        border-bottom: 1px solid #000;
+        font-weight: bold;
+        font-size: 14px;
+        text-transform: uppercase;
+    }}
+    .section-title {{
+        background: #eee;
+        padding: 5px 12px;
+        font-weight: bold;
+        font-size: 12px;
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+        color: #000;
+    }}
+    .data-table {{
+        width: 100%;
+        border-collapse: collapse;
+    }}
+    .data-table td {{
+        padding: 6px 12px;
+        border-bottom: 1px solid #ddd;
+        vertical-align: top;
+        font-size: 11px;
+    }}
+    .label {{ font-weight: bold; color: #333; width: 38%; }}
+    .value {{ color: #000; }}
+    
+    .top-info-table {{
+        width: 100%;
+        border-collapse: collapse;
+    }}
+    .photo-area {{
+        width: 140px;
+        text-align: center;
+        padding: 12px;
+        border-left: 1px solid #000;
+        vertical-align: top;
+    }}
+    .photo-frame {{
+        width: 115px;
+        height: 140px;
+        border: 1px solid #000;
+        margin: 0 auto 5px;
+        background: #fdfdfd;
+        overflow: hidden;
+    }}
+    .photo-frame img {{
+        width: 100%; height: 100%; object-fit: cover;
+    }}
+    .photo-cap {{ font-size: 9px; font-style: italic; color: #555; }}
+    
+    .pill {{ display: inline-block; padding: 2px 10px; border-radius: 2px; font-weight: bold; font-size: 11px; }}
+    .pill-seat {{ background: #002e5b; color: #fff; }}
+    .pill-status {{ border: 1px solid #28a745; color: #155724; background: #d4edda; }}
+
+    .signature-area {{
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        border-top: 1px solid #000;
+        background: #fff;
+    }}
+    .sig-table {{ width: 100%; border-collapse: collapse; }}
+    .sig-table td {{
+        width: 50%; height: 80px; text-align: center; vertical-align: bottom;
+        font-size: 11px; font-weight: bold; border-right: 1px solid #000;
+        padding-bottom: 10px;
+    }}
+    .sig-table td:last-child {{ border-right: none; }}
+    .sig-note {{ text-align: center; font-style: italic; font-size: 11px; padding: 6px; }}
+    .footer-note {{ font-size: 9px; color: #666; padding: 6px 12px; border-top: 1px solid #eee; }}
+
+    /* Page 2 Style Original */
+    .p2-container {{ width: 210mm; height: 297mm; page-break-before: always; padding: 10mm; box-sizing: border-box; }}
+    .p2-border {{ width: 100%; height: 100%; border: 1.5px solid #555; position: relative; box-sizing: border-box; }}
+    .inst-outer {{ border: 1.5px solid #888; margin: 12px 14px 16px; padding: 14px 18px 18px; }}
+    .inst-main-title {{ font-size: 13.5px; font-weight: bold; text-align: center; color: #000; margin-bottom: 10px; }}
+    .p2-sec-title {{ font-size: 12.5px; font-weight: bold; color: #000; margin: 10px 0 3px; }}
+    .il {{ list-style: none; margin: 0; padding: 0; }}
+    .il > li {{ display: flex; gap: 6px; font-size: 11.5px; color: #000; line-height: 1.65; padding-left: 18px; }}
+    .il > li .mk {{ flex-shrink: 0; min-width: 16px; font-weight: bold; }}
+    .sl {{ list-style: none; margin: 2px 0 2px 52px; padding: 0; }}
+    .sl li {{ display: flex; gap: 6px; font-size: 11.5px; color: #000; line-height: 1.65; }}
+    .sl li .mk {{ flex-shrink: 0; min-width: 22px; font-style: italic; font-weight: bold; }}
+    .p2-footer {{ padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }}
+    .p2-footer span {{ font-size: 8.5px; color: #888; }}
 </style>
 </head>
 <body>
-<div class="card-page p1">
-  {header_html}
-  <div class="title-row">
-    <div class="t1">Admit Card ({val(f_test)})</div>
-    <div class="t2">Admission to {val(doc.program_level) if doc.program_level else "the Programme"} &nbsp;|&nbsp; {val(doc.academic_year)} &nbsp;|&nbsp; {val(doc.admission_cycle)}</div>
-  </div>
-  <table class="info-wrap-tbl">
-    <tr>
-      <td class="info-tbl-cell">
-        <table class="info-tbl">
-          <tbody>
-            <tr><td class="lb">Admit Card Number</td><td class="sp">:</td><td class="vl"><strong>{val(admit_no)}</strong></td></tr>
-            <tr><td class="lb">Candidate's Name</td><td class="sp">:</td><td class="vl">{val(doc.candidate_name)}</td></tr>
-            <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">{val(dob)}</td></tr>
-            <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">{val(doc.father_name)}</td></tr>
-            <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">{val(doc.mother_name)}</td></tr>
-            <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">{val(doc.gender)}</td></tr>
-            <tr><td class="lb">Programme Applied</td><td class="sp">:</td><td class="vl">{val(doc.program)}</td></tr>
-            <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(doc.applicant)}</td></tr>
-            <tr><td class="lb">Examination Date &amp; Time</td><td class="sp">:</td><td class="vl">{exam_date_time}</td></tr>
-            <tr><td class="lb">Reporting Time</td><td class="sp">:</td><td class="vl">30 minutes before scheduled time</td></tr>
-            <tr><td class="lb">Seat Number</td><td class="sp">:</td><td class="vl"><span class="seat-pill">{val(f_seat)}</span></td></tr>
-            <tr><td class="lb">Room / Hall</td><td class="sp">:</td><td class="vl">{val(f_room)}{f'&nbsp; (Code:&nbsp;{esc(f_code)})' if f_code and f_code.strip() else ""}</td></tr>
-            <tr><td class="lb">Building / Floor</td><td class="sp">:</td><td class="vl">{val(f_building)}{f'&nbsp; &middot;&nbsp; Floor:&nbsp;{esc(f_floor)}' if f_floor and f_floor.strip() else ""}</td></tr>
-            <tr><td class="lb">Allocation Status</td><td class="sp">:</td><td class="vl"><span class="status-pill">{val(f_status)}</span></td></tr>
-            <tr><td class="lb">Test Centre Name &amp; Address</td><td class="sp">:</td><td class="vl" style="font-size:11.5px;">{centre_full}</td></tr>
-          </tbody>
-        </table>
-      </td>
-      <td class="photo-col-cell">
-        <div class="photo-inner-wrap">
-          <div class="photo-box-inner" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <div class="photo-frame">
-              {f'<img src="{profile_image_url}" alt="Candidate Photo" width="120" height="150" style="width: 120px; height: 150px; object-fit: cover; display: block;">' if profile_image_url else '<div class="photo-ph">👤</div>'}
+    <!-- Page 1 -->
+    <div class="p1-wrapper">
+        <div class="p1-border">
+            <table class="header-table">
+                <tr>
+                    <td style="width: 80px;">
+                        <div class="logo-container">
+                            {f'<img src="{campus_logo_url}" />' if campus_logo_url else '<div style="font-size:32px;line-height:65px;color:#7b1c1c;">⚖</div>'}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="univ-info">
+                            <div class="univ-name">{esc(campus_display_name)}</div>
+                            <div class="univ-sub">OFFICE OF ADMISSIONS & EXAMINATION CELL</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="title-banner">ADMIT CARD - {esc(admit_no)}</div>
+
+            <table class="top-info-table">
+                <tr>
+                    <td style="vertical-align: top;">
+                        <div class="section-title">Candidate Information</div>
+                        <table class="data-table">
+                            <tr><td class="label">Candidate Name</td><td class="value"><strong>{val(doc.candidate_name)}</strong></td></tr>
+                            <tr><td class="label">Date of Birth</td><td class="value">{val(dob)}</td></tr>
+                            <tr><td class="label">Father's Name</td><td class="value">{val(doc.father_name)}</td></tr>
+                            <tr><td class="label">Mother's Name</td><td class="value">{val(doc.mother_name)}</td></tr>
+                            <tr><td class="label">Gender</td><td class="value">{val(doc.gender)}</td></tr>
+                        </table>
+                    </td>
+                    <td class="photo-area">
+                        <div class="photo-frame">
+                            {f'<img src="{profile_image_url}" />' if profile_image_url else '<div style="font-size:60px; color:#ccc; margin-top:35px;">👤</div>'}
+                        </div>
+                        <div class="photo-cap">Candidate's Photograph</div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Application Details FULL WIDTH -->
+            <div class="section-title">Application Details</div>
+            <table class="data-table">
+                <tr><td class="label">Programme Applied</td><td class="value"><strong>{val(doc.program)}</strong></td></tr>
+                <tr><td class="label">Application Number</td><td class="value">{val(doc.applicant)}</td></tr>
+                <tr><td class="label">Academic Year / Cycle</td><td class="value">{val(doc.academic_year)} &nbsp;|&nbsp; {val(doc.admission_cycle)}</td></tr>
+            </table>
+
+            <!-- Examination Details FULL WIDTH -->
+            <div class="section-title">Examination Details</div>
+            <table class="data-table">
+                <tr><td class="label">Entrance Test</td><td class="value"><strong>{val(f_test)}</strong></td></tr>
+                <tr><td class="label">Examination Date</td><td class="value"><strong>{alloc_date}</strong></td></tr>
+                <tr><td class="label">Examination Time</td><td class="value">As per center schedule</td></tr>
+                <tr><td class="label">Reporting Time</td><td class="value">{rep_time_str} (30 mins before start)</td></tr>
+            </table>
+
+            <!-- Seat & Venue Details FULL WIDTH -->
+            <div class="section-title">Seat & Venue Details</div>
+            <table class="data-table">
+                <tr><td class="label">Seat Number</td><td class="value"><span class="pill pill-seat">{val(f_seat)}</span></td></tr>
+                <tr><td class="label">Room / Hall / Floor</td><td class="value">{val(f_room)}{f' ({esc(f_code)})' if f_code else ""} &nbsp;|&nbsp; {val(f_building)} ({esc(f_floor)})</td></tr>
+                <tr><td class="label">Examination Venue</td><td class="value"><strong>{val(f_center)}</strong><br/><span style="font-size:10px; color:#555;">{val(f_address)}</span></td></tr>
+                <tr><td class="label">Allocation Status</td><td class="value"><span class="pill pill-status">{val(f_status)}</span></td></tr>
+            </table>
+
+            <div style="padding: 15px; font-size: 11px; color: #444; line-height: 1.45;">
+                <strong>Important:</strong> Please bring a printed copy of this admit card with a valid ID proof (Aadhar/PAN/Passport) to the exam center. No entry without these documents.
             </div>
-            <div class="photo-cap">Candidate's Photograph</div>
-          </div>
-          <div class="photo-sig-box" style="width: 100%; text-align: center; padding-bottom: 5px;">
-            <div style="height: 40px; border-bottom: 1px solid #999; margin-bottom: 4px;"></div>
-            <div style="font-size: 8px; font-family: Arial, sans-serif; font-weight: bold; text-transform: uppercase; color: #333; letter-spacing: -0.2px;">Candidate's Signature</div>
-          </div>
+
+            <div class="signature-area">
+                <div class="sig-note">To be signed in the presence of the Invigilator at the Examination Hall</div>
+                <table class="sig-table">
+                    <tr>
+                        <td>Candidate's Signature</td>
+                        <td>Invigilator's Signature</td>
+                    </tr>
+                </table>
+                <div class="footer-note">
+                    Ref ID: {esc(doc.name)} &nbsp;|&nbsp; Generated: {esc(issue_date)} &nbsp;|&nbsp; System Generated.
+                </div>
+            </div>
         </div>
-      </td>
-    </tr>
-  </table>
-  <div class="sig-note">To be signed in the presence of the Invigilator in the Examination Hall</div>
-  <table class="sig-tbl">
-    <tr>
-      <td><div class="sig-cell-inner"><span class="sig-hdr">Candidate's Signature</span><span class="sig-body"></span></div></td>
-      <td><div class="sig-cell-inner"><span class="sig-hdr">Invigilator's Signature</span><span class="sig-body"></span></div></td>
-    </tr>
-  </table>
-</div>
-<div class="card-page p2">
-  <div class="inst-outer">
-    <div class="inst-main-title">Instructions to Candidates</div>
-    <div class="sec-title">1.&nbsp;&nbsp; General Instructions</div>
-    <ul class="il">
-      <li><span class="mk">a.</span><span>Candidates should check and review their admit cards carefully and make sure that their Name, Date of Birth, and other personal details mentioned in the admit card are as per the details filled by them in the application form. In case of any discrepancy, please contact the Examination Cell immediately.</span></li>
-      <li><span class="mk">b.</span><span>Please carry a printed copy of this admit card to the test centre.</span></li>
-    </ul>
-    <div class="sec-title">2.&nbsp;&nbsp; Reporting to the Test Centre &amp; Test Timings</div>
-    <ul class="il">
-      <li><span class="mk">a.</span><span>Candidates will be allowed to enter the premises of the test centre 30 minutes before the examination start time and should be seated in the examination hall at least 15 minutes before commencement.</span></li>
-      <li><span class="mk">b.</span><span>Candidates should carry a Government-issued photo ID card, preferably the one uploaded with the application form. The ID card will be checked at the time of entry into the centre.</span></li>
-      <li><span class="mk">c.</span><span>Candidates who arrive at the test centre beyond the scheduled entry cut-off time will not be permitted entry.</span></li>
-      <li><span class="mk">d.</span><span>Once the test commences, Candidates will not be permitted to leave the examination hall until the test is completed, and all the Question Booklets and OMR response sheets have been collected by the invigilator/s.</span></li>
-    </ul>
-    <div class="sec-title">3.&nbsp;&nbsp; Pre-Test Instructions</div>
-    <ul class="il">
-      <li><span class="mk">a.</span><span>Candidates shall be required to follow all directions issued by the Centre Coordinators and the Institution representatives at their respective test centres.</span></li>
-      <li><span class="mk">b.</span><span>Candidates must maintain all protocols in place at their respective test centres.</span></li>
-    </ul>
-    <div class="sec-title">4.&nbsp;&nbsp; Permitted Items</div>
-    <ul class="il">
-      <li><span class="mk">a.</span><span>Candidates will only be permitted to carry the following inside the Test Centre:</span></li>
-    </ul>
-    <ul class="sl">
-      <li><span class="mk">i.</span><span>Admit Card (In case the photograph on the Admit Card is not clear, candidates should carry a self-attested passport size photograph).</span></li>
-      <li><span class="mk">ii.</span><span>Government Issued Photo ID (preferably the one uploaded with the application form).</span></li>
-      <li><span class="mk">iii.</span><span>Black or Blue Ballpoint pen.</span></li>
-      <li><span class="mk">iv.</span><span>A transparent water bottle.</span></li>
-      <li><span class="mk">v.</span><span>A face mask (the Candidate may be asked to remove the face mask for ascertainment of identity).</span></li>
-      <li><span class="mk">vi.</span><span>An analogue watch. <strong>Note:</strong> Smart Watches are not permitted.</span></li>
-    </ul>
-    <div class="sec-title">5.&nbsp;&nbsp; Admissions Test Related Instructions</div>
-    <ul class="il">
-      <li><span class="mk">a.</span><span>An attendance sheet will be circulated during the admissions test. The requisite details should be filled in the attendance sheet.</span></li>
-      <li><span class="mk">b.</span><span>Candidates will be provided with a Question Booklet and/or answer sheets. Candidates should use black/blue ball point pen <strong>only</strong> to enter the admit card number and other required details.</span></li>
-      <li><span class="mk">c.</span><span>Candidates must read the instructions provided with the Question Booklet before commencing the test.</span></li>
-      <li><span class="mk">d.</span><span>Candidates should write the details required on the cover page of the Question Booklet.</span></li>
-      <li><span class="mk">e.</span><span>No clarifications can be sought about the Question Booklet from anyone.</span></li>
-      <li><span class="mk">f.</span><span>Candidates shall not carry the Question Booklet out of the examination hall under any circumstances.</span></li>
-    </ul>
-    <div class="sec-title">6.&nbsp;&nbsp; Documents to be retained by the Candidate after the test</div>
-    <ul class="il">
-      <li><span class="mk">a.</span><span>The admit card, with the invigilator's signature, should be retained by the candidate and produced at the Institution at the time of admission.</span></li>
-    </ul>
-    <div class="sec-title">7.&nbsp;&nbsp; Malpractice</div>
-    <ul class="il">
-      <li><span class="mk">a.</span><span>The use of any unfair means by a Candidate shall result in their disqualification and cancellation of their test.</span></li>
-      <li><span class="mk">b.</span><span>Impersonation is an offence, and the Candidate, apart from being disqualified, shall be liable to penal action under the law.</span></li>
-      <li><span class="mk">c.</span><span>Possession of electronic devices, including mobile phones, headphones, earphones, smart watches, calculators etc., is strictly prohibited in the examination hall.</span></li>
-    </ul>
-  </div>
-  <div class="pg-footer">
-    <span>Doc: <strong>{val(doc.name)}</strong> &nbsp;·&nbsp; Generated: <strong>{val(issue_date)}</strong> &nbsp;·&nbsp; System-generated. No physical signature required.</span>
-    <span>{val(admit_no)}</span>
-  </div>
-</div>
+    </div>
+
+    <!-- Page 2: Original Full Instructions -->
+    <div class="p2-container">
+        <div class="p2-border">
+            <div class="inst-outer">
+                <div class="inst-main-title">Instructions to Candidates</div>
+                <div class="p2-sec-title">1.&nbsp;&nbsp; General Instructions</div>
+                <ul class="il">
+                <li><span class="mk">a.</span><span>Candidates should check and review their admit cards carefully and make sure that their Name, Date of Birth, and other personal details mentioned in the admit card are as per the details filled by them in the application form. In case of any discrepancy, please contact the Examination Cell immediately.</span></li>
+                <li><span class="mk">b.</span><span>Please carry a printed copy of this admit card to the test centre.</span></li>
+                </ul>
+                <div class="p2-sec-title">2.&nbsp;&nbsp; Reporting to the Test Centre &amp; Test Timings</div>
+                <ul class="il">
+                <li><span class="mk">a.</span><span>Candidates will be allowed to enter the premises of the test centre 30 minutes before the examination start time and should be seated in the examination hall at least 15 minutes before commencement.</span></li>
+                <li><span class="mk">b.</span><span>Candidates should carry a Government-issued photo ID card, preferably the one uploaded with the application form. The ID card will be checked at the time of entry into the centre.</span></li>
+                <li><span class="mk">c.</span><span>Candidates who arrive at the test centre beyond the scheduled entry cut-off time will not be permitted entry.</span></li>
+                <li><span class="mk">d.</span><span>Once the test commences, Candidates will not be permitted to leave the examination hall until the test is completed, and all the Question Booklets and OMR response sheets have been collected by the invigilator/s.</span></li>
+                </ul>
+                <div class="p2-sec-title">3.&nbsp;&nbsp; Pre-Test Instructions</div>
+                <ul class="il">
+                <li><span class="mk">a.</span><span>Candidates shall be required to follow all directions issued by the Centre Coordinators and the Institution representatives at their respective test centres.</span></li>
+                <li><span class="mk">b.</span><span>Candidates must maintain all protocols in place at their respective test centres.</span></li>
+                </ul>
+                <div class="p2-sec-title">4.&nbsp;&nbsp; Permitted Items</div>
+                <ul class="il">
+                <li><span class="mk">a.</span><span>Candidates will only be permitted to carry the following inside the Test Centre:</span></li>
+                </ul>
+                <ul class="sl">
+                <li><span class="mk">i.</span><span>Admit Card (In case the photograph on the Admit Card is not clear, candidates should carry a self-attested passport size photograph).</span></li>
+                <li><span class="mk">ii.</span><span>Government Issued Photo ID (preferably the one uploaded with the application form).</span></li>
+                <li><span class="mk">iii.</span><span>Black or Blue Ballpoint pen.</span></li>
+                <li><span class="mk">iv.</span><span>A transparent water bottle.</span></li>
+                <li><span class="mk">v.</span><span>An analogue watch. <strong>Note:</strong> Smart Watches are not permitted.</span></li>
+                </ul>
+                <div class="p2-sec-title">5.&nbsp;&nbsp; Admissions Test Related Instructions</div>
+                <ul class="il">
+                <li><span class="mk">a.</span><span>An attendance sheet will be circulated during the admissions test. The requisite details should be filled in the attendance sheet.</span></li>
+                <li><span class="mk">b.</span><span>Candidates will be provided with a Question Booklet and/or answer sheets. Candidates should use black/blue ball point pen only to enter the admit card number and other required details.</span></li>
+                <li><span class="mk">c.</span><span>Candidates must read the instructions provided with the Question Booklet before commencing the test.</span></li>
+                <li><span class="mk">d.</span><span>Candidates should write the details required on the cover page of the Question Booklet.</span></li>
+                <li><span class="mk">e.</span><span>No clarifications can be sought about the Question Booklet from anyone.</span></li>
+                <li><span class="mk">f.</span><span>Candidates shall not carry the Question Booklet out of the examination hall under any circumstances.</span></li>
+                </ul>
+                <div class="p2-sec-title">6.&nbsp;&nbsp; Documents to be retained by the Candidate after the test</div>
+                <ul class="il">
+                <li><span class="mk">a.</span><span>The admit card, with the invigilator's signature, should be retained by the candidate and produced at the Institution at the time of admission.</span></li>
+                </ul>
+                <div class="p2-sec-title">7.&nbsp;&nbsp; Malpractice</div>
+                <ul class="il">
+                <li><span class="mk">a.</span><span>The use of any unfair means by a Candidate shall result in their disqualification and cancellation of their test.</span></li>
+                <li><span class="mk">b.</span><span>Impersonation is an offence, and the Candidate, apart from being disqualified, shall be liable to penal action under the law.</span></li>
+                <li><span class="mk">c.</span><span>Possession of electronic devices, including mobile phones, headphones, earphones, smart watches, calculators etc., is strictly prohibited in the examination hall.</span></li>
+                </ul>
+            </div>
+            <div class="p2-footer">
+                <span>Doc: <strong>{val(doc.name)}</strong> &nbsp;·&nbsp; Gen: <strong>{val(issue_date)}</strong></span>
+                <span>{val(admit_no)}</span>
+            </div>
+        </div>
+    </div>
 </body>
 </html>"""
     return html
