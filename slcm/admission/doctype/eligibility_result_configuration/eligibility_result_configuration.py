@@ -247,8 +247,9 @@ class EligibilityResultConfiguration(Document):
             if res.email:
                 try:
                     _send_eligibility_result_email(res)
+                    _send_eligibility_result_notification(res)
                 except Exception:
-                    frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email Failed: {res.name}")
+                    frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email/Notification Failed: {res.name}")
 
             frappe.db.sql("""
                 UPDATE `tabApplicant` 
@@ -341,3 +342,34 @@ def _send_eligibility_result_email(res):
             )
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email Failed: {res.name}")
+
+
+def _send_eligibility_result_notification(res):
+    """Creates a Notification Log entry for the eligibility result."""
+    if not res.email:
+        return
+    
+    if frappe.db.exists("User", res.email):
+        try:
+            # Custom message for Eligibility Result
+            message_body = f"""
+                <p>Your eligibility evaluation result for <strong>"{res.program}"</strong> has been published.</p>
+                <p>Status: <strong>{res.result_status or "Qualified"}</strong></p>
+                <p>Entrance Test Score: <strong>{res.entrance_test_score or 0}</strong></p>
+                <p>Interview Score: <strong>{res.interview_score or 0}</strong></p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Eligibility Result Published",
+                "for_user": res.email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Eligibility Result",
+                "document_name": res.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Eligibility Result Notification Failed: {res.name}")
