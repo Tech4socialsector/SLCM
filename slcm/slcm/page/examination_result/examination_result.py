@@ -408,7 +408,7 @@ def get_departments(search=""):
 
 
 @frappe.whitelist()
-def get_courses_by_department(exam_plan, department, search=""):
+def get_courses_by_department(department, exam_plan=None, search=""):
 	"""Return courses in a department that have class configurations."""
 	course_filters = {"department": department}
 	if search:
@@ -420,6 +420,256 @@ def get_courses_by_department(exam_plan, department, search=""):
 		order_by="course_name asc",
 		page_length=200,
 	)
+
+
+# ── New Course Results Page API ────────────────────────────────────────────────
+
+def _get_marks_columns(evaluation_schema):
+	"""Return ordered assessment config columns for a given evaluation schema."""
+	return frappe.db.sql(
+		"""
+		SELECT sac.name, sac.component, ec.component_name,
+		       sac.assessment_type, eat.type_name,
+		       sac.label, sac.maximum_marks, sac.effective_marks,
+		       sac.consider_for_pass_fail, sac.enrollment, sac.idx
+		FROM `tabSchema Assessment Config` sac
+		LEFT JOIN `tabExam Component` ec ON ec.name = sac.component
+		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = sac.assessment_type
+		WHERE sac.parent = %(schema)s
+		ORDER BY sac.idx ASC
+		""",
+		{"schema": evaluation_schema},
+		as_dict=True,
+	)
+
+
+@frappe.whitelist()
+def get_course_info(course):
+	"""Return full course info for the Course Results page."""
+	course_doc = frappe.db.get_value(
+		"Course", course,
+		["course_name", "course_code", "credit_value", "department_name", "department"],
+		as_dict=True,
+	) or {}
+
+	# Find best exam plan (Active first, then most recent)
+	assignment = frappe.db.sql(
+		"""
+		SELECT csa.exam_plan, csa.evaluation_schema, csa.grade_schema,
+		       ep.exam_name, ep.status AS plan_status
+		FROM `tabCourse Schema Assignment` csa
+		JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
+		WHERE csa.course = %(course)s
+		ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
+		LIMIT 1
+		""",
+		{"course": course},
+		as_dict=True,
+	)
+	assignment = assignment[0] if assignment else {}
+
+	access = frappe.db.get_value(
+		"Course Result Access",
+		{"exam_plan": assignment.get("exam_plan"), "course": course},
+		["view_access", "edit_access", "edit_deadline", "mask_student_info",
+		 "auto_generate_grade_access", "status"],
+		as_dict=True,
+	) or {}
+
+	count_row = frappe.db.sql(
+		"""
+		SELECT COUNT(DISTINCT cs.student) AS cnt
+		FROM `tabClass Student` cs
+		INNER JOIN `tabClass Configuration` cc ON cs.parent = cc.name
+		WHERE cc.course = %(course)s
+		""",
+		{"course": course},
+		as_dict=True,
+	)
+
+	columns = []
+	if assignment.get("evaluation_schema"):
+		columns = _get_marks_columns(assignment["evaluation_schema"])
+
+	# Format edit_deadline for display
+	edit_deadline = ""
+	raw_dl = access.get("edit_deadline")
+	if raw_dl:
+		try:
+			edit_deadline = frappe.utils.format_datetime(str(raw_dl), "dd MMM yy hh:mm a")
+		except Exception:
+			edit_deadline = str(raw_dl)
+
+	return {
+		"course_name":     course_doc.get("course_name", ""),
+		"course_code":     course_doc.get("course_code", ""),
+		"credit_value":    course_doc.get("credit_value", 0),
+		"department_name": course_doc.get("department_name", ""),
+		"exam_plan":       assignment.get("exam_plan", ""),
+		"exam_name":       assignment.get("exam_name", ""),
+		"evaluation_schema": assignment.get("evaluation_schema", ""),
+		"grade_schema":    assignment.get("grade_schema", ""),
+		"student_count":   count_row[0]["cnt"] if count_row else 0,
+		"view_access":     int(access.get("view_access", 1)),
+		"edit_access":     int(access.get("edit_access", 1)),
+		"edit_deadline":   edit_deadline,
+		"mask_student_info": int(access.get("mask_student_info", 0)),
+		"status":          access.get("status", "UNLOCKED"),
+		"columns":         columns,
+	}
+
+
+@frappe.whitelist()
+def get_course_students_paged(course, search="", page=1, page_length=20,
+                               sort_by="registration_id", sort_order="asc"):
+	"""Return paginated students enrolled via Class Configuration for a course."""
+	page        = int(page)
+	page_length = int(page_length)
+	offset      = (page - 1) * page_length
+
+	sort_col = (
+		"sm.registration_id"
+		if sort_by == "registration_id"
+		else "CONCAT_WS(' ', sm.first_name, sm.last_name)"
+	)
+	sort_dir = "DESC" if sort_order == "desc" else "ASC"
+
+	search_cond = ""
+	params = {"course": course, "lim": page_length, "off": offset}
+	if search:
+		search_cond = (
+			"AND (sm.registration_id LIKE %(search)s "
+			"OR sm.first_name LIKE %(search)s "
+			"OR sm.last_name LIKE %(search)s)"
+		)
+		params["search"] = f"%{search}%"
+
+	students = frappe.db.sql(
+		f"""
+		SELECT DISTINCT
+			sm.name               AS student,
+			sm.registration_id,
+			CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name,
+			sm.student_status,
+			sm.account_status,
+			sm.programme,
+			sm.batch_year,
+			sm.intake,
+			sm.department,
+			cc.section
+		FROM `tabClass Student` cs
+		INNER JOIN `tabClass Configuration` cc ON cs.parent = cc.name
+		LEFT JOIN `tabStudent Master` sm ON sm.name = cs.student
+		WHERE cc.course = %(course)s
+		{search_cond}
+		ORDER BY {sort_col} {sort_dir}
+		LIMIT %(lim)s OFFSET %(off)s
+		""",
+		params,
+		as_dict=True,
+	)
+
+	total_row = frappe.db.sql(
+		f"""
+		SELECT COUNT(DISTINCT cs.student) AS cnt
+		FROM `tabClass Student` cs
+		INNER JOIN `tabClass Configuration` cc ON cs.parent = cc.name
+		LEFT JOIN `tabStudent Master` sm ON sm.name = cs.student
+		WHERE cc.course = %(course)s
+		{search_cond}
+		""",
+		params,
+		as_dict=True,
+	)
+
+	return {
+		"students": students,
+		"total":    total_row[0]["cnt"] if total_row else 0,
+	}
+
+
+@frappe.whitelist()
+def get_student_hover_info(student, course):
+	"""Return student profile + section for the hover popup."""
+	sm = frappe.db.get_value(
+		"Student Master", student,
+		["registration_id", "first_name", "last_name",
+		 "official_email_id", "email", "programme", "batch_year", "intake"],
+		as_dict=True,
+	)
+	if not sm:
+		return {}
+
+	cohort_name = ""
+	if sm.get("programme"):
+		cohort_name = (
+			frappe.db.get_value("Cohort", sm["programme"], "cohort_name")
+			or sm["programme"]
+		)
+
+	section_row = frappe.db.sql(
+		"""
+		SELECT cc.section
+		FROM `tabClass Student` cs
+		INNER JOIN `tabClass Configuration` cc ON cs.parent = cc.name
+		WHERE cs.student = %(student)s AND cc.course = %(course)s
+		LIMIT 1
+		""",
+		{"student": student, "course": course},
+		as_dict=True,
+	)
+
+	return {
+		"student_name":    " ".join(filter(None, [sm.first_name, sm.last_name])),
+		"registration_id": sm.registration_id or "",
+		"email":           sm.official_email_id or sm.email or "",
+		"programme":       cohort_name,
+		"batch":           sm.batch_year or "",
+		"intake":          sm.intake or "",
+		"section":         section_row[0]["section"] if section_row else "",
+	}
+
+
+@frappe.whitelist()
+def get_marks_for_students(course, exam_plan, student_ids):
+	"""Return marks data keyed by student → component."""
+	import json as _json
+	if isinstance(student_ids, str):
+		student_ids = _json.loads(student_ids)
+	if not student_ids or not exam_plan:
+		return {}
+
+	rows = frappe.db.sql(
+		"""
+		SELECT scm.student, scm.total_marks, scm.grade, scm.status,
+		       sme.component, sme.assessment_type,
+		       sme.marks, sme.revaluation_marks, sme.moderated_marks
+		FROM `tabStudent Course Marks` scm
+		JOIN `tabStudent Marks Entry` sme ON sme.parent = scm.name
+		WHERE scm.course = %(course)s
+		  AND scm.exam_plan = %(exam_plan)s
+		  AND scm.student IN %(students)s
+		""",
+		{"course": course, "exam_plan": exam_plan, "students": tuple(student_ids)},
+		as_dict=True,
+	)
+
+	result = {}
+	for row in rows:
+		s = row["student"]
+		c = row["component"]
+		if s not in result:
+			result[s] = {
+				"total": row["total_marks"],
+				"grade": row["grade"],
+				"components": {},
+			}
+		result[s]["components"][c] = {
+			"marks":             row["marks"],
+			"revaluation_marks": row["revaluation_marks"],
+			"moderated_marks":   row["moderated_marks"],
+		}
+	return result
 
 
 @frappe.whitelist()
@@ -569,7 +819,7 @@ def get_student_profile(student):
 	# Get cohort/programme label
 	cohort_name = ""
 	if sm.get("programme"):
-		cohort_name = frappe.db.get_value("Cohort", sm["programme"], "name") or sm["programme"]
+		cohort_name = frappe.db.get_value("Cohort", sm["programme"], "cohort_name") or sm["programme"]
 	sm["cohort_name"] = cohort_name
 	return sm
 

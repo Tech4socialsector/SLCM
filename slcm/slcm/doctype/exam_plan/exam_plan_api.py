@@ -391,13 +391,11 @@ def get_courses_for_plan(exam_plan, search=""):
 		if term_name:
 			enrollment_counts = frappe.db.sql(
 				"""
-				SELECT co.course_title AS course, COUNT(DISTINCT ce.parent) AS enrolled_count
-				FROM `tabCourse Enrollment` ce
-				JOIN `tabStudent Enrollment` se ON ce.parent = se.name
-				JOIN `tabCourse Offering` co ON ce.course_offering = co.name
+				SELECT pe.course AS course, COUNT(DISTINCT se.name) AS enrolled_count
+				FROM `tabStudent Enrollment` se
+				JOIN `tabProgram Enrollment` pe ON pe.parent = se.name
 				WHERE se.term_name = %(term_name)s
-				  AND (ce.enrollment_status = 'Enrolled' OR ce.enrollment_status IS NULL OR ce.enrollment_status = '')
-				GROUP BY co.course_title
+				GROUP BY pe.course
 				""",
 				{"term_name": term_name},
 				as_dict=True,

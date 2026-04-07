@@ -1,8 +1,8 @@
 {
  "app": "slcm",
  "charts": [],
- "content": "[]",
- "creation": "2026-04-07 09:51:21.651131",
+ "content": "[{\"id\": \"em-hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Examination Management</b></span>\", \"col\": 12}}, {\"id\": \"em-sc-1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exam Planner\", \"col\": 6}}, {\"id\": \"em-sc-2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exam Result\", \"col\": 6}}]",
+ "creation": "2026-04-07 16:20:29.910048",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -14,7 +14,7 @@
  "label": "Examination Management",
  "link_type": "DocType",
  "links": [],
- "modified": "2026-04-07 09:56:13.944138",
+ "modified": "2026-04-07 16:40:27.968912",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Examination Management",
@@ -25,7 +25,24 @@
  "quick_lists": [],
  "roles": [],
  "sequence_id": 0.0,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Exam Planner",
+   "link_to": "",
+   "type": "URL",
+   "url": "/app/exam-planner"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "label": "Exam Result",
+   "link_to": "",
+   "type": "URL",
+   "url": "/app/exam-result"
+  }
+ ],
  "title": "Examination Management",
  "type": "Workspace"
 }
