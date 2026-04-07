@@ -16,12 +16,14 @@ class FoundationsforaLegalEducation(Document):
 		This hook is called by the Frappe Payments app when a payment is successful, failed, or cancelled.
 		The 'status' parameter is usually 'Completed', 'Authorized', 'Failed', etc.
 		"""
+		import json
+
 		razorpay_payment_id = None
 		amount_paise = None
 		paid_amount_logged = 0.0
+		integration_requests = []  # initialised here so the payment-log block below can reference it safely
 
 		try:
-			import json
 			integration_requests = frappe.get_all(
 				"Integration Request",
 				filters={
@@ -59,11 +61,10 @@ class FoundationsforaLegalEducation(Document):
 			payment_log.transaction_id = razorpay_payment_id
 			payment_log.transaction_date = frappe.utils.now_datetime()
 
-			import json
 			if integration_requests:
 				# Store the raw stringified data we fetched earlier
 				payment_log.gateway_response = integration_requests[0].get("data")
-			
+
 			payment_log.insert(ignore_permissions=True)
 			# Do not commit just yet, as we rely on the parent transaction
 		except Exception:
@@ -102,7 +103,7 @@ class FoundationsforaLegalEducation(Document):
 	# Required to prevent multiple applications being submitted with the same email address.
 	# --------------------------------------------------
 	def validate(self):
-		# Check for duplicate email address on new submissions
+		# Check for duplicate email address and consent only on new submissions (web form)
 		if self.is_new():
 			existing = frappe.db.exists(
 				"Foundations for a Legal Education",
@@ -114,10 +115,9 @@ class FoundationsforaLegalEducation(Document):
 					"Please use a different email address or contact support."
 				)
 
-		# Declaration consent is mandatory for all candidates
-		from frappe.utils import cint
-		if not cint(self.declaration_consent):
-			frappe.throw("Please accept the declaration consent before submitting the application.")
+			from frappe.utils import cint
+			if not cint(self.declaration_consent):
+				frappe.throw("Please accept the declaration consent before submitting the application.")
 
 
 	# --------------------------------------------------
@@ -146,7 +146,6 @@ class FoundationsforaLegalEducation(Document):
 	# --------------------------------------------------
 	def create_user_on_enrollment(self):
 		from frappe.utils import random_string
-		from frappe.utils.password import update_password
 		
 		# Ensure we only try to create exactly once
 		# if self.lms_account_created and self.generated_password_temp:

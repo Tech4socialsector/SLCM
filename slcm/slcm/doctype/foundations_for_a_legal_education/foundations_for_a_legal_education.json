@@ -258,7 +258,7 @@
    "fieldname": "payment_status",
    "fieldtype": "Select",
    "label": "Payment Status",
-   "options": "\nAuthorized\nCaptured\nFailed\nRefunded\nPending\nCancelled\nPayment Initiated"
+   "options": "\nUnpaid\nPayment Initiated\nAuthorized\nCaptured\nFailed\nRefunded\nPending\nCancelled"
   },
   {
    "depends_on": "eval: doc.where_did_you_hear==\"Other\"",
@@ -340,13 +340,13 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval: doc.last_class_attended==\"Others\"",
+   "depends_on": "eval: doc.last_class_attended==\"Other\"",
    "fieldname": "if_others1",
    "fieldtype": "Data",
    "label": "If Others, Mention here"
   },
   {
-   "depends_on": "eval: doc.latest_board_attended==\"Others\"",
+   "depends_on": "eval: doc.latest_board_attended==\"Other\"",
    "fieldname": "if_others2",
    "fieldtype": "Data",
    "label": "If Others, Mention here"
