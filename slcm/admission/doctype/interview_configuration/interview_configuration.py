@@ -56,7 +56,6 @@ class InterviewConfiguration(Document):
                 app.candidate_name,
                 app.email,
                 app.gender,
-                app.reservation_category,
                 app.program,
                 app.program_level
             FROM `tabApplicant` app
@@ -89,7 +88,6 @@ class InterviewConfiguration(Document):
                 app.candidate_name,
                 app.email,
                 app.gender,
-                app.reservation_category,
                 app.program,
                 app.program_level,
                 COALESCE(etsa.score_obtained, 0) AS entrance_test_score
@@ -123,7 +121,6 @@ class InterviewConfiguration(Document):
                 "candidate_name":       app.candidate_name or "Unknown",
                 "email":                app.email,
                 "gender":               app.gender,
-                "reservation_category": app.reservation_category,
                 "program":              app.program,
                 "program_level":        app.program_level,
                 "source_type":          "National Test (Direct)",
@@ -137,7 +134,6 @@ class InterviewConfiguration(Document):
                 "candidate_name":       app.candidate_name or "Unknown",
                 "email":                app.email,
                 "gender":               app.gender,
-                "reservation_category": app.reservation_category,
                 "program":              app.program,
                 "program_level":        app.program_level,
                 "source_type":          "Entrance Test",
@@ -220,7 +216,6 @@ class InterviewConfiguration(Document):
                 "candidate_name":       app["candidate_name"],
                 "program":              app["program"],
                 "program_level":        app["program_level"],
-                "reservation_category": app["reservation_category"],
                 "email":                app["email"],
                 "gender":               app["gender"],
                 "source_type":          app["source_type"],
