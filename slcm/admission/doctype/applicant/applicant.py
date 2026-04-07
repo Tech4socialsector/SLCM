@@ -1586,7 +1586,6 @@ class Applicant(Document):
             unit = "%"
 
         display_level = "HSC (Class XII)" if qualification_level == "XII" else qualification_level
-        baseline = self.get_required_academic_value(base_rule)
         applicant_val = self._get_applicant_value(base_rule)
 
         score_failed = bool(
@@ -1598,24 +1597,18 @@ class Applicant(Document):
 
         blocks = []
 
-        # ── Block 1: Reservation / general + marks (when score is the issue) ──
+        # ── Block 1: Marks — reservation paths use neutral “Minimum required” (actual
+        #    threshold for the evaluated path) + “You secured”; we omit the old
+        #    “for your category” / “general-category baseline” pair of lines.
         score_lines = []
         if cat_row and (cat_row.get("category") or "").strip():
-            if applied_threshold is not None:
-                score_lines.append(
-                    _("• Minimum required for your category ({0}): {1}{2}").format(
-                        display_level, flt(applied_threshold), unit
-                    )
-                )
-            if baseline is not None and (
-                applied_threshold is None or flt(baseline) != flt(applied_threshold)
-            ):
-                score_lines.append(
-                    _("• Programme baseline for general-category applicants ({0}): {1}{2}").format(
-                        display_level, flt(baseline), unit
-                    )
-                )
             if score_failed:
+                if applied_threshold is not None:
+                    score_lines.append(
+                        _("• Minimum required ({0}): {1}{2}").format(
+                            display_level, flt(applied_threshold), unit
+                        )
+                    )
                 score_lines.append(
                     _("• You secured ({0}): {1}{2}").format(display_level, flt(applicant_val), unit)
                 )
@@ -1643,7 +1636,8 @@ class Applicant(Document):
                 )
 
         if cat_row and (cat_row.get("category") or "").strip():
-            blocks.append("\n".join(score_lines))
+            if score_lines:
+                blocks.append("\n".join(score_lines))
         elif len(score_lines) > 1:
             blocks.append("\n".join(score_lines))
 
@@ -1692,6 +1686,31 @@ class Applicant(Document):
 
         return "\n\n".join(blocks)
 
+    @staticmethod
+    def _dedupe_eligibility_portal_lines(text: str) -> str:
+        """
+        Collapse repeated lines (e.g. same “You secured …” / rule ineligible_message) when
+        several Rule Mapping rows fail for one mapping — one line per distinct message, order kept.
+        """
+        if not (text or "").strip():
+            return (text or "").strip()
+        seen: set[str] = set()
+        out_lines: list[str] = []
+        for raw in (text or "").splitlines():
+            line = raw.rstrip()
+            key = " ".join(line.split()).strip().casefold()
+            if not key:
+                out_lines.append("")
+                continue
+            if key in seen:
+                continue
+            seen.add(key)
+            out_lines.append(line.strip())
+        result = "\n".join(out_lines).strip()
+        while "\n\n\n" in result:
+            result = result.replace("\n\n\n", "\n\n")
+        return result
+
     def _evaluate_mapping_with_category_priority(self, mapping):
         """
         Comprehensive eligibility engine:
@@ -1700,9 +1719,13 @@ class Applicant(Document):
 
         Result: Eligible if ANY (Category, Rule) combination passes.
 
-        Portal messaging: if the applicant matches at least one reservation row on this mapping,
-        ineligibility details only include failures for those matched category paths — not the
-        generic General path (still evaluated for eligibility, omitted from the message).
+        Portal messaging when ineligible:
+        • No reservation row matches the applicant’s categories → show failures for the General
+          path only (thresholds from the Eligibility Rule).
+        • One or more rows match → show failure copy for the single row with the lowest
+          priority number (1 before 2), i.e. the primary mapping category — not every matched
+          row and not the General path, so applicants do not see multiple “required %” lines.
+        Eligibility itself is still OR across all paths (any pass → eligible).
         """
         mapping_name = mapping.get("name")
         failure_msg  = (mapping.get("failure_message") or "").strip() or \
@@ -1733,11 +1756,18 @@ class Applicant(Document):
             row for row in reservation_rows
             if (row.category or "").strip() in applicant_categories
         ]
-        
+
+        primary_matched_row = None
+        if matched_categories:
+            primary_matched_row = sorted(
+                matched_categories,
+                key=lambda r: (flt(r.get("priority") or 999999), (r.get("category") or "").strip()),
+            )[0]
+
         # evaluation_paths = [MatchedCategoryRow1, MatchedCategoryRow2, ..., None (for General)]
         evaluation_paths = matched_categories + [None]
 
-        # Collect rule-specific ineligible messages to show if ALL paths fail
+        # Collect rule-specific ineligible messages to show if ALL paths fail (subset; see docstring)
         ineligible_messages = []
 
         # 4. Nested OR Evaluation: Success if ANY (Path, Rule) combination passes
@@ -1775,9 +1805,16 @@ class Applicant(Document):
                     )
                     if rule_msg:
                         if matched_categories:
-                            if cat_row is not None:
+                            if (
+                                cat_row is not None
+                                and primary_matched_row is not None
+                                and (cat_row.get("category") or "").strip()
+                                == (primary_matched_row.get("category") or "").strip()
+                                and flt(cat_row.get("priority"))
+                                == flt(primary_matched_row.get("priority"))
+                            ):
                                 ineligible_messages.append(rule_msg)
-                        else:
+                        elif cat_row is None:
                             ineligible_messages.append(rule_msg)
 
         # If all paths and all rules failed, combine the mapping-level failure_message
@@ -1795,10 +1832,13 @@ class Applicant(Document):
                 unique_parts.append(m)
 
         if unique_parts:
+            merged_detail = Applicant._dedupe_eligibility_portal_lines("\n\n".join(unique_parts))
             self._slcm_failure_sections.append(
-                {"heading": detail_heading, "body": "\n\n".join(unique_parts)}
+                {"heading": detail_heading, "body": merged_detail}
             )
-            final_message = failure_msg + "\n\n" + "\n\n".join(unique_parts)
+            final_message = Applicant._dedupe_eligibility_portal_lines(
+                failure_msg + "\n\n" + merged_detail
+            )
 
         return False, final_message
 

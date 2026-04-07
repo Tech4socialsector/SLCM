@@ -11,7 +11,13 @@
 <meta charset="UTF-8"/>
 <title>Eligibility Result - {{ doc.applicant_id }}</title>
 <style>
+/* PDF-safe layout: table-based header/footer; no flex/gap for main structure. */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@page {
+  size: A4 portrait;
+  margin: 8mm;
+}
+html { -webkit-text-size-adjust: 100%; }
 body {
 font-family: "Times New Roman", Times, serif;
 font-size: 13px;
@@ -20,44 +26,62 @@ color: #000;
 line-height: 1.4;
 print-color-adjust: exact;
 -webkit-print-color-adjust: exact;
+width: 100%;
+max-width: 210mm;
+margin: 0 auto;
 }
 .card-page {
-width: 710px;
+width: 100%;
+max-width: 190mm;
 margin: 0 auto;
 background: #fff;
 border: 1.5px solid #555;
 padding: 0;
 position: relative;
-overflow: hidden;
+overflow: visible;
 page-break-after: always;
 }
 .header {
 background: #7b1c1c;
-display: flex;
-align-items: center;
-justify-content: space-between;
+display: table;
+width: 100%;
+table-layout: fixed;
+border-collapse: collapse;
 padding: 10px 18px;
 border-bottom: 3px solid #5a0e0e;
 }
+.header > .logo-box,
+.header > .hdr-center {
+display: table-cell;
+vertical-align: middle;
+}
+.header > .logo-box:first-child { width: 90px; padding-right: 12px; }
+.header > .hdr-center { width: auto; }
+.header > .logo-box:last-child { width: 90px; padding-left: 12px; text-align: right; }
 .logo-box {
 width: 74px;
 height: 74px;
+max-width: 74px;
 background: #fff;
 border: 2px solid rgba(255,255,255,0.6);
 border-radius: 3px;
-display: flex;
-align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+text-align: center;
+overflow: hidden;
+vertical-align: middle;
 }
-.logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo-box img { width: 70px; height: 70px; max-width: 70px; max-height: 70px; object-fit: contain; display: inline-block; vertical-align: middle; }
 .logo-inner {
-display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+display: block;
+text-align: center;
+padding-top: 10px;
 }
+.logo-inner .logo-text { display: block; margin-top: 2px; }
 .logo-icon { font-size: 28px; line-height: 1; color: #7b1c1c; }
 .logo-text {
 font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
 text-align: center; letter-spacing: 0.5px; line-height: 1.2;
 }
-.hdr-center { flex: 1; text-align: center; min-width: 0; padding: 0 15px; }
+.hdr-center { text-align: center; min-width: 0; padding: 0 15px; }
 .univ-name {
 font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
 text-transform: none; letter-spacing: 1.2px; line-height: 1.2; margin-bottom: 0;
@@ -98,6 +122,7 @@ border-radius: 2px;
 .info-tbl {
 width: 100%;
 border-collapse: collapse;
+table-layout: fixed;
 }
 .info-tbl tr { border-bottom: 1px solid #ddd; }
 .info-tbl tr:last-child { border-bottom: none; }
@@ -127,6 +152,7 @@ font-weight: bold;
 .results-table {
 width: 100%;
 border-collapse: collapse;
+table-layout: fixed;
 margin-top: 10px;
 border: 1.5px solid #bbb;
 }
@@ -172,11 +198,22 @@ color: #333;
 margin-top: 25px;
 border-top: 1px solid #ddd;
 padding-top: 10px;
-display: flex;
-justify-content: space-between;
+display: table;
+width: 100%;
+table-layout: fixed;
 font-family: Arial, sans-serif;
 font-size: 9.5px;
 color: #555;
+}
+.footer > div {
+display: table-cell;
+vertical-align: top;
+width: 50%;
+}
+.footer > div:last-child { text-align: right; }
+@media print {
+  body { margin: 0; }
+  .card-page { width: 100%; max-width: none; margin: 0; }
 }
 </style>
 </head>
