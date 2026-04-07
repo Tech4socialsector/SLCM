@@ -1,0 +1,33 @@
+{
+ "content": null,
+ "creation": "2026-04-07 10:17:12.320719",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "layout-panel-top",
+ "idx": 0,
+ "modified": "2026-04-07 10:17:12.320719",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "examination-planner",
+ "owner": "Administrator",
+ "page_name": "examination-planner",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Academics User"
+  },
+  {
+   "role": "Academics User"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 1,
+ "title": "Examination Planner"
+}

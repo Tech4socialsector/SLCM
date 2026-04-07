@@ -258,7 +258,7 @@
    "fieldname": "source",
    "fieldtype": "Select",
    "label": "Source",
-   "options": "RFID\nManual\nQR",
+   "options": "Manual\nRFID\nQR\nAuto",
    "reqd": 1
   },
   {

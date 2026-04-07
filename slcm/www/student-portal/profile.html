@@ -1,0 +1,315 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+{# ── Profile Hero ──────────────────────────────────────────── #}
+<div class="sp-profile-hero fade-in">
+  <div class="sp-profile-avatar">
+    {% if profile.photo %}
+      <img src="{{ profile.photo }}" alt="{{ student_name }}">
+    {% else %}
+      {{ student_initial or "S" }}
+    {% endif %}
+  </div>
+  <div>
+    <div style="font-size:22px;font-weight:800;line-height:1.2;">{{ student_name }}</div>
+    <div style="font-size:14px;opacity:0.8;margin-top:4px;font-family:monospace;">{{ student_id }}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+      {% if programme_name %}
+      <span style="background:rgba(255,255,255,0.15);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;">{{ programme_name }}</span>
+      {% endif %}
+      {% if department %}
+      <span style="background:rgba(255,255,255,0.15);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;">{{ department }}</span>
+      {% endif %}
+      {% if batch_year %}
+      <span style="background:rgba(200,161,75,0.35);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">Batch {{ batch_year }}</span>
+      {% endif %}
+      {% if profile.student_status %}
+      <span style="background:{% if profile.student_status == 'Active' %}rgba(22,163,74,0.3){% else %}rgba(220,38,38,0.3){% endif %};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">{{ profile.student_status }}</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Two-Column Layout ─────────────────────────────────────── #}
+<div class="sp-profile-layout">
+
+  {# ── Left Column ──────────────────────────────────────────── #}
+  <div>
+
+    {# Personal Information #}
+    <div class="sp-section-card fade-in delay-1">
+      <div class="sp-section-header">
+        <span class="sp-ms">person</span> Personal Information
+      </div>
+      <div class="sp-section-body">
+        <div class="sp-info-grid">
+          <div>
+            <div class="sp-info-label">Full Name</div>
+            <div class="sp-info-value">{{ profile.full_name }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Date of Birth</div>
+            <div class="sp-info-value {% if not profile.dob %}empty{% endif %}">{{ profile.dob or "Not provided" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Gender</div>
+            <div class="sp-info-value {% if not profile.gender %}empty{% endif %}">{{ profile.gender or "Not provided" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Nationality</div>
+            <div class="sp-info-value {% if not profile.nationality %}empty{% endif %}">{{ profile.nationality or "Not provided" }}</div>
+          </div>
+          {% if profile.quota %}
+          <div>
+            <div class="sp-info-label">Category / Quota</div>
+            <div class="sp-info-value">{{ profile.quota }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# Contact Information #}
+    <div class="sp-section-card fade-in delay-2">
+      <div class="sp-section-header">
+        <span class="sp-ms">contact_mail</span> Contact Information
+      </div>
+      <div class="sp-section-body">
+        <div class="sp-info-grid">
+          <div>
+            <div class="sp-info-label">Login Email</div>
+            <div class="sp-info-value" style="word-break:break-all;">{{ frappe.session.user }}</div>
+          </div>
+          {% if profile.official_email %}
+          <div>
+            <div class="sp-info-label">Official Email</div>
+            <div class="sp-info-value" style="word-break:break-all;">{{ profile.official_email }}</div>
+          </div>
+          {% endif %}
+          {% if profile.personal_email %}
+          <div>
+            <div class="sp-info-label">Personal Email</div>
+            <div class="sp-info-value" style="word-break:break-all;">{{ profile.personal_email }}</div>
+          </div>
+          {% endif %}
+          {% if profile.phone %}
+          <div>
+            <div class="sp-info-label">Phone</div>
+            <div class="sp-info-value">{{ profile.phone }}</div>
+          </div>
+          {% endif %}
+        </div>
+        {% if profile.present_address %}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--sp-border);">
+          <div class="sp-info-label">Present Address</div>
+          <div class="sp-info-value" style="margin-top:4px;line-height:1.6;">{{ profile.present_address }}</div>
+        </div>
+        {% endif %}
+        {% if profile.permanent_address and profile.permanent_address != profile.present_address %}
+        <div style="margin-top:14px;">
+          <div class="sp-info-label">Permanent Address</div>
+          <div class="sp-info-value" style="margin-top:4px;line-height:1.6;">{{ profile.permanent_address }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Academic Information #}
+    <div class="sp-section-card fade-in delay-3">
+      <div class="sp-section-header">
+        <span class="sp-ms">school</span> Academic Information
+      </div>
+      <div class="sp-section-body">
+        <div class="sp-info-grid">
+          <div>
+            <div class="sp-info-label">Student ID</div>
+            <div style="font-size:18px;font-weight:800;color:var(--sp-primary);font-family:monospace;">{{ profile.registration_id or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Programme</div>
+            <div class="sp-info-value">{{ profile.programme or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Department</div>
+            <div class="sp-info-value">{{ profile.department or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Batch</div>
+            <div class="sp-info-value">{{ profile.batch_year or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Current Term</div>
+            <div class="sp-info-value">{{ profile.current_term or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Academic Year</div>
+            <div class="sp-info-value">{{ profile.academic_year or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">CGPA</div>
+            <div style="font-size:20px;font-weight:800;color:var(--sp-primary);">{{ "%.2f"|format(profile.current_cgpa) if profile.current_cgpa else "—" }}</div>
+          </div>
+          {% if profile.specialisation %}
+          <div>
+            <div class="sp-info-label">Specialisation</div>
+            <div class="sp-info-value">{{ profile.specialisation }}</div>
+          </div>
+          {% endif %}
+          {% if profile.admission_type %}
+          <div>
+            <div class="sp-info-label">Admission Type</div>
+            <div class="sp-info-value">{{ profile.admission_type }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# Bank Details #}
+    {% if profile.bank_name or profile.bank_account_number %}
+    <div class="sp-section-card fade-in delay-4">
+      <div class="sp-section-header">
+        <span class="sp-ms">account_balance</span> Bank Details
+      </div>
+      <div class="sp-section-body">
+        <div class="sp-info-grid">
+          {% if profile.bank_name %}
+          <div><div class="sp-info-label">Bank</div><div class="sp-info-value">{{ profile.bank_name }}</div></div>
+          {% endif %}
+          {% if profile.bank_account_number %}
+          <div><div class="sp-info-label">Account Number</div><div class="sp-info-value" style="font-family:monospace;">{{ profile.bank_account_number }}</div></div>
+          {% endif %}
+          {% if profile.ifsc_code %}
+          <div><div class="sp-info-label">IFSC Code</div><div class="sp-info-value" style="font-family:monospace;">{{ profile.ifsc_code }}</div></div>
+          {% endif %}
+          {% if profile.branch_name %}
+          <div><div class="sp-info-label">Branch</div><div class="sp-info-value">{{ profile.branch_name }}</div></div>
+          {% endif %}
+          {% if profile.account_holder %}
+          <div><div class="sp-info-label">Account Holder</div><div class="sp-info-value">{{ profile.account_holder }}</div></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Parents #}
+    {% if parents %}
+    <div class="sp-section-card fade-in delay-5">
+      <div class="sp-section-header">
+        <span class="sp-ms">family_restroom</span> Parent / Guardian
+      </div>
+      <div class="sp-section-body">
+        {% for p in parents %}
+        <div {% if not loop.last %}style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--sp-border);"{% endif %}>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-primary-light);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--sp-primary);">
+              {{ (p.parent_name or "P")[0].upper() }}
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--sp-text-1);">{{ p.parent_name }}</div>
+              <div style="font-size:12px;color:var(--sp-text-4);">{{ p.relation }}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-left:46px;">
+            {% if p.contact_number %}<span style="font-size:13px;color:var(--sp-text-3);">&#128222; {{ p.contact_number }}</span>{% endif %}
+            {% if p.email_id %}<span style="font-size:13px;color:var(--sp-text-3);word-break:break-all;">&#9993; {{ p.email_id }}</span>{% endif %}
+            {% if p.occupation %}<span style="font-size:13px;color:var(--sp-text-3);">{{ p.occupation }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# ── Right Column ─────────────────────────────────────────── #}
+  <div>
+
+    {# ID Card #}
+    {% if id_card %}
+    <div class="sp-section-card fade-in delay-1" style="margin-bottom:20px;">
+      <div class="sp-section-header">
+        <span class="sp-ms">badge</span> Student ID Card
+      </div>
+      <div class="sp-section-body">
+        <div class="sp-id-card-preview">
+          {% if id_card.front_id_image %}
+          <img src="{{ id_card.front_id_image }}" style="width:100%;border-radius:8px;" alt="ID Card">
+          {% else %}
+          <div style="text-align:center;padding:10px;">
+            <div style="font-size:11px;opacity:0.7;margin-bottom:6px;letter-spacing:0.1em;">STUDENT ID</div>
+            <div style="font-size:16px;font-weight:700;">{{ student_name }}</div>
+            <div style="font-size:13px;font-family:monospace;opacity:0.8;margin-top:4px;">{{ student_id }}</div>
+            {% if programme_name %}<div style="font-size:12px;opacity:0.7;margin-top:6px;">{{ programme_name }}</div>{% endif %}
+            {% if id_card.expiry_date %}<div style="font-size:11px;opacity:0.6;margin-top:8px;">Valid till {{ frappe.utils.formatdate(id_card.expiry_date, "MMM yyyy") }}</div>{% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;">
+          <span class="sp-badge" style="background:var(--sp-success-bg);color:var(--sp-success);">{{ id_card.card_status }}</span>
+          {% if id_card.expiry_date %}
+          <span style="font-size:12px;color:var(--sp-text-4);">Expires {{ frappe.utils.formatdate(id_card.expiry_date, "dd MMM yyyy") }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Hostel #}
+    {% if profile.is_hosteller %}
+    <div class="sp-section-card fade-in delay-2" style="margin-bottom:20px;">
+      <div class="sp-section-header">
+        <span class="sp-ms">hotel</span> Hostel
+      </div>
+      <div class="sp-section-body">
+        <span class="sp-badge" style="background:var(--sp-success-bg);color:var(--sp-success);margin-bottom:14px;">Resident</span>
+        {% if profile.hostel_room %}
+        <div style="margin-top:12px;"><div class="sp-info-label">Room</div><div class="sp-info-value">{{ profile.hostel_room }}</div></div>
+        {% endif %}
+        {% if profile.hostel_bed %}
+        <div style="margin-top:10px;"><div class="sp-info-label">Bed</div><div class="sp-info-value">{{ profile.hostel_bed }}</div></div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# Prior Qualifications #}
+    {% if ug_degrees %}
+    <div class="sp-section-card fade-in delay-3">
+      <div class="sp-section-header">
+        <span class="sp-ms">workspace_premium</span> Prior Qualifications
+      </div>
+      <div class="sp-section-body">
+        {% for ug in ug_degrees %}
+        <div {% if not loop.last %}style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--sp-border);"{% endif %}>
+          <div class="sp-info-label">Degree</div>
+          <div class="sp-info-value" style="margin-bottom:4px;">{{ ug.degree or "—" }}</div>
+          {% if ug.institution %}<div style="font-size:13px;color:var(--sp-text-3);">{{ ug.institution }}</div>{% endif %}
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            {% if ug.year_of_passing %}<span style="font-size:12px;color:var(--sp-text-4);">{{ ug.year_of_passing }}</span>{% endif %}
+            {% if ug.percentage %}<span style="font-size:12px;color:var(--sp-text-4);">{{ ug.percentage }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endif %}{# end no_student #}
+{% endblock %}

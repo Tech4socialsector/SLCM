@@ -191,7 +191,13 @@ website_route_rules = [
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},
     {"from_route": "/admission-dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
     {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"},
-    {"from_route": "/application-form", "to_route": "application_form"}
+    {"from_route": "/application-form", "to_route": "application_form"},
+    # Student Portal
+    {"from_route": "/student-portal", "to_route": "student-portal/index"},
+    {"from_route": "/student-portal/courses", "to_route": "student-portal/courses"},
+    {"from_route": "/student-portal/attendance", "to_route": "student-portal/attendance"},
+    {"from_route": "/student-portal/fees", "to_route": "student-portal/fees"},
+    {"from_route": "/student-portal/profile", "to_route": "student-portal/profile"},
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"

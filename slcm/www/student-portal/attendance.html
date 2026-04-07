@@ -1,0 +1,174 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+
+{% block title %}Attendance{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Attendance</h1>
+  <p class="sp-page-sub">Course-wise attendance tracking</p>
+</div>
+
+{# ── Summary Stats ─────────────────────────────────────────── #}
+<div class="sp-att-stat-grid fade-in">
+  <div class="sp-att-stat">
+    <div class="sp-att-stat-num" style="color:{% if avg_attendance >= 75 %}var(--sp-success){% elif avg_attendance >= 60 %}var(--sp-warning){% else %}var(--sp-danger){% endif %};">
+      {{ avg_attendance }}%
+    </div>
+    <div class="sp-att-stat-lbl">Overall Avg</div>
+  </div>
+  <div class="sp-att-stat">
+    <div class="sp-att-stat-num" style="color:var(--sp-primary);">{{ total_courses }}</div>
+    <div class="sp-att-stat-lbl">Courses</div>
+  </div>
+  <div class="sp-att-stat">
+    <div class="sp-att-stat-num" style="color:var(--sp-danger);">{{ courses_below_75 }}</div>
+    <div class="sp-att-stat-lbl">Below 75%</div>
+  </div>
+  <div class="sp-att-stat">
+    <div class="sp-att-stat-num" style="color:var(--sp-success);">{{ courses_eligible }}</div>
+    <div class="sp-att-stat-lbl">Exam Eligible</div>
+  </div>
+</div>
+
+{# ── Alerts ────────────────────────────────────────────────── #}
+{% if courses_below_75 > 0 %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div>
+    <strong>{{ courses_below_75 }} course{% if courses_below_75 != 1 %}s{% endif %} below 75%.</strong>
+    You may not be eligible for exams in these courses. Contact your Faculty Advisor.
+  </div>
+</div>
+{% endif %}
+
+{# ── No Data ───────────────────────────────────────────────── #}
+{% if not attendance_summaries %}
+<div class="sp-empty fade-in">
+  <span class="sp-ms">event_available</span>
+  <p class="sp-empty-title">No attendance records yet</p>
+  <p class="sp-empty-sub">Attendance will appear here once sessions have been recorded.</p>
+</div>
+
+{% else %}
+
+{# ── Course Cards (grouped by term) ───────────────────────── #}
+{% for tg in term_groups %}
+<div style="margin-bottom:28px;" class="fade-in">
+  <div style="font-size:14px;font-weight:700;color:var(--sp-text-2);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-primary);">calendar_month</span>
+    {{ tg.term }}
+    <span style="font-size:12px;font-weight:400;color:var(--sp-text-4);">
+      {{ tg.summaries|length }} course{% if tg.summaries|length != 1 %}s{% endif %}
+    </span>
+  </div>
+
+  <div class="sp-att-grid">
+    {% for s in tg.summaries %}
+    <div class="sp-att-card" style="border-left-color:{{ s.status_color }};">
+
+      {# Header #}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px;">
+        <div style="overflow:hidden;">
+          <div style="font-size:14px;font-weight:700;color:var(--sp-text-1);line-height:1.3;">{{ s.course_display }}</div>
+          <div style="font-size:12px;color:var(--sp-text-4);margin-top:2px;">{{ s.faculty }}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:24px;font-weight:800;color:{{ s.status_color }};line-height:1;">{{ s.pct }}%</div>
+          <span class="sp-badge" style="font-size:10px;background:{% if s.status_label == 'Good' %}var(--sp-success-bg);color:var(--sp-success){% elif s.status_label == 'Low' %}var(--sp-warning-bg);color:var(--sp-warning){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
+            {{ s.status_label }}
+          </span>
+        </div>
+      </div>
+
+      {# Progress Bar #}
+      <div class="sp-progress" style="margin-bottom:10px;height:6px;">
+        <div class="sp-progress-bar" style="width:{{ s.pct if s.pct <= 100 else 100 }}%;background:{{ s.status_color }};"></div>
+      </div>
+
+      {# Stats Row #}
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--sp-text-4);">
+        <span><strong style="color:var(--sp-text-2);">{{ s.attended_classes|int }}</strong> / {{ s.total_classes|int }} sessions</span>
+        {% if s.minimum_required_percentage %}
+        <span>Required: <strong style="color:var(--sp-text-2);">{{ s.minimum_required_percentage|int }}%</strong></span>
+        {% endif %}
+        {% if s.shortfall > 0 %}
+        <span style="color:var(--sp-danger);">Shortfall: <strong>{{ s.shortfall }}%</strong></span>
+        {% endif %}
+      </div>
+
+      {# Eligibility Badges #}
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        {% if s.eligible_for_exam is not none %}
+        <span class="sp-badge" style="background:{% if s.eligible_for_exam %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
+          <span class="sp-ms">{% if s.eligible_for_exam %}check_circle{% else %}cancel{% endif %}</span>
+          {% if s.eligible_for_exam %}Exam Eligible{% else %}Not Eligible{% endif %}
+        </span>
+        {% endif %}
+        {% if s.total_condonation_hours and s.total_condonation_hours > 0 %}
+        <span class="sp-badge" style="background:var(--sp-info-bg);color:var(--sp-info);">
+          Condonation: {{ s.total_condonation_hours|int }}h
+        </span>
+        {% endif %}
+        {% if s.total_fa_mfa_hours and s.total_fa_mfa_hours > 0 %}
+        <span class="sp-badge" style="background:#f3e8ff;color:#7c3aed;">
+          FA/MFA: {{ s.total_fa_mfa_hours|int }}h
+        </span>
+        {% endif %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+
+{# ── Recent Daily Attendance ──────────────────────────────── #}
+{% if recent_attendance %}
+<div class="sp-card fade-in" style="margin-top:8px;">
+  <div class="sp-card-header">
+    <div class="sp-card-title"><span class="sp-ms">history</span> Recent Attendance (Last 30 Days)</div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="sp-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Course</th>
+          <th>Status</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent_attendance %}
+        <tr>
+          <td style="font-weight:500;">{{ frappe.utils.formatdate(r.attendance_date, "dd MMM yyyy") }}</td>
+          <td style="color:var(--sp-text-3);">{{ r.course_offering or "—" }}</td>
+          <td>
+            <span class="sp-badge" style="background:{% if r.status == 'Present' %}var(--sp-success-bg);color:var(--sp-success){% elif r.status == 'Absent' %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-info-bg);color:var(--sp-info){% endif %};">
+              {{ r.status }}
+            </span>
+          </td>
+          <td style="font-size:12px;color:var(--sp-text-4);">
+            {% if r.in_time %}{{ r.in_time }}{% if r.out_time %} – {{ r.out_time }}{% endif %}{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}{# end no attendance_summaries #}
+{% endif %}{# end no_student #}
+
+{% endblock %}

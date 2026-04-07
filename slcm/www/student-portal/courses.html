@@ -1,0 +1,133 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+
+{% block title %}My Courses{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% elif not has_any_courses %}
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">My Courses</h1>
+  <p class="sp-page-sub">{{ programme_name }}{% if batch_year %} &nbsp;·&nbsp; Batch {{ batch_year }}{% endif %}</p>
+</div>
+<div class="sp-empty fade-in">
+  <span class="sp-ms">menu_book</span>
+  <p class="sp-empty-title">No courses enrolled yet</p>
+  <p class="sp-empty-sub">Your enrolled courses will appear here once enrollment is completed.</p>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">My Courses</h1>
+  <p class="sp-page-sub">{{ programme_name }}{% if batch_year %} &nbsp;·&nbsp; Batch {{ batch_year }}{% endif %}</p>
+</div>
+
+{# ── Active Enrollment Banner ──────────────────────────────── #}
+{% if active_enrollment %}
+<div class="sp-alert sp-alert-info fade-in">
+  <span class="sp-ms">info</span>
+  <div>
+    <strong>Active Enrollment:</strong>
+    {{ active_enrollment.enrollment.term_name or "" }}
+    {% if active_enrollment.enrollment.academic_year %}&nbsp;·&nbsp; {{ active_enrollment.enrollment.academic_year }}{% endif %}
+    &nbsp;·&nbsp; <strong>{{ active_enrollment.course_count }}</strong> Course{% if active_enrollment.course_count != 1 %}s{% endif %}
+    &nbsp;·&nbsp; <strong>{{ active_enrollment.total_credits }}</strong> Credits
+    {% if active_enrollment.enrollment.faculty_advisor %}
+    &nbsp;·&nbsp; Advisor: <strong>{{ active_enrollment.enrollment.faculty_advisor }}</strong>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Enrollment Sections ───────────────────────────────────── #}
+{% for ed in enrollment_data %}
+{% if ed.course_count > 0 %}
+<div style="margin-bottom:32px;" class="fade-in">
+
+  {# Section Header #}
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    <div style="font-size:16px;font-weight:700;color:var(--sp-text-1);display:flex;align-items:center;gap:8px;">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;color:var(--sp-primary);">school</span>
+      {{ ed.enrollment.term_name or "Enrollment" }}
+      {% if ed.enrollment.academic_year %}
+        <span style="font-size:13px;font-weight:400;color:var(--sp-text-4);">{{ ed.enrollment.academic_year }}</span>
+      {% endif %}
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="sp-badge" style="background:{% if ed.enrollment.status == 'Enrolled' %}var(--sp-success-bg);color:var(--sp-success){% elif ed.enrollment.status == 'Completed' %}var(--sp-info-bg);color:var(--sp-info){% else %}var(--sp-bg);color:var(--sp-text-3){% endif %};">
+        {{ ed.enrollment.status }}
+      </span>
+      <span style="font-size:13px;color:var(--sp-text-4);">{{ ed.total_credits }} Credits</span>
+    </div>
+  </div>
+
+  {# Course Cards Grid #}
+  <div class="sp-courses-grid">
+    {% for c in ed.courses %}
+    <div class="sp-course-card">
+
+      {# Name & Status #}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="overflow:hidden;">
+          <div style="font-size:15px;font-weight:700;color:var(--sp-text-1);line-height:1.3;">{{ c.course_name }}</div>
+          {% if c.course_offering %}
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:2px;font-family:monospace;">{{ c.course_offering }}</div>
+          {% endif %}
+        </div>
+        <span class="sp-badge" style="background:{% if c.status == 'Enrolled' %}var(--sp-success-bg);color:var(--sp-success){% elif c.status == 'Completed' %}var(--sp-info-bg);color:var(--sp-info){% else %}var(--sp-bg);color:var(--sp-text-3){% endif %};flex-shrink:0;">
+          {{ c.status }}
+        </span>
+      </div>
+
+      {# Faculty & Credits #}
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sp-text-3);">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">person</span>
+          {{ c.faculty }}
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sp-text-3);">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">stars</span>
+          {{ c.credits }} Credit{% if c.credits != 1 %}s{% endif %}
+        </span>
+      </div>
+
+      {# Attendance Bar #}
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--sp-text-4);">Attendance</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;font-weight:700;color:{% if c.attendance_pct >= 75 %}var(--sp-success){% elif c.attendance_pct >= 60 %}var(--sp-warning){% elif c.attendance_pct > 0 %}var(--sp-danger){% else %}var(--sp-text-4){% endif %};">
+              {% if c.attendance_pct > 0 %}{{ c.attendance_pct }}%{% else %}—{% endif %}
+            </span>
+            {% if c.eligible_for_exam is not none %}
+            <span class="sp-badge" style="font-size:10px;background:{% if c.eligible_for_exam %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
+              {% if c.eligible_for_exam %}Eligible{% else %}Not Eligible{% endif %}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="sp-progress">
+          <div class="sp-progress-bar" style="width:{{ c.attendance_pct if c.attendance_pct <= 100 else 100 }}%;background:{% if c.attendance_pct >= 75 %}var(--sp-success){% elif c.attendance_pct >= 60 %}var(--sp-warning){% else %}var(--sp-danger){% endif %};"></div>
+        </div>
+        {% if c.total_classes > 0 %}
+        <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
+          {{ c.attended_classes|int }} / {{ c.total_classes|int }} sessions attended
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endif %}
+{% endblock %}

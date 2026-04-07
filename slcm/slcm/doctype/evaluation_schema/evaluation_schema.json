@@ -15,7 +15,11 @@
   "section_break_assessments",
   "assessment_configs",
   "section_break_reexam",
-  "reexam_configs"
+  "reexam_configs",
+  "section_break_calc",
+  "calc_higher_revaluation",
+  "calc_higher_makeup",
+  "calc_higher_reexam"
  ],
  "fields": [
   {
@@ -78,6 +82,29 @@
    "fieldtype": "Table",
    "label": "Re-Exam Configuration",
    "options": "Schema Reexam Config"
+  },
+  {
+   "fieldname": "section_break_calc",
+   "fieldtype": "Section Break",
+   "label": "Calculation Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "calc_higher_revaluation",
+   "fieldtype": "Check",
+   "label": "Consider higher marks for an assessment between regular marks and revaluation marks"
+  },
+  {
+   "default": "0",
+   "fieldname": "calc_higher_makeup",
+   "fieldtype": "Check",
+   "label": "Consider higher marks for an assessment or component between regular evaluation marks and MakeUp Exams"
+  },
+  {
+   "default": "0",
+   "fieldname": "calc_higher_reexam",
+   "fieldtype": "Check",
+   "label": "Consider higher marks for an assessment or component between regular evaluation marks and Re-Exam"
   }
  ],
  "grid_page_length": 50,
