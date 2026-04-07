@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate
+from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate, cint
 from slcm.admission.portal_application_web_form import (
 	applicant_portal_application_locked,
 )
@@ -43,6 +43,19 @@ class Applicant(Document):
             title=_("Not allowed"),
         )
 
+    def _restrict_program_change_on_submitted_applicant(self):
+        """Block programme changes only when portal workflow has left Draft (e.g. Submitted), not when only docstatus is 1."""
+        if self.is_new() or not self.has_value_changed("program"):
+            return
+        if getattr(self.flags, "ignore_validate_update_after_submit", False):
+            return
+        if not applicant_portal_application_locked((self.application_status or "").strip()):
+            return
+        frappe.throw(
+            _("Changing programme is not allowed after this application has been submitted for review."),
+            title=_("Not allowed"),
+        )
+
     def validate(self):
         """
         Runs on every save.
@@ -52,8 +65,10 @@ class Applicant(Document):
         create_or_update_evaluation() is called inside validate_eligibility().
         """
         self._deny_portal_web_form_edit_if_locked()
+        self._restrict_program_change_on_submitted_applicant()
 
         set_intake_type(self)
+        self._validate_education_percentage_bounds()
 
         if self.application_status == "Submitted" and self.has_value_changed("application_status"):
             self._validate_application_fee_before_submit()
@@ -85,19 +100,21 @@ class Applicant(Document):
                     title="Age Restriction"
                 )
 
-    # def validate_percentages(self):
-    #     if self.class_x_percentage:
-    #         if not 0 <= self.class_x_percentage <= 100:
-    #             frappe.throw(
-    #                 "Class X Percentage must be between 0 and 100.",
-    #                 title="Invalid Percentage"
-    #             )
-    #     if self.class_xii_percentage:
-    #         if not 0 <= self.class_xii_percentage <= 100:
-    #             frappe.throw(
-    #                 "Class XII Percentage must be between 0 and 100.",
-    #                 title="Invalid Percentage"
-    #             )
+    def _validate_education_percentage_bounds(self):
+        """Class X % and HSC % use 0–100 scale (CGPA uses separate fields)."""
+        for fieldname, label in (
+            ("class_x_percentage", _("Class X percentage")),
+            ("hsc_percentage", _("HSC / Class XII percentage")),
+        ):
+            val = getattr(self, fieldname, None)
+            if val is None:
+                continue
+            v = flt(val)
+            if v < 0 or v > 100:
+                frappe.throw(
+                    _("{0} must be between 0 and 100.").format(label),
+                    title=_("Invalid value"),
+                )
 
     def validate_reservation_documents(self):
         if self.ews == "Yes" and not self.ews_certificate:
@@ -189,6 +206,15 @@ class Applicant(Document):
             )
 
     def before_save(self):
+        """
+        Stale docstatus=1 on a portal-Draft application triggers Frappe's update-after-submit checks
+        (even when Applicant is not submittable — see patch normalize_applicant_docstatus_not_submittable).
+        """
+        if not self.is_new() and self.name and cint(self.docstatus) == 1:
+            st_db = (frappe.db.get_value(self.doctype, self.name, "application_status") or "").strip()
+            if st_db == "Draft" and (self.application_status or "").strip() == "Draft":
+                self.flags.ignore_validate_update_after_submit = True
+
         if not self.applicant_id:
             self.applicant_id = frappe.generate_hash(length=8).upper()
         doc_before = self.get_doc_before_save()
@@ -1575,9 +1601,6 @@ class Applicant(Document):
         # ── Block 1: Reservation / general + marks (when score is the issue) ──
         score_lines = []
         if cat_row and (cat_row.get("category") or "").strip():
-            cat = (cat_row.get("category") or "").strip()
-            score_lines.append(_("Reservation category"))
-            score_lines.append(_("• Category: {0}").format(cat))
             if applied_threshold is not None:
                 score_lines.append(
                     _("• Minimum required for your category ({0}): {1}{2}").format(

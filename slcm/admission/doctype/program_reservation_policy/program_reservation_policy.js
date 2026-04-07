@@ -1,6 +1,8 @@
 frappe.ui.form.on("Program Reservation Policy", {
-
     refresh: function (frm) {
+        frm.set_df_property("campus", "hidden", 1);
+        frm.set_df_property("campus", "reqd", 0);
+
         const status_colors = {
             "Draft": "gray", "Active": "green", "Locked": "red"
         };
