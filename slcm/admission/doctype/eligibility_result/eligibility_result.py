@@ -2,10 +2,8 @@
 # For license information, please see license.txt
 
 import frappe
-import base64
-import mimetypes
+from frappe import _
 from frappe.model.document import Document
-from frappe.utils import formatdate, nowdate, get_url, escape_html
 from frappe.utils.pdf import get_pdf
 
 
@@ -79,314 +77,24 @@ class EligibilityResult(Document):
             self.flags.in_card_generation = False
 
     def get_card_html(self):
-        def esc(v): return escape_html(str(v if v is not None else ""))
-        def val(v): return esc(v) if (v and str(v).strip() != "") else "—"
-
-        app_doc = frappe.get_doc("Applicant", self.applicant_id)
-        dob = formatdate(app_doc.date_of_birth) if app_doc.date_of_birth else "—"
-        issue_date = formatdate(nowdate())
-
-        def get_base64_img(file_url):
-            if not file_url: return None
-            try:
-                if "?" in file_url: file_url = file_url.split("?")[0]
-                if file_url.startswith(("http://", "https://")):
-                    from urllib.parse import urlparse
-                    file_url = urlparse(file_url).path
-                if not file_url.startswith("/"): file_url = "/" + file_url
-                if file_url.startswith("/private/files/"):
-                    file_url = file_url.replace("/private/files/", "/files/")
-
-                if not frappe.db.exists("File", {"file_url": file_url}): return None
-                file_doc = frappe.get_doc("File", {"file_url": file_url})
-                content = file_doc.get_content()
-                if not content: return None
-                mtype = mimetypes.guess_type(file_url)[0] or "image/png"
-                b64 = base64.b64encode(content).decode()
-                return f"data:{mtype};base64,{b64}"
-            except Exception: return None
-
-        campus_display_name = self.campus or "Institution of Legal Education"
-        campus_logo_url = None
-        try:
-            campus = frappe.get_doc("Campus", self.campus)
-            if campus.campus_name: campus_display_name = campus.campus_name
-            if campus.logo: campus_logo_url = get_base64_img(campus.logo)
-        except: pass
-
-        header_html = f"""
-            <div class="header">
-              <div class="logo-box">
-                {f'<img src="{campus_logo_url}" alt="Campus Logo" style="max-width:100%;max-height:100%;object-fit:contain;">' if campus_logo_url else '<div class="logo-inner"><span class="logo-icon">⚖</span><span class="logo-text">Law<br>School</span></div>'}
-              </div>
-              <div class="hdr-center">
-                <div class="univ-name">{esc(campus_display_name)}</div>
-                <div class="univ-sub">Office of Admissions &nbsp;&middot;&nbsp; Eligibility Cell</div>
-              </div>
-              <div class="logo-box" style="visibility:hidden; border:none; background:transparent;"></div>
-            </div>"""
-
-        html = f"""<!DOCTYPE html>
-        <html lang="en">
-        <head>
-        <meta charset="UTF-8"/>
-        <title>Eligibility Result - {esc(self.applicant_id)}</title>
-        <style>
-        *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
-        body {{
-        font-family: "Times New Roman", Times, serif;
-        font-size: 13px;
-        background: #fff;
-        color: #000;
-        line-height: 1.4;
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
-        }}
-        .card-page {{
-        width: 710px;
-        margin: 0 auto;
-        background: #fff;
-        border: 1.5px solid #555;
-        padding: 0;
-        position: relative;
-        overflow: hidden;
-        page-break-after: always;
-        }}
-        .header {{
-        background: #7b1c1c;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 18px;
-        border-bottom: 3px solid #5a0e0e;
-        }}
-        .logo-box {{
-        width: 74px;
-        height: 74px;
-        background: #fff;
-        border: 2px solid rgba(255,255,255,0.6);
-        border-radius: 3px;
-        display: flex;
-        align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
-        }}
-        .logo-box img {{ max-width: 100%; max-height: 100%; object-fit: contain; }}
-        .logo-inner {{
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-        }}
-        .logo-icon {{ font-size: 28px; line-height: 1; color: #7b1c1c; }}
-        .logo-text {{
-        font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
-        text-align: center; letter-spacing: 0.5px; line-height: 1.2;
-        }}
-        .hdr-center {{ flex: 1; text-align: center; min-width: 0; padding: 0 15px; }}
-        .univ-name {{
-        font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
-        text-transform: none; letter-spacing: 1.2px; line-height: 1.2; margin-bottom: 0;
-        word-wrap: break-word; overflow-wrap: break-word;
-        }}
-        .univ-sub {{
-        font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80);
-        letter-spacing: 2.5px; text-transform: none; margin-top: 3px;
-        }}
-        .title-banner {{
-        background: #f8f8f8;
-        text-align: center;
-        padding: 12px;
-        border-bottom: 1.5px solid #bbb;
-        }}
-        .title-banner .t1 {{ font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c; text-transform: none; letter-spacing: 0.5px; }}
-        .title-banner .t2 {{ font-size: 13px; font-family: Arial, sans-serif; color: #444; margin-top: 4px; font-weight: bold; }}
-
-        .content-wrap {{ padding: 15px 20px; }}
-
-        .section-head {{
-        font-family: Arial, sans-serif;
-        font-size: 13px;
-        font-weight: bold;
-        color: #7b1c1c;
-        text-transform: none;
-        border-bottom: 1.5px solid #7b1c1c;
-        padding-bottom: 4px;
-        margin-bottom: 10px;
-        margin-top: 10px;
-        }}
-
-        .info-wrap {{
-        border: 1.5px solid #bbb;
-        margin-bottom: 15px;
-        border-radius: 2px;
-        }}
-        .info-tbl {{
-        width: 100%;
-        border-collapse: collapse;
-        }}
-        .info-tbl tr {{ border-bottom: 1px solid #ddd; }}
-        .info-tbl tr:last-child {{ border-bottom: none; }}
-        .info-tbl td {{
-        padding: 6px 10px;
-        font-size: 13px;
-        vertical-align: middle;
-        line-height: 1.5;
-        }}
-        .info-tbl td.lb {{
-        font-weight: bold;
-        font-family: Arial, sans-serif;
-        width: 35%;
-        color: #000;
-        }}
-        .info-tbl td.sp {{
-        width: 15px;
-        font-weight: bold;
-        text-align: center;
-        padding: 0;
-        }}
-        .info-tbl td.vl {{
-        font-family: "Times New Roman", Times, serif;
-        font-weight: bold;
-        }}
-
-        .results-table {{
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-        border: 1.5px solid #bbb;
-        }}
-        .results-table th {{
-        background: #f4f4f4;
-        font-family: Arial, sans-serif;
-        font-size: 12px;
-        font-weight: bold;
-        text-align: left;
-        padding: 8px 12px;
-        border: 1px solid #bbb;
-        text-transform: none;
-        color: #000;
-        }}
-        .results-table td {{
-        padding: 10px 12px;
-        font-size: 13px;
-        border: 1px solid #bbb;
-        vertical-align: middle;
-        }}
-        .score-cell {{ font-weight: bold; font-size: 14px; }}
+        """
+        Fetches the Eligibility Result Card HTML using Frappe Print Format.
+        """
+        print_format_name = "Eligibility Result Card"
         
-        .status-text {{
-        font-weight: bold;
-        font-family: Arial, sans-serif;
-        font-size: 13px;
-        color: #000;
-        }}
+        if not frappe.db.exists("Print Format", print_format_name):
+            frappe.throw(
+                _("Print Format '{0}' not found. Please create it in the Desk using the code in Sample_Eligibillity.html.").format(print_format_name),
+                title=_("Configuration Missing")
+            )
 
-        .disclaimer {{
-        margin-top: 20px;
-        padding: 12px;
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 2px;
-        font-family: Arial, sans-serif;
-        font-size: 11.5px;
-        line-height: 1.5;
-        color: #333;
-        }}
-
-        .footer {{
-        margin-top: 25px;
-        border-top: 1px solid #ddd;
-        padding-top: 10px;
-        display: flex;
-        justify-content: space-between;
-        font-family: Arial, sans-serif;
-        font-size: 9.5px;
-        color: #555;
-        }}
-        </style>
-        </head>
-        <body>
-        <div class="card-page">
-        {header_html}
-        <div class="title-banner">
-        <div class="t1">Eligibility Result Mark Sheet</div>
-        <div class="t2">Academic Year: {val(self.academic_year)} &nbsp;&middot;&nbsp; Admission Cycle: {val(self.admission_cycle)}</div>
-        </div>
-
-        <div class="content-wrap">
-        <div class="section-head">Candidate Details</div>
-        <div class="info-wrap">
-          <table class="info-tbl">
-            <tbody>
-              <tr><td class="lb">Candidate Name</td><td class="sp">:</td><td class="vl">{val(self.candidate_name)}</td></tr>
-              <tr><td class="lb">Application Number</td><td class="sp">:</td><td class="vl">{val(self.applicant_id)}</td></tr>
-              <tr><td class="lb">Date of Birth</td><td class="sp">:</td><td class="vl">{val(dob)}</td></tr>
-              <tr><td class="lb">Gender</td><td class="sp">:</td><td class="vl">{val(self.gender)}</td></tr>
-              <tr><td class="lb">Father's Name</td><td class="sp">:</td><td class="vl">{val(app_doc.father_name)}</td></tr>
-              <tr><td class="lb">Mother's Name</td><td class="sp">:</td><td class="vl">{val(app_doc.mother_name)}</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section-head">Programme Details</div>
-        <div class="info-wrap">
-          <table class="info-tbl">
-            <tbody>
-              <tr><td class="lb">Programme</td><td class="sp">:</td><td class="vl">{val(self.program)}</td></tr>
-              <tr><td class="lb">Campus</td><td class="sp">:</td><td class="vl">{val(self.campus)}</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section-head">Assessment Result</div>
-        <table class="results-table">
-        <thead>
-        <tr>
-          <th>Assessment Component</th>
-          <th>Maximum Marks</th>
-          <th>Marks Obtained</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-          <td>Entrance Test Score</td>
-          <td>100</td>
-          <td class="score-cell">{val(self.entrance_test_score)}</td>
-        </tr>
-        <tr>
-          <td>Interview Assessment Score</td>
-          <td>100</td>
-          <td class="score-cell">{val(self.interview_score)}</td>
-        </tr>
-        <tr style="background: #f9f9f9;">
-          <td colspan="2" style="text-align: right; font-weight: bold; font-family: Arial, sans-serif; font-size: 12px;">Result Status</td>
-          <td>
-            <span class="status-text">{val(self.result_status)}</span>
-          </td>
-        </tr>
-        </tbody>
-        </table>
-
-        <div class="disclaimer">
-        <strong>Important:</strong> This document is a system-generated mark sheet. 
-        It reflects the eligibility assessment based on the scores obtained by the candidate. 
-        Final admission is subject to verification of original documents and fulfillment of all criteria. 
-        Errors and omissions are excepted.
-        </div>
-
-        <div class="footer">
-        <div>
-        Reference: <strong>{val(self.name)}</strong><br>
-        Generated on: <strong>{val(issue_date)}</strong><br>
-        Source Type: {val(self.source_type)}
-        </div>
-        <div style="text-align: right;">
-        Authorized Signatory<br>
-        (Digitally Verified Document)
-        </div>
-        </div>
-        </div>
-        </div>
-        </body>
-        </html>"""
-
-        return html
+        return frappe.get_print(
+            self.doctype, 
+            self.name, 
+            print_format_name, 
+            as_pdf=False, 
+            no_letterhead=True
+        )
 
 @frappe.whitelist()
 def bulk_download_cards(names):
@@ -420,7 +128,6 @@ def bulk_download_cards(names):
                 file_url = doc.eligibility_result_card
                 
                 # Get local path for the file
-                # If file_url is /files/filename.pdf, we need the actual disk path
                 fname = file_url.split('/')[-1]
                 fpath = get_file_path(fname)
                 
@@ -440,9 +147,9 @@ def bulk_download_cards(names):
         zip_filename,
         zip_buffer.getvalue(),
         "Eligibility Result",
-        names[0], # Attach to the first selected record as a reference
+        names[0], 
         is_private=0,
-        df="eligibility_result_card" # Just to associate it somewhere, though it's a bulk file
+        df="eligibility_result_card"
     )
 
     return saved_zip.file_url
