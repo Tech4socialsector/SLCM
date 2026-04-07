@@ -159,8 +159,9 @@ class InterviewList(Document):
                 if email:
                     try:
                         _send_interview_slot_email(allocation, email)
+                        _send_interview_slot_notification(allocation, email)
                     except Exception:
-                        frappe.log_error(message=traceback.format_exc(), title=f"Interview Slot Email Failed: {allocation.name}")
+                        frappe.log_error(message=traceback.format_exc(), title=f"Interview Slot Email/Notification Failed: {allocation.name}")
             
             # Commit periodically to update progress
             if i % 5 == 0:
@@ -202,3 +203,34 @@ def _send_interview_slot_email(allocation, email):
             )
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Interview Slot Email Failed: {allocation.name}")
+
+
+def _send_interview_slot_notification(allocation, email):
+    """Creates a Notification Log entry for the interview slot."""
+    if not email:
+        return
+    
+    if frappe.db.exists("User", email):
+        try:
+            # Custom message for Interview
+            message_body = f"""
+                <p>An interview slot has been scheduled for you in <strong>"{allocation.interview_list}"</strong>.</p>
+                <p>Date: <strong>{format_date(allocation.interview_date) or "—"}</strong></p>
+                <p>Time: <strong>{format_time(allocation.interview_time) or "—"}</strong></p>
+                <p>Staff: <strong>{allocation.staff_name or "—"}</strong></p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Interview Slot Scheduled",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Interview Seat Allocation",
+                "document_name": allocation.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Interview Slot Notification Failed: {allocation.name}")
