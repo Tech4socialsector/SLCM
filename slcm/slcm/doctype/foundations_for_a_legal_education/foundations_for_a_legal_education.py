@@ -4,7 +4,6 @@
 import frappe
 from frappe.model.document import Document
 from frappe.utils import flt
-from payments.utils import get_payment_gateway_controller
 
 class FoundationsforaLegalEducation(Document):
 	# --------------------------------------------------
