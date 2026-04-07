@@ -46,7 +46,7 @@ def auto_update_cycle_status():
 	cycles = frappe.db.get_all(
 		"Admission Cycle",
 		filters={"docstatus": ["<", 2]},
-		fields=["name", "start_date", "end_date", "status", "is_active"]
+		fields=["name", "cycle_start_date", "cycle_end_date", "status"]
 	)
 
 	updated_count = 0
@@ -57,20 +57,16 @@ def auto_update_cycle_status():
 		# Skip if explicitly closed by admin earlier? 
 		# For now, follow the date rules strictly
 		
-		if getdate(current_today) < getdate(c.start_date):
-			new_status = "Upcoming"
-			new_is_active = 0
-		elif getdate(c.start_date) <= getdate(current_today) <= getdate(c.end_date):
+		if getdate(current_today) < getdate(c.cycle_start_date):
+			new_status = "Draft" # 'Upcoming' is not a standard status in this doctype (Draft/Active/Closed)
+		elif getdate(c.cycle_start_date) <= getdate(current_today) <= getdate(c.cycle_end_date):
 			new_status = "Active"
-			new_is_active = 1
-		elif getdate(current_today) > getdate(c.end_date):
+		elif getdate(current_today) > getdate(c.cycle_end_date):
 			new_status = "Closed"
-			new_is_active = 0
 			
-		if new_status != c.status or new_is_active != c.is_active:
+		if new_status != c.status:
 			frappe.db.set_value("Admission Cycle", c.name, {
-				"status": new_status,
-				"is_active": new_is_active
+				"status": new_status
 			}, update_modified=False)
 			updated_count += 1
 

@@ -25,33 +25,39 @@ def _overlap_rows_with_labels(overlaps):
     return out
 
 
-def get_overlapping_admission_cycles(start_date, end_date, exclude_name=None):
+def get_overlapping_admission_cycles(start_date, end_date, exclude_name=None, status=None):
     """
     Return cycles whose [cycle_start_date, cycle_end_date] overlaps [start_date, end_date] (inclusive).
     Overlap iff existing_start <= end_date and existing_end >= start_date.
     """
     if not start_date or not end_date:
         return []
+        
     start_d = getdate(start_date)
     end_d = getdate(end_date)
+    
     if start_d > end_d:
         return []
 
-    filters = [
-        ["cycle_start_date", "is", "set"],
-        ["cycle_end_date", "is", "set"],
-        ["cycle_start_date", "<=", end_d],
-        ["cycle_end_date", ">=", start_d],
-    ]
+    filters = {
+        "cycle_start_date": ["<=", end_d],
+        "cycle_end_date": [">=", start_d],
+        "docstatus": ["<", 2],
+    }
+    
     if exclude_name:
-        filters.append(["name", "!=", exclude_name])
+        filters["name"] = ["!=", exclude_name]
+    if status:
+        filters["status"] = status
 
-    return frappe.get_all(
+    overlaps = frappe.get_all(
         "Admission Cycle",
         filters=filters,
-        fields=["name", "cycle_name", "cycle_start_date", "cycle_end_date"],
+        fields=["name", "cycle_name", "cycle_start_date", "cycle_end_date", "status"],
         order_by="cycle_start_date asc",
     )
+    
+    return overlaps
 
 
 class AdmissionCycle(Document):
@@ -62,6 +68,12 @@ class AdmissionCycle(Document):
         self._validate_cycle_dates_no_overlap()
         self._validate_single_active_cycle()
         self._validate_programs()
+
+    def on_submit(self):
+        """Automatically set status to Active on submission."""
+        if self.status != "Active":
+            self.db_set("status", "Active")
+            self.status = "Active" # Update local object for the rest of request
 
     def _validate_cycle_date_range(self):
         if not self.cycle_start_date or not self.cycle_end_date:
@@ -99,36 +111,39 @@ class AdmissionCycle(Document):
             )
 
     def _validate_cycle_dates_no_overlap(self):
+        if self.status != "Active":
+            return
         if not self.cycle_start_date or not self.cycle_end_date:
             return
-        overlaps = get_overlapping_admission_cycles(
-            self.cycle_start_date,
-            self.cycle_end_date,
-            exclude_name=self.name,
+
+        conflicting_cycle = frappe.db.get_value(
+            "Admission Cycle",
+            {
+                "status": "Active",
+                "name": ("!=", self.name),
+                "cycle_start_date": ("<=", self.cycle_end_date),
+                "cycle_end_date": (">=", self.cycle_start_date),
+                "docstatus": ("<", 2)
+            },
+            ["name", "cycle_name", "cycle_start_date", "cycle_end_date"],
+            as_dict=True
         )
-        if not overlaps:
+
+        if not conflicting_cycle:
             return
-        lines = [
-            _("The selected date range overlaps with an existing admission cycle:"),
-            "",
-        ]
-        for row in overlaps:
-            sd = (
-                format_date(row.cycle_start_date, "dd MMM yyyy")
-                if row.cycle_start_date
-                else "—"
-            )
-            ed = (
-                format_date(row.cycle_end_date, "dd MMM yyyy")
-                if row.cycle_end_date
-                else "—"
-            )
-            label = escape_html(row.cycle_name or row.name or "")
-            link = get_link_to_form("Admission Cycle", row.name, label=label)
-            lines.append(_("• {0}: {1} to {2}").format(link, sd, ed))
-        lines.append("")
-        lines.append(_("Please adjust the dates to avoid overlapping periods."))
-        frappe.throw("<br>".join(lines), title=_("Admission Cycle Dates Conflict"))
+
+        sd = format_date(conflicting_cycle.cycle_start_date, "dd MMM yyyy") if conflicting_cycle.cycle_start_date else "—"
+        ed = format_date(conflicting_cycle.cycle_end_date, "dd MMM yyyy") if conflicting_cycle.cycle_end_date else "—"
+        label = escape_html(conflicting_cycle.cycle_name or conflicting_cycle.name or "")
+        link = get_link_to_form("Admission Cycle", conflicting_cycle.name, label=label)
+
+        msg = _("The selected date range overlaps with an existing Active admission cycle: <b>{0}</b> ({1} to {2})").format(
+            link, sd, ed
+        )
+        msg += "<br><br>" + _("Please adjust the dates to avoid overlapping periods for multiple Active cycles.")
+        
+        frappe.throw(msg, title=_("Admission Cycle Dates Conflict"))
+
 
     def _validate_single_active_cycle(self):
         """Only one cycle can be Active at a time."""
@@ -140,10 +155,10 @@ class AdmissionCycle(Document):
             )
             if existing:
                 frappe.throw(
-                    msg=f"Cycle <b>{existing}</b> is already Active. Close it before activating this one.",
-                    title="Active Cycle Conflict",
+                    msg=_("Cycle <b>{0}</b> is already Active. Close it before activating this one.").format(existing),
+                    title=_("Active Cycle Conflict"),
                     primary_action={
-                        "label": f"Go to {existing}",
+                        "label": _("Go to {0}").format(existing),
                         "client_action": "frappe.set_route",
                         "args": ["Form", "Admission Cycle", existing]
                     }
@@ -233,7 +248,54 @@ class AdmissionCycle(Document):
 
 
 @frappe.whitelist()
-def check_admission_cycle_date_overlap(name=None, cycle_start_date=None, cycle_end_date=None):
+def reopen_cycle(name):
+    """
+    Reopen a Closed admission cycle.
+    Sets status back to 'Active' and docstatus back to 1 (Submitted).
+    Performs conflict checks (Single Active Cycle + Date Overlaps).
+    """
+    if not name:
+        return {"success": False, "message": _("Missing Cycle Name")}
+
+    doc = frappe.get_doc("Admission Cycle", name)
+    if doc.status == "Active":
+        return {"success": True, "message": _("Cycle is already Active")}
+
+    # 1. Check for any other Active cycle
+    existing_active = frappe.db.get_value(
+        "Admission Cycle",
+        {"status": "Active", "name": ("!=", doc.name)},
+        "cycle_name"
+    )
+    if existing_active:
+        return {
+            "success": False,
+            "message": _("Cycle <b>{0}</b> is already Active. Close it before reopening this one.").format(existing_active),
+            "conflict_name": existing_active
+        }
+
+    # 2. Check for date overlaps with other Active cycles (though there should be none due to rule #1)
+    overlaps = get_overlapping_admission_cycles(
+        doc.cycle_start_date, doc.cycle_end_date, exclude_name=doc.name, status="Active"
+    )
+    if overlaps:
+        return {
+            "success": False,
+            "message": _("Reopening this cycle would cause a date conflict with another active cycle.")
+        }
+
+    # Perform the reopen
+    try:
+        doc.db_set("status", "Active")
+        doc.db_set("docstatus", 1)  # Restore to Submitted state
+        return {"success": True, "message": _("Admission Cycle reopened successfully.")}
+    except Exception as e:
+        frappe.log_error(f"Reopen Admission Cycle fail: {e}", "Admission Cycle")
+        return {"success": False, "message": str(e)}
+
+
+@frappe.whitelist()
+def check_admission_cycle_date_overlap(name=None, cycle_start_date=None, cycle_end_date=None, status=None):
     """
     Desk client: check whether the given period overlaps other cycles.
     Returns { valid, overlaps: [{ name, cycle_name, cycle_start_date, cycle_end_date }], message }.
@@ -254,7 +316,7 @@ def check_admission_cycle_date_overlap(name=None, cycle_start_date=None, cycle_e
             "message": _("Cycle Start Date cannot be after Cycle End Date."),
         }
 
-    overlaps = get_overlapping_admission_cycles(start_d, end_d, exclude_name=name or None)
+    overlaps = get_overlapping_admission_cycles(start_d, end_d, exclude_name=name or None, status=status)
     if not overlaps:
         return {"valid": True, "overlaps": [], "message": ""}
 
