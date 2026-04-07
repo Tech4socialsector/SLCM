@@ -436,6 +436,28 @@ def after_save(doc, context):
     pass
 
 
+def _portal_ineligibility_message_from_failure_sections(doc) -> str | None:
+    """
+    Same composition as check_portal_eligibility / save_form ineligibility: Eligibility Rule Mapping
+    ``failure_message`` (Summary) plus rule-level detail, not detail alone (so mapping copy is visible).
+
+    Bodies are already line-deduped on the Applicant side when several mapping rules fail.
+    """
+    if not doc:
+        return None
+    sections = getattr(doc, "_slcm_failure_sections", None) or []
+    if not sections:
+        return None
+    if len(sections) >= 2:
+        summary = (sections[0].get("body") or "").strip()
+        detail = (sections[1].get("body") or "").strip()
+        if summary and detail:
+            return summary + "\n\n" + detail
+        return detail or summary or None
+    body0 = (sections[0].get("body") or "").strip()
+    return body0 or None
+
+
 def _check_eligibility_ineligible_response(doc, raw_msg: str) -> dict:
     """
     Same message + programs shape as slcm/www/application_form/index.py save_form
@@ -479,6 +501,12 @@ def _check_eligibility_ineligible_response(doc, raw_msg: str) -> dict:
         err_text = "\n".join(_lines) if _lines else (plain or raw_msg)
 
     err_text = (err_text or "").strip() or _("You do not meet the eligibility criteria for the selected program.")
+
+    # Prefer structured rule-level copy over generic mapping summary (see _portal_ineligibility_message_from_failure_sections).
+    structured = _portal_ineligibility_message_from_failure_sections(doc)
+    if structured:
+        err_text = structured.strip()
+
     if len(err_text) > 2400:
         err_text = err_text[:2397] + "..."
 

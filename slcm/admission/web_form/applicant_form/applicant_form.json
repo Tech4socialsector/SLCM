@@ -1218,7 +1218,7 @@
    "label": "Score or percentage",
    "mandatory_depends_on": "eval:doc.national_test_name",
    "max_length": 0,
-   "max_value": 0,
+   "max_value": 100,
    "precision": "",
    "read_only": 0,
    "reqd": 0,
