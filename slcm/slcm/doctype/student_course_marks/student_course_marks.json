@@ -15,6 +15,16 @@
   "total_marks",
   "grade",
   "status",
+  "moderated_grade",
+  "col_break_2",
+  "enrollment_status",
+  "attendance_status",
+  "fairness_status",
+  "consider_for_sgpa",
+  "remark",
+  "section_final",
+  "updated_final_marks",
+  "updated_grade",
   "section_entries",
   "marks_entries"
  ],
@@ -87,6 +97,59 @@
    "fieldtype": "Table",
    "label": "Marks Entries",
    "options": "Student Marks Entry"
+  },
+  {
+   "fieldname": "moderated_grade",
+   "fieldtype": "Data",
+   "label": "Moderated Grade"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enrollment_status",
+   "fieldtype": "Select",
+   "label": "Enrollment Status",
+   "options": "\nEnrolled\nDropped\nDetained\nMigrated"
+  },
+  {
+   "fieldname": "attendance_status",
+   "fieldtype": "Select",
+   "label": "Attendance Status",
+   "options": "\nPresent\nAbsent\nDetained"
+  },
+  {
+   "fieldname": "fairness_status",
+   "fieldtype": "Select",
+   "label": "Fairness Status",
+   "options": "\nFair\nUnfair\nMalpractice"
+  },
+  {
+   "fieldname": "consider_for_sgpa",
+   "fieldtype": "Check",
+   "label": "Consider For SGPA",
+   "default": "1"
+  },
+  {
+   "fieldname": "remark",
+   "fieldtype": "Small Text",
+   "label": "Remark"
+  },
+  {
+   "fieldname": "section_final",
+   "fieldtype": "Section Break",
+   "label": "Updated Final Result"
+  },
+  {
+   "fieldname": "updated_final_marks",
+   "fieldtype": "Float",
+   "label": "Updated Final Marks"
+  },
+  {
+   "fieldname": "updated_grade",
+   "fieldtype": "Data",
+   "label": "Updated Grade"
   }
  ],
  "links": [],
@@ -120,5 +183,11 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "student",
- "unique_constraints": [["exam_plan", "course", "student"]]
+ "unique_constraints": [
+  [
+   "exam_plan",
+   "course",
+   "student"
+  ]
+ ]
 }

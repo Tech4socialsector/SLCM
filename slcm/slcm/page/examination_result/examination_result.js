@@ -7,21 +7,22 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 	// ── State ─────────────────────────────────────────────────────────────────
 	var S = {
-		department:    null,
-		course:        null,
-		info:          null,   // course_info response
-		students:      [],
-		total:         0,
-		page:          1,
-		page_length:   20,
-		search:        '',
-		sort_by:       'registration_id',
-		sort_order:    'asc',
-		marks:         {},     // student → {components: {comp → marks}}
-		columns:       [],     // assessment config columns
-		popup_timer:   null,
-		popup_student: null,
-		left_collapsed: false,
+		department:      null,
+		course:          null,
+		info:            null,   // course_info response
+		students:        [],
+		total:           0,
+		page:            1,
+		page_length:     20,
+		search:          '',
+		sort_by:         'registration_id',
+		sort_order:      'asc',
+		marks:           {},     // student → {entries: {comp|atype → marks}, grade, ...}
+		columns:         [],     // assessment config columns
+		reexam_columns:  [],     // reexam config columns
+		popup_timer:     null,
+		popup_student:   null,
+		left_collapsed:  false,
 	};
 
 	// ── CSS ───────────────────────────────────────────────────────────────────
@@ -508,8 +509,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			method: 'slcm.slcm.page.examination_result.examination_result.get_course_info',
 			args: { course: S.course },
 			callback: function (r) {
-				S.info    = r.message || {};
-				S.columns = S.info.columns || [];
+				S.info           = r.message || {};
+				S.columns        = S.info.columns || [];
+				S.reexam_columns = S.info.reexam_columns || [];
 				render_info_panel();
 				populate_exam_filter();
 				$info.show();
@@ -580,28 +582,54 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		var mask_val    = o.mask_student_info
 			? '<span style="color:#28a745;font-weight:600;">ON</span> | Admin Access'
 			: '<span style="color:#6c757d;">OFF</span>';
+		var eval_link   = o.evaluation_schema
+			? '<a href="#" class="er2-schema-link" data-schema="eval" data-name="' + frappe.utils.escape_html(o.evaluation_schema) + '">' + frappe.utils.escape_html(o.evaluation_schema) + '</a>'
+			: '—';
+		var grade_link  = o.grade_schema
+			? '<a href="#" class="er2-schema-link" data-schema="grade" data-name="' + frappe.utils.escape_html(o.grade_schema) + '">' + frappe.utils.escape_html(o.grade_schema) + '</a>'
+			: '—';
+		var calc_link   = o.evaluation_schema
+			? '<a href="#" id="er2-calc-settings-link">Calculation Settings</a>'
+			: '—';
 
 		$info.html(
 			'<div class="er2-info">' +
 			row('Number of Students', '<span style="color:#e63946;font-weight:700;font-size:16px;">' + o.student_count + '</span>') +
-			row('Evaluation Schema', frappe.utils.escape_html(o.evaluation_schema || '—')) +
-			row('Course Name [Code]', frappe.utils.escape_html((o.course_name || '') + (o.course_code ? '[' + o.course_code + ']' : ''))) +
-			row('Grade Schema', frappe.utils.escape_html(o.grade_schema || '—')) +
+			row('Evaluation Schema', eval_link) +
+			row('Course Name [Code]', frappe.utils.escape_html((o.course_name || '') + (o.course_code ? ' [' + o.course_code + ']' : ''))) +
+			row('Grade Schema', grade_link) +
 			row('Course Credits', o.credit_value || '—') +
-			row('Calculation Settings', o.evaluation_schema ? '<a href="/app/evaluation-schema/' + encodeURIComponent(o.evaluation_schema) + '" target="_blank">Calculation Settings</a>' : '—') +
+			row('Calculation Settings', calc_link) +
 			row('View Access', view_access) +
 			row('Edit Access', edit_val) +
 			'<div class="er2-irow"></div>' +
 			row('Student Masking', mask_val) +
 			'</div>'
 		);
+
+		// Bind click handlers after rendering
+		$info.find('#er2-calc-settings-link').on('click', function (e) {
+			e.preventDefault();
+			show_calc_settings_popup(S.info.evaluation_schema);
+		});
+		$info.find('.er2-schema-link').on('click', function (e) {
+			e.preventDefault();
+			var schema_type = $(this).data('schema');
+			var name = $(this).data('name');
+			if (schema_type === 'eval') show_eval_schema_popup(name);
+			else show_grade_schema_popup(name);
+		});
 	}
 
 	function populate_exam_filter() {
 		$examFilter.find('option:not(:first)').remove();
+		var seen = {};
 		(S.columns || []).forEach(function (col) {
-			var lbl = col.label || col.component_name || col.type_name || col.component;
-			$examFilter.append('<option value="' + (col.component || '') + '">' +
+			var val = col.assessment_type || '';
+			if (!val || seen[val]) return;
+			seen[val] = true;
+			var lbl = col.type_name || col.assessment_type || '';
+			$examFilter.append('<option value="' + frappe.utils.escape_html(val) + '">' +
 				frappe.utils.escape_html(lbl) + '</option>');
 		});
 	}
@@ -635,62 +663,195 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	}
 
 	function render_marks_table() {
-		var cols = S.columns || [];
-		var filter_val = $examFilter.val();
+		var cols         = S.columns || [];
+		var reexam_cols  = S.reexam_columns || [];
+		var filter_val   = $examFilter.val();
 		if (filter_val) {
-			cols = cols.filter(function (c) { return c.component === filter_val; });
+			cols = cols.filter(function (c) { return c.assessment_type === filter_val; });
 		}
 
-		if (!cols.length) {
+		if (!cols.length && !reexam_cols.length) {
 			$mtable.html('<div style="padding:40px;text-align:center;color:#adb5bd;font-size:13px;">No assessment columns configured.</div>');
 			return;
 		}
 
-		// Header row 1: component names
-		var th1 = '';
+		// ── Group regular cols by component ──────────────────────────────────────
+		var groups = [];
+		var group_map = {};
 		cols.forEach(function (col) {
-			var lbl = frappe.utils.escape_html(col.label || col.component_name || col.type_name || col.component || '—');
-			var max = col.maximum_marks ? 'Max. Marks ' + parseFloat(col.maximum_marks).toFixed(2) : '';
-			var sync_btn = (col.enrollment === 'Auto')
-				? '<br><button class="er2-sync-btn er2-sync-comp" data-comp="' + (col.component || '') + '">Sync Marks</button>'
-				: '';
-			th1 += '<th colspan="3" class="type-hdr" style="text-align:center;">' +
-				lbl + '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' +
-				sync_btn + '</th>';
+			var comp = col.component || '__none__';
+			if (!group_map[comp]) {
+				group_map[comp] = {
+					component:      comp,
+					component_name: col.component_name || comp,
+					cols:           [],
+				};
+				groups.push(group_map[comp]);
+			}
+			group_map[comp].cols.push(col);
 		});
-		th1 += '<th rowspan="2" style="vertical-align:middle;min-width:60px;">Total</th>';
 
-		// Header row 2: sub-columns
+		// ── Group reexam cols by component ───────────────────────────────────────
+		var rxgroups = [];
+		var rxgroup_map = {};
+		reexam_cols.forEach(function (col) {
+			var comp = col.component || '__rx_none__';
+			if (!rxgroup_map[comp]) {
+				rxgroup_map[comp] = {
+					component:      comp,
+					component_name: col.component_name || comp,
+					cols:           [],
+				};
+				rxgroups.push(rxgroup_map[comp]);
+			}
+			rxgroup_map[comp].cols.push(col);
+		});
+
+		// ── Total number of data columns (for empty-row colspan) ─────────────────
+		// Each regular assessment: 3 sub-cols (Marks, Reval, Moderated)
+		// After regular cols: Total, Grade, Moderated Grade
+		// Overall Status: 5 cols
+		// Each reexam assessment: 2 sub-cols (Marks, Reval)
+		// Updated Final Result: 2 cols
+		var total_cols = cols.length * 3 + 3 + 5 + reexam_cols.length * 2 + 2;
+
+		// ── CSS colours ──────────────────────────────────────────────────────────
+		var C_COMP   = 'background:#dbe4ff;color:#364fc7;';       // component group
+		var C_GRADE  = 'background:#e8f5e9;color:#1b5e20;';       // grade section
+		var C_STATUS = 'background:#fff8e1;color:#795548;';       // overall status
+		var C_REEXAM = 'background:#fce4ec;color:#880e4f;';       // re-exam
+		var C_FINAL  = 'background:#e8eaf6;color:#1a237e;';       // final result
+
+		// ── Header row 1: section-level group headers ────────────────────────────
+		var th1 = '';
+		groups.forEach(function (g) {
+			th1 += '<th colspan="' + (g.cols.length * 3) + '" class="type-hdr" style="text-align:center;' + C_COMP + '">' +
+				frappe.utils.escape_html(g.component_name) + '</th>';
+		});
+		// Total + Grade + Moderated Grade (span 3)
+		th1 += '<th colspan="3" class="type-hdr" style="text-align:center;' + C_GRADE + '">Grade</th>';
+		// Overall Status (span 5)
+		th1 += '<th colspan="5" class="type-hdr" style="text-align:center;' + C_STATUS + '">Overall Status</th>';
+		// Re-Exam groups
+		rxgroups.forEach(function (g) {
+			th1 += '<th colspan="' + (g.cols.length * 2) + '" class="type-hdr" style="text-align:center;' + C_REEXAM + '">' +
+				frappe.utils.escape_html(g.component_name) + ' (Re-Exam)</th>';
+		});
+		// Updated Final Result (span 2)
+		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_FINAL + '">Updated Final Result</th>';
+
+		// ── Header row 2: assessment labels + max marks ──────────────────────────
 		var th2 = '';
-		cols.forEach(function () {
-			th2 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
-				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Revaluation<br>Marks</th>' +
-				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Moderated<br>Marks ' +
-				'<span style="color:#e63946;cursor:pointer;font-size:10px;" title="Reset">&#9673;</span></th>';
+		groups.forEach(function (g) {
+			g.cols.forEach(function (col) {
+				var lbl = frappe.utils.escape_html(col.label || col.type_name || col.assessment_type || '');
+				var max = col.maximum_marks ? 'Max. ' + parseFloat(col.maximum_marks).toFixed(2) : '';
+				var sync_btn = (col.enrollment === 'Auto')
+					? '<br><button class="er2-sync-btn er2-sync-comp" data-comp="' + frappe.utils.escape_html(col.component || '') + '">Sync Marks</button>'
+					: '';
+				th2 += '<th colspan="3" class="type-hdr" style="text-align:center;">' +
+					lbl +
+					(max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') +
+					sync_btn + '</th>';
+			});
 		});
+		// Grade section row 2 labels
+		th2 += '<th style="font-size:11px;color:#6c757d;min-width:60px;">Total<br>Marks</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:60px;">Grade</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Moderated<br>Grade</th>';
+		// Overall Status row 2 labels
+		th2 += '<th style="font-size:11px;color:#6c757d;min-width:90px;">Enrollment<br>Status</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:90px;">Attendance<br>Status</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Fairness<br>Status</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:60px;">SGPA</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:100px;">Remark</th>';
+		// Re-Exam row 2 labels
+		rxgroups.forEach(function (g) {
+			g.cols.forEach(function (col) {
+				var lbl = frappe.utils.escape_html(col.label || col.type_name || col.assessment_type || '');
+				var max = col.maximum_marks ? 'Max. ' + parseFloat(col.maximum_marks).toFixed(2) : '';
+				th2 += '<th colspan="2" class="type-hdr" style="text-align:center;">' +
+					lbl + (max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') + '</th>';
+			});
+		});
+		// Updated Final Result row 2 labels
+		th2 += '<th style="font-size:11px;color:#6c757d;min-width:80px;">Updated<br>Final Marks</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:70px;">Updated<br>Grade</th>';
 
-		// Data rows
+		// ── Header row 3: sub-column labels ──────────────────────────────────────
+		var th3 = '';
+		cols.forEach(function () {
+			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
+				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Revaluation<br>Marks</th>' +
+				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Moderated<br>Marks <span style="color:#e63946;cursor:pointer;font-size:10px;" title="Reset">&#9673;</span></th>';
+		});
+		// Grade section row 3 (empty — already set in row 2)
+		th3 += '<th></th><th></th><th></th>';
+		// Overall Status row 3 (empty)
+		th3 += '<th></th><th></th><th></th><th></th><th></th>';
+		// Re-Exam sub-column labels
+		reexam_cols.forEach(function () {
+			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
+				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Revaluation<br>Marks</th>';
+		});
+		// Updated Final Result row 3 (empty)
+		th3 += '<th></th><th></th>';
+
+		// ── Data rows ─────────────────────────────────────────────────────────────
 		var rows = '';
 		S.students.forEach(function (s) {
-			var sm     = S.marks[s.student] || {};
-			var comps  = sm.components || {};
-			var total  = sm.total != null ? parseFloat(sm.total).toFixed(2) : '—';
-			var cells  = '';
+			var sm      = S.marks[s.student] || {};
+			var entries = sm.entries || {};
+			var total   = sm.total   != null ? parseFloat(sm.total).toFixed(2) : '—';
+			var cells   = '';
+
+			// Regular assessment cells
 			cols.forEach(function (col) {
-				var cm = comps[col.component] || {};
-				var m  = cm.marks           != null ? parseFloat(cm.marks).toFixed(2)            : '--';
-				var rv = cm.revaluation_marks != null ? parseFloat(cm.revaluation_marks).toFixed(2) : '--';
-				var mo = cm.moderated_marks  != null ? parseFloat(cm.moderated_marks).toFixed(2)  : '--';
+				var key = (col.component || '') + '|' + (col.assessment_type || '');
+				var e   = entries[key] || {};
+				var m   = e.marks             != null ? parseFloat(e.marks).toFixed(2)             : '--';
+				var rv  = e.revaluation_marks  != null ? parseFloat(e.revaluation_marks).toFixed(2) : '--';
+				var mo  = e.moderated_marks    != null ? parseFloat(e.moderated_marks).toFixed(2)   : '--';
 				cells += '<td>' + m + '</td><td>' + rv + '</td><td>' + mo + '</td>';
 			});
-			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' +
-				cells +
-				'<td style="font-weight:700;">' + total + '</td></tr>';
+
+			// Grade section
+			cells += '<td style="font-weight:700;">' + total + '</td>' +
+				'<td style="font-weight:600;color:#1b5e20;">' + frappe.utils.escape_html(sm.grade || '—') + '</td>' +
+				'<td>' + frappe.utils.escape_html(sm.moderated_grade || '—') + '</td>';
+
+			// Overall Status
+			var es  = sm.enrollment_status  || '—';
+			var at  = sm.attendance_status  || '—';
+			var fs  = sm.fairness_status    || '—';
+			var sg  = sm.consider_for_sgpa  ? '<span style="color:#28a745;font-weight:700;">&#10003;</span>' : '—';
+			var rmk = sm.remark || '';
+			cells += '<td>' + frappe.utils.escape_html(es) + '</td>' +
+				'<td>' + frappe.utils.escape_html(at) + '</td>' +
+				'<td>' + frappe.utils.escape_html(fs) + '</td>' +
+				'<td style="text-align:center;">' + sg + '</td>' +
+				'<td style="text-align:left;max-width:120px;">' + frappe.utils.escape_html(rmk) + '</td>';
+
+			// Re-Exam cells
+			reexam_cols.forEach(function (col) {
+				var key = (col.component || '') + '|' + (col.assessment_type || '');
+				var e   = entries[key] || {};
+				var m   = e.marks            != null ? parseFloat(e.marks).toFixed(2)             : '--';
+				var rv  = e.revaluation_marks != null ? parseFloat(e.revaluation_marks).toFixed(2) : '--';
+				cells += '<td>' + m + '</td><td>' + rv + '</td>';
+			});
+
+			// Updated Final Result
+			var ufm = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '—';
+			var ug  = sm.updated_grade || '—';
+			cells += '<td style="font-weight:700;">' + frappe.utils.escape_html(ufm) + '</td>' +
+				'<td style="font-weight:600;color:#1a237e;">' + frappe.utils.escape_html(ug) + '</td>';
+
+			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
 		});
 
 		if (!rows) {
-			var colspan = cols.length * 3 + 1;
-			rows = '<tr><td colspan="' + colspan + '" style="text-align:center;padding:40px;color:#adb5bd;">No students found.</td></tr>';
+			rows = '<tr><td colspan="' + total_cols + '" style="text-align:center;padding:40px;color:#adb5bd;">No students found.</td></tr>';
 		}
 
 		$mtable.html(
@@ -698,12 +859,12 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			'<thead>' +
 			'<tr>' + th1 + '</tr>' +
 			'<tr style="background:#fafbfc;">' + th2 + '</tr>' +
+			'<tr style="background:#f4f5f7;">' + th3 + '</tr>' +
 			'</thead>' +
 			'<tbody>' + rows + '</tbody>' +
 			'</table>'
 		);
 
-		// Sync marks stub
 		$mtable.find('.er2-sync-comp').on('click', function () {
 			frappe.msgprint('Sync Marks for this component — coming soon.');
 		});
@@ -771,6 +932,173 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 	}
 
+	// ── Popup dialogs ────────────────────────────────────────────────────────
+	function show_calc_settings_popup(evaluation_schema) {
+		frappe.call({
+			method: 'slcm.slcm.page.examination_result.examination_result.get_calc_settings',
+			args: { evaluation_schema: evaluation_schema },
+			callback: function (r) {
+				var s = r.message || {};
+				var d = new frappe.ui.Dialog({
+					title: 'Calculation Settings',
+					fields: [
+						{
+							fieldname: 'calc_higher_revaluation',
+							fieldtype: 'Check',
+							label: 'Consider higher marks for an assessment between regular marks and revaluation marks',
+							default: s.calc_higher_revaluation || 0,
+						},
+						{
+							fieldname: 'calc_higher_makeup',
+							fieldtype: 'Check',
+							label: 'Consider higher marks for an assessment or component between regular evaluation marks and MakeUp Exams',
+							default: s.calc_higher_makeup || 0,
+						},
+						{
+							fieldname: 'calc_higher_reexam',
+							fieldtype: 'Check',
+							label: 'Consider higher marks for an assessment or component between regular evaluation marks and Re-Exam',
+							default: s.calc_higher_reexam || 0,
+						},
+					],
+					primary_action_label: 'Save',
+					primary_action: function () {
+						var vals = d.get_values();
+						frappe.call({
+							method: 'slcm.slcm.page.examination_result.examination_result.save_calc_settings',
+							args: {
+								evaluation_schema:     evaluation_schema,
+								calc_higher_revaluation: vals.calc_higher_revaluation ? 1 : 0,
+								calc_higher_makeup:    vals.calc_higher_makeup ? 1 : 0,
+								calc_higher_reexam:    vals.calc_higher_reexam ? 1 : 0,
+							},
+							callback: function () {
+								d.hide();
+								frappe.show_alert({ message: 'Calculation settings saved.', indicator: 'green' });
+							},
+						});
+					},
+				});
+				d.show();
+			},
+		});
+	}
+
+	function show_eval_schema_popup(name) {
+		frappe.call({
+			method: 'slcm.slcm.page.examination_result.examination_result.get_evaluation_schema_details',
+			args: { name: name },
+			callback: function (r) {
+				var s = r.message || {};
+				var html = '<div style="font-size:13px;">';
+				html += '<div style="margin-bottom:12px;"><b>' + frappe.utils.escape_html(s.schema_name || name) + '</b>';
+				if (s.description) html += '<div style="color:#6c757d;margin-top:4px;">' + frappe.utils.escape_html(s.description) + '</div>';
+				html += '</div>';
+				html += '<div style="display:flex;gap:24px;margin-bottom:14px;">' +
+					'<div><span style="color:#8d99ae;font-size:11px;text-transform:uppercase;">Total Marks</span><div style="font-size:15px;font-weight:700;">' + (s.total_marks || 0) + '</div></div>' +
+					'<div><span style="color:#8d99ae;font-size:11px;text-transform:uppercase;">Passing Marks</span><div style="font-size:15px;font-weight:700;">' + (s.passing_marks || 0) + '</div></div>' +
+					'</div>';
+				if (s.components && s.components.length) {
+					html += '<div style="font-weight:600;margin-bottom:6px;color:#333;font-size:12px;">Components</div>' +
+						'<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px;">' +
+						'<thead><tr style="background:#f0f2f5;">' +
+						'<th style="padding:6px 8px;text-align:left;border:1px solid #dee2e6;">Component</th>' +
+						'<th style="padding:6px 8px;text-align:right;border:1px solid #dee2e6;">Max Marks</th>' +
+						'<th style="padding:6px 8px;text-align:right;border:1px solid #dee2e6;">Weightage</th>' +
+						'<th style="padding:6px 8px;text-align:right;border:1px solid #dee2e6;">Passing</th>' +
+						'</tr></thead><tbody>';
+					(s.components || []).forEach(function (c) {
+						html += '<tr>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;">' + frappe.utils.escape_html(c.component_name || c.component) + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:right;">' + (c.effective_max_marks || '—') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:right;">' + (c.weightage != null ? c.weightage + '%' : '—') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:right;">' + (c.passing_marks || '—') + '</td>' +
+							'</tr>';
+					});
+					html += '</tbody></table>';
+				}
+				if (s.assessments && s.assessments.length) {
+					html += '<div style="font-weight:600;margin-bottom:6px;color:#333;font-size:12px;">Assessment Configuration</div>' +
+						'<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+						'<thead><tr style="background:#f0f2f5;">' +
+						'<th style="padding:6px 8px;text-align:left;border:1px solid #dee2e6;">Component</th>' +
+						'<th style="padding:6px 8px;text-align:left;border:1px solid #dee2e6;">Assessment Type</th>' +
+						'<th style="padding:6px 8px;text-align:left;border:1px solid #dee2e6;">Label</th>' +
+						'<th style="padding:6px 8px;text-align:right;border:1px solid #dee2e6;">Max Marks</th>' +
+						'<th style="padding:6px 8px;text-align:right;border:1px solid #dee2e6;">Effective</th>' +
+						'<th style="padding:6px 8px;text-align:center;border:1px solid #dee2e6;">Enrollment</th>' +
+						'</tr></thead><tbody>';
+					(s.assessments || []).forEach(function (a) {
+						html += '<tr>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;">' + frappe.utils.escape_html(a.component_name || a.component || '') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;">' + frappe.utils.escape_html(a.type_name || a.assessment_type || '') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;">' + frappe.utils.escape_html(a.label || '') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:right;">' + (a.maximum_marks || '—') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:right;">' + (a.effective_marks || '—') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:center;">' + frappe.utils.escape_html(a.enrollment || '') + '</td>' +
+							'</tr>';
+					});
+					html += '</tbody></table>';
+				}
+				html += '</div>';
+				var d = new frappe.ui.Dialog({
+					title: 'Evaluation Schema: ' + frappe.utils.escape_html(name),
+					fields: [{ fieldname: 'schema_html', fieldtype: 'HTML', options: html }],
+				});
+				d.show();
+			},
+		});
+	}
+
+	function show_grade_schema_popup(name) {
+		frappe.call({
+			method: 'slcm.slcm.page.examination_result.examination_result.get_grading_schema_details',
+			args: { name: name },
+			callback: function (r) {
+				var s = r.message || {};
+				var html = '<div style="font-size:13px;">';
+				html += '<div style="margin-bottom:12px;"><b>' + frappe.utils.escape_html(s.schema_name || name) + '</b>';
+				if (s.description) html += '<div style="color:#6c757d;margin-top:4px;">' + frappe.utils.escape_html(s.description) + '</div>';
+				html += '</div>';
+				html += '<div style="display:flex;gap:24px;margin-bottom:14px;">' +
+					'<div><span style="color:#8d99ae;font-size:11px;text-transform:uppercase;">Max Marks</span><div style="font-size:15px;font-weight:700;">' + (s.maximum_marks || 0) + '</div></div>' +
+					'<div><span style="color:#8d99ae;font-size:11px;text-transform:uppercase;">Type</span><div style="font-size:15px;font-weight:700;">' + frappe.utils.escape_html(s.grading_type || '') + '</div></div>' +
+					'</div>';
+				if (s.grades && s.grades.length) {
+					html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+						'<thead><tr style="background:#f0f2f5;">' +
+						'<th style="padding:6px 8px;text-align:left;border:1px solid #dee2e6;">Grade</th>' +
+						'<th style="padding:6px 8px;text-align:left;border:1px solid #dee2e6;">Meaning</th>' +
+						'<th style="padding:6px 8px;text-align:center;border:1px solid #dee2e6;">Range</th>' +
+						'<th style="padding:6px 8px;text-align:right;border:1px solid #dee2e6;">Grade Point</th>' +
+						'<th style="padding:6px 8px;text-align:center;border:1px solid #dee2e6;">Failed</th>' +
+						'<th style="padding:6px 8px;text-align:center;border:1px solid #dee2e6;">For SGPA</th>' +
+						'</tr></thead><tbody>';
+					(s.grades || []).forEach(function (g) {
+						var range      = (g.from_operator || '>=') + ' ' + (g.marks_from || 0) + ' &amp; ' + (g.to_operator || '<') + ' ' + (g.marks_to || 0);
+						var failedBadge = g.failed ? '<span style="color:#dc3545;font-weight:600;">Yes</span>' : '<span style="color:#28a745;">No</span>';
+						var sgpaBadge   = g.consider_for_sgpa ? '<span style="color:#28a745;">Yes</span>' : '<span style="color:#6c757d;">No</span>';
+						html += '<tr>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;font-weight:700;">' + frappe.utils.escape_html(g.grade || '') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;">' + frappe.utils.escape_html(g.qualitative_meaning || '') + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:center;">' + range + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:right;">' + (g.grade_point || 0) + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:center;">' + failedBadge + '</td>' +
+							'<td style="padding:5px 8px;border:1px solid #dee2e6;text-align:center;">' + sgpaBadge + '</td>' +
+							'</tr>';
+					});
+					html += '</tbody></table>';
+				}
+				html += '</div>';
+				var d = new frappe.ui.Dialog({
+					title: 'Grading Schema: ' + frappe.utils.escape_html(name),
+					fields: [{ fieldname: 'schema_html', fieldtype: 'HTML', options: html }],
+				});
+				d.show();
+			},
+		});
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 	function hide_detail() {
 		$info.hide().empty();
@@ -779,10 +1107,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		$split.hide();
 		$popup.hide();
 		$empty.show();
-		S.students = [];
-		S.marks    = {};
-		S.info     = null;
-		S.columns  = [];
+		S.students        = [];
+		S.marks           = {};
+		S.info            = null;
+		S.columns         = [];
+		S.reexam_columns  = [];
 	}
 
 	// Close popup on outside click

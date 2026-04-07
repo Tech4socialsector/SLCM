@@ -426,7 +426,7 @@ def get_courses_by_department(department, exam_plan=None, search=""):
 
 def _get_marks_columns(evaluation_schema):
 	"""Return ordered assessment config columns for a given evaluation schema."""
-	return frappe.db.sql(
+	rows = frappe.db.sql(
 		"""
 		SELECT sac.name, sac.component, ec.component_name,
 		       sac.assessment_type, eat.type_name,
@@ -441,6 +441,38 @@ def _get_marks_columns(evaluation_schema):
 		{"schema": evaluation_schema},
 		as_dict=True,
 	)
+	# Ensure type_name falls back to assessment_type when JOIN returns NULL
+	for row in rows:
+		if not row.get("type_name"):
+			row["type_name"] = row.get("assessment_type") or ""
+		if not row.get("component_name"):
+			row["component_name"] = row.get("component") or ""
+	return rows
+
+
+def _get_reexam_columns(evaluation_schema):
+	"""Return ordered reexam config columns for a given evaluation schema."""
+	rows = frappe.db.sql(
+		"""
+		SELECT src.name, src.component, ec.component_name,
+		       src.assessment_type, eat.type_name,
+		       src.label, src.maximum_marks, src.effective_marks,
+		       src.enrollment, src.re_exam_type_category, src.idx
+		FROM `tabSchema Reexam Config` src
+		LEFT JOIN `tabExam Component` ec ON ec.name = src.component
+		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = src.assessment_type
+		WHERE src.parent = %(schema)s
+		ORDER BY src.idx ASC
+		""",
+		{"schema": evaluation_schema},
+		as_dict=True,
+	)
+	for row in rows:
+		if not row.get("type_name"):
+			row["type_name"] = row.get("assessment_type") or ""
+		if not row.get("component_name"):
+			row["component_name"] = row.get("component") or ""
+	return rows
 
 
 @frappe.whitelist()
@@ -488,8 +520,10 @@ def get_course_info(course):
 	)
 
 	columns = []
+	reexam_columns = []
 	if assignment.get("evaluation_schema"):
 		columns = _get_marks_columns(assignment["evaluation_schema"])
+		reexam_columns = _get_reexam_columns(assignment["evaluation_schema"])
 
 	# Format edit_deadline for display
 	edit_deadline = ""
@@ -516,6 +550,7 @@ def get_course_info(course):
 		"mask_student_info": int(access.get("mask_student_info", 0)),
 		"status":          access.get("status", "UNLOCKED"),
 		"columns":         columns,
+		"reexam_columns":  reexam_columns,
 	}
 
 
@@ -632,17 +667,51 @@ def get_student_hover_info(student, course):
 
 @frappe.whitelist()
 def get_marks_for_students(course, exam_plan, student_ids):
-	"""Return marks data keyed by student → component."""
+	"""Return marks data keyed by student → {entries: {comp|atype → marks}, totals, status fields}."""
 	import json as _json
 	if isinstance(student_ids, str):
 		student_ids = _json.loads(student_ids)
 	if not student_ids or not exam_plan:
 		return {}
 
-	rows = frappe.db.sql(
+	# Fetch header-level data (totals, grade, status fields)
+	header_rows = frappe.db.sql(
 		"""
-		SELECT scm.student, scm.total_marks, scm.grade, scm.status,
-		       sme.component, sme.assessment_type,
+		SELECT scm.student, scm.total_marks, scm.grade, scm.moderated_grade,
+		       scm.status, scm.enrollment_status, scm.attendance_status,
+		       scm.fairness_status, scm.consider_for_sgpa, scm.remark,
+		       scm.updated_final_marks, scm.updated_grade
+		FROM `tabStudent Course Marks` scm
+		WHERE scm.course = %(course)s
+		  AND scm.exam_plan = %(exam_plan)s
+		  AND scm.student IN %(students)s
+		""",
+		{"course": course, "exam_plan": exam_plan, "students": tuple(student_ids)},
+		as_dict=True,
+	)
+
+	result = {}
+	for row in header_rows:
+		s = row["student"]
+		result[s] = {
+			"total":               row["total_marks"],
+			"grade":               row["grade"] or "",
+			"moderated_grade":     row["moderated_grade"] or "",
+			"status":              row["status"] or "",
+			"enrollment_status":   row["enrollment_status"] or "",
+			"attendance_status":   row["attendance_status"] or "",
+			"fairness_status":     row["fairness_status"] or "",
+			"consider_for_sgpa":   int(row["consider_for_sgpa"] or 0),
+			"remark":              row["remark"] or "",
+			"updated_final_marks": row["updated_final_marks"],
+			"updated_grade":       row["updated_grade"] or "",
+			"entries":             {},
+		}
+
+	# Fetch per-assessment marks
+	entry_rows = frappe.db.sql(
+		"""
+		SELECT scm.student, sme.component, sme.assessment_type,
 		       sme.marks, sme.revaluation_marks, sme.moderated_marks
 		FROM `tabStudent Course Marks` scm
 		JOIN `tabStudent Marks Entry` sme ON sme.parent = scm.name
@@ -654,21 +723,20 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		as_dict=True,
 	)
 
-	result = {}
-	for row in rows:
+	for row in entry_rows:
 		s = row["student"]
-		c = row["component"]
 		if s not in result:
-			result[s] = {
-				"total": row["total_marks"],
-				"grade": row["grade"],
-				"components": {},
-			}
-		result[s]["components"][c] = {
+			result[s] = {"total": None, "grade": "", "moderated_grade": "",
+			             "status": "", "enrollment_status": "", "attendance_status": "",
+			             "fairness_status": "", "consider_for_sgpa": 1, "remark": "",
+			             "updated_final_marks": None, "updated_grade": "", "entries": {}}
+		key = (row["component"] or "") + "|" + (row["assessment_type"] or "")
+		result[s]["entries"][key] = {
 			"marks":             row["marks"],
 			"revaluation_marks": row["revaluation_marks"],
 			"moderated_marks":   row["moderated_marks"],
 		}
+
 	return result
 
 
@@ -822,6 +890,110 @@ def get_student_profile(student):
 		cohort_name = frappe.db.get_value("Cohort", sm["programme"], "cohort_name") or sm["programme"]
 	sm["cohort_name"] = cohort_name
 	return sm
+
+
+@frappe.whitelist()
+def get_calc_settings(evaluation_schema):
+	"""Return calculation settings for the evaluation schema."""
+	doc = frappe.db.get_value(
+		"Evaluation Schema",
+		evaluation_schema,
+		["calc_higher_revaluation", "calc_higher_makeup", "calc_higher_reexam"],
+		as_dict=True,
+	) or {}
+	return {
+		"calc_higher_revaluation": int(doc.get("calc_higher_revaluation") or 0),
+		"calc_higher_makeup":      int(doc.get("calc_higher_makeup") or 0),
+		"calc_higher_reexam":      int(doc.get("calc_higher_reexam") or 0),
+	}
+
+
+@frappe.whitelist()
+def save_calc_settings(evaluation_schema, calc_higher_revaluation, calc_higher_makeup, calc_higher_reexam):
+	"""Save calculation settings to the evaluation schema."""
+	doc = frappe.get_doc("Evaluation Schema", evaluation_schema)
+	doc.calc_higher_revaluation = int(calc_higher_revaluation)
+	doc.calc_higher_makeup      = int(calc_higher_makeup)
+	doc.calc_higher_reexam      = int(calc_higher_reexam)
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return True
+
+
+@frappe.whitelist()
+def get_evaluation_schema_details(name):
+	"""Return full evaluation schema for the popup view."""
+	doc = frappe.get_doc("Evaluation Schema", name)
+
+	components = []
+	for row in doc.schema_components:
+		comp_name = frappe.db.get_value("Exam Component", row.component, "component_name") or row.component
+		components.append({
+			"component":       row.component,
+			"component_name":  comp_name,
+			"effective_max_marks": row.effective_max_marks,
+			"weightage":       row.weightage,
+			"passing_marks":   row.passing_marks,
+			"consider_for_pass_fail": int(row.consider_for_pass_fail or 0),
+		})
+
+	assessments = []
+	for row in doc.assessment_configs:
+		comp_name = frappe.db.get_value("Exam Component", row.component, "component_name") or row.component
+		type_name = frappe.db.get_value("Exam Assessment Type", row.assessment_type, "type_name") or row.assessment_type
+		assessments.append({
+			"component":       row.component,
+			"component_name":  comp_name,
+			"assessment_type": row.assessment_type,
+			"type_name":       type_name,
+			"label":           row.label,
+			"maximum_marks":   row.maximum_marks,
+			"effective_marks": row.effective_marks,
+			"passing_marks":   row.passing_marks,
+			"consider_for_pass_fail": int(row.consider_for_pass_fail or 0),
+			"enrollment":      row.enrollment,
+		})
+
+	return {
+		"schema_name":   doc.schema_name,
+		"description":   doc.description or "",
+		"total_marks":   doc.total_marks,
+		"passing_marks": doc.passing_marks,
+		"components":    components,
+		"assessments":   assessments,
+		"calc_higher_revaluation": int(doc.calc_higher_revaluation or 0),
+		"calc_higher_makeup":      int(doc.calc_higher_makeup or 0),
+		"calc_higher_reexam":      int(doc.calc_higher_reexam or 0),
+	}
+
+
+@frappe.whitelist()
+def get_grading_schema_details(name):
+	"""Return full grading schema for the popup view."""
+	doc = frappe.get_doc("Grading Schema", name)
+
+	grades = []
+	for row in doc.grades:
+		grades.append({
+			"grade":               row.grade,
+			"qualitative_meaning": row.qualitative_meaning or "",
+			"from_operator":       row.from_operator or ">=",
+			"marks_from":          row.marks_from,
+			"to_operator":         row.to_operator or "<",
+			"marks_to":            row.marks_to,
+			"grade_point":         row.grade_point,
+			"failed":              int(row.failed or 0),
+			"consider_for_sgpa":   int(row.consider_for_sgpa or 0),
+		})
+
+	return {
+		"grading_schema_name": doc.grading_schema_name,
+		"schema_name":         doc.schema_name or "",
+		"description":         doc.description or "",
+		"maximum_marks":       doc.maximum_marks,
+		"grading_type":        doc.grading_type,
+		"grades":              grades,
+	}
 
 
 @frappe.whitelist()
