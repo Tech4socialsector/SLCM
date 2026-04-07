@@ -39,49 +39,74 @@
 <meta charset="UTF-8"/>
 <title>Admit Card - {{ admit_no }}</title>
 <style>
+/* PDF / print-engine safe: avoid flex+gap for layout (wkhtmltopdf & older Qt WebKit). */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@page {
+  size: A4 portrait;
+  margin: 8mm;
+}
+html { -webkit-text-size-adjust: 100%; }
 body {
   font-family: "Times New Roman", Times, serif;
   font-size: 13px;
   background: #fff;
   color: #000;
+  line-height: 1.35;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
+  width: 100%;
+  max-width: 210mm;
+  margin: 0 auto;
 }
 .card-page {
-  width: 710px;
+  width: 100%;
+  max-width: 190mm;
   margin: 0 auto;
   background: #fff;
   border: 1.5px solid #555;
   page-break-after: always;
+  overflow: visible;
 }
 .header {
   background: #7b1c1c;
-  display: flex;
-  align-items: center;
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
   padding: 10px 18px;
-  gap: 16px;
   border-bottom: 3px solid #5a0e0e;
 }
+.header > .logo-box,
+.header > .hdr-center {
+  display: table-cell;
+  vertical-align: middle;
+}
+.header > .logo-box { width: 90px; padding-right: 16px; }
+.header > .hdr-center { width: auto; }
 .logo-box {
   width: 74px;
   height: 74px;
+  max-width: 74px;
   background: #fff;
   border: 2px solid rgba(255,255,255,0.6);
   border-radius: 3px;
-  display: flex;
-  align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+  text-align: center;
+  overflow: hidden;
+  vertical-align: middle;
 }
-.logo-box img { width: 70px; height: 70px; object-fit: contain; }
+.logo-box img { width: 70px; height: 70px; max-width: 70px; max-height: 70px; object-fit: contain; display: inline-block; vertical-align: middle; }
 .logo-inner {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  display: block;
+  text-align: center;
+  padding-top: 10px;
 }
+.logo-inner .logo-text { display: block; margin-top: 2px; }
 .logo-icon { font-size: 28px; line-height: 1; color: #7b1c1c; }
 .logo-text {
   font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
   text-align: center; letter-spacing: 0.5px; line-height: 1.2;
 }
-.hdr-center { flex: 1; text-align: center; }
+.hdr-center { text-align: center; }
 .univ-name {
   font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
   text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.2;
@@ -94,10 +119,11 @@ body {
 .title-row .t1 { font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; color: #000; }
 .title-row .t2 { font-size: 12.5px; font-family: Arial, sans-serif; color: #111; margin-top: 2px; }
 .info-wrap-tbl { 
-  width: calc(100% - 28px); 
-  margin: 12px 14px; 
+  width: 100%;
+  margin: 12px 14px;
   border: 1.5px solid #888; 
   border-collapse: collapse;
+  table-layout: fixed;
 }
 .info-tbl-cell { 
   vertical-align: top;
@@ -110,7 +136,8 @@ body {
 }
 .info-tbl { 
   width: 100%;
-  border-collapse: collapse; 
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 .info-tbl tr { border-bottom: 1px solid #ccc; }
 .info-tbl tr:last-child { border-bottom: none; }
@@ -127,55 +154,106 @@ body {
   font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; padding: 1px 10px; border-radius: 30px;
 }
 .photo-inner-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  height: 100%;
+  display: block;
+  text-align: center;
+  width: 100%;
+  padding-bottom: 4px;
 }
 .photo-box-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  display: block;
+  text-align: center;
+  margin-bottom: 8px;
 }
 .photo-frame { 
   width: 120px; 
   height: 150px; 
+  max-width: 100%;
   border: 1.5px solid #555; 
   overflow: hidden; 
   background: #eee; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
+  margin: 0 auto;
+  text-align: center;
+  line-height: 150px;
 }
 .photo-frame img { 
-  display: block;
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+  max-height: 100%;
+  width: 120px;
+  height: 150px;
+  object-fit: cover;
 }
-.photo-ph { font-size: 36px; color: #aaa; text-align: center; line-height: 150px; }
+.photo-ph { font-size: 28px; color: #aaa; text-align: center; line-height: 150px; font-family: Arial, sans-serif; }
 .photo-cap {
   font-size: 9.5px; font-family: Arial, sans-serif; color: #555; text-align: center; font-style: italic; line-height: 1.3;
 }
 .sig-note { text-align: center; font-style: italic; font-size: 11.5px; font-family: "Times New Roman", Times, serif; padding: 6px 14px 3px; color: #000; }
-.sig-tbl { border-collapse: collapse; width: calc(100% - 28px); margin: 0 14px 16px; border: 1.5px solid #888; }
-.sig-tbl td { border: 1.5px solid #888; padding: 0; width: 50%; }
-.sig-cell-inner { display: flex; flex-direction: column; }
+.sig-tbl { border-collapse: collapse; width: 100%; margin: 0 14px 16px; border: 1.5px solid #888; table-layout: fixed; }
+.sig-tbl td { border: 1.5px solid #888; padding: 0; width: 50%; vertical-align: top; }
+.sig-cell-inner { display: block; width: 100%; }
 .sig-hdr { font-weight: bold; font-family: Arial, sans-serif; font-size: 12px; color: #000; text-align: center; padding: 5px 8px 4px; border-bottom: 1.5px solid #888; display: block; }
 .sig-body { height: 54px; display: block; }
 .inst-outer { border: 1.5px solid #888; margin: 12px 14px 16px; padding: 14px 18px 18px; }
 .inst-main-title { font-size: 13.5px; font-weight: bold; font-family: Arial, sans-serif; text-align: center; color: #000; margin-bottom: 10px; }
 .sec-title { font-size: 12.5px; font-weight: bold; font-family: Arial, sans-serif; color: #000; margin: 10px 0 3px; }
 .il { list-style: none; margin: 0; padding: 0; }
-.il > li { display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65; padding-left: 18px; }
-.il > li .mk { flex-shrink: 0; min-width: 16px; }
+.il > li {
+  display: table;
+  width: 100%;
+  font-size: 11.5px;
+  font-family: Arial, sans-serif;
+  color: #000;
+  line-height: 1.65;
+  padding: 2px 0 2px 18px;
+  border-collapse: separate;
+}
+.il > li .mk {
+  display: table-cell;
+  width: 22px;
+  vertical-align: top;
+  padding-right: 6px;
+  white-space: nowrap;
+}
+.il > li > span:last-child { display: table-cell; vertical-align: top; }
 .sl { list-style: none; margin: 2px 0 2px 52px; padding: 0; }
 .sl li {
-  display: flex; gap: 6px; font-size: 11.5px; font-family: Arial, sans-serif; color: #000; line-height: 1.65;
+  display: table;
+  width: 100%;
+  font-size: 11.5px;
+  font-family: Arial, sans-serif;
+  color: #000;
+  line-height: 1.65;
+  padding: 2px 0;
 }
-.sl li .mk { flex-shrink: 0; min-width: 22px; font-style: italic; }
-.pg-footer { padding: 6px 14px 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; }
-.pg-footer span { font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }
- @media print { body { background: #fff; margin: 0; } .card-page { width: 100%; margin: 0; border: 1.5px solid #555; } }
+.sl li .mk {
+  display: table-cell;
+  width: 28px;
+  vertical-align: top;
+  padding-right: 6px;
+  font-style: italic;
+  white-space: nowrap;
+}
+.sl li > span:last-child { display: table-cell; vertical-align: top; }
+.pg-footer {
+  padding: 6px 14px 10px;
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-top: 1px solid #ddd;
+}
+.pg-footer span {
+  display: table-cell;
+  vertical-align: middle;
+  font-size: 8.5px;
+  font-family: Arial, sans-serif;
+  color: #888;
+}
+.pg-footer span:last-child { text-align: right; width: 35%; }
+@media print {
+  body { background: #fff; margin: 0; }
+  .card-page { width: 100%; max-width: none; margin: 0; border: 1.5px solid #555; page-break-after: always; }
+}
 </style>
 </head>
 <body>
