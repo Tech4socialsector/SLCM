@@ -123,7 +123,8 @@
    "fieldname": "programs",
    "fieldtype": "Table",
    "label": "Programmes",
-   "options": "Admission Cycle Program"
+   "options": "Admission Cycle Program",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_stages",
@@ -170,14 +171,14 @@
   {
    "fieldname": "cycle_start_date",
    "fieldtype": "Date",
-   "label": "Cycle Start date",
+   "label": "Cycle Start Date",
    "reqd": 1
   },
   {
    "allow_on_submit": 1,
    "fieldname": "cycle_end_date",
    "fieldtype": "Date",
-   "label": "Cycle end date",
+   "label": "Cycle End Date",
    "reqd": 1
   },
   {
@@ -362,13 +363,15 @@
    "allow_on_submit": 1,
    "fieldname": "application_start_date",
    "fieldtype": "Date",
-   "label": "Application Start Date"
+   "label": "Application Start Date",
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
    "fieldname": "application_end_date",
    "fieldtype": "Date",
-   "label": "Application End Date"
+   "label": "Application End Date",
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -382,7 +385,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-07 15:42:40.166939",
+ "modified": "2026-04-07 16:52:18.771595",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
