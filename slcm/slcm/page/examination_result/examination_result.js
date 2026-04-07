@@ -1,415 +1,794 @@
 frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: 'Course Results',
+		title: 'Examination Result',
 		single_column: true,
 	});
 
-	// ── State ────────────────────────────────────────────────────────────────
-	var state = {
-		exam_plan: null,
-		department: null,
-		course: null,
-		overview: null,
-		page_num: 1,
-		page_length: 20,
-		search_query: '',
-		exam_types: [],
-		popup_timeout: null,
+	// ── State ─────────────────────────────────────────────────────────────────
+	var S = {
+		department:    null,
+		course:        null,
+		info:          null,   // course_info response
+		students:      [],
+		total:         0,
+		page:          1,
+		page_length:   20,
+		search:        '',
+		sort_by:       'registration_id',
+		sort_order:    'asc',
+		marks:         {},     // student → {components: {comp → marks}}
+		columns:       [],     // assessment config columns
+		popup_timer:   null,
+		popup_student: null,
+		left_collapsed: false,
 	};
 
-	// ── Render shell ─────────────────────────────────────────────────────────
+	// ── CSS ───────────────────────────────────────────────────────────────────
+	if (!document.getElementById('er2-style')) {
+		var style = document.createElement('style');
+		style.id  = 'er2-style';
+		style.textContent = `
+		.er2-wrap { font-family: var(--font-stack); padding: 0; }
+		/* Tabs */
+		.er2-tabs { display:flex; border-bottom:2px solid #e8eaed; margin-bottom:16px; }
+		.er2-tab  { padding:10px 20px; cursor:pointer; font-size:14px; font-weight:500;
+		            color:#6c757d; border-bottom:2px solid transparent; margin-bottom:-2px;
+		            transition:color .15s, border-color .15s; }
+		.er2-tab:hover { color:#e63946; }
+		.er2-tab.active { color:#e63946; border-bottom-color:#e63946; }
+		/* Filter bar */
+		.er2-filters { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;
+		               margin-bottom:14px; padding:0 2px; }
+		.er2-fgroup  { display:flex; flex-direction:column; min-width:200px; flex:1; }
+		.er2-flabel  { font-size:11px; color:#6c757d; font-weight:500; margin-bottom:4px;
+		               text-transform:uppercase; letter-spacing:.4px; }
+		.er2-select  { height:34px; border:1px solid #d1d8dd; border-radius:4px;
+		               padding:0 10px; font-size:13px; background:#fff; color:#333;
+		               outline:none; cursor:pointer; }
+		.er2-select:focus { border-color:#6195ff; }
+		/* Info panel */
+		.er2-info    { background:#fff; border:1px solid #e8eaed; border-radius:8px;
+		               padding:16px 20px; margin-bottom:14px;
+		               display:grid; grid-template-columns:1fr 1fr; gap:10px 32px; }
+		.er2-irow    { display:flex; flex-direction:column; gap:2px; }
+		.er2-ilabel  { font-size:11px; color:#8d99ae; text-transform:uppercase;
+		               letter-spacing:.4px; font-weight:500; }
+		.er2-ival    { font-size:13px; color:#2b2d42; font-weight:500; }
+		.er2-ival a  { color:#e63946; text-decoration:none; }
+		.er2-ival.green { color:#28a745; }
+		.er2-ival.orange { color:#fd7e14; }
+		/* Action bar */
+		.er2-actbar  { display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+		               margin-bottom:12px; }
+		.er2-srch    { flex:1; min-width:220px; max-width:340px; position:relative; }
+		.er2-srch input { width:100%; height:34px; border:1px solid #d1d8dd; border-radius:20px;
+		                  padding:0 12px 0 34px; font-size:13px; outline:none; }
+		.er2-srch input:focus { border-color:#6195ff; }
+		.er2-srch-ico { position:absolute; left:10px; top:9px; color:#adb5bd; }
+		.er2-btn     { height:34px; padding:0 14px; border-radius:4px; border:1px solid #d1d8dd;
+		               background:#fff; cursor:pointer; font-size:13px; font-weight:500;
+		               color:#333; display:inline-flex; align-items:center; gap:5px;
+		               white-space:nowrap; }
+		.er2-btn:hover { background:#f4f5f7; }
+		.er2-btn.primary { background:#e63946; border-color:#e63946; color:#fff; }
+		.er2-btn.primary:hover { background:#c1121f; }
+		.er2-btn.outline-red { border-color:#e63946; color:#e63946; }
+		.er2-btn.outline-red:hover { background:#fff5f5; }
+		.er2-btn-dd  { position:relative; display:inline-flex; }
+		.er2-btn-dd .dd-menu { display:none; position:absolute; top:38px; left:0; z-index:999;
+		                       background:#fff; border:1px solid #d1d8dd; border-radius:4px;
+		                       box-shadow:0 4px 12px rgba(0,0,0,.12); min-width:160px; padding:4px 0; }
+		.er2-btn-dd:hover .dd-menu,
+		.er2-btn-dd.open .dd-menu { display:block; }
+		.dd-item { padding:8px 14px; font-size:13px; cursor:pointer; color:#333; }
+		.dd-item:hover { background:#f4f5f7; }
+		/* Filter row */
+		.er2-filterrow { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+		.er2-pag     { margin-left:auto; display:flex; align-items:center; gap:6px;
+		               font-size:13px; color:#6c757d; }
+		.er2-pag-btn { width:28px; height:28px; border:1px solid #d1d8dd; border-radius:4px;
+		               background:#fff; cursor:pointer; font-size:14px; display:inline-flex;
+		               align-items:center; justify-content:center; }
+		.er2-pag-btn:disabled { opacity:.4; cursor:default; }
+		/* Split panel */
+		.er2-split   { display:flex; gap:0; border:1px solid #e8eaed; border-radius:8px;
+		               overflow:hidden; background:#fff; }
+		.er2-left    { width:360px; flex-shrink:0; overflow-y:auto; overflow-x:hidden;
+		               border-right:1px solid #e8eaed; }
+		.er2-left.collapsed { width:0; border-right:none; }
+		.er2-right   { flex:1; overflow:auto; min-width:0; }
+		/* Left panel header */
+		.er2-lhdr    { display:flex; align-items:center; gap:8px; padding:10px 12px;
+		               background:#fafbfc; border-bottom:1px solid #e8eaed; position:sticky; top:0;
+		               z-index:10; }
+		.er2-lhdr-title { font-size:13px; font-weight:600; color:#333; flex:1; }
+		.er2-sort-btn { font-size:11px; color:#6195ff; cursor:pointer; background:none;
+		                border:none; padding:0; display:flex; align-items:center; gap:3px; }
+		/* Student row */
+		.er2-srow    { display:flex; align-items:center; gap:10px; padding:10px 12px;
+		               border-bottom:1px solid #f1f3f5; cursor:pointer; min-height:70px; }
+		.er2-srow:hover { background:#f8f9fa; }
+		.er2-srow.selected { background:#e8f4ff; }
+		.er2-savatar { width:36px; height:36px; border-radius:50%; background:#dee2e6;
+		               display:flex; align-items:center; justify-content:center;
+		               font-size:14px; color:#6c757d; flex-shrink:0; overflow:hidden; }
+		.er2-savatar img { width:100%; height:100%; object-fit:cover; }
+		.er2-sinfo   { flex:1; min-width:0; }
+		.er2-sname   { font-size:13px; font-weight:600; color:#e63946; white-space:nowrap;
+		               overflow:hidden; text-overflow:ellipsis; }
+		.er2-sreg    { font-size:11px; color:#6c757d; margin-top:1px; }
+		.er2-sbadges { display:flex; gap:4px; margin-top:3px; flex-wrap:wrap; }
+		.er2-badge   { font-size:10px; font-weight:600; padding:1px 7px; border-radius:10px; }
+		.er2-badge.active   { background:#d4edda; color:#155724; }
+		.er2-badge.inactive { background:#f8d7da; color:#721c24; }
+		.er2-badge.blocked  { background:#f8d7da; color:#721c24; }
+		.er2-badge.regular  { background:#e2e3e5; color:#383d41; }
+		.er2-badge.dropped  { background:#fff3cd; color:#856404; }
+		/* Right panel marks table */
+		.er2-rtable  { border-collapse:collapse; min-width:100%; font-size:12px; }
+		.er2-rtable th, .er2-rtable td { padding:6px 10px; border-right:1px solid #e8eaed;
+		                                  white-space:nowrap; }
+		.er2-rtable th { background:#fafbfc; position:sticky; top:0; z-index:5;
+		                 font-weight:600; color:#495057; text-align:center;
+		                 border-bottom:1px solid #dee2e6; }
+		.er2-rtable th.type-hdr { background:#f0f2f5; border-bottom:2px solid #dee2e6; }
+		.er2-rtable td { text-align:center; color:#333; border-bottom:1px solid #f1f3f5; }
+		.er2-rtable tr:hover td { background:#f8f9fa; }
+		.er2-mrow    { min-height:70px; height:70px; }
+		.er2-toggle-wrap { display:flex; align-items:center; gap:8px; padding:8px 12px;
+		                   background:#fafbfc; border-bottom:1px solid #e8eaed;
+		                   position:sticky; top:0; z-index:10; }
+		.er2-toggle-lbl { font-size:12px; font-weight:600; color:#333; }
+		.er2-toggle  { position:relative; width:36px; height:20px; }
+		.er2-toggle input { opacity:0; width:0; height:0; }
+		.er2-slider  { position:absolute; inset:0; border-radius:20px; background:#ccc;
+		               cursor:pointer; transition:background .2s; }
+		.er2-slider:before { content:''; position:absolute; width:14px; height:14px;
+		                     left:3px; top:3px; border-radius:50%; background:#fff;
+		                     transition:transform .2s; }
+		.er2-toggle input:checked + .er2-slider { background:#28a745; }
+		.er2-toggle input:checked + .er2-slider:before { transform:translateX(16px); }
+		.er2-collapse-btn { width:20px; cursor:pointer; display:flex; align-items:center;
+		                    justify-content:center; background:#f0f2f5; border:none;
+		                    border-left:1px solid #e8eaed; color:#6c757d; font-size:14px;
+		                    align-self:stretch; flex-shrink:0; }
+		.er2-collapse-btn:hover { background:#e8eaed; }
+		/* Hover popup */
+		#er2-popup   { display:none; position:fixed; z-index:9999; background:#fff;
+		               border:1px solid #d1d8dd; border-radius:8px;
+		               box-shadow:0 6px 20px rgba(0,0,0,.15); padding:16px 18px;
+		               min-width:280px; max-width:360px; pointer-events:none; }
+		.er2-pop-name { font-size:15px; font-weight:700; color:#e63946; margin-bottom:10px; }
+		.er2-pop-row  { display:flex; gap:8px; margin-bottom:5px; font-size:13px; }
+		.er2-pop-lbl  { color:#8d99ae; min-width:100px; font-weight:500; flex-shrink:0; }
+		.er2-pop-val  { color:#2b2d42; font-weight:500; }
+		/* Sync marks btn */
+		.er2-sync-btn { font-size:10px; background:#e63946; color:#fff; border:none;
+		                border-radius:3px; padding:2px 6px; cursor:pointer; margin-top:3px; }
+		.er2-sync-btn:hover { background:#c1121f; }
+		/* Empty state */
+		.er2-empty   { display:flex; flex-direction:column; align-items:center;
+		               justify-content:center; padding:80px 20px; color:#adb5bd; }
+		.er2-empty svg { width:80px; height:80px; margin-bottom:16px; }
+		.er2-empty-txt { font-size:15px; font-weight:500; }
+		`;
+		document.head.appendChild(style);
+	}
+
+	// ── Render shell ──────────────────────────────────────────────────────────
 	var $body = $(page.main);
-
 	$body.html(`
-		<div style="padding:16px 20px;">
+		<div class="er2-wrap" style="padding:16px 20px;">
 
-			<!-- Filter bar -->
-			<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
-				<div style="min-width:200px;flex:1;">
-					<label style="display:block;font-size:12px;color:#6c757d;margin-bottom:4px;font-weight:500;">Exam Plan</label>
-					<select class="form-control" id="er-exam-plan">
-						<option value="">-- Select Exam Plan --</option>
-					</select>
-				</div>
-				<div style="min-width:180px;flex:1;">
-					<label style="display:block;font-size:12px;color:#6c757d;margin-bottom:4px;font-weight:500;">Department</label>
-					<select class="form-control" id="er-department" disabled>
-						<option value="">-- Select Department --</option>
-					</select>
-				</div>
-				<div style="min-width:200px;flex:1;">
-					<label style="display:block;font-size:12px;color:#6c757d;margin-bottom:4px;font-weight:500;">Course</label>
-					<select class="form-control" id="er-course" disabled>
-						<option value="">-- Select Course --</option>
-					</select>
-				</div>
+			<!-- Tabs -->
+			<div class="er2-tabs">
+				<div class="er2-tab active" data-tab="course">Course Results</div>
+				<div class="er2-tab" data-tab="term">Term Results</div>
+				<div class="er2-tab" data-tab="publish">Publish Results</div>
+				<div class="er2-tab" data-tab="settings">Settings</div>
 			</div>
 
-			<!-- Course info panel -->
-			<div id="er-overview" style="display:none;margin-bottom:16px;"></div>
+			<!-- Course Results tab -->
+			<div id="er2-tab-course">
 
-			<!-- Search + pagination -->
-			<div id="er-list-controls" style="display:none;margin-bottom:10px;">
-				<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-					<input type="text" class="form-control" id="er-search"
-						placeholder="Search by Registration ID or Name…"
-						style="max-width:280px;">
-					<div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-						<span id="er-pag-info" style="color:#6c757d;font-size:13px;"></span>
-						<button class="btn btn-default btn-sm" id="er-prev">&#8249; Prev</button>
-						<button class="btn btn-default btn-sm" id="er-next">Next &#8250;</button>
+				<!-- Top filter bar -->
+				<div class="er2-filters">
+					<div class="er2-fgroup" style="max-width:260px;">
+						<span class="er2-flabel">Department</span>
+						<select class="er2-select" id="er2-dept">
+							<option value="">Select Department</option>
+						</select>
+					</div>
+					<div class="er2-fgroup" style="max-width:300px;">
+						<span class="er2-flabel">Course</span>
+						<select class="er2-select" id="er2-course" disabled>
+							<option value="">Select Course</option>
+						</select>
+					</div>
+					<div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end;">
+						<div class="er2-btn-dd">
+							<button class="er2-btn outline-red" id="er2-sync-btn">
+								<i class="fa fa-refresh"></i> Sync Students <i class="fa fa-caret-down"></i>
+							</button>
+							<div class="dd-menu">
+								<div class="dd-item" id="er2-sync-enroll">Sync from Enrollment</div>
+								<div class="dd-item" id="er2-sync-class">Sync from Class Config</div>
+							</div>
+						</div>
+						<button class="er2-btn outline-red" id="er2-lock-btn">
+							<i class="fa fa-lock"></i> Lock
+						</button>
 					</div>
 				</div>
+
+				<!-- Course info panel (hidden until course selected) -->
+				<div id="er2-info-panel" style="display:none;"></div>
+
+				<!-- Action bar (hidden until course selected) -->
+				<div id="er2-actbar" class="er2-actbar" style="display:none;">
+					<div class="er2-srch">
+						<span class="er2-srch-ico">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+							     stroke="currentColor" stroke-width="2">
+								<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+							</svg>
+						</span>
+						<input type="text" id="er2-search" placeholder="Search by Student Name / Id">
+					</div>
+					<button class="er2-btn" id="er2-moderation-btn">Result Moderation</button>
+					<div class="er2-btn-dd" id="er2-grades-dd">
+						<button class="er2-btn outline-red">
+							Manage Grades <i class="fa fa-caret-down"></i>
+						</button>
+						<div class="dd-menu">
+							<div class="dd-item">Auto Generate Grades</div>
+							<div class="dd-item">Clear Grades</div>
+							<div class="dd-item">Grade Report</div>
+						</div>
+					</div>
+					<div class="er2-btn-dd" id="er2-marks-dd">
+						<button class="er2-btn outline-red">
+							Manage Marks <i class="fa fa-caret-down"></i>
+						</button>
+						<div class="dd-menu">
+							<div class="dd-item">Import Marks</div>
+							<div class="dd-item">Export Marks</div>
+							<div class="dd-item">Clear All Marks</div>
+						</div>
+					</div>
+					<div class="er2-btn-dd" id="er2-status-dd">
+						<button class="er2-btn">
+							Manage Status <i class="fa fa-caret-down"></i>
+						</button>
+						<div class="dd-menu">
+							<div class="dd-item">Mark as Submitted</div>
+							<div class="dd-item">Mark as Draft</div>
+							<div class="dd-item">Lock Selected</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Filter row (hidden until course selected) -->
+				<div id="er2-filterrow" class="er2-filterrow" style="display:none;">
+					<select class="er2-select" id="er2-exam-filter" style="max-width:180px;">
+						<option value="">Filter Exam Type</option>
+					</select>
+					<div class="er2-pag" id="er2-pag">
+						<span id="er2-pag-info"></span>
+						<button class="er2-pag-btn" id="er2-prev">&#8249;</button>
+						<button class="er2-pag-btn" id="er2-next">&#8250;</button>
+					</div>
+					<button class="er2-btn" id="er2-inst-filter" style="margin-left:4px;">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+						     stroke="currentColor" stroke-width="2" style="margin-right:4px;">
+							<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+						</svg>
+						Institutional Filter
+					</button>
+				</div>
+
+				<!-- Empty state -->
+				<div id="er2-empty" class="er2-empty">
+					<svg viewBox="0 0 24 24" fill="none" stroke="#e63946" stroke-width="1.5">
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+						<polyline points="14 2 14 8 20 8"/>
+						<line x1="16" y1="13" x2="8" y2="13"/>
+						<line x1="16" y1="17" x2="8" y2="17"/>
+						<polyline points="10 9 9 9 8 9"/>
+						<circle cx="19" cy="19" r="4" fill="#e63946" stroke="none"/>
+						<path d="M17 19h4M19 17v4" stroke="#fff" stroke-width="1.5"/>
+					</svg>
+					<div class="er2-empty-txt">Please Select Department &amp; Course</div>
+				</div>
+
+				<!-- Split panel -->
+				<div id="er2-split" class="er2-split" style="display:none;max-height:calc(100vh - 360px);">
+					<!-- Left: student list -->
+					<div id="er2-left" class="er2-left">
+						<div class="er2-lhdr">
+							<input type="checkbox" id="er2-chk-all" title="Select All">
+							<span class="er2-lhdr-title" id="er2-student-count-lbl">Students (0)</span>
+							<button class="er2-sort-btn" id="er2-sort-btn">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+								     stroke="currentColor" stroke-width="2.5">
+									<path d="M11 5H21M11 9H17M11 13H13"/>
+									<path d="M3 7l4-4 4 4M7 3v14M3 17l4 4 4-4"/>
+								</svg>
+								<span id="er2-sort-lbl">Registration Id</span>
+							</button>
+						</div>
+						<div id="er2-student-list"></div>
+					</div>
+					<!-- Collapse toggle -->
+					<button class="er2-collapse-btn" id="er2-collapse-btn" title="Toggle panel">&#9664;</button>
+					<!-- Right: marks grid -->
+					<div id="er2-right" class="er2-right">
+						<div class="er2-toggle-wrap">
+							<label class="er2-toggle">
+								<input type="checkbox" id="er2-internal-toggle">
+								<span class="er2-slider"></span>
+							</label>
+							<span class="er2-toggle-lbl">Internal</span>
+						</div>
+						<div id="er2-marks-table-wrap"></div>
+					</div>
+				</div>
+
+			</div><!-- /tab-course -->
+
+			<!-- Other tabs (stubs) -->
+			<div id="er2-tab-term" style="display:none;">
+				<div class="er2-empty" style="padding:60px;">
+					<div class="er2-empty-txt" style="color:#adb5bd;">Term Results — Coming Soon</div>
+				</div>
 			</div>
-
-			<!-- Marks table -->
-			<div id="er-table-wrap" style="display:none;overflow-x:auto;"></div>
-
-			<!-- Hover popup -->
-			<div id="er-popup" style="
-				display:none;position:fixed;z-index:9999;
-				background:#fff;border:1px solid #d1d8dd;border-radius:6px;
-				box-shadow:0 4px 16px rgba(0,0,0,.15);padding:14px 18px;
-				min-width:260px;max-width:340px;pointer-events:none;font-size:13px;">
+			<div id="er2-tab-publish" style="display:none;">
+				<div class="er2-empty" style="padding:60px;">
+					<div class="er2-empty-txt" style="color:#adb5bd;">Publish Results — Coming Soon</div>
+				</div>
+			</div>
+			<div id="er2-tab-settings" style="display:none;">
+				<div class="er2-empty" style="padding:60px;">
+					<div class="er2-empty-txt" style="color:#adb5bd;">Settings — Coming Soon</div>
+				</div>
 			</div>
 		</div>
+
+		<!-- Hover popup -->
+		<div id="er2-popup"></div>
 	`);
 
-	// Cache refs
-	var $ep   = $body.find('#er-exam-plan');
-	var $dept = $body.find('#er-department');
-	var $crs  = $body.find('#er-course');
-	var $ov   = $body.find('#er-overview');
-	var $lc   = $body.find('#er-list-controls');
-	var $tw   = $body.find('#er-table-wrap');
-	var $srch = $body.find('#er-search');
-	var $prev = $body.find('#er-prev');
-	var $next = $body.find('#er-next');
-	var $pi   = $body.find('#er-pag-info');
-	var $pop  = $body.find('#er-popup');
+	// ── DOM refs ──────────────────────────────────────────────────────────────
+	var $dept     = $body.find('#er2-dept');
+	var $course   = $body.find('#er2-course');
+	var $info     = $body.find('#er2-info-panel');
+	var $actbar   = $body.find('#er2-actbar');
+	var $filterrow= $body.find('#er2-filterrow');
+	var $empty    = $body.find('#er2-empty');
+	var $split    = $body.find('#er2-split');
+	var $left     = $body.find('#er2-left');
+	var $right    = $body.find('#er2-right');
+	var $slist    = $body.find('#er2-student-list');
+	var $mtable   = $body.find('#er2-marks-table-wrap');
+	var $search   = $body.find('#er2-search');
+	var $prevBtn  = $body.find('#er2-prev');
+	var $nextBtn  = $body.find('#er2-next');
+	var $pagInfo  = $body.find('#er2-pag-info');
+	var $cntLbl   = $body.find('#er2-student-count-lbl');
+	var $collapse = $body.find('#er2-collapse-btn');
+	var $popup    = $('#er2-popup');
+	var $examFilter = $body.find('#er2-exam-filter');
 
-	// ── Page action buttons ───────────────────────────────────────────────────
-	page.add_inner_button('Sync Students', function () {
-		if (!state.course) { frappe.msgprint('Select a course first.'); return; }
-		frappe.msgprint('Sync Students — coming soon.');
+	// ── Tabs ──────────────────────────────────────────────────────────────────
+	$body.find('.er2-tab').on('click', function () {
+		$body.find('.er2-tab').removeClass('active');
+		$(this).addClass('active');
+		var tab = $(this).data('tab');
+		$body.find('#er2-tab-course, #er2-tab-term, #er2-tab-publish, #er2-tab-settings').hide();
+		$body.find('#er2-tab-' + tab).show();
 	});
 
-	page.add_inner_button('Lock Course', function () {
-		if (!state.course) { frappe.msgprint('Select a course first.'); return; }
-		frappe.confirm('Lock this course? Faculty will lose edit access.', function () {
-			frappe.call({
-				method: 'slcm.slcm.page.examination_result.examination_result.save_access_settings',
-				args: {
-					exam_plan: state.exam_plan,
-					courses:   JSON.stringify([state.course]),
-					settings:  JSON.stringify({ edit_access: 0 }),
-				},
-				callback: function () {
-					frappe.show_alert({ message: 'Course locked.', indicator: 'orange' });
-					load_overview();
-				},
+	// ── Collapse left panel ───────────────────────────────────────────────────
+	$collapse.on('click', function () {
+		S.left_collapsed = !S.left_collapsed;
+		$left.toggleClass('collapsed', S.left_collapsed);
+		$collapse.html(S.left_collapsed ? '&#9654;' : '&#9664;');
+	});
+
+	// ── Sync vertical scroll ──────────────────────────────────────────────────
+	var syncing = false;
+	$left[0].addEventListener('scroll', function () {
+		if (syncing) return;
+		syncing = true;
+		$right[0].scrollTop = $left[0].scrollTop;
+		syncing = false;
+	});
+	$right[0].addEventListener('scroll', function () {
+		if (syncing) return;
+		syncing = true;
+		$left[0].scrollTop = $right[0].scrollTop;
+		syncing = false;
+	});
+
+	// ── Load departments ──────────────────────────────────────────────────────
+	frappe.call({
+		method: 'slcm.slcm.page.examination_result.examination_result.get_departments',
+		callback: function (r) {
+			(r.message || []).forEach(function (d) {
+				$dept.append('<option value="' + d.name + '">' +
+					frappe.utils.escape_html(d.department_name) + '</option>');
 			});
-		});
+		},
 	});
 
-	page.add_inner_button('Result Moderation', function () {
-		frappe.msgprint('Result Moderation — coming soon.');
-	});
-
-	// ── Events ───────────────────────────────────────────────────────────────
-	$ep.on('change', function () {
-		state.exam_plan  = $(this).val();
-		state.department = null;
-		state.course     = null;
-		reset_dept();
-		reset_course();
-		hide_detail();
-		if (state.exam_plan) load_departments();
-	});
-
+	// ── Dept change ───────────────────────────────────────────────────────────
 	$dept.on('change', function () {
-		state.department = $(this).val();
-		state.course     = null;
-		reset_course();
+		S.department = $(this).val();
+		S.course     = null;
+		S.page       = 1;
+		$course.val('').prop('disabled', true).find('option:not(:first)').remove();
 		hide_detail();
-		if (state.department) load_courses();
-	});
-
-	$crs.on('change', function () {
-		state.course   = $(this).val();
-		state.page_num = 1;
-		hide_detail();
-		if (state.course) {
-			load_overview();
-			load_students();
-		}
-	});
-
-	$srch.on('input', frappe.utils.debounce(function () {
-		state.search_query = $srch.val().trim();
-		state.page_num     = 1;
-		if (state.course) load_students();
-	}, 400));
-
-	$prev.on('click', function () {
-		if (state.page_num > 1) { state.page_num--; load_students(); }
-	});
-	$next.on('click', function () {
-		state.page_num++; load_students();
-	});
-
-	// ── Data loaders ─────────────────────────────────────────────────────────
-	function load_exam_plans() {
-		frappe.call({
-			method: 'slcm.slcm.page.examination_result.examination_result.get_exam_plans',
-			callback: function (r) {
-				$ep.find('option:not(:first)').remove();
-				(r.message || []).forEach(function (p) {
-					$ep.append('<option value="' + p.name + '">' +
-						frappe.utils.escape_html(p.exam_name) + ' (' + p.name + ')</option>');
-				});
-			},
-		});
-	}
-
-	function load_departments() {
-		frappe.call({
-			method: 'slcm.slcm.page.examination_result.examination_result.get_departments',
-			callback: function (r) {
-				$dept.find('option:not(:first)').remove();
-				(r.message || []).forEach(function (d) {
-					$dept.append('<option value="' + d.name + '">' +
-						frappe.utils.escape_html(d.department_name) + '</option>');
-				});
-				$dept.prop('disabled', false);
-			},
-		});
-	}
-
-	function load_courses() {
+		if (!S.department) return;
 		frappe.call({
 			method: 'slcm.slcm.page.examination_result.examination_result.get_courses_by_department',
-			args: { exam_plan: state.exam_plan, department: state.department },
+			args: { department: S.department },
 			callback: function (r) {
-				$crs.find('option:not(:first)').remove();
 				(r.message || []).forEach(function (c) {
-					$crs.append('<option value="' + c.name + '">' +
+					$course.append('<option value="' + c.name + '">' +
 						frappe.utils.escape_html(c.course_name) +
-						' [' + frappe.utils.escape_html(c.course_code || '') + ']</option>');
+						(c.course_code ? ' [' + c.course_code + ']' : '') + '</option>');
 				});
-				$crs.prop('disabled', false);
+				$course.prop('disabled', false);
 			},
 		});
-	}
+	});
 
-	function load_overview() {
+	// ── Course change ─────────────────────────────────────────────────────────
+	$course.on('change', function () {
+		S.course = $(this).val();
+		S.page   = 1;
+		S.search = '';
+		$search.val('');
+		hide_detail();
+		if (!S.course) return;
+		load_course_info();
+	});
+
+	// ── Search ────────────────────────────────────────────────────────────────
+	$search.on('input', frappe.utils.debounce(function () {
+		S.search = $search.val().trim();
+		S.page   = 1;
+		if (S.course) load_students();
+	}, 400));
+
+	// ── Pagination ────────────────────────────────────────────────────────────
+	$prevBtn.on('click', function () {
+		if (S.page > 1) { S.page--; load_students(); }
+	});
+	$nextBtn.on('click', function () {
+		S.page++;
+		load_students();
+	});
+
+	// ── Sort ──────────────────────────────────────────────────────────────────
+	$body.find('#er2-sort-btn').on('click', function () {
+		if (S.sort_by === 'registration_id') {
+			S.sort_order = S.sort_order === 'asc' ? 'desc' : 'asc';
+		} else {
+			S.sort_by    = 'registration_id';
+			S.sort_order = 'asc';
+		}
+		S.page = 1;
+		if (S.course) load_students();
+	});
+
+	// ── Exam type filter ──────────────────────────────────────────────────────
+	$examFilter.on('change', function () {
+		render_marks_table();
+	});
+
+	// ── Stub buttons ─────────────────────────────────────────────────────────
+	$body.find('#er2-moderation-btn').on('click', function () {
+		frappe.msgprint('Result Moderation — coming soon.');
+	});
+	$body.find('#er2-lock-btn').on('click', function () {
+		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
+		frappe.confirm('Lock this course for result entry?', function () {
+			frappe.show_alert({ message: 'Lock feature coming soon.', indicator: 'orange' });
+		});
+	});
+	$body.find('#er2-sync-btn').on('click', function () {
+		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
+	});
+
+	// ── Data loaders ──────────────────────────────────────────────────────────
+	function load_course_info() {
 		frappe.call({
-			method: 'slcm.slcm.page.examination_result.examination_result.get_course_overview',
-			args: { exam_plan: state.exam_plan, course: state.course },
+			method: 'slcm.slcm.page.examination_result.examination_result.get_course_info',
+			args: { course: S.course },
 			callback: function (r) {
-				state.overview = r.message || {};
-				render_overview();
-				$lc.show();
+				S.info    = r.message || {};
+				S.columns = S.info.columns || [];
+				render_info_panel();
+				populate_exam_filter();
+				$info.show();
+				$actbar.show();
+				$filterrow.show();
+				$empty.hide();
+				$split.show();
+				$cntLbl.text('Students (' + S.info.student_count + ')');
+				load_students();
 			},
 		});
 	}
 
 	function load_students() {
-		if (!state.course) return;
 		frappe.call({
-			method: 'slcm.slcm.page.examination_result.examination_result.get_course_students_with_marks',
+			method: 'slcm.slcm.page.examination_result.examination_result.get_course_students_paged',
 			args: {
-				exam_plan:   state.exam_plan,
-				course:      state.course,
-				search:      state.search_query,
-				page:        state.page_num,
-				page_length: state.page_length,
+				course:       S.course,
+				search:       S.search,
+				page:         S.page,
+				page_length:  S.page_length,
+				sort_by:      S.sort_by,
+				sort_order:   S.sort_order,
 			},
 			callback: function (r) {
-				var data      = r.message || {};
-				state.exam_types = data.exam_types || [];
-				render_students(data.students || [], data.total || 0);
+				var data   = r.message || {};
+				S.students = data.students || [];
+				S.total    = data.total || 0;
+				render_student_list();
+				load_marks();
+				update_pagination();
 			},
 		});
 	}
 
-	// ── Renderers ─────────────────────────────────────────────────────────────
-	function render_overview() {
-		var o = state.overview;
-		if (!o) return;
-
-		var lock_badge = o.status === 'LOCKED'
-			? '<span class="badge" style="background:#dc3545;color:#fff;padding:3px 8px;font-size:11px;">LOCKED</span>'
-			: '<span class="badge" style="background:#28a745;color:#fff;padding:3px 8px;font-size:11px;">UNLOCKED</span>';
-
-		function on_off(val, yes, no) {
-			return val
-				? '<span style="color:#28a745;font-weight:600;">' + (yes || 'On') + '</span>'
-				: '<span style="color:#6c757d;">' + (no || 'Off') + '</span>';
+	function load_marks() {
+		if (!S.students.length || !S.info.exam_plan) {
+			S.marks = {};
+			render_marks_table();
+			return;
 		}
-
-		function info_row(label, value) {
-			return '<div><span style="font-size:11px;color:#6c757d;text-transform:uppercase;' +
-				'letter-spacing:.5px;">' + label + '</span>' +
-				'<div style="font-size:14px;margin-top:2px;">' + value + '</div></div>';
-		}
-
-		$ov.html(
-			'<div style="background:#fff;border:1px solid #d1d8dd;border-radius:8px;padding:16px 20px;">' +
-			'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
-			'<h5 style="margin:0;font-size:15px;font-weight:600;">' +
-				frappe.utils.escape_html(o.course_name) +
-				' <span style="color:#6c757d;font-weight:400;">[' +
-				frappe.utils.escape_html(o.course_code || '') + ']</span></h5>' +
-			lock_badge + '</div>' +
-			'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 24px;">' +
-				info_row('Students', o.student_count) +
-				info_row('Credits', o.credit_value || '—') +
-				info_row('Evaluation Schema', frappe.utils.escape_html(o.evaluation_schema || '—')) +
-				info_row('Grade Schema', frappe.utils.escape_html(o.grade_schema || '—')) +
-				info_row('View Access', on_off(o.view_access, 'Enabled', 'Disabled')) +
-				info_row('Edit Access', on_off(o.edit_access, 'Enabled', 'Disabled')) +
-				info_row('Auto Grade', on_off(o.auto_generate_grade_access, 'Enabled', 'Disabled')) +
-				info_row('Student Masking', on_off(o.mask_student_info, 'On', 'Off')) +
-			'</div></div>'
-		).show();
+		var ids = S.students.map(function (s) { return s.student; });
+		frappe.call({
+			method: 'slcm.slcm.page.examination_result.examination_result.get_marks_for_students',
+			args: {
+				course:      S.course,
+				exam_plan:   S.info.exam_plan,
+				student_ids: JSON.stringify(ids),
+			},
+			callback: function (r) {
+				S.marks = r.message || {};
+				render_marks_table();
+			},
+		});
 	}
 
-	function render_students(students, total) {
-		var types = state.exam_types;
+	// ── Renderers ────────────────────────────────────────────────────────────
+	function render_info_panel() {
+		var o = S.info || {};
+		function row(label, val, cls) {
+			return '<div class="er2-irow"><span class="er2-ilabel">' + label + '</span>' +
+				'<span class="er2-ival' + (cls ? ' ' + cls : '') + '">' + val + '</span></div>';
+		}
+		var view_access = o.view_access ? '<span style="color:#28a745;font-weight:600;">ON</span>' : '<span style="color:#6c757d;">OFF</span>';
+		var edit_val    = o.edit_access
+			? '<span style="color:#28a745;font-weight:600;">ON</span>' + (o.edit_deadline ? ' | ' + frappe.utils.escape_html(o.edit_deadline) : '')
+			: '<span style="color:#6c757d;">OFF</span>';
+		var mask_val    = o.mask_student_info
+			? '<span style="color:#28a745;font-weight:600;">ON</span> | Admin Access'
+			: '<span style="color:#6c757d;">OFF</span>';
 
-		// Header row 1: exam type names
-		var th1 = '<th rowspan="2" style="vertical-align:middle;background:#f4f5f7;">Student</th>' +
-			'<th rowspan="2" style="vertical-align:middle;background:#f4f5f7;">Status</th>';
-		types.forEach(function (t) {
-			th1 += '<th colspan="3" style="text-align:center;background:#f4f5f7;border-bottom:2px solid #dee2e6;">' +
-				frappe.utils.escape_html(t.type_name || t.exam_type) + '</th>';
+		$info.html(
+			'<div class="er2-info">' +
+			row('Number of Students', '<span style="color:#e63946;font-weight:700;font-size:16px;">' + o.student_count + '</span>') +
+			row('Evaluation Schema', frappe.utils.escape_html(o.evaluation_schema || '—')) +
+			row('Course Name [Code]', frappe.utils.escape_html((o.course_name || '') + (o.course_code ? '[' + o.course_code + ']' : ''))) +
+			row('Grade Schema', frappe.utils.escape_html(o.grade_schema || '—')) +
+			row('Course Credits', o.credit_value || '—') +
+			row('Calculation Settings', o.evaluation_schema ? '<a href="/app/evaluation-schema/' + encodeURIComponent(o.evaluation_schema) + '" target="_blank">Calculation Settings</a>' : '—') +
+			row('View Access', view_access) +
+			row('Edit Access', edit_val) +
+			'<div class="er2-irow"></div>' +
+			row('Student Masking', mask_val) +
+			'</div>'
+		);
+	}
+
+	function populate_exam_filter() {
+		$examFilter.find('option:not(:first)').remove();
+		(S.columns || []).forEach(function (col) {
+			var lbl = col.label || col.component_name || col.type_name || col.component;
+			$examFilter.append('<option value="' + (col.component || '') + '">' +
+				frappe.utils.escape_html(lbl) + '</option>');
 		});
-		th1 += '<th rowspan="2" style="vertical-align:middle;background:#f4f5f7;text-align:center;">Total</th>';
+	}
+
+	function render_student_list() {
+		var html = '';
+		S.students.forEach(function (s) {
+			var status_cls = s.account_status === 'Blocked' ? 'blocked' :
+				s.student_status === 'Dropped' ? 'dropped' : 'active';
+			var status_txt = s.student_status || 'Active';
+			var initials   = (s.student_name || 'S').charAt(0).toUpperCase();
+			html +=
+				'<div class="er2-srow" data-student="' + frappe.utils.escape_html(s.student) + '">' +
+				'  <input type="checkbox" class="er2-chk" style="flex-shrink:0;">' +
+				'  <div class="er2-savatar">' + initials + '</div>' +
+				'  <div class="er2-sinfo">' +
+				'    <div class="er2-sname">' + frappe.utils.escape_html(s.student_name || s.student) + '</div>' +
+				'    <div class="er2-sreg">' + frappe.utils.escape_html(s.registration_id || '') + '</div>' +
+				'    <div class="er2-sbadges">' +
+				'      <span class="er2-badge ' + status_cls + '">' + frappe.utils.escape_html(status_txt) + '</span>' +
+				'      <span class="er2-badge regular">Regular</span>' +
+				'    </div>' +
+				'  </div>' +
+				'</div>';
+		});
+		if (!html) {
+			html = '<div style="padding:40px;text-align:center;color:#adb5bd;font-size:13px;">No students found.</div>';
+		}
+		$slist.html(html);
+		bind_hover();
+	}
+
+	function render_marks_table() {
+		var cols = S.columns || [];
+		var filter_val = $examFilter.val();
+		if (filter_val) {
+			cols = cols.filter(function (c) { return c.component === filter_val; });
+		}
+
+		if (!cols.length) {
+			$mtable.html('<div style="padding:40px;text-align:center;color:#adb5bd;font-size:13px;">No assessment columns configured.</div>');
+			return;
+		}
+
+		// Header row 1: component names
+		var th1 = '';
+		cols.forEach(function (col) {
+			var lbl = frappe.utils.escape_html(col.label || col.component_name || col.type_name || col.component || '—');
+			var max = col.maximum_marks ? 'Max. Marks ' + parseFloat(col.maximum_marks).toFixed(2) : '';
+			var sync_btn = (col.enrollment === 'Auto')
+				? '<br><button class="er2-sync-btn er2-sync-comp" data-comp="' + (col.component || '') + '">Sync Marks</button>'
+				: '';
+			th1 += '<th colspan="3" class="type-hdr" style="text-align:center;">' +
+				lbl + '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' +
+				sync_btn + '</th>';
+		});
+		th1 += '<th rowspan="2" style="vertical-align:middle;min-width:60px;">Total</th>';
 
 		// Header row 2: sub-columns
 		var th2 = '';
-		types.forEach(function () {
-			th2 += '<th style="font-size:11px;color:#6c757d;white-space:nowrap;">Marks</th>' +
-				'<th style="font-size:11px;color:#6c757d;white-space:nowrap;">Reval.</th>' +
-				'<th style="font-size:11px;color:#6c757d;white-space:nowrap;">Moderated</th>';
+		cols.forEach(function () {
+			th2 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
+				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Revaluation<br>Marks</th>' +
+				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Moderated<br>Marks ' +
+				'<span style="color:#e63946;cursor:pointer;font-size:10px;" title="Reset">&#9673;</span></th>';
 		});
 
-		// Rows
+		// Data rows
 		var rows = '';
-		students.forEach(function (s) {
-			var color = s.account_status === 'Blocked' ? '#dc3545' :
-				s.student_status === 'Dropped' ? '#fd7e14' : '#28a745';
-			var marks = '';
-			types.forEach(function () {
-				marks += '<td style="text-align:center;">—</td><td style="text-align:center;">—</td><td style="text-align:center;">—</td>';
+		S.students.forEach(function (s) {
+			var sm     = S.marks[s.student] || {};
+			var comps  = sm.components || {};
+			var total  = sm.total != null ? parseFloat(sm.total).toFixed(2) : '—';
+			var cells  = '';
+			cols.forEach(function (col) {
+				var cm = comps[col.component] || {};
+				var m  = cm.marks           != null ? parseFloat(cm.marks).toFixed(2)            : '--';
+				var rv = cm.revaluation_marks != null ? parseFloat(cm.revaluation_marks).toFixed(2) : '--';
+				var mo = cm.moderated_marks  != null ? parseFloat(cm.moderated_marks).toFixed(2)  : '--';
+				cells += '<td>' + m + '</td><td>' + rv + '</td><td>' + mo + '</td>';
 			});
-			rows += '<tr class="er-student-row" data-student="' +
-				frappe.utils.escape_html(s.student || '') + '" style="cursor:default;">' +
-				'<td style="white-space:nowrap;"><span style="font-weight:500;">' +
-				frappe.utils.escape_html(s.registration_id || s.student || '') + '</span><br>' +
-				'<span style="font-size:11px;color:#6c757d;">' +
-				frappe.utils.escape_html(s.student_name || '') + '</span></td>' +
-				'<td><span style="color:' + color + ';font-size:12px;font-weight:500;">' +
-				frappe.utils.escape_html(s.student_status || 'Active') + '</span></td>' +
-				marks +
-				'<td style="text-align:center;font-weight:600;">—</td></tr>';
+			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' +
+				cells +
+				'<td style="font-weight:700;">' + total + '</td></tr>';
 		});
 
-		if (!students.length) {
-			rows = '<tr><td colspan="' + (4 + types.length * 3) + '" ' +
-				'style="text-align:center;padding:40px;color:#6c757d;">No students found.</td></tr>';
+		if (!rows) {
+			var colspan = cols.length * 3 + 1;
+			rows = '<tr><td colspan="' + colspan + '" style="text-align:center;padding:40px;color:#adb5bd;">No students found.</td></tr>';
 		}
 
-		$tw.html(
-			'<table class="table table-bordered" ' +
-			'style="border-collapse:collapse;min-width:100%;font-size:13px;">' +
-			'<thead><tr>' + th1 + '</tr><tr style="background:#fafbfc;">' + th2 + '</tr></thead>' +
-			'<tbody>' + rows + '</tbody></table>'
-		).show();
+		$mtable.html(
+			'<table class="er2-rtable">' +
+			'<thead>' +
+			'<tr>' + th1 + '</tr>' +
+			'<tr style="background:#fafbfc;">' + th2 + '</tr>' +
+			'</thead>' +
+			'<tbody>' + rows + '</tbody>' +
+			'</table>'
+		);
 
-		// Pagination
-		var from = (state.page_num - 1) * state.page_length + 1;
-		var to   = Math.min(state.page_num * state.page_length, total);
-		$pi.text(total ? (from + '–' + to + ' of ' + total) : '0 students');
-		$prev.prop('disabled', state.page_num <= 1);
-		$next.prop('disabled', to >= total);
+		// Sync marks stub
+		$mtable.find('.er2-sync-comp').on('click', function () {
+			frappe.msgprint('Sync Marks for this component — coming soon.');
+		});
+	}
 
-		bind_hover();
+	function update_pagination() {
+		var from = S.total ? (S.page - 1) * S.page_length + 1 : 0;
+		var to   = Math.min(S.page * S.page_length, S.total);
+		$pagInfo.text(S.total ? (from + '–' + to + ' of ' + S.total) : '0 students');
+		$prevBtn.prop('disabled', S.page <= 1);
+		$nextBtn.prop('disabled', to >= S.total);
 	}
 
 	// ── Hover popup ───────────────────────────────────────────────────────────
 	function bind_hover() {
-		$tw.find('.er-student-row')
+		$slist.find('.er2-srow')
 			.on('mouseenter', function (e) {
 				var student = $(this).data('student');
-				clearTimeout(state.popup_timeout);
-				state.popup_timeout = setTimeout(function () {
+				clearTimeout(S.popup_timer);
+				S.popup_student = student;
+				S.popup_timer = setTimeout(function () {
 					show_popup(student, e.clientX, e.clientY);
 				}, 300);
 			})
 			.on('mouseleave', function () {
-				clearTimeout(state.popup_timeout);
-				$pop.hide();
+				clearTimeout(S.popup_timer);
+				$popup.hide();
 			})
 			.on('mousemove', function (e) {
-				var left = e.clientX + 356 > window.innerWidth ? e.clientX - 356 : e.clientX + 16;
-				$pop.css({ top: e.clientY + 8, left: left });
+				position_popup(e.clientX, e.clientY);
 			});
+	}
+
+	function position_popup(x, y) {
+		var pw = 300;
+		var left = (x + pw + 20 > window.innerWidth) ? x - pw - 10 : x + 16;
+		$popup.css({ top: y + 8, left: left });
 	}
 
 	function show_popup(student, x, y) {
 		frappe.call({
-			method: 'slcm.slcm.page.examination_result.examination_result.get_student_profile',
-			args: { student: student },
+			method: 'slcm.slcm.page.examination_result.examination_result.get_student_hover_info',
+			args: { student: student, course: S.course },
 			callback: function (r) {
-				var s    = r.message || {};
-				var name = [s.first_name, s.last_name].filter(Boolean).join(' ') || student;
+				var s = r.message || {};
+				if (S.popup_student !== student) return; // stale
 
-				function prow(label, val) {
-					if (!val) return '';
-					return '<div style="display:flex;gap:8px;margin-bottom:4px;">' +
-						'<span style="color:#6c757d;min-width:85px;">' + label + '</span>' +
-						'<span style="font-weight:500;">' + frappe.utils.escape_html(String(val)) + '</span></div>';
+				function prow(lbl, val) {
+					if (!val && val !== 0) return '';
+					return '<div class="er2-pop-row"><span class="er2-pop-lbl">' + lbl + ' :</span>' +
+						'<span class="er2-pop-val">' + frappe.utils.escape_html(String(val)) + '</span></div>';
 				}
-
-				$pop.html(
-					'<div style="font-weight:600;font-size:14px;margin-bottom:8px;">' +
-					frappe.utils.escape_html(name) + '</div>' +
-					prow('Reg. ID',    s.registration_id) +
-					prow('Email',      s.official_email_id || s.email) +
-					prow('Phone',      s.phone) +
-					prow('Programme',  s.cohort_name || s.programme) +
-					prow('Batch',      s.batch_year) +
-					prow('Intake',     s.intake) +
-					prow('Department', s.department) +
-					prow('Status',     s.student_status) +
-					prow('Account',    s.account_status)
+				$popup.html(
+					'<div class="er2-pop-name">' + frappe.utils.escape_html(s.student_name || student) + '</div>' +
+					prow('Registration ID', s.registration_id) +
+					prow('Email ID',        s.email) +
+					prow('Programme',       s.programme) +
+					prow('Batch',           s.batch) +
+					prow('Intake',          s.intake) +
+					prow('Section',         s.section)
 				);
-				var left = x + 356 > window.innerWidth ? x - 356 : x + 16;
-				$pop.css({ top: y + 8, left: left }).show();
+				position_popup(x, y);
+				$popup.show();
 			},
 		});
 	}
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
-	function reset_dept() {
-		$dept.val('').prop('disabled', true).find('option:not(:first)').remove();
-	}
-
-	function reset_course() {
-		$crs.val('').prop('disabled', true).find('option:not(:first)').remove();
-	}
-
 	function hide_detail() {
-		$ov.hide().empty();
-		$lc.hide();
-		$tw.hide().empty();
-		$pop.hide();
-		$pi.text('');
+		$info.hide().empty();
+		$actbar.hide();
+		$filterrow.hide();
+		$split.hide();
+		$popup.hide();
+		$empty.show();
+		S.students = [];
+		S.marks    = {};
+		S.info     = null;
+		S.columns  = [];
 	}
 
-	// ── Boot ─────────────────────────────────────────────────────────────────
-	load_exam_plans();
+	// Close popup on outside click
+	$(document).on('click.er2popup', function (e) {
+		if (!$(e.target).closest('.er2-srow, #er2-popup').length) {
+			$popup.hide();
+		}
+	});
 };
