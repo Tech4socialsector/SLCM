@@ -120,6 +120,13 @@ frappe.ui.form.on("Admission Cycle", {
                 }
             };
         });
+        frm.set_query("application_form_template", function () {
+            return {
+                filters: {
+                    doc_type: "Applicant"
+                }
+            };
+        });
 
 
         const today = new Date(frappe.datetime.get_today());
