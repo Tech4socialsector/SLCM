@@ -16,7 +16,16 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     """
     Sends an email notification to the applicant about a status change
     using the 'Seat Allocation Result Notification' template record and logs it.
+    Only sends notifications for the core 'Selected', 'Waitlisted', and 'Rejected' statuses.
+    Lifecycle statuses like 'Offer Issued' or 'Fee Paid' are skipped here.
     """
+    # 1. Define allowed statuses for notification
+    allowed_statuses = ["Selected", "Waitlisted", "Rejected"]
+
+    if new_status not in allowed_statuses:
+        frappe.logger().info(f"Notification skipped: Status '{new_status}' is not in allowed list (Selected, Waitlisted, Rejected) for {applicant}")
+        return
+
     try:
         applicant_doc = frappe.get_doc("Eligibility Result", applicant)
     except frappe.DoesNotExistError:
@@ -306,11 +315,11 @@ def notify_scholarship_status(application_name):
                 "subject": f"Scholarship Status: {app.status}",
                 "for_user": email,
                 "type": "Alert",
-                "email_content": f"Your scholarship application for <strong>{scheme_name}</strong> has been <strong>{app.status}</strong>. <br><br> <a href='/my-applications?app={app.applicant_id}'>Click here to view details.</a>",
+                "email_content": f"Your scholarship application for <strong>{scheme_name}</strong> has been <strong>{app.status}</strong>. <br><br> <a href='/merit-and-scholarship/scholarships'>Click here to view details.</a>",
                 "document_type": "Scholarship Application",
                 "document_name": app.name,
                 "from_user": from_user,
-                "link": f"/my-applications?app={app.applicant_id}"
+                "link": "/merit-and-scholarship/scholarships"
             }).insert(ignore_permissions=True)
     except Exception as e:
         frappe.logger().error(f"Scholarship Notification Log error for {app.name}: {e}")
