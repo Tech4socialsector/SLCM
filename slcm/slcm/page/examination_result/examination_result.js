@@ -1643,18 +1643,47 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 			// Re-Exam cells
 			reexam_cols.forEach(function (col) {
-				var key = (col.component || '') + '|' + (col.assessment_type || '');
-				var e   = entries[key] || {};
-				var m   = e.marks            != null ? parseFloat(e.marks).toFixed(2)             : '--';
-				var rv  = e.revaluation_marks != null ? parseFloat(e.revaluation_marks).toFixed(2) : '--';
-				cells += '<td>' + m + '</td><td>' + rv + '</td>';
+				var key  = (col.component || '') + '|' + (col.assessment_type || '');
+				var e    = entries[key] || {};
+				var mVal = e.marks            != null ? parseFloat(e.marks).toFixed(2)             : '';
+				var rvVal= e.revaluation_marks != null ? parseFloat(e.revaluation_marks).toFixed(2) : '';
+				var comp = frappe.utils.escape_html(col.component      || '');
+				var atyp = frappe.utils.escape_html(col.assessment_type || '');
+				var stu  = frappe.utils.escape_html(s.student);
+				if (canEdit) {
+					cells +=
+						'<td style="padding:4px 6px;"><input type="number" step="0.01" min="0" class="er2-mi" ' +
+						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="marks" ' +
+						'value="' + frappe.utils.escape_html(mVal) + '" placeholder="—" ' +
+						'style="width:70px;height:26px;border:1.5px solid #fce7f3;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;"></td>' +
+						'<td style="padding:4px 6px;"><input type="number" step="0.01" min="0" class="er2-mi" ' +
+						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="revaluation_marks" ' +
+						'value="' + frappe.utils.escape_html(rvVal) + '" placeholder="—" ' +
+						'style="width:70px;height:26px;border:1.5px solid #fce7f3;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;"></td>';
+				} else {
+					cells += '<td>' + (mVal  || '—') + '</td><td>' + (rvVal || '—') + '</td>';
+				}
 			});
 
 			// Updated Final Result
-			var ufm = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '—';
-			var ug  = sm.updated_grade || '—';
-			cells += '<td style="font-weight:700;">' + frappe.utils.escape_html(ufm) + '</td>' +
-				'<td style="font-weight:600;color:#1a237e;">' + frappe.utils.escape_html(ug) + '</td>';
+			var ufmVal = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '';
+			var ugVal  = sm.updated_grade || '';
+			var stu2   = frappe.utils.escape_html(s.student);
+			if (canEdit) {
+				cells +=
+					'<td style="padding:4px 6px;"><input type="number" step="0.01" min="0" class="er2-uf-marks" ' +
+					'data-student="' + stu2 + '" ' +
+					'value="' + frappe.utils.escape_html(ufmVal) + '" placeholder="—" ' +
+					'style="width:80px;height:26px;border:1.5px solid #bfdbfe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;"></td>' +
+					'<td style="padding:4px 6px;"><input type="text" class="er2-uf-grade" ' +
+					'data-student="' + stu2 + '" ' +
+					'value="' + frappe.utils.escape_html(ugVal) + '" placeholder="—" ' +
+					'style="width:60px;height:26px;border:1.5px solid #bfdbfe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#1a237e;"></td>';
+			} else {
+				cells +=
+					'<td style="font-weight:700;">' + frappe.utils.escape_html(ufmVal || '—') + '</td>' +
+					'<td style="font-weight:700;color:#1a237e;">' + frappe.utils.escape_html(ugVal || '—') + '</td>';
+			}
 
 			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
 		});
@@ -1806,9 +1835,15 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	}
 
 	function position_popup(x, y) {
-		var pw = 300;
-		var left = (x + pw + 20 > window.innerWidth) ? x - pw - 10 : x + 16;
-		$popup.css({ top: y + 8, left: left });
+		var pw  = $popup.outerWidth(true)  || 340;
+		var ph  = $popup.outerHeight(true) || 200;
+		var vw  = window.innerWidth;
+		var vh  = window.innerHeight;
+		var left = (x + pw + 20 > vw) ? x - pw - 10 : x + 16;
+		var top  = (y + ph + 10 > vh) ? y - ph - 10 : y + 8;
+		left = Math.max(8, Math.min(left, vw - pw - 8));
+		top  = Math.max(8, top);
+		$popup.css({ top: top, left: left });
 	}
 
 	function show_popup(student, x, y) {
@@ -1837,49 +1872,14 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					prow('Term',         s.current_term) +
 					prow('Section',      s.section);
 
-				// ── Marks section (from S.marks cache) ──
-				var marksHtml = '';
-				var sm = S.marks[student];
-				if (sm && S.columns && S.columns.length) {
-					var chips = '';
-					S.columns.forEach(function (col) {
-						var key = (col.component || '') + '|' + (col.assessment_type || '');
-						var e   = (sm.entries || {})[key] || {};
-						var lbl = col.label || col.type_name || col.assessment_type || '';
-						var val = e.marks != null ? parseFloat(e.marks).toFixed(2) : '—';
-						chips += '<div class="er2-pop-mark-chip">' +
-							'<span class="chip-lbl">' + frappe.utils.escape_html(lbl) + '</span>' +
-							'<span class="chip-val">' + val + '</span>' +
-							'</div>';
-					});
-
-					var total = sm.total != null ? parseFloat(sm.total).toFixed(2) : '—';
-					var grade = sm.grade || '';
-
-					marksHtml = '<hr class="er2-pop-divider">' +
-						'<div class="er2-pop-marks-title">Marks</div>' +
-						'<div class="er2-pop-marks-grid">' + chips + '</div>' +
-						'<div class="er2-pop-total-row">' +
-						'<span class="er2-pop-total-lbl">Total</span>' +
-						'<div>' +
-						'<span class="er2-pop-total-val">' + total + '</span>' +
-						(grade ? '<span class="er2-pop-grade-badge">' + frappe.utils.escape_html(grade) + '</span>' : '') +
-						'</div>' +
-						'</div>';
-				}
-
 				$popup.html(
 					'<div class="er2-pop-head">' +
 					'<div class="er2-pop-name">' + frappe.utils.escape_html(s.student_name || student) + '</div>' +
 					'<div class="er2-pop-sub">' + frappe.utils.escape_html(s.registration_id || '') + '</div>' +
 					'</div>' +
-					'<div class="er2-pop-body">' +
-					infoHtml +
-					marksHtml +
-					'</div>'
+					'<div class="er2-pop-body">' + infoHtml + '</div>'
 				);
-				// Widen popup if marks are shown
-				$popup.css('max-width', marksHtml ? '420px' : '360px');
+				$popup.css('max-width', '340px');
 				position_popup(x, y);
 				$popup.show();
 			},
