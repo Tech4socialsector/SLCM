@@ -433,13 +433,14 @@ class OfferService:
             frappe.enqueue(
                 method="slcm.api.service.offer_service.OfferService.background_bulk_worker",
                 queue="long",
+                timeout=43200, # 12 hours timeout for massive batches (e.g., 10,000+ records)
                 applicants=applicants,
                 user=frappe.session.user,
                 now=frappe.flags.in_test
             )
             return {
                 "queued": True,
-                "message": _("Large batch detected ({0} applicants). Processing started in the background. You will receive a notification when finished.").format(len(applicants))
+                "message": _("Large batch detected ({0} applicants). Processing started safely in the background. You will receive a notification when finished.").format(len(applicants))
             }
 
         # Otherwise, process immediately (standard behavior)
@@ -540,15 +541,39 @@ class OfferService:
         # Switch session user to the requester
         frappe.set_user(user)
 
-        results = OfferService._process_bulk_batch(applicants)
+        total = len(applicants)
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        # Process in chunks and commit to prevent memory leaks and transaction locks
+        for i, data in enumerate(applicants):
+            try:
+                res = OfferService._process_bulk_batch([data])
+                if res.get("success"):
+                    success_count += len(res["success"])
+                    # Commit every record to ensure it is saved immediately
+                    frappe.db.commit()
+                if res.get("errors"):
+                    error_count += len(res["errors"])
+                    errors.extend([f"Applicant: {e.get('applicant')} - Error: {e.get('error')}" for e in res["errors"]])
+            except Exception as e:
+                frappe.db.rollback()
+                error_count += 1
+                errors.append(f"Fatal error processing {data}: {str(e)}")
 
         # Create a System Notification upon completion
-        success_count = len(results["success"])
-        error_count = len(results["errors"])
-        
         summary_msg = _("Successfully generated {0} offers.").format(success_count)
         if error_count > 0:
             summary_msg += _(" {0} errors encountered.").format(error_count)
+
+        error_details = ""
+        if errors:
+            error_details = "<br><br><b>Recent Errors:</b><ul style='font-size: 11px; color: #e53e3e;'>"
+            error_details += "".join([f"<li>{e}</li>" for e in errors[:15]])
+            error_details += "</ul>"
+            if len(errors) > 15:
+                error_details += f"<div style='font-size: 11px;'>...and {len(errors) - 15} more. Check Error Log for full details.</div>"
 
         notification_content = f"""
             <div style="font-family: sans-serif; padding: 5px;">
@@ -562,8 +587,9 @@ class OfferService:
                     </span>
                 </div>
                 <p style="font-size: 13px; color: #4a5568; line-height: 1.5;">
-                    {_('Offer generation process has finished for {0} applicants.').format(len(applicants))}
+                    {_('Offer generation process has finished for {0} applicants.').format(total)}
                 </p>
+                {error_details}
                 <div style="margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 12px;">
                     <a href="/app/offer-letter" style="background: #1a202c; color: #ffffff !important; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">
                         {_('View Offer Letters')}
