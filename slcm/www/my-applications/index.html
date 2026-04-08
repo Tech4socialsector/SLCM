@@ -187,7 +187,7 @@
   .qs-fee-value-row {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: center;ma-enrolled-title-text
     gap: 8px;
     flex-wrap: wrap;
     max-width: 100%;
@@ -349,7 +349,7 @@
   /* ── Next step above progress bar (inside summary card) ───── */
   .ma-progress-next {
     margin: 0;
-    padding: 20px 20px 8px;
+    padding: 12px 20px 6px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -577,7 +577,7 @@
     background: var(--success);
     border-radius: 2px;
     z-index: 1;
-    transition: width 2s cubic-bezier(.2,.85,.2,1);
+    transition: width 1.5s cubic-bezier(.2,.85,.2,1);
     overflow: hidden;
   }
 
@@ -600,13 +600,13 @@
     100% { transform: translateX(120%); }
   }
 
-  /* Confetti burst (only on completion) */
+  /* Confetti burst (only on completion); above stage circles/labels (layer is last in .stage-track DOM) */
   .ma-confetti-layer {
     position: absolute;
     inset: 0;
-    overflow: hidden;
+    overflow: visible;
     pointer-events: none;
-    z-index: 5;
+    z-index: 100;
   }
 
   .ma-confetti-piece {
@@ -615,6 +615,7 @@
     height: 12px;
     border-radius: 2px;
     opacity: .95;
+    z-index: 1;
     animation: ma-confetti-fall 1.9s ease-out forwards;
     will-change: transform, opacity;
   }
@@ -622,8 +623,8 @@
   @keyframes ma-confetti-fall {
     0%   { transform: translate3d(var(--x0, 0px), var(--y0, 0px), 0) rotate(var(--r0, 0deg)); opacity: 0; }
     12%  { opacity: 1; }
-    60%  { transform: translate3d(var(--x1, 0px), var(--y1, -120px), 0) rotate(var(--r1, 220deg)); opacity: 1; }
-    100% { transform: translate3d(var(--x2, 0px), var(--y2, 20px), 0) rotate(var(--r2, 420deg)); opacity: 0; }
+    60%  { transform: translate3d(var(--x1, 0px), var(--y1, -48px), 0) rotate(var(--r1, 220deg)); opacity: 1; }
+    100% { transform: translate3d(var(--x2, 0px), var(--y2, 16px), 0) rotate(var(--r2, 420deg)); opacity: 0; }
   }
 
   .stage-item {
@@ -854,10 +855,10 @@
     50% { opacity: .55; }
   }
 
-  /* ── Enrolled congratulations banner (no confetti here) ── */
+  /* ── Enrolled congratulations banner ── */
   .ma-enrolled-banner {
-    margin: 10px auto 2px;
-    padding: 0;
+    margin: 4px auto 0;
+    padding: 6px 16px 4px;
     border: none;
     background: transparent;
     box-shadow: none;
@@ -865,8 +866,45 @@
     text-align: center;
   }
 
+  /* Hidden until stage-track fill animation finishes (see DOMContentLoaded script) */
+  .ma-enrolled-banner--await-progress {
+    visibility: hidden;
+    opacity: 0;
+    max-height: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .ma-enrolled-banner--await-progress .ma-enrolled-title {
+    margin: 0;
+  }
+
+  .ma-enrolled-banner--revealed {
+    visibility: visible;
+    max-height: none;
+    margin: 4px auto 0 !important;
+    padding: 6px 16px 4px !important;
+    overflow: visible;
+    pointer-events: auto;
+    animation: ma-enrolled-banner-reveal 0.55s cubic-bezier(.16, 1, .3, 1) both;
+  }
+
+  @keyframes ma-enrolled-banner-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .ma-enrolled-title {
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
     font-size: 18px;
     font-weight: 900;
     color: #065f46;
@@ -878,7 +916,7 @@
   .ma-enrolled-title .ma-enrolled-title-text {
     animation: ma-pay-blink 1.35s ease-in-out infinite;
     position: relative;
-    z-index: 3;
+    z-index: 0;
   }
 
   .ma-enrolled-sub {
@@ -893,14 +931,21 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    isolation: isolate;
   }
 
+  .ma-enrolled-title-wrap > .material-symbols-outlined {
+    position: relative;
+    z-index: 0;
+  }
+
+  /* z-index 1: in front of title/icon (0) inside isolated wrap */
   .ma-enrolled-confetti {
     position: absolute;
-    inset: -8px -14px;
+    inset: -40px -140px;
     pointer-events: none;
-    overflow: hidden;
-    z-index: 4;
+    overflow: visible;
+    z-index: 1;
   }
 
   @media (max-width: 620px) {
@@ -2627,7 +2672,7 @@
     }
 
     .ma-progress-next {
-      padding: 4px 14px 6px;
+      padding: 10px 14px 8px;
     }
 
     .ma-progress-next-row {
@@ -2691,7 +2736,7 @@
       top: 0;
       width: 3px !important;
       height: var(--pct, 0%);
-      transition: height 2s cubic-bezier(.2,.85,.2,1);
+      transition: height 1s cubic-bezier(.2,.85,.2,1);
     }
 
     .stage-item {
@@ -2909,7 +2954,7 @@ or _app.current_stage)) or _status %}
       </div>
 
       {% if _final_stage_completed %}
-      <div class="ma-enrolled-banner fade-up" style="animation-delay:.045s;" role="status" aria-live="polite">
+      <div class="ma-enrolled-banner{% if _stages %} ma-enrolled-banner--await-progress{% else %} fade-up{% endif %}" data-enrolled-complete="1" {% if _stages %}aria-hidden="true"{% endif %} {% if not _stages %}style="animation-delay:.045s;"{% endif %} role="status" aria-live="polite">
         <p class="ma-enrolled-title">
           <span class="ma-enrolled-title-wrap">
             <span class="ma-enrolled-confetti" aria-hidden="true"></span>
@@ -2973,7 +3018,6 @@ or _app.current_stage)) or _status %}
                data-target="{{ _pct|round(0)|int }}"
                data-complete="{{ 1 if _all_completed else 0 }}"
                style="width:0%; --pct: 0%;"></div>
-          <div class="ma-confetti-layer" aria-hidden="true"></div>
 
           {% for s in _stages %}
           {% set _sstate = s.state if s is mapping else s['state'] %}
@@ -3007,6 +3051,8 @@ or _app.current_stage)) or _status %}
             {% endif %}
           </div>
           {% endfor %}
+
+          <div class="ma-confetti-layer" aria-hidden="true"></div>
 
         </div><!-- end stage-track -->
       </div><!-- end stage-track-wrap -->
@@ -4411,8 +4457,30 @@ LIST / DASHBOARD VIEW
 
       /* ── Stage tracker progress: stage-by-stage from start ── */
       (function () {
+        function revealEnrolledBanner() {
+          var b = document.querySelector('.ma-enrolled-banner--await-progress');
+          if (!b) return;
+          b.classList.remove('ma-enrolled-banner--await-progress');
+          b.classList.add('ma-enrolled-banner--revealed');
+          b.setAttribute('aria-hidden', 'false');
+        }
+
+        function scheduleEnrollmentConfetti() {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              startEnrollmentConfetti();
+            });
+          });
+        }
+
         var fill = document.querySelector('.stage-track-fill[data-target]');
-        if (!fill) return;
+        if (!fill) {
+          if (document.querySelector('.ma-enrolled-banner[data-enrolled-complete="1"]')) {
+            revealEnrolledBanner();
+            scheduleEnrollmentConfetti();
+          }
+          return;
+        }
         var track = fill.closest('.stage-track');
         if (!track) return;
 
@@ -4478,7 +4546,7 @@ LIST / DASHBOARD VIEW
             setTimeout(function () {
               fill.removeEventListener('transitionend', onTransition);
               done();
-            }, 2300);
+            }, 2200);
           });
         }
 
@@ -4490,8 +4558,10 @@ LIST / DASHBOARD VIEW
           var originY = (sourceRect.top - layerRect.top) + (sourceRect.height / 2);
           var isEnrollmentLayer = container.classList && container.classList.contains('ma-enrolled-confetti');
           if (isEnrollmentLayer) {
-            if (side === 'left') originX = (sourceRect.left - layerRect.left) - 12;
-            if (side === 'right') originX = (sourceRect.right - layerRect.left) + 12;
+            var tw = sourceRect.width;
+            var tx = sourceRect.left - layerRect.left;
+            if (side === 'left') originX = tx + Math.max(10, tw * 0.06);
+            if (side === 'right') originX = tx + tw - Math.max(10, tw * 0.06);
           } else {
             if (side === 'left') originX -= Math.min(36, sourceRect.width);
             if (side === 'right') originX += Math.min(36, sourceRect.width);
@@ -4506,20 +4576,31 @@ LIST / DASHBOARD VIEW
             piece.style.background = colors[i % colors.length];
             piece.style.setProperty('--x0', ((Math.random() * 18) - 9) + 'px');
             piece.style.setProperty('--y0', ((Math.random() * 4) - 2) + 'px');
-            piece.style.setProperty('--x1', ((Math.random() * 160) - 80) + 'px');
-            piece.style.setProperty('--y1', (-120 - (Math.random() * 120)) + 'px');
-            piece.style.setProperty('--x2', ((Math.random() * 220) - 110) + 'px');
-            piece.style.setProperty('--y2', (30 + (Math.random() * 90)) + 'px');
+            if (isEnrollmentLayer) {
+              piece.style.setProperty('--x1', ((Math.random() * 110) - 55) + 'px');
+              piece.style.setProperty('--y1', (-36 - (Math.random() * 56)) + 'px');
+              piece.style.setProperty('--x2', ((Math.random() * 130) - 65) + 'px');
+              piece.style.setProperty('--y2', (6 + (Math.random() * 52)) + 'px');
+            } else {
+              piece.style.setProperty('--x1', ((Math.random() * 100) - 50) + 'px');
+              piece.style.setProperty('--y1', (-26 - (Math.random() * 36)) + 'px');
+              piece.style.setProperty('--x2', ((Math.random() * 120) - 60) + 'px');
+              piece.style.setProperty('--y2', (10 + (Math.random() * 38)) + 'px');
+            }
             piece.style.setProperty('--r0', ((Math.random() * 90) - 45) + 'deg');
             piece.style.setProperty('--r1', (240 + (Math.random() * 260)) + 'deg');
             piece.style.setProperty('--r2', (420 + (Math.random() * 260)) + 'deg');
-            piece.style.animationDelay = (Math.random() * 0.08) + 's';
-            piece.style.animationDuration = (1.35 + (Math.random() * 0.95)) + 's';
+            piece.style.animationDelay = (Math.random() * 0.06) + 's';
+            if (isEnrollmentLayer) {
+              piece.style.animationDuration = (1.05 + (Math.random() * 0.55)) + 's';
+            } else {
+              piece.style.animationDuration = (0.85 + (Math.random() * 0.45)) + 's';
+            }
             container.appendChild(piece);
           }
           setTimeout(function () {
             if (container.childNodes.length > 220) container.innerHTML = '';
-          }, 1900);
+          }, isEnrollmentLayer ? 2300 : 1900);
         }
 
         function sleep(ms) {
@@ -4537,7 +4618,7 @@ LIST / DASHBOARD VIEW
               await animateFillTo(i);
               setCircleState(i, 'completed');
               burstConfettiAt(confettiLayer, circles[i]);
-              await sleep(700);
+              await sleep(35);
               continue;
             }
 
@@ -4557,13 +4638,17 @@ LIST / DASHBOARD VIEW
           }
 
           fill.classList.remove('is-loading');
-          startEnrollmentConfetti();
+          if (isComplete) {
+            revealEnrolledBanner();
+            scheduleEnrollmentConfetti();
+          }
         }
 
         function startEnrollmentConfetti() {
-          var enrolledText = document.querySelector('.ma-enrolled-title-text');
-          var enrolledLayer = document.querySelector('.ma-enrolled-confetti');
-          if (!enrolledText || !enrolledLayer || !isComplete) return;
+          var enrolledBanner = document.querySelector('.ma-enrolled-banner[data-enrolled-complete="1"]');
+          var enrolledText = enrolledBanner ? enrolledBanner.querySelector('.ma-enrolled-title-text') : null;
+          var enrolledLayer = enrolledBanner ? enrolledBanner.querySelector('.ma-enrolled-confetti') : null;
+          if (!enrolledText || !enrolledLayer) return;
           if (enrolledLayer.dataset.running === '1') return;
           enrolledLayer.dataset.running = '1';
 
@@ -4572,8 +4657,9 @@ LIST / DASHBOARD VIEW
             burstConfettiAt(enrolledLayer, enrolledText, 'right');
           }
 
+          /* One confetti cycle (left + right burst along title text) every 2s */
           burstBothSides();
-          setInterval(burstBothSides, 1000);
+          setInterval(burstBothSides, 2000);
         }
 
         requestAnimationFrame(function () {
