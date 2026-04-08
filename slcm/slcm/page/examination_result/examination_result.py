@@ -510,12 +510,12 @@ def get_course_info(course):
 
 	count_row = frappe.db.sql(
 		"""
-		SELECT COUNT(DISTINCT cs.student) AS cnt
-		FROM `tabClass Student` cs
-		INNER JOIN `tabClass Configuration` cc ON cs.parent = cc.name
-		WHERE cc.course = %(course)s
+		SELECT COUNT(DISTINCT scm.student) AS cnt
+		FROM `tabStudent Course Marks` scm
+		WHERE scm.course = %(course)s
+		  AND scm.exam_plan = %(exam_plan)s
 		""",
-		{"course": course},
+		{"course": course, "exam_plan": assignment.get("exam_plan", "")},
 		as_dict=True,
 	)
 
@@ -557,10 +557,25 @@ def get_course_info(course):
 @frappe.whitelist()
 def get_course_students_paged(course, search="", page=1, page_length=20,
                                sort_by="registration_id", sort_order="asc"):
-	"""Return paginated students enrolled via Class Configuration for a course."""
+	"""Return paginated students from Student Course Marks for a course."""
 	page        = int(page)
 	page_length = int(page_length)
 	offset      = (page - 1) * page_length
+
+	# Find exam plan for this course
+	assignment = frappe.db.sql(
+		"""
+		SELECT csa.exam_plan
+		FROM `tabCourse Schema Assignment` csa
+		JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
+		WHERE csa.course = %(course)s
+		ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
+		LIMIT 1
+		""",
+		{"course": course},
+		as_dict=True,
+	)
+	exam_plan = assignment[0]["exam_plan"] if assignment else ""
 
 	sort_col = (
 		"sm.registration_id"
@@ -570,7 +585,7 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 	sort_dir = "DESC" if sort_order == "desc" else "ASC"
 
 	search_cond = ""
-	params = {"course": course, "lim": page_length, "off": offset}
+	params = {"course": course, "exam_plan": exam_plan, "lim": page_length, "off": offset}
 	if search:
 		search_cond = (
 			"AND (sm.registration_id LIKE %(search)s "
@@ -591,11 +606,11 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 			sm.batch_year,
 			sm.intake,
 			sm.department,
-			cc.section
-		FROM `tabClass Student` cs
-		INNER JOIN `tabClass Configuration` cc ON cs.parent = cc.name
-		LEFT JOIN `tabStudent Master` sm ON sm.name = cs.student
-		WHERE cc.course = %(course)s
+			NULL AS section
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.course = %(course)s
+		  AND scm.exam_plan = %(exam_plan)s
 		{search_cond}
 		ORDER BY {sort_col} {sort_dir}
 		LIMIT %(lim)s OFFSET %(off)s
@@ -606,11 +621,11 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 
 	total_row = frappe.db.sql(
 		f"""
-		SELECT COUNT(DISTINCT cs.student) AS cnt
-		FROM `tabClass Student` cs
-		INNER JOIN `tabClass Configuration` cc ON cs.parent = cc.name
-		LEFT JOIN `tabStudent Master` sm ON sm.name = cs.student
-		WHERE cc.course = %(course)s
+		SELECT COUNT(DISTINCT scm.student) AS cnt
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.course = %(course)s
+		  AND scm.exam_plan = %(exam_plan)s
 		{search_cond}
 		""",
 		params,
@@ -621,6 +636,162 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 		"students": students,
 		"total":    total_row[0]["cnt"] if total_row else 0,
 	}
+
+
+@frappe.whitelist()
+def sync_students_from_enrollment(course):
+	"""Create Student Course Marks records for all students enrolled in this course via Student Enrollment."""
+	# Get the active exam plan and evaluation schema for the course
+	assignment = frappe.db.sql(
+		"""
+		SELECT csa.exam_plan, csa.evaluation_schema
+		FROM `tabCourse Schema Assignment` csa
+		JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
+		WHERE csa.course = %(course)s
+		ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
+		LIMIT 1
+		""",
+		{"course": course},
+		as_dict=True,
+	)
+	if not assignment:
+		frappe.throw("No Exam Plan assigned for this course. Please set up a Course Schema Assignment first.")
+
+	exam_plan         = assignment[0]["exam_plan"]
+	evaluation_schema = assignment[0]["evaluation_schema"] or ""
+
+	# Find students enrolled in this course via Student Enrollment
+	enrolled_students = frappe.db.sql(
+		"""
+		SELECT DISTINCT se.student
+		FROM `tabStudent Enrollment` se
+		INNER JOIN `tabProgram Enrollment` pe ON pe.parent = se.name
+		WHERE pe.course = %(course)s
+		  AND se.status = 'Enrolled'
+		  AND se.student IS NOT NULL
+		  AND se.student != ''
+		""",
+		{"course": course},
+		as_dict=True,
+	)
+
+	if not enrolled_students:
+		frappe.throw("No enrolled students found for this course in Student Enrollment.")
+
+	added = 0
+	skipped = 0
+	for row in enrolled_students:
+		student = row["student"]
+		exists = frappe.db.exists("Student Course Marks", {
+			"course":     course,
+			"exam_plan":  exam_plan,
+			"student":    student,
+		})
+		if exists:
+			skipped += 1
+			continue
+		doc = frappe.new_doc("Student Course Marks")
+		doc.course             = course
+		doc.exam_plan          = exam_plan
+		doc.student            = student
+		doc.evaluation_schema  = evaluation_schema
+		doc.status             = "Draft"
+		doc.consider_for_sgpa  = 1
+		doc.insert(ignore_permissions=True)
+		added += 1
+
+	frappe.db.commit()
+	return {"added": added, "skipped": skipped, "total": len(enrolled_students)}
+
+
+@frappe.whitelist()
+def sync_students_from_class_config(course, class_config, course_type):
+	"""Create Student Course Marks records for all students in the given Class Configuration."""
+	# Validate the class config belongs to this course
+	cc_course = frappe.db.get_value("Class Configuration", class_config, "course")
+	if cc_course != course:
+		frappe.throw("The selected Class does not belong to this course.")
+
+	# Get active exam plan and evaluation schema
+	assignment = frappe.db.sql(
+		"""
+		SELECT csa.exam_plan, csa.evaluation_schema
+		FROM `tabCourse Schema Assignment` csa
+		JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
+		WHERE csa.course = %(course)s
+		ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
+		LIMIT 1
+		""",
+		{"course": course},
+		as_dict=True,
+	)
+	if not assignment:
+		frappe.throw("No Exam Plan assigned for this course. Please set up a Course Schema Assignment first.")
+
+	exam_plan         = assignment[0]["exam_plan"]
+	evaluation_schema = assignment[0]["evaluation_schema"] or ""
+
+	# Get all students from the Class Configuration
+	class_students = frappe.db.sql(
+		"""
+		SELECT cs.student
+		FROM `tabClass Student` cs
+		WHERE cs.parent = %(class_config)s
+		  AND cs.student IS NOT NULL
+		  AND cs.student != ''
+		""",
+		{"class_config": class_config},
+		as_dict=True,
+	)
+
+	if not class_students:
+		frappe.throw("No students found in the selected Class Configuration.")
+
+	added = 0
+	skipped = 0
+	for row in class_students:
+		student = row["student"]
+		exists = frappe.db.exists("Student Course Marks", {
+			"course":    course,
+			"exam_plan": exam_plan,
+			"student":   student,
+		})
+		if exists:
+			skipped += 1
+			continue
+		doc = frappe.new_doc("Student Course Marks")
+		doc.course            = course
+		doc.exam_plan         = exam_plan
+		doc.student           = student
+		doc.evaluation_schema = evaluation_schema
+		doc.status            = "Draft"
+		doc.consider_for_sgpa = 1
+		doc.insert(ignore_permissions=True)
+		added += 1
+
+		# Update course_type in Program Enrollment if present
+		pe = frappe.db.get_value(
+			"Program Enrollment",
+			{"parent": ["like", "%"], "course": course, "parenttype": "Student Enrollment"},
+			"name",
+		)
+		# Find program enrollment rows for this student and course
+		pe_rows = frappe.db.sql(
+			"""
+			SELECT pe.name
+			FROM `tabProgram Enrollment` pe
+			INNER JOIN `tabStudent Enrollment` se ON se.name = pe.parent
+			WHERE pe.course = %(course)s AND se.student = %(student)s
+			LIMIT 1
+			""",
+			{"course": course, "student": student},
+			as_dict=True,
+		)
+		if pe_rows and course_type:
+			frappe.db.set_value("Program Enrollment", pe_rows[0]["name"], "course_type", course_type)
+
+	frappe.db.commit()
+	return {"added": added, "skipped": skipped, "total": len(class_students)}
 
 
 @frappe.whitelist()
@@ -656,7 +827,7 @@ def get_student_hover_info(student, course):
 
 	return {
 		"student_name":    " ".join(filter(None, [sm.first_name, sm.last_name])),
-		"registration_id": sm.registration_id or "",
+		"registration_id": sm.registration_id or student,
 		"email":           sm.official_email_id or sm.email or "",
 		"programme":       cohort_name,
 		"batch":           sm.batch_year or "",
@@ -1010,3 +1181,144 @@ def get_result_summary(exam_plan):
 		"unlocked":      unlocked,
 		"unconfigured":  total - configured,
 	}
+
+
+@frappe.whitelist()
+def download_grade_sample(course, exam_plan, include_students=1):
+	"""Generate a sample Excel file for bulk grade upload."""
+	import io
+	try:
+		import openpyxl
+		from openpyxl.styles import Font, PatternFill, Alignment
+	except ImportError:
+		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
+
+	include_students = frappe.utils.cint(include_students)
+
+	wb = openpyxl.Workbook()
+	ws = wb.active
+	ws.title = "Grade Upload"
+
+	header_font  = Font(bold=True, color="FFFFFF")
+	header_fill  = PatternFill("solid", fgColor="C0392B")
+	center_align = Alignment(horizontal="center")
+
+	headers = ["Registration ID", "Email ID", "Student Name", "Grade"]
+	for col, h in enumerate(headers, 1):
+		cell = ws.cell(row=1, column=col, value=h)
+		cell.font  = header_font
+		cell.fill  = header_fill
+		cell.alignment = center_align
+
+	ws.column_dimensions["A"].width = 20
+	ws.column_dimensions["B"].width = 30
+	ws.column_dimensions["C"].width = 30
+	ws.column_dimensions["D"].width = 15
+
+	if include_students:
+		students = frappe.db.sql(
+			"""
+			SELECT sm.registration_id, sm.official_email_id,
+			       CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name
+			FROM `tabStudent Course Marks` scm
+			LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+			WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+			ORDER BY sm.registration_id ASC
+			""",
+			{"course": course, "exam_plan": exam_plan},
+			as_dict=True,
+		)
+		for row_idx, s in enumerate(students, 2):
+			ws.cell(row=row_idx, column=1, value=s.registration_id or "")
+			ws.cell(row=row_idx, column=2, value=s.official_email_id or "")
+			ws.cell(row=row_idx, column=3, value=s.student_name or "")
+			ws.cell(row=row_idx, column=4, value="")
+
+	buf = io.BytesIO()
+	wb.save(buf)
+	buf.seek(0)
+
+	file_name = f"grade_upload_{course}.xlsx"
+	file_doc = frappe.get_doc({
+		"doctype":    "File",
+		"file_name":  file_name,
+		"is_private": 1,
+		"content":    buf.read(),
+	})
+	file_doc.save(ignore_permissions=True)
+	return {"file_url": file_doc.file_url}
+
+
+@frappe.whitelist()
+def bulk_upload_grades(course, exam_plan, file_url):
+	"""Process uploaded Excel file and update grades in Student Course Marks."""
+	import io
+	try:
+		import openpyxl
+	except ImportError:
+		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
+
+	# Fetch the file
+	file_doc = frappe.get_doc("File", {"file_url": file_url})
+	file_path = file_doc.get_full_path()
+
+	wb = openpyxl.load_workbook(file_path, data_only=True)
+	ws = wb.active
+
+	headers = [str(ws.cell(1, c).value or "").strip() for c in range(1, ws.max_column + 1)]
+
+	def col_idx(name):
+		try:
+			return headers.index(name)
+		except ValueError:
+			return -1
+
+	reg_col   = col_idx("Registration ID")
+	email_col = col_idx("Email ID")
+	grade_col = col_idx("Grade")
+
+	if grade_col == -1:
+		frappe.throw("Column 'Grade' not found in the uploaded file.")
+
+	updated = 0
+	errors  = []
+
+	for row in ws.iter_rows(min_row=2, values_only=True):
+		reg_id = str(row[reg_col]).strip() if reg_col >= 0 and row[reg_col] else ""
+		email  = str(row[email_col]).strip() if email_col >= 0 and row[email_col] else ""
+		grade  = str(row[grade_col]).strip() if row[grade_col] else ""
+
+		if not grade:
+			continue
+
+		# Find student
+		student = None
+		if reg_id:
+			student = frappe.db.get_value("Student Master", {"registration_id": reg_id}, "name")
+		if not student and email:
+			student = frappe.db.get_value(
+				"Student Master",
+				[["official_email_id", "=", email], ["email", "=", email]],
+				"name",
+				or_filters=True,
+			) or frappe.db.get_value("Student Master", {"official_email_id": email}, "name") \
+			  or frappe.db.get_value("Student Master", {"email": email}, "name")
+
+		if not student:
+			errors.append(f"Student not found: {reg_id or email}")
+			continue
+
+		scm_name = frappe.db.get_value(
+			"Student Course Marks",
+			{"course": course, "exam_plan": exam_plan, "student": student},
+			"name",
+		)
+		if not scm_name:
+			errors.append(f"No result record for: {reg_id or email}")
+			continue
+
+		frappe.db.set_value("Student Course Marks", scm_name, "grade", grade)
+		updated += 1
+
+	frappe.db.commit()
+	return {"updated": updated, "errors": errors}

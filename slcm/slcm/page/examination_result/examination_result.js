@@ -214,7 +214,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							</button>
 							<div class="dd-menu">
 								<div class="dd-item" id="er2-sync-enroll">Sync from Enrollment</div>
-								<div class="dd-item" id="er2-sync-class">Sync from Class Config</div>
+								<div class="dd-item" id="er2-sync-class">Add Class Students</div>
 							</div>
 						</div>
 						<button class="er2-btn outline-red" id="er2-lock-btn">
@@ -243,9 +243,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							Manage Grades <i class="fa fa-caret-down"></i>
 						</button>
 						<div class="dd-menu">
-							<div class="dd-item">Auto Generate Grades</div>
-							<div class="dd-item">Clear Grades</div>
-							<div class="dd-item">Grade Report</div>
+							<div class="dd-item" id="er2-grade-edit">Edit</div>
+							<div class="dd-item" id="er2-grade-bulk-upload">Bulk Upload</div>
+							<div class="dd-item" id="er2-grade-report">Grade Report</div>
 						</div>
 					</div>
 					<div class="er2-btn-dd" id="er2-marks-dd">
@@ -493,6 +493,111 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	$body.find('#er2-moderation-btn').on('click', function () {
 		frappe.msgprint('Result Moderation — coming soon.');
 	});
+
+	// ── Manage Grades ─────────────────────────────────────────────────────────
+	$body.find('#er2-grade-edit').on('click', function () {
+		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
+		frappe.msgprint('Edit Grades — coming soon.');
+	});
+
+	$body.find('#er2-grade-report').on('click', function () {
+		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
+		frappe.msgprint('Grade Report — coming soon.');
+	});
+
+	$body.find('#er2-grade-bulk-upload').on('click', function () {
+		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
+
+		var include_students = true;
+
+		var d = new frappe.ui.Dialog({
+			title: 'Update Grade In Bulk',
+			fields: [
+				{
+					fieldname: 'info',
+					fieldtype: 'HTML',
+					options: '<p style="margin-bottom:12px;font-size:13px;color:#333;">Update Grade by uploading an excel file.</p>',
+				},
+				{
+					fieldname: 'include_students',
+					fieldtype: 'Check',
+					label: 'Include students in sample Excel?',
+					default: 1,
+					onchange: function () {
+						include_students = !!d.get_value('include_students');
+					},
+				},
+				{
+					fieldname: 'download_sec',
+					fieldtype: 'HTML',
+					options: '<div style="margin:10px 0 4px;">' +
+						'<button class="btn btn-default btn-sm" id="er2-grade-download-sample" style="width:100%;">' +
+						'Download Sample Excel</button></div>',
+				},
+				{
+					fieldname: 'upload_file',
+					fieldtype: 'Attach',
+					label: 'Upload File',
+					reqd: 1,
+				},
+				{
+					fieldname: 'notes_sec',
+					fieldtype: 'HTML',
+					options: '<div style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;padding:10px 14px;margin-top:8px;">' +
+						'<div style="font-weight:600;margin-bottom:6px;font-size:13px;">Notes</div>' +
+						'<ol style="margin:0;padding-left:18px;font-size:12px;color:#555;">' +
+						'<li>Either student Registration ID or Email ID should be entered.</li>' +
+						'<li>Before updating results, take a backup via Download sample excel.</li>' +
+						'</ol></div>',
+				},
+			],
+			primary_action_label: 'Upload File',
+			primary_action: function (values) {
+				if (!values.upload_file) {
+					frappe.msgprint('Please upload a file.');
+					return;
+				}
+				d.hide();
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.bulk_upload_grades',
+					args: {
+						course:    S.course,
+						exam_plan: S.info.exam_plan || '',
+						file_url:  values.upload_file,
+					},
+					callback: function (r) {
+						var res = r.message || {};
+						frappe.show_alert({
+							message: 'Grades updated: ' + (res.updated || 0) + ' rows processed.',
+							indicator: 'green'
+						});
+						load_students();
+					},
+				});
+			},
+		});
+
+		d.show();
+
+		// Wire download button after dialog renders
+		setTimeout(function () {
+			$('#er2-grade-download-sample').on('click', function () {
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.download_grade_sample',
+					args: {
+						course:           S.course,
+						exam_plan:        S.info.exam_plan || '',
+						include_students: include_students ? 1 : 0,
+					},
+					callback: function (r) {
+						if (r.message && r.message.file_url) {
+							window.open(r.message.file_url);
+						}
+					},
+				});
+			});
+		}, 300);
+	});
 	$body.find('#er2-lock-btn').on('click', function () {
 		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
 		frappe.confirm('Lock this course for result entry?', function () {
@@ -501,6 +606,71 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	});
 	$body.find('#er2-sync-btn').on('click', function () {
 		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
+	});
+
+	$body.find('#er2-sync-enroll').on('click', function () {
+		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
+		frappe.confirm('Sync students from Student Enrollment for this course?', function () {
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.sync_students_from_enrollment',
+				args: { course: S.course },
+				callback: function (r) {
+					var res = r.message || {};
+					frappe.show_alert({
+						message: 'Synced: ' + (res.added || 0) + ' added, ' + (res.skipped || 0) + ' already existed.',
+						indicator: 'green'
+					});
+					load_course_info();
+				},
+			});
+		});
+	});
+
+	$body.find('#er2-sync-class').on('click', function () {
+		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
+		var d = new frappe.ui.Dialog({
+			title: 'Add Class Students',
+			fields: [
+				{
+					fieldname: 'class_config',
+					fieldtype: 'Link',
+					label: 'Class',
+					options: 'Class Configuration',
+					reqd: 1,
+					get_query: function () {
+						return { filters: { course: S.course } };
+					},
+				},
+				{
+					fieldname: 'course_type',
+					fieldtype: 'Select',
+					label: 'Course Type',
+					options: '\nCore\nElective',
+					reqd: 1,
+				},
+			],
+			primary_action_label: 'Add Students',
+			primary_action: function (values) {
+				d.hide();
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.sync_students_from_class_config',
+					args: {
+						course:       S.course,
+						class_config: values.class_config,
+						course_type:  values.course_type,
+					},
+					callback: function (r) {
+						var res = r.message || {};
+						frappe.show_alert({
+							message: 'Added: ' + (res.added || 0) + ' students, ' + (res.skipped || 0) + ' already existed.',
+							indicator: 'green'
+						});
+						load_course_info();
+					},
+				});
+			},
+		});
+		d.show();
 	});
 
 	// ── Data loaders ──────────────────────────────────────────────────────────
@@ -647,7 +817,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				'  <div class="er2-savatar">' + initials + '</div>' +
 				'  <div class="er2-sinfo">' +
 				'    <div class="er2-sname">' + frappe.utils.escape_html(s.student_name || s.student) + '</div>' +
-				'    <div class="er2-sreg">' + frappe.utils.escape_html(s.registration_id || '') + '</div>' +
+				'    <div class="er2-sreg">' + frappe.utils.escape_html(s.registration_id || s.student || '') + '</div>' +
 				'    <div class="er2-sbadges">' +
 				'      <span class="er2-badge ' + status_cls + '">' + frappe.utils.escape_html(status_txt) + '</span>' +
 				'      <span class="er2-badge regular">Regular</span>' +
@@ -912,19 +1082,20 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				var s = r.message || {};
 				if (S.popup_student !== student) return; // stale
 
-				function prow(lbl, val) {
-					if (!val && val !== 0) return '';
+				function prow(lbl, val, always) {
+					if (!always && !val && val !== 0) return '';
+					var display = (val || val === 0) ? frappe.utils.escape_html(String(val)) : '—';
 					return '<div class="er2-pop-row"><span class="er2-pop-lbl">' + lbl + ' :</span>' +
-						'<span class="er2-pop-val">' + frappe.utils.escape_html(String(val)) + '</span></div>';
+						'<span class="er2-pop-val">' + display + '</span></div>';
 				}
 				$popup.html(
 					'<div class="er2-pop-name">' + frappe.utils.escape_html(s.student_name || student) + '</div>' +
-					prow('Registration ID', s.registration_id) +
-					prow('Email ID',        s.email) +
-					prow('Programme',       s.programme) +
-					prow('Batch',           s.batch) +
-					prow('Intake',          s.intake) +
-					prow('Section',         s.section)
+					prow('Student ID',  s.registration_id, true) +
+					prow('Email ID',    s.email) +
+					prow('Programme',   s.programme) +
+					prow('Batch',       s.batch, true) +
+					prow('Intake',      s.intake) +
+					prow('Section',     s.section, true)
 				);
 				position_popup(x, y);
 				$popup.show();
