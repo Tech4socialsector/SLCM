@@ -557,11 +557,18 @@ def get_course_info(course):
 @frappe.whitelist()
 def get_course_students_paged(course, search="", page=1, page_length=20,
                                sort_by="registration_id", sort_order="asc",
-                               status_filter=""):
+                               status_filter="", inst_programmes="",
+                               inst_batches="", inst_course_types=""):
 	"""Return paginated students from Student Course Marks for a course."""
+	import json
 	page        = int(page)
 	page_length = int(page_length)
 	offset      = (page - 1) * page_length
+
+	# Parse institutional filter lists (JSON arrays)
+	f_programmes  = json.loads(inst_programmes)  if inst_programmes  else []
+	f_batches     = json.loads(inst_batches)     if inst_batches     else []
+	f_course_types= json.loads(inst_course_types)if inst_course_types else []
 
 	# Find exam plan for this course
 	assignment = frappe.db.sql(
@@ -597,6 +604,17 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 	if status_filter:
 		extra_cond += " AND sm.student_status = %(status_filter)s"
 		params["status_filter"] = status_filter
+	if f_programmes:
+		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
+		extra_cond += f" AND sm.programme IN ({placeholders})"
+		for i, v in enumerate(f_programmes):
+			params[f"prog_{i}"] = v
+	if f_batches:
+		placeholders = ",".join([f"%(batch_{i})s" for i in range(len(f_batches))])
+		extra_cond += f" AND sm.batch_year IN ({placeholders})"
+		for i, v in enumerate(f_batches):
+			params[f"batch_{i}"] = v
+	# course_type filter skipped — field lives on Program Enrollment, not Student Course Marks
 
 	students = frappe.db.sql(
 		f"""
@@ -639,6 +657,48 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 	return {
 		"students": students,
 		"total":    total_row[0]["cnt"] if total_row else 0,
+	}
+
+
+@frappe.whitelist()
+def get_institutional_filter_options(course):
+	"""Return distinct programme, batch_year, and course_type values for students in this course."""
+	assignment = frappe.db.sql(
+		"""
+		SELECT csa.exam_plan
+		FROM `tabCourse Schema Assignment` csa
+		JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
+		WHERE csa.course = %(course)s
+		ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
+		LIMIT 1
+		""",
+		{"course": course},
+		as_dict=True,
+	)
+	exam_plan = assignment[0]["exam_plan"] if assignment else ""
+
+	rows = frappe.db.sql(
+		"""
+		SELECT DISTINCT sm.programme, sm.batch_year
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+
+	programmes = sorted(set(r["programme"]        for r in rows if r.get("programme")))
+	batches    = sorted(set(str(r["batch_year"])   for r in rows if r.get("batch_year")), reverse=True)
+
+	# course_type lives on Program Enrollment, not Student Course Marks.
+	# Return static options for display; SQL filtering is handled via programme/batch.
+	course_types = ["Regular", "Backlog"]
+
+	return {
+		"programmes":   programmes,
+		"batches":      batches,
+		"course_types": course_types,
 	}
 
 
@@ -804,7 +864,8 @@ def get_student_hover_info(student, course):
 	sm = frappe.db.get_value(
 		"Student Master", student,
 		["registration_id", "first_name", "last_name",
-		 "official_email_id", "email", "programme", "batch_year", "intake"],
+		 "official_email_id", "email", "programme",
+		 "batch_year", "current_year", "current_term", "intake", "department"],
 		as_dict=True,
 	)
 	if not sm:
@@ -816,6 +877,9 @@ def get_student_hover_info(student, course):
 			frappe.db.get_value("Cohort", sm["programme"], "cohort_name")
 			or sm["programme"]
 		)
+
+	# Batch: prefer batch_year, fall back to current_year
+	batch_val = sm.get("batch_year") or sm.get("current_year") or ""
 
 	section_row = frappe.db.sql(
 		"""
@@ -834,7 +898,9 @@ def get_student_hover_info(student, course):
 		"registration_id": sm.registration_id or student,
 		"email":           sm.official_email_id or sm.email or "",
 		"programme":       cohort_name,
-		"batch":           sm.batch_year or "",
+		"department":      sm.department or "",
+		"batch":           batch_val,
+		"current_term":    sm.current_term or "",
 		"intake":          sm.intake or "",
 		"section":         section_row[0]["section"] if section_row else "",
 	}

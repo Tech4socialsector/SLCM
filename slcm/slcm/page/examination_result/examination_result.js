@@ -26,6 +26,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		show_status:     false,  // view/hide student assessment status columns
 		selected_all:    false,  // select all across pages
 		status_filter:   '',     // student status filter
+		inst_filter:     { programmes: [], batches: [], course_types: [] },
+		inst_options:    null,   // cached filter options from backend
 	};
 
 	// ── CSS ───────────────────────────────────────────────────────────────────
@@ -33,149 +35,291 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		var style = document.createElement('style');
 		style.id  = 'er2-style';
 		style.textContent = `
-		.er2-wrap { font-family: var(--font-stack); padding: 0; }
-		/* Tabs */
-		.er2-tabs { display:flex; border-bottom:2px solid #e8eaed; margin-bottom:16px; }
-		.er2-tab  { padding:10px 20px; cursor:pointer; font-size:14px; font-weight:500;
-		            color:#6c757d; border-bottom:2px solid transparent; margin-bottom:-2px;
-		            transition:color .15s, border-color .15s; }
-		.er2-tab:hover { color:#e63946; }
-		.er2-tab.active { color:#e63946; border-bottom-color:#e63946; }
-		/* Filter bar */
-		.er2-filters { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;
-		               margin-bottom:14px; padding:0 2px; }
-		.er2-fgroup  { display:flex; flex-direction:column; min-width:200px; flex:1; }
-		.er2-flabel  { font-size:11px; color:#6c757d; font-weight:500; margin-bottom:4px;
-		               text-transform:uppercase; letter-spacing:.4px; }
-		.er2-select  { height:34px; border:1px solid #d1d8dd; border-radius:4px;
-		               padding:0 10px; font-size:13px; background:#fff; color:#333;
-		               outline:none; cursor:pointer; }
-		.er2-select:focus { border-color:#6195ff; }
-		/* Info panel */
-		.er2-info    { background:#fff; border:1px solid #e8eaed; border-radius:8px;
-		               padding:16px 20px; margin-bottom:14px;
-		               display:grid; grid-template-columns:1fr 1fr; gap:10px 32px; }
+		/* ── Base ── */
+		.er2-wrap { font-family: var(--font-stack,'Inter',sans-serif); padding:0; background:#f1f5f9; min-height:100vh; }
+
+		/* ── Tabs ── */
+		.er2-tabs { display:flex; gap:4px; margin-bottom:18px;
+		            background:#e2e8f0; border-radius:10px; padding:4px; width:fit-content; }
+		.er2-tab  { padding:8px 20px; cursor:pointer; font-size:13px; font-weight:600;
+		            color:#64748b; border-radius:7px; transition:all .2s;
+		            user-select:none; letter-spacing:.1px; }
+		.er2-tab:hover { color:#4f46e5; background:rgba(79,70,229,.08); }
+		.er2-tab.active { background:#fff; color:#4f46e5;
+		                  box-shadow:0 1px 4px rgba(0,0,0,.12); }
+
+		/* ── Top filter card ── */
+		.er2-filter-card { background:#fff; border-radius:12px; padding:16px 20px;
+		                   margin-bottom:16px; display:flex; gap:14px; align-items:flex-end;
+		                   box-shadow:0 1px 3px rgba(0,0,0,.06); flex-wrap:wrap; }
+		.er2-fgroup  { display:flex; flex-direction:column; min-width:200px; flex:1; max-width:300px; }
+		.er2-flabel  { font-size:11px; color:#94a3b8; font-weight:600; margin-bottom:5px;
+		               text-transform:uppercase; letter-spacing:.6px; }
+		.er2-select  { height:36px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 12px; font-size:13px; background:#fff; color:#1e293b;
+		               outline:none; cursor:pointer; transition:border-color .2s; }
+		.er2-select:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+
+		/* ── Info panel (stat cards) ── */
+		.er2-info    { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+		.er2-icard   { background:#fff; border-radius:12px; padding:14px 18px; flex:1;
+		               min-width:160px; box-shadow:0 1px 3px rgba(0,0,0,.06);
+		               border-top:3px solid #4f46e5; position:relative; overflow:hidden; }
+		.er2-icard::after { content:''; position:absolute; right:-12px; top:-12px;
+		                    width:60px; height:60px; border-radius:50%;
+		                    background:rgba(79,70,229,.05); }
+		.er2-icard.teal  { border-top-color:#0ea5e9; }
+		.er2-icard.teal::after  { background:rgba(14,165,233,.05); }
+		.er2-icard.green { border-top-color:#10b981; }
+		.er2-icard.green::after { background:rgba(16,185,129,.05); }
+		.er2-icard.amber { border-top-color:#f59e0b; }
+		.er2-icard.amber::after { background:rgba(245,158,11,.05); }
+		.er2-icard.rose  { border-top-color:#ef4444; }
+		.er2-icard.rose::after  { background:rgba(239,68,68,.05); }
+		.er2-icard.slate { border-top-color:#64748b; }
+		.er2-icard.slate::after { background:rgba(100,116,139,.05); }
+		.er2-icard.violet{ border-top-color:#7c3aed; }
+		.er2-icard.violet::after{ background:rgba(124,58,237,.05); }
+		.er2-ilabel  { font-size:10px; color:#94a3b8; text-transform:uppercase;
+		               letter-spacing:.7px; font-weight:700; margin-bottom:5px; }
+		.er2-ival    { font-size:13px; color:#1e293b; font-weight:600; line-height:1.4; }
+		.er2-ival a  { color:#4f46e5; text-decoration:none; border-bottom:1px dashed #c7d2fe; }
+		.er2-ival a:hover { color:#3730a3; }
+		.er2-ival.green { color:#059669; }
+		.er2-ival.orange { color:#d97706; }
 		.er2-irow    { display:flex; flex-direction:column; gap:2px; }
-		.er2-ilabel  { font-size:11px; color:#8d99ae; text-transform:uppercase;
-		               letter-spacing:.4px; font-weight:500; }
-		.er2-ival    { font-size:13px; color:#2b2d42; font-weight:500; }
-		.er2-ival a  { color:#e63946; text-decoration:none; }
-		.er2-ival.green { color:#28a745; }
-		.er2-ival.orange { color:#fd7e14; }
-		/* Action bar */
+
+		/* ── Action bar ── */
 		.er2-actbar  { display:flex; gap:8px; align-items:center; flex-wrap:wrap;
-		               margin-bottom:12px; }
-		.er2-srch    { flex:1; min-width:220px; max-width:340px; position:relative; }
-		.er2-srch input { width:100%; height:34px; border:1px solid #d1d8dd; border-radius:20px;
-		                  padding:0 12px 0 34px; font-size:13px; outline:none; }
-		.er2-srch input:focus { border-color:#6195ff; }
-		.er2-srch-ico { position:absolute; left:10px; top:9px; color:#adb5bd; }
-		.er2-btn     { height:34px; padding:0 14px; border-radius:4px; border:1px solid #d1d8dd;
-		               background:#fff; cursor:pointer; font-size:13px; font-weight:500;
-		               color:#333; display:inline-flex; align-items:center; gap:5px;
-		               white-space:nowrap; }
-		.er2-btn:hover { background:#f4f5f7; }
-		.er2-btn.primary { background:#e63946; border-color:#e63946; color:#fff; }
-		.er2-btn.primary:hover { background:#c1121f; }
-		.er2-btn.outline-red { border-color:#e63946; color:#e63946; }
-		.er2-btn.outline-red:hover { background:#fff5f5; }
+		               margin-bottom:12px; background:#fff; border-radius:10px;
+		               padding:10px 14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+		.er2-srch    { flex:1; min-width:200px; max-width:320px; position:relative; }
+		.er2-srch input { width:100%; height:34px; border:1.5px solid #e2e8f0; border-radius:20px;
+		                  padding:0 14px 0 36px; font-size:13px; outline:none; color:#1e293b;
+		                  background:#f8fafc; transition:border-color .2s, background .2s; }
+		.er2-srch input:focus { border-color:#4f46e5; background:#fff;
+		                        box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+		.er2-srch-ico { position:absolute; left:11px; top:9px; color:#94a3b8; }
+
+		/* ── Buttons ── */
+		.er2-btn     { height:34px; padding:0 14px; border-radius:7px; border:1.5px solid #e2e8f0;
+		               background:#fff; cursor:pointer; font-size:12.5px; font-weight:600;
+		               color:#475569; display:inline-flex; align-items:center; gap:5px;
+		               white-space:nowrap; transition:all .15s; }
+		.er2-btn:hover { background:#f8fafc; border-color:#cbd5e1; color:#1e293b; }
+		.er2-btn.primary { background:linear-gradient(135deg,#4f46e5,#6366f1);
+		                   border-color:transparent; color:#fff; }
+		.er2-btn.primary:hover { background:linear-gradient(135deg,#4338ca,#4f46e5); }
+		.er2-btn.outline-red { border-color:#fca5a5; color:#ef4444; background:#fff5f5; }
+		.er2-btn.outline-red:hover { background:#fee2e2; border-color:#f87171; }
+		.er2-btn.outline-indigo { border-color:#c7d2fe; color:#4f46e5; background:#eef2ff; }
+		.er2-btn.outline-indigo:hover { background:#e0e7ff; }
+
+		/* ── Dropdowns ── */
 		.er2-btn-dd  { position:relative; display:inline-flex; }
 		.er2-btn-dd .dd-menu { display:none; position:absolute; top:100%; left:0; z-index:999;
-		                       background:#fff; border:1px solid #d1d8dd; border-radius:4px;
-		                       box-shadow:0 4px 12px rgba(0,0,0,.12); min-width:160px; padding:4px 0; }
+		                       background:#fff; border:1.5px solid #e2e8f0; border-radius:9px;
+		                       box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:170px;
+		                       padding:5px; margin-top:4px; }
 		.er2-btn-dd:hover .dd-menu,
 		.er2-btn-dd.open .dd-menu { display:block; }
-		.dd-item { padding:8px 14px; font-size:13px; cursor:pointer; color:#333; }
-		.dd-item:hover { background:#f4f5f7; }
-		/* Filter row */
-		.er2-filterrow { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+		.dd-item { padding:8px 12px; font-size:12.5px; cursor:pointer; color:#475569;
+		           border-radius:6px; font-weight:500; }
+		.dd-item:hover { background:#f1f5f9; color:#1e293b; }
+		.dd-item + .dd-item { margin-top:1px; }
+
+		/* ── Filter row ── */
+		.er2-filterrow { display:flex; align-items:center; gap:8px; margin-bottom:12px;
+		                 background:#fff; border-radius:10px; padding:8px 14px;
+		                 box-shadow:0 1px 3px rgba(0,0,0,.06); }
 		.er2-pag     { margin-left:auto; display:flex; align-items:center; gap:6px;
-		               font-size:13px; color:#6c757d; }
-		.er2-pag-btn { width:28px; height:28px; border:1px solid #d1d8dd; border-radius:4px;
+		               font-size:12.5px; color:#64748b; }
+		.er2-pag-btn { width:28px; height:28px; border:1.5px solid #e2e8f0; border-radius:7px;
 		               background:#fff; cursor:pointer; font-size:14px; display:inline-flex;
-		               align-items:center; justify-content:center; }
-		.er2-pag-btn:disabled { opacity:.4; cursor:default; }
-		/* Split panel */
-		.er2-split   { display:flex; gap:0; border:1px solid #e8eaed; border-radius:8px;
-		               overflow:hidden; background:#fff; }
-		.er2-left    { width:360px; flex-shrink:0; overflow-y:auto; overflow-x:hidden;
-		               border-right:1px solid #e8eaed; }
+		               align-items:center; justify-content:center; color:#64748b;
+		               transition:all .15s; }
+		.er2-pag-btn:hover:not(:disabled) { background:#eef2ff; border-color:#c7d2fe; color:#4f46e5; }
+		.er2-pag-btn:disabled { opacity:.35; cursor:default; }
+
+		/* ── Split panel ── */
+		.er2-split   { display:flex; gap:0; border-radius:12px; overflow:hidden;
+		               background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+		.er2-left    { width:320px; flex-shrink:0; overflow-y:auto; overflow-x:hidden;
+		               border-right:1.5px solid #f1f5f9; }
 		.er2-left.collapsed { width:0; border-right:none; }
 		.er2-right   { flex:1; overflow:auto; min-width:0; }
-		/* Left panel header */
-		.er2-lhdr    { display:flex; align-items:center; gap:8px; padding:10px 12px;
-		               background:#fafbfc; border-bottom:1px solid #e8eaed; position:sticky; top:0;
-		               z-index:10; }
-		.er2-lhdr-title { font-size:13px; font-weight:600; color:#333; flex:1; }
-		.er2-sort-btn { font-size:11px; color:#6195ff; cursor:pointer; background:none;
-		                border:none; padding:0; display:flex; align-items:center; gap:3px; }
-		/* Student row */
-		.er2-srow    { display:flex; align-items:center; gap:10px; padding:10px 12px;
-		               border-bottom:1px solid #f1f3f5; cursor:pointer; min-height:70px; }
-		.er2-srow:hover { background:#f8f9fa; }
-		.er2-srow.selected { background:#e8f4ff; }
-		.er2-savatar { width:36px; height:36px; border-radius:50%; background:#dee2e6;
+
+		/* ── Left panel header ── */
+		.er2-lhdr    { display:flex; align-items:center; gap:8px; padding:11px 13px;
+		               background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%);
+		               border-bottom:none; position:sticky; top:0; z-index:10; }
+		.er2-lhdr-title { font-size:13px; font-weight:700; color:#fff; flex:1; }
+		.er2-lhdr input[type="checkbox"] { accent-color:#fff; width:14px; height:14px; cursor:pointer; }
+		.er2-sort-btn { font-size:11px; color:rgba(255,255,255,.85); cursor:pointer; background:none;
+		                border:1px solid rgba(255,255,255,.3); border-radius:5px; padding:3px 7px;
+		                display:flex; align-items:center; gap:3px; transition:all .15s; }
+		.er2-sort-btn:hover { background:rgba(255,255,255,.15); color:#fff; }
+
+		/* ── Student status filter bar ── */
+		.er2-status-bar { padding:6px 12px; background:#f8fafc; border-bottom:1.5px solid #f1f5f9;
+		                  display:flex; align-items:center; gap:6px; }
+
+		/* ── Student row ── */
+		.er2-srow    { display:flex; align-items:center; gap:10px; padding:11px 13px;
+		               border-bottom:1.5px solid #f8fafc; cursor:pointer; transition:background .15s; }
+		.er2-srow:hover { background:#f8fafc; }
+		.er2-srow.selected { background:#eef2ff; }
+		.er2-savatar { width:38px; height:38px; border-radius:10px; flex-shrink:0;
 		               display:flex; align-items:center; justify-content:center;
-		               font-size:14px; color:#6c757d; flex-shrink:0; overflow:hidden; }
+		               font-size:15px; font-weight:700; color:#fff; overflow:hidden; }
 		.er2-savatar img { width:100%; height:100%; object-fit:cover; }
 		.er2-sinfo   { flex:1; min-width:0; }
-		.er2-sname   { font-size:13px; font-weight:600; color:#e63946; white-space:nowrap;
+		.er2-sname   { font-size:13px; font-weight:700; color:#1e293b; white-space:nowrap;
 		               overflow:hidden; text-overflow:ellipsis; }
-		.er2-sreg    { font-size:11px; color:#6c757d; margin-top:1px; }
-		.er2-sbadges { display:flex; gap:4px; margin-top:3px; flex-wrap:wrap; }
-		.er2-badge   { font-size:10px; font-weight:600; padding:1px 7px; border-radius:10px; }
-		.er2-badge.active   { background:#d4edda; color:#155724; }
-		.er2-badge.inactive { background:#f8d7da; color:#721c24; }
-		.er2-badge.blocked  { background:#f8d7da; color:#721c24; }
-		.er2-badge.regular  { background:#e2e3e5; color:#383d41; }
-		.er2-badge.dropped  { background:#fff3cd; color:#856404; }
-		/* Right panel marks table */
+		.er2-sreg    { font-size:11px; color:#94a3b8; margin-top:1px; font-weight:500; }
+		.er2-sbadges { display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; }
+		.er2-badge   { font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
+		               letter-spacing:.2px; }
+		.er2-badge.active   { background:#d1fae5; color:#065f46; }
+		.er2-badge.inactive { background:#fee2e2; color:#991b1b; }
+		.er2-badge.blocked  { background:#fee2e2; color:#991b1b; }
+		.er2-badge.regular  { background:#e0e7ff; color:#3730a3; }
+		.er2-badge.dropped  { background:#fef3c7; color:#92400e; }
+
+		/* ── Marks table ── */
 		.er2-rtable  { border-collapse:collapse; min-width:100%; font-size:12px; }
-		.er2-rtable th, .er2-rtable td { padding:6px 10px; border-right:1px solid #e8eaed;
+		.er2-rtable th, .er2-rtable td { padding:7px 11px; border-right:1px solid #f1f5f9;
 		                                  white-space:nowrap; }
-		.er2-rtable th { background:#fafbfc; position:sticky; top:0; z-index:5;
-		                 font-weight:600; color:#495057; text-align:center;
-		                 border-bottom:1px solid #dee2e6; }
-		.er2-rtable th.type-hdr { background:#f0f2f5; border-bottom:2px solid #dee2e6; }
-		.er2-rtable td { text-align:center; color:#333; border-bottom:1px solid #f1f3f5; }
-		.er2-rtable tr:hover td { background:#f8f9fa; }
-		.er2-mrow    { min-height:70px; height:70px; }
-		.er2-toggle-wrap { display:flex; align-items:center; gap:8px; padding:8px 12px;
-		                   background:#fafbfc; border-bottom:1px solid #e8eaed;
+		.er2-rtable th { background:#f8fafc; position:sticky; top:0; z-index:5;
+		                 font-weight:700; color:#475569; text-align:center;
+		                 border-bottom:1.5px solid #e2e8f0; font-size:11px;
+		                 letter-spacing:.2px; }
+		.er2-rtable th.type-hdr { font-size:12px; font-weight:700; letter-spacing:.3px;
+		                          border-bottom:2px solid rgba(0,0,0,.08); }
+		.er2-rtable td { text-align:center; color:#334155; border-bottom:1px solid #f8fafc; }
+		.er2-rtable tbody tr:hover td { background:#fafbff; }
+		.er2-rtable tbody tr:nth-child(even) td { background:#fafcff; }
+		.er2-rtable tbody tr:nth-child(even):hover td { background:#f0f4ff; }
+		.er2-mrow    { min-height:64px; height:64px; }
+
+		/* ── Collapse button ── */
+		.er2-collapse-btn { width:18px; cursor:pointer; display:flex; align-items:center;
+		                    justify-content:center; background:#f1f5f9; border:none;
+		                    border-left:1.5px solid #e2e8f0; color:#94a3b8; font-size:12px;
+		                    align-self:stretch; flex-shrink:0; transition:all .15s; }
+		.er2-collapse-btn:hover { background:#e0e7ff; color:#4f46e5; }
+
+		/* ── Hover popup ── */
+		#er2-popup   { display:none; position:fixed; z-index:9999; background:#fff;
+		               border:1.5px solid #e2e8f0; border-radius:12px;
+		               box-shadow:0 12px 32px rgba(0,0,0,.14); padding:16px 18px;
+		               min-width:280px; max-width:360px; pointer-events:none; }
+		.er2-pop-name { font-size:14px; font-weight:700; color:#4f46e5; margin-bottom:10px;
+		                padding-bottom:8px; border-bottom:1.5px solid #f1f5f9; }
+		.er2-pop-row  { display:flex; gap:8px; margin-bottom:5px; font-size:12.5px; }
+		.er2-pop-lbl  { color:#94a3b8; min-width:90px; font-weight:600; flex-shrink:0;
+		                font-size:11px; text-transform:uppercase; letter-spacing:.4px; }
+		.er2-pop-val  { color:#1e293b; font-weight:600; }
+
+		/* ── Sync btn ── */
+		.er2-sync-btn { font-size:10px; background:linear-gradient(135deg,#4f46e5,#6366f1);
+		                color:#fff; border:none; border-radius:5px; padding:3px 8px;
+		                cursor:pointer; margin-top:3px; font-weight:600; }
+		.er2-sync-btn:hover { background:linear-gradient(135deg,#4338ca,#4f46e5); }
+
+		/* ── Toggle wrap ── */
+		.er2-toggle-wrap { display:flex; align-items:center; gap:8px; padding:8px 13px;
+		                   background:#f8fafc; border-bottom:1.5px solid #f1f5f9;
 		                   position:sticky; top:0; z-index:10; }
-		.er2-toggle-lbl { font-size:12px; font-weight:600; color:#333; }
+		.er2-toggle-lbl { font-size:12px; font-weight:600; color:#475569; }
 		.er2-toggle  { position:relative; width:36px; height:20px; }
 		.er2-toggle input { opacity:0; width:0; height:0; }
-		.er2-slider  { position:absolute; inset:0; border-radius:20px; background:#ccc;
+		.er2-slider  { position:absolute; inset:0; border-radius:20px; background:#cbd5e1;
 		               cursor:pointer; transition:background .2s; }
 		.er2-slider:before { content:''; position:absolute; width:14px; height:14px;
 		                     left:3px; top:3px; border-radius:50%; background:#fff;
-		                     transition:transform .2s; }
-		.er2-toggle input:checked + .er2-slider { background:#28a745; }
+		                     transition:transform .2s;
+		                     box-shadow:0 1px 3px rgba(0,0,0,.2); }
+		.er2-toggle input:checked + .er2-slider { background:#4f46e5; }
 		.er2-toggle input:checked + .er2-slider:before { transform:translateX(16px); }
-		.er2-collapse-btn { width:20px; cursor:pointer; display:flex; align-items:center;
-		                    justify-content:center; background:#f0f2f5; border:none;
-		                    border-left:1px solid #e8eaed; color:#6c757d; font-size:14px;
-		                    align-self:stretch; flex-shrink:0; }
-		.er2-collapse-btn:hover { background:#e8eaed; }
-		/* Hover popup */
-		#er2-popup   { display:none; position:fixed; z-index:9999; background:#fff;
-		               border:1px solid #d1d8dd; border-radius:8px;
-		               box-shadow:0 6px 20px rgba(0,0,0,.15); padding:16px 18px;
-		               min-width:280px; max-width:360px; pointer-events:none; }
-		.er2-pop-name { font-size:15px; font-weight:700; color:#e63946; margin-bottom:10px; }
-		.er2-pop-row  { display:flex; gap:8px; margin-bottom:5px; font-size:13px; }
-		.er2-pop-lbl  { color:#8d99ae; min-width:100px; font-weight:500; flex-shrink:0; }
-		.er2-pop-val  { color:#2b2d42; font-weight:500; }
-		/* Sync marks btn */
-		.er2-sync-btn { font-size:10px; background:#e63946; color:#fff; border:none;
-		                border-radius:3px; padding:2px 6px; cursor:pointer; margin-top:3px; }
-		.er2-sync-btn:hover { background:#c1121f; }
-		/* Empty state */
+
+		/* ── Empty state ── */
 		.er2-empty   { display:flex; flex-direction:column; align-items:center;
-		               justify-content:center; padding:80px 20px; color:#adb5bd; }
-		.er2-empty svg { width:80px; height:80px; margin-bottom:16px; }
-		.er2-empty-txt { font-size:15px; font-weight:500; }
+		               justify-content:center; padding:80px 20px; color:#cbd5e1; }
+		.er2-empty svg { width:80px; height:80px; margin-bottom:20px; }
+		.er2-empty-txt { font-size:15px; font-weight:600; color:#94a3b8; }
+		.er2-empty-sub { font-size:12.5px; color:#cbd5e1; margin-top:6px; }
+
+		/* ── Avatar colour palette ── */
+		.av-0{background:linear-gradient(135deg,#4f46e5,#818cf8);}
+		.av-1{background:linear-gradient(135deg,#0ea5e9,#38bdf8);}
+		.av-2{background:linear-gradient(135deg,#10b981,#34d399);}
+		.av-3{background:linear-gradient(135deg,#f59e0b,#fbbf24);}
+		.av-4{background:linear-gradient(135deg,#ef4444,#f87171);}
+		.av-5{background:linear-gradient(135deg,#8b5cf6,#a78bfa);}
+		.av-6{background:linear-gradient(135deg,#ec4899,#f472b6);}
+		.av-7{background:linear-gradient(135deg,#14b8a6,#2dd4bf);}
+
+		/* ── Institutional Filter Modal ── */
+		.xif-overlay { position:fixed; inset:0; background:rgba(15,23,42,.35);
+		               z-index:10000; display:flex; align-items:center; justify-content:center;
+		               backdrop-filter:blur(2px); }
+		.xif-modal   { background:#fff; border-radius:14px; width:660px; max-width:95vw;
+		               max-height:85vh; display:flex; flex-direction:column;
+		               box-shadow:0 20px 60px rgba(0,0,0,.18); overflow:hidden; }
+		.xif-header  { display:flex; align-items:center; justify-content:space-between;
+		               padding:16px 20px; border-bottom:1.5px solid #f1f5f9; }
+		.xif-title   { font-size:15px; font-weight:700; color:#0f172a; }
+		.xif-close   { width:30px; height:30px; border-radius:8px; border:none;
+		               background:#f1f5f9; cursor:pointer; display:flex;
+		               align-items:center; justify-content:center; color:#64748b;
+		               font-size:16px; transition:all .15s; }
+		.xif-close:hover { background:#fee2e2; color:#ef4444; }
+		.xif-body    { display:flex; flex:1; overflow:hidden; }
+		.xif-types   { width:190px; flex-shrink:0; border-right:1.5px solid #f1f5f9;
+		               padding:8px; background:#fafbff; }
+		.xif-type    { padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600;
+		               color:#475569; cursor:pointer; margin-bottom:2px;
+		               transition:all .15s; display:flex; align-items:center; gap:8px; }
+		.xif-type:hover { background:#f1f5f9; color:#1e293b; }
+		.xif-type.active { background:#eef2ff; color:#4f46e5; }
+		.xif-type-badge { min-width:18px; height:18px; border-radius:20px;
+		                  background:#4f46e5; color:#fff; font-size:10px; font-weight:700;
+		                  display:inline-flex; align-items:center; justify-content:center;
+		                  padding:0 5px; margin-left:auto; }
+		.xif-panel   { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+		.xif-ph      { padding:14px 16px 8px; border-bottom:1.5px solid #f1f5f9; }
+		.xif-ph-title{ font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px; }
+		.xif-search  { width:100%; height:32px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 10px 0 30px; font-size:12.5px; outline:none; color:#1e293b;
+		               background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 9px center;
+		               box-sizing:border-box; transition:border-color .2s; }
+		.xif-search:focus { border-color:#4f46e5; background-color:#fff; }
+		.xif-opts    { flex:1; overflow-y:auto; padding:8px; }
+		.xif-opt     { display:flex; align-items:center; gap:10px; padding:9px 12px;
+		               border-radius:8px; cursor:pointer; font-size:13px; font-weight:500;
+		               color:#334155; transition:background .12s; }
+		.xif-opt:hover { background:#f8fafc; }
+		.xif-opt.checked { background:#eef2ff; color:#3730a3; }
+		.xif-opt input[type="checkbox"] { width:15px; height:15px; accent-color:#4f46e5;
+		                                  cursor:pointer; flex-shrink:0; }
+		.xif-empty-opts { padding:32px; text-align:center; color:#cbd5e1; font-size:13px; }
+		.xif-footer  { display:flex; align-items:center; justify-content:space-between;
+		               padding:12px 16px; border-top:1.5px solid #f1f5f9; background:#fafbff; }
+		.xif-status  { font-size:12.5px; color:#64748b; font-weight:500; }
+		.xif-status strong { color:#4f46e5; }
+		.xif-actions { display:flex; gap:8px; }
+		.xif-clear   { padding:0 14px; height:32px; border-radius:7px;
+		               border:1.5px solid #e2e8f0; background:#fff; color:#64748b;
+		               font-size:12.5px; font-weight:600; cursor:pointer; transition:all .15s; }
+		.xif-clear:hover { border-color:#ef4444; color:#ef4444; background:#fff5f5; }
+		.xif-apply   { padding:0 18px; height:32px; border-radius:7px; border:none;
+		               background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff;
+		               font-size:12.5px; font-weight:700; cursor:pointer; transition:opacity .15s; }
+		.xif-apply:hover { opacity:.88; }
+		/* Active filter badge on button */
+		.xif-btn-active { background:linear-gradient(135deg,#eef2ff,#e0e7ff) !important;
+		                  border-color:#c7d2fe !important; color:#4338ca !important; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -183,45 +327,72 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	// ── Render shell ──────────────────────────────────────────────────────────
 	var $body = $(page.main);
 	$body.html(`
-		<div class="er2-wrap" style="padding:16px 20px;">
+		<div class="er2-wrap" style="padding:20px 24px;">
 
 			<!-- Tabs -->
 			<div class="er2-tabs">
-				<div class="er2-tab active" data-tab="course">Course Results</div>
-				<div class="er2-tab" data-tab="term">Term Results</div>
-				<div class="er2-tab" data-tab="publish">Publish Results</div>
-				<div class="er2-tab" data-tab="settings">Settings</div>
+				<div class="er2-tab active" data-tab="course">
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+					Course Results
+				</div>
+				<div class="er2-tab" data-tab="term">
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:5px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+					Term Results
+				</div>
+				<div class="er2-tab" data-tab="publish">
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:5px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+					Publish Results
+				</div>
+				<div class="er2-tab" data-tab="settings">
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:5px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+					Settings
+				</div>
 			</div>
 
 			<!-- Course Results tab -->
 			<div id="er2-tab-course">
 
-				<!-- Top filter bar -->
-				<div class="er2-filters">
+				<!-- Top filter card -->
+				<div class="er2-filter-card">
 					<div class="er2-fgroup" style="max-width:260px;">
-						<span class="er2-flabel">Department</span>
+						<span class="er2-flabel">
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+							Department
+						</span>
 						<select class="er2-select" id="er2-dept">
-							<option value="">Select Department</option>
+							<option value="">Choose Department</option>
 						</select>
 					</div>
-					<div class="er2-fgroup" style="max-width:300px;">
-						<span class="er2-flabel">Course</span>
+					<div class="er2-fgroup" style="max-width:320px;">
+						<span class="er2-flabel">
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+							Course
+						</span>
 						<select class="er2-select" id="er2-course" disabled>
-							<option value="">Select Course</option>
+							<option value="">Choose Course</option>
 						</select>
 					</div>
 					<div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end;">
 						<div class="er2-btn-dd">
-							<button class="er2-btn outline-red" id="er2-sync-btn">
-								<i class="fa fa-refresh"></i> Sync Students <i class="fa fa-caret-down"></i>
+							<button class="er2-btn outline-indigo" id="er2-sync-btn">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+								Sync Students
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
 							</button>
 							<div class="dd-menu">
-								<div class="dd-item" id="er2-sync-enroll">Sync from Enrollment</div>
-								<div class="dd-item" id="er2-sync-class">Add Class Students</div>
+								<div class="dd-item" id="er2-sync-enroll">
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-2px;color:#4f46e5;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+									Sync from Enrollment
+								</div>
+								<div class="dd-item" id="er2-sync-class">
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-2px;color:#0ea5e9;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+									Add Class Students
+								</div>
 							</div>
 						</div>
 						<button class="er2-btn outline-red" id="er2-lock-btn">
-							<i class="fa fa-lock"></i> Lock
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+							Lock
 						</button>
 					</div>
 				</div>
@@ -233,27 +404,31 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				<div id="er2-actbar" class="er2-actbar" style="display:none;">
 					<div class="er2-srch">
 						<span class="er2-srch-ico">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-							     stroke="currentColor" stroke-width="2">
-								<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-							</svg>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 						</span>
-						<input type="text" id="er2-search" placeholder="Search by Student Name / Id">
+						<input type="text" id="er2-search" placeholder="Search student name or ID…">
 					</div>
-					<button class="er2-btn" id="er2-moderation-btn">Result Moderation</button>
+					<button class="er2-btn" id="er2-moderation-btn">
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+						Result Moderation
+					</button>
 					<div class="er2-btn-dd" id="er2-grades-dd">
-						<button class="er2-btn outline-red">
-							Manage Grades <i class="fa fa-caret-down"></i>
+						<button class="er2-btn outline-indigo">
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+							Manage Grades
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
 						</button>
 						<div class="dd-menu">
-							<div class="dd-item" id="er2-grade-edit">Edit</div>
+							<div class="dd-item" id="er2-grade-edit">Edit Grades</div>
 							<div class="dd-item" id="er2-grade-bulk-upload">Bulk Upload</div>
 							<div class="dd-item" id="er2-grade-report">Grade Report</div>
 						</div>
 					</div>
 					<div class="er2-btn-dd" id="er2-marks-dd">
-						<button class="er2-btn outline-red">
-							Manage Marks <i class="fa fa-caret-down"></i>
+						<button class="er2-btn outline-indigo">
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+							Manage Marks
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
 						</button>
 						<div class="dd-menu">
 							<div class="dd-item">Import Marks</div>
@@ -263,7 +438,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					</div>
 					<div class="er2-btn-dd" id="er2-status-dd">
 						<button class="er2-btn">
-							Manage Status <i class="fa fa-caret-down"></i>
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+							Manage Status
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
 						</button>
 						<div class="dd-menu">
 							<div class="dd-item">Mark as Submitted</div>
@@ -275,39 +452,39 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 				<!-- Filter row (hidden until course selected) -->
 				<div id="er2-filterrow" class="er2-filterrow" style="display:none;">
-					<select class="er2-select" id="er2-exam-filter" style="max-width:180px;">
-						<option value="">Filter Exam Type</option>
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+					<select class="er2-select" id="er2-exam-filter" style="max-width:190px;height:30px;font-size:12px;">
+						<option value="">All Exam Types</option>
 					</select>
 					<div class="er2-pag" id="er2-pag">
-						<span id="er2-pag-info"></span>
+						<span id="er2-pag-info" style="font-weight:600;color:#475569;"></span>
 						<button class="er2-pag-btn" id="er2-prev">&#8249;</button>
 						<button class="er2-pag-btn" id="er2-next">&#8250;</button>
 					</div>
-					<button class="er2-btn" id="er2-inst-filter" style="margin-left:4px;">
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-						     stroke="currentColor" stroke-width="2" style="margin-right:4px;">
-							<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-						</svg>
+					<button class="er2-btn" id="er2-inst-filter" style="margin-left:4px;height:30px;font-size:12px;">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
 						Institutional Filter
 					</button>
 				</div>
 
 				<!-- Empty state -->
 				<div id="er2-empty" class="er2-empty">
-					<svg viewBox="0 0 24 24" fill="none" stroke="#e63946" stroke-width="1.5">
-						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-						<polyline points="14 2 14 8 20 8"/>
-						<line x1="16" y1="13" x2="8" y2="13"/>
-						<line x1="16" y1="17" x2="8" y2="17"/>
-						<polyline points="10 9 9 9 8 9"/>
-						<circle cx="19" cy="19" r="4" fill="#e63946" stroke="none"/>
-						<path d="M17 19h4M19 17v4" stroke="#fff" stroke-width="1.5"/>
+					<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<circle cx="60" cy="60" r="56" fill="#eef2ff" stroke="#c7d2fe" stroke-width="2"/>
+						<rect x="35" y="30" width="50" height="60" rx="6" fill="#fff" stroke="#c7d2fe" stroke-width="2"/>
+						<rect x="43" y="44" width="34" height="3" rx="1.5" fill="#c7d2fe"/>
+						<rect x="43" y="53" width="26" height="3" rx="1.5" fill="#e0e7ff"/>
+						<rect x="43" y="62" width="30" height="3" rx="1.5" fill="#e0e7ff"/>
+						<rect x="43" y="71" width="20" height="3" rx="1.5" fill="#e0e7ff"/>
+						<circle cx="84" cy="84" r="18" fill="#4f46e5"/>
+						<path d="M76 84h16M84 76v16" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
 					</svg>
-					<div class="er2-empty-txt">Please Select Department &amp; Course</div>
+					<div class="er2-empty-txt">Select a Department &amp; Course</div>
+					<div class="er2-empty-sub">Choose from the filters above to view examination results</div>
 				</div>
 
 				<!-- Split panel -->
-				<div id="er2-split" class="er2-split" style="display:none;max-height:calc(100vh - 360px);">
+				<div id="er2-split" class="er2-split" style="display:none;max-height:calc(100vh - 340px);">
 					<!-- Left: student list -->
 					<div id="er2-left" class="er2-left">
 						<div class="er2-lhdr">
@@ -315,26 +492,32 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							<div class="er2-btn-dd" id="er2-select-dd" style="flex:1;min-width:0;">
 								<span class="er2-lhdr-title" id="er2-student-count-lbl"
 								      style="cursor:pointer;user-select:none;">
-									Students (0) <i class="fa fa-caret-down" style="font-size:10px;"></i>
+									Students (0)
+									<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px;"><polyline points="6 9 12 15 18 9"/></svg>
 								</span>
-								<div class="dd-menu" style="min-width:210px;">
-									<div class="dd-item" id="er2-sel-page">Select All For This Page</div>
-									<div class="dd-item" id="er2-sel-all">Select All Across All Pages</div>
-									<div class="dd-item" id="er2-sel-none">Select None</div>
+								<div class="dd-menu" style="min-width:220px;">
+									<div class="dd-item" id="er2-sel-page">
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+										Select All For This Page
+									</div>
+									<div class="dd-item" id="er2-sel-all">
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><polyline points="20 6 9 17 4 12"/></svg>
+										Select All Across All Pages
+									</div>
+									<div class="dd-item" id="er2-sel-none">
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+										Select None
+									</div>
 								</div>
 							</div>
 							<button class="er2-sort-btn" id="er2-sort-btn">
-								<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-								     stroke="currentColor" stroke-width="2.5">
-									<path d="M11 5H21M11 9H17M11 13H13"/>
-									<path d="M3 7l4-4 4 4M7 3v14M3 17l4 4 4-4"/>
-								</svg>
-								<span id="er2-sort-lbl">Registration Id</span>
+								<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 5H21M11 9H17M11 13H13"/><path d="M3 7l4-4 4 4M7 3v14"/></svg>
+								<span id="er2-sort-lbl">Sort</span>
 							</button>
 						</div>
-						<div style="padding:4px 10px 2px;display:flex;align-items:center;gap:6px;border-bottom:1px solid #f1f3f5;">
-							<span style="font-size:11px;color:#8d99ae;font-weight:500;">Filter:</span>
-							<select id="er2-status-filter" style="font-size:11px;border:1px solid #dee2e6;border-radius:3px;padding:2px 4px;color:#333;background:#fff;">
+						<div class="er2-status-bar">
+							<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+							<select id="er2-status-filter" style="font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;border-radius:6px;padding:3px 7px;color:#475569;background:#fff;outline:none;cursor:pointer;">
 								<option value="">All Students</option>
 								<option value="Active">Active</option>
 								<option value="Inactive">Inactive</option>
@@ -362,18 +545,33 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 			<!-- Other tabs (stubs) -->
 			<div id="er2-tab-term" style="display:none;">
-				<div class="er2-empty" style="padding:60px;">
-					<div class="er2-empty-txt" style="color:#adb5bd;">Term Results — Coming Soon</div>
+				<div class="er2-empty" style="padding:80px;">
+					<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;margin-bottom:16px;">
+						<circle cx="40" cy="40" r="38" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="2"/>
+						<path d="M26 40h28M40 26v28" stroke="#86efac" stroke-width="3" stroke-linecap="round"/>
+					</svg>
+					<div class="er2-empty-txt">Term Results</div>
+					<div class="er2-empty-sub">Coming soon</div>
 				</div>
 			</div>
 			<div id="er2-tab-publish" style="display:none;">
-				<div class="er2-empty" style="padding:60px;">
-					<div class="er2-empty-txt" style="color:#adb5bd;">Publish Results — Coming Soon</div>
+				<div class="er2-empty" style="padding:80px;">
+					<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;margin-bottom:16px;">
+						<circle cx="40" cy="40" r="38" fill="#fdf4ff" stroke="#e9d5ff" stroke-width="2"/>
+						<path d="M26 40h28M40 26v28" stroke="#d8b4fe" stroke-width="3" stroke-linecap="round"/>
+					</svg>
+					<div class="er2-empty-txt">Publish Results</div>
+					<div class="er2-empty-sub">Coming soon</div>
 				</div>
 			</div>
 			<div id="er2-tab-settings" style="display:none;">
-				<div class="er2-empty" style="padding:60px;">
-					<div class="er2-empty-txt" style="color:#adb5bd;">Settings — Coming Soon</div>
+				<div class="er2-empty" style="padding:80px;">
+					<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;margin-bottom:16px;">
+						<circle cx="40" cy="40" r="38" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/>
+						<path d="M26 40h28M40 26v28" stroke="#fdba74" stroke-width="3" stroke-linecap="round"/>
+					</svg>
+					<div class="er2-empty-txt">Settings</div>
+					<div class="er2-empty-sub">Coming soon</div>
 				</div>
 			</div>
 		</div>
@@ -469,10 +667,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 	// ── Course change ─────────────────────────────────────────────────────────
 	$course.on('change', function () {
-		S.course = $(this).val();
-		S.page   = 1;
-		S.search = '';
+		S.course       = $(this).val();
+		S.page         = 1;
+		S.search       = '';
+		S.inst_filter  = { programmes: [], batches: [], course_types: [] };
+		S.inst_options = null;
 		$search.val('');
+		$body.find('#er2-inst-filter').removeClass('xif-btn-active').find('.xif-count').remove();
 		hide_detail();
 		if (!S.course) return;
 		load_course_info();
@@ -539,6 +740,23 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		var checked = $(this).prop('checked');
 		$body.find('.er2-chk').prop('checked', checked);
 		if (!checked) S.selected_all = false;
+	});
+
+	// ── Institutional Filter ──────────────────────────────────────────────────
+	$body.find('#er2-inst-filter').on('click', function () {
+		if (!S.course) { frappe.show_alert({ message: 'Select a course first.', indicator: 'orange' }); return; }
+		if (S.inst_options) {
+			show_inst_filter_dialog(S.inst_options);
+		} else {
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.get_institutional_filter_options',
+				args: { course: S.course },
+				callback: function (r) {
+					S.inst_options = r.message || { programmes: [], batches: [], course_types: [] };
+					show_inst_filter_dialog(S.inst_options);
+				},
+			});
+		}
 	});
 
 	// ── Stub buttons ─────────────────────────────────────────────────────────
@@ -741,7 +959,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				$filterrow.show();
 				$empty.hide();
 				$split.show();
-				$cntLbl.text('Students (' + S.info.student_count + ')');
+				$cntLbl.html('Students (' + S.info.student_count + ') <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px;"><polyline points="6 9 12 15 18 9"/></svg>');
 				load_students();
 			},
 		});
@@ -751,13 +969,16 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		frappe.call({
 			method: 'slcm.slcm.page.examination_result.examination_result.get_course_students_paged',
 			args: {
-				course:         S.course,
-				search:         S.search,
-				page:           S.page,
-				page_length:    S.page_length,
-				sort_by:        S.sort_by,
-				sort_order:     S.sort_order,
-				status_filter:  S.status_filter,
+				course:            S.course,
+				search:            S.search,
+				page:              S.page,
+				page_length:       S.page_length,
+				sort_by:           S.sort_by,
+				sort_order:        S.sort_order,
+				status_filter:     S.status_filter,
+				inst_programmes:   JSON.stringify(S.inst_filter.programmes),
+				inst_batches:      JSON.stringify(S.inst_filter.batches),
+				inst_course_types: JSON.stringify(S.inst_filter.course_types),
 			},
 			callback: function (r) {
 				var data   = r.message || {};
@@ -794,39 +1015,51 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	// ── Renderers ────────────────────────────────────────────────────────────
 	function render_info_panel() {
 		var o = S.info || {};
-		function row(label, val, cls) {
-			return '<div class="er2-irow"><span class="er2-ilabel">' + label + '</span>' +
-				'<span class="er2-ival' + (cls ? ' ' + cls : '') + '">' + val + '</span></div>';
+
+		function card(accent, icon, label, val) {
+			return '<div class="er2-icard ' + accent + '">' +
+				'<div class="er2-ilabel">' + icon + ' ' + label + '</div>' +
+				'<div class="er2-ival">' + val + '</div>' +
+				'</div>';
 		}
-		var view_access = o.view_access ? '<span style="color:#28a745;font-weight:600;">ON</span>' : '<span style="color:#6c757d;">OFF</span>';
-		var edit_val    = o.edit_access
-			? '<span style="color:#28a745;font-weight:600;">ON</span>' + (o.edit_deadline ? ' | ' + frappe.utils.escape_html(o.edit_deadline) : '')
-			: '<span style="color:#6c757d;">OFF</span>';
-		var mask_val    = o.mask_student_info
-			? '<span style="color:#28a745;font-weight:600;">ON</span> | Admin Access'
-			: '<span style="color:#6c757d;">OFF</span>';
-		var eval_link   = o.evaluation_schema
+
+		var on_badge  = '<span style="display:inline-flex;align-items:center;gap:4px;background:#d1fae5;color:#065f46;font-weight:700;padding:2px 9px;border-radius:20px;font-size:11px;">&#9679; ON</span>';
+		var off_badge = '<span style="display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;color:#94a3b8;font-weight:700;padding:2px 9px;border-radius:20px;font-size:11px;">&#9675; OFF</span>';
+
+		var view_val = o.view_access ? on_badge : off_badge;
+		var edit_val = o.edit_access
+			? on_badge + (o.edit_deadline ? '<span style="font-size:11px;color:#64748b;margin-left:6px;">' + frappe.utils.escape_html(o.edit_deadline) + '</span>' : '')
+			: off_badge;
+		var mask_val = o.mask_student_info
+			? on_badge + '<span style="font-size:11px;color:#64748b;margin-left:6px;">Admin Access</span>'
+			: off_badge;
+
+		var eval_link = o.evaluation_schema
 			? '<a href="#" class="er2-schema-link" data-schema="eval" data-name="' + frappe.utils.escape_html(o.evaluation_schema) + '">' + frappe.utils.escape_html(o.evaluation_schema) + '</a>'
-			: '—';
-		var grade_link  = o.grade_schema
+			: '<span style="color:#94a3b8;">—</span>';
+		var grade_link = o.grade_schema
 			? '<a href="#" class="er2-schema-link" data-schema="grade" data-name="' + frappe.utils.escape_html(o.grade_schema) + '">' + frappe.utils.escape_html(o.grade_schema) + '</a>'
-			: '—';
-		var calc_link   = o.evaluation_schema
-			? '<a href="#" id="er2-calc-settings-link">Calculation Settings</a>'
-			: '—';
+			: '<span style="color:#94a3b8;">—</span>';
+		var calc_link = o.evaluation_schema
+			? '<a href="#" id="er2-calc-settings-link" style="color:#4f46e5;font-size:12px;font-weight:600;text-decoration:none;border-bottom:1px dashed #c7d2fe;">Calculation Settings</a>'
+			: '<span style="color:#94a3b8;">—</span>';
+
+		var course_lbl = frappe.utils.escape_html((o.course_name || '') + (o.course_code ? ' [' + o.course_code + ']' : ''));
 
 		$info.html(
 			'<div class="er2-info">' +
-			row('Number of Students', '<span style="color:#e63946;font-weight:700;font-size:16px;">' + o.student_count + '</span>') +
-			row('Evaluation Schema', eval_link) +
-			row('Course Name [Code]', frappe.utils.escape_html((o.course_name || '') + (o.course_code ? ' [' + o.course_code + ']' : ''))) +
-			row('Grade Schema', grade_link) +
-			row('Course Credits', o.credit_value || '—') +
-			row('Calculation Settings', calc_link) +
-			row('View Access', view_access) +
-			row('Edit Access', edit_val) +
-			'<div class="er2-irow"></div>' +
-			row('Student Masking', mask_val) +
+			card('', '&#128100;', 'Students Enrolled',
+				'<span style="font-size:22px;font-weight:800;color:#4f46e5;line-height:1.1;">' + (o.student_count || 0) + '</span>') +
+			card('teal', '&#128218;', 'Course',
+				'<span style="font-weight:700;color:#0369a1;">' + course_lbl + '</span>' +
+				'<span style="display:block;font-size:11px;color:#94a3b8;margin-top:2px;font-weight:500;">' +
+				(o.credit_value ? o.credit_value + ' Credits' : '') + '</span>') +
+			card('green', '&#9999;&#65039;', 'Evaluation Schema', eval_link +
+				'<span style="display:block;margin-top:4px;">' + calc_link + '</span>') +
+			card('amber', '&#127775;', 'Grade Schema', grade_link) +
+			card('rose', '&#128065;&#65039;', 'View Access', view_val) +
+			card('slate', '&#9998;', 'Edit Access', edit_val) +
+			card('violet', '&#128373;&#65039;', 'Student Masking', mask_val) +
 			'</div>'
 		);
 
@@ -859,27 +1092,34 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 	function render_student_list() {
 		var html = '';
-		S.students.forEach(function (s) {
+		S.students.forEach(function (s, idx) {
 			var status_cls = s.account_status === 'Blocked' ? 'blocked' :
-				s.student_status === 'Dropped' ? 'dropped' : 'active';
+				s.student_status === 'Dropped' ? 'dropped' :
+				s.student_status === 'Inactive' ? 'inactive' : 'active';
 			var status_txt = s.student_status || 'Active';
 			var initials   = (s.student_name || 'S').charAt(0).toUpperCase();
+			var av_cls     = 'av-' + (idx % 8);
+			var dot_color  = status_cls === 'active' ? '#10b981' : status_cls === 'dropped' ? '#f59e0b' : '#ef4444';
 			html +=
 				'<div class="er2-srow" data-student="' + frappe.utils.escape_html(s.student) + '">' +
-				'  <input type="checkbox" class="er2-chk" style="flex-shrink:0;">' +
-				'  <div class="er2-savatar">' + initials + '</div>' +
+				'  <input type="checkbox" class="er2-chk" style="flex-shrink:0;accent-color:#4f46e5;width:14px;height:14px;cursor:pointer;">' +
+				'  <div class="er2-savatar ' + av_cls + '">' + initials + '</div>' +
 				'  <div class="er2-sinfo">' +
 				'    <div class="er2-sname">' + frappe.utils.escape_html(s.student_name || s.student) + '</div>' +
 				'    <div class="er2-sreg">' + frappe.utils.escape_html(s.registration_id || s.student || '') + '</div>' +
 				'    <div class="er2-sbadges">' +
-				'      <span class="er2-badge ' + status_cls + '">' + frappe.utils.escape_html(status_txt) + '</span>' +
+				'      <span class="er2-badge ' + status_cls + '">' +
+				'        <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' + dot_color + ';margin-right:4px;vertical-align:1px;"></span>' +
+				frappe.utils.escape_html(status_txt) + '</span>' +
 				'      <span class="er2-badge regular">Regular</span>' +
 				'    </div>' +
 				'  </div>' +
 				'</div>';
 		});
 		if (!html) {
-			html = '<div style="padding:40px;text-align:center;color:#adb5bd;font-size:13px;">No students found.</div>';
+			html = '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:12.5px;font-weight:500;">' +
+				'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="display:block;margin:0 auto 10px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' +
+				'No students found</div>';
 		}
 		$slist.html(html);
 		bind_hover();
@@ -939,11 +1179,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		var total_cols = cols.length * 3 + 3 + 5 + reexam_cols.length * 2 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
-		var C_COMP   = 'background:#dbe4ff;color:#364fc7;';       // component group
-		var C_GRADE  = 'background:#e8f5e9;color:#1b5e20;';       // grade section
-		var C_STATUS = 'background:#fff8e1;color:#795548;';       // overall status
-		var C_REEXAM = 'background:#fce4ec;color:#880e4f;';       // re-exam
-		var C_FINAL  = 'background:#e8eaf6;color:#1a237e;';       // final result
+		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
+		var C_GRADE  = 'background:linear-gradient(90deg,#ecfdf5,#d1fae5);color:#065f46;border-bottom:2px solid #34d399;';
+		var C_STATUS = 'background:linear-gradient(90deg,#fffbeb,#fef3c7);color:#92400e;border-bottom:2px solid #fbbf24;';
+		var C_REEXAM = 'background:linear-gradient(90deg,#fdf2f8,#fce7f3);color:#9d174d;border-bottom:2px solid #f472b6;';
+		var C_FINAL  = 'background:linear-gradient(90deg,#eff6ff,#dbeafe);color:#1e40af;border-bottom:2px solid #60a5fa;';
 
 		// ── Header row 1: section-level group headers ────────────────────────────
 		var th1 = '';
@@ -1179,12 +1419,14 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				}
 				$popup.html(
 					'<div class="er2-pop-name">' + frappe.utils.escape_html(s.student_name || student) + '</div>' +
-					prow('Student ID',  s.registration_id, true) +
-					prow('Email ID',    s.email) +
-					prow('Programme',   s.programme) +
-					prow('Batch',       s.batch, true) +
-					prow('Intake',      s.intake) +
-					prow('Section',     s.section, true)
+					prow('Student ID',   s.registration_id, true) +
+					prow('Email ID',     s.email) +
+					prow('Department',   s.department) +
+					prow('Programme',    s.programme) +
+					prow('Batch Year',   s.batch) +
+					prow('Current Term', s.current_term) +
+					prow('Intake',       s.intake) +
+					prow('Section',      s.section)
 				);
 				position_popup(x, y);
 				$popup.show();
@@ -1356,6 +1598,171 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				});
 				d.show();
 			},
+		});
+	}
+
+	// ── Institutional Filter Dialog ───────────────────────────────────────────
+	function show_inst_filter_dialog(opts) {
+		// Working copy of selections (deep copy)
+		var sel = {
+			programmes:   S.inst_filter.programmes.slice(),
+			batches:      S.inst_filter.batches.slice(),
+			course_types: S.inst_filter.course_types.slice(),
+		};
+
+		var TYPES = [
+			{ key: 'programmes',   label: 'Department & Programme',
+			  icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+			  items: opts.programmes },
+			{ key: 'batches',      label: 'Batch',
+			  icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+			  items: opts.batches },
+			{ key: 'course_types', label: 'Course Type',
+			  icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+			  items: opts.course_types },
+		];
+
+		var activeType = 0;
+
+		function count_all() {
+			return sel.programmes.length + sel.batches.length + sel.course_types.length;
+		}
+
+		function render_types() {
+			var html = '';
+			TYPES.forEach(function (t, i) {
+				var cnt = sel[t.key].length;
+				html += '<div class="xif-type' + (i === activeType ? ' active' : '') + '" data-idx="' + i + '">' +
+					t.icon + ' ' + t.label +
+					(cnt ? '<span class="xif-type-badge">' + cnt + '</span>' : '') +
+					'</div>';
+			});
+			$modal.find('.xif-types').html(html);
+			$modal.find('.xif-type').on('click', function () {
+				activeType = parseInt($(this).data('idx'));
+				render_types();
+				render_panel();
+			});
+		}
+
+		function render_panel(search_val) {
+			var t     = TYPES[activeType];
+			var items = (t.items || []).filter(function (v) {
+				return !search_val || String(v).toLowerCase().includes(search_val.toLowerCase());
+			});
+			$modal.find('.xif-ph-title').text(t.label);
+			var html = '';
+			if (!items.length) {
+				html = '<div class="xif-empty-opts">No options available</div>';
+			} else {
+				items.forEach(function (v) {
+					var checked = sel[t.key].indexOf(String(v)) !== -1;
+					html += '<div class="xif-opt' + (checked ? ' checked' : '') + '" data-val="' + frappe.utils.escape_html(String(v)) + '">' +
+						'<input type="checkbox"' + (checked ? ' checked' : '') + '>' +
+						'<span>' + frappe.utils.escape_html(String(v)) + '</span>' +
+						'</div>';
+				});
+			}
+			$modal.find('.xif-opts').html(html);
+			$modal.find('.xif-opt').on('click', function (e) {
+				e.preventDefault();
+				var val = $(this).data('val');
+				var key = TYPES[activeType].key;
+				var idx = sel[key].indexOf(String(val));
+				if (idx === -1) sel[key].push(String(val));
+				else            sel[key].splice(idx, 1);
+				render_types();
+				render_panel($modal.find('.xif-search').val());
+				update_footer();
+			});
+		}
+
+		function update_footer() {
+			var total = count_all();
+			var parts = [];
+			if (sel.programmes.length)   parts.push(sel.programmes.length + ' Programme(s)');
+			if (sel.batches.length)      parts.push(sel.batches.length + ' Batch(es)');
+			if (sel.course_types.length) parts.push(sel.course_types.length + ' Course Type(s)');
+			$modal.find('.xif-status').html(
+				total ? '<strong>' + total + ' filter' + (total > 1 ? 's' : '') + '</strong> selected: ' + parts.join(', ')
+				      : 'No Filters Applied'
+			);
+		}
+
+		// Build modal HTML
+		var $overlay = $('<div class="xif-overlay"></div>');
+		var $modal = $(`
+			<div class="xif-modal">
+				<div class="xif-header">
+					<span class="xif-title">
+						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" style="vertical-align:-3px;margin-right:6px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+						Filter by
+					</span>
+					<button class="xif-close">&#10005;</button>
+				</div>
+				<div class="xif-body">
+					<div class="xif-types"></div>
+					<div class="xif-panel">
+						<div class="xif-ph">
+							<div class="xif-ph-title"></div>
+							<input class="xif-search" type="text" placeholder="Search…">
+						</div>
+						<div class="xif-opts"></div>
+					</div>
+				</div>
+				<div class="xif-footer">
+					<span class="xif-status">No Filters Applied</span>
+					<div class="xif-actions">
+						<button class="xif-clear">Clear All</button>
+						<button class="xif-apply">Apply</button>
+					</div>
+				</div>
+			</div>
+		`);
+
+		$overlay.append($modal);
+		$('body').append($overlay);
+
+		render_types();
+		render_panel();
+		update_footer();
+
+		// Search
+		$modal.find('.xif-search').on('input', function () {
+			render_panel($(this).val());
+		});
+
+		// Clear all
+		$modal.find('.xif-clear').on('click', function () {
+			sel.programmes   = [];
+			sel.batches      = [];
+			sel.course_types = [];
+			render_types();
+			render_panel($modal.find('.xif-search').val());
+			update_footer();
+		});
+
+		// Apply
+		$modal.find('.xif-apply').on('click', function () {
+			S.inst_filter = { programmes: sel.programmes, batches: sel.batches, course_types: sel.course_types };
+			S.page = 1;
+			// Update button badge
+			var total = count_all();
+			var $btn = $body.find('#er2-inst-filter');
+			if (total) {
+				$btn.addClass('xif-btn-active').find('.xif-count').remove();
+				$btn.append('<span class="xif-count" style="background:#4f46e5;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;">' + total + '</span>');
+			} else {
+				$btn.removeClass('xif-btn-active').find('.xif-count').remove();
+			}
+			$overlay.remove();
+			load_students();
+		});
+
+		// Close
+		$modal.find('.xif-close').on('click', function () { $overlay.remove(); });
+		$overlay.on('click', function (e) {
+			if ($(e.target).is($overlay)) $overlay.remove();
 		});
 	}
 
