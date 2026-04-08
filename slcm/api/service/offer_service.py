@@ -394,6 +394,7 @@ class OfferService:
         """
         Scheduled job logic to transition 'Issued' and 'Accepted' offers to 'Expired' 
         after the payment deadline (if payment is not completed).
+        Optimized for bulk expiry.
         """
         to_expire = frappe.get_all("Offer Letter", filters={
             "offer_status": ["in", ["Issued", "Accepted"]],
@@ -401,7 +402,9 @@ class OfferService:
         }, fields=["name"])
 
         processed = 0
-        for entry in to_expire:
+        batch_size = 50 
+        
+        for i, entry in enumerate(to_expire):
             try:
                 # We save each individually to trigger the automated status hook
                 doc = frappe.get_doc("Offer Letter", entry.name)
@@ -421,9 +424,19 @@ class OfferService:
                 )
                 
                 processed += 1
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), _("Manual Offer Expiry Failed"))
-        
+                
+                # Commit in chunks to avoid massive db locks
+                if (i + 1) % batch_size == 0:
+                    frappe.db.commit()
+                    
+            except Exception as e:
+                frappe.db.rollback()
+                frappe.log_error(f"Failed to expire offer {entry.name}: {str(e)}", "Auto Expiry Error")
+                
+        # Final commit for remaining records
+        if processed > 0:
+            frappe.db.commit()
+            
         return processed
 
     @staticmethod
