@@ -390,6 +390,7 @@ class OfferService:
         return True
 
     @staticmethod
+    @frappe.whitelist()
     def expire_offers():
         """
         Scheduled job logic to transition 'Issued' and 'Accepted' offers to 'Expired' 
