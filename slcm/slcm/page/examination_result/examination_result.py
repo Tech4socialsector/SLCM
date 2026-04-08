@@ -600,10 +600,11 @@ def get_course_info(course, exam_plan=None):
 
 
 @frappe.whitelist()
-def get_course_students_paged(course, search="", page=1, page_length=20,
+def get_course_students_paged(course, exam_plan="", search="", page=1, page_length=20,
                                sort_by="registration_id", sort_order="asc",
                                status_filter="", inst_programmes="",
-                               inst_batches="", inst_course_types=""):
+                               inst_batches="", inst_course_types="",
+                               grade_filter="", pass_filter=""):
 	"""Return paginated students from Student Course Marks for a course."""
 	import json
 	page        = int(page)
@@ -615,26 +616,44 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 	f_batches     = json.loads(inst_batches)     if inst_batches     else []
 	f_course_types= json.loads(inst_course_types)if inst_course_types else []
 
-	# Find exam plan for this course
-	assignment = frappe.db.sql(
-		"""
-		SELECT csa.exam_plan
-		FROM `tabCourse Schema Assignment` csa
-		JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
-		WHERE csa.course = %(course)s
-		ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
-		LIMIT 1
-		""",
-		{"course": course},
-		as_dict=True,
-	)
-	exam_plan = assignment[0]["exam_plan"] if assignment else ""
+	# Resolve exam plan and grade schema
+	if not exam_plan:
+		assignment = frappe.db.sql(
+			"""
+			SELECT csa.exam_plan, csa.grade_schema
+			FROM `tabCourse Schema Assignment` csa
+			JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
+			WHERE csa.course = %(course)s
+			ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
+			LIMIT 1
+			""",
+			{"course": course},
+			as_dict=True,
+		)
+		exam_plan    = assignment[0]["exam_plan"]    if assignment else ""
+		grade_schema = assignment[0]["grade_schema"] if assignment else ""
+	else:
+		row = frappe.db.get_value(
+			"Course Schema Assignment",
+			{"course": course, "exam_plan": exam_plan},
+			"grade_schema",
+		)
+		grade_schema = row or ""
 
-	sort_col = (
-		"sm.registration_id"
-		if sort_by == "registration_id"
-		else "CONCAT_WS(' ', sm.first_name, sm.last_name)"
-	)
+	# Determine failed grades for pass/fail filter
+	failed_grades = []
+	if pass_filter and grade_schema:
+		rows = frappe.db.sql(
+			"SELECT grade FROM `tabGrading Schema Component` WHERE parent = %s AND failed = 1",
+			grade_schema,
+			as_list=True,
+		)
+		failed_grades = [r[0] for r in rows]
+
+	sort_col = {
+		"total_marks": "scm.total_marks",
+		"name":        "CONCAT_WS(' ', sm.first_name, sm.last_name)",
+	}.get(sort_by, "sm.registration_id")
 	sort_dir = "DESC" if sort_order == "desc" else "ASC"
 
 	extra_cond = ""
@@ -660,6 +679,23 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 		for i, v in enumerate(f_batches):
 			params[f"batch_{i}"] = v
 	# course_type filter skipped — field lives on Program Enrollment, not Student Course Marks
+	if grade_filter:
+		extra_cond += " AND scm.grade = %(grade_filter)s"
+		params["grade_filter"] = grade_filter
+	if pass_filter == "failed" and failed_grades:
+		placeholders = ",".join([f"%(fg_{i})s" for i in range(len(failed_grades))])
+		extra_cond += f" AND scm.grade IN ({placeholders})"
+		for i, v in enumerate(failed_grades):
+			params[f"fg_{i}"] = v
+	elif pass_filter == "passed" and failed_grades:
+		placeholders = ",".join([f"%(fg_{i})s" for i in range(len(failed_grades))])
+		extra_cond += f" AND (scm.grade IS NOT NULL AND scm.grade != '' AND scm.grade NOT IN ({placeholders}))"
+		for i, v in enumerate(failed_grades):
+			params[f"fg_{i}"] = v
+	elif pass_filter == "graded":
+		extra_cond += " AND scm.grade IS NOT NULL AND scm.grade != ''"
+	elif pass_filter == "not_graded":
+		extra_cond += " AND (scm.grade IS NULL OR scm.grade = '')"
 
 	students = frappe.db.sql(
 		f"""
@@ -1452,3 +1488,530 @@ def save_student_remark(course, exam_plan, student, remark):
 	frappe.db.set_value("Student Course Marks", scm_name, "remark", remark)
 	frappe.db.commit()
 	return {"success": True}
+
+
+# ── Marks Entry & Grade Calculation ───────────────────────────────────────────
+
+@frappe.whitelist()
+def save_marks(course, exam_plan, student, component, assessment_type, marks_field, value):
+	"""Save/update a single marks entry for a student assessment. Returns updated total and grade."""
+	VALID_FIELDS = {"marks", "revaluation_marks", "moderated_marks"}
+	if marks_field not in VALID_FIELDS:
+		frappe.throw(f"Invalid marks_field: {marks_field}")
+
+	fvalue = frappe.utils.flt(value) if value not in (None, "", "null", "--") else None
+
+	scm_name = frappe.db.get_value(
+		"Student Course Marks",
+		{"course": course, "exam_plan": exam_plan, "student": student},
+		"name",
+	)
+	if not scm_name:
+		frappe.throw("Result record not found for this student.")
+
+	# Check lock status
+	access = frappe.db.get_value(
+		"Course Result Access",
+		{"exam_plan": exam_plan, "course": course},
+		["edit_access", "status"],
+		as_dict=True,
+	) or {}
+	if access.get("status") == "LOCKED":
+		frappe.throw("Result entry is locked for this course.")
+	if not int(access.get("edit_access") or 1):
+		frappe.throw("Edit access is disabled for this course.")
+
+	# Update or create the marks entry row
+	sme_name = frappe.db.get_value(
+		"Student Marks Entry",
+		{"parent": scm_name, "component": component, "assessment_type": assessment_type},
+		"name",
+	)
+	if sme_name:
+		frappe.db.set_value("Student Marks Entry", sme_name, marks_field, fvalue)
+	else:
+		# marks_field is already validated against VALID_FIELDS — safe to use in f-string
+		frappe.db.sql(
+			f"""
+			INSERT INTO `tabStudent Marks Entry`
+			(name, creation, modified, modified_by, owner,
+			 parent, parenttype, parentfield, component, assessment_type, {marks_field})
+			VALUES (%(name_val)s, NOW(), NOW(), %(user)s, %(user)s,
+			        %(parent)s, 'Student Course Marks', 'marks_entries',
+			        %(comp)s, %(atype)s, %(val)s)
+			""",
+			{
+				"name_val": frappe.generate_hash("", 10),
+				"user":     frappe.session.user,
+				"parent":   scm_name,
+				"comp":     component,
+				"atype":    assessment_type,
+				"val":      fvalue,
+			},
+		)
+
+	frappe.db.commit()
+	return _recalculate_student_marks(scm_name, course, exam_plan)
+
+
+def _recalculate_student_marks(scm_name, course, exam_plan):
+	"""Recalculate total marks and grade for a student. Updates SCM and returns new values."""
+	csa = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"course": course, "exam_plan": exam_plan},
+		["evaluation_schema", "grade_schema"],
+		as_dict=True,
+	) or {}
+	eval_schema  = csa.get("evaluation_schema")
+	grade_schema = csa.get("grade_schema")
+
+	if not eval_schema:
+		return {"total": None, "grade": ""}
+
+	configs = frappe.db.sql(
+		"""
+		SELECT sac.component, sac.assessment_type, sac.maximum_marks, sac.effective_marks
+		FROM `tabSchema Assessment Config` sac
+		WHERE sac.parent = %(schema)s
+		""",
+		{"schema": eval_schema},
+		as_dict=True,
+	)
+	if not configs:
+		return {"total": None, "grade": ""}
+
+	entries = frappe.db.sql(
+		"""
+		SELECT sme.component, sme.assessment_type,
+		       sme.marks, sme.revaluation_marks, sme.moderated_marks
+		FROM `tabStudent Marks Entry` sme
+		WHERE sme.parent = %(scm)s
+		""",
+		{"scm": scm_name},
+		as_dict=True,
+	)
+	entry_map = {}
+	for e in entries:
+		key = (e["component"] or "") + "|" + (e["assessment_type"] or "")
+		entry_map[key] = e
+
+	total = 0.0
+	for cfg in configs:
+		key     = (cfg["component"] or "") + "|" + (cfg["assessment_type"] or "")
+		e       = entry_map.get(key, {})
+		raw_m   = frappe.utils.flt(e.get("marks") or 0)
+		max_m   = frappe.utils.flt(cfg["maximum_marks"] or 0)
+		eff_m   = frappe.utils.flt(cfg["effective_marks"] or 0)
+		if max_m > 0 and eff_m > 0:
+			total += raw_m * (eff_m / max_m)
+		else:
+			total += raw_m
+
+	grade = _lookup_grade(grade_schema, total) if grade_schema else ""
+
+	frappe.db.set_value("Student Course Marks", scm_name, {
+		"total_marks": round(total, 2),
+		"grade":       grade,
+	})
+	frappe.db.commit()
+	return {"total": round(total, 2), "grade": grade}
+
+
+def _lookup_grade(grade_schema_name, total_marks):
+	"""Return grade string for given total from a Grading Schema."""
+	try:
+		schema = frappe.get_doc("Grading Schema", grade_schema_name)
+	except Exception:
+		return ""
+	total = frappe.utils.flt(total_marks)
+	for row in schema.grades:
+		f       = frappe.utils.flt(row.marks_from)
+		t       = frappe.utils.flt(row.marks_to)
+		from_op = row.from_operator or ">="
+		to_op   = row.to_operator   or "<"
+		ok_from = (total >= f) if from_op == ">=" else (total > f)
+		ok_to   = (total <= t) if to_op   == "<=" else (total < t)
+		if ok_from and ok_to:
+			return row.grade
+	return ""
+
+
+# ── Lock / Unlock ─────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def toggle_lock(course, exam_plan):
+	"""Toggle LOCKED / UNLOCKED status on the Course Result Access record."""
+	doc        = _get_or_create_access(exam_plan, course)
+	new_status = "UNLOCKED" if doc.status == "LOCKED" else "LOCKED"
+	frappe.db.set_value("Course Result Access", doc.name, "status", new_status)
+	frappe.db.commit()
+	return {"status": new_status}
+
+
+# ── Excel Import / Export ─────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def export_marks_excel(course, exam_plan):
+	"""Export component-wise marks to Excel. Returns file_url for download."""
+	import io
+	try:
+		import openpyxl
+		from openpyxl.styles import Font, PatternFill, Alignment
+	except ImportError:
+		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
+
+	csa_row = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"course": course, "exam_plan": exam_plan},
+		"evaluation_schema",
+	)
+	if not csa_row:
+		frappe.throw("No evaluation schema found for this course / exam plan.")
+
+	cols = frappe.db.sql(
+		"""
+		SELECT sac.component, ec.component_name, sac.assessment_type, eat.type_name,
+		       sac.label, sac.maximum_marks, sac.idx
+		FROM `tabSchema Assessment Config` sac
+		LEFT JOIN `tabExam Component` ec     ON ec.name  = sac.component
+		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = sac.assessment_type
+		WHERE sac.parent = %(schema)s
+		ORDER BY sac.idx ASC
+		""",
+		{"schema": csa_row},
+		as_dict=True,
+	)
+
+	students = frappe.db.sql(
+		"""
+		SELECT scm.student, scm.name AS scm_name,
+		       sm.registration_id,
+		       CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		ORDER BY sm.registration_id ASC
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+	if not students:
+		frappe.throw("No students found for this course / exam plan.")
+
+	entries = frappe.db.sql(
+		"""
+		SELECT scm.student, sme.component, sme.assessment_type, sme.marks
+		FROM `tabStudent Course Marks` scm
+		JOIN `tabStudent Marks Entry` sme ON sme.parent = scm.name
+		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+	marks_map = {}
+	for e in entries:
+		key = (e["component"] or "") + "|" + (e["assessment_type"] or "")
+		marks_map.setdefault(e["student"], {})[key] = e["marks"]
+
+	wb = openpyxl.Workbook()
+	ws = wb.active
+	ws.title = "Marks"
+
+	hdr_font  = Font(bold=True, color="FFFFFF")
+	hdr_fill  = PatternFill("solid", fgColor="4338CA")
+	c_align   = Alignment(horizontal="center")
+
+	col_keys  = []
+	headers   = ["Registration ID", "Student Name"]
+	for col in cols:
+		lbl  = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
+		maxm = col.get("maximum_marks") or 0
+		headers.append(f"{lbl} (Max:{maxm})")
+		col_keys.append((col["component"] or "") + "|" + (col["assessment_type"] or ""))
+
+	for ci, h in enumerate(headers, 1):
+		cell           = ws.cell(row=1, column=ci, value=h)
+		cell.font      = hdr_font
+		cell.fill      = hdr_fill
+		cell.alignment = c_align
+	ws.column_dimensions["A"].width = 20
+	ws.column_dimensions["B"].width = 30
+
+	for ri, s in enumerate(students, 2):
+		ws.cell(row=ri, column=1, value=s["registration_id"] or "")
+		ws.cell(row=ri, column=2, value=s["student_name"]     or "")
+		sm = marks_map.get(s["student"], {})
+		for ci, key in enumerate(col_keys, 3):
+			m = sm.get(key)
+			ws.cell(row=ri, column=ci, value=m if m is not None else "")
+
+	buf  = io.BytesIO()
+	wb.save(buf)
+	buf.seek(0)
+
+	course_code = frappe.db.get_value("Course", course, "course_code") or course
+	fname       = f"marks_{course_code}_{exam_plan}.xlsx".replace(" ", "_")
+	fdoc        = frappe.get_doc({
+		"doctype":    "File",
+		"file_name":  fname,
+		"is_private": 1,
+		"content":    buf.read(),
+	})
+	fdoc.save(ignore_permissions=True)
+	return {"file_url": fdoc.file_url}
+
+
+@frappe.whitelist()
+def import_marks_excel(course, exam_plan, file_url):
+	"""Import component-wise marks from Excel. Returns {updated, errors}."""
+	import io
+	try:
+		import openpyxl
+	except ImportError:
+		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
+
+	file_doc  = frappe.get_doc("File", {"file_url": file_url})
+	file_path = file_doc.get_full_path()
+
+	wb = openpyxl.load_workbook(file_path, data_only=True)
+	ws = wb.active
+
+	headers = [str(ws.cell(1, c).value or "").strip() for c in range(1, ws.max_column + 1)]
+
+	# Identify Registration ID column
+	reg_col = next(
+		(i for i, h in enumerate(headers) if h.lower().replace(" ", "_") == "registration_id"),
+		None,
+	)
+	if reg_col is None:
+		frappe.throw("'Registration ID' column not found in the uploaded file.")
+
+	# Get schema columns to map header labels → (component, assessment_type)
+	csa_row = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"course": course, "exam_plan": exam_plan},
+		"evaluation_schema",
+	) or ""
+	if not csa_row:
+		frappe.throw("No evaluation schema found.")
+
+	schema_cols = frappe.db.sql(
+		"""
+		SELECT sac.component, sac.assessment_type, eat.type_name, sac.label, sac.maximum_marks
+		FROM `tabSchema Assessment Config` sac
+		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = sac.assessment_type
+		WHERE sac.parent = %(schema)s ORDER BY sac.idx ASC
+		""",
+		{"schema": csa_row},
+		as_dict=True,
+	)
+
+	header_to_key = {}
+	for col in schema_cols:
+		lbl  = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
+		maxm = col.get("maximum_marks") or 0
+		header_to_key[f"{lbl} (Max:{maxm})"] = (col["component"], col["assessment_type"])
+
+	# Build reg_id → (scm_name, student_id) map
+	students = frappe.db.sql(
+		"""
+		SELECT scm.name AS scm_name, scm.student, sm.registration_id
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+	reg_map = {s["registration_id"]: (s["scm_name"], s["student"]) for s in students}
+
+	updated = 0
+	errors  = []
+
+	for row in ws.iter_rows(min_row=2, values_only=True):
+		reg_id = str(row[reg_col]).strip() if row[reg_col] else ""
+		if not reg_id or reg_id not in reg_map:
+			if reg_id:
+				errors.append(f"Student '{reg_id}' not found.")
+			continue
+
+		scm_name, _student = reg_map[reg_id]
+		row_changed = False
+
+		for ci, h in enumerate(headers):
+			if h not in header_to_key or ci >= len(row):
+				continue
+			component, atype = header_to_key[h]
+			cell_val = row[ci]
+			if cell_val is None or str(cell_val).strip() == "":
+				continue
+			try:
+				fval = float(cell_val)
+			except (ValueError, TypeError):
+				errors.append(f"Invalid value '{cell_val}' for {reg_id} / {h}.")
+				continue
+
+			sme_name = frappe.db.get_value(
+				"Student Marks Entry",
+				{"parent": scm_name, "component": component, "assessment_type": atype},
+				"name",
+			)
+			if sme_name:
+				frappe.db.set_value("Student Marks Entry", sme_name, "marks", fval)
+			else:
+				frappe.db.sql(
+					"""
+					INSERT INTO `tabStudent Marks Entry`
+					(name, creation, modified, modified_by, owner,
+					 parent, parenttype, parentfield, component, assessment_type, marks)
+					VALUES (%(nm)s, NOW(), NOW(), %(usr)s, %(usr)s,
+					        %(par)s, 'Student Course Marks', 'marks_entries',
+					        %(comp)s, %(atype)s, %(marks)s)
+					""",
+					{
+						"nm":    frappe.generate_hash("", 10),
+						"usr":   frappe.session.user,
+						"par":   scm_name,
+						"comp":  component,
+						"atype": atype,
+						"marks": fval,
+					},
+				)
+			row_changed = True
+
+		if row_changed:
+			_recalculate_student_marks(scm_name, course, exam_plan)
+			updated += 1
+
+	frappe.db.commit()
+	return {"updated": updated, "errors": errors}
+
+
+# ── Statistics ────────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def get_course_statistics(course, exam_plan):
+	"""Return pass/fail counts, grade distribution, avg marks, and topper for a course."""
+	# Fetch ALL students (including those without marks yet) for total/graded/not_graded counts
+	rows = frappe.db.sql(
+		"""
+		SELECT scm.grade, scm.total_marks,
+		       CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name,
+		       sm.registration_id
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+
+	# Grade schema pass info
+	csa = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"course": course, "exam_plan": exam_plan},
+		"grade_schema",
+	)
+	failed_grades = set()
+	if csa:
+		try:
+			gs = frappe.get_doc("Grading Schema", csa)
+			failed_grades = {r.grade for r in gs.grades if r.failed}
+		except Exception:
+			pass
+
+	grade_dist = {}
+	marks_with_values = []
+	topper_row = None
+	graded     = 0
+	not_graded = 0
+
+	for r in rows:
+		g = (r["grade"] or "").strip()
+		if g:
+			graded += 1
+			grade_dist[g] = grade_dist.get(g, 0) + 1
+		else:
+			not_graded += 1
+
+		if r["total_marks"] is not None:
+			m = frappe.utils.flt(r["total_marks"])
+			marks_with_values.append(m)
+			if topper_row is None or m > frappe.utils.flt(topper_row["total_marks"]):
+				topper_row = r
+
+	passed = sum(v for g, v in grade_dist.items() if g not in failed_grades)
+	failed = sum(v for g, v in grade_dist.items() if g in failed_grades)
+
+	avg = round(sum(marks_with_values) / len(marks_with_values), 2) if marks_with_values else 0
+
+	return {
+		"total":      len(rows),
+		"graded":     graded,
+		"not_graded": not_graded,
+		"passed":     passed,
+		"failed":     failed,
+		"avg_marks":  avg,
+		"topper":     {
+			"name":  topper_row["student_name"]   if topper_row else "",
+			"reg":   topper_row["registration_id"] if topper_row else "",
+			"marks": topper_row["total_marks"]     if topper_row else 0,
+		},
+		"grade_dist": grade_dist,
+	}
+
+
+# ── Email Results ─────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def send_results_email(course, exam_plan):
+	"""Queue result emails to all students in the course/exam_plan."""
+	rows = frappe.db.sql(
+		"""
+		SELECT scm.student, scm.total_marks, scm.grade,
+		       sm.first_name, sm.last_name, sm.official_email_id,
+		       c.course_name, ep.exam_name
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		LEFT JOIN `tabCourse`         c  ON c.name  = scm.course
+		LEFT JOIN `tabExam Plan`      ep ON ep.name = scm.exam_plan
+		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		  AND sm.official_email_id IS NOT NULL AND sm.official_email_id != ''
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+
+	sent = 0
+	for r in rows:
+		student_name = " ".join(filter(None, [r["first_name"], r["last_name"]]))
+		total        = f"{frappe.utils.flt(r['total_marks']):.2f}" if r["total_marks"] is not None else "N/A"
+		grade        = r["grade"] or "N/A"
+		course_name  = r["course_name"] or course
+		exam_name    = r["exam_name"]   or exam_plan
+
+		subject = f"Your Result: {course_name} — {exam_name}"
+		message = f"""
+		<p>Dear {student_name},</p>
+		<p>Your examination result for <strong>{course_name}</strong> under <strong>{exam_name}</strong> has been published.</p>
+		<table style="border-collapse:collapse;margin:10px 0;">
+		  <tr><td style="padding:6px 12px;border:1px solid #e2e8f0;font-weight:600;">Course</td>
+		      <td style="padding:6px 12px;border:1px solid #e2e8f0;">{course_name}</td></tr>
+		  <tr><td style="padding:6px 12px;border:1px solid #e2e8f0;font-weight:600;">Exam Plan</td>
+		      <td style="padding:6px 12px;border:1px solid #e2e8f0;">{exam_name}</td></tr>
+		  <tr><td style="padding:6px 12px;border:1px solid #e2e8f0;font-weight:600;">Total Marks</td>
+		      <td style="padding:6px 12px;border:1px solid #e2e8f0;">{total}</td></tr>
+		  <tr><td style="padding:6px 12px;border:1px solid #e2e8f0;font-weight:600;">Grade</td>
+		      <td style="padding:6px 12px;border:1px solid #e2e8f0;font-size:18px;font-weight:700;color:#4f46e5;">{grade}</td></tr>
+		</table>
+		<p>Please contact your faculty for any queries.</p>
+		"""
+		frappe.sendmail(
+			recipients=[r["official_email_id"]],
+			subject=subject,
+			message=message,
+			now=False,
+		)
+		sent += 1
+
+	return {"sent": sent}

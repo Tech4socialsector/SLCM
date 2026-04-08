@@ -27,6 +27,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		show_status:     false,  // view/hide student assessment status columns
 		selected_all:    false,  // select all across pages
 		status_filter:   '',     // student status filter
+		grade_filter:    '',     // grade drilldown filter
+		pass_filter:     '',     // pass/fail/graded/not_graded filter
 		inst_filter:     { programmes: [], batches: [], course_types: [] },
 		inst_options:    null,   // cached filter options from backend
 	};
@@ -321,6 +323,45 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		/* Active filter badge on button */
 		.xif-btn-active { background:linear-gradient(135deg,#eef2ff,#e0e7ff) !important;
 		                  border-color:#c7d2fe !important; color:#4338ca !important; }
+
+		/* ── Stat cards (drilldown) ── */
+		.er2-stats-panel { background:#fff; border-radius:12px; padding:16px 20px;
+		                   margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+		.er2-stats-cards { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+		.er2-stat-card   { background:#fff; border-radius:12px; padding:14px 16px; flex:1;
+		                   min-width:130px; box-shadow:0 1px 3px rgba(0,0,0,.06);
+		                   cursor:pointer; transition:all .18s; border:2px solid transparent;
+		                   display:flex; align-items:center; gap:12px; }
+		.er2-stat-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.1); transform:translateY(-1px); }
+		.er2-stat-card.er2-sc-active { border-color:var(--sc-color,#4f46e5);
+		                               background:var(--sc-bg,#eef2ff); }
+		.er2-stat-icon   { width:38px; height:38px; border-radius:9px; flex-shrink:0;
+		                   display:flex; align-items:center; justify-content:center;
+		                   font-size:17px; background:var(--sc-bg,#eef2ff); }
+		.er2-stat-body   { flex:1; min-width:0; }
+		.er2-stat-val    { font-size:22px; font-weight:800; color:var(--sc-color,#4f46e5);
+		                   line-height:1.1; }
+		.er2-stat-lbl    { font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase;
+		                   letter-spacing:.6px; margin-top:2px; }
+		.er2-stats-meta  { display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+		.er2-stats-avg   { font-size:12.5px; color:#475569; font-weight:500; }
+		.er2-gd-wrap     { display:flex; gap:5px; flex-wrap:wrap; }
+		.er2-gd-badge    { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;
+		                   background:#f1f5f9; color:#475569; cursor:pointer; transition:all .15s;
+		                   border:1.5px solid transparent; }
+		.er2-gd-badge:hover  { background:#eef2ff; color:#4f46e5; }
+		.er2-gd-badge.er2-gd-active { background:#eef2ff; color:#4f46e5; border-color:#c7d2fe; }
+
+		/* ── Editable marks input ── */
+		.er2-mi { width:68px; height:26px; border:1.5px solid #e2e8f0; border-radius:6px;
+		          padding:0 5px; font-size:12px; color:#334155; text-align:center;
+		          background:#fff; outline:none; transition:border-color .15s; }
+		.er2-mi:focus   { border-color:#4f46e5; box-shadow:0 0 0 2px rgba(79,70,229,.12); }
+		.er2-mi:disabled { background:#f8fafc; color:#94a3b8; cursor:not-allowed; }
+
+		/* ── Lock button states ── */
+		.er2-btn.outline-green { border-color:#a7f3d0; color:#059669; background:#f0fdf4; }
+		.er2-btn.outline-green:hover { background:#dcfce7; border-color:#6ee7b7; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -409,6 +450,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 				<!-- Course info panel (hidden until course selected) -->
 				<div id="er2-info-panel" style="display:none;"></div>
+
+				<!-- Statistics panel (hidden until course selected) -->
+				<div id="er2-stats-panel" class="er2-stats-panel" style="display:none;"></div>
 
 				<!-- Action bar (hidden until course selected) -->
 				<div id="er2-actbar" class="er2-actbar" style="display:none;">
