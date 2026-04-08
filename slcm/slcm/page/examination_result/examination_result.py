@@ -1957,7 +1957,7 @@ def get_course_statistics(course, exam_plan):
 			"reg":   topper_row["registration_id"] if topper_row else "",
 			"marks": topper_row["total_marks"]     if topper_row else 0,
 		},
-		"grade_dist": grade_dist,
+		"grade_dist": [{"grade": g, "count": c} for g, c in sorted(grade_dist.items(), key=lambda x: -x[1])],
 	}
 
 

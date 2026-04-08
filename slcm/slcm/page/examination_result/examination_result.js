@@ -168,7 +168,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		                  display:flex; align-items:center; gap:6px; }
 
 		/* ── Student row ── */
-		.er2-srow    { display:flex; align-items:center; gap:10px; padding:11px 13px;
+		.er2-srow    { display:flex; align-items:center; gap:10px; padding:0 13px;
+		               height:64px; min-height:64px; flex-shrink:0; box-sizing:border-box;
 		               border-bottom:1.5px solid #f8fafc; cursor:pointer; transition:background .15s; }
 		.er2-srow:hover { background:#f8fafc; }
 		.er2-srow.selected { background:#eef2ff; }
@@ -199,11 +200,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		                 letter-spacing:.2px; }
 		.er2-rtable th.type-hdr { font-size:12px; font-weight:700; letter-spacing:.3px;
 		                          border-bottom:2px solid rgba(0,0,0,.08); }
-		.er2-rtable td { text-align:center; color:#334155; border-bottom:1px solid #f8fafc; }
+		.er2-rtable td { text-align:center; color:#334155; border-bottom:1.5px solid #f1f5f9; vertical-align:middle; }
 		.er2-rtable tbody tr:hover td { background:#fafbff; }
 		.er2-rtable tbody tr:nth-child(even) td { background:#fafcff; }
 		.er2-rtable tbody tr:nth-child(even):hover td { background:#f0f4ff; }
-		.er2-mrow    { min-height:64px; height:64px; }
+		.er2-mrow    { height:64px; max-height:64px; }
 
 		/* ── Collapse button ── */
 		.er2-collapse-btn { width:18px; cursor:pointer; display:flex; align-items:center;
@@ -214,15 +215,35 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 		/* ── Hover popup ── */
 		#er2-popup   { display:none; position:fixed; z-index:9999; background:#fff;
-		               border:1.5px solid #e2e8f0; border-radius:12px;
-		               box-shadow:0 12px 32px rgba(0,0,0,.14); padding:16px 18px;
-		               min-width:280px; max-width:360px; pointer-events:none; }
-		.er2-pop-name { font-size:14px; font-weight:700; color:#4f46e5; margin-bottom:10px;
-		                padding-bottom:8px; border-bottom:1.5px solid #f1f5f9; }
+		               border:1.5px solid #e2e8f0; border-radius:14px;
+		               box-shadow:0 16px 40px rgba(0,0,0,.16); padding:0;
+		               min-width:310px; max-width:400px; pointer-events:none;
+		               overflow:hidden; }
+		.er2-pop-head { background:linear-gradient(135deg,#4f46e5,#6366f1); padding:14px 16px; }
+		.er2-pop-name { font-size:14px; font-weight:700; color:#fff; }
+		.er2-pop-sub  { font-size:11px; color:rgba(255,255,255,.75); margin-top:2px; font-weight:500; }
+		.er2-pop-body { padding:12px 16px; }
 		.er2-pop-row  { display:flex; gap:8px; margin-bottom:5px; font-size:12.5px; }
-		.er2-pop-lbl  { color:#94a3b8; min-width:90px; font-weight:600; flex-shrink:0;
+		.er2-pop-lbl  { color:#94a3b8; min-width:95px; font-weight:600; flex-shrink:0;
 		                font-size:11px; text-transform:uppercase; letter-spacing:.4px; }
 		.er2-pop-val  { color:#1e293b; font-weight:600; }
+		.er2-pop-divider { border:none; border-top:1.5px solid #f1f5f9; margin:10px 0; }
+		.er2-pop-marks-title { font-size:10.5px; font-weight:700; color:#94a3b8; text-transform:uppercase;
+		                       letter-spacing:.5px; margin-bottom:8px; }
+		.er2-pop-marks-grid { display:flex; flex-wrap:wrap; gap:6px; }
+		.er2-pop-mark-chip  { background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px;
+		                      padding:5px 10px; font-size:11.5px; min-width:80px; text-align:center; }
+		.er2-pop-mark-chip .chip-lbl { color:#64748b; font-size:10px; font-weight:600;
+		                               text-transform:uppercase; letter-spacing:.3px; display:block; }
+		.er2-pop-mark-chip .chip-val { color:#1e293b; font-size:13px; font-weight:700;
+		                               display:block; margin-top:2px; }
+		.er2-pop-total-row { display:flex; justify-content:space-between; align-items:center;
+		                     background:#eef2ff; border-radius:8px; padding:8px 12px; margin-top:8px; }
+		.er2-pop-total-lbl { font-size:11px; color:#4f46e5; font-weight:700;
+		                     text-transform:uppercase; letter-spacing:.4px; }
+		.er2-pop-total-val { font-size:18px; font-weight:800; color:#4f46e5; }
+		.er2-pop-grade-badge { background:#4f46e5; color:#fff; font-size:11px; font-weight:700;
+		                       padding:2px 10px; border-radius:20px; margin-left:8px; }
 
 		/* ── Sync btn ── */
 		.er2-sync-btn { font-size:10px; background:linear-gradient(135deg,#4f46e5,#6366f1);
@@ -485,9 +506,14 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
 						</button>
 						<div class="dd-menu">
-							<div class="dd-item">Import Marks</div>
-							<div class="dd-item">Export Marks</div>
-							<div class="dd-item">Clear All Marks</div>
+							<div class="dd-item" id="er2-marks-import">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+								Import Marks
+							</div>
+							<div class="dd-item" id="er2-marks-export">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+								Export Marks (Excel)
+							</div>
 						</div>
 					</div>
 					<div class="er2-btn-dd" id="er2-status-dd">
@@ -652,9 +678,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	var $nextBtn  = $body.find('#er2-next');
 	var $pagInfo  = $body.find('#er2-pag-info');
 	var $cntLbl   = $body.find('#er2-student-count-lbl');
-	var $collapse = $body.find('#er2-collapse-btn');
-	var $popup    = $('#er2-popup');
-	var $examFilter = $body.find('#er2-exam-filter');
+	var $collapse    = $body.find('#er2-collapse-btn');
+	var $popup       = $('#er2-popup');
+	var $examFilter  = $body.find('#er2-exam-filter');
+	var $statsPanel  = $body.find('#er2-stats-panel');
 
 	// ── Tabs ──────────────────────────────────────────────────────────────────
 	$body.find('.er2-tab').on('click', function () {
@@ -854,13 +881,50 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 	// ── Manage Grades ─────────────────────────────────────────────────────────
 	$body.find('#er2-grade-edit').on('click', function () {
-		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
-		frappe.msgprint('Edit Grades — coming soon.');
+		if (!S.course || !S.info) { frappe.msgprint('Select a course first.'); return; }
+		var ids = S.students.map(function (s) { return s.student; });
+		if (!ids.length) { frappe.msgprint('No students on this page.'); return; }
+		frappe.confirm(
+			'Auto-calculate grades for all ' + ids.length + ' student(s) on this page using the Grade Schema?',
+			function () {
+				var done = 0;
+				frappe.show_alert({ message: 'Calculating grades…', indicator: 'blue' });
+				var promises = ids.map(function (sid) {
+					return new Promise(function (resolve) {
+						frappe.call({
+							method: 'slcm.slcm.page.examination_result.examination_result.save_marks',
+							// Trigger recalc by calling with a no-op: reload marks after
+							// Actually just call _recalculate via a dedicated call below
+							args: {
+								course: S.course, exam_plan: S.info.exam_plan || '',
+								student: sid, component: '', assessment_type: '',
+								marks_field: 'marks', value: null,
+							},
+							error: function () { resolve(); },
+							callback: function (r) {
+								done++;
+								if (r.message) {
+									if (!S.marks[sid]) S.marks[sid] = { entries: {} };
+									S.marks[sid].total = r.message.total;
+									S.marks[sid].grade = r.message.grade;
+								}
+								resolve();
+							},
+						});
+					});
+				});
+				Promise.all(promises).then(function () {
+					render_marks_table();
+					load_stats();
+					frappe.show_alert({ message: 'Grades recalculated for ' + done + ' students.', indicator: 'green' });
+				});
+			}
+		);
 	});
 
 	$body.find('#er2-grade-report').on('click', function () {
-		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
-		frappe.msgprint('Grade Report — coming soon.');
+		if (!S.course || !S.info) { frappe.msgprint('Select a course first.'); return; }
+		load_stats(true);
 	});
 
 	$body.find('#er2-grade-bulk-upload').on('click', function () {
@@ -957,10 +1021,84 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		}, 300);
 	});
 	$body.find('#er2-lock-btn').on('click', function () {
-		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
-		frappe.confirm('Lock this course for result entry?', function () {
-			frappe.show_alert({ message: 'Lock feature coming soon.', indicator: 'orange' });
+		if (!S.course || !S.info) { frappe.msgprint('Select a course first.'); return; }
+		var isLocked = S.info.status === 'LOCKED';
+		var msg = isLocked
+			? 'Unlock this course to allow marks entry?'
+			: 'Lock this course? Faculty will not be able to edit marks after locking.';
+		frappe.confirm(msg, function () {
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.toggle_lock',
+				args: { course: S.course, exam_plan: S.info.exam_plan || '' },
+				callback: function (r) {
+					var res = r.message || {};
+					S.info.status = res.status;
+					update_lock_btn();
+					render_marks_table();
+					frappe.show_alert({
+						message: res.status === 'LOCKED' ? 'Course locked.' : 'Course unlocked.',
+						indicator: res.status === 'LOCKED' ? 'red' : 'green',
+					});
+				},
+			});
 		});
+	});
+
+	// ── Import / Export Marks ─────────────────────────────────────────────────
+	$body.find('#er2-marks-export').on('click', function () {
+		if (!S.course || !S.info) { frappe.msgprint('Select a course first.'); return; }
+		frappe.show_alert({ message: 'Preparing Excel…', indicator: 'blue' });
+		frappe.call({
+			method: 'slcm.slcm.page.examination_result.examination_result.export_marks_excel',
+			args: { course: S.course, exam_plan: S.info.exam_plan || '' },
+			callback: function (r) {
+				if (r.message && r.message.file_url) {
+					window.open(r.message.file_url);
+				}
+			},
+		});
+	});
+
+	$body.find('#er2-marks-import').on('click', function () {
+		if (!S.course || !S.info) { frappe.msgprint('Select a course first.'); return; }
+		var d = new frappe.ui.Dialog({
+			title: 'Import Marks from Excel',
+			fields: [
+				{
+					fieldname: 'info_html',
+					fieldtype: 'HTML',
+					options: '<p style="font-size:12px;color:#64748b;margin:0 0 10px;">Upload the filled marks template. Use <b>Export Marks (Excel)</b> first to get the correct column format.</p>',
+				},
+				{ fieldname: 'upload_file', fieldtype: 'Attach', label: 'Excel File (.xlsx)', reqd: 1 },
+				{
+					fieldname: 'note',
+					fieldtype: 'HTML',
+					options: '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px;margin-top:6px;font-size:12px;color:#14532d;">' +
+						'Rows are matched by Registration ID or Email. Existing marks will be overwritten.' +
+						'</div>',
+				},
+			],
+			primary_action_label: 'Import',
+			primary_action: function (vals) {
+				if (!vals.upload_file) { frappe.msgprint('Please attach a file.'); return; }
+				d.hide();
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.import_marks_excel',
+					args: { course: S.course, exam_plan: S.info.exam_plan || '', file_url: vals.upload_file },
+					callback: function (r) {
+						var res = r.message || {};
+						var msg = 'Imported: ' + (res.updated || 0) + ' students updated.';
+						if (res.errors && res.errors.length) {
+							msg += ' Errors: ' + res.errors.slice(0, 5).join(', ');
+						}
+						frappe.msgprint(msg);
+						load_students();
+						load_stats();
+					},
+				});
+			},
+		});
+		d.show();
 	});
 	$body.find('#er2-sync-btn').on('click', function () {
 		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
@@ -1042,15 +1180,95 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				S.reexam_columns = S.info.reexam_columns || [];
 				render_info_panel();
 				populate_exam_filter();
+				update_lock_btn();
 				$info.show();
 				$actbar.show();
 				$filterrow.show();
+				$statsPanel.show();
 				$empty.hide();
 				$split.show();
 				$cntLbl.html('Students (' + S.info.student_count + ') <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px;"><polyline points="6 9 12 15 18 9"/></svg>');
 				load_students();
+				load_stats();
 			},
 		});
+	}
+
+	function update_lock_btn() {
+		var isLocked = S.info && S.info.status === 'LOCKED';
+		var $btn = $body.find('#er2-lock-btn');
+		if (isLocked) {
+			$btn.removeClass('outline-red').addClass('outline-indigo').html(
+				'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>' +
+				'Unlock'
+			);
+		} else {
+			$btn.removeClass('outline-indigo').addClass('outline-red').html(
+				'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+				'Lock'
+			);
+		}
+	}
+
+	function load_stats(show_panel) {
+		if (!S.info || !S.info.exam_plan) return;
+		frappe.call({
+			method: 'slcm.slcm.page.examination_result.examination_result.get_course_statistics',
+			args: { course: S.course, exam_plan: S.info.exam_plan },
+			callback: function (r) {
+				var st = r.message || {};
+				var graded = (st.passed || 0) + (st.failed || 0);
+
+				// Build grade dist badges
+				var distHtml = '';
+				(st.grade_dist || []).forEach(function (g) {
+					distHtml += '<span style="display:inline-flex;align-items:center;gap:4px;' +
+						'background:#f1f5f9;border-radius:6px;padding:2px 9px;font-size:12px;margin:2px;">' +
+						'<b style="color:#1e293b;">' + frappe.utils.escape_html(g.grade || '') + '</b>' +
+						'<span style="color:#64748b;">' + (g.count || 0) + '</span></span>';
+				});
+
+				// Extra info row
+				var extra = '';
+				if (st.avg_marks !== undefined) {
+					extra += '<span style="font-size:12px;color:#64748b;font-weight:500;margin-right:16px;">&#x2205; Avg: <b>' + st.avg_marks + '</b></span>';
+				}
+				if (st.topper && st.topper.name) {
+					extra += '<span style="font-size:12px;color:#64748b;font-weight:500;">&#127942; Topper: <b>' + frappe.utils.escape_html(st.topper.name) + '</b>' +
+						(st.topper.marks ? ' (' + st.topper.marks + ')' : '') + '</span>';
+				}
+
+				$statsPanel.html(
+					'<div class="er2-stats-cards">' +
+					_stat_card('#4f46e5', '&#127979;', st.total || 0,    'Total Students') +
+					_stat_card('#0ea5e9', '&#9998;',   graded,            'Graded') +
+					_stat_card('#10b981', '&#10003;',  st.passed || 0,    'Passed') +
+					_stat_card('#ef4444', '&#10007;',  st.failed || 0,    'Failed') +
+					_stat_card('#f59e0b', '&#8987;',   st.not_graded || 0,'Not Graded') +
+					(distHtml ? '<div class="er2-stat-card" style="--sc-color:#7c3aed;flex:2.5;">' +
+						'<div class="er2-stat-icon" style="background:#ede9fe;color:#7c3aed;font-size:16px;">&#127775;</div>' +
+						'<div class="er2-stat-body">' +
+						'<div class="er2-stat-lbl">Grade Distribution</div>' +
+						'<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:4px;">' + distHtml + '</div>' +
+						'</div></div>' : '') +
+					'</div>' +
+					(extra ? '<div class="er2-stats-meta">' + extra + '</div>' : '')
+				);
+
+				if (show_panel) {
+					$statsPanel[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				}
+			},
+		});
+	}
+
+	function _stat_card(color, icon, num, lbl) {
+		return '<div class="er2-stat-card" style="--sc-color:' + color + ';">' +
+			'<div class="er2-stat-icon" style="background:' + color + '22;color:' + color + ';font-size:16px;">' + icon + '</div>' +
+			'<div class="er2-stat-body">' +
+			'<div class="er2-stat-val">' + num + '</div>' +
+			'<div class="er2-stat-lbl">' + lbl + '</div>' +
+			'</div></div>';
 	}
 
 	function load_students() {
@@ -1361,19 +1579,47 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var total   = sm.total   != null ? parseFloat(sm.total).toFixed(2) : '—';
 			var cells   = '';
 
+			var canEdit = S.info && S.info.edit_access && S.info.status !== 'LOCKED';
+
 			// Regular assessment cells
 			cols.forEach(function (col) {
-				var key = (col.component || '') + '|' + (col.assessment_type || '');
-				var e   = entries[key] || {};
-				var m   = e.marks             != null ? parseFloat(e.marks).toFixed(2)             : '--';
-				var rv  = e.revaluation_marks  != null ? parseFloat(e.revaluation_marks).toFixed(2) : '--';
-				var mo  = e.moderated_marks    != null ? parseFloat(e.moderated_marks).toFixed(2)   : '--';
-				cells += '<td>' + m + '</td><td>' + rv + '</td><td>' + mo + '</td>';
+				var key  = (col.component || '') + '|' + (col.assessment_type || '');
+				var e    = entries[key] || {};
+				var mVal = e.marks            != null ? parseFloat(e.marks).toFixed(2)             : '';
+				var rvVal= e.revaluation_marks != null ? parseFloat(e.revaluation_marks).toFixed(2) : '';
+				var moVal= e.moderated_marks   != null ? parseFloat(e.moderated_marks).toFixed(2)   : '';
+				var comp = frappe.utils.escape_html(col.component      || '');
+				var atyp = frappe.utils.escape_html(col.assessment_type || '');
+				var stu  = frappe.utils.escape_html(s.student);
+				if (canEdit) {
+					cells += '<td style="padding:4px 6px;">' +
+						'<input type="number" step="0.01" min="0" class="er2-mi" ' +
+						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="marks" ' +
+						'value="' + frappe.utils.escape_html(mVal) + '" placeholder="—" ' +
+						'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
+						'</td>' +
+						'<td style="padding:4px 6px;">' +
+						'<input type="number" step="0.01" min="0" class="er2-mi" ' +
+						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="revaluation_marks" ' +
+						'value="' + frappe.utils.escape_html(rvVal) + '" placeholder="—" ' +
+						'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
+						'</td>' +
+						'<td style="padding:4px 6px;">' +
+						'<input type="number" step="0.01" min="0" class="er2-mi" ' +
+						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="moderated_marks" ' +
+						'value="' + frappe.utils.escape_html(moVal) + '" placeholder="—" ' +
+						'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
+						'</td>';
+				} else {
+					cells += '<td>' + (mVal  || '—') + '</td>' +
+					         '<td>' + (rvVal || '—') + '</td>' +
+					         '<td>' + (moVal || '—') + '</td>';
+				}
 			});
 
 			// Grade section
-			cells += '<td style="font-weight:700;">' + total + '</td>' +
-				'<td style="font-weight:600;color:#1b5e20;">' + frappe.utils.escape_html(sm.grade || '—') + '</td>' +
+			cells += '<td style="font-weight:700;" class="er2-total-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + total + '</td>' +
+				'<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(sm.grade || '—') + '</td>' +
 				'<td>' + frappe.utils.escape_html(sm.moderated_grade || '—') + '</td>';
 
 			// Overall Status
@@ -1432,6 +1678,61 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			frappe.msgprint('Sync Marks for this component — coming soon.');
 		});
 
+		// ── Inline marks entry ─────────────────────────────────────────────────
+		var _saveTimer = {};
+		$mtable.find('.er2-mi').on('focus', function () {
+			$(this).css('border-color', '#4f46e5');
+		}).on('blur', function () {
+			$(this).css('border-color', '#e2e8f0');
+		}).on('change', function () {
+			var $inp    = $(this);
+			var student = $inp.data('student');
+			var comp    = $inp.data('comp')  || '';
+			var atype   = $inp.data('atype') || '';
+			var field   = $inp.data('field');
+			var val     = $inp.val().trim();
+			var $tr     = $mtable.find('tr[data-student="' + student + '"]');
+
+			// Yellow flash while pending
+			$tr.css('background', '#fefce8');
+			clearTimeout(_saveTimer[student + field + comp + atype]);
+			_saveTimer[student + field + comp + atype] = setTimeout(function () {
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.save_marks',
+					args: {
+						course:          S.course,
+						exam_plan:       S.info.exam_plan || '',
+						student:         student,
+						component:       comp,
+						assessment_type: atype,
+						marks_field:     field,
+						value:           val === '' ? null : parseFloat(val),
+					},
+					callback: function (r) {
+						$tr.css('background', '');
+						if (r.message) {
+							var total = r.message.total;
+							var grade = r.message.grade;
+							// Update in-place
+							$mtable.find('.er2-total-cell[data-student="' + student + '"]')
+								.text(total != null ? parseFloat(total).toFixed(2) : '—');
+							$mtable.find('.er2-grade-cell[data-student="' + student + '"]')
+								.text(grade || '—');
+							// Update state
+							if (!S.marks[student]) S.marks[student] = { entries: {} };
+							S.marks[student].total = total;
+							S.marks[student].grade = grade;
+							// Refresh stats bar
+							load_stats();
+						}
+					},
+					error: function () {
+						$tr.css('background', '#fff1f2');
+					},
+				});
+			}, 500);
+		});
+
 		// Remarks: show save button on typing
 		$mtable.find('.er2-remark-input').on('input', function () {
 			$(this).siblings('.er2-remark-save').show();
@@ -1455,6 +1756,25 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				},
 			});
 		});
+
+		// ── Sync student-list top offset with marks thead height ──────────────────
+		// After the table renders (with sticky 3-row thead), measure the total
+		// non-scrollable header area in both panels and add a spacer so that
+		// student row[i] aligns pixel-perfectly with marks data row[i].
+		setTimeout(function () {
+			var $thead   = $mtable.find('table thead');
+			var theadH   = $thead.length ? $thead.outerHeight(true) : 0;
+			var lhdrH    = $left.find('.er2-lhdr').outerHeight(true)      || 0;
+			var stbarH   = $left.find('.er2-status-bar').outerHeight(true) || 0;
+			var leftHdrH = lhdrH + stbarH;
+			var spacerH  = Math.max(0, theadH - leftHdrH);
+			$slist.find('.er2-align-spacer').remove();
+			if (spacerH > 0) {
+				$slist.prepend(
+					'<div class="er2-align-spacer" style="height:' + spacerH + 'px;flex-shrink:0;"></div>'
+				);
+			}
+		}, 30);
 	}
 
 	function update_pagination() {
@@ -1859,6 +2179,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		$info.hide().empty();
 		$actbar.hide();
 		$filterrow.hide();
+		$statsPanel.hide().empty();
 		$split.hide();
 		$popup.hide();
 		$empty.show();
