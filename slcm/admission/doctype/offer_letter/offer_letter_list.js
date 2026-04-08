@@ -61,6 +61,13 @@ frappe.listview_settings['Offer Letter'] = {
                         fieldname: 'offer_status',
                         fieldtype: 'Select',
                         options: '\nDraft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn'
+                    },
+                    {
+                        label: __('Output Format'),
+                        fieldname: 'output_format',
+                        fieldtype: 'Select',
+                        options: 'ZIP Archive\nSingle Merged PDF',
+                        default: 'ZIP Archive'
                     }
                 ],
                 primary_action_label: __('Download'),
@@ -76,6 +83,7 @@ frappe.listview_settings['Offer Letter'] = {
                                 if (typeof r.message === 'string') {
                                     // Sync response (URL)
                                     let file_url = r.message;
+                                    frappe.hide_progress();
                                     let w = window.open(file_url, '_blank');
                                     if (!w) {
                                         frappe.msgprint(__('Please allow popups to download the file.'));

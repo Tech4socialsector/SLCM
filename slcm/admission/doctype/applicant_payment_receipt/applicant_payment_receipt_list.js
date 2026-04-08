@@ -68,6 +68,7 @@ frappe.listview_settings['Applicant Payment Receipt'] = {
 								if (typeof r.message === 'string') {
 									// Sync response (URL)
 									let file_url = r.message;
+									frappe.hide_progress();
 									let w = window.open(file_url, '_blank');
 									if (!w) {
 										frappe.msgprint(__('Please allow popups to download the file.'));

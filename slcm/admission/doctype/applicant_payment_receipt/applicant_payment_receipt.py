@@ -78,6 +78,8 @@ def get_bulk_receipts_zip(filters):
 	elif filters.get("to_date"):
 		query_filters["payment_date"] = ["<=", filters["to_date"]]
 
+	output_format = filters.get("output_format", "ZIP Archive")
+
 	receipts = frappe.get_all(
 		"Applicant Payment Receipt",
 		filters=query_filters,
@@ -92,21 +94,22 @@ def get_bulk_receipts_zip(filters):
 			method="slcm.admission.doctype.applicant_payment_receipt.applicant_payment_receipt.bulk_receipts_zip_worker",
 			queue="long",
 			receipts=receipts,
-			user=frappe.session.user
+			user=frappe.session.user,
+			output_format=output_format
 		)
 		return {
 			"status": "enqueued",
-			"message": _("Preparing ZIP for {0} fee receipts in the background. You will receive a notification when it's ready.").format(len(receipts))
+			"message": _("Preparing {0} for {1} fee receipts in the background. You will receive a notification when it's ready.").format(output_format, len(receipts))
 		}
 
-	file_url, summary, errors = process_bulk_receipts_zip(receipts, user=frappe.session.user)
+	file_url, summary, errors = process_bulk_receipts_zip(receipts, user=frappe.session.user, output_format=output_format)
 	return file_url
 
 @frappe.whitelist()
-def bulk_receipts_zip_worker(receipts, user):
+def bulk_receipts_zip_worker(receipts, user, output_format="ZIP Archive"):
 	frappe.set_user(user)
 	try:
-		file_url, summary, errors = process_bulk_receipts_zip(receipts, user=user)
+		file_url, summary, errors = process_bulk_receipts_zip(receipts, user=user, output_format=output_format)
 		
 		error_details = ""
 		if errors:
@@ -134,85 +137,126 @@ def bulk_receipts_zip_worker(receipts, user):
 	except Exception as e:
 		frappe.log_error(f"Bulk Receipt Download Worker Failed: {e!s}", "Bulk Download Error")
 
-def process_bulk_receipts_zip(receipts, user=None):
+def process_bulk_receipts_zip(receipts, user=None, output_format="ZIP Archive"):
+	import tempfile
+	import os
 	from frappe.utils import formatdate
-	zip_buffer = io.BytesIO()
+	
 	total = len(receipts)
 	success_count = 0
 	failure_count = 0
 	errors = []
 
-	with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-		for i, receipt in enumerate(receipts):
-			formatted_date = formatdate(receipt.payment_date, "dd-mm-yyyy")
-			filename = f"{receipt.applicant} - fee receipt ( {formatted_date} ).pdf"
-
-			try:
-				pdf_content = None
-				# Optimized: Try to use pre-generated PDF first
-				if receipt.get("receipt_pdf"):
+	# Use a temporary file on disk for memory safety
+	with tempfile.NamedTemporaryFile(delete=False, suffix=".zip" if output_format == "ZIP Archive" else ".pdf") as temp_out:
+		temp_path = temp_out.name
+		
+		if output_format == "ZIP Archive":
+			with zipfile.ZipFile(temp_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
+				for i, receipt in enumerate(receipts):
+					formatted_date = formatdate(receipt.payment_date, "dd-mm-yyyy")
+					filename = f"{receipt.applicant} - fee receipt ( {formatted_date} ).pdf"
+					
 					try:
-						from frappe.utils.file_manager import get_file_path
-						file_path = get_file_path(receipt.receipt_pdf)
-						if file_path and os.path.exists(file_path):
-							with open(file_path, "rb") as f:
-								pdf_content = f.read()
+						content = _get_receipt_pdf_content(receipt)
+						if content:
+							zip_file.writestr(filename, content)
+							success_count += 1
 						else:
-							frappe.log_error(f"File not found on disk for {receipt.name}: {receipt.receipt_pdf}", "Bulk Download Debug")
+							failure_count += 1
+							errors.append(f"Empty content for {receipt.name}")
 					except Exception as e:
-						frappe.log_error(f"Error reading PDF file for {receipt.name}: {str(e)}", "Bulk Download Error")
-				
-				# Fallback to dynamic generation if stored PDF is missing or failed
-				if not pdf_content:
-					print_format = receipt.get("payment_receipt_template") or "Applicant Payment Receipt"
-					pdf_content = frappe.get_print(
-						"Applicant Payment Receipt",
-						receipt.name,
-						print_format,
-						as_pdf=True,
-					)
-				
-				if pdf_content:
-					zip_file.writestr(filename, pdf_content)
-					success_count += 1
-				else:
-					failure_count += 1
-					errors.append(f"Could not retrieve PDF for {receipt.name}")
-
-			except Exception as e:
-				failure_count += 1
-				error_msg = str(e)
-				errors.append(f"Error processing {receipt.name}: {error_msg}")
-				frappe.log_error(f"Error generating PDF for {receipt.name}: {error_msg}", "Bulk Receipt Download Error")
-				continue
+						failure_count += 1
+						errors.append(f"Error zipping {receipt.name}: {str(e)}")
+					
+					_update_bulk_progress(i, total, success_count, failure_count, user, "bulk_receipt_download_progress")
+		
+		else:
+			# PDF Merging logic
+			from pypdf import PdfWriter
+			merger = PdfWriter()
 			
-			# Adaptive Real-time progress update (prevents flooding for large batches)
-			update_step = 100 if total > 1000 else 10
-			if (i + 1) % update_step == 0 or i == total - 1:
-				frappe.publish_realtime("bulk_receipt_download_progress", {
-					"progress": [(i + 1) * 100 / total],
-					"title": _("Preparing Bulk Download..."),
-					"description": _("Processing {0} of {1} fee receipts ({2} successful, {3} failed)").format(
-						i + 1, total, success_count, failure_count
-					)
-				}, user=user or frappe.session.user)
+			for i, receipt in enumerate(receipts):
+				try:
+					content = _get_receipt_pdf_content(receipt)
+					if content:
+						# For merging, we need to load into memory one by one
+						import io
+						merger.append(io.BytesIO(content))
+						success_count += 1
+					else:
+						failure_count += 1
+						errors.append(f"Empty content for {receipt.name}")
+				except Exception as e:
+					failure_count += 1
+					errors.append(f"Error merging {receipt.name}: {str(e)}")
+				
+				_update_bulk_progress(i, total, success_count, failure_count, user, "bulk_receipt_download_progress")
+			
+			with open(temp_path, "wb") as f:
+				merger.write(f)
+			merger.close()
 
 	if success_count == 0:
+		if os.path.exists(temp_path):
+			os.remove(temp_path)
 		frappe.throw(_("Failed to generate any receipts. Please check the error logs."))
 
-	zip_filename = f"Bulk_Fee_Receipts_{now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
-	saved_zip = save_file(
-		zip_filename,
-		zip_buffer.getvalue(),
-		"Applicant Payment Receipt",
-		"Bulk Download",
-		is_private=1,
-	)
+	# Save the final file from disk to Frappe
+	final_filename = f"Bulk_Receipts_{now_datetime().strftime('%Y%m%d_%H%M%S')}"
+	final_filename += ".zip" if output_format == "ZIP Archive" else ".pdf"
+	
+	with open(temp_path, "rb") as f:
+		saved_file = save_file(
+			final_filename,
+			f.read(), # This still reads into memory for save_file, but the *generation* was disk-safe.
+			"Applicant Payment Receipt",
+			"Bulk Download",
+			is_private=1,
+		)
 
-	# Build a summary message
+	# Cleanup temp file
+	if os.path.exists(temp_path):
+		os.remove(temp_path)
+
 	summary = _("Bulk Download Complete: {0} receipts successful").format(success_count)
 	if failure_count > 0:
 		summary += _(", {0} failed").format(failure_count)
 	
-	# If background job, worker will notify. If sync, returning here.
-	return saved_zip.file_url, summary, errors
+	return saved_file.file_url, summary, errors
+
+def _get_receipt_pdf_content(receipt):
+	"""Internal helper to get PDF content for a receipt (cached or dynamic)."""
+	pdf_content = None
+	if receipt.get("receipt_pdf"):
+		try:
+			from frappe.utils.file_manager import get_file_path
+			file_path = get_file_path(receipt.receipt_pdf)
+			if file_path and os.path.exists(file_path):
+				with open(file_path, "rb") as f:
+					pdf_content = f.read()
+		except Exception:
+			pass
+	
+	if not pdf_content:
+		print_format = receipt.get("payment_receipt_template") or "Applicant Payment Receipt"
+		pdf_content = frappe.get_print(
+			"Applicant Payment Receipt",
+			receipt.name,
+			print_format,
+			as_pdf=True,
+		)
+	return pdf_content
+
+def _update_bulk_progress(i, total, success, failure, user, event_name):
+	"""Internal helper for adaptive progress updates."""
+	update_step = 100 if total > 1000 else 10
+	if (i + 1) % update_step == 0 or i == total - 1:
+		frappe.publish_realtime(event_name, {
+			"progress": [(i + 1) * 100 / total],
+			"title": _("Preparing Bulk Download..."),
+			"description": _("Processing {0} of {1} records ({2} successful, {3} failed)").format(
+				i + 1, total, success, failure
+			)
+		}, user=user or frappe.session.user)
+
