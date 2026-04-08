@@ -7,6 +7,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 	// ── State ─────────────────────────────────────────────────────────────────
 	var S = {
+		exam_plan:       null,
 		department:      null,
 		course:          null,
 		info:            null,   // course_info response
@@ -354,6 +355,15 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 				<!-- Top filter card -->
 				<div class="er2-filter-card">
+					<div class="er2-fgroup" style="max-width:240px;">
+						<span class="er2-flabel">
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+							Exam Plan
+						</span>
+						<select class="er2-select" id="er2-exam-plan">
+							<option value="">Choose Exam Plan</option>
+						</select>
+					</div>
 					<div class="er2-fgroup" style="max-width:260px;">
 						<span class="er2-flabel">
 							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -581,6 +591,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	`);
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
+	var $examPlan = $body.find('#er2-exam-plan');
 	var $dept     = $body.find('#er2-dept');
 	var $course   = $body.find('#er2-course');
 	var $info     = $body.find('#er2-info-panel');
@@ -632,6 +643,18 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		syncing = false;
 	});
 
+	// ── Load exam plans ───────────────────────────────────────────────────────
+	frappe.call({
+		method: 'slcm.slcm.page.examination_result.examination_result.get_exam_plans',
+		callback: function (r) {
+			(r.message || []).forEach(function (ep) {
+				var label = frappe.utils.escape_html(ep.exam_name || ep.name);
+				if (ep.status) label += ' [' + frappe.utils.escape_html(ep.status) + ']';
+				$examPlan.append('<option value="' + ep.name + '">' + label + '</option>');
+			});
+		},
+	});
+
 	// ── Load departments ──────────────────────────────────────────────────────
 	frappe.call({
 		method: 'slcm.slcm.page.examination_result.examination_result.get_departments',
@@ -641,6 +664,27 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					frappe.utils.escape_html(d.department_name) + '</option>');
 			});
 		},
+	});
+
+	// ── Exam Plan change ─────────────────────────────────────────────────────
+	$examPlan.on('change', function () {
+		S.exam_plan  = $(this).val();
+		S.department = null;
+		S.course     = null;
+		S.page       = 1;
+		$dept.val('').find('option:not(:first)').remove();
+		$course.val('').prop('disabled', true).find('option:not(:first)').remove();
+		hide_detail();
+		frappe.call({
+			method: 'slcm.slcm.page.examination_result.examination_result.get_departments',
+			args: { exam_plan: S.exam_plan || '' },
+			callback: function (r) {
+				(r.message || []).forEach(function (d) {
+					$dept.append('<option value="' + d.name + '">' +
+						frappe.utils.escape_html(d.department_name) + '</option>');
+				});
+			},
+		});
 	});
 
 	// ── Dept change ───────────────────────────────────────────────────────────
@@ -653,7 +697,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		if (!S.department) return;
 		frappe.call({
 			method: 'slcm.slcm.page.examination_result.examination_result.get_courses_by_department',
-			args: { department: S.department },
+			args: { department: S.department, exam_plan: S.exam_plan || '' },
 			callback: function (r) {
 				(r.message || []).forEach(function (c) {
 					$course.append('<option value="' + c.name + '">' +
@@ -947,7 +991,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	function load_course_info() {
 		frappe.call({
 			method: 'slcm.slcm.page.examination_result.examination_result.get_course_info',
-			args: { course: S.course },
+			args: { course: S.course, exam_plan: S.exam_plan || '' },
 			callback: function (r) {
 				S.info           = r.message || {};
 				S.columns        = S.info.columns || [];

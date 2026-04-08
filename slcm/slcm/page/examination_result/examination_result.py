@@ -393,8 +393,24 @@ def get_exam_types(search=""):
 
 
 @frappe.whitelist()
-def get_departments(search=""):
+def get_departments(search="", exam_plan=None):
 	"""Return departments for the Course Results page department filter."""
+	if exam_plan:
+		search_clause = "AND d.department_name LIKE %(search)s" if search else ""
+		return frappe.db.sql(
+			f"""
+			SELECT DISTINCT d.name, d.department_name
+			FROM `tabDepartment` d
+			JOIN `tabCourse` c ON c.department = d.name
+			JOIN `tabCourse Schema Assignment` csa ON csa.course = c.name AND csa.exam_plan = %(exam_plan)s
+			WHERE d.status = 'Active'
+			{search_clause}
+			ORDER BY d.department_name ASC
+			LIMIT 100
+			""",
+			{"exam_plan": exam_plan, "search": f"%{search}%"},
+			as_dict=True,
+		)
 	filters = {"status": "Active"}
 	if search:
 		filters["department_name"] = ["like", f"%{search}%"]
@@ -409,7 +425,22 @@ def get_departments(search=""):
 
 @frappe.whitelist()
 def get_courses_by_department(department, exam_plan=None, search=""):
-	"""Return courses in a department that have class configurations."""
+	"""Return courses in a department, optionally filtered by exam plan."""
+	if exam_plan:
+		search_clause = "AND c.course_name LIKE %(search)s" if search else ""
+		return frappe.db.sql(
+			f"""
+			SELECT DISTINCT c.name, c.course_name, c.course_code, c.credit_value
+			FROM `tabCourse` c
+			JOIN `tabCourse Schema Assignment` csa ON csa.course = c.name AND csa.exam_plan = %(exam_plan)s
+			WHERE c.department = %(department)s
+			{search_clause}
+			ORDER BY c.course_name ASC
+			LIMIT 200
+			""",
+			{"exam_plan": exam_plan, "department": department, "search": f"%{search}%"},
+			as_dict=True,
+		)
 	course_filters = {"department": department}
 	if search:
 		course_filters["course_name"] = ["like", f"%{search}%"]
@@ -476,7 +507,7 @@ def _get_reexam_columns(evaluation_schema):
 
 
 @frappe.whitelist()
-def get_course_info(course):
+def get_course_info(course, exam_plan=None):
 	"""Return full course info for the Course Results page."""
 	course_doc = frappe.db.get_value(
 		"Course", course,
@@ -484,20 +515,34 @@ def get_course_info(course):
 		as_dict=True,
 	) or {}
 
-	# Find best exam plan (Active first, then most recent)
-	assignment = frappe.db.sql(
-		"""
-		SELECT csa.exam_plan, csa.evaluation_schema, csa.grade_schema,
-		       ep.exam_name, ep.status AS plan_status
-		FROM `tabCourse Schema Assignment` csa
-		JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
-		WHERE csa.course = %(course)s
-		ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
-		LIMIT 1
-		""",
-		{"course": course},
-		as_dict=True,
-	)
+	# Use provided exam plan or find best (Active first, then most recent)
+	if exam_plan:
+		assignment = frappe.db.sql(
+			"""
+			SELECT csa.exam_plan, csa.evaluation_schema, csa.grade_schema,
+			       ep.exam_name, ep.status AS plan_status
+			FROM `tabCourse Schema Assignment` csa
+			JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
+			WHERE csa.course = %(course)s AND csa.exam_plan = %(exam_plan)s
+			LIMIT 1
+			""",
+			{"course": course, "exam_plan": exam_plan},
+			as_dict=True,
+		)
+	else:
+		assignment = frappe.db.sql(
+			"""
+			SELECT csa.exam_plan, csa.evaluation_schema, csa.grade_schema,
+			       ep.exam_name, ep.status AS plan_status
+			FROM `tabCourse Schema Assignment` csa
+			JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
+			WHERE csa.course = %(course)s
+			ORDER BY FIELD(ep.status, 'Active', 'Inactive') ASC, ep.creation DESC
+			LIMIT 1
+			""",
+			{"course": course},
+			as_dict=True,
+		)
 	assignment = assignment[0] if assignment else {}
 
 	access = frappe.db.get_value(
