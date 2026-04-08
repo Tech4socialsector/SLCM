@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:applicant",
- "creation": "2026-03-26 11:28:29.932930",
+ "creation": "2026-04-08 12:30:51.486371",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -468,7 +468,7 @@
    "fieldname": "entrance_test_rank",
    "fieldtype": "Int",
    "label": "Rank",
-   "non_negative": 1
+   "read_only": 1
   },
   {
    "fieldname": "category",
@@ -502,7 +502,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-30 10:44:00.996913",
+ "modified": "2026-04-08 12:33:23.743636",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

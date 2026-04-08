@@ -260,10 +260,14 @@ def notify_scholarship_status(application_name):
     # Prepare Context
     context = {
         "doc": app,
+        "applicant_name": app.applicant_name,
+        "application_id": app.name,
         "scheme_name": scheme_name,
         "benefit_amount": benefit_amount,
         "portal_url": portal_url,
+        "portal_link": portal_url,
         "status": app.status,
+        "rejection_reason": app.rejection_reason,
     }
     
     # Fetch Content based on use_html toggle

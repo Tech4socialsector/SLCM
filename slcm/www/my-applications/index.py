@@ -37,6 +37,10 @@ _APPLICATION_CLOSED_PORTAL_MESSAGES = {
         "Application Withdrawn",
         "Your application has been successfully withdrawn as per your request.",
     ),
+    "Merit Rejected": (
+        "Merit List – Not Selected",
+        "We regret to inform you that you have not been selected in the current merit list for the chosen program. Thank you for your interest and we wish you the best in your future endeavors.",
+    ),
 }
 
 _NEXT_STEPS_DEADLINE_PLACEHOLDER = "Complete all steps before your cycle deadline"
@@ -899,16 +903,19 @@ def get_context(context):
     STATUS_STYLE = {
         "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
         "Submitted":      {"color": "#1d4ed8", "bg": "#dbeafe"},
-        "Merit Published": {"color": "#0369a1", "bg": "#e0f2fe"},
-        "Under Review":   {"color": "#d97706", "bg": "#fef3c7"},
-        "Shortlisted":    {"color": "#059669", "bg": "#d1fae5"},
-        "Waitlisted":     {"color": "#7c3aed", "bg": "#ede9fe"},
-        "Offer Issued":   {"color": "#0369a1", "bg": "#e0f2fe"},
-        "Offer Accepted": {"color": "#065f46", "bg": "#d1fae5"},
-        "Offer Declined": {"color": "#991b1b", "bg": "#fee2e2"},
-        "Rejected":       {"color": "#991b1b", "bg": "#fee2e2"},
-        "Selected":       {"color": "#065f46", "bg": "#d1fae5"},
-        "Fee Paid":       {"color": "#065f46", "bg": "#d1fae5"},
+        "Merit Published":  {"color": "#0369a1", "bg": "#e0f2fe"},
+        "Merit Selected":   {"color": "#065f46", "bg": "#d1fae5"},
+        "Merit Rejected":   {"color": "#991b1b", "bg": "#fee2e2"},
+        "Merit Waitlisted": {"color": "#7c3aed", "bg": "#ede9fe"},
+        "Under Review":     {"color": "#d97706", "bg": "#fef3c7"},
+        "Shortlisted":      {"color": "#059669", "bg": "#d1fae5"},
+        "Waitlisted":       {"color": "#7c3aed", "bg": "#ede9fe"},
+        "Offer Issued":     {"color": "#0369a1", "bg": "#e0f2fe"},
+        "Offer Accepted":   {"color": "#065f46", "bg": "#d1fae5"},
+        "Offer Declined":   {"color": "#991b1b", "bg": "#fee2e2"},
+        "Rejected":         {"color": "#991b1b", "bg": "#fee2e2"},
+        "Selected":         {"color": "#065f46", "bg": "#d1fae5"},
+        "Fee Paid":         {"color": "#065f46", "bg": "#d1fae5"},
     }
 
     data_list = get_applicant_data()

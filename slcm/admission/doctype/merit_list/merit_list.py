@@ -130,7 +130,15 @@ def publish_merit_list(merit_list_name):
     # Update Applicant status
     for row in doc.merit_applicants:
         if row.applicant_id:
-            frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Merit Published")
+            new_status = "Merit Published"
+            if row.status == "Selected":
+                new_status = "Merit Selected"
+            elif row.status == "Rejected":
+                new_status = "Merit Rejected"
+            elif row.status == "Waitlisted":
+                new_status = "Merit Waitlisted"
+                
+            frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
 
     # Audit log
     frappe.get_doc({
@@ -273,9 +281,9 @@ def unpublish_merit_list(merit_list_name):
     # Revert Applicant status
     for row in doc.merit_applicants:
         if row.applicant_id:
-            # Revert to Submitted if it was Merit Published
+            # Revert to Submitted if it was any Merit status
             current_status = frappe.db.get_value("Applicant", row.applicant_id, "application_status")
-            if current_status == "Merit Published":
+            if current_status in ["Merit Published", "Merit Selected", "Merit Rejected", "Merit Waitlisted"]:
                 frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Submitted")
 
     # Audit log
