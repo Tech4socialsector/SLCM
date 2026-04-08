@@ -187,7 +187,7 @@
   .qs-fee-value-row {
     display: inline-flex;
     align-items: center;
-    justify-content: center;ma-enrolled-title-text
+    justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
     max-width: 100%;
@@ -581,6 +581,10 @@
     overflow: hidden;
   }
 
+  .stage-track-fill.stage-track-fill--instant {
+    transition: none !important;
+  }
+
   /* Loading shimmer while progress animates */
   .stage-track-fill.is-loading::after {
     content: '';
@@ -792,6 +796,41 @@
     font-weight: 400;
   }
 
+  .qs-value--offer-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .qs-item--offer-letter .qs-value--offer-actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .qs-item--offer-letter .qs-value--offer-actions .btn-qs-offer {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .qs-item--offer-letter .qs-value--offer-actions .btn-pay-now {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .qs-item--offer-letter .qs-value--offer-actions {
+      flex-wrap: wrap;
+    }
+  }
+
   /* ── Animated Offer Button ── */
   .btn-qs-offer {
     display: inline-flex;
@@ -832,17 +871,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 8px;
-    padding: 7px 14px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 800;
+    flex-shrink: 0;
+    margin-top: 0;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
     text-decoration: none;
     background: #111827;
     color: #ffffff;
     border: 1px solid rgba(17,24,39,.25);
-    box-shadow: 0 10px 24px rgba(17,24,39,.14);
-    animation: ma-pay-blink 1.15s ease-in-out infinite, qs-pulse 2s infinite;
+    box-shadow: 0 4px 12px rgba(17,24,39,.12);
+    animation: ma-pay-blink 1.15s ease-in-out infinite;
   }
 
   .btn-pay-now:hover {
@@ -3102,12 +3142,12 @@ or _app.current_stage)) or _status %}
           </div>
         </div>
         {% if offer_name %}
-        <div class="qs-item">
+        <div class="qs-item qs-item--offer-letter">
           <span class="qs-label">
             <span class="material-symbols-outlined">mail</span>
             Offer Letter
           </span>
-          <span class="qs-value">
+          <span class="qs-value qs-value--offer-actions">
               {% set _display_status = offer_status %}
               {% if offer_status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
               {% elif offer_status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
@@ -4492,7 +4532,6 @@ LIST / DASHBOARD VIEW
         var isComplete = (fill.getAttribute('data-complete') === '1');
         var isVertical = window.matchMedia('(max-width: 920px)').matches;
 
-        // Start from 0
         fill.style.width = '0%';
         fill.style.setProperty('--pct', '0%');
         fill.getBoundingClientRect(); // force layout
@@ -4517,7 +4556,7 @@ LIST / DASHBOARD VIEW
 
         function updateProgressAt(index) {
           var pct = 0;
-          if (circles.length > 0) pct = (index / circles.length) * 100;
+          if (circles.length > 0 && index >= 0) pct = (index / circles.length) * 100;
           pct = Math.max(0, Math.min(100, pct));
           if (isVertical) {
             fill.style.setProperty('--pct', pct + '%');
@@ -4608,36 +4647,89 @@ LIST / DASHBOARD VIEW
         }
 
         async function animateStages() {
-          fill.classList.add('is-loading');
-
-          for (var r = 0; r < circles.length; r++) setCircleState(r, 'pending');
-
-          for (var i = 0; i < targetStates.length; i++) {
-            var state = targetStates[i];
-            if (state === 'completed') {
-              await animateFillTo(i);
-              setCircleState(i, 'completed');
-              burstConfettiAt(confettiLayer, circles[i]);
-              await sleep(35);
-              continue;
-            }
-
-            if (state === 'active') {
-              await animateFillTo(i);
-              setCircleState(i, 'active');
-              break;
-            }
-
-            if (state === 'closed') {
-              await animateFillTo(i);
-              setCircleState(i, 'closed');
-              break;
-            }
-
-            break;
+          var n = circles.length;
+          var allStagesCompleted = n > 0 && targetStates.every(function (s) { return s === 'completed'; });
+          var lastCompleted = -1;
+          var i;
+          for (i = 0; i < targetStates.length; i++) {
+            if (targetStates[i] === 'completed') lastCompleted = i;
+            else break;
           }
 
+          if (allStagesCompleted) {
+            var focusIdx = n - 1;
+            var startIdx = n > 1 ? n - 2 : -1;
+            var pStart = startIdx < 0 || n === 0 ? 0 : (startIdx / n) * 100;
+            var pEnd = n === 0 ? 0 : (focusIdx / n) * 100;
+
+            fill.classList.add('stage-track-fill--instant');
+            for (i = 0; i < focusIdx; i++) {
+              setCircleState(i, targetStates[i]);
+            }
+            setCircleState(focusIdx, 'pending');
+            updateProgressAt(startIdx);
+            fill.getBoundingClientRect();
+            fill.classList.remove('stage-track-fill--instant');
+
+            var needFillAnim = Math.abs(pEnd - pStart) >= 0.5;
+            if (needFillAnim) {
+              fill.classList.add('is-loading');
+              await animateFillTo(focusIdx);
+            }
+            setCircleState(focusIdx, targetStates[focusIdx]);
+            if (needFillAnim && targetStates[focusIdx] === 'completed' && confettiLayer && circles[focusIdx]) {
+              burstConfettiAt(confettiLayer, circles[focusIdx]);
+              await sleep(35);
+            }
+            fill.classList.remove('is-loading');
+            if (isComplete) {
+              revealEnrolledBanner();
+              scheduleEnrollmentConfetti();
+            }
+            return;
+          }
+
+          var currentIdx = -1;
+          for (i = 0; i < targetStates.length; i++) {
+            if (targetStates[i] === 'active' || targetStates[i] === 'closed') {
+              currentIdx = i;
+              break;
+            }
+          }
+          if (currentIdx < 0) {
+            currentIdx = lastCompleted + 1;
+            if (currentIdx >= n) currentIdx = n > 0 ? n - 1 : 0;
+          }
+
+          var prefillLastIdx = Math.max(-1, currentIdx - 2);
+
+          fill.classList.add('stage-track-fill--instant');
+          for (i = 0; i <= prefillLastIdx; i++) {
+            setCircleState(i, targetStates[i]);
+          }
+          for (i = prefillLastIdx + 1; i < n; i++) {
+            if (i <= currentIdx) setCircleState(i, 'pending');
+            else setCircleState(i, targetStates[i]);
+          }
+          updateProgressAt(prefillLastIdx);
+          fill.getBoundingClientRect();
+          fill.classList.remove('stage-track-fill--instant');
+
+          fill.classList.add('is-loading');
+          for (var k = prefillLastIdx + 1; k <= currentIdx; k++) {
+            var pPrev = k <= 0 ? 0 : ((k - 1) / n) * 100;
+            var pNext = (k / n) * 100;
+            if (Math.abs(pNext - pPrev) >= 0.5) {
+              await animateFillTo(k);
+            }
+            setCircleState(k, targetStates[k]);
+            if (targetStates[k] === 'completed' && confettiLayer && circles[k]) {
+              burstConfettiAt(confettiLayer, circles[k]);
+              await sleep(35);
+            }
+          }
           fill.classList.remove('is-loading');
+
           if (isComplete) {
             revealEnrolledBanner();
             scheduleEnrollmentConfetti();

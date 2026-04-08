@@ -3,6 +3,9 @@ import json
 from frappe import _, throw
 from frappe.utils import add_days, getdate, now_datetime, get_datetime, flt
 from frappe.utils.pdf import get_pdf
+from slcm.admission.doctype.offer_configuration.offer_configuration import (
+    validate_offer_config_fee_deadlines,
+)
 from slcm.api.service.fee_service import FeeService
 
 class OfferService:
@@ -129,6 +132,8 @@ class OfferService:
 
         config = OfferService.get_active_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
+
+        validate_offer_config_fee_deadlines(config)
 
         # --- PRE-FLIGHT CHECKS (Before Transaction) ---
         if getattr(config, "send_email", 0):
