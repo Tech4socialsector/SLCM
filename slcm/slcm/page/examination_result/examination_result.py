@@ -556,7 +556,8 @@ def get_course_info(course):
 
 @frappe.whitelist()
 def get_course_students_paged(course, search="", page=1, page_length=20,
-                               sort_by="registration_id", sort_order="asc"):
+                               sort_by="registration_id", sort_order="asc",
+                               status_filter=""):
 	"""Return paginated students from Student Course Marks for a course."""
 	page        = int(page)
 	page_length = int(page_length)
@@ -584,15 +585,18 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 	)
 	sort_dir = "DESC" if sort_order == "desc" else "ASC"
 
-	search_cond = ""
+	extra_cond = ""
 	params = {"course": course, "exam_plan": exam_plan, "lim": page_length, "off": offset}
 	if search:
-		search_cond = (
-			"AND (sm.registration_id LIKE %(search)s "
+		extra_cond += (
+			" AND (sm.registration_id LIKE %(search)s "
 			"OR sm.first_name LIKE %(search)s "
 			"OR sm.last_name LIKE %(search)s)"
 		)
 		params["search"] = f"%{search}%"
+	if status_filter:
+		extra_cond += " AND sm.student_status = %(status_filter)s"
+		params["status_filter"] = status_filter
 
 	students = frappe.db.sql(
 		f"""
@@ -611,7 +615,7 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.course = %(course)s
 		  AND scm.exam_plan = %(exam_plan)s
-		{search_cond}
+		{extra_cond}
 		ORDER BY {sort_col} {sort_dir}
 		LIMIT %(lim)s OFFSET %(off)s
 		""",
@@ -626,7 +630,7 @@ def get_course_students_paged(course, search="", page=1, page_length=20,
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.course = %(course)s
 		  AND scm.exam_plan = %(exam_plan)s
-		{search_cond}
+		{extra_cond}
 		""",
 		params,
 		as_dict=True,
@@ -1322,3 +1326,18 @@ def bulk_upload_grades(course, exam_plan, file_url):
 
 	frappe.db.commit()
 	return {"updated": updated, "errors": errors}
+
+
+@frappe.whitelist()
+def save_student_remark(course, exam_plan, student, remark):
+	"""Save a remark on a Student Course Marks record."""
+	scm_name = frappe.db.get_value(
+		"Student Course Marks",
+		{"course": course, "exam_plan": exam_plan, "student": student},
+		"name",
+	)
+	if not scm_name:
+		frappe.throw("Result record not found for this student.")
+	frappe.db.set_value("Student Course Marks", scm_name, "remark", remark)
+	frappe.db.commit()
+	return {"success": True}

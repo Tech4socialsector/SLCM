@@ -23,6 +23,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		popup_timer:     null,
 		popup_student:   null,
 		left_collapsed:  false,
+		show_status:     false,  // view/hide student assessment status columns
+		selected_all:    false,  // select all across pages
+		status_filter:   '',     // student status filter
 	};
 
 	// ── CSS ───────────────────────────────────────────────────────────────────
@@ -77,7 +80,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-btn.outline-red { border-color:#e63946; color:#e63946; }
 		.er2-btn.outline-red:hover { background:#fff5f5; }
 		.er2-btn-dd  { position:relative; display:inline-flex; }
-		.er2-btn-dd .dd-menu { display:none; position:absolute; top:38px; left:0; z-index:999;
+		.er2-btn-dd .dd-menu { display:none; position:absolute; top:100%; left:0; z-index:999;
 		                       background:#fff; border:1px solid #d1d8dd; border-radius:4px;
 		                       box-shadow:0 4px 12px rgba(0,0,0,.12); min-width:160px; padding:4px 0; }
 		.er2-btn-dd:hover .dd-menu,
@@ -309,7 +312,17 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					<div id="er2-left" class="er2-left">
 						<div class="er2-lhdr">
 							<input type="checkbox" id="er2-chk-all" title="Select All">
-							<span class="er2-lhdr-title" id="er2-student-count-lbl">Students (0)</span>
+							<div class="er2-btn-dd" id="er2-select-dd" style="flex:1;min-width:0;">
+								<span class="er2-lhdr-title" id="er2-student-count-lbl"
+								      style="cursor:pointer;user-select:none;">
+									Students (0) <i class="fa fa-caret-down" style="font-size:10px;"></i>
+								</span>
+								<div class="dd-menu" style="min-width:210px;">
+									<div class="dd-item" id="er2-sel-page">Select All For This Page</div>
+									<div class="dd-item" id="er2-sel-all">Select All Across All Pages</div>
+									<div class="dd-item" id="er2-sel-none">Select None</div>
+								</div>
+							</div>
 							<button class="er2-sort-btn" id="er2-sort-btn">
 								<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
 								     stroke="currentColor" stroke-width="2.5">
@@ -318,6 +331,15 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								</svg>
 								<span id="er2-sort-lbl">Registration Id</span>
 							</button>
+						</div>
+						<div style="padding:4px 10px 2px;display:flex;align-items:center;gap:6px;border-bottom:1px solid #f1f3f5;">
+							<span style="font-size:11px;color:#8d99ae;font-weight:500;">Filter:</span>
+							<select id="er2-status-filter" style="font-size:11px;border:1px solid #dee2e6;border-radius:3px;padding:2px 4px;color:#333;background:#fff;">
+								<option value="">All Students</option>
+								<option value="Active">Active</option>
+								<option value="Inactive">Inactive</option>
+								<option value="Dropped">Dropped</option>
+							</select>
 						</div>
 						<div id="er2-student-list"></div>
 					</div>
@@ -487,6 +509,36 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	// ── Exam type filter ──────────────────────────────────────────────────────
 	$examFilter.on('change', function () {
 		render_marks_table();
+	});
+
+	// ── Student status filter ─────────────────────────────────────────────────
+	$body.find('#er2-status-filter').on('change', function () {
+		S.status_filter = $(this).val();
+		S.page = 1;
+		if (S.course) load_students();
+	});
+
+	// ── Select dropdown ───────────────────────────────────────────────────────
+	$body.find('#er2-sel-page').on('click', function () {
+		S.selected_all = false;
+		$body.find('.er2-chk').prop('checked', true);
+		$body.find('#er2-chk-all').prop('checked', true);
+	});
+	$body.find('#er2-sel-all').on('click', function () {
+		S.selected_all = true;
+		$body.find('.er2-chk').prop('checked', true);
+		$body.find('#er2-chk-all').prop('checked', true);
+		frappe.show_alert({ message: 'All ' + S.total + ' students selected across all pages.', indicator: 'blue' });
+	});
+	$body.find('#er2-sel-none').on('click', function () {
+		S.selected_all = false;
+		$body.find('.er2-chk').prop('checked', false);
+		$body.find('#er2-chk-all').prop('checked', false);
+	});
+	$body.find('#er2-chk-all').on('change', function () {
+		var checked = $(this).prop('checked');
+		$body.find('.er2-chk').prop('checked', checked);
+		if (!checked) S.selected_all = false;
 	});
 
 	// ── Stub buttons ─────────────────────────────────────────────────────────
@@ -699,12 +751,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		frappe.call({
 			method: 'slcm.slcm.page.examination_result.examination_result.get_course_students_paged',
 			args: {
-				course:       S.course,
-				search:       S.search,
-				page:         S.page,
-				page_length:  S.page_length,
-				sort_by:      S.sort_by,
-				sort_order:   S.sort_order,
+				course:         S.course,
+				search:         S.search,
+				page:           S.page,
+				page_length:    S.page_length,
+				sort_by:        S.sort_by,
+				sort_order:     S.sort_order,
+				status_filter:  S.status_filter,
 			},
 			callback: function (r) {
 				var data   = r.message || {};
@@ -901,7 +954,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Total + Grade + Moderated Grade (span 3)
 		th1 += '<th colspan="3" class="type-hdr" style="text-align:center;' + C_GRADE + '">Grade</th>';
 		// Overall Status (span 5)
-		th1 += '<th colspan="5" class="type-hdr" style="text-align:center;' + C_STATUS + '">Overall Status</th>';
+		th1 += '<th colspan="5" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
+			'Overall Status</th>';
 		// Re-Exam groups
 		rxgroups.forEach(function (g) {
 			th1 += '<th colspan="' + (g.cols.length * 2) + '" class="type-hdr" style="text-align:center;' + C_REEXAM + '">' +
@@ -930,11 +984,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			'<th style="font-size:11px;color:#6c757d;min-width:60px;">Grade</th>' +
 			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Moderated<br>Grade</th>';
 		// Overall Status row 2 labels
-		th2 += '<th style="font-size:11px;color:#6c757d;min-width:90px;">Enrollment<br>Status</th>' +
-			'<th style="font-size:11px;color:#6c757d;min-width:90px;">Attendance<br>Status</th>' +
-			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Fairness<br>Status</th>' +
-			'<th style="font-size:11px;color:#6c757d;min-width:60px;">SGPA</th>' +
-			'<th style="font-size:11px;color:#6c757d;min-width:100px;">Remark</th>';
+		th2 += '<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Enrollment<br>Status</th>' +
+			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Attendance<br>Status</th>' +
+			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:80px;">Fairness<br>Status</th>' +
+			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">SGPA</th>' +
+			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:120px;">Remarks</th>';
 		// Re-Exam row 2 labels
 		rxgroups.forEach(function (g) {
 			g.cols.forEach(function (col) {
@@ -958,7 +1012,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Grade section row 3 (empty — already set in row 2)
 		th3 += '<th></th><th></th><th></th>';
 		// Overall Status row 3 (empty)
-		th3 += '<th></th><th></th><th></th><th></th><th></th>';
+		th3 += '<th class="er2-status-col"></th>' +
+			'<th class="er2-status-col"></th>' +
+			'<th class="er2-status-col"></th>' +
+			'<th class="er2-status-col"></th>' +
+			'<th class="er2-status-col"></th>';
 		// Re-Exam sub-column labels
 		reexam_cols.forEach(function () {
 			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
@@ -991,16 +1049,23 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				'<td>' + frappe.utils.escape_html(sm.moderated_grade || '—') + '</td>';
 
 			// Overall Status
-			var es  = sm.enrollment_status  || '—';
-			var at  = sm.attendance_status  || '—';
-			var fs  = sm.fairness_status    || '—';
-			var sg  = sm.consider_for_sgpa  ? '<span style="color:#28a745;font-weight:700;">&#10003;</span>' : '—';
-			var rmk = sm.remark || '';
-			cells += '<td>' + frappe.utils.escape_html(es) + '</td>' +
-				'<td>' + frappe.utils.escape_html(at) + '</td>' +
-				'<td>' + frappe.utils.escape_html(fs) + '</td>' +
-				'<td style="text-align:center;">' + sg + '</td>' +
-				'<td style="text-align:left;max-width:120px;">' + frappe.utils.escape_html(rmk) + '</td>';
+			var es   = sm.enrollment_status  || '—';
+			var at   = sm.attendance_status  || '—';
+			var fs   = sm.fairness_status    || '—';
+			var sg   = sm.consider_for_sgpa  ? '<span style="color:#28a745;font-weight:700;">&#10003;</span>' : '—';
+			var rmk  = frappe.utils.escape_html(sm.remark || '');
+			cells += '<td class="er2-status-col">' + frappe.utils.escape_html(es) + '</td>' +
+				'<td class="er2-status-col">' + frappe.utils.escape_html(at) + '</td>' +
+				'<td class="er2-status-col">' + frappe.utils.escape_html(fs) + '</td>' +
+				'<td class="er2-status-col" style="text-align:center;">' + sg + '</td>' +
+				'<td class="er2-status-col er2-remark-cell" style="text-align:left;min-width:140px;">' +
+				'<textarea class="er2-remark-input" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
+				'placeholder="Add remarks" style="width:100%;font-size:11px;border:1px solid #dee2e6;' +
+				'border-radius:3px;padding:3px 5px;resize:vertical;min-height:36px;background:#fff;">' +
+				rmk + '</textarea>' +
+				'<span class="er2-remark-save" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
+				'style="font-size:10px;color:#e63946;cursor:pointer;display:none;">&#9998; Save</span>' +
+				'</td>';
 
 			// Re-Exam cells
 			reexam_cols.forEach(function (col) {
@@ -1037,6 +1102,30 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 		$mtable.find('.er2-sync-comp').on('click', function () {
 			frappe.msgprint('Sync Marks for this component — coming soon.');
+		});
+
+		// Remarks: show save button on typing
+		$mtable.find('.er2-remark-input').on('input', function () {
+			$(this).siblings('.er2-remark-save').show();
+		});
+		$mtable.find('.er2-remark-save').on('click', function () {
+			var student = $(this).data('student');
+			var $inp    = $(this).siblings('.er2-remark-input');
+			var remark  = $inp.val();
+			var $btn    = $(this);
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.save_student_remark',
+				args: {
+					course:    S.course,
+					exam_plan: S.info.exam_plan || '',
+					student:   student,
+					remark:    remark,
+				},
+				callback: function () {
+					$btn.hide();
+					frappe.show_alert({ message: 'Remark saved.', indicator: 'green' });
+				},
+			});
 		});
 	}
 
