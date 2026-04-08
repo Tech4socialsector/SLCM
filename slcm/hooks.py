@@ -65,6 +65,12 @@ fixtures = [
                 "Application Submitted Email"
             ]]
         ]
+    },
+    {
+        "doctype": "Kanban Board",
+        "filters": [
+            ["name", "=", "Scholarship View"]
+        ]
     }
 ]
 # Apps  

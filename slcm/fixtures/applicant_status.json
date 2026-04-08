@@ -223,5 +223,32 @@
   "stage_type": "Interview",
   "status": "Interview Exempted",
   "status_type": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-04-08 10:20:00.000000",
+  "name": "Merit Selected",
+  "stage_type": "Merit",
+  "status": "Merit Selected",
+  "status_type": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-04-08 10:20:00.000000",
+  "name": "Merit Rejected",
+  "stage_type": "Merit",
+  "status": "Merit Rejected",
+  "status_type": "Closed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-04-08 10:20:00.000000",
+  "name": "Merit Waitlisted",
+  "stage_type": "Merit",
+  "status": "Merit Waitlisted",
+  "status_type": "Active"
  }
 ]

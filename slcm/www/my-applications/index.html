@@ -1664,6 +1664,10 @@
     border-radius: 10px;
     padding: 12px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 82px;
   }
 
   .result-score-box .lbl {
@@ -3478,20 +3482,20 @@ or _app.current_stage)) or _status %}
             <div class="seat-alloc-grid {% if r.allocated_category and r.seat_type %}has-3{% endif %}">
               <div class="result-score-box">
                 <div class="lbl">Programme</div>
-                <div class="val" style="font-size:14px;line-height:1.3">{{ _prog }}</div>
+                <div class="val" style="font-size:16px;line-height:1.2;font-weight:700">{{ _prog }}</div>
               </div>
 
               {% if r.allocated_category %}
               <div class="result-score-box">
                 <div class="lbl">Category</div>
-                <div class="val" style="font-size:15px">{{ r.allocated_category|title }}</div>
+                <div class="val" style="font-size:18px;font-weight:700">{{ r.allocated_category|title }}</div>
               </div>
               {% endif %}
 
               {% if r.seat_type %}
               <div class="result-score-box">
                 <div class="lbl">Seat type</div>
-                <div class="val" style="font-size:15px">{{ r.seat_type|title }}</div>
+                <div class="val" style="font-size:18px;font-weight:700">{{ r.seat_type|title }}</div>
               </div>
               {% endif %}
 
