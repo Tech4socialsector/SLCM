@@ -455,9 +455,8 @@ class FeeService:
 
             # 3. Copy Components
             from frappe.utils import flt as _flt
-
-            # If scholarship is applied on the Applicant Fee Assignment, append a
-            # negative "Scholarship Benefit" line so the receipt clearly shows it.
+            
+            # If scholarship is applied on the Applicant Fee Assignment
             try:
                 afa = frappe.db.get_value(
                     "Applicant Fee Assignment",
@@ -468,26 +467,11 @@ class FeeService:
             except Exception:
                 afa = None
 
-            if afa and afa.scholarship_applied and _flt(afa.scholarship_amount) > 0:
-                components = list(components) if components else []
-                components.append(
-                    frappe._dict(
-                        fee_component="Scholarship",
-                        component_name="Scholarship Benefit",
-                        amount=-_flt(afa.scholarship_amount),
-                        is_taxable=0,
-                        tax_rate=0,
-                        tax_amount=0,
-                        total_amount=-_flt(afa.scholarship_amount),
-                    )
-                )
-
             # Append all components and then recompute the total from their amounts
             total_from_components = 0
             for comp in components:
-                comp_total = _flt(getattr(comp, "total_amount", None))
-                if comp_total == 0 and (getattr(comp, "amount", None) is not None):
-                    comp_total = _flt(comp.amount)
+                # Use total_amount if available, fallback to amount
+                comp_total = _flt(getattr(comp, "total_amount", 0)) or _flt(getattr(comp, "amount", 0))
                 total_from_components += comp_total
 
                 receipt.append("fee_components", {
@@ -500,9 +484,17 @@ class FeeService:
                     "total_amount": comp.total_amount
                 })
 
-            # Ensure the header Total Amount reflects scholarship-adjusted sum
-            if total_from_components:
-                receipt.total_amount = total_from_components
+            # Store scholarship in dedicated header fields (no Fee Component record needed)
+            receipt.scholarship_applied = 0
+            receipt.scholarship_amount = 0
+            
+            if afa and afa.scholarship_applied:
+                receipt.scholarship_applied = 1
+                receipt.scholarship_amount = _flt(afa.scholarship_amount)
+
+            # Ensure health header amounts reflect the breakdown
+            receipt.total_amount = total_from_components
+            receipt.net_amount = receipt.total_amount - receipt.scholarship_amount
 
             tpl = FeeService._resolve_payment_receipt_print_format(
                 offer_doc.applicant, getattr(offer_doc, "campus", None)

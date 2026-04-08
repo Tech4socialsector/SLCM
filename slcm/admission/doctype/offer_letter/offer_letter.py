@@ -258,7 +258,7 @@ def get_bulk_offers_zip(filters):
 	offers = frappe.get_all(
 		"Offer Letter",
 		filters=query_filters,
-		fields=["name", "applicant", "offer_letter_pdf"],
+		fields=["name", "applicant", "offer_letter_pdf", "offer_configrationn"],
 	)
 
 	if not offers:
@@ -282,14 +282,20 @@ def get_bulk_offers_zip(filters):
 def bulk_zip_worker(offers, user):
 	frappe.set_user(user)
 	try:
-		file_url = process_bulk_zip(offers, user=user)
+		file_url, summary, errors = process_bulk_zip(offers, user=user)
 		
+		error_details = ""
+		if errors:
+			error_details = "<br><br><b>Errors:</b><ul>" + "".join([f"<li>{e}</li>" for e in errors[:10]]) + "</ul>"
+			if len(errors) > 10:
+				error_details += _("<p>...and {0} more errors.</p>").format(len(errors) - 10)
+
 		from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
 		enqueue_create_notification(
 			[user],
 			{
 				"subject": _("Bulk Offer Download Ready"),
-				"email_content": _("Your ZIP archive for {0} offers is ready. <a href='{1}' target='_blank'><b>Click here to download</b></a>.").format(len(offers), file_url),
+				"email_content": _("{0}. <a href='{1}' target='_blank'><b>Click here to download</b></a>. {2}").format(summary, file_url, error_details),
 				"type": "Alert",
 				"document_type": "Offer Letter"
 			}
@@ -307,48 +313,72 @@ def bulk_zip_worker(offers, user):
 def process_bulk_zip(offers, user=None):
 	zip_buffer = io.BytesIO()
 	total = len(offers)
+	success_count = 0
+	failure_count = 0
+	errors = []
+
 	# Bulk Offer Letters filename format: {applicant} - offer letter.pdf
 	with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
 		for i, offer in enumerate(offers):
 			filename = f"{offer.applicant} - offer letter.pdf"
 			pdf_content = None
 
-			# 1. Try to get existing PDF from offer_letter_pdf field
-			if offer.offer_letter_pdf:
-				try:
-					file_path = frappe.get_site_path("public", offer.offer_letter_pdf.lstrip("/"))
-					if os.path.exists(file_path):
-						with open(file_path, "rb") as f:
-							pdf_content = f.read()
-				except Exception:
-					pass
+			try:
+				# 1. Try to get existing PDF from offer_letter_pdf field
+				if offer.offer_letter_pdf:
+					try:
+						file_path = frappe.get_site_path("public", offer.offer_letter_pdf.lstrip("/"))
+						if os.path.exists(file_path):
+							with open(file_path, "rb") as f:
+								pdf_content = f.read()
+					except Exception:
+						pdf_content = None
 
-			# 2. Fallback: Generate PDF on the fly
-			if not pdf_content:
-				try:
+				# 2. Fallback: Generate PDF on the fly
+				if not pdf_content:
+					print_format = "Offer Letter 2026"
+					if offer.get("offer_configrationn"):
+						pdf_format = frappe.db.get_value("Offer Configuration", offer.offer_configrationn, "pdf_format")
+						if pdf_format:
+							print_format = pdf_format
+
 					pdf_content = frappe.get_print(
 						"Offer Letter",
 						offer.name,
-						"Offer Letter 2026",
+						print_format,
 						as_pdf=True,
 					)
-				except Exception as e:
-					frappe.log_error(
-						f"Error generating PDF for {offer.name}: {e!s}",
-						"Bulk Offer Letter Download Error",
-					)
-					continue
 
-			if pdf_content:
-				zip_file.writestr(filename, pdf_content)
+				if pdf_content:
+					zip_file.writestr(filename, pdf_content)
+					success_count += 1
+				else:
+					failure_count += 1
+					errors.append(f"Could not retrieve PDF for {offer.name}")
 
-			# Real-time progress update
-			if (i + 1) % 5 == 0 or i == total - 1:
+			except Exception as e:
+				failure_count += 1
+				error_msg = str(e)
+				errors.append(f"Error processing {offer.name}: {error_msg}")
+				frappe.log_error(
+					f"Error generating PDF for {offer.name}: {error_msg}",
+					"Bulk Offer Letter Download Error",
+				)
+				continue
+
+			# Adaptive Real-time progress update
+			update_step = 100 if total > 1000 else 10
+			if (i + 1) % update_step == 0 or i == total - 1:
 				frappe.publish_realtime("bulk_offer_download_progress", {
 					"progress": [(i + 1) * 100 / total],
 					"title": _("Preparing Bulk Download..."),
-					"description": _("Processing {0} of {1} offer letters").format(i + 1, total)
+					"description": _("Processing {0} of {1} offer letters ({2} successful, {3} failed)").format(
+						i + 1, total, success_count, failure_count
+					)
 				}, user=user or frappe.session.user)
+
+	if success_count == 0:
+		frappe.throw(_("Failed to generate any offer letters. Please check the error logs."))
 
 	zip_filename = f"Bulk_Offer_Letters_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
 	saved_zip = save_file(
@@ -359,5 +389,8 @@ def process_bulk_zip(offers, user=None):
 		is_private=1,
 	)
 
-	return saved_zip.file_url
+	summary = _("Bulk Download Complete: {0} offers successful").format(success_count)
+	if failure_count > 0:
+		summary += _(", {0} failed").format(failure_count)
 
+	return saved_zip.file_url, summary, errors

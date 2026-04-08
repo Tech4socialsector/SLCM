@@ -46,6 +46,13 @@ frappe.listview_settings['Applicant Payment Receipt'] = {
 						fieldname: 'payment_mode',
 						fieldtype: 'Select',
 						options: '\nOnline\nCash\nCheque\nUPI\nQR Code\nBank Transfer\nDemand Draft'
+					},
+					{
+						label: __('Output Format'),
+						fieldname: 'output_format',
+						fieldtype: 'Select',
+						options: 'ZIP Archive\nSingle Merged PDF',
+						default: 'ZIP Archive'
 					}
 				],
 				primary_action_label: __('Download'),
