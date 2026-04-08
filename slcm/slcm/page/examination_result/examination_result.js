@@ -1819,23 +1819,67 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				var s = r.message || {};
 				if (S.popup_student !== student) return; // stale
 
-				function prow(lbl, val, always) {
-					if (!always && !val && val !== 0) return '';
-					var display = (val || val === 0) ? frappe.utils.escape_html(String(val)) : '—';
-					return '<div class="er2-pop-row"><span class="er2-pop-lbl">' + lbl + ' :</span>' +
-						'<span class="er2-pop-val">' + display + '</span></div>';
+				function prow(lbl, val) {
+					if (!val && val !== 0) return '';
+					return '<div class="er2-pop-row">' +
+						'<span class="er2-pop-lbl">' + lbl + '</span>' +
+						'<span class="er2-pop-val">' + frappe.utils.escape_html(String(val)) + '</span>' +
+						'</div>';
 				}
-				$popup.html(
-					'<div class="er2-pop-name">' + frappe.utils.escape_html(s.student_name || student) + '</div>' +
-					prow('Student ID',   s.registration_id, true) +
-					prow('Email ID',     s.email) +
-					prow('Department',   s.department) +
+
+				// ── Student info section ──
+				var infoHtml =
+					prow('Student ID',   s.registration_id) +
+					prow('Email',        s.email) +
 					prow('Programme',    s.programme) +
-					prow('Batch Year',   s.batch) +
-					prow('Current Term', s.current_term) +
-					prow('Intake',       s.intake) +
-					prow('Section',      s.section)
+					prow('Batch',        s.batch) +
+					prow('Department',   s.department) +
+					prow('Term',         s.current_term) +
+					prow('Section',      s.section);
+
+				// ── Marks section (from S.marks cache) ──
+				var marksHtml = '';
+				var sm = S.marks[student];
+				if (sm && S.columns && S.columns.length) {
+					var chips = '';
+					S.columns.forEach(function (col) {
+						var key = (col.component || '') + '|' + (col.assessment_type || '');
+						var e   = (sm.entries || {})[key] || {};
+						var lbl = col.label || col.type_name || col.assessment_type || '';
+						var val = e.marks != null ? parseFloat(e.marks).toFixed(2) : '—';
+						chips += '<div class="er2-pop-mark-chip">' +
+							'<span class="chip-lbl">' + frappe.utils.escape_html(lbl) + '</span>' +
+							'<span class="chip-val">' + val + '</span>' +
+							'</div>';
+					});
+
+					var total = sm.total != null ? parseFloat(sm.total).toFixed(2) : '—';
+					var grade = sm.grade || '';
+
+					marksHtml = '<hr class="er2-pop-divider">' +
+						'<div class="er2-pop-marks-title">Marks</div>' +
+						'<div class="er2-pop-marks-grid">' + chips + '</div>' +
+						'<div class="er2-pop-total-row">' +
+						'<span class="er2-pop-total-lbl">Total</span>' +
+						'<div>' +
+						'<span class="er2-pop-total-val">' + total + '</span>' +
+						(grade ? '<span class="er2-pop-grade-badge">' + frappe.utils.escape_html(grade) + '</span>' : '') +
+						'</div>' +
+						'</div>';
+				}
+
+				$popup.html(
+					'<div class="er2-pop-head">' +
+					'<div class="er2-pop-name">' + frappe.utils.escape_html(s.student_name || student) + '</div>' +
+					'<div class="er2-pop-sub">' + frappe.utils.escape_html(s.registration_id || '') + '</div>' +
+					'</div>' +
+					'<div class="er2-pop-body">' +
+					infoHtml +
+					marksHtml +
+					'</div>'
 				);
+				// Widen popup if marks are shown
+				$popup.css('max-width', marksHtml ? '420px' : '360px');
 				position_popup(x, y);
 				$popup.show();
 			},
