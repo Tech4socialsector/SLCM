@@ -40,6 +40,9 @@ fixtures = [
         ]
     },
     {
+        "doctype": "Workflow State",
+    },
+    {
         "doctype": "Applicant Status",
     },
     {
