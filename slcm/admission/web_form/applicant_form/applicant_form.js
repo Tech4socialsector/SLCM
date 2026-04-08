@@ -2186,12 +2186,12 @@ function _doFinalSubmit(applicantName) {
 
 				_showSuccessModal(title, message, nextUrl);
 			} else {
-				_showToast('\u26a0  ' + ((msg && msg.message) || 'Submission failed.'), 'error');
+				showToast('\u26a0  ' + ((msg && msg.message) || 'Submission failed.'), 'error');
 			}
 		},
 		error: function () {
 			_hideSubmitOverlay();
-			_showToast('\u26a0  Network error during submission.', 'error');
+			showToast('\u26a0  Network error during submission.', 'error');
 		},
 	});
 }
@@ -2829,7 +2829,6 @@ var SLCM_APPLICANT_YEAR_4_FIELDS = {
 var SLCM_APPLICANT_MAX10_P2_FIELDS = {
 	class_x_cgpa: 1,
 	class_xii_cgpa: 1,
-	percentage: 1,
 	ug_cgpa: 1,
 	pg_cgpa: 1,
 };
@@ -2838,6 +2837,8 @@ var SLCM_APPLICANT_MAX10_P2_FIELDS = {
 var SLCM_APPLICANT_MAX100_P2_FIELDS = {
 	class_x_percentage: 1,
 	hsc_percentage: 1,
+	/** National test “Score or percentage” — percentage or normalized score up to 100. */
+	percentage: 1,
 };
 
 function _slcmApplicantFormatRuleField(fieldname) {

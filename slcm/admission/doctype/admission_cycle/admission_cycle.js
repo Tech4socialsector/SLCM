@@ -39,6 +39,7 @@ function slcm_check_admission_cycle_date_overlap(frm) {
             name: frm.doc.name,
             cycle_start_date: frm.doc.cycle_start_date,
             cycle_end_date: frm.doc.cycle_end_date,
+            status: frm.doc.status === "Active" ? "Active" : null
         },
         callback(r) {
             const m = r && r.message;
@@ -51,7 +52,7 @@ function slcm_check_admission_cycle_date_overlap(frm) {
             } else {
                 body =
                     (m.message && String(m.message).replace(/\n/g, "<br>")) ||
-                    __("These dates overlap another admission cycle.");
+                    __("These dates overlap with another Active admission cycle.");
             }
             frappe.msgprint({
                 title: __("Admission Cycle Dates Conflict"),
@@ -144,6 +145,15 @@ frappe.ui.form.on("Admission Cycle", {
             colors[frm.doc.status] || "gray"
         );
 
+        // Intro messages
+        if (frm.doc.status === "Active") {
+            frm.set_intro(__("This admission cycle is currently <b>Active</b>. It is visible on the applicant portal."));
+        } else if (frm.doc.status === "Closed") {
+            frm.set_intro(__("This admission cycle is <b>Closed</b>. No more applications are being accepted."), "red");
+        } else {
+            frm.set_intro(__("This cycle is currently in <b>Draft</b>. It will not be visible on the portal until it is activated."), "blue");
+        }
+
         // Program count warning
         if (!frm.is_new()) {
             const active_programs = (frm.doc.programs || [])
@@ -181,55 +191,7 @@ frappe.ui.form.on("Admission Cycle", {
         if (!frm.is_new()) {
             if (frm.doc.status === "Draft") {
                 frm.add_custom_button(__("Activate"), function () {
-                    // Check for existing active cycle conflict first
-                    frappe.db.get_value("Admission Cycle", {
-                        status: "Active",
-                        name: ["!=", frm.doc.name]
-                    }, "cycle_name", (r) => {
-                        if (r && r.cycle_name) {
-                            frappe.msgprint({
-                                message: __("Cycle <b>{0}</b> is already Active. Close it before activating this one.", [r.cycle_name]),
-                                title: __("Active Cycle Conflict"),
-                                indicator: "red",
-                                primary_action: {
-                                    label: __("Go to {0}", [r.cycle_name]),
-                                    action: () => {
-                                        frappe.set_route("Form", "Admission Cycle", r.cycle_name);
-                                    }
-                                }
-                            });
-                            return;
-                        }
-
-                        // Date validation for activation
-                        const today = frappe.datetime.get_today();
-                        const cycle_start = frm.doc.cycle_start_date;
-                        const cycle_end = frm.doc.cycle_end_date;
-
-                        const build_activate_confirm_msg = () => {
-                            let msg = "";
-
-                            if (cycle_start && today < cycle_start) {
-                                const days_to_start = frappe.datetime.get_diff(cycle_start, today);
-                                msg += __("⚠️ The cycle is scheduled to start on <b>{0}</b> ({1} day(s) from today). Activating early may allow premature applications.<br><br>",
-                                    [cycle_start, days_to_start]);
-                            }
-
-                            if (cycle_end && today > cycle_end) {
-                                const days_past_end = frappe.datetime.get_diff(today, cycle_end);
-                                msg += __("⚠️ The cycle end date <b>{0}</b> has already passed ({1} day(s) ago). Activating a past-dated cycle is not recommended.<br><br>",
-                                    [cycle_end, days_past_end]);
-                            }
-
-                            if (frm.doc.docstatus === 0) {
-                                msg += __("Activating will also <b>Submit</b> this document. Do you want to continue?");
-                            } else {
-                                msg += __("Do you want to activate this cycle?");
-                            }
-
-                            return msg;
-                        };
-
+                    slcm_run_activation_checks(frm, () => {
                         const activate_cycle = () => {
                             frappe.call({
                                 method: "frappe.client.set_value",
@@ -245,7 +207,7 @@ frappe.ui.form.on("Admission Cycle", {
                             });
                         };
 
-                        frappe.confirm(build_activate_confirm_msg(), () => {
+                        frappe.confirm(slcm_build_activate_confirm_msg(frm), () => {
                             if (frm.doc.docstatus === 0) {
                                 frm.save("Submit").then(activate_cycle);
                             } else {
@@ -308,15 +270,60 @@ frappe.ui.form.on("Admission Cycle", {
                     });
                 }, __("Actions"));
             }
+
+            if (frm.doc.status === "Closed") {
+                frm.set_read_only();
+                frm.add_custom_button(__("Reopen Cycle"), function () {
+                    frappe.confirm(__("Are you sure you want to reopen this admission cycle?"), function () {
+                        frappe.call({
+                            method: "slcm.admission.doctype.admission_cycle.admission_cycle.reopen_cycle",
+                            args: {
+                                name: frm.doc.name
+                            },
+                            callback: function (r) {
+                                if (r.message && r.message.success) {
+                                    frappe.show_alert({
+                                        message: r.message.message,
+                                        indicator: "green"
+                                    });
+                                    frm.reload_doc();
+                                } else if (r.message) {
+                                    frappe.msgprint({
+                                        message: r.message.message,
+                                        title: __("Cannot Reopen"),
+                                        indicator: "red"
+                                    });
+                                }
+                            }
+                        });
+                    });
+                }, __("Actions"));
+            }
         }
     },
 
     status: function (frm) {
         if (frm.doc.status === "Active") {
-            frappe.show_alert({
-                message: __("Cycle activated. Programs will appear on the portal."),
-                indicator: "green"
-            }, 5);
+            // Check for other Active cycles
+            frappe.db.get_value("Admission Cycle", {
+                status: "Active",
+                name: ["!=", frm.doc.name]
+            }, "cycle_name", (r) => {
+                if (r && r.cycle_name) {
+                    frappe.msgprint({
+                        message: __("Cycle <b>{0}</b> is already Active. Close it before activating this one.", [r.cycle_name]),
+                        title: __("Active Cycle Conflict"),
+                        indicator: "red"
+                    });
+                    frm.set_value("status", "Draft");
+                    return;
+                }
+                slcm_check_admission_cycle_date_overlap(frm);
+                frappe.show_alert({
+                    message: __("Cycle activated. Programs will appear on the portal."),
+                    indicator: "green"
+                }, 5);
+            });
         }
     },
     cycle_start_date: function (frm) {
@@ -373,7 +380,20 @@ frappe.ui.form.on("Admission Cycle", {
         }
     },
 
-
+    before_submit: function (frm) {
+        if (!frm.flags) frm.flags = {};
+        if (!frm.flags.ignore_submit_check && frm.doc.status !== "Active") {
+            frappe.validated = false;
+            slcm_run_activation_checks(frm, () => {
+                frappe.confirm(slcm_build_activate_confirm_msg(frm), () => {
+                    frm.set_value("status", "Active");
+                    if (!frm.flags) frm.flags = {};
+                    frm.flags.ignore_submit_check = true;
+                    frm.save("Submit");
+                });
+            });
+        }
+    },
 });
 
 frappe.ui.form.on("Admission Cycle Program", {
@@ -1176,4 +1196,81 @@ function open_program_media(frm, row) {
         table_rows.splice(idx, 1);
         render_table();
     });
+}
+function slcm_run_activation_checks(frm, callback) {
+    // 1. Check for any other Active cycle first (Global rule)
+    frappe.db.get_value("Admission Cycle", {
+        status: "Active",
+        name: ["!=", frm.doc.name]
+    }, "cycle_name", (r) => {
+        if (r && r.cycle_name) {
+            frappe.msgprint({
+                message: __("Cycle <b>{0}</b> is already Active. Close it before activating this one.", [r.cycle_name]),
+                title: __("Active Cycle Conflict"),
+                indicator: "red",
+                primary_action: {
+                    label: __("Go to {0}", [r.cycle_name]),
+                    action: () => {
+                        frappe.set_route("Form", "Admission Cycle", r.cycle_name);
+                    }
+                }
+            });
+            return;
+        }
+
+        // 2. Check for existing active cycle date overlaps (Secondary rule)
+        frappe.call({
+            method: "slcm.admission.doctype.admission_cycle.admission_cycle.check_admission_cycle_date_overlap",
+            args: {
+                name: frm.doc.name,
+                cycle_start_date: frm.doc.cycle_start_date,
+                cycle_end_date: frm.doc.cycle_end_date,
+                status: "Active"
+            },
+            callback: (r) => {
+                const m = r && r.message;
+                if (m && !m.valid) {
+                    let body = m.overlaps && m.overlaps.length
+                        ? slcm_build_admission_cycle_conflict_message(m.overlaps)
+                        : (m.message || __("These dates overlap with another Active admission cycle."));
+
+                    frappe.msgprint({
+                        message: body,
+                        title: __("Active Cycle Conflict"),
+                        indicator: "red"
+                    });
+                    return;
+                }
+                if (callback) callback();
+            }
+        });
+    });
+}
+
+function slcm_build_activate_confirm_msg(frm) {
+    const today = frappe.datetime.get_today();
+    const cycle_start = frm.doc.cycle_start_date;
+    const cycle_end = frm.doc.cycle_end_date;
+
+    let msg = "";
+
+    if (cycle_start && today < cycle_start) {
+        const days_to_start = frappe.datetime.get_diff(cycle_start, today);
+        msg += __("⚠️ The cycle is scheduled to start on <b>{0}</b> ({1} day(s) from today). Activating early may allow premature applications.<br><br>",
+            [cycle_start, days_to_start]);
+    }
+
+    if (cycle_end && today > cycle_end) {
+        const days_past_end = frappe.datetime.get_diff(today, cycle_end);
+        msg += __("⚠️ The cycle end date <b>{0}</b> has already passed ({1} day(s) ago). Activating a past-dated cycle is not recommended.<br><br>",
+            [cycle_end, days_past_end]);
+    }
+
+    if (frm.doc.docstatus === 0) {
+        msg += __("Submitting will also set this cycle as <b>Active</b> and make it visible on the portal. Do you want to continue?");
+    } else {
+        msg += __("Do you want to activate this cycle?");
+    }
+
+    return msg;
 }
