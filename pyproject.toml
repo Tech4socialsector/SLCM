@@ -12,7 +12,8 @@ authors = [
 
 dependencies = [
     "qrcode[pil]>=7.4.2",
-    "Pillow>=10.2.0"
+    "Pillow>=10.2.0",
+    "pypdf>=3.0.0"
 ]
 
 [build-system]
@@ -23,3 +24,4 @@ build-backend = "flit_core.buildapi"
 frappe = ">=15,<18"
 qrcode = "~=7.4.2"
 Pillow = "~=10.2.0"
+pypdf = ">=3.0.0"

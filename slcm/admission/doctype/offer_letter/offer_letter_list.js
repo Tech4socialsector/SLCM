@@ -22,6 +22,22 @@ frappe.listview_settings['Offer Letter'] = {
             });
         });
 
+        listview.page.add_inner_button(__("Run Expiry Check"), function () {
+            frappe.confirm(__("Are you sure you want to manually run the expiration system? This will immediately expire all offers whose payment deadline has safely passed."), function() {
+                frappe.call({
+                    method: "slcm.api.service.offer_service.expire_offers",
+                    freeze: true,
+                    freeze_message: __("Processing Expirations..."),
+                    callback: function (r) {
+                        if (r.message !== undefined) {
+                            frappe.msgprint(__("Successfully expired {0} offers.", [r.message]));
+                            listview.refresh();
+                        }
+                    }
+                });
+            });
+        });
+
         listview.page.add_inner_button(__("Bulk Download ZIP"), function () {
             let dialog = new frappe.ui.Dialog({
                 title: __('Bulk Download Offer Letters'),
@@ -61,6 +77,13 @@ frappe.listview_settings['Offer Letter'] = {
                         fieldname: 'offer_status',
                         fieldtype: 'Select',
                         options: '\nDraft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn'
+                    },
+                    {
+                        label: __('Output Format'),
+                        fieldname: 'output_format',
+                        fieldtype: 'Select',
+                        options: 'ZIP Archive\nSingle Merged PDF',
+                        default: 'ZIP Archive'
                     }
                 ],
                 primary_action_label: __('Download'),
@@ -76,6 +99,7 @@ frappe.listview_settings['Offer Letter'] = {
                                 if (typeof r.message === 'string') {
                                     // Sync response (URL)
                                     let file_url = r.message;
+                                    frappe.hide_progress();
                                     let w = window.open(file_url, '_blank');
                                     if (!w) {
                                         frappe.msgprint(__('Please allow popups to download the file.'));

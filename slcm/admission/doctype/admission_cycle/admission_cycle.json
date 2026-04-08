@@ -40,6 +40,7 @@
   "after_enroll",
   "section_break_jwca",
   "email_template",
+  "process_completed_message",
   "column_break_njek",
   "application_form_template",
   "section_break_programs",
@@ -382,6 +383,12 @@
    "fieldtype": "Select",
    "label": "Application Form Type",
    "options": "Web From\nCustom From"
+  },
+  {
+   "description": "Ex: \"Congratulations! Your application has been successfully processed.\"",
+   "fieldname": "process_completed_message",
+   "fieldtype": "Data",
+   "label": "Process Completed Message"
   }
  ],
  "is_submittable": 1,

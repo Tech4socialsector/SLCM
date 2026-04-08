@@ -2656,6 +2656,9 @@ function wrapSlcmApplicantFileUploaderConstructor() {
 
 	function SlcmFileUploader(opts) {
 		opts = opts || {};
+		// Force public uploads for the applicant form
+		opts.is_private = 0;
+
 		if (frappe.web_form && window._slcmLastAttachCtx) {
 			var ctx = window._slcmLastAttachCtx;
 			if (Date.now() - (ctx.ts || 0) < 120000) {

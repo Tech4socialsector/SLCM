@@ -3,6 +3,9 @@ import json
 from frappe import _, throw
 from frappe.utils import add_days, getdate, now_datetime, get_datetime, flt
 from frappe.utils.pdf import get_pdf
+from slcm.admission.doctype.offer_configuration.offer_configuration import (
+    validate_offer_config_fee_deadlines,
+)
 from slcm.api.service.fee_service import FeeService
 
 class OfferService:
@@ -129,6 +132,8 @@ class OfferService:
 
         config = OfferService.get_active_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
+
+        validate_offer_config_fee_deadlines(config)
 
         # --- PRE-FLIGHT CHECKS (Before Transaction) ---
         if getattr(config, "send_email", 0):
@@ -390,10 +395,12 @@ class OfferService:
         return True
 
     @staticmethod
+    @frappe.whitelist()
     def expire_offers():
         """
         Scheduled job logic to transition 'Issued' and 'Accepted' offers to 'Expired' 
         after the payment deadline (if payment is not completed).
+        Optimized for bulk expiry.
         """
         to_expire = frappe.get_all("Offer Letter", filters={
             "offer_status": ["in", ["Issued", "Accepted"]],
@@ -401,17 +408,41 @@ class OfferService:
         }, fields=["name"])
 
         processed = 0
-        for entry in to_expire:
+        batch_size = 50 
+        
+        for i, entry in enumerate(to_expire):
             try:
                 # We save each individually to trigger the automated status hook
                 doc = frappe.get_doc("Offer Letter", entry.name)
                 doc.offer_status = "Expired"
                 doc.edit_reason = _("Automatically expired by system scheduler.")
                 doc.save(ignore_permissions=True)
+                
+                from slcm.admission.utils.notifications import log_communication
+                log_communication(
+                    applicant=doc.applicant,
+                    communication_type="Portal Notification",
+                    category="Offer Letter",
+                    subject=_("Admission Offer Expired"),
+                    content=_("Your admission offer for {0} has expired as the payment deadline has passed.").format(doc.program),
+                    reference_doctype="Offer Letter",
+                    reference_name=doc.name
+                )
+                
                 processed += 1
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), _("Manual Offer Expiry Failed"))
-        
+                
+                # Commit in chunks to avoid massive db locks
+                if (i + 1) % batch_size == 0:
+                    frappe.db.commit()
+                    
+            except Exception as e:
+                frappe.db.rollback()
+                frappe.log_error(f"Failed to expire offer {entry.name}: {str(e)}", "Auto Expiry Error")
+                
+        # Final commit for remaining records
+        if processed > 0:
+            frappe.db.commit()
+            
         return processed
 
     @staticmethod
@@ -433,13 +464,14 @@ class OfferService:
             frappe.enqueue(
                 method="slcm.api.service.offer_service.OfferService.background_bulk_worker",
                 queue="long",
+                timeout=43200, # 12 hours timeout for massive batches (e.g., 10,000+ records)
                 applicants=applicants,
                 user=frappe.session.user,
                 now=frappe.flags.in_test
             )
             return {
                 "queued": True,
-                "message": _("Large batch detected ({0} applicants). Processing started in the background. You will receive a notification when finished.").format(len(applicants))
+                "message": _("Large batch detected ({0} applicants). Processing started safely in the background. You will receive a notification when finished.").format(len(applicants))
             }
 
         # Otherwise, process immediately (standard behavior)
@@ -540,15 +572,39 @@ class OfferService:
         # Switch session user to the requester
         frappe.set_user(user)
 
-        results = OfferService._process_bulk_batch(applicants)
+        total = len(applicants)
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        # Process in chunks and commit to prevent memory leaks and transaction locks
+        for i, data in enumerate(applicants):
+            try:
+                res = OfferService._process_bulk_batch([data])
+                if res.get("success"):
+                    success_count += len(res["success"])
+                    # Commit every record to ensure it is saved immediately
+                    frappe.db.commit()
+                if res.get("errors"):
+                    error_count += len(res["errors"])
+                    errors.extend([f"Applicant: {e.get('applicant')} - Error: {e.get('error')}" for e in res["errors"]])
+            except Exception as e:
+                frappe.db.rollback()
+                error_count += 1
+                errors.append(f"Fatal error processing {data}: {str(e)}")
 
         # Create a System Notification upon completion
-        success_count = len(results["success"])
-        error_count = len(results["errors"])
-        
         summary_msg = _("Successfully generated {0} offers.").format(success_count)
         if error_count > 0:
             summary_msg += _(" {0} errors encountered.").format(error_count)
+
+        error_details = ""
+        if errors:
+            error_details = "<br><br><b>Recent Errors:</b><ul style='font-size: 11px; color: #e53e3e;'>"
+            error_details += "".join([f"<li>{e}</li>" for e in errors[:15]])
+            error_details += "</ul>"
+            if len(errors) > 15:
+                error_details += f"<div style='font-size: 11px;'>...and {len(errors) - 15} more. Check Error Log for full details.</div>"
 
         notification_content = f"""
             <div style="font-family: sans-serif; padding: 5px;">
@@ -562,8 +618,9 @@ class OfferService:
                     </span>
                 </div>
                 <p style="font-size: 13px; color: #4a5568; line-height: 1.5;">
-                    {_('Offer generation process has finished for {0} applicants.').format(len(applicants))}
+                    {_('Offer generation process has finished for {0} applicants.').format(total)}
                 </p>
+                {error_details}
                 <div style="margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 12px;">
                     <a href="/app/offer-letter" style="background: #1a202c; color: #ffffff !important; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">
                         {_('View Offer Letters')}

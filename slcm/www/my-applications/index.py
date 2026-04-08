@@ -318,6 +318,7 @@ def get_context(context):
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
         context.cycle_next_step_message = ""
+        context.process_completed_message = ""
         try:
             # 1. Get Admission Cycle Doc to check enabled stages
             # ── Use active cycle for stage configuration (per requirement) ──
@@ -352,6 +353,7 @@ def get_context(context):
             
             if cycle_name_to_use:
                 cycle_doc = frappe.get_doc("Admission Cycle", cycle_name_to_use, ignore_permissions=True)
+                context.process_completed_message = (cycle_doc.get("process_completed_message") or "").strip()
                 
                 # Potential stages mapping based on checkboxes in Admission Cycle
                 # Using 'intereview' as per the doctype field name (note the typo)
