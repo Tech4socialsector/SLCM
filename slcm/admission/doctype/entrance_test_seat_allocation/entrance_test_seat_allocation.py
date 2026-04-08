@@ -219,7 +219,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
     all_records = frappe.get_all("Entrance Test Seat Allocation",
         filters=all_filters,
         fields=["name", "applicant", "candidate_name", "email", "entrance_test_status", 
-                "score_obtained", "total_score", "entrance_test_rank", "entrance_test_list"]
+                "score_obtained","entrance_test_rank", "entrance_test_list"]
     )
 
     count = 0
