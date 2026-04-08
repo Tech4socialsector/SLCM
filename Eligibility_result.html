@@ -1,9 +1,22 @@
 {%- set campus_display_name = frappe.db.get_value("Campus", doc.campus, "campus_name") if doc.campus else (doc.campus or "Institution of Legal Education") -%}
-{%- set campus_logo_url = frappe.db.get_value("Campus", doc.campus, "logo") if doc.campus else None -%}
+{%- set campus_logo_path = frappe.db.get_value("Campus", doc.campus, "logo") if doc.campus else None -%}
 {%- set dob = frappe.utils.formatdate(frappe.db.get_value("Applicant", doc.applicant_id, "date_of_birth")) -%}
 {%- set father_name = frappe.db.get_value("Applicant", doc.applicant_id, "father_name") -%}
 {%- set mother_name = frappe.db.get_value("Applicant", doc.applicant_id, "mother_name") -%}
 {%- set issue_date = frappe.utils.formatdate(frappe.utils.nowdate()) -%}
+
+{%- set _site = frappe.utils.get_url() -%}
+
+{#- Image Handling for Live -#}
+{%- set _logo_src = '' -%}
+{%- if campus_logo_path -%}
+    {%- set _lb64 = get_file_b64(campus_logo_path) -%}
+    {%- if _lb64 -%}
+        {%- set _lext = (campus_logo_path.split('.')[-1] | lower) -%}
+        {%- set _lmime = 'image/jpeg' if _lext in ['jpg','jpeg'] else ('image/png' if _lext == 'png' else 'image/svg+xml') -%}
+        {%- set _logo_src = 'data:' ~ _lmime ~ ';base64,' ~ _lb64 -%}
+    {%- else -%}{%- set _logo_src = _site ~ campus_logo_path -%}{%- endif -%}
+{%- endif -%}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -11,13 +24,14 @@
 <meta charset="UTF-8"/>
 <title>Eligibility Result - {{ doc.applicant_id }}</title>
 <style>
-/* PDF-safe layout: table-based header/footer; no flex/gap for main structure. */
+@page { size: 210mm 297mm; margin: 10mm 8mm; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-@page {
-  size: A4 portrait;
-  margin: 8mm;
+
+/* Frappe Live Reset */
+html, body, #page-body, .print-format-gutter, .print-format, .page-break, .letter-head, .letter-head-content, form[data-doctype], .layout-main, .layout-main-section, .frappe-card {
+    margin: 0 !important; padding: 0 !important; border: none !important; background: transparent !important; width: auto !important; max-width: none !important;
 }
-html { -webkit-text-size-adjust: 100%; }
+
 body {
 font-family: "Times New Roman", Times, serif;
 font-size: 13px;
@@ -26,73 +40,55 @@ color: #000;
 line-height: 1.4;
 print-color-adjust: exact;
 -webkit-print-color-adjust: exact;
-width: 100%;
-max-width: 210mm;
-margin: 0 auto;
 }
 .card-page {
-width: 100%;
-max-width: 190mm;
+width: 710px;
 margin: 0 auto;
 background: #fff;
 border: 1.5px solid #555;
 padding: 0;
 position: relative;
-overflow: visible;
+overflow: hidden;
 page-break-after: always;
 }
 .header {
-background: #7b1c1c;
-display: table;
-width: 100%;
-table-layout: fixed;
-border-collapse: collapse;
+background: #7b1c1c !important;
+display: flex;
+align-items: center;
+justify-content: space-between;
 padding: 10px 18px;
 border-bottom: 3px solid #5a0e0e;
 }
-.header > .logo-box,
-.header > .hdr-center {
-display: table-cell;
-vertical-align: middle;
-}
-.header > .logo-box:first-child { width: 90px; padding-right: 12px; }
-.header > .hdr-center { width: auto; }
-.header > .logo-box:last-child { width: 90px; padding-left: 12px; text-align: right; }
 .logo-box {
 width: 74px;
 height: 74px;
-max-width: 74px;
-background: #fff;
+background: #fff !important;
 border: 2px solid rgba(255,255,255,0.6);
 border-radius: 3px;
-text-align: center;
-overflow: hidden;
-vertical-align: middle;
+display: flex;
+align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
 }
-.logo-box img { width: 70px; height: 70px; max-width: 70px; max-height: 70px; object-fit: contain; display: inline-block; vertical-align: middle; }
+.logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .logo-inner {
-display: block;
-text-align: center;
-padding-top: 10px;
+display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
 }
-.logo-inner .logo-text { display: block; margin-top: 2px; }
 .logo-icon { font-size: 28px; line-height: 1; color: #7b1c1c; }
 .logo-text {
 font-size: 7.5px; font-weight: bold; font-family: Arial, sans-serif; color: #7b1c1c;
 text-align: center; letter-spacing: 0.5px; line-height: 1.2;
 }
-.hdr-center { text-align: center; min-width: 0; padding: 0 15px; }
+.hdr-center { flex: 1; text-align: center; min-width: 0; padding: 0 15px; }
 .univ-name {
-font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff;
+font-size: 21px; font-weight: bold; font-family: Arial, sans-serif; color: #fff !important;
 text-transform: none; letter-spacing: 1.2px; line-height: 1.2; margin-bottom: 0;
 word-wrap: break-word; overflow-wrap: break-word;
 }
 .univ-sub {
-font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80);
+font-size: 11px; font-family: Arial, sans-serif; color: rgba(255,255,255,0.80) !important;
 letter-spacing: 2.5px; text-transform: none; margin-top: 3px;
 }
 .title-banner {
-background: #f8f8f8;
+background: #f8f8f8 !important;
 text-align: center;
 padding: 12px;
 border-bottom: 1.5px solid #bbb;
@@ -122,7 +118,6 @@ border-radius: 2px;
 .info-tbl {
 width: 100%;
 border-collapse: collapse;
-table-layout: fixed;
 }
 .info-tbl tr { border-bottom: 1px solid #ddd; }
 .info-tbl tr:last-child { border-bottom: none; }
@@ -152,12 +147,11 @@ font-weight: bold;
 .results-table {
 width: 100%;
 border-collapse: collapse;
-table-layout: fixed;
 margin-top: 10px;
 border: 1.5px solid #bbb;
 }
 .results-table th {
-background: #f4f4f4;
+background: #f4f4f4 !important;
 font-family: Arial, sans-serif;
 font-size: 12px;
 font-weight: bold;
@@ -198,22 +192,16 @@ color: #333;
 margin-top: 25px;
 border-top: 1px solid #ddd;
 padding-top: 10px;
-display: table;
-width: 100%;
-table-layout: fixed;
+display: flex;
+justify-content: space-between;
 font-family: Arial, sans-serif;
 font-size: 9.5px;
 color: #555;
 }
-.footer > div {
-display: table-cell;
-vertical-align: top;
-width: 50%;
-}
-.footer > div:last-child { text-align: right; }
+
 @media print {
-  body { margin: 0; }
-  .card-page { width: 100%; max-width: none; margin: 0; }
+    .card-page { width: 100%; margin: 0; border: 1.5px solid #555; }
+    .header { background: #7b1c1c !important; }
 }
 </style>
 </head>
@@ -221,8 +209,8 @@ width: 50%;
 <div class="card-page">
 <div class="header">
   <div class="logo-box">
-    {% if campus_logo_url %}
-      <img src="{{ campus_logo_url }}" alt="Campus Logo">
+    {% if _logo_src %}
+      <img src="{{ _logo_src }}" alt="Campus Logo">
     {% else %}
       <div class="logo-inner"><span class="logo-icon">⚖</span><span class="logo-text">Law<br>School</span></div>
     {% endif %}
@@ -283,7 +271,7 @@ width: 50%;
   <td>100</td>
   <td class="score-cell">{{ doc.interview_score or 0 }}</td>
 </tr>
-<tr style="background: #f9f9f9;">
+<tr style="background: #f9f9f9 !important;">
   <td colspan="2" style="text-align: right; font-weight: bold; font-family: Arial, sans-serif; font-size: 12px;">Result Status</td>
   <td>
     <span class="status-text">{{ doc.result_status or "—" }}</span>
@@ -317,4 +305,3 @@ Authorized Signatory<br>
 </div>
 </body>
 </html>
-
