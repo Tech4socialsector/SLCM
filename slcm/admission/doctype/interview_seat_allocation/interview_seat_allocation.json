@@ -333,7 +333,8 @@
   {
    "fieldname": "rank",
    "fieldtype": "Int",
-   "label": "Rank"
+   "label": "Rank",
+   "read_only": 1
   },
   {
    "fetch_from": "interview_staff_member.interview_address",
@@ -375,7 +376,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 14:47:32.361930",
+ "modified": "2026-04-08 12:42:34.577239",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
