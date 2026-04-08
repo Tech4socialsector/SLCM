@@ -408,6 +408,18 @@ class OfferService:
                 doc.offer_status = "Expired"
                 doc.edit_reason = _("Automatically expired by system scheduler.")
                 doc.save(ignore_permissions=True)
+                
+                from slcm.admission.utils.notifications import log_communication
+                log_communication(
+                    applicant=doc.applicant,
+                    communication_type="Portal Notification",
+                    category="Offer Letter",
+                    subject=_("Admission Offer Expired"),
+                    content=_("Your admission offer for {0} has expired as the payment deadline has passed.").format(doc.program),
+                    reference_doctype="Offer Letter",
+                    reference_name=doc.name
+                )
+                
                 processed += 1
             except Exception:
                 frappe.log_error(frappe.get_traceback(), _("Manual Offer Expiry Failed"))
