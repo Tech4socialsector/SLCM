@@ -16,7 +16,16 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     """
     Sends an email notification to the applicant about a status change
     using the 'Seat Allocation Result Notification' template record and logs it.
+    Only sends notifications for the core 'Selected', 'Waitlisted', and 'Rejected' statuses.
+    Lifecycle statuses like 'Offer Issued' or 'Fee Paid' are skipped here.
     """
+    # 1. Define allowed statuses for notification
+    allowed_statuses = ["Selected", "Waitlisted", "Rejected"]
+
+    if new_status not in allowed_statuses:
+        frappe.logger().info(f"Notification skipped: Status '{new_status}' is not in allowed list (Selected, Waitlisted, Rejected) for {applicant}")
+        return
+
     try:
         applicant_doc = frappe.get_doc("Eligibility Result", applicant)
     except frappe.DoesNotExistError:
@@ -212,7 +221,7 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
 def notify_published_allocation(allocation_name):
     """
     Sends email notifications ONLY to the applicants listed in the 
-    Seat Allocation document.
+    Seat Allocation document. Optimized for large volumes.
     """
     allocation = frappe.get_doc("Seat Allocation", allocation_name)
     
@@ -220,18 +229,141 @@ def notify_published_allocation(allocation_name):
         frappe.logger().info(f"Notification: No applicants found in {allocation_name}. Skipping.")
         return
 
-    frappe.logger().info(f"Notification: Publishing {allocation_name}. Notifying {len(allocation.selection_applicant)} applicants.")
+    count = len(allocation.selection_applicant)
+    frappe.logger().info(f"Notification: Publishing {allocation_name}. Notifying {count} applicants.")
+
+    # 1. Pre-fetch common data
+    template_name = "Seat Allocation Result Notification"
+    if not frappe.db.exists("Email Template", template_name):
+        template_name = "Seat Allocation Status"
+        
+    template = frappe.get_doc("Email Template", template_name)
+    template_body = template.response_html if template.get("use_html") else (template.response or template.get("message"))
+    
+    # 2. Pre-fetch all applicant emails in bulk
+    applicant_ids = [row.applicant_id for row in allocation.selection_applicant if row.applicant_id]
+    
+    # Map applicant_id -> email
+    email_map = {}
+    if applicant_ids:
+        # Check Applicant records
+        applicants = frappe.get_all("Applicant", 
+            filters={"name": ["in", applicant_ids]}, 
+            fields=["name", "email", "candidate_name"]
+        )
+        for a in applicants:
+            if a.email:
+                email_map[a.name] = a.email
+
+    # 3. Batch process notifications
+    notification_logs = []
+    audit_logs = []
+    from_user = frappe.session.user if frappe.session.user != "Guest" else "Administrator"
+    time_now = now()
+    base_url = get_url()
+
+    allowed_statuses = ["Selected", "Waitlisted", "Rejected"]
 
     for row in allocation.selection_applicant:
-        notify_status_change(
-            applicant=row.applicant_id,
-            program=row.program,
-            old_status="Draft",
-            new_status=row.selection_status,
-            allocation_name=allocation_name,
-            admission_cycle=allocation.admission_cycle,
-            row=row
+        # Skip if status not in allowed list
+        if row.selection_status not in allowed_statuses:
+            continue
+
+        email = email_map.get(row.applicant_id)
+        if not email:
+            continue
+
+        # Prepare context for Jinja (Minimal to save memory in large loops)
+        safe_name = str(row.candidate_name or "Applicant")
+        status_label = row.selection_status
+        
+        doc_context = {
+            "applicant_id": row.applicant_id,
+            "candidate_name": safe_name,
+            "applicant_name": safe_name,
+            "admission_cycle": allocation.admission_cycle,
+            "program": row.program,
+            "selection_status": row.selection_status,
+            "allocation_type": row.allocation_type,
+            "overall_rank": row.overall_rank,
+            "total_score": row.total_score
+        }
+
+        args = {
+            "doc": doc_context,
+            "candidate_name": safe_name,
+            "applicant_name": safe_name,
+            "status": status_label,
+            "new_status": row.selection_status,
+            "allocation_name": allocation_name,
+            "get_url": get_url,
+            "base_url": base_url
+        }
+
+        try:
+            subject = frappe.render_template(template.subject, args)
+            message = frappe.render_template(template_body, args)
+        except Exception:
+            continue
+
+        # A. Enqueue Email
+        frappe.enqueue(
+            method=frappe.sendmail,
+            queue="short",
+            recipients=[email],
+            subject=subject,
+            message=message,
+            reference_doctype="Seat Allocation",
+            reference_name=allocation_name,
+            now=False
         )
+
+        # B. Prepare System Notification Log
+        if frappe.db.exists("User", email):
+            notification_logs.append([
+                frappe.generate_hash(length=10), # name
+                time_now, time_now, from_user, from_user, 0, # creation, modified, modified_by, owner, docstatus
+                subject, # subject
+                email, # for_user
+                "Alert", # type
+                f"Your status for Seat Allocation {allocation_name} has been updated to <strong>{status_label}</strong>.", # email_content
+                "Seat Allocation", # document_type
+                allocation_name, # document_name
+                from_user, # from_user
+                f"/my-applications?app={row.applicant_id}" # link
+            ])
+
+        # C. Prepare Audit Log
+        audit_logs.append([
+            frappe.generate_hash(length=10), time_now, time_now, from_user, from_user, 0, # name, creation, modified, modified_by, owner, docstatus
+            "Seat Allocation", # reference_doctype
+            allocation_name, # reference_name
+            "Notification Sent", # action_type (maps to action_type field)
+            row.applicant_id, # applicant
+            row.program, # program
+            from_user, # performed_by
+            time_now, # performed_on
+            f"Bulk email notification sent to {email} on publication.", # remarks
+            "Draft", # old_value
+            row.selection_status # new_value
+        ])
+
+    # 4. Bulk Inserts
+    if notification_logs:
+        frappe.db.bulk_insert("Notification Log", [
+            "name", "creation", "modified", "modified_by", "owner", "docstatus",
+            "subject", "for_user", "type", "email_content", 
+            "document_type", "document_name", "from_user", "link"
+        ], notification_logs)
+
+    if audit_logs:
+        frappe.db.bulk_insert("Admission Audit Log", [
+            "name", "creation", "modified", "modified_by", "owner", "docstatus",
+            "reference_doctype", "reference_name", "action_type", "applicant", "program",
+            "performed_by", "performed_on", "remarks", "old_value", "new_value"
+        ], audit_logs)
+
+    frappe.logger().info(f"Notification: Bulk publication finished for {allocation_name}.")
 
 
 def notify_scholarship_status(application_name):
@@ -306,11 +438,11 @@ def notify_scholarship_status(application_name):
                 "subject": f"Scholarship Status: {app.status}",
                 "for_user": email,
                 "type": "Alert",
-                "email_content": f"Your scholarship application for <strong>{scheme_name}</strong> has been <strong>{app.status}</strong>. <br><br> <a href='/my-applications?app={app.applicant_id}'>Click here to view details.</a>",
+                "email_content": f"Your scholarship application for <strong>{scheme_name}</strong> has been <strong>{app.status}</strong>. <br><br> <a href='/merit-and-scholarship/scholarships'>Click here to view details.</a>",
                 "document_type": "Scholarship Application",
                 "document_name": app.name,
                 "from_user": from_user,
-                "link": f"/my-applications?app={app.applicant_id}"
+                "link": "/merit-and-scholarship/scholarships"
             }).insert(ignore_permissions=True)
     except Exception as e:
         frappe.logger().error(f"Scholarship Notification Log error for {app.name}: {e}")

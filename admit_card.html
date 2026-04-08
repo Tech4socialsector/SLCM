@@ -56,6 +56,29 @@
     {%- else -%}{%- set _photo_src = _site ~ doc.profile -%}{%- endif -%}
 {%- endif -%}
 
+{%- set _site = frappe.utils.get_url() -%}
+
+{#- Image Handling for Live -#}
+{%- set _logo_src = '' -%}
+{%- if campus_logo_path -%}
+    {%- set _lb64 = get_file_b64(campus_logo_path) -%}
+    {%- if _lb64 -%}
+        {%- set _lext = (campus_logo_path.split('.')[-1] | lower) -%}
+        {%- set _lmime = 'image/jpeg' if _lext in ['jpg','jpeg'] else ('image/png' if _lext == 'png' else 'image/svg+xml') -%}
+        {%- set _logo_src = 'data:' ~ _lmime ~ ';base64,' ~ _lb64 -%}
+    {%- else -%}{%- set _logo_src = _site ~ campus_logo_path -%}{%- endif -%}
+{%- endif -%}
+
+{%- set _photo_src = '' -%}
+{%- if doc.profile -%}
+    {%- set _pb64 = get_file_b64(doc.profile) -%}
+    {%- if _pb64 -%}
+        {%- set _pext = (doc.profile.split('.')[-1] | lower) -%}
+        {%- set _pmime = 'image/jpeg' if _pext in ['jpg','jpeg'] else ('image/png' if _pext == 'png' else 'image/webp') -%}
+        {%- set _photo_src = 'data:' ~ _pmime ~ ';base64,' ~ _pb64 -%}
+    {%- else -%}{%- set _photo_src = _site ~ doc.profile -%}{%- endif -%}
+{%- endif -%}
+
 <!DOCTYPE html>
 <html>
 <head>
