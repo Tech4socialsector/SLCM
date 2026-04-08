@@ -16,16 +16,19 @@ def get_context(context):
 
     # ── Application cards (new) ──────────────────────────────────
     STATUS_STYLE = {
-        "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
-        "Submitted":      {"color": "#1d4ed8", "bg": "#dbeafe"},
-        "Merit Published": {"color": "#0369a1", "bg": "#e0f2fe"},
-        "Under Review":   {"color": "#d97706", "bg": "#fef3c7"},
-        "Shortlisted":    {"color": "#059669", "bg": "#d1fae5"},
-        "Waitlisted":     {"color": "#7c3aed", "bg": "#ede9fe"},
-        "Offer Issued":   {"color": "#0369a1", "bg": "#e0f2fe"},
-        "Offer Accepted": {"color": "#065f46", "bg": "#d1fae5"},
-        "Rejected":       {"color": "#dc2626", "bg": "#fee2e2"},
-        "Selected":       {"color": "#065f46", "bg": "#d1fae5"},
+        "Draft":            {"color": "#6b7280", "bg": "#f3f4f6"},
+        "Submitted":        {"color": "#1d4ed8", "bg": "#dbeafe"},
+        "Merit Published":  {"color": "#0369a1", "bg": "#e0f2fe"},
+        "Merit Selected":   {"color": "#065f46", "bg": "#d1fae5"},
+        "Merit Rejected":   {"color": "#991b1b", "bg": "#fee2e2"},
+        "Merit Waitlisted": {"color": "#7c3aed", "bg": "#ede9fe"},
+        "Under Review":     {"color": "#d97706", "bg": "#fef3c7"},
+        "Shortlisted":      {"color": "#059669", "bg": "#d1fae5"},
+        "Waitlisted":       {"color": "#7c3aed", "bg": "#ede9fe"},
+        "Offer Issued":     {"color": "#0369a1", "bg": "#e0f2fe"},
+        "Offer Accepted":   {"color": "#065f46", "bg": "#d1fae5"},
+        "Rejected":         {"color": "#991b1b", "bg": "#fee2e2"},
+        "Selected":         {"color": "#065f46", "bg": "#d1fae5"},
     }
 
     applicants = frappe.get_all(

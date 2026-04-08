@@ -40,6 +40,9 @@ fixtures = [
         ]
     },
     {
+        "doctype": "Workflow State",
+    },
+    {
         "doctype": "Applicant Status",
     },
     {
@@ -64,6 +67,12 @@ fixtures = [
                 "Entrance Test Allocation",
                 "Application Submitted Email"
             ]]
+        ]
+    },
+    {
+        "doctype": "Kanban Board",
+        "filters": [
+            ["name", "=", "Scholarship View"]
         ]
     }
 ]

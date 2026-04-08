@@ -160,38 +160,32 @@ class InterviewConfiguration(Document):
                 "result_status":    "Pass"
             })
 
+            # Masterpiece Failure Message
             msg = f"""
-                <div style="font-family: inherit; padding: 15px; background: #fff; border-radius: 12px; border: 1px solid #ffccd5; border-left: 6px solid #dc3545;">
-                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
-                        <div style="background: #dc3545; color: #fff; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 24px;">
-                            <i class="fa fa-exclamation-triangle"></i>
+                <div style="text-align: center; padding: 15px;">
+                    <div style="color: #dc3545; font-size: 40px; margin-bottom: 15px;">
+                        <i class="fa fa-exclamation-circle"></i>
+                    </div>
+                    <h3 style="font-weight: 800; margin-bottom: 10px; color: #171717;">{_("No Candidates Found")}</h3>
+                    <p style="color: #666; margin-bottom: 25px;">{_("We couldn't find any new eligible candidates matching this configuration.")}</p>
+                    
+                    <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 25px;">
+                        <div style="background: #f8f9fa; border: 1px solid #eef0f2; border-radius: 12px; padding: 12px 20px; min-width: 120px;">
+                            <div style="font-size: 22px; font-weight: 900; color: #171717;">{count_total}</div>
+                            <div style="font-size: 10px; font-weight: 700; color: #adb5bd; text-transform: uppercase;">{_("Evaluated")}</div>
                         </div>
-                        <div>
-                            <h4 style="margin: 0; color: #dc3545; font-weight: 700; font-size: 18px;">Generation Incomplete</h4>
-                            <p style="margin: 0; color: #6c757d; font-size: 13px;">No eligible candidates were found</p>
+                        <div style="background: #f8f9fa; border: 1px solid #eef0f2; border-radius: 12px; padding: 12px 20px; min-width: 120px;">
+                            <div style="font-size: 22px; font-weight: 900; color: #171717;">{count_et_pass}</div>
+                            <div style="font-size: 10px; font-weight: 700; color: #adb5bd; text-transform: uppercase;">{_("Test Passers")}</div>
                         </div>
                     </div>
 
-                    <div style="margin-bottom: 20px; font-size: 14px;">
-                        <p style="margin: 0 0 10px 0; color: #495057; font-weight: 600;">System Breakdown:</p>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; text-align: center;">
-                                <span style="display: block; font-size: 9px; color: #adb5bd;">Total Applicants</span>
-                                <span style="font-size: 16px; font-weight: 700;">{count_total}</span>
-                            </div>
-                            <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; text-align: center;">
-                                <span style="display: block; font-size: 9px; color: #adb5bd;">Entrance Test Passers</span>
-                                <span style="font-size: 16px; font-weight: 700;">{count_et_pass}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="background: #fff5f5; border-radius: 10px; padding: 15px; border: 1px solid #ffe3e3;">
-                         <p style="margin: 0 0 10px 0; color: #dc3545; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Potential Blockers:</p>
-                         <ul style="margin: 0; padding-left: 18px; color: #495057; font-size: 13px; line-height: 1.6;">
-                            <li>Already Generated? <b>{_("Validated")}</b></li>
-                            <li>Rejected Status? <b>{_("Validated")}</b></li>
-                            <li>Exempted from Interview? <b>{_("Validated")}</b></li>
+                    <div style="text-align: left; background: #fff5f5; border-radius: 10px; padding: 15px; border: 1px solid #ffe3e3;">
+                         <p style="margin: 0 0 8px 0; color: #dc3545; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">{_("Validation Checks Completed:")}</p>
+                         <ul style="margin: 0; padding-left: 18px; color: #495057; font-size: 12px; line-height: 1.6;">
+                            <li>{_("Exclusion of already generated applicants")}</li>
+                            <li>{_("Verification of successful entrance test status")}</li>
+                            <li>{_("Check for interview exemptions/rejections")}</li>
                          </ul>
                     </div>
                 </div>
@@ -235,40 +229,31 @@ class InterviewConfiguration(Document):
 
         # Masterpiece Success Message
         msg = f"""
-            <div style="font-family: inherit; padding: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 12px; border: 1px solid #e9ecef; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
-                <div style="display: flex; align-items: center; margin-bottom: 20px;">
-                    <div style="background: #28a745; color: #fff; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 24px; box-shadow: 0 4px 12px rgba(40,167,69,0.2);">
-                        <i class="fa fa-check-circle"></i>
+            <div style="text-align: center; padding: 15px;">
+                <div style="color: #28a745; font-size: 40px; margin-bottom: 15px;">
+                    <i class="fa fa-check-circle"></i>
+                </div>
+                <h3 style="font-weight: 800; margin-bottom: 10px; color: #171717;">{_("Generation Successful")}</h3>
+                <p style="color: #666; margin-bottom: 25px;">{_("The interview list has been created with candidates who cleared the eligibility criteria.")}</p>
+                
+                <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 30px;">
+                    <div style="background: #f8f9fa; border: 1px solid #eef0f2; border-radius: 12px; padding: 12px 20px; min-width: 100px;">
+                        <div style="font-size: 24px; font-weight: 900; color: #171717;">{len(all_applicants)}</div>
+                        <div style="font-size: 10px; font-weight: 700; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.5px;">{_("Total Eligible")}</div>
                     </div>
-                    <div>
-                        <h4 style="margin: 0; color: #212529; font-weight: 800; font-size: 20px; line-height: 1.2;">Interview List Generated Successfully</h4>
-                        <p style="margin: 0; color: #6c757d; font-size: 13px; font-weight: 500;">Details Below</p>
+                    <div style="background: #f8f9fa; border: 1px solid #eef0f2; border-radius: 12px; padding: 12px 20px; min-width: 100px;">
+                        <div style="font-size: 24px; font-weight: 900; color: #171717;">{cnt_national}</div>
+                        <div style="font-size: 10px; font-weight: 700; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.5px;">{_("National Test")}</div>
+                    </div>
+                    <div style="background: #f8f9fa; border: 1px solid #eef0f2; border-radius: 12px; padding: 12px 20px; min-width: 100px;">
+                        <div style="font-size: 24px; font-weight: 900; color: #171717;">{cnt_et}</div>
+                        <div style="font-size: 10px; font-weight: 700; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.5px;">{_("Entrance Pass")}</div>
                     </div>
                 </div>
 
-                <div style="background: #f8f9fa; border-radius: 12px; padding: 18px; border: 1px solid #f1f3f5; margin-bottom: 25px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1.5px solid #dee2e6; padding-bottom: 12px;">
-                        <span style="font-size: 14px; font-weight: 700; color: #495057; text-transform: uppercase; letter-spacing: 0.5px;">Eligible Candidates</span>
-                        <span style="background: #28a745; color: #fff; font-weight: 800; font-size: 16px; padding: 4px 16px; border-radius: 20px; box-shadow: 0 2px 6px rgba(40,167,69,0.15);">{len(all_applicants)}</span>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div style="background: #fff; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #adb5bd; margin-bottom: 6px;">National Test</div>
-                            <div style="font-size: 20px; font-weight: 900; color: #007bff;">{cnt_national}</div>
-                        </div>
-                        <div style="background: #fff; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #adb5bd; margin-bottom: 6px;">Entrance Pass</div>
-                            <div style="font-size: 20px; font-weight: 900; color: #007bff;">{cnt_et}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="text-align: center;">
-                    <a href='/app/interview-list/{interview_list.name}' style="display: inline-block; background: #212529; color: #fff !important; text-decoration: none !important; font-weight: 700; font-size: 14px; padding: 12px 32px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease;">
-                         <i class="fa fa-eye"></i> &nbsp; View Interview List
-                    </a>
-                </div>
+                <a href='/app/interview-list/{interview_list.name}' class="btn btn-primary" style="background-color: #171717; border-color: #171717; padding: 10px 35px; font-weight: 700; border-radius: 8px; color: #fff !important; text-decoration: none;">
+                    {_("View Interview List")}
+                </a>
             </div>
         """
         frappe.msgprint(msg, title="", indicator="green")
