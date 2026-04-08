@@ -1,5 +1,6 @@
 import frappe
 import json
+import re
 import zipfile
 from frappe import _
 from frappe.model.document import Document
@@ -159,15 +160,72 @@ def bulk_download_worker(names, user=None):
 
 # ── PDF helper ────────────────────────────────────────────────────────────────
 
+def _rewrite_urls_for_worker(html, port):
+	"""
+	wkhtmltopdf runs inside a background worker that cannot resolve the
+	site hostname (e.g. v16.local → HostNotFoundError).
+
+	This function rewrites every URL in the HTML so all requests go to
+	http://127.0.0.1:<port> (the local gunicorn process) instead:
+
+	  • Absolute site URL  http://v16.local/assets/... → http://127.0.0.1:<port>/assets/...
+	  • Bare absolute path /assets/frappe/css/x.css    → http://127.0.0.1:<port>/assets/...
+	  • url('/assets/...')  in inline styles            → url('http://127.0.0.1:<port>/assets/...')
+	"""
+	local_base = f"http://127.0.0.1:{port}"
+
+	# 1. Replace the configured site URL (handles http:// and https://)
+	site_url = frappe.utils.get_url().rstrip("/")
+	html = html.replace(site_url, local_base)
+
+	# 2. Rewrite href="/..." and src="/..." (bare absolute paths)
+	html = re.sub(
+		r'(href|src)=(["\'])(/[^"\'>\s]+)\2',
+		lambda m: f'{m.group(1)}={m.group(2)}{local_base}{m.group(3)}{m.group(2)}',
+		html,
+	)
+
+	# 3. Rewrite url('/...') or url("/...") in inline styles
+	html = re.sub(
+		r'url\((["\']?)(/[^"\')\s]+)\1\)',
+		lambda m: f'url({m.group(1)}{local_base}{m.group(2)}{m.group(1)})',
+		html,
+	)
+
+	return html
+
+
 def get_pdf_for_refund_request(refund_request_name):
+	"""
+	Renders the Refund Receipt print format to PDF.
+	Safe to call from a background worker (no DNS lookups needed).
+	"""
 	try:
-		pdf_content = frappe.get_print(
+		from frappe.utils.pdf import get_pdf
+
+		# Step 1 – render Jinja template → raw HTML  (no HTTP request)
+		html = frappe.get_print(
 			"Refund Request",
 			refund_request_name,
 			"Refund Receipt Format",
-			as_pdf=True,
 		)
+
+		# Step 2 – patch all URLs so wkhtmltopdf uses 127.0.0.1
+		port = frappe.conf.get("webserver_port", 8000)
+		html = _rewrite_urls_for_worker(html, port)
+
+		# Step 3 – convert HTML → PDF with graceful error handling
+		pdf_options = {
+			"load-error-handling":       "ignore",
+			"load-media-error-handling": "ignore",
+			"disable-javascript":        "",
+			"no-stop-slow-scripts":      "",
+			"quiet":                     "",
+		}
+
+		pdf_content = get_pdf(html, pdf_options)
 		return pdf_content
+
 	except Exception as e:
 		frappe.log_error(
 			f"Error generating PDF for {refund_request_name}: {str(e)}",
