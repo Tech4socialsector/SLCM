@@ -491,19 +491,23 @@ class SeatAllocation(Document):
         # -------------------------
         # 5️⃣ LOGGING & COMMIT
         # -------------------------
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
+        from slcm.admission.doctype.admission_audit_log.audit_service import bulk_log_seat_allocation_actions
+        audit_logs = []
         for row in self.selection_applicant:
              category_used_str = f" Category Used: {row.allocated_category}" if row.allocated_category else ""
-             log_seat_allocation_action(
-                seat_allocation=self.name,
-                admission_cycle=self.admission_cycle,
-                applicant=row.applicant_id,
-                program=row.program,
-                action_type="Seat Allocated",
-                old_value="Draft",
-                new_value=row.selection_status,
-                remarks=f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
-            )
+             audit_logs.append({
+                "seat_allocation": self.name,
+                "admission_cycle": self.admission_cycle,
+                "applicant": row.applicant_id,
+                "program": row.program,
+                "action_type": "Seat Allocated",
+                "old_value": "Draft",
+                "new_value": row.selection_status,
+                "remarks": f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
+            })
+        
+        # Optimized bulk logging
+        bulk_log_seat_allocation_actions(audit_logs)
 
         self.total_selected = total_selected
         self.total_waitlisted = total_waitlisted
@@ -514,13 +518,55 @@ class SeatAllocation(Document):
         self.sync_filled_seats()
         frappe.db.commit()
 
-        frappe.msgprint("Seat Allocation phase completed successfully.")
+        if not getattr(self.flags, "is_background", False):
+            frappe.msgprint("Seat Allocation phase completed successfully.")
+
+    @frappe.whitelist()
+    def allocate_seats_trigger(self):
+        """
+        Whitelisted entry point that decides whether to run immediately or in background.
+        """
+        if not self.selection_applicant:
+            self.pull_from_merit_list()
+            
+        count = len(self.selection_applicant)
+        if count > 500:
+            frappe.enqueue(
+                method="slcm.admission.doctype.seat_allocation.seat_allocation.run_allocation_background",
+                queue="long",
+                name=self.name,
+                user=frappe.session.user
+            )
+            return {
+                "queued": True,
+                "message": f"Large allocation detected ({count} applicants). Processing started in the background. You will be notified when finished."
+            }
+        
+        self.allocate_seats()
+        return {"queued": False}
 
     @frappe.whitelist()
     def publish_allocation(self):
         if self.status != "Allocated":
             frappe.throw("Run allocation first.")
  
+        # For large counts, background the whole publication process
+        if len(self.selection_applicant) > 500:
+            frappe.enqueue(
+                method="slcm.admission.doctype.seat_allocation.seat_allocation.publish_allocation_background",
+                queue="long",
+                name=self.name,
+                user=frappe.session.user
+            )
+            return {
+                "queued": True,
+                "message": f"Publishing {len(self.selection_applicant)} results in the background. You will be notified when finished."
+            }
+
+        self._publish_logic()
+        return {"queued": False}
+
+    def _publish_logic(self):
         self.status = "Published"
         self.published_on = now()
         self.published_by = frappe.session.user
@@ -540,7 +586,8 @@ class SeatAllocation(Document):
         from slcm.admission.notification_service import notify_published_allocation
         notify_published_allocation(self.name)
 
-        frappe.msgprint("Allocation Published and notifications queued.")
+        if not getattr(self.flags, "is_background", False):
+            frappe.msgprint("Allocation Published and notifications queued.")
 
     @frappe.whitelist()
     def unpublish_allocation(self):
@@ -575,3 +622,35 @@ class SeatAllocation(Document):
 
         frappe.db.commit()
         return {"status": "Allocated"}
+
+def run_allocation_background(name, user=None):
+    """Background worker for large-scale seat allocation."""
+    if user:
+        frappe.set_user(user)
+    
+    doc = frappe.get_doc("Seat Allocation", name)
+    doc.flags.is_background = True
+    doc.allocate_seats()
+    
+    # Notify user on completion
+    frappe.publish_realtime("msgprint", {
+        "message": f"Seat Allocation {name} has been processed successfully in the background.",
+        "title": "Allocation Complete",
+        "indicator": "green"
+    }, user=user)
+
+def publish_allocation_background(name, user=None):
+    """Background worker for large-scale result publication."""
+    if user:
+        frappe.set_user(user)
+    
+    doc = frappe.get_doc("Seat Allocation", name)
+    doc.flags.is_background = True
+    doc._publish_logic()
+    
+    # Notify user on completion
+    frappe.publish_realtime("msgprint", {
+        "message": f"Results for Seat Allocation {name} have been published and notifications are being sent.",
+        "title": "Publication Complete",
+        "indicator": "green"
+    }, user=user)
