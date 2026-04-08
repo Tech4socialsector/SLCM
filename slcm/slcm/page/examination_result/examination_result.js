@@ -325,7 +325,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					<button class="er2-collapse-btn" id="er2-collapse-btn" title="Toggle panel">&#9664;</button>
 					<!-- Right: marks grid -->
 					<div id="er2-right" class="er2-right">
-						<div class="er2-toggle-wrap">
+						<div class="er2-toggle-wrap" style="display:none;">
 							<label class="er2-toggle">
 								<input type="checkbox" id="er2-internal-toggle">
 								<span class="er2-slider"></span>
