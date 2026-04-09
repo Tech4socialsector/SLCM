@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class PACEApplicationForm(Document):
+class PACEUGDegreeDetails(Document):
 	pass

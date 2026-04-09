@@ -31,6 +31,7 @@
   "designation",
   "please_specify",
   "how_did_you_hear_about_us",
+  "parents_details_tab",
   "father_details_section",
   "father_title",
   "column_break_kxrk",
@@ -64,15 +65,8 @@
   "p_country",
   "p_pincode",
   "education_details_tab",
-  "ug_details_section",
-  "institution_name",
-  "university",
-  "programme_studied",
-  "year_of_passing",
-  "column_break_yjhz",
-  "result_status",
-  "marking_scheme",
-  "obtained_percentage_cgpa",
+  "ug_degree_details_section",
+  "ug_degree",
   "upload_documents_tab",
   "upload_documents_section",
   "student_signature",
@@ -82,11 +76,11 @@
   "passport_oci",
   "govt_id",
   "declaration_tab",
-  "i_agree",
   "declaration_html",
-  "date",
+  "i_agree",
   "amended_from",
-  "status"
+  "status",
+  "submission_date"
  ],
  "fields": [
   {
@@ -100,6 +94,7 @@
    "label": "Basic Details"
   },
   {
+   "description": "Max Limit 1 MB( Only jpeg , jpg , png allowed )",
    "fieldname": "upload_student_photo",
    "fieldtype": "Attach Image",
    "label": "Upload Student Photo"
@@ -190,7 +185,9 @@
   {
    "fieldname": "differently_abled",
    "fieldtype": "Select",
-   "label": "Differently-Abled"
+   "label": "Differently-Abled",
+   "options": "\nYes\nNo",
+   "placeholder": "Select"
   },
   {
    "fieldname": "please_specify",
@@ -200,7 +197,8 @@
   {
    "fieldname": "how_did_you_hear_about_us",
    "fieldtype": "Select",
-   "label": "How did you hear about us?"
+   "label": "How did you hear about us?",
+   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers"
   },
   {
    "fieldname": "father_details_section",
@@ -209,8 +207,9 @@
   },
   {
    "fieldname": "father_title",
-   "fieldtype": "Data",
-   "label": "Father's Title"
+   "fieldtype": "Select",
+   "label": "Father's Title",
+   "options": "Mr\nDr\nProf"
   },
   {
    "fieldname": "father_name",
@@ -224,8 +223,9 @@
   },
   {
    "fieldname": "mother_title",
-   "fieldtype": "Data",
-   "label": "Mother's Title"
+   "fieldtype": "Select",
+   "label": "Mother's Title",
+   "options": "Mrs\nDr\nProf\nMs"
   },
   {
    "fieldname": "mother_name",
@@ -352,48 +352,6 @@
    "label": "Education Details"
   },
   {
-   "fieldname": "ug_details_section",
-   "fieldtype": "Section Break",
-   "label": "UG Details"
-  },
-  {
-   "fieldname": "institution_name",
-   "fieldtype": "Data",
-   "label": "Institution Name"
-  },
-  {
-   "fieldname": "university",
-   "fieldtype": "Data",
-   "label": "University"
-  },
-  {
-   "fieldname": "programme_studied",
-   "fieldtype": "Data",
-   "label": "Programme Studied"
-  },
-  {
-   "fieldname": "year_of_passing",
-   "fieldtype": "Date",
-   "label": "Year of Passing"
-  },
-  {
-   "fieldname": "result_status",
-   "fieldtype": "Select",
-   "label": "Result Status",
-   "options": "DECLARED\nWaiting for result"
-  },
-  {
-   "fieldname": "marking_scheme",
-   "fieldtype": "Select",
-   "label": "Marking Scheme",
-   "options": "PERCENTAGE\nCGPA"
-  },
-  {
-   "fieldname": "obtained_percentage_cgpa",
-   "fieldtype": "Percent",
-   "label": "Obtained Percentage/CGPA"
-  },
-  {
    "fieldname": "upload_documents_tab",
    "fieldtype": "Tab Break",
    "label": "Documents"
@@ -412,7 +370,7 @@
    "default": "0",
    "fieldname": "i_agree",
    "fieldtype": "Check",
-   "label": "I AGREE"
+   "label": "I Agree"
   },
   {
    "fieldname": "declaration_html",
@@ -421,16 +379,11 @@
    "options": "<p>I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.</p>"
   },
   {
-   "fieldname": "date",
-   "fieldtype": "Date",
-   "label": "Date"
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "PACE Application Form",
+   "options": "PACE Application",
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
@@ -478,33 +431,34 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_yjhz",
-   "fieldtype": "Column Break"
-  },
-  {
+   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "student_signature",
    "fieldtype": "Attach Image",
    "label": "Student Signature"
   },
   {
+   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "ug_degree_certificate",
    "fieldtype": "Attach",
    "label": "UG Degree Certificate",
    "options": "YES\nNO"
   },
   {
+   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "self_declaration",
    "fieldtype": "Attach",
    "label": "Self-signed, Self-declaration Document",
    "options": "YES\nNO"
   },
   {
+   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "passport_oci",
    "fieldtype": "Attach",
    "label": "Passport / OCI card",
    "options": "YES\nNO"
   },
   {
+   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "govt_id",
    "fieldtype": "Attach",
    "label": "Govt. ID (Passport for Foreign Nationals)",
@@ -519,16 +473,37 @@
    "fieldtype": "Select",
    "label": "Status",
    "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted"
+  },
+  {
+   "fieldname": "submission_date",
+   "fieldtype": "Date",
+   "label": "Submission Date"
+  },
+  {
+   "fieldname": "ug_degree_details_section",
+   "fieldtype": "Section Break",
+   "label": "UG Degree Details"
+  },
+  {
+   "fieldname": "ug_degree",
+   "fieldtype": "Table",
+   "label": "UG Degree",
+   "options": "PACE UG Degree Details"
+  },
+  {
+   "fieldname": "parents_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Parents Details"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-01 12:54:55.550572",
+ "modified": "2026-04-09 14:12:43.787938",
  "modified_by": "Administrator",
  "module": "PACE",
- "name": "PACE Application Form",
+ "name": "PACE Application",
  "owner": "Administrator",
  "permissions": [
   {
