@@ -21,7 +21,7 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "list",
+   "icon": "blinds",
    "indent": 0,
    "keep_closed": 0,
    "label": "PACE Programme Course",
@@ -33,7 +33,7 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "list",
+   "icon": "blocks",
    "indent": 0,
    "keep_closed": 0,
    "label": "PACE Programme",
@@ -43,7 +43,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-09 16:09:43.639180",
+ "modified": "2026-04-09 17:58:49.279410",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
