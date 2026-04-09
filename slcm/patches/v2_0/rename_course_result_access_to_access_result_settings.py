@@ -36,8 +36,11 @@ def execute():
 # ── 1. Workspace Sidebar ──────────────────────────────────────────────────────
 
 def _update_workspace_sidebar():
+    # Items live in the child table "Workspace Sidebar Item", not on the parent.
+    if not frappe.db.table_exists("Workspace Sidebar Item"):
+        return
     rows = frappe.db.get_all(
-        "Workspace Sidebar",
+        "Workspace Sidebar Item",
         filters={"link_to": OLD_NAME, "link_type": "DocType"},
         fields=["name", "label"],
     )
@@ -47,7 +50,7 @@ def _update_workspace_sidebar():
         # custom labels ("Result Access Settings", "Access Results", …) are kept.
         if row.get("label") == OLD_NAME:
             updates["label"] = NEW_NAME
-        frappe.db.set_value("Workspace Sidebar", row["name"], updates)
+        frappe.db.set_value("Workspace Sidebar Item", row["name"], updates)
 
 
 # ── 2. Workspace Links table ──────────────────────────────────────────────────
@@ -59,7 +62,7 @@ def _update_workspace_links():
 
     rows = frappe.db.get_all(
         "Workspace Link",
-        filters={"link_to": OLD_NAME, "type": "DocType"},
+        filters={"link_to": OLD_NAME, "link_type": "DocType"},
         fields=["name", "label"],
     )
     for row in rows:
@@ -110,7 +113,7 @@ def _update_property_setters():
     rows = frappe.db.get_all(
         "Property Setter",
         filters={"doc_type": OLD_NAME},
-        fields=["name", "property_name"],
+        fields=["name"],
     )
     for row in rows:
         new_ps_name = row["name"].replace(OLD_NAME, NEW_NAME)
