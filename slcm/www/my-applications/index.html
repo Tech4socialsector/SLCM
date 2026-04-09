@@ -2623,6 +2623,10 @@
   }
 
   @media (max-width: 768px) {
+    .ma-inner {
+      padding: 0 8px;
+    }
+
     .prof-field-grid {
       grid-template-columns: 1fr !important;
     }
@@ -2632,14 +2636,18 @@
     }
 
     .ma-page {
-      padding: 20px 12px 40px;
+      padding: 16px 12px 32px;
       margin: 0;
+    }
+
+    .app-summary-head {
+      padding: 20px 20px 16px;
     }
 
     .app-top-row {
       flex-direction: column;
-      align-items: stretch !important;
-      gap: 20px;
+      align-items: flex-start !important;
+      gap: 16px;
     }
 
     .app-header-left {
@@ -3571,7 +3579,7 @@ or _app.current_stage)) or _status %}
          ╚══════════════════════════════════════════════╝ -->
     {% if eligibility_result and eligibility_result.name %}
     <div class="ma-card fade-up" style="animation-delay:.24s; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4);">
-      <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5);">
+      <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5); flex-wrap: wrap; gap: 12px;">
         <div class="ma-card-title">
           <span class="ico" style="background: #dcfce7; color: #16a34a;">
             <span class="material-symbols-outlined">assignment_turned_in</span>
@@ -3581,7 +3589,7 @@ or _app.current_stage)) or _status %}
         {% if eligibility_result.eligibility_result_card %}
         <div class="ma-card-actions">
           <a href="{{ eligibility_result.eligibility_result_card }}" target="_blank" class="btn-download" 
-             style="padding: 0 16px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; background: #16a34a; color: white; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); transition: all 0.2s;">
+             style="padding: 0 16px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; background: #16a34a; color: white; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); transition: all 0.2s; white-space: nowrap;">
             <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
             Download Mark Sheet
           </a>
