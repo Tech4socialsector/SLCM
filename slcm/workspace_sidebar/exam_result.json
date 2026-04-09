@@ -44,12 +44,24 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "shield-check",
+   "icon": "book-open",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Course Result Access",
-   "link_to": "Course Result Access",
-   "link_type": "DocType",
+   "label": "Term Results",
+   "link_to": "term-result",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "send",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Publish Results",
+   "link_to": "publish-result",
+   "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -67,12 +79,24 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "shield-check",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Course Result Access",
+   "link_to": "Course Result Access",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
    "icon": "settings",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Result Access Settings",
-   "link_to": "Course Result Access",
-   "link_type": "DocType",
+   "label": "Result Settings",
+   "link_to": "result-settings",
+   "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -89,7 +113,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-08 00:00:00.000000",
+ "modified": "2026-04-09 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Exam Result",

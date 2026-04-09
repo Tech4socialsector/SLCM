@@ -383,6 +383,26 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		/* ── Lock button states ── */
 		.er2-btn.outline-green { border-color:#a7f3d0; color:#059669; background:#f0fdf4; }
 		.er2-btn.outline-green:hover { background:#dcfce7; border-color:#6ee7b7; }
+
+		/* ── Page header ── */
+		.er2-page-header { background:#fff; border-radius:12px; padding:20px 24px;
+		                   margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.06);
+		                   display:flex; align-items:center; gap:16px; }
+		.er2-page-icon   { width:46px; height:46px; border-radius:12px; flex-shrink:0;
+		                   display:flex; align-items:center; justify-content:center; }
+		.er2-page-title  { font-size:17px; font-weight:800; color:#0f172a; line-height:1.2; }
+		.er2-page-sub    { font-size:12px; color:#94a3b8; margin-top:3px; font-weight:500; }
+
+		/* ── Page nav tabs ── */
+		.er2-page-nav    { display:flex; gap:4px; margin-bottom:16px; background:#e2e8f0;
+		                   border-radius:10px; padding:4px; width:fit-content; }
+		.er2-pnav-btn    { padding:8px 18px; cursor:pointer; font-size:13px; font-weight:600;
+		                   color:#64748b; border-radius:7px; transition:all .2s;
+		                   user-select:none; letter-spacing:.1px; border:none;
+		                   background:transparent; display:inline-flex; align-items:center; gap:5px; }
+		.er2-pnav-btn:hover  { color:#4f46e5; background:rgba(79,70,229,.08); }
+		.er2-pnav-btn.active { background:#fff; color:#4f46e5;
+		                       box-shadow:0 1px 4px rgba(0,0,0,.12); }
 		`;
 		document.head.appendChild(style);
 	}
@@ -392,27 +412,41 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	$body.html(`
 		<div class="er2-wrap" style="padding:20px 24px;">
 
-			<!-- Tabs -->
-			<div class="er2-tabs">
-				<div class="er2-tab active" data-tab="course">
-					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-					Course Results
+			<!-- Page header -->
+			<div class="er2-page-header">
+				<div class="er2-page-icon" style="background:linear-gradient(135deg,#4f46e5,#6366f1);">
+					<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
+						<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+						<rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+					</svg>
 				</div>
-				<div class="er2-tab" data-tab="term">
-					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:5px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-					Term Results
-				</div>
-				<div class="er2-tab" data-tab="publish">
-					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:5px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-					Publish Results
-				</div>
-				<div class="er2-tab" data-tab="settings">
-					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:5px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-					Settings
+				<div>
+					<div class="er2-page-title">Course Results</div>
+					<div class="er2-page-sub">View and manage student marks, grades and assessment results per course</div>
 				</div>
 			</div>
 
-			<!-- Course Results tab -->
+			<!-- Page navigation -->
+			<div class="er2-page-nav">
+				<button class="er2-pnav-btn active">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+					Course Results
+				</button>
+				<button class="er2-pnav-btn" onclick="frappe.set_route('term-result')">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+					Term Results
+				</button>
+				<button class="er2-pnav-btn" onclick="frappe.set_route('publish-result')">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+					Publish Results
+				</button>
+				<button class="er2-pnav-btn" onclick="frappe.set_route('result-settings')">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+					Settings
+				</button>
+			</div>
+
+			<!-- Course Results -->
 			<div id="er2-tab-course">
 
 				<!-- Top filter card -->
@@ -622,38 +656,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				</div>
 
 			</div><!-- /tab-course -->
-
-			<!-- Other tabs (stubs) -->
-			<div id="er2-tab-term" style="display:none;">
-				<div class="er2-empty" style="padding:80px;">
-					<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;margin-bottom:16px;">
-						<circle cx="40" cy="40" r="38" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="2"/>
-						<path d="M26 40h28M40 26v28" stroke="#86efac" stroke-width="3" stroke-linecap="round"/>
-					</svg>
-					<div class="er2-empty-txt">Term Results</div>
-					<div class="er2-empty-sub">Coming soon</div>
-				</div>
-			</div>
-			<div id="er2-tab-publish" style="display:none;">
-				<div class="er2-empty" style="padding:80px;">
-					<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;margin-bottom:16px;">
-						<circle cx="40" cy="40" r="38" fill="#fdf4ff" stroke="#e9d5ff" stroke-width="2"/>
-						<path d="M26 40h28M40 26v28" stroke="#d8b4fe" stroke-width="3" stroke-linecap="round"/>
-					</svg>
-					<div class="er2-empty-txt">Publish Results</div>
-					<div class="er2-empty-sub">Coming soon</div>
-				</div>
-			</div>
-			<div id="er2-tab-settings" style="display:none;">
-				<div class="er2-empty" style="padding:80px;">
-					<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;margin-bottom:16px;">
-						<circle cx="40" cy="40" r="38" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/>
-						<path d="M26 40h28M40 26v28" stroke="#fdba74" stroke-width="3" stroke-linecap="round"/>
-					</svg>
-					<div class="er2-empty-txt">Settings</div>
-					<div class="er2-empty-sub">Coming soon</div>
-				</div>
-			</div>
 		</div>
 
 		<!-- Hover popup -->
@@ -682,15 +684,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	var $popup       = $('#er2-popup');
 	var $examFilter  = $body.find('#er2-exam-filter');
 	var $statsPanel  = $body.find('#er2-stats-panel');
-
-	// ── Tabs ──────────────────────────────────────────────────────────────────
-	$body.find('.er2-tab').on('click', function () {
-		$body.find('.er2-tab').removeClass('active');
-		$(this).addClass('active');
-		var tab = $(this).data('tab');
-		$body.find('#er2-tab-course, #er2-tab-term, #er2-tab-publish, #er2-tab-settings').hide();
-		$body.find('#er2-tab-' + tab).show();
-	});
 
 	// ── Collapse left panel ───────────────────────────────────────────────────
 	$collapse.on('click', function () {
