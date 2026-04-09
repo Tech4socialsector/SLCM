@@ -135,8 +135,15 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-filterrow { display:flex; align-items:center; gap:8px; margin-bottom:12px;
 		                 background:#fff; border-radius:10px; padding:8px 14px;
 		                 box-shadow:0 1px 3px rgba(0,0,0,.06); }
-		.er2-pag     { margin-left:auto; display:flex; align-items:center; gap:6px;
+		.er2-pag     { display:flex; align-items:center; gap:6px;
 		               font-size:12.5px; color:#64748b; }
+		.er2-paglen-wrap { display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b; margin-left:auto; }
+		.er2-paglen-wrap label { font-weight:600; white-space:nowrap; }
+		.er2-paglen  { height:30px; border:1.5px solid #e2e8f0; border-radius:7px;
+		               padding:0 8px; font-size:12px; background:#fff; color:#1e293b;
+		               outline:none; cursor:pointer; transition:border-color .2s; }
+		.er2-paglen:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+		.er2-paglen-info { font-size:12px; font-weight:600; color:#475569; white-space:nowrap; padding:0 4px; }
 		.er2-pag-btn { width:28px; height:28px; border:1.5px solid #e2e8f0; border-radius:7px;
 		               background:#fff; cursor:pointer; font-size:14px; display:inline-flex;
 		               align-items:center; justify-content:center; color:#64748b;
@@ -570,8 +577,19 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					<select class="er2-select" id="er2-exam-filter" style="max-width:190px;height:30px;font-size:12px;">
 						<option value="">All Exam Types</option>
 					</select>
+					<div class="er2-paglen-wrap">
+						<label for="er2-paglen">Show</label>
+						<select class="er2-paglen" id="er2-paglen">
+							<option value="10">10</option>
+							<option value="20" selected>20</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+							<option value="500">500</option>
+						</select>
+						<label>records</label>
+					</div>
 					<div class="er2-pag" id="er2-pag">
-						<span id="er2-pag-info" style="font-weight:600;color:#475569;"></span>
+						<span class="er2-paglen-info" id="er2-pag-info"></span>
 						<button class="er2-pag-btn" id="er2-prev">&#8249;</button>
 						<button class="er2-pag-btn" id="er2-next">&#8250;</button>
 					</div>
@@ -679,6 +697,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	var $prevBtn  = $body.find('#er2-prev');
 	var $nextBtn  = $body.find('#er2-next');
 	var $pagInfo  = $body.find('#er2-pag-info');
+	var $pagLen   = $body.find('#er2-paglen');
 	var $cntLbl   = $body.find('#er2-student-count-lbl');
 	var $collapse    = $body.find('#er2-collapse-btn');
 	var $popup       = $('#er2-popup');
@@ -793,6 +812,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		S.page   = 1;
 		if (S.course) load_students();
 	}, 400));
+
+	// ── Page length ──────────────────────────────────────────────────────────
+	$pagLen.on('change', function () {
+		S.page_length = parseInt($(this).val(), 10) || 20;
+		S.page        = 1;
+		if (S.course) load_students();
+	});
 
 	// ── Pagination ────────────────────────────────────────────────────────────
 	$prevBtn.on('click', function () {
@@ -1804,9 +1830,17 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	}
 
 	function update_pagination() {
-		var from = S.total ? (S.page - 1) * S.page_length + 1 : 0;
-		var to   = Math.min(S.page * S.page_length, S.total);
-		$pagInfo.text(S.total ? (from + '–' + to + ' of ' + S.total) : '0 students');
+		var from     = S.total ? (S.page - 1) * S.page_length + 1 : 0;
+		var to       = Math.min(S.page * S.page_length, S.total);
+		var totalPgs = S.total ? Math.ceil(S.total / S.page_length) : 1;
+		if (S.total) {
+			$pagInfo.html(
+				from + '&ndash;' + to + ' of <strong>' + S.total + '</strong>' +
+				(totalPgs > 1 ? ' &nbsp;(Page ' + S.page + '/' + totalPgs + ')' : '')
+			);
+		} else {
+			$pagInfo.text('0 students');
+		}
 		$prevBtn.prop('disabled', S.page <= 1);
 		$nextBtn.prop('disabled', to >= S.total);
 	}
