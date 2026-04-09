@@ -334,7 +334,7 @@ def get_context(context):
         "class_xii_name_of_examination", "class_xii_school", "class_xii_board", "class_xii_year_of_completion", "hsc_group", "hsc_percentage",
         "national_test_name", "percentage", "ug_degree_completion",
         "first_preference", "second_preference", "third_preference",
-        "whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "reservation_category",
+        "whether_scstobc_ncl", "ews", "pwd", "karnataka_category",
         "caste_certificate", "ews_certificate", "pwd_certificate",
         "ka_study_7yrs", "ka_defence_child", "ka_govt_child", "ka_ais_child", "ka_capf_child",
         "ka_study_7yrs_certificate", "ka_defence_child_certificate", "ka_govt_child_certificate",

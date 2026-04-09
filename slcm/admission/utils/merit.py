@@ -20,7 +20,7 @@ def generate_merit_list(cycle, program, campus):
             "rank": idx,
             "applicant": pref.applicant,
             "candidate_name": applicant.candidate_name,
-            "category": applicant.reservation_category,
+            "category": applicant.whether_scstobc_ncl,
             "score": pref.nlsat_score or 0,
             "clat_rank": pref.clat_rank or 0,
             "status": "Listed"

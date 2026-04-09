@@ -84,7 +84,7 @@ def get_document_status(applicant_name):
     
     required = get_required_documents(
         applicant_doc.program,
-        applicant_doc.reservation_category
+        applicant_doc.whether_scstobc_ncl
     )
     
     uploaded = frappe.get_all(
