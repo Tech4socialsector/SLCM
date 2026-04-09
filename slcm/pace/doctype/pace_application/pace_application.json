@@ -497,10 +497,12 @@
   }
  ],
  "grid_page_length": 50,
+ "image_field": "upload_student_photo",
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-09 14:12:43.787938",
+ "make_attachments_public": 1,
+ "modified": "2026-04-09 17:37:01.684106",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
@@ -524,5 +526,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

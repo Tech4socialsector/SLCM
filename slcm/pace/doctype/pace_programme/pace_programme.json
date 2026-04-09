@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "field:programme_name",
  "creation": "2026-03-31 15:21:22.257002",
+ "default_view": "Image",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -15,6 +16,7 @@
   "published",
   "banner_image",
   "admission_status",
+  "duration_type",
   "duration",
   "instructions_text",
   "instructions_link",
@@ -150,6 +152,7 @@
   {
    "fieldname": "course",
    "fieldtype": "Table MultiSelect",
+   "in_standard_filter": 1,
    "label": "Course",
    "options": "PACE Programme Course Table"
   },
@@ -170,12 +173,21 @@
    "fieldname": "show_apply_introduction",
    "fieldtype": "Check",
    "label": "Show Apply Introduction"
+  },
+  {
+   "fieldname": "duration_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Duration Type",
+   "options": "Month\nYear"
   }
  ],
  "grid_page_length": 50,
+ "image_field": "banner_image",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-31 17:30:52.112335",
+ "make_attachments_public": 1,
+ "modified": "2026-04-09 17:34:06.884765",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Programme",
@@ -197,6 +209,8 @@
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
+ "show_name_in_global_search": 1,
+ "show_preview_popup": 1,
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
