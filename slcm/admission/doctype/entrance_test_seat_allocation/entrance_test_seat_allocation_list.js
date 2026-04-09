@@ -100,6 +100,13 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                             });
                         }
                     });
+                    d.set_query("admission_cycle", function () {
+                        return {
+                            filters: {
+                                "status": "Active"
+                            }
+                        };
+                    });
                     d.show();
                 });
                 ubtn.addClass('btn-update-rank');
@@ -316,6 +323,14 @@ function _show_reschedule_dialog(listview, all_providers) {
     });
 
     d.show();
+
+    d.set_query("admission_cycle", function () {
+        return {
+            filters: {
+                "status": "Active"
+            }
+        };
+    });
 
     // Set query for re_entrance_test_name with correct filtering
     d.set_query("re_entrance_test_name", () => {

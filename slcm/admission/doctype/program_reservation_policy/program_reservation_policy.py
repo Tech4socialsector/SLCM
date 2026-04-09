@@ -1,15 +1,20 @@
 import frappe
 from frappe.model.document import Document
+from slcm.admission.utils.institution import is_multi_campus_enabled
 
 
 class ProgramReservationPolicy(Document):
 
     def validate(self):
+        self._validate_campus_requirement()
         self._validate_unique_per_cycle_program()
         self._validate_unique_priorities()
         self._validate_seat_sum()
         self._recalculate_summary()
         self._update_row_available_seats()
+
+    def _validate_campus_requirement(self):
+        pass
 
     def _validate_unique_priorities(self):
         priorities = []
@@ -23,20 +28,22 @@ class ProgramReservationPolicy(Document):
             priorities.append(row.priority)
 
     def _validate_unique_per_cycle_program(self):
+        filters = {
+            "admission_cycle": self.admission_cycle,
+            "program": self.program,
+            "name": ("!=", self.name or "")
+        }
+
         existing = frappe.db.get_value(
             "Program Reservation Policy",
-            {
-                "admission_cycle": self.admission_cycle,
-                "program": self.program,
-                "name": ("!=", self.name or "")
-            },
+            filters,
             "name"
         )
         if existing:
             frappe.throw(
                 f"A reservation policy already exists for "
                 f"<b>{self.program}</b> in <b>{self.admission_cycle}</b>. "
-                f"Only one policy per program per cycle is allowed."
+                "Only one policy per program per cycle is allowed."
             )
 
     def _validate_seat_sum(self):
@@ -78,7 +85,8 @@ class ProgramReservationPolicy(Document):
             cycle_doc = frappe.get_doc("Admission Cycle", self.admission_cycle)
             changed = False
             for row in (cycle_doc.programs or []):
-                if row.program == self.program:
+                same_program = row.program == self.program
+                if same_program:
                     if row.get("reservation_policy") != self.name:
                         row.reservation_policy = self.name
                         changed = True

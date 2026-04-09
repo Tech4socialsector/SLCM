@@ -29,6 +29,10 @@
   "totals_section",
   "total_amount",
   "currency",
+  "scholarship_amount",
+  "scholarship_applied",
+  "net_amount",
+  "receipt_pdf",
   "amended_from",
   "notification_receiver"
  ],
@@ -179,6 +183,30 @@
    "options": "Currency"
   },
   {
+   "fieldname": "scholarship_amount",
+   "fieldtype": "Currency",
+   "label": "Scholarship Amount",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "scholarship_applied",
+   "fieldtype": "Check",
+   "label": "Scholarship Applied",
+   "read_only": 1
+  },
+  {
+   "fieldname": "net_amount",
+   "fieldtype": "Currency",
+   "label": "Net Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "receipt_pdf",
+   "fieldtype": "Attach",
+   "label": "Receipt PDF"
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -201,7 +229,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-26 14:35:23.556035",
+ "modified": "2026-04-08 12:06:07.093562",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Payment Receipt",

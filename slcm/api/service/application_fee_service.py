@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import cint, flt
 
 
 def get_application_fee_for_category(program, admission_cycle, category):
@@ -201,6 +201,9 @@ def sync_application_fee_assignment_for_applicant(applicant_name):
 			return doc.name
 		doc.flags.ignore_permissions = True
 		_write_afa_application_fee_grid(doc, fee_component_name, fee_amount, sch, applicant)
+		# AFA is often submitted; programme/cycle must follow Applicant (e.g. portal switch).
+		if cint(doc.docstatus) == 1:
+			doc.flags.ignore_validate_update_after_submit = True
 		doc.save()
 		if doc.docstatus == 0:
 			doc.reload()

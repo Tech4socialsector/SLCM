@@ -193,7 +193,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
         email = doc.email or ""
         if not email and doc.applicant:
             try:
-                app_email = frappe.db.get_value("Applicant", doc.applicant, "email_id")
+                app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
                 if app_email:
                     email = app_email
             except Exception:
@@ -202,9 +202,10 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
         if email:
             try:
                 _send_result_notification_email(doc, email)
+                _send_result_notification(doc, email)
                 count += 1
             except Exception:
-                frappe.log_error(message=traceback.format_exc(), title=f"Interview Result Email Failed: {doc.name}")
+                frappe.log_error(message=traceback.format_exc(), title=f"Interview Result Email/Notification Failed: {doc.name}")
         
         if i % 10 == 0:
             frappe.db.commit()
@@ -333,7 +334,7 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
         email = doc.email or ""
         if not email and doc.applicant:
             try:
-                app_email = frappe.db.get_value("Applicant", doc.applicant, "email_id")
+                app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
                 if app_email:
                     email = app_email
             except Exception:
@@ -342,10 +343,11 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
         if email:
             try:
                 _send_reschedule_email(doc, email)
+                _send_reschedule_notification(doc, email)
             except Exception:
                 frappe.log_error(
                     message=traceback.format_exc(),
-                    title=f"Interview Reschedule Email Failed: {doc.name}"
+                    title=f"Interview Reschedule Email/Notification Failed: {doc.name}"
                 )
         
         if i % 5 == 0:
@@ -388,3 +390,63 @@ def _send_reschedule_email(doc, email):
             )
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Interview Reschedule Email Failed: {doc.name}")
+
+
+def _send_result_notification(doc, email):
+    """Creates a Notification Log entry for the interview result."""
+    if not email:
+        return
+    
+    if frappe.db.exists("User", email):
+        try:
+            # Custom message for Interview Result
+            message_body = f"""
+                <p>Your interview result for <strong>"{doc.interview_list}"</strong> has been published.</p>
+                <p>Interview Score: <strong>{doc.interview_score or 0}</strong></p>
+                <p>Rank: <strong>{doc.rank or "—"}</strong></p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Interview Result Published",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Interview Seat Allocation",
+                "document_name": doc.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Interview Result Notification Failed: {doc.name}")
+
+
+def _send_reschedule_notification(doc, email):
+    """Creates a Notification Log entry for the rescheduled interview."""
+    if not email:
+        return
+    
+    if frappe.db.exists("User", email):
+        try:
+            # Custom message for Interview Reschedule
+            message_body = f"""
+                <p>Your interview for <strong>"{doc.interview_list}"</strong> has been rescheduled.</p>
+                <p>New Date: <strong>{format_date(doc.re_interview_date) or "—"}</strong></p>
+                <p>New Time: <strong>{format_time(doc.re_interview_time) or "—"}</strong></p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Interview Rescheduled",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Interview Seat Allocation",
+                "document_name": doc.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Interview Reschedule Notification Failed: {doc.name}")

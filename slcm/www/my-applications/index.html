@@ -349,7 +349,7 @@
   /* ── Next step above progress bar (inside summary card) ───── */
   .ma-progress-next {
     margin: 0;
-    padding: 20px 20px 8px;
+    padding: 12px 20px 6px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -577,7 +577,58 @@
     background: var(--success);
     border-radius: 2px;
     z-index: 1;
-    transition: width .6s ease;
+    transition: width 1.5s cubic-bezier(.2,.85,.2,1);
+    overflow: hidden;
+  }
+
+  .stage-track-fill.stage-track-fill--instant {
+    transition: none !important;
+  }
+
+  /* Loading shimmer while progress animates */
+  .stage-track-fill.is-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,.55) 45%,
+      rgba(255,255,255,0) 80%);
+    transform: translateX(-120%);
+    animation: ma-stage-shimmer 1.1s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes ma-stage-shimmer {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(120%); }
+  }
+
+  /* Confetti burst (only on completion); above stage circles/labels (layer is last in .stage-track DOM) */
+  .ma-confetti-layer {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .ma-confetti-piece {
+    position: absolute;
+    width: 8px;
+    height: 12px;
+    border-radius: 2px;
+    opacity: .95;
+    z-index: 1;
+    animation: ma-confetti-fall 1.9s ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  @keyframes ma-confetti-fall {
+    0%   { transform: translate3d(var(--x0, 0px), var(--y0, 0px), 0) rotate(var(--r0, 0deg)); opacity: 0; }
+    12%  { opacity: 1; }
+    60%  { transform: translate3d(var(--x1, 0px), var(--y1, -48px), 0) rotate(var(--r1, 220deg)); opacity: 1; }
+    100% { transform: translate3d(var(--x2, 0px), var(--y2, 16px), 0) rotate(var(--r2, 420deg)); opacity: 0; }
   }
 
   .stage-item {
@@ -745,6 +796,41 @@
     font-weight: 400;
   }
 
+  .qs-value--offer-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .qs-item--offer-letter .qs-value--offer-actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .qs-item--offer-letter .qs-value--offer-actions .btn-qs-offer {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .qs-item--offer-letter .qs-value--offer-actions .btn-pay-now {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .qs-item--offer-letter .qs-value--offer-actions {
+      flex-wrap: wrap;
+    }
+  }
+
   /* ── Animated Offer Button ── */
   .btn-qs-offer {
     display: inline-flex;
@@ -778,6 +864,128 @@
   .btn-qs-offer:hover {
     transform: translateY(-1px);
     filter: brightness(0.95);
+  }
+
+  /* ── Pay Now (Admission fee) Button ── */
+  .btn-pay-now {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    background: #111827;
+    color: #ffffff;
+    border: 1px solid rgba(17,24,39,.25);
+    box-shadow: 0 4px 12px rgba(17,24,39,.12);
+    animation: ma-pay-blink 1.15s ease-in-out infinite;
+  }
+
+  .btn-pay-now:hover {
+    filter: brightness(0.98);
+    transform: translateY(-1px);
+  }
+
+  @keyframes ma-pay-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .55; }
+  }
+
+  /* ── Enrolled congratulations banner ── */
+  .ma-enrolled-banner {
+    margin: 4px auto 0;
+    padding: 6px 16px 4px;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Hidden until stage-track fill animation finishes (see DOMContentLoaded script) */
+  .ma-enrolled-banner--await-progress {
+    visibility: hidden;
+    opacity: 0;
+    max-height: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .ma-enrolled-banner--await-progress .ma-enrolled-title {
+    margin: 0;
+  }
+
+  .ma-enrolled-banner--revealed {
+    visibility: visible;
+    max-height: none;
+    margin: 4px auto 0 !important;
+    padding: 6px 16px 4px !important;
+    overflow: visible;
+    pointer-events: auto;
+    animation: ma-enrolled-banner-reveal 0.55s cubic-bezier(.16, 1, .3, 1) both;
+  }
+
+  @keyframes ma-enrolled-banner-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ma-enrolled-title {
+    margin: 0 0 2px 0;
+    font-size: 18px;
+    font-weight: 900;
+    color: #065f46;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ma-enrolled-title .ma-enrolled-title-text {
+    animation: ma-pay-blink 1.35s ease-in-out infinite;
+    position: relative;
+    z-index: 0;
+  }
+
+  .ma-enrolled-sub {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .ma-enrolled-title-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    isolation: isolate;
+  }
+
+  .ma-enrolled-title-wrap > .material-symbols-outlined {
+    position: relative;
+    z-index: 0;
+  }
+
+  /* z-index 1: in front of title/icon (0) inside isolated wrap */
+  .ma-enrolled-confetti {
+    position: absolute;
+    inset: -40px -140px;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 1;
   }
 
   @media (max-width: 620px) {
@@ -1664,6 +1872,10 @@
     border-radius: 10px;
     padding: 12px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 82px;
   }
 
   .result-score-box .lbl {
@@ -2500,7 +2712,7 @@
     }
 
     .ma-progress-next {
-      padding: 4px 14px 6px;
+      padding: 10px 14px 8px;
     }
 
     .ma-progress-next-row {
@@ -2564,6 +2776,7 @@
       top: 0;
       width: 3px !important;
       height: var(--pct, 0%);
+      transition: height 1s cubic-bezier(.2,.85,.2,1);
     }
 
     .stage-item {
@@ -2694,6 +2907,12 @@ or _app.current_stage)) or _status %}
 {% set _narr = app_narrative or '' %}
 {% set _docs = app_documents or [] %}
 {% set _stages = stage_tracker or [] %}
+{% set _final_stage_completed = (_stages and ((_stages[-1].state if _stages[-1] is mapping else _stages[-1]['state']) == 'completed')) %}
+{% set _status_l = (_status or '')|lower %}
+{% set _stage_l = (_stage or '')|lower %}
+{% set _closed_title_l = ((application_closed_message.title if application_closed_message else '') or '')|lower %}
+{% set _is_enrolled = _final_stage_completed or (_status_l in ['enrolled','student enrolled']) or (_stage_l in ['enrolled','student enrolled']) or ('enroll' in _closed_title_l) %}
+{% set _process_completed_message = (process_completed_message if process_completed_message is defined else '') or '' %}
 {% set _steps = next_steps or [] %}
 {% set _sname = support_name or '' %}
 {% set _srole = support_role or '' %}
@@ -2756,7 +2975,7 @@ or _app.current_stage)) or _status %}
               </button>
               {% endif %}
 
-              <a href="/application_form?applicant={{ _appid }}" class="btn-edit-application"
+              <a href="{{ applicant_portal_open_url or '#' }}" class="btn-edit-application"
                 title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
                 <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
                 {{ 'View' if not is_editable else 'Edit' }}
@@ -2774,6 +2993,20 @@ or _app.current_stage)) or _status %}
         </div>
       </div>
 
+      {% if _final_stage_completed %}
+      <div class="ma-enrolled-banner{% if _stages %} ma-enrolled-banner--await-progress{% else %} fade-up{% endif %}" data-enrolled-complete="1" {% if _stages %}aria-hidden="true"{% endif %} {% if not _stages %}style="animation-delay:.045s;"{% endif %} role="status" aria-live="polite">
+        <p class="ma-enrolled-title">
+          <span class="ma-enrolled-title-wrap">
+            <span class="ma-enrolled-confetti" aria-hidden="true"></span>
+            <span class="material-symbols-outlined" style="font-size:18px;">school</span>
+            <span class="ma-enrolled-title-text">
+              {{ (_process_completed_message if _process_completed_message else 'Congratulations! Your application has been successfully processed.') | e }}
+            </span>
+          </span>
+        </p>
+      </div>
+      {% endif %}
+
       {% if not hide_application_next_steps and cycle_next_step_message %}
       <div class="ma-progress-next fade-up" style="animation-delay:.04s;" role="status" aria-live="polite">
         <div class="ma-progress-next-row">
@@ -2783,7 +3016,7 @@ or _app.current_stage)) or _status %}
       </div>
       {% endif %}
 
-      <!-- Stage Tracker (hidden when application is in a closed / terminal portal state) -->
+      <!-- Stage Tracker -->
       {% if application_closed_message %}
       <div class="ma-application-closed fade-up" style="animation-delay:.04s;" role="status" aria-live="polite">
         <div class="ma-application-closed-inner">
@@ -2794,7 +3027,8 @@ or _app.current_stage)) or _status %}
           </div>
         </div>
       </div>
-      {% elif _stages %}
+      {% endif %}
+      {% if _stages %}
       <div class="stage-track-wrap">
         {% set ns = namespace(done=0, stopped=false) %}
         {% for s in _stages %}
@@ -2814,15 +3048,22 @@ or _app.current_stage)) or _status %}
         {% else %}
           {% set _pct = 0 %}
         {% endif %}
+        {% set _all_completed = (ns.done == _num_stages) and (not ns.stopped) %}
+        {% if _all_completed %}
+          {% set _pct = 100 %}
+        {% endif %}
 
         <div class="stage-track" style="--num-stages: {{ _num_stages }};">
-          <div class="stage-track-fill" style="width:{{ _pct }}%; --pct: {{ _pct }}%;"></div>
+          <div class="stage-track-fill is-loading"
+               data-target="{{ _pct|round(0)|int }}"
+               data-complete="{{ 1 if _all_completed else 0 }}"
+               style="width:0%; --pct: 0%;"></div>
 
           {% for s in _stages %}
           {% set _sstate = s.state if s is mapping else s['state'] %}
           {% set _slabel = s.name if s is mapping else s['name'] %}
 
-          <div class="stage-item">
+          <div class="stage-item" data-target-state="{{ _sstate }}">
             <div class="stage-circle {{ _sstate }}">
               {% if _sstate == 'completed' %}
               <span class="material-symbols-outlined" style="font-size:18px">check</span>
@@ -2850,6 +3091,8 @@ or _app.current_stage)) or _status %}
             {% endif %}
           </div>
           {% endfor %}
+
+          <div class="ma-confetti-layer" aria-hidden="true"></div>
 
         </div><!-- end stage-track -->
       </div><!-- end stage-track-wrap -->
@@ -2899,12 +3142,12 @@ or _app.current_stage)) or _status %}
           </div>
         </div>
         {% if offer_name %}
-        <div class="qs-item">
+        <div class="qs-item qs-item--offer-letter">
           <span class="qs-label">
             <span class="material-symbols-outlined">mail</span>
             Offer Letter
           </span>
-          <span class="qs-value">
+          <span class="qs-value qs-value--offer-actions">
               {% set _display_status = offer_status %}
               {% if offer_status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
               {% elif offer_status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
@@ -2923,6 +3166,11 @@ or _app.current_stage)) or _status %}
                  style="background: {{ _obg }}; color: {{ _oclr }}; border-color: {{ _oclr }}40; --qs-pulse-rgb: {{ _orgb }};">
                 {{ _display_status }}
               </a>
+              {% if offer_status == 'Accepted' %}
+              <a class="btn-pay-now" href="/offer_letter/offer-letter-detail?offer={{ offer_name }}">
+                Pay now
+              </a>
+              {% endif %}
           </span>
         </div>
         {% endif %}
@@ -3478,20 +3726,20 @@ or _app.current_stage)) or _status %}
             <div class="seat-alloc-grid {% if r.allocated_category and r.seat_type %}has-3{% endif %}">
               <div class="result-score-box">
                 <div class="lbl">Programme</div>
-                <div class="val" style="font-size:14px;line-height:1.3">{{ _prog }}</div>
+                <div class="val" style="font-size:16px;line-height:1.2;font-weight:700">{{ _prog }}</div>
               </div>
 
               {% if r.allocated_category %}
               <div class="result-score-box">
                 <div class="lbl">Category</div>
-                <div class="val" style="font-size:15px">{{ r.allocated_category|title }}</div>
+                <div class="val" style="font-size:18px;font-weight:700">{{ r.allocated_category|title }}</div>
               </div>
               {% endif %}
 
               {% if r.seat_type %}
               <div class="result-score-box">
                 <div class="lbl">Seat type</div>
-                <div class="val" style="font-size:15px">{{ r.seat_type|title }}</div>
+                <div class="val" style="font-size:18px;font-weight:700">{{ r.seat_type|title }}</div>
               </div>
               {% endif %}
 
@@ -4246,6 +4494,270 @@ LIST / DASHBOARD VIEW
       document.querySelectorAll('.fade-up').forEach(function (el) {
         el.style.animationFillMode = 'forwards';
       });
+
+      /* ── Stage tracker progress: stage-by-stage from start ── */
+      (function () {
+        function revealEnrolledBanner() {
+          var b = document.querySelector('.ma-enrolled-banner--await-progress');
+          if (!b) return;
+          b.classList.remove('ma-enrolled-banner--await-progress');
+          b.classList.add('ma-enrolled-banner--revealed');
+          b.setAttribute('aria-hidden', 'false');
+        }
+
+        function scheduleEnrollmentConfetti() {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              startEnrollmentConfetti();
+            });
+          });
+        }
+
+        var fill = document.querySelector('.stage-track-fill[data-target]');
+        if (!fill) {
+          if (document.querySelector('.ma-enrolled-banner[data-enrolled-complete="1"]')) {
+            revealEnrolledBanner();
+            scheduleEnrollmentConfetti();
+          }
+          return;
+        }
+        var track = fill.closest('.stage-track');
+        if (!track) return;
+
+        var confettiLayer = track ? track.querySelector('.ma-confetti-layer') : null;
+        var stageItems = Array.prototype.slice.call(track.querySelectorAll('.stage-item'));
+        var circles = stageItems.map(function (item) { return item.querySelector('.stage-circle'); });
+        var labels = stageItems.map(function (item) { return item.querySelector('.stage-label'); });
+        var targetStates = stageItems.map(function (item) { return item.getAttribute('data-target-state') || 'pending'; });
+        var isComplete = (fill.getAttribute('data-complete') === '1');
+        var isVertical = window.matchMedia('(max-width: 920px)').matches;
+
+        fill.style.width = '0%';
+        fill.style.setProperty('--pct', '0%');
+        fill.getBoundingClientRect(); // force layout
+
+        var iconByState = {
+          completed: 'check',
+          active: 'sync',
+          closed: 'close',
+          pending: 'radio_button_unchecked'
+        };
+
+        function setCircleState(index, state) {
+          var circle = circles[index];
+          var label = labels[index];
+          if (!circle || !label) return;
+          circle.classList.remove('completed', 'active', 'closed', 'pending');
+          label.classList.remove('completed', 'active', 'closed', 'pending');
+          circle.classList.add(state);
+          label.classList.add(state);
+          circle.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px">' + (iconByState[state] || iconByState.pending) + '</span>' + (index < circles.length - 1 ? '<span class="stage-arrow">→</span>' : '');
+        }
+
+        function updateProgressAt(index) {
+          var pct = 0;
+          if (circles.length > 0 && index >= 0) pct = (index / circles.length) * 100;
+          pct = Math.max(0, Math.min(100, pct));
+          if (isVertical) {
+            fill.style.setProperty('--pct', pct + '%');
+          } else {
+            fill.style.width = pct + '%';
+            fill.style.setProperty('--pct', pct + '%');
+          }
+        }
+
+        function animateFillTo(index) {
+          return new Promise(function (resolve) {
+            var resolved = false;
+            function done() {
+              if (resolved) return;
+              resolved = true;
+              resolve();
+            }
+            var onTransition = function (e) {
+              if (!e || !e.propertyName) return;
+              if (e.propertyName !== 'width' && e.propertyName !== 'height') return;
+              fill.removeEventListener('transitionend', onTransition);
+              done();
+            };
+            fill.addEventListener('transitionend', onTransition);
+            updateProgressAt(index);
+            setTimeout(function () {
+              fill.removeEventListener('transitionend', onTransition);
+              done();
+            }, 2200);
+          });
+        }
+
+        function burstConfettiAt(container, sourceEl, side) {
+          if (!container || !sourceEl) return;
+          var layerRect = container.getBoundingClientRect();
+          var sourceRect = sourceEl.getBoundingClientRect();
+          var originX = (sourceRect.left - layerRect.left) + (sourceRect.width / 2);
+          var originY = (sourceRect.top - layerRect.top) + (sourceRect.height / 2);
+          var isEnrollmentLayer = container.classList && container.classList.contains('ma-enrolled-confetti');
+          if (isEnrollmentLayer) {
+            var tw = sourceRect.width;
+            var tx = sourceRect.left - layerRect.left;
+            if (side === 'left') originX = tx + Math.max(10, tw * 0.06);
+            if (side === 'right') originX = tx + tw - Math.max(10, tw * 0.06);
+          } else {
+            if (side === 'left') originX -= Math.min(36, sourceRect.width);
+            if (side === 'right') originX += Math.min(36, sourceRect.width);
+          }
+
+          var colors = ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#ef4444', '#eab308'];
+          for (var i = 0; i < 26; i++) {
+            var piece = document.createElement('i');
+            piece.className = 'ma-confetti-piece';
+            piece.style.left = originX + 'px';
+            piece.style.top = originY + 'px';
+            piece.style.background = colors[i % colors.length];
+            piece.style.setProperty('--x0', ((Math.random() * 18) - 9) + 'px');
+            piece.style.setProperty('--y0', ((Math.random() * 4) - 2) + 'px');
+            if (isEnrollmentLayer) {
+              piece.style.setProperty('--x1', ((Math.random() * 110) - 55) + 'px');
+              piece.style.setProperty('--y1', (-36 - (Math.random() * 56)) + 'px');
+              piece.style.setProperty('--x2', ((Math.random() * 130) - 65) + 'px');
+              piece.style.setProperty('--y2', (6 + (Math.random() * 52)) + 'px');
+            } else {
+              piece.style.setProperty('--x1', ((Math.random() * 100) - 50) + 'px');
+              piece.style.setProperty('--y1', (-26 - (Math.random() * 36)) + 'px');
+              piece.style.setProperty('--x2', ((Math.random() * 120) - 60) + 'px');
+              piece.style.setProperty('--y2', (10 + (Math.random() * 38)) + 'px');
+            }
+            piece.style.setProperty('--r0', ((Math.random() * 90) - 45) + 'deg');
+            piece.style.setProperty('--r1', (240 + (Math.random() * 260)) + 'deg');
+            piece.style.setProperty('--r2', (420 + (Math.random() * 260)) + 'deg');
+            piece.style.animationDelay = (Math.random() * 0.06) + 's';
+            if (isEnrollmentLayer) {
+              piece.style.animationDuration = (1.05 + (Math.random() * 0.55)) + 's';
+            } else {
+              piece.style.animationDuration = (0.85 + (Math.random() * 0.45)) + 's';
+            }
+            container.appendChild(piece);
+          }
+          setTimeout(function () {
+            if (container.childNodes.length > 220) container.innerHTML = '';
+          }, isEnrollmentLayer ? 2300 : 1900);
+        }
+
+        function sleep(ms) {
+          return new Promise(function (resolve) { setTimeout(resolve, ms); });
+        }
+
+        async function animateStages() {
+          var n = circles.length;
+          var allStagesCompleted = n > 0 && targetStates.every(function (s) { return s === 'completed'; });
+          var lastCompleted = -1;
+          var i;
+          for (i = 0; i < targetStates.length; i++) {
+            if (targetStates[i] === 'completed') lastCompleted = i;
+            else break;
+          }
+
+          if (allStagesCompleted) {
+            var focusIdx = n - 1;
+            var startIdx = n > 1 ? n - 2 : -1;
+            var pStart = startIdx < 0 || n === 0 ? 0 : (startIdx / n) * 100;
+            var pEnd = n === 0 ? 0 : (focusIdx / n) * 100;
+
+            fill.classList.add('stage-track-fill--instant');
+            for (i = 0; i < focusIdx; i++) {
+              setCircleState(i, targetStates[i]);
+            }
+            setCircleState(focusIdx, 'pending');
+            updateProgressAt(startIdx);
+            fill.getBoundingClientRect();
+            fill.classList.remove('stage-track-fill--instant');
+
+            var needFillAnim = Math.abs(pEnd - pStart) >= 0.5;
+            if (needFillAnim) {
+              fill.classList.add('is-loading');
+              await animateFillTo(focusIdx);
+            }
+            setCircleState(focusIdx, targetStates[focusIdx]);
+            if (needFillAnim && targetStates[focusIdx] === 'completed' && confettiLayer && circles[focusIdx]) {
+              burstConfettiAt(confettiLayer, circles[focusIdx]);
+              await sleep(35);
+            }
+            fill.classList.remove('is-loading');
+            if (isComplete) {
+              revealEnrolledBanner();
+              scheduleEnrollmentConfetti();
+            }
+            return;
+          }
+
+          var currentIdx = -1;
+          for (i = 0; i < targetStates.length; i++) {
+            if (targetStates[i] === 'active' || targetStates[i] === 'closed') {
+              currentIdx = i;
+              break;
+            }
+          }
+          if (currentIdx < 0) {
+            currentIdx = lastCompleted + 1;
+            if (currentIdx >= n) currentIdx = n > 0 ? n - 1 : 0;
+          }
+
+          var prefillLastIdx = Math.max(-1, currentIdx - 2);
+
+          fill.classList.add('stage-track-fill--instant');
+          for (i = 0; i <= prefillLastIdx; i++) {
+            setCircleState(i, targetStates[i]);
+          }
+          for (i = prefillLastIdx + 1; i < n; i++) {
+            if (i <= currentIdx) setCircleState(i, 'pending');
+            else setCircleState(i, targetStates[i]);
+          }
+          updateProgressAt(prefillLastIdx);
+          fill.getBoundingClientRect();
+          fill.classList.remove('stage-track-fill--instant');
+
+          fill.classList.add('is-loading');
+          for (var k = prefillLastIdx + 1; k <= currentIdx; k++) {
+            var pPrev = k <= 0 ? 0 : ((k - 1) / n) * 100;
+            var pNext = (k / n) * 100;
+            if (Math.abs(pNext - pPrev) >= 0.5) {
+              await animateFillTo(k);
+            }
+            setCircleState(k, targetStates[k]);
+            if (targetStates[k] === 'completed' && confettiLayer && circles[k]) {
+              burstConfettiAt(confettiLayer, circles[k]);
+              await sleep(35);
+            }
+          }
+          fill.classList.remove('is-loading');
+
+          if (isComplete) {
+            revealEnrolledBanner();
+            scheduleEnrollmentConfetti();
+          }
+        }
+
+        function startEnrollmentConfetti() {
+          var enrolledBanner = document.querySelector('.ma-enrolled-banner[data-enrolled-complete="1"]');
+          var enrolledText = enrolledBanner ? enrolledBanner.querySelector('.ma-enrolled-title-text') : null;
+          var enrolledLayer = enrolledBanner ? enrolledBanner.querySelector('.ma-enrolled-confetti') : null;
+          if (!enrolledText || !enrolledLayer) return;
+          if (enrolledLayer.dataset.running === '1') return;
+          enrolledLayer.dataset.running = '1';
+
+          function burstBothSides() {
+            burstConfettiAt(enrolledLayer, enrolledText, 'left');
+            burstConfettiAt(enrolledLayer, enrolledText, 'right');
+          }
+
+          /* One confetti cycle (left + right burst along title text) every 2s */
+          burstBothSides();
+          setInterval(burstBothSides, 2000);
+        }
+
+        requestAnimationFrame(function () {
+          animateStages();
+        });
+      })();
 
       /* ── Accept / Decline seat ── */
       window.handleSeatAction = async function (action, appId) {

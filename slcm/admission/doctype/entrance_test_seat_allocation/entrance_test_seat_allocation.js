@@ -5,6 +5,16 @@
 
 frappe.ui.form.on("Entrance Test Seat Allocation", {
 
+  onload: function (frm) {
+    frm.set_query("admission_cycle", function () {
+      return {
+        filters: {
+          "status": "Active"
+        }
+      };
+    });
+  },
+
   refresh: function (frm) {
     frm.set_query("entrance_test_provider", function () {
       const preferences = (frm.doc.assigned_preferences || []).map(p => p.provider);

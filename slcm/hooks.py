@@ -40,6 +40,9 @@ fixtures = [
         ]
     },
     {
+        "doctype": "Workflow State",
+    },
+    {
         "doctype": "Applicant Status",
     },
     {
@@ -61,8 +64,15 @@ fixtures = [
                 "Interview Allocation",
                 "Entrance Test Result",
                 "Entrance Test Reschedule",
-                "Entrance Test Allocation"
+                "Entrance Test Allocation",
+                "Application Submitted Email"
             ]]
+        ]
+    },
+    {
+        "doctype": "Kanban Board",
+        "filters": [
+            ["name", "=", "Scholarship View"]
         ]
     }
 ]
@@ -332,6 +342,7 @@ scheduler_events = {
 	"daily": [
 		"slcm.api.service.offer_service.expire_offers",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
+		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.expire_waitlists_past_cutoff",
 		"slcm.admission.events.send_deadline_reminders",
 		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages"
 	]

@@ -46,6 +46,13 @@ frappe.listview_settings['Applicant Payment Receipt'] = {
 						fieldname: 'payment_mode',
 						fieldtype: 'Select',
 						options: '\nOnline\nCash\nCheque\nUPI\nQR Code\nBank Transfer\nDemand Draft'
+					},
+					{
+						label: __('Output Format'),
+						fieldname: 'output_format',
+						fieldtype: 'Select',
+						options: 'ZIP Archive\nSingle Merged PDF',
+						default: 'ZIP Archive'
 					}
 				],
 				primary_action_label: __('Download'),
@@ -61,6 +68,7 @@ frappe.listview_settings['Applicant Payment Receipt'] = {
 								if (typeof r.message === 'string') {
 									// Sync response (URL)
 									let file_url = r.message;
+									frappe.hide_progress();
 									let w = window.open(file_url, '_blank');
 									if (!w) {
 										frappe.msgprint(__('Please allow popups to download the file.'));
