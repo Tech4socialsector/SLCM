@@ -13,9 +13,9 @@ IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
 
-class IntegrationTestPACEApplicationForm(IntegrationTestCase):
+class IntegrationTestPACEApplication(IntegrationTestCase):
 	"""
-	Integration tests for PACEApplicationForm.
+	Integration tests for PACEApplication.
 	Use this class for testing interactions between multiple components.
 	"""
 

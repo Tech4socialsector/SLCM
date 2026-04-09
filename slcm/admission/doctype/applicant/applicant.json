@@ -254,8 +254,9 @@
    "reqd": 1
   },
   {
+   "default": "Indian",
    "fieldname": "nationality",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Nationality",
    "options": "Country",
    "reqd": 1
@@ -1131,7 +1132,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-04-08 13:05:02.670977",
+ "modified": "2026-04-09 11:19:16.751074",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

@@ -1,0 +1,53 @@
+{
+ "app": "slcm",
+ "creation": "2026-04-09 16:01:42.794274",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "book-marked",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "briefcase-business",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Application",
+   "link_to": "PACE Application",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Programme Course",
+   "link_to": "PACE Programme Course",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Programme",
+   "link_to": "PACE Programme",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-04-09 16:09:43.639180",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "PACE"
+}
