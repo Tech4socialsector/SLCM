@@ -5,11 +5,12 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		single_column: true,
 	});
 
-	// ── CSS (shared er2 design system) ────────────────────────────────────────
-	if (!document.getElementById('er2-style')) {
+	// ── CSS ───────────────────────────────────────────────────────────────────
+	if (!document.getElementById('tr-style')) {
 		var style = document.createElement('style');
-		style.id  = 'er2-style';
+		style.id  = 'tr-style';
 		style.textContent = `
+		/* shared layout */
 		.er2-wrap        { font-family:var(--font-stack,'Inter',sans-serif); padding:0; background:#f1f5f9; min-height:100vh; }
 		.er2-page-header { background:#fff; border-radius:12px; padding:20px 24px; margin-bottom:16px;
 		                   box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; align-items:center; gap:16px; }
@@ -25,20 +26,206 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		                   display:inline-flex; align-items:center; gap:5px; }
 		.er2-pnav-btn:hover  { color:#4f46e5; background:rgba(79,70,229,.08); }
 		.er2-pnav-btn.active { background:#fff; color:#4f46e5; box-shadow:0 1px 4px rgba(0,0,0,.12); }
-		.er2-coming-card { background:#fff; border-radius:16px; padding:60px 40px;
-		                   box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex;
-		                   flex-direction:column; align-items:center; text-align:center; }
-		.er2-coming-icon { width:80px; height:80px; border-radius:20px; display:flex;
-		                   align-items:center; justify-content:center; margin-bottom:20px; }
-		.er2-coming-title { font-size:20px; font-weight:800; color:#0f172a; margin-bottom:8px; }
-		.er2-coming-desc  { font-size:13.5px; color:#64748b; max-width:420px; line-height:1.6; }
-		.er2-coming-badge { display:inline-flex; align-items:center; gap:6px; margin-top:20px;
-		                    background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:20px;
-		                    padding:6px 14px; font-size:12px; font-weight:700; color:#64748b; }
+
+		/* Filter card */
+		.tr-filter-card  { background:#fff; border-radius:12px; padding:14px 20px; margin-bottom:14px;
+		                   box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; gap:14px;
+		                   align-items:flex-end; flex-wrap:wrap; }
+		.tr-fgroup       { display:flex; flex-direction:column; min-width:220px; flex:1; max-width:320px; }
+		.tr-flabel       { font-size:11px; color:#94a3b8; font-weight:700; margin-bottom:5px;
+		                   text-transform:uppercase; letter-spacing:.6px; }
+		.tr-select       { height:36px; border:1.5px solid #e2e8f0; border-radius:8px;
+		                   padding:0 12px; font-size:13px; background:#fff; color:#1e293b;
+		                   outline:none; cursor:pointer; transition:border-color .2s; }
+		.tr-select:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+
+		/* Action bar */
+		.tr-actbar       { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+		                   margin-bottom:12px; }
+		.tr-srch         { flex:1; min-width:200px; max-width:380px; position:relative; }
+		.tr-srch input   { width:100%; height:36px; border:1.5px solid #e2e8f0; border-radius:8px;
+		                   padding:0 12px 0 36px; font-size:13px; outline:none; color:#1e293b;
+		                   background:#fff; transition:border-color .2s; box-sizing:border-box; }
+		.tr-srch input:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+		.tr-srch-ico     { position:absolute; left:10px; top:10px; color:#94a3b8; }
+		.tr-btn          { height:36px; padding:0 14px; border-radius:7px; border:1.5px solid #e2e8f0;
+		                   background:#fff; cursor:pointer; font-size:12.5px; font-weight:600;
+		                   color:#475569; display:inline-flex; align-items:center; gap:5px;
+		                   white-space:nowrap; transition:all .15s; }
+		.tr-btn:hover    { background:#f8fafc; border-color:#cbd5e1; color:#1e293b; }
+		.tr-btn.primary  { background:linear-gradient(135deg,#4f46e5,#6366f1);
+		                   border-color:transparent; color:#fff; }
+		.tr-btn.primary:hover { opacity:.9; }
+		.tr-btn.outline-indigo { border-color:#c7d2fe; color:#4f46e5; background:#eef2ff; }
+		.tr-btn.outline-indigo:hover { background:#e0e7ff; }
+
+		/* Dropdown buttons */
+		.tr-btn-dd       { position:relative; display:inline-flex; }
+		.tr-btn-dd .dd-menu { display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:999;
+		                   background:#fff; border:1.5px solid #e2e8f0; border-radius:9px;
+		                   box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:160px; padding:5px; }
+		.tr-btn-dd.open .dd-menu { display:block; }
+		.dd-item         { padding:8px 12px; font-size:12.5px; cursor:pointer; color:#475569;
+		                   border-radius:6px; font-weight:500; }
+		.dd-item:hover   { background:#f1f5f9; color:#1e293b; }
+
+		/* Summary stat cards */
+		.tr-stat-cards   { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+		.tr-stat-card    { background:#fff; border-radius:12px; padding:14px 18px; flex:1;
+		                   min-width:140px; box-shadow:0 1px 3px rgba(0,0,0,.06);
+		                   border-top:3px solid var(--sc-color,#4f46e5); display:flex;
+		                   align-items:center; gap:12px; }
+		.tr-sc-icon      { width:38px; height:38px; border-radius:9px; flex-shrink:0;
+		                   display:flex; align-items:center; justify-content:center;
+		                   font-size:17px; background:var(--sc-bg,#eef2ff); }
+		.tr-sc-val       { font-size:22px; font-weight:800; color:var(--sc-color,#4f46e5); line-height:1.1; }
+		.tr-sc-lbl       { font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase;
+		                   letter-spacing:.6px; margin-top:2px; }
+
+		/* Stats / table header row */
+		.tr-tbl-header   { display:flex; align-items:center; gap:10px; margin-bottom:10px; padding:0 2px; }
+		.tr-count-lbl    { font-size:13px; font-weight:700; color:#0f172a; }
+		.tr-sort-wrap    { display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;
+		                   margin-left:auto; }
+		.tr-sort-select  { height:28px; border:1.5px solid #e2e8f0; border-radius:6px;
+		                   padding:0 8px; font-size:12px; background:#fff; color:#334155;
+		                   outline:none; cursor:pointer; }
+
+		/* Table card — allow horizontal scroll */
+		.tr-table-card   { background:#fff; border-radius:12px;
+		                   box-shadow:0 1px 3px rgba(0,0,0,.06);
+		                   overflow:hidden; }
+		.tr-table-scroll { overflow-x:auto; }
+		.tr-table        { width:100%; border-collapse:collapse; font-size:13px; min-width:1100px; }
+		.tr-table thead tr { background:#f8fafc; }
+		.tr-table th     { padding:10px 14px; text-align:left; font-size:11px; font-weight:700;
+		                   color:#475569; border-bottom:1.5px solid #e2e8f0; white-space:nowrap;
+		                   text-transform:uppercase; letter-spacing:.4px; cursor:pointer;
+		                   user-select:none; background:#f8fafc; position:sticky; top:0; z-index:5; }
+		.tr-table th:hover { color:#4f46e5; background:#f1f5f9; }
+		.tr-table th.center { text-align:center; }
+		.tr-table th .sort-ico { font-size:10px; margin-left:3px; opacity:.4; }
+		.tr-table th.sort-active { color:#4f46e5; }
+		.tr-table th.sort-active .sort-ico { opacity:1; color:#4f46e5; }
+		.tr-table td     { padding:0 14px; border-bottom:1.5px solid #f1f5f9; vertical-align:middle;
+		                   white-space:nowrap; }
+		.tr-table tbody tr { height:72px; }
+		.tr-table tbody tr:hover td { background:#fafbff; }
+		.tr-table tbody tr:last-child td { border-bottom:none; }
+
+		/* Student cell */
+		.tr-savatar      { width:40px; height:40px; border-radius:10px; flex-shrink:0;
+		                   display:flex; align-items:center; justify-content:center;
+		                   font-size:14px; font-weight:700; color:#fff; overflow:hidden; }
+		.tr-savatar img  { width:100%; height:100%; object-fit:cover; }
+		.tr-sinfo        { min-width:0; }
+		.tr-sname        { font-size:13px; font-weight:700; color:#0f172a; }
+		.tr-sreg         { font-size:11px; color:#4f46e5; font-weight:600; margin-top:2px;
+		                   background:#eef2ff; border-radius:4px; padding:1px 6px;
+		                   display:inline-block; }
+		.tr-semail       { font-size:11px; color:#94a3b8; font-weight:400; margin-top:3px; }
+
+		/* GPA / percentage values */
+		.tr-val-pill     { display:inline-flex; align-items:center; gap:5px; }
+		.tr-val-num      { font-size:13px; font-weight:700; color:#0f172a; }
+		.tr-val-ng       { font-size:12.5px; color:#ef4444; font-weight:600; }
+		.tr-val-na       { font-size:12.5px; color:#cbd5e1; font-weight:500; }
+
+		/* View link */
+		.tr-view-link    { font-size:12px; font-weight:700; color:#4f46e5; cursor:pointer;
+		                   border-bottom:1px dashed #c7d2fe; text-decoration:none; }
+		.tr-view-link:hover { color:#3730a3; }
+
+		/* Badge */
+		.tr-badge        { font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
+		.tr-badge.active   { background:#d1fae5; color:#065f46; }
+		.tr-badge.inactive { background:#fee2e2; color:#991b1b; }
+
+		/* Pagination */
+		.tr-pag-bar      { display:flex; align-items:center; justify-content:space-between;
+		                   padding:12px 16px; border-top:1.5px solid #f1f5f9; }
+		.tr-pag-info     { font-size:12.5px; color:#64748b; }
+		.tr-pag-btns     { display:flex; gap:4px; }
+		.tr-pag-btn      { width:30px; height:30px; border:1.5px solid #e2e8f0; border-radius:7px;
+		                   background:#fff; cursor:pointer; font-size:14px; display:inline-flex;
+		                   align-items:center; justify-content:center; color:#64748b;
+		                   transition:all .15s; }
+		.tr-pag-btn:hover:not(:disabled) { background:#eef2ff; border-color:#c7d2fe; color:#4f46e5; }
+		.tr-pag-btn:disabled { opacity:.35; cursor:default; }
+
+		/* Empty state */
+		.tr-empty        { padding:80px 20px; display:flex; flex-direction:column;
+		                   align-items:center; justify-content:center; text-align:center; }
+		.tr-empty-icon   { width:56px; height:56px; border-radius:14px; background:#f1f5f9;
+		                   display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+		.tr-empty-txt    { font-size:14px; font-weight:700; color:#94a3b8; }
+		.tr-empty-sub    { font-size:12px; color:#cbd5e1; margin-top:4px; }
+
+		/* Loading */
+		.tr-loading      { padding:60px; text-align:center; color:#94a3b8; font-size:13px; }
+
+		/* Avatar colours */
+		.av-0{background:linear-gradient(135deg,#4f46e5,#818cf8);}
+		.av-1{background:linear-gradient(135deg,#0ea5e9,#38bdf8);}
+		.av-2{background:linear-gradient(135deg,#10b981,#34d399);}
+		.av-3{background:linear-gradient(135deg,#f59e0b,#fbbf24);}
+		.av-4{background:linear-gradient(135deg,#ef4444,#f87171);}
+		.av-5{background:linear-gradient(135deg,#8b5cf6,#a78bfa);}
+		.av-6{background:linear-gradient(135deg,#ec4899,#f472b6);}
+		.av-7{background:linear-gradient(135deg,#14b8a6,#2dd4bf);}
+
+		/* Courses dialog */
+		.tr-dlg-profile  { display:flex; align-items:center; gap:14px; padding:14px 18px;
+		                   background:#f8fafc; border-radius:10px; margin-bottom:16px; }
+		.tr-dlg-avatar   { width:56px; height:56px; border-radius:12px; flex-shrink:0;
+		                   object-fit:cover; border:2px solid #e2e8f0; background:#e2e8f0; }
+		.tr-dlg-sname    { font-size:15px; font-weight:800; color:#4f46e5; }
+		.tr-dlg-sreg     { font-size:12px; color:#64748b; font-weight:600; margin-top:1px; }
+		.tr-dlg-semail   { font-size:12px; color:#94a3b8; margin-top:1px; }
+		.tr-dlg-sprog    { font-size:12px; color:#475569; font-weight:500; margin-top:1px; }
+		.tr-dlg-section  { font-size:13px; font-weight:800; color:#0f172a; margin:14px 0 8px; }
+		.tr-dlg-section .tr-dlg-cnt { color:#ef4444; margin-left:4px; }
+		.tr-dlg-section .tr-dlg-cnt.regular { color:#10b981; }
+		.tr-cdlg-table   { width:100%; border-collapse:collapse; font-size:12.5px; }
+		.tr-cdlg-table th { background:#f8fafc; padding:8px 10px; text-align:center; font-size:10.5px;
+		                    font-weight:700; color:#475569; border-bottom:1.5px solid #e2e8f0;
+		                    white-space:nowrap; text-transform:uppercase; letter-spacing:.3px; }
+		.tr-cdlg-table th.left { text-align:left; }
+		.tr-cdlg-table td { padding:10px 10px; border-bottom:1.5px solid #f1f5f9;
+		                    vertical-align:middle; color:#334155; text-align:center; }
+		.tr-cdlg-table td.left { text-align:left; }
+		.tr-cdlg-table tbody tr:last-child td { border-bottom:none; }
+		.tr-cdlg-table tbody tr:hover td { background:#fafbff; }
+		.tr-cdlg-cname   { font-size:13px; font-weight:700; color:#0f172a; }
+		.tr-cdlg-code    { font-size:11px; color:#64748b; margin-top:1px; }
+		.tr-cdlg-backlog { font-size:10px; font-weight:700; color:#ef4444; background:#fff5f5;
+		                   border:1px solid #fca5a5; border-radius:4px; padding:1px 6px;
+		                   display:inline-block; margin-top:3px; }
+		.tr-cdlg-result  { line-height:1.5; }
+		.tr-cdlg-grade-pill { font-size:12px; font-weight:800; }
+		.tr-cdlg-grade-pill.fail  { color:#ef4444; }
+		.tr-cdlg-grade-pill.pass  { color:#059669; }
+		.tr-cdlg-marks   { font-size:11px; color:#64748b; }
+		.tr-cdlg-dash    { color:#cbd5e1; font-size:13px; font-weight:600; }
 		`;
 		document.head.appendChild(style);
 	}
 
+	// ── State ─────────────────────────────────────────────────────────────────
+	var S = {
+		exam_plan:   null,
+		students:    [],
+		total:       0,
+		page:        1,
+		page_length: 20,
+		search:      '',
+		sort_by:     'registration_id',
+		sort_order:  'asc',
+		loading:     false,
+		search_timer: null,
+	};
+
+	// ── Render shell ──────────────────────────────────────────────────────────
 	var $body = $(page.main);
 	$body.html(`
 		<div class="er2-wrap" style="padding:20px 24px;">
@@ -53,7 +240,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				</div>
 				<div>
 					<div class="er2-page-title">Term Results</div>
-					<div class="er2-page-sub">View and manage consolidated term-wise results for students</div>
+					<div class="er2-page-sub">Consolidated term-wise academic results, SGPA/CGPA and semester performance</div>
 				</div>
 			</div>
 
@@ -77,30 +264,574 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				</button>
 			</div>
 
-			<!-- Coming soon content -->
-			<div class="er2-coming-card">
-				<div class="er2-coming-icon" style="background:linear-gradient(135deg,#e0f2fe,#bae6fd);">
-					<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="1.8">
-						<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-						<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-						<line x1="8" y1="8" x2="16" y2="8"/>
-						<line x1="8" y1="12" x2="14" y2="12"/>
-					</svg>
-				</div>
-				<div class="er2-coming-title">Term Results</div>
-				<div class="er2-coming-desc">
-					Consolidated term-wise academic results, SGPA/CGPA computation, and
-					semester performance summaries will be available here.
-				</div>
-				<div class="er2-coming-badge">
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-						<circle cx="12" cy="12" r="10"/>
-						<polyline points="12 6 12 12 16 14"/>
-					</svg>
-					Coming Soon
+			<!-- Filter card: Exam Plan only -->
+			<div class="tr-filter-card">
+				<div class="tr-fgroup">
+					<span class="tr-flabel">
+						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+						Exam Plan
+					</span>
+					<select class="tr-select" id="tr-exam-plan">
+						<option value="">Choose Exam Plan</option>
+					</select>
 				</div>
 			</div>
 
+			<!-- Content area -->
+			<div id="tr-content" style="display:none;">
+
+				<!-- Action bar -->
+				<div class="tr-actbar">
+					<div class="tr-srch">
+						<svg class="tr-srch-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+						<input id="tr-search" type="text" placeholder="Search by student name or id">
+					</div>
+					<div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+						<button class="tr-btn" id="tr-moderation-btn">
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+							Result Moderation
+						</button>
+						<div class="tr-btn-dd" id="tr-generate-dd">
+							<button class="tr-btn outline-indigo" id="tr-generate-btn">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+								Generate
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+							</button>
+							<div class="dd-menu">
+								<div class="dd-item" id="tr-gen-term-gpa">Term GPA</div>
+								<div class="dd-item" id="tr-gen-cum-gpa">Cumulative GPA</div>
+								<div class="dd-item" id="tr-gen-term-pct">Term Percentage</div>
+								<div class="dd-item" id="tr-gen-cum-pct">Cumulative Percentage</div>
+								<div class="dd-item" id="tr-gen-gs-orig">Gradesheets (Original)</div>
+								<div class="dd-item" id="tr-gen-gs-dup">Gradesheets (Duplicate)</div>
+							</div>
+						</div>
+						<div class="tr-btn-dd" id="tr-actions-dd">
+							<button class="tr-btn" id="tr-actions-btn">
+								Actions
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+							</button>
+							<div class="dd-menu">
+								<div class="dd-item" id="tr-act-update-course">Update Course Details</div>
+								<div class="dd-item" id="tr-act-upload-sgpa">Upload SGPA</div>
+								<div class="dd-item" id="tr-act-upload-cgpa">Upload CGPA</div>
+							</div>
+						</div>
+						<div class="tr-btn-dd" id="tr-download-dd">
+							<button class="tr-btn" id="tr-download-btn">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+								Download
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+							</button>
+							<div class="dd-menu">
+								<div class="dd-item" id="tr-dl-gradesheets">Gradesheets</div>
+								<div class="dd-item" id="tr-dl-consolidated">Consolidated Report</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Summary stat cards -->
+				<div class="tr-stat-cards" id="tr-stat-cards" style="display:none;"></div>
+
+				<!-- Table header row -->
+				<div class="tr-tbl-header">
+					<span id="tr-count-lbl" class="tr-count-lbl">Students (0)</span>
+					<span class="tr-sort-wrap">
+						Sort by:
+						<select class="tr-sort-select" id="tr-sort-by">
+							<option value="registration_id">Registration Id</option>
+							<option value="name">Name</option>
+							<option value="programme">Programme</option>
+						</select>
+						<button id="tr-sort-dir" title="Toggle sort direction"
+						  style="border:1.5px solid #e2e8f0;border-radius:6px;background:#fff;
+						         padding:4px 8px;cursor:pointer;font-size:13px;color:#64748b;
+						         display:inline-flex;align-items:center;gap:3px;">
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+						</button>
+					</span>
+				</div>
+
+				<!-- Table (horizontally scrollable) -->
+				<div class="tr-table-card">
+					<div class="tr-table-scroll">
+						<div id="tr-table-body"></div>
+					</div>
+					<div class="tr-pag-bar" id="tr-pag-bar" style="display:none;">
+						<span id="tr-pag-info" class="tr-pag-info"></span>
+						<div class="tr-pag-btns">
+							<button class="tr-pag-btn" id="tr-prev" disabled>&#8592;</button>
+							<button class="tr-pag-btn" id="tr-next" disabled>&#8594;</button>
+						</div>
+					</div>
+				</div>
+
+			</div><!-- /tr-content -->
+
 		</div>
 	`);
+
+	// ── DOM refs ──────────────────────────────────────────────────────────────
+	var $examPlan   = $body.find('#tr-exam-plan');
+	var $content    = $body.find('#tr-content');
+	var $search     = $body.find('#tr-search');
+	var $tableBody  = $body.find('#tr-table-body');
+	var $countLbl   = $body.find('#tr-count-lbl');
+	var $pagBar     = $body.find('#tr-pag-bar');
+	var $pagInfo    = $body.find('#tr-pag-info');
+	var $prev       = $body.find('#tr-prev');
+	var $next       = $body.find('#tr-next');
+	var $sortBy     = $body.find('#tr-sort-by');
+	var $sortDir    = $body.find('#tr-sort-dir');
+	var $statCards  = $body.find('#tr-stat-cards');
+
+	// ── Load Exam Plans ───────────────────────────────────────────────────────
+	frappe.call({
+		method: 'slcm.slcm.page.term_result.term_result.get_exam_plans',
+		callback: function (r) {
+			if (!r.message) return;
+			r.message.forEach(function (ep) {
+				$examPlan.append(
+					'<option value="' + ep.name + '">' +
+					frappe.utils.escape_html(ep.exam_name || ep.name) +
+					(ep.status === 'Active' ? ' [Active]' : '') + '</option>'
+				);
+			});
+		},
+	});
+
+	// ── Exam Plan change ──────────────────────────────────────────────────────
+	$examPlan.on('change', function () {
+		S.exam_plan = $(this).val();
+		S.page = 1;
+		S.search = '';
+		$search.val('');
+		if (S.exam_plan) {
+			$content.show();
+			loadStats();
+			loadStudents();
+		} else {
+			$content.hide();
+			$statCards.hide();
+		}
+	});
+
+	// ── Search ────────────────────────────────────────────────────────────────
+	$search.on('input', function () {
+		clearTimeout(S.search_timer);
+		S.search_timer = setTimeout(function () {
+			S.search = $search.val().trim();
+			S.page = 1;
+			loadStudents();
+		}, 350);
+	});
+
+	// ── Sort ──────────────────────────────────────────────────────────────────
+	$sortBy.on('change', function () {
+		S.sort_by = $(this).val();
+		S.page = 1;
+		if (S.exam_plan) loadStudents();
+	});
+	$sortDir.on('click', function () {
+		S.sort_order = S.sort_order === 'asc' ? 'desc' : 'asc';
+		var isAsc = S.sort_order === 'asc';
+		$sortDir.html(isAsc
+			? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>'
+			: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>');
+		if (S.exam_plan) loadStudents();
+	});
+
+	// ── Dropdown toggles ──────────────────────────────────────────────────────
+	['tr-generate-dd', 'tr-actions-dd', 'tr-download-dd'].forEach(function (id) {
+		$body.find('#' + id + ' button').first().on('click', function (e) {
+			e.stopPropagation();
+			var $dd = $(this).closest('.tr-btn-dd');
+			var wasOpen = $dd.hasClass('open');
+			$body.find('.tr-btn-dd').removeClass('open');
+			if (!wasOpen) $dd.addClass('open');
+		});
+	});
+	$(document).on('click.tr_dd', function () {
+		$body.find('.tr-btn-dd').removeClass('open');
+	});
+
+	// ── Generate actions (placeholder toasts) ─────────────────────────────────
+	$body.find('#tr-gen-term-gpa').on('click',  function () { frappe.show_alert({message:'Generate Term GPA – coming soon', indicator:'blue'}); });
+	$body.find('#tr-gen-cum-gpa').on('click',   function () { frappe.show_alert({message:'Generate Cumulative GPA – coming soon', indicator:'blue'}); });
+	$body.find('#tr-gen-term-pct').on('click',  function () { frappe.show_alert({message:'Generate Term Percentage – coming soon', indicator:'blue'}); });
+	$body.find('#tr-gen-cum-pct').on('click',   function () { frappe.show_alert({message:'Generate Cumulative Percentage – coming soon', indicator:'blue'}); });
+	$body.find('#tr-gen-gs-orig').on('click',   function () { frappe.show_alert({message:'Generate Gradesheets (Original) – coming soon', indicator:'blue'}); });
+	$body.find('#tr-gen-gs-dup').on('click',    function () { frappe.show_alert({message:'Generate Gradesheets (Duplicate) – coming soon', indicator:'blue'}); });
+
+	// ── Actions ───────────────────────────────────────────────────────────────
+	$body.find('#tr-act-update-course').on('click', function () { frappe.show_alert({message:'Update Course Details – coming soon', indicator:'blue'}); });
+	$body.find('#tr-act-upload-sgpa').on('click',   function () { frappe.show_alert({message:'Upload SGPA – coming soon', indicator:'blue'}); });
+	$body.find('#tr-act-upload-cgpa').on('click',   function () { frappe.show_alert({message:'Upload CGPA – coming soon', indicator:'blue'}); });
+
+	// ── Download actions ──────────────────────────────────────────────────────
+	$body.find('#tr-dl-gradesheets').on('click',   function () { frappe.show_alert({message:'Download Gradesheets – coming soon', indicator:'blue'}); });
+	$body.find('#tr-dl-consolidated').on('click',  function () { frappe.show_alert({message:'Download Consolidated Report – coming soon', indicator:'blue'}); });
+
+	// ── Result Moderation ─────────────────────────────────────────────────────
+	$body.find('#tr-moderation-btn').on('click', function () { frappe.show_alert({message:'Result Moderation – coming soon', indicator:'blue'}); });
+
+	// ── Select All ───────────────────────────────────────────────────────────
+	$body.on('click', '#tr-act-select-all', function () {
+		$tableBody.find('.tr-row-chk').prop('checked', true);
+	});
+	$body.on('click', '#tr-act-clear', function () {
+		$tableBody.find('.tr-row-chk').prop('checked', false);
+	});
+
+	// ── Pagination ────────────────────────────────────────────────────────────
+	$prev.on('click', function () {
+		if (S.page > 1) { S.page--; loadStudents(); }
+	});
+	$next.on('click', function () {
+		var totalPages = Math.ceil(S.total / S.page_length);
+		if (S.page < totalPages) { S.page++; loadStudents(); }
+	});
+
+	// ── Load & render stat cards ──────────────────────────────────────────────
+	function loadStats() {
+		if (!S.exam_plan) return;
+		$statCards.html(
+			'<div class="tr-stat-card" style="--sc-color:#4f46e5;--sc-bg:#eef2ff;">' +
+			'<div class="tr-sc-icon">👥</div>' +
+			'<div><div class="tr-sc-val">…</div><div class="tr-sc-lbl">Total Students</div></div></div>'
+		).show();
+
+		frappe.call({
+			method: 'slcm.slcm.page.term_result.term_result.get_term_stats',
+			args: { exam_plan: S.exam_plan },
+			callback: function (r) {
+				if (!r.message) return;
+				renderStats(r.message);
+			},
+		});
+	}
+
+	function renderStats(stats) {
+		var cards = [
+			{
+				label: 'Total Students',
+				value: stats.total_students || 0,
+				icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+				color: '#4f46e5', bg: '#eef2ff',
+			},
+			{
+				label: 'Total Courses',
+				value: stats.total_courses || 0,
+				icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+				color: '#0ea5e9', bg: '#e0f2fe',
+			},
+			{
+				label: 'Graded',
+				value: stats.graded || 0,
+				icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+				color: '#10b981', bg: '#d1fae5',
+			},
+			{
+				label: 'Not Graded',
+				value: stats.not_graded || 0,
+				icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+				color: '#f59e0b', bg: '#fef3c7',
+			},
+			{
+				label: 'Avg CGPA',
+				value: stats.avg_cgpa != null ? stats.avg_cgpa : '—',
+				icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+				color: '#8b5cf6', bg: '#ede9fe',
+			},
+		];
+
+		var html = cards.map(function (c) {
+			return '<div class="tr-stat-card" style="--sc-color:' + c.color + ';--sc-bg:' + c.bg + ';">' +
+				'<div class="tr-sc-icon" style="color:' + c.color + ';">' + c.icon + '</div>' +
+				'<div>' +
+					'<div class="tr-sc-val">' + c.value + '</div>' +
+					'<div class="tr-sc-lbl">' + c.label + '</div>' +
+				'</div>' +
+			'</div>';
+		}).join('');
+
+		$statCards.html(html).show();
+	}
+
+	// ── Load students ─────────────────────────────────────────────────────────
+	function loadStudents() {
+		if (!S.exam_plan || S.loading) return;
+		S.loading = true;
+		$tableBody.html('<div class="tr-loading"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="animation:spin 1s linear infinite;vertical-align:-6px;margin-right:6px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading students…</div>');
+
+		frappe.call({
+			method: 'slcm.slcm.page.term_result.term_result.get_term_students',
+			args: {
+				exam_plan:   S.exam_plan,
+				search:      S.search,
+				page:        S.page,
+				page_length: S.page_length,
+				sort_by:     S.sort_by,
+				sort_order:  S.sort_order,
+			},
+			callback: function (r) {
+				S.loading = false;
+				if (!r.message) return;
+				S.students = r.message.students || [];
+				S.total    = r.message.total    || 0;
+				renderTable();
+				renderPagination();
+			},
+			error: function () {
+				S.loading = false;
+				$tableBody.html('<div class="tr-empty"><div class="tr-empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="tr-empty-txt">Failed to load students</div></div>');
+			},
+		});
+	}
+
+	// ── Render table ──────────────────────────────────────────────────────────
+	function renderTable() {
+		$countLbl.text('Students (' + S.total + ')');
+
+		if (!S.students.length) {
+			$tableBody.html('<div class="tr-empty"><div class="tr-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="tr-empty-txt">No students found</div><div class="tr-empty-sub">Try a different exam plan or search term</div></div>');
+			$pagBar.hide();
+			return;
+		}
+
+		var rows = S.students.map(function (s, idx) {
+			var initials = (s.student_name || 'S').split(' ').map(function (w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+			var avClass  = 'av-' + (idx % 8);
+			var avatar   = s.image
+				? '<img src="' + frappe.utils.escape_html(s.image) + '" alt="">'
+				: initials;
+
+			var badge = s.student_status === 'Active'
+				? '<span class="tr-badge active">Active</span>'
+				: '<span class="tr-badge inactive">' + frappe.utils.escape_html(s.student_status || 'Unknown') + '</span>';
+
+			var tgpa = s.term_gpa != null
+				? '<span class="tr-val-num">' + s.term_gpa + '</span>'
+				: '<span class="tr-val-ng">Not Generated</span>';
+
+			var cgpa = s.cumulative_gpa != null
+				? '<span class="tr-val-num">' + parseFloat(s.cumulative_gpa).toFixed(2) + '</span>'
+				: '<span class="tr-val-ng">Not Generated</span>';
+
+			var tpct = s.term_percentage != null
+				? '<span class="tr-val-num">' + s.term_percentage + '%</span>'
+				: '<span class="tr-val-ng">Not Generated</span>';
+
+			var cpct = '<span class="tr-val-na">—</span>';
+
+			var gradesheet = '<span class="tr-val-ng">Not Generated</span>';
+
+			var prog = frappe.utils.escape_html(s.programme || '—');
+			var courses = s.course_count
+				? s.course_count + ' &nbsp;<a class="tr-view-link tr-view-courses" data-student="' + frappe.utils.escape_html(s.student) + '" data-name="' + frappe.utils.escape_html(s.student_name) + '">View</a>'
+				: '—';
+
+			return '<tr>' +
+				'<td style="width:40px;"><input type="checkbox" class="tr-row-chk" data-student="' + frappe.utils.escape_html(s.student) + '" style="accent-color:#4f46e5;cursor:pointer;"></td>' +
+				'<td style="min-width:200px;">' +
+					'<div style="display:flex;align-items:center;gap:10px;">' +
+					'<div class="tr-savatar ' + avClass + '">' + avatar + '</div>' +
+					'<div class="tr-sinfo">' +
+						'<div class="tr-sname">' + frappe.utils.escape_html(s.student_name || s.student) + '</div>' +
+						'<div class="tr-sreg">' + frappe.utils.escape_html(s.registration_id || s.student) + '</div>' +
+						(s.email ? '<div class="tr-semail">' + frappe.utils.escape_html(s.email) + '</div>' : '') +
+					'</div>' +
+					'</div>' +
+				'</td>' +
+				'<td style="min-width:180px;">' + prog + '</td>' +
+				'<td style="min-width:100px;text-align:center;">' + courses + '</td>' +
+				'<td style="min-width:130px;text-align:center;">' + tgpa + '</td>' +
+				'<td style="min-width:130px;text-align:center;">' + cgpa + '</td>' +
+				'<td style="min-width:150px;text-align:center;">' + tpct + '</td>' +
+				'<td style="min-width:160px;text-align:center;">' + cpct + '</td>' +
+				'<td style="min-width:170px;text-align:center;">' + gradesheet + '</td>' +
+			'</tr>';
+		});
+
+		var thead = '<table class="tr-table">' +
+			'<thead><tr>' +
+			'<th style="width:40px;"><input type="checkbox" id="tr-chk-all" style="accent-color:#4f46e5;cursor:pointer;"></th>' +
+			'<th>Student</th>' +
+			'<th>Programme</th>' +
+			'<th class="center">Courses</th>' +
+			'<th class="center">Term GPA</th>' +
+			'<th class="center">Cumulative GPA</th>' +
+			'<th class="center">Term Percentage</th>' +
+			'<th class="center">Cumulative %</th>' +
+			'<th class="center">Gradesheet(s)</th>' +
+			'</tr></thead>' +
+			'<tbody>' + rows.join('') + '</tbody>' +
+			'</table>';
+
+		$tableBody.html(thead);
+		$pagBar.show();
+
+		// Select all checkbox
+		$tableBody.find('#tr-chk-all').on('change', function () {
+			$tableBody.find('.tr-row-chk').prop('checked', $(this).is(':checked'));
+		});
+
+		// Add spin keyframe if not present
+		if (!document.getElementById('tr-spin-style')) {
+			var ss = document.createElement('style');
+			ss.id = 'tr-spin-style';
+			ss.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+			document.head.appendChild(ss);
+		}
+	}
+
+	// ── Render pagination ────────────────────────────────────────────────────
+	function renderPagination() {
+		var totalPages = Math.ceil(S.total / S.page_length);
+		var from = Math.min((S.page - 1) * S.page_length + 1, S.total);
+		var to   = Math.min(S.page * S.page_length, S.total);
+		$pagInfo.text(from + '–' + to + ' of ' + S.total);
+		$prev.prop('disabled', S.page <= 1);
+		$next.prop('disabled', S.page >= totalPages);
+	}
+
+	// ── View courses popup ────────────────────────────────────────────────────
+	$body.on('click', '.tr-view-courses', function (e) {
+		e.preventDefault();
+		var student = $(this).data('student');
+		if (!S.exam_plan || !student) return;
+
+		frappe.call({
+			method: 'slcm.slcm.page.term_result.term_result.get_student_courses',
+			args: { exam_plan: S.exam_plan, student: student },
+			callback: function (r) {
+				var data    = r.message || {};
+				var courses = data.courses || [];
+				var sm      = data.student || {};
+
+				if (!courses.length) {
+					frappe.show_alert({ message: 'No courses found for this student', indicator: 'orange' });
+					return;
+				}
+
+				// ── Student profile card ────────────────────────────────────
+				var initials = ((sm.first_name || 'S')[0] + (sm.last_name || '')[0]).toUpperCase();
+				var avatarHtml = sm.passport_size_photo
+					? '<img class="tr-dlg-avatar" src="' + frappe.utils.escape_html(sm.passport_size_photo) + '">'
+					: '<div class="tr-dlg-avatar" style="display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;background:linear-gradient(135deg,#4f46e5,#6366f1);">' + initials + '</div>';
+
+				var fullName = [sm.first_name, sm.middle_name, sm.last_name].filter(Boolean).join(' ');
+				var prog     = sm.programme ? frappe.utils.escape_html(sm.programme) : '';
+				var batch    = sm.batch_year ? frappe.utils.escape_html(sm.batch_year) : '';
+
+				var profileHtml = '<div class="tr-dlg-profile">' +
+					avatarHtml +
+					'<div>' +
+						'<div class="tr-dlg-sname">' + frappe.utils.escape_html(fullName) + '</div>' +
+						'<div class="tr-dlg-sreg">' + frappe.utils.escape_html(sm.registration_id || student) + '</div>' +
+						(sm.email ? '<div class="tr-dlg-semail">' + frappe.utils.escape_html(sm.email) + '</div>' : '') +
+						(prog ? '<div class="tr-dlg-sprog">' + prog + (batch ? ' &nbsp;·&nbsp; ' + batch : '') + '</div>' : '') +
+					'</div>' +
+				'</div>';
+
+				// ── Moderation Logs button ─────────────────────────────────
+				var modBtn = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">' +
+					'<button onclick="frappe.show_alert({message:\'Moderation Logs – coming soon\',indicator:\'blue\'})" ' +
+					'style="height:30px;padding:0 12px;border:1.5px solid #c7d2fe;border-radius:7px;background:#eef2ff;' +
+					'color:#4f46e5;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">' +
+					'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">' +
+					'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>' +
+					'<line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>' +
+					'</svg>Moderation Logs</button>' +
+				'</div>';
+
+				// ── Build table rows ────────────────────────────────────────
+				function dash() { return '<span class="tr-cdlg-dash">--</span>'; }
+				function resultCell(grade, marks, maxMarks, isFail) {
+					if (!grade && !marks) return dash();
+					var gradeHtml = grade
+						? '<div class="tr-cdlg-grade-pill ' + (isFail ? 'fail' : 'pass') + '">' + frappe.utils.escape_html(grade) + '</div>'
+						: '';
+					var marksHtml = '<div class="tr-cdlg-marks">' + parseFloat(marks || 0).toFixed(0) + ' /\u200B' + (maxMarks || 100) + '</div>';
+					return '<div class="tr-cdlg-result">' + gradeHtml + marksHtml + '</div>';
+				}
+
+				// Separate backlog vs regular
+				var backlogRows = [], regularRows = [];
+				courses.forEach(function (c) {
+					(c.is_failed ? backlogRows : regularRows).push(c);
+				});
+
+				function buildRows(list) {
+					return list.map(function (c) {
+						var isBacklog = !!c.is_failed;
+						var courseCell =
+							'<div class="tr-cdlg-cname">' + frappe.utils.escape_html(c.course_name || c.course) + '</div>' +
+							'<div class="tr-cdlg-code">[' + frappe.utils.escape_html(c.course_code || c.course) + ']</div>' +
+							(isBacklog ? '<span class="tr-cdlg-backlog">Backlog</span>' : '');
+
+						var spec   = dash();
+						var lpath  = c.course_type ? frappe.utils.escape_html(c.course_type) : dash();
+						var creds  = c.credit_value ? c.credit_value : dash();
+						var modMks = c.moderation_marks ? parseFloat(c.moderation_marks).toFixed(1) : dash();
+						var regRes = resultCell(c.regular_grade, c.regular_marks, c.max_marks, isBacklog);
+						var modGrd = c.moderated_grade ? '<span class="tr-cdlg-grade-pill">' + frappe.utils.escape_html(c.moderated_grade) + '</span>' : dash();
+						var reRes  = (c.reexam_grade || c.reexam_marks)
+							? resultCell(c.reexam_grade, c.reexam_marks, c.max_marks, false)
+							: '<div class="tr-cdlg-result">' + dash() + '<div class="tr-cdlg-marks">-- /\u200B' + (c.max_marks || 100) + '</div></div>';
+						var sgpa   = '<input type="checkbox" disabled ' + (c.consider_for_sgpa ? 'checked' : '') +
+							' style="width:15px;height:15px;accent-color:#4f46e5;cursor:default;">';
+
+						return '<tr>' +
+							'<td class="left" style="min-width:200px;">' + courseCell + '</td>' +
+							'<td>' + spec + '</td>' +
+							'<td>' + lpath + '</td>' +
+							'<td>' + creds + '</td>' +
+							'<td>' + modMks + '</td>' +
+							'<td>' + regRes + '</td>' +
+							'<td>' + modGrd + '</td>' +
+							'<td>' + reRes + '</td>' +
+							'<td>' + sgpa + '</td>' +
+						'</tr>';
+					}).join('');
+				}
+
+				var tableHead = '<table class="tr-cdlg-table">' +
+					'<thead><tr>' +
+					'<th class="left">Course</th>' +
+					'<th>Specialization</th>' +
+					'<th>Learning Pathway</th>' +
+					'<th>Credits</th>' +
+					'<th>Moderation Marks</th>' +
+					'<th>Regular Result</th>' +
+					'<th>Moderated Grade</th>' +
+					'<th>ReExam Result</th>' +
+					'<th>Consider For SGPA</th>' +
+					'</tr></thead><tbody>';
+
+				var tableBody = '';
+				if (backlogRows.length) {
+					tableBody += '<tr><td colspan="9" style="padding:10px 10px 4px;"><span class="tr-dlg-section">Backlog Courses <span class="tr-dlg-cnt">(' + backlogRows.length + ')</span></span></td></tr>';
+					tableBody += buildRows(backlogRows);
+				}
+				if (regularRows.length) {
+					tableBody += '<tr><td colspan="9" style="padding:10px 10px 4px;"><span class="tr-dlg-section">Regular Courses <span class="tr-dlg-cnt regular">(' + regularRows.length + ')</span></span></td></tr>';
+					tableBody += buildRows(regularRows);
+				}
+				if (!backlogRows.length && !regularRows.length) {
+					tableBody += buildRows(courses);
+				}
+				tableBody += '</tbody></table>';
+
+				var d = new frappe.ui.Dialog({
+					title: 'Registered Courses',
+					size: 'extra-large',
+				});
+				d.$body.css({ padding: '12px 16px', maxHeight: '70vh', overflowY: 'auto' });
+				d.$body.html(profileHtml + modBtn + tableHead + tableBody);
+				d.show();
+			},
+		});
+	});
 };

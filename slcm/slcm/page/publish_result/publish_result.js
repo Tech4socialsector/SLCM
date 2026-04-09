@@ -6,10 +6,11 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 	});
 
 	// ── CSS (shared er2 design system) ────────────────────────────────────────
-	if (!document.getElementById('er2-style')) {
+	if (!document.getElementById('pr-style')) {
 		var style = document.createElement('style');
-		style.id  = 'er2-style';
+		style.id  = 'pr-style';
 		style.textContent = `
+		/* shared layout */
 		.er2-wrap        { font-family:var(--font-stack,'Inter',sans-serif); padding:0; background:#f1f5f9; min-height:100vh; }
 		.er2-page-header { background:#fff; border-radius:12px; padding:20px 24px; margin-bottom:16px;
 		                   box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; align-items:center; gap:16px; }

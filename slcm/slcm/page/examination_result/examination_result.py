@@ -709,6 +709,7 @@ def get_course_students_paged(course, exam_plan="", search="", page=1, page_leng
 			sm.batch_year,
 			sm.intake,
 			sm.department,
+			sm.passport_size_photo,
 			NULL AS section
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student

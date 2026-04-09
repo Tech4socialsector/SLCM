@@ -1399,10 +1399,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var initials   = (s.student_name || 'S').charAt(0).toUpperCase();
 			var av_cls     = 'av-' + (idx % 8);
 			var dot_color  = status_cls === 'active' ? '#10b981' : status_cls === 'dropped' ? '#f59e0b' : '#ef4444';
+			var avatarContent = s.passport_size_photo
+				? '<img src="' + frappe.utils.escape_html(s.passport_size_photo) + '" alt="">'
+				: initials;
 			html +=
 				'<div class="er2-srow" data-student="' + frappe.utils.escape_html(s.student) + '">' +
 				'  <input type="checkbox" class="er2-chk" style="flex-shrink:0;accent-color:#4f46e5;width:14px;height:14px;cursor:pointer;">' +
-				'  <div class="er2-savatar ' + av_cls + '">' + initials + '</div>' +
+				'  <div class="er2-savatar ' + av_cls + '">' + avatarContent + '</div>' +
 				'  <div class="er2-sinfo">' +
 				'    <div class="er2-sname">' + frappe.utils.escape_html(s.student_name || s.student) + '</div>' +
 				'    <div class="er2-sreg">' + frappe.utils.escape_html(s.registration_id || s.student || '') + '</div>' +
@@ -1659,7 +1662,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			});
 
 			// Updated Final Result
-			var ufmVal = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '';
+			var ufmVal = (sm.updated_final_marks != null && sm.updated_final_marks !== 0)
+				? parseFloat(sm.updated_final_marks).toFixed(2) : '';
 			var ugVal  = sm.updated_grade || '';
 			var stu2   = frappe.utils.escape_html(s.student);
 			if (canEdit) {
