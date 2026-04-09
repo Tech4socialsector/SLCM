@@ -40,6 +40,15 @@ frappe.ui.form.on("Scholarship Scheme", {
             }, __("Actions"));
         }
     },
+    onload: function(frm) {
+        frm.set_query("admission_cycle", function() {
+            return {
+                filters: {
+                    status: "Active"
+                }
+            };
+        });
+    },
     scheme_type(frm) {
         const type = frm.doc.scheme_type;
 
@@ -175,3 +184,4 @@ function validate_numeric(frm, fieldname) {
         frm.set_value(fieldname, 0);
     }
 }
+    

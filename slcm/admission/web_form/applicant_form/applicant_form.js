@@ -5,7 +5,7 @@
 //    • Save Draft button (always before the Next/Submit primary button)
 //    • Application status badge near the applicant-ID heading
 //    • Toast notifications — top-right
-//    • Submit intercept: mandatory → eligibility (modal if ineligible) → fee/Razorpay → submit
+//    • Submit intercept: mandatory → eligibility (same modal as application_form showEligibilityModal) → fee/Razorpay → submit
 //    • No live eligibility banner; query-string prefill for /applicant-form/new?...
 // ═══════════════════════════════════════════════════════════════════
 
@@ -37,7 +37,7 @@ function _injectCSS() {
 		/* spinner keyframes */
 		'@keyframes slcm-spin{to{transform:rotate(360deg)}}',
 		/* Toast — top-right */
-		'#slcm-toast{position:fixed;top:40px;right:24px;z-index:99999;' +
+		'#slcm-toast{position:fixed;top:40px;right:24px;z-index:2500000;max-width:min(420px,calc(100vw - 32px));' +
 			'min-width:260px;max-width:min(440px,92vw);padding:13px 18px;border-radius:10px;' +
 			'font-size:13.5px;font-weight:500;line-height:1.5;pointer-events:auto;' +
 			'box-shadow:0 8px 32px rgba(0,0,0,.18);display:none;cursor:default;' +
@@ -46,6 +46,33 @@ function _injectCSS() {
 		'#slcm-toast.slcm-error  {background:#fff2f2;border:1.5px solid #fca5a5;color:#991b1b;}',
 		'#slcm-toast.slcm-info   {background:#eff6ff;border:1.5px solid #93c5fd;color:#1e3a5f;}',
 		'#slcm-toast.slcm-warn   {background:#fffbeb;border:1.5px solid #fcd34d;color:#78350f;}',
+		'@keyframes slcm-wf-modal-slide-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}' +
+			/* Portal-themed programme picker (parity with application_form switch overlay) */
+			'#slcm-wf-switch-program-overlay.slcm-portal-switch-shell{' +
+			'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-card{' +
+			'background:#fff;border-radius:24px;width:100%;max-width:440px;padding:32px;' +
+			'box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);animation:slcm-wf-modal-slide-up .3s cubic-bezier(0.16,1,0.3,1);}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt{' +
+			'padding:14px 18px;border:1px solid #e2e8f0;border-radius:12px;cursor:pointer;margin-bottom:10px;' +
+			'transition:all .2s ease;display:flex;align-items:center;gap:12px;background:#fff;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt:hover{border-color:#1a3c6e;background:#f8fafc;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.selected{border-color:#1a3c6e;background:#eff6ff;box-shadow:0 0 0 1px #1a3c6e;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.selected .slcm-wf-switch-radio{border-color:#1a3c6e !important;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.selected .slcm-wf-switch-radio div{display:block !important;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied{' +
+			'opacity:0.72;cursor:not-allowed;pointer-events:none;border-color:#e2e8f0 !important;background:#f1f5f9 !important;box-shadow:none !important;}' +
+			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied .slcm-wf-switch-applied-badge{' +
+			'display:inline-block;margin-left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
+			'#slcm-wf-switch-opts-container::-webkit-scrollbar{width:4px;}' +
+			'#slcm-wf-switch-opts-container::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn{' +
+			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:700;color:#475569;cursor:pointer;transition:background .15s;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn:hover{background:#e2e8f0;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn{' +
+			'height:52px;border-radius:14px;border:none;background:#1a3c6e;color:#fff;font-weight:700;cursor:pointer;' +
+			'box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:filter .15s;}' +
+			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn:hover:not(:disabled){filter:brightness(1.05);}',
 		/* Application ID + status row (inside web-form title h1) */
 		'.slcm-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;' +
 			'line-height:1.25;margin:0;}',
@@ -193,19 +220,22 @@ function _injectCSS() {
 		'.adm-wf-footer-links a:hover{color:#fff;}',
 				'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
 			'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
-		/* ── Stepper — pill strip + step numbers (pages from Page Break fields; no fixed icons) ── */
-		'#slcm-stepper-wrap{padding:15px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}',
+		/* ── Stepper — CSS Grid: max-content columns for pills, 1fr tracks for lines (fills any screen width) ── */
+		'#slcm-stepper-wrap{padding:15px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;width:100%;' +
+			'box-sizing:border-box;}',
 		'#slcm-stepper-wrap::-webkit-scrollbar{display:none;}',
-		'.slcm-stepper{display:flex;align-items:flex-start;justify-content:space-between;min-width:max-content;padding:0 6px;gap:8px;}',
-		'.slcm-step{flex:1;display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
-			'min-width:104px;max-width:220px;transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
+		'.slcm-stepper{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;}',
+		'.slcm-step{display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
+			'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
 			'border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
+		'.slcm-step-connector{align-self:center;width:100%;min-width:12px;height:2px;background:#e5e7eb;' +
+			'border-radius:1px;pointer-events:none;}',
 		/* Completed step: green */
 		'.slcm-step.completed:not(.active){background:#ecfdf5;border-color:#bbf7d0;}',
 		'.slcm-step.completed .slcm-step-circle{border-color:#22c55e;background:#22c55e;color:#fff;}',
 		'.slcm-step.completed .slcm-step-label{color:#15803d;}',
 		'.slcm-step.completed:not(.active) .slcm-step-label{color:#166534;}',
-		'.slcm-step.completed:not(:last-child)::after{background:#86efac;}',
+		'.slcm-step.completed + .slcm-step-connector{background:#86efac;}',
 		/* Active step: blue */
 		'.slcm-step.active{background:#e0ecfa;border-color:#2471f3;}',
 		'.slcm-step.active .slcm-step-circle{border-color:#2471f3;background:#2471f3;color:#fff;' +
@@ -220,9 +250,6 @@ function _injectCSS() {
 			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
 		'.slcm-step-label{font-size:10px;font-weight:700;text-align:left;line-height:1.25;' +
 			'white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
-		/* Connector only between wizard pages (each .slcm-step = one page) — omit on last step */
-		'.slcm-step:not(:last-child)::after{content:"";position:absolute;top:50%;transform:translateY(-50%);left:calc(100% - 6px);width:20px;' +
-			'height:2px;background:#e5e7eb;z-index:1;}',
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
 		'.slcm-step.completed:hover .slcm-step-circle{border-color:#16a34a;}',
@@ -716,13 +743,31 @@ function handleSaveDraft(opts) {
 				var msg = r && r.message;
 				if (msg && msg.status === 'success') {
 					var wf = frappe.web_form;
-				if (wf && wf.doc && !wf.doc.name && msg.name) {
-					wf.doc.name = msg.name;
-					try {
-						var url = new URL(window.location.href);
-						url.searchParams.set('name', msg.name);
-						window.history.replaceState({}, '', url.toString());
-					} catch (e) {}
+				/*
+				 * Never use /applicant-form/new?name=DOC — Frappe sees form_dict.name and redirects to
+				 * path+/edit → /applicant-form/new/edit (404). Move URL to /applicant-form/DOC/edit without
+				 * full reload so Submit flow can keep awaiting handleSaveDraft.
+				 */
+				if (msg.name) {
+					var p = (window.location.pathname || '').replace(/\/$/, '');
+					if (p.endsWith('/new')) {
+						var rt = (wf && wf.route) || 'applicant-form';
+						var newPath = '/' + rt + '/' + encodeURIComponent(msg.name) + '/edit';
+						try {
+							if (wf && wf.doc) wf.doc.name = msg.name;
+							if (wf) {
+								wf.is_new = false;
+								wf.in_edit_mode = true;
+							}
+							if (typeof frappe !== 'undefined' && frappe.web_form_doc) {
+								frappe.web_form_doc.is_new = false;
+								frappe.web_form_doc.in_edit_mode = true;
+							}
+							window.history.replaceState({}, '', newPath);
+						} catch (e2) {}
+					} else if (wf && wf.doc && !wf.doc.name) {
+						wf.doc.name = msg.name;
+					}
 				}
 				// Set directly on doc — avoids triggering a Frappe field-refresh
 				// cascade that would call set_formatted_input on the phone control
@@ -1071,6 +1116,17 @@ function setupApplicationFeeReceiptDownload() {
 	setInterval(syncApplicationFeeReceiptButton, 1200);
 }
 
+/** Hide Frappe header Edit when URL is already .../edit (my-applications opens this directly). */
+function setupHideRedundantWebFormEdit() {
+	setInterval(function () {
+		try {
+			var path = (window.location.pathname || '').replace(/\/$/, '');
+			if (path.indexOf('/applicant-form/') !== 0 || !/\/edit$/.test(path)) return;
+			$('.web-form-header a.edit-button, .web-form-actions a.edit-button').hide();
+		} catch (e) {}
+	}, 400);
+}
+
 /** Locked portal statuses: hide Submit / Save Draft / Edit (footer still shows Discard / nav where shown). */
 function setupSubmittedFormUX() {
 	setInterval(function () {
@@ -1201,6 +1257,523 @@ function _slcmFormatEeSectionBody(text) {
 		.join('');
 }
 
+function _slcmWfGetWebFormField(fieldname) {
+	try {
+		if (frappe.web_form && typeof frappe.web_form.get_value === 'function') {
+			var v = frappe.web_form.get_value(fieldname);
+			if (v !== undefined && v !== null) {
+				return String(v);
+			}
+		}
+	} catch (e) {}
+	return '';
+}
+
+/**
+ * Formats rejected_reason for the eligibility card: supports '|' (portal) or newline-separated
+ * lines from Applicant._build_rule_failure_reason. Omits redundant reservation/category headers.
+ */
+function _slcmFormatIneligibilityAlertBodyForModal(rawMsg) {
+	rawMsg = (rawMsg || '').trim();
+	if (!rawMsg) {
+		return '';
+	}
+	var parts;
+	if (rawMsg.indexOf('|') !== -1) {
+		parts = rawMsg.split('|').map(function (p) { return p.trim(); }).filter(function (p) { return p; });
+	} else {
+		parts = rawMsg.split(/\r?\n/).map(function (p) { return p.trim(); }).filter(function (p) { return p; });
+	}
+	parts = parts.filter(function (p) {
+		if (/^reservation\s+category$/i.test(p)) {
+			return false;
+		}
+		if (/^•?\s*category:\s*/i.test(p)) {
+			return false;
+		}
+		return true;
+	});
+	if (parts.length === 0) {
+		return '';
+	}
+	if (parts.length === 1) {
+		return _slcmEscapeHtml(parts[0]);
+	}
+	function bulletRow(p) {
+		var text = p.replace(/^\s*•\s*/, '');
+		return (
+			'<div style="display:flex;gap:8px;margin-bottom:4px;font-size:0.8125rem;color:#991b1b;">' +
+			'<span style="color:#ef4444;font-weight:bold;">•</span>' +
+			'<span>' +
+			_slcmEscapeHtml(text) +
+			'</span></div>'
+		);
+	}
+	var allBullets = parts.every(function (p) {
+		return /^\s*•/.test(p);
+	});
+	if (allBullets) {
+		return parts.map(bulletRow).join('');
+	}
+	return (
+		'<div style="font-weight:600;margin-bottom:6px;">' +
+		_slcmEscapeHtml(parts[0]) +
+		'</div>' +
+		parts.slice(1).map(bulletRow).join('')
+	);
+}
+
+/**
+ * Port of slcm/www/application_form/index.html showEligibilityModal(eligRes).
+ * Called when check_eligibility returns Ineligible — same table, stats, pipe message, and switch CTA as the application form.
+ */
+function showSlcmApplicantEligibilityModal(applicantName, eligRes) {
+	_injectCSS();
+	var existing = document.getElementById('slcm-wf-eligibility-modal-overlay');
+	if (existing) {
+		existing.remove();
+	}
+	if (!applicantName) {
+		_slcmWfRenderEligibilityModalContent(applicantName, eligRes, {});
+		return;
+	}
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.get_applicant_programs_already_applied',
+		args: { applicant_name: applicantName },
+		callback: function (r) {
+			var already = (r.message && r.message.already_applied) || {};
+			_slcmWfRenderEligibilityModalContent(applicantName, eligRes, already);
+		},
+		error: function () {
+			_slcmWfRenderEligibilityModalContent(applicantName, eligRes, {});
+		},
+	});
+}
+
+function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApplied) {
+	alreadyApplied = alreadyApplied || {};
+	var existing2 = document.getElementById('slcm-wf-eligibility-modal-overlay');
+	if (existing2) {
+		existing2.remove();
+	}
+
+	var selectedProgram = _slcmWfGetWebFormField('program');
+	var campus = _slcmWfGetWebFormField('campus');
+	var cycle = _slcmWfGetWebFormField('admission_cycle');
+
+	var programs = (eligRes && eligRes.programs) || [];
+	var eligibleCount = programs.filter(function (p) { return p.eligible; }).length;
+	var switchablePrograms = programs
+		.filter(function (p) {
+			return p.eligible && !alreadyApplied[p.program];
+		})
+		.map(function (p) {
+			return p.program;
+		});
+	var total = programs.length;
+
+	var sorted = programs
+		.filter(function (p) { return p.program === selectedProgram; })
+		.concat(programs.filter(function (p) { return p.program !== selectedProgram && !p.eligible; }))
+		.concat(programs.filter(function (p) { return p.program !== selectedProgram && p.eligible; }));
+
+	var rowsHtml = '';
+	sorted.forEach(function (p) {
+		var isSelected = p.program === selectedProgram;
+		var isElig = p.eligible;
+		var rowBg = isSelected && !isElig ? '#fff5f5' : isSelected ? '#f0fdf4' : '#fff';
+		var badge = isSelected
+			? '&nbsp;<span style="font-size:10px;padding:2px 8px;background:' +
+			  (isElig ? '#27ae60' : '#e74c3c') +
+			  ';color:#fff;border-radius:10px;font-weight:600;vertical-align:middle;">' +
+			  (isElig ? 'Selected ✓' : 'Choosen Program') +
+			  '</span>'
+			: '';
+		var progDisplay =
+			'<strong style="color:#2c3e50;">' + _slcmEscapeHtml(p.program || '') + '</strong>' + badge;
+		var statusDot =
+			'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px;background:' +
+			(isElig ? '#27ae60' : '#e74c3c') +
+			';"></span>';
+		var statusLabel =
+			'<span style="font-size:13px;font-weight:600;color:' +
+			(isElig ? '#27ae60' : '#e74c3c') +
+			';">' +
+			(isElig ? 'Eligible' : 'Not Eligible') +
+			'</span>';
+		var appliedNote =
+			isElig && alreadyApplied[p.program]
+				? '<div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">' +
+				  __('Applied') +
+				  ' &middot; ' +
+				  _slcmEscapeHtml(String(alreadyApplied[p.program])) +
+				  '</div>'
+				: '';
+
+		var reasonHtml = '';
+		if (!isElig && p.reason) {
+			var pr = (p.reason || '').split('|').map(function (r) { return r.trim(); }).filter(function (r) { return r; });
+			var mainReason = pr[0];
+			var subReasons = pr.slice(1);
+			reasonHtml =
+				'<div style="font-size:11px;color:#888;margin-top:4px;font-style:italic;line-height:1.4;">' +
+				_slcmEscapeHtml(mainReason) +
+				'</div>';
+			if (subReasons.length > 0) {
+				reasonHtml += subReasons
+					.map(function (sr) {
+						return (
+							'<div style="font-size:10px;color:#94a3b8;font-style:normal;margin-top:2px;display:flex;gap:4px;"><span>•</span><span>' +
+							_slcmEscapeHtml(sr) +
+							'</span></div>'
+						);
+					})
+					.join('');
+			}
+		}
+
+		rowsHtml +=
+			'<tr style="background:' +
+			rowBg +
+			';">' +
+			'<td style="padding:10px 12px;vertical-align:middle;border-bottom:1px solid #eee;">' +
+			progDisplay +
+			reasonHtml +
+			'</td>' +
+			'<td style="padding:10px 12px;vertical-align:middle;text-align:center;white-space:nowrap;border-bottom:1px solid #eee;">' +
+			'<div style="display:inline-block;text-align:center;">' +
+			statusDot +
+			statusLabel +
+			appliedNote +
+			'</div>' +
+			'</td>' +
+			'</tr>';
+	});
+
+	if (!rowsHtml) {
+		rowsHtml =
+			'<tr><td colspan="2" style="padding:16px;text-align:center;color:#888;">No program data available.</td></tr>';
+	}
+
+	var mainHeading = 'Not Eligible for ' + _slcmEscapeHtml(selectedProgram);
+
+	var rawMsg = ((eligRes && eligRes.message) || (eligRes && eligRes.error) || '').trim();
+	if (!rawMsg) {
+		rawMsg = 'You do not meet the eligibility criteria for the selected program.';
+	}
+
+	/* Same idea as index.html showEligibilityModal: | OR newline-separated reasons; drop redundant category headers. */
+	var alertBodyHtml = _slcmFormatIneligibilityAlertBodyForModal(rawMsg);
+
+	var switchBlock = '';
+	if (eligibleCount > 0 && switchablePrograms.length > 0) {
+		switchBlock =
+			'<div style="margin-top:16px; display:flex; justify-content:center;">' +
+			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:14px;font-weight:700;border:none;border-radius:12px;background:#1a3c6e;color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
+			'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="margin-right:10px; vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' +
+			__('Switch to an Eligible Programme Instantly') +
+			'</button></div>';
+	} else if (eligibleCount > 0 && switchablePrograms.length === 0) {
+		switchBlock =
+			'<div style="margin-top:16px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;text-align:center;font-size:0.875rem;color:#64748b;">' +
+			__('You already have a separate application for every eligible programme in this cycle and campus.') +
+			'</div>';
+	}
+
+	var html =
+		'<div id="slcm-wf-eligibility-modal-overlay" style="position:fixed;inset:0;z-index:199000;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">' +
+		'<div style="background:#fff;border-radius:20px;width:100%;max-width:680px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25),0 0 0 1px rgba(0,0,0,0.05);display:flex;flex-direction:column;max-height:90vh;overflow:hidden;">' +
+		'<div style="padding:20px 24px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);border-bottom:1px solid #fecaca;flex-shrink:0;">' +
+		'<div style="display:flex;align-items:center;gap:14px;">' +
+		'<span style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;background:rgba(220,38,38,0.15);border-radius:12px;border:1px solid rgba(220,38,38,0.2);">' +
+		'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+		'</span>' +
+		'<div>' +
+		'<h3 style="margin:0;font-size:1.125rem;font-weight:700;color:#1e293b;letter-spacing:-0.01em;">Eligibility Evaluation Results</h3>' +
+		'<p style="margin:4px 0 0;font-size:0.8125rem;color:#64748b;">Review your programme eligibility below</p>' +
+		'</div></div>' +
+		'<button type="button" class="slcm-wf-eligibility-modal-close" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;color:#64748b;font-size:1.25rem;line-height:1;transition:background 0.15s, color 0.15s;" title="Close">&times;</button>' +
+		'</div>' +
+		'<div style="padding:24px;overflow-y:auto;flex:1;">' +
+		'<div style="margin-bottom:24px;padding:18px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fed7d7 8%);border:1px solid #fecaca;border-radius:14px;box-shadow:0 1px 3px rgba(220,38,38,0.08);">' +
+		'<div style="font-weight:700;font-size:1rem;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:8px;">' +
+		'<span style="width:6px;height:6px;background:#dc2626;border-radius:50%;"></span>' +
+		mainHeading +
+		'</div>' +
+		'<div style="font-size:0.875rem;color:#7f1d1d;line-height:1.6;">' +
+		alertBodyHtml +
+		'</div></div>' +
+		'<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;padding:12px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">' +
+		'<span style="font-weight:600;font-size:0.875rem;color:#334155;">All Programmes at This Level</span>' +
+		'<span style="font-size:0.75rem;color:#94a3b8;">' +
+		_slcmEscapeHtml(campus) +
+		(cycle ? ' &middot; ' + _slcmEscapeHtml(cycle) : '') +
+		'</span>' +
+		'<span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;">' +
+		'<span style="width:8px;height:8px;background:#22c55e;border-radius:50%;"></span>' +
+		'<strong style="color:#15803d;">' +
+		eligibleCount +
+		'</strong> eligible' +
+		'</span>' +
+		'<span style="display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;">' +
+		'<span style="width:8px;height:8px;background:#dc2626;border-radius:50%;"></span>' +
+		'<strong style="color:#b91c1c;">' +
+		(total - eligibleCount) +
+		'</strong> not eligible' +
+		'</span></div>' +
+		'<div style="overflow-x:auto;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">' +
+		'<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">' +
+		'<thead><tr style="background:#f1f5f9;">' +
+		'<th style="padding:14px 18px;text-align:left;font-weight:600;color:#475569;width:70%;border-bottom:2px solid #e2e8f0;">Program</th>' +
+		'<th style="padding:14px 18px;text-align:center;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;">Eligibility</th>' +
+		'</tr></thead><tbody>' +
+		rowsHtml +
+		'</tbody></table></div>' +
+		switchBlock +
+		'</div></div></div>';
+
+	document.body.insertAdjacentHTML('beforeend', html);
+
+	var overlay = document.getElementById('slcm-wf-eligibility-modal-overlay');
+	if (!overlay) {
+		return;
+	}
+
+	function closeModal() {
+		if (overlay && overlay.parentNode) {
+			overlay.remove();
+		}
+	}
+	var closeBtn = overlay.querySelector('.slcm-wf-eligibility-modal-close');
+	if (closeBtn) {
+		closeBtn.onclick = closeModal;
+	}
+
+	var allEligibleIds = programs
+		.filter(function (p) {
+			return p.eligible;
+		})
+		.map(function (p) {
+			return p.program;
+		});
+	var sw = overlay.querySelector('.slcm-wf-modal-switch-btn');
+	if (sw && applicantName) {
+		sw.addEventListener('click', function () {
+			_slcmWfHandleToastProgramSwitch(applicantName, allEligibleIds);
+		});
+	}
+}
+
+function _slcmWfExecuteProgramSwitch(applicantName, program, opts) {
+	opts = opts || {};
+	var confirmBtn = opts.confirmBtn;
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.switch_applicant_program',
+		args: { applicant_name: applicantName, program: program },
+		callback: function (r) {
+			var m = r && r.message;
+			var ov = document.getElementById('slcm-wf-switch-program-overlay');
+			if (m && m.status === 'success') {
+				if (ov) {
+					ov.remove();
+				}
+				showToast(m.message || __('Programme updated.'), 'success', 5000);
+				window.location.reload();
+			} else {
+				if (confirmBtn) {
+					confirmBtn.disabled = false;
+					confirmBtn.textContent = __('Update Programme');
+				}
+				var errSw = (m && m.message) || __('Could not switch programme.');
+				showToast(errSw, 'error', errSw.length > 120 ? 10000 : 4000);
+			}
+		},
+		error: function () {
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				confirmBtn.textContent = __('Update Programme');
+			}
+			showToast(__('Could not switch programme.'), 'error');
+		},
+	});
+}
+
+/** Clears toast and opens switch overlay (index.html handleToastProgramSwitch + saveDraft path → web form API + reload). */
+function _slcmWfHandleToastProgramSwitch(applicantName, eligibleProgs) {
+	if (!eligibleProgs || !eligibleProgs.length || !applicantName) {
+		return;
+	}
+	_injectCSS();
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.get_applicant_programs_already_applied',
+		args: { applicant_name: applicantName },
+		callback: function (r) {
+			var already = (r.message && r.message.already_applied) || {};
+			_slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, already);
+		},
+		error: function () {
+			_slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, {});
+		},
+	});
+}
+
+function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyApplied) {
+	alreadyApplied = alreadyApplied || {};
+	var eligModal = document.getElementById('slcm-wf-eligibility-modal-overlay');
+	if (eligModal) {
+		eligModal.remove();
+	}
+	var tc = document.getElementById('slcm-portal-toast-container');
+	if (tc) {
+		tc.innerHTML = '';
+	}
+	var existing = document.getElementById('slcm-wf-switch-program-overlay');
+	if (existing) {
+		existing.remove();
+	}
+
+	var selectable = eligibleProgs.filter(function (pid) {
+		return !alreadyApplied[pid];
+	});
+
+	if (selectable.length === 0) {
+		showToast(
+			__(
+				'You already have a separate application for each eligible programme in this admission cycle and campus. You cannot switch to another one from here.'
+			),
+			'info',
+			10000
+		);
+		return;
+	}
+
+	if (eligibleProgs.length === 1) {
+		if (alreadyApplied[eligibleProgs[0]]) {
+			showToast(
+				__('This programme is already applied for in the same cycle and campus.') +
+					' (' +
+					__('Application ID') +
+					': ' +
+					_slcmEscapeHtml(String(alreadyApplied[eligibleProgs[0]])) +
+					')',
+				'error',
+				12000
+			);
+			return;
+		}
+		_slcmWfExecuteProgramSwitch(applicantName, eligibleProgs[0]);
+		return;
+	}
+
+	var optionsHtml = eligibleProgs
+		.map(function (p) {
+			var pv = _slcmEscapeAttr(p);
+			var pt = _slcmEscapeHtml(p);
+			var ref = alreadyApplied[p] ? String(alreadyApplied[p]) : '';
+			if (alreadyApplied[p]) {
+				return (
+					'<div class="slcm-wf-switch-opt slcm-wf-switch-opt--applied" data-value="' +
+					pv +
+					'" data-applied="1">' +
+					'<div class="slcm-wf-switch-radio" style="width:18px;height:18px;border:2px solid #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f1f5f9;">' +
+					'<div style="width:8px;height:8px;background:#94a3b8;border-radius:50%;display:none !important;"></div></div>' +
+					'<span style="font-weight:600;color:#64748b;">' +
+					pt +
+					'</span>' +
+					'<span class="slcm-wf-switch-applied-badge">' +
+					__('Applied') +
+					'</span>' +
+					(ref
+						? '<span style="font-size:11px;color:#94a3b8;margin-left:6px;">(' +
+						  _slcmEscapeHtml(ref) +
+						  ')</span>'
+						: '') +
+					'</div>'
+				);
+			}
+			return (
+				'<div class="slcm-wf-switch-opt" data-value="' +
+				pv +
+				'">' +
+				'<div class="slcm-wf-switch-radio" style="width:18px;height:18px;border:2px solid #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+				'<div style="width:8px;height:8px;background:#1a3c6e;border-radius:50%;display:none;"></div></div>' +
+				'<span style="font-weight:600;color:#334155;">' +
+				pt +
+				'</span></div>'
+			);
+		})
+		.join('');
+
+	var overlay = document.createElement('div');
+	overlay.id = 'slcm-wf-switch-program-overlay';
+	overlay.className = 'slcm-portal-switch-shell';
+	overlay.style.cssText =
+		'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;';
+	overlay.innerHTML =
+		'<div class="slcm-portal-switch-card">' +
+		'<div style="width:56px;height:56px;background:#f0fdf4;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:#15803d;">' +
+		'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg></div>' +
+		'<h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:800;color:#1a3c6e;letter-spacing:-0.02em;">' +
+		__('Switch Programme') +
+		'</h3>' +
+		'<p style="margin:0 0 24px;font-size:0.95rem;color:#64748b;line-height:1.6;">' +
+		__(
+			'Please select your new eligible programme. Your current data will be automatically successfully synced.'
+		) +
+		'</p>' +
+		'<div id="slcm-wf-switch-opts-container" style="margin-bottom:28px;max-height:280px;overflow-y:auto;padding-right:4px;">' +
+		optionsHtml +
+		'</div>' +
+		'<div class="slcm-portal-switch-actions" style="display:grid;grid-template-columns:1fr 1.5fr;gap:12px;">' +
+		'<button type="button" class="slcm-wf-switch-cancel-btn">' +
+		__('Cancel') +
+		'</button>' +
+		'<button type="button" id="slcm-wf-confirm-switch-btn">' +
+		__('Update Programme') +
+		'</button></div></div>';
+	document.body.appendChild(overlay);
+	_injectCSS();
+
+	function selectOpt(el) {
+		if (!el || el.classList.contains('slcm-wf-switch-opt--applied')) {
+			return;
+		}
+		var all = overlay.querySelectorAll('.slcm-wf-switch-opt');
+		for (var i = 0; i < all.length; i++) {
+			all[i].classList.remove('selected');
+		}
+		el.classList.add('selected');
+	}
+
+	var opts = overlay.querySelectorAll('.slcm-wf-switch-opt');
+	for (var j = 0; j < opts.length; j++) {
+		opts[j].addEventListener('click', function () {
+			selectOpt(this);
+		});
+	}
+	var firstOpt = overlay.querySelector('.slcm-wf-switch-opt:not(.slcm-wf-switch-opt--applied)');
+	if (firstOpt) {
+		selectOpt(firstOpt);
+	}
+	overlay.querySelector('.slcm-wf-switch-cancel-btn').addEventListener('click', function () {
+		overlay.remove();
+	});
+	var cbtn = document.getElementById('slcm-wf-confirm-switch-btn');
+	cbtn.addEventListener('click', function () {
+		var selectedOpt = overlay.querySelector('.slcm-wf-switch-opt.selected');
+		var newProg = selectedOpt ? selectedOpt.getAttribute('data-value') : null;
+		if (!newProg || (selectedOpt && selectedOpt.getAttribute('data-applied') === '1')) {
+			showToast(__('Please select a programme you have not already applied for.'), 'error', 7000);
+			return;
+		}
+		cbtn.disabled = true;
+		cbtn.innerHTML =
+			'<span style="display:inline-block;animation:slcm-spin 1s linear infinite">\u23f3</span> ' +
+			__('Processing\u2026');
+		_slcmWfExecuteProgramSwitch(applicantName, newProg, { confirmBtn: cbtn });
+	});
+}
+
 /**
  * Rich "Eligibility Evaluation Results" dialog (data from check_eligibility API).
  * Includes suggested programmes with Switch — avoids duplicating Frappe server throw UI.
@@ -1310,96 +1883,127 @@ function showEligibilityEvaluationModal(applicantName, res) {
 	var ec = sug.eligible_count != null ? sug.eligible_count : programs.length;
 	var tc = sug.total_count != null ? sug.total_count : programs.length;
 
-	var rows = programs
-		.map(function (p) {
-			var name = p.program_name || p.program || '';
-			var pid = p.program || '';
-			var sel = !!p.selected;
-			var progCell =
-				'<strong>' +
-				_slcmEscapeHtml(name) +
-				'</strong>' +
-				(sel
-					? ' <span class="slcm-ee-badge">Current</span>'
-					: '');
-			var statusCell =
-				'<span class="slcm-ee-status"><span class="slcm-ee-dot"></span> Eligible</span>';
-			var actionCell = sel
-				? '<span style="color:#94a3b8;font-size:12px;">\u2014</span>'
-				: '<button type="button" class="slcm-ee-switch" data-program="' +
-					_slcmEscapeHtml(pid) +
-					'">Switch</button>';
-			return (
-				'<tr>' +
-				'<td>' +
-				progCell +
-				'</td>' +
-				'<td style="text-align:center;">' +
-				statusCell +
-				'</td>' +
-				'<td style="text-align:center;" class="slcm-ee-td-switch">' +
-				actionCell +
-				'</td>' +
-				'</tr>'
-			);
-		})
-		.join('');
+	function _slcmEeFinishProgramsTable(alreadyApplied) {
+		alreadyApplied = alreadyApplied || {};
+		var rows = programs
+			.map(function (p) {
+				var name = p.program_name || p.program || '';
+				var pid = p.program || '';
+				var sel = !!p.selected;
+				var progCell =
+					'<strong>' +
+					_slcmEscapeHtml(name) +
+					'</strong>' +
+					(sel
+						? ' <span class="slcm-ee-badge">Current</span>'
+						: '');
+				var statusCell =
+					'<span class="slcm-ee-status"><span class="slcm-ee-dot"></span> Eligible</span>';
+				var actionCell;
+				if (sel) {
+					actionCell = '<span style="color:#94a3b8;font-size:12px;">\u2014</span>';
+				} else if (alreadyApplied[pid]) {
+					actionCell =
+						'<span style="display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#e2e8f0;color:#475569;">' +
+						__('Applied') +
+						'</span>' +
+						'<div style="font-size:11px;color:#94a3b8;margin-top:6px;">' +
+						_slcmEscapeHtml(String(alreadyApplied[pid])) +
+						'</div>';
+				} else {
+					actionCell =
+						'<button type="button" class="slcm-ee-switch" data-program="' +
+						_slcmEscapeAttr(pid) +
+						'">Switch</button>';
+				}
+				return (
+					'<tr>' +
+					'<td>' +
+					progCell +
+					'</td>' +
+					'<td style="text-align:center;">' +
+					statusCell +
+					'</td>' +
+					'<td style="text-align:center;" class="slcm-ee-td-switch">' +
+					actionCell +
+					'</td>' +
+					'</tr>'
+				);
+			})
+			.join('');
 
-	wrap.innerHTML =
-		'<div class="slcm-ee-subhead">' +
-		'<strong>Suggested eligible programmes</strong>' +
-		(metaStr ? '<span class="slcm-ee-meta">\u2014 ' + _slcmEscapeHtml(metaStr) + '</span>' : '') +
-		'</div>' +
-		'<div class="slcm-ee-summary">' +
-		'<span class="slcm-ee-dot"></span>' +
-		'<span><strong>' +
-		ec +
-		'</strong> eligible programme' +
-		(ec === 1 ? '' : 's') +
-		' found</span>' +
-		'<span style="color:#94a3b8;">(' +
-		tc +
-		' total at this level)</span>' +
-		'</div>' +
-		'<div style="overflow-x:auto;">' +
-		'<table id="slcm-ee-table">' +
-		'<thead><tr>' +
-		'<th>Programme</th>' +
-		'<th style="text-align:center;">Status</th>' +
-		'<th class="slcm-ee-th-actions">Action</th>' +
-		'</tr></thead>' +
-		'<tbody>' +
-		rows +
-		'</tbody></table></div>';
+		wrap.innerHTML =
+			'<div class="slcm-ee-subhead">' +
+			'<strong>Suggested eligible programmes</strong>' +
+			(metaStr ? '<span class="slcm-ee-meta">\u2014 ' + _slcmEscapeHtml(metaStr) + '</span>' : '') +
+			'</div>' +
+			'<div class="slcm-ee-summary">' +
+			'<span class="slcm-ee-dot"></span>' +
+			'<span><strong>' +
+			ec +
+			'</strong> eligible programme' +
+			(ec === 1 ? '' : 's') +
+			' found</span>' +
+			'<span style="color:#94a3b8;">(' +
+			tc +
+			' total at this level)</span>' +
+			'</div>' +
+			'<div style="overflow-x:auto;">' +
+			'<table id="slcm-ee-table">' +
+			'<thead><tr>' +
+			'<th>Programme</th>' +
+			'<th style="text-align:center;">Status</th>' +
+			'<th class="slcm-ee-th-actions">Action</th>' +
+			'</tr></thead>' +
+			'<tbody>' +
+			rows +
+			'</tbody></table></div>';
 
-	wrap.querySelectorAll('.slcm-ee-switch').forEach(function (btn) {
-		btn.onclick = function () {
-			var prog = btn.getAttribute('data-program');
-			if (!prog || !applicantName) return;
-			btn.disabled = true;
-			frappe.call({
-				method: 'slcm.admission.web_form.applicant_form.applicant_form.switch_applicant_program',
-				args: { applicant_name: applicantName, program: prog },
-				callback: function (r) {
-					var m = r && r.message;
-					if (m && m.status === 'success') {
-						if (modal._slcmClose) modal._slcmClose();
-						showToast(m.message || 'Programme updated.', 'success');
-						window.location.reload();
-					} else {
+		wrap.querySelectorAll('.slcm-ee-switch').forEach(function (btn) {
+			btn.onclick = function () {
+				var prog = btn.getAttribute('data-program');
+				if (!prog || !applicantName) return;
+				btn.disabled = true;
+				frappe.call({
+					method: 'slcm.admission.web_form.applicant_form.applicant_form.switch_applicant_program',
+					args: { applicant_name: applicantName, program: prog },
+					callback: function (r) {
+						var m = r && r.message;
+						if (m && m.status === 'success') {
+							if (modal._slcmClose) modal._slcmClose();
+							showToast(m.message || 'Programme updated.', 'success');
+							window.location.reload();
+						} else {
+							btn.disabled = false;
+							var errTb = (m && m.message) || 'Could not switch programme.';
+							showToast(errTb, 'error', errTb.length > 120 ? 10000 : 4000);
+						}
+					},
+					error: function () {
 						btn.disabled = false;
-						showToast((m && m.message) || 'Could not switch programme.', 'error');
-					}
-				},
-				error: function () {
-					btn.disabled = false;
-					showToast('Could not switch programme.', 'error');
-				},
-			});
-		};
-	});
+						showToast('Could not switch programme.', 'error');
+					},
+				});
+			};
+		});
 
-	modal.classList.add('open');
+		modal.classList.add('open');
+	}
+
+	if (!applicantName) {
+		_slcmEeFinishProgramsTable({});
+		return;
+	}
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.get_applicant_programs_already_applied',
+		args: { applicant_name: applicantName },
+		callback: function (r) {
+			_slcmEeFinishProgramsTable((r.message && r.message.already_applied) || {});
+		},
+		error: function () {
+			_slcmEeFinishProgramsTable({});
+		},
+	});
 }
 
 function _feePayBtnSetLoading(payBtn, loading, label) {
@@ -1582,12 +2186,12 @@ function _doFinalSubmit(applicantName) {
 
 				_showSuccessModal(title, message, nextUrl);
 			} else {
-				_showToast('\u26a0  ' + ((msg && msg.message) || 'Submission failed.'), 'error');
+				showToast('\u26a0  ' + ((msg && msg.message) || 'Submission failed.'), 'error');
 			}
 		},
 		error: function () {
 			_hideSubmitOverlay();
-			_showToast('\u26a0  Network error during submission.', 'error');
+			showToast('\u26a0  Network error during submission.', 'error');
 		},
 	});
 }
@@ -1710,7 +2314,7 @@ function runSubmitFlow() {
 					var res = r && r.message;
 					if (!res || res.status === 'Ineligible') {
 						_hideSubmitOverlay();
-						showEligibilityEvaluationModal(applicantName, res || {});
+						showSlcmApplicantEligibilityModal(applicantName, res || {});
 						return;
 					}
 					if (res.status === 'Error') {
@@ -2052,6 +2656,9 @@ function wrapSlcmApplicantFileUploaderConstructor() {
 
 	function SlcmFileUploader(opts) {
 		opts = opts || {};
+		// Force public uploads for the applicant form
+		opts.is_private = 0;
+
 		if (frappe.web_form && window._slcmLastAttachCtx) {
 			var ctx = window._slcmLastAttachCtx;
 			if (Date.now() - (ctx.ts || 0) < 120000) {
@@ -2213,6 +2820,189 @@ function setupNumericFieldRestriction() {
 			input.value = val.replace(regex, '');
 		}
 	});
+}
+
+/** Applicant web form — digit length & numeric bounds (portal). */
+var SLCM_APPLICANT_PINCODE_FIELD = 'pincode';
+var SLCM_APPLICANT_YEAR_4_FIELDS = {
+	class_x_year_of_completion: 1,
+	class_xii_year_of_completion: 1,
+	year_of_completion: 1,
+};
+var SLCM_APPLICANT_MAX10_P2_FIELDS = {
+	class_x_cgpa: 1,
+	class_xii_cgpa: 1,
+	ug_cgpa: 1,
+	pg_cgpa: 1,
+};
+
+/** Percentage fields (0–100, 2 decimal places) — not CGPA-on-10 scale. */
+var SLCM_APPLICANT_MAX100_P2_FIELDS = {
+	class_x_percentage: 1,
+	hsc_percentage: 1,
+	/** National test “Score or percentage” — percentage or normalized score up to 100. */
+	percentage: 1,
+};
+
+function _slcmApplicantFormatRuleField(fieldname) {
+	if (!fieldname) return false;
+	if (fieldname === SLCM_APPLICANT_PINCODE_FIELD) return true;
+	return !!(
+		SLCM_APPLICANT_YEAR_4_FIELDS[fieldname] ||
+		SLCM_APPLICANT_MAX10_P2_FIELDS[fieldname] ||
+		SLCM_APPLICANT_MAX100_P2_FIELDS[fieldname]
+	);
+}
+
+function _slcmApplicantControlFieldname(el) {
+	if (!el || !el.closest) return null;
+	var c = el.closest('.frappe-control[data-fieldname]');
+	return c ? c.getAttribute('data-fieldname') : null;
+}
+
+function _slcmClampDecimalInputEl(input, maxVal, precision) {
+	var s = (input.value || '').trim();
+	if (s === '' || s === '.') return;
+	var n = parseFloat(s);
+	if (Number.isNaN(n)) return;
+	n = Math.max(0, Math.min(maxVal, n));
+	var p = Math.pow(10, precision);
+	n = Math.round(n * p) / p;
+	input.value = String(n);
+}
+
+/**
+ * Server-style format check. @param rawVal string or number from control / get_value.
+ * @returns {string|null} user-facing error line or null if OK / not applicable / empty.
+ */
+function _slcmApplicantFormatError(fieldname, rawVal, label) {
+	var lbl = (label || fieldname || '').trim() || fieldname;
+	if (rawVal === undefined || rawVal === null) return null;
+	var s0 = typeof rawVal === 'string' ? rawVal.trim() : String(rawVal);
+	if (s0 === '') return null;
+
+	if (fieldname === SLCM_APPLICANT_PINCODE_FIELD) {
+		var digits = s0.replace(/\D/g, '');
+		if (digits.length !== 6) {
+			return lbl + ': ' + __('Pincode must be exactly 6 digits');
+		}
+		return null;
+	}
+
+	if (SLCM_APPLICANT_YEAR_4_FIELDS[fieldname]) {
+		if (!/^\d{4}$/.test(s0)) {
+			return lbl + ': ' + __('Year must be exactly 4 digits');
+		}
+		var y = parseInt(s0, 10);
+		if (y < 1900 || y > 2100) {
+			return lbl + ': ' + __('Year must be between 1900 and 2100');
+		}
+		return null;
+	}
+
+	if (SLCM_APPLICANT_MAX100_P2_FIELDS[fieldname]) {
+		var n100 = typeof rawVal === 'number' ? rawVal : parseFloat(s0);
+		if (Number.isNaN(n100)) {
+			return lbl + ': ' + __('Enter a valid number');
+		}
+		if (n100 < 0) {
+			return lbl + ': ' + __('Cannot be negative');
+		}
+		if (n100 > 100) {
+			return lbl + ': ' + __('Cannot be greater than 100');
+		}
+		var rounded100 = Math.round(n100 * 100) / 100;
+		if (Math.abs(n100 - rounded100) > 1e-6) {
+			return lbl + ': ' + __('Use at most 2 decimal places');
+		}
+		return null;
+	}
+
+	if (SLCM_APPLICANT_MAX10_P2_FIELDS[fieldname]) {
+		var n = typeof rawVal === 'number' ? rawVal : parseFloat(s0);
+		if (Number.isNaN(n)) {
+			return lbl + ': ' + __('Enter a valid number');
+		}
+		if (n < 0) {
+			return lbl + ': ' + __('Cannot be negative');
+		}
+		if (n > 10) {
+			return lbl + ': ' + __('Cannot be greater than 10');
+		}
+		var rounded = Math.round(n * 100) / 100;
+		if (Math.abs(n - rounded) > 1e-6) {
+			return lbl + ': ' + __('Use at most 2 decimal places');
+		}
+		return null;
+	}
+
+	return null;
+}
+
+/** Walk visible controls (includes child-table rows; multiple same fieldname allowed). */
+function _slcmValidateApplicantFormatsOnPage(wf, $page, missing) {
+	var errSel = '.form-control, .input-with-feedback, .control-value';
+	$page.find('.frappe-control[data-fieldname]').each(function () {
+		var $w = $(this);
+		if ($w.is(':hidden')) return;
+		var fn = $w.attr('data-fieldname');
+		if (!_slcmApplicantFormatRuleField(fn)) return;
+
+		var $in = $w.find('input:visible, textarea:visible').first();
+		var raw = $in.length ? $in.val() : '';
+		if (raw === undefined || raw === null) raw = '';
+		if (String(raw).trim() === '') return;
+
+		var dfLbl = '';
+		try {
+			var fd = wf.fields_dict && wf.fields_dict[fn];
+			dfLbl = fd && fd.df && fd.df.label ? fd.df.label : '';
+		} catch (e1) { /* child row may omit parent fields_dict */ }
+
+		var err = _slcmApplicantFormatError(fn, raw, dfLbl || fn);
+		if (err) {
+			$w.find(errSel).addClass('slcm-field-error');
+			missing.push(err);
+		}
+	});
+}
+
+function setupApplicantFieldBoundaries() {
+	document.body.addEventListener(
+		'input',
+		function (e) {
+			var t = e.target;
+			if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA')) return;
+			var fn = _slcmApplicantControlFieldname(t);
+			if (!fn) return;
+
+			if (fn === SLCM_APPLICANT_PINCODE_FIELD) {
+				var pd = String(t.value || '').replace(/\D/g, '').slice(0, 6);
+				if (t.value !== pd) t.value = pd;
+				return;
+			}
+			if (SLCM_APPLICANT_YEAR_4_FIELDS[fn]) {
+				var yd = String(t.value || '').replace(/\D/g, '').slice(0, 4);
+				if (t.value !== yd) t.value = yd;
+			}
+		},
+		true
+	);
+
+	document.body.addEventListener(
+		'blur',
+		function (e) {
+			var t = e.target;
+			if (!t || t.tagName !== 'INPUT') return;
+			var fn = _slcmApplicantControlFieldname(t);
+			if (fn && SLCM_APPLICANT_MAX100_P2_FIELDS[fn]) {
+				_slcmClampDecimalInputEl(t, 100, 2);
+			} else if (fn && SLCM_APPLICANT_MAX10_P2_FIELDS[fn]) {
+				_slcmClampDecimalInputEl(t, 10, 2);
+			}
+		},
+		true
+	);
 }
 
 function setupPhoneValidation() {
@@ -2816,6 +3606,7 @@ frappe.ready(function () {
 
 	// Save Draft button (re-polls on every step change)
 	setupSaveDraftButton();
+	setupHideRedundantWebFormEdit();
 
 	setupApplicationFeeReceiptDownload();
 	if (window.frappe && frappe.web_form && frappe.web_form.events && frappe.web_form.events.on) {
@@ -2830,6 +3621,7 @@ frappe.ready(function () {
 	setupCandidatePhotoPreview();
 	setupAttachFieldValidation();
 	setupNumericFieldRestriction();
+	setupApplicantFieldBoundaries();
 	setupPhoneValidation();
 	setupWebFormDateInputSanitize();
 	
@@ -2930,8 +3722,20 @@ function _renderStepper(wf) {
 		}
 	});
 
-	// ── 2. Build stepper HTML ──────────────────────────────────────────────
-	let html = '<div id="slcm-stepper-wrap"><div class="slcm-stepper">';
+	// ── 2. Build stepper HTML (grid: pill | growing line | pill | …) ───────
+	var gridCols = [];
+	for (var gi = 0; gi < steps.length; gi++) {
+		gridCols.push('max-content');
+		if (gi < steps.length - 1) {
+			gridCols.push('minmax(12px,1fr)');
+		}
+	}
+	var gridInline =
+		'display:grid;width:100%;max-width:100%;box-sizing:border-box;' +
+		'grid-template-columns:' +
+		gridCols.join(' ') +
+			';align-items:center;column-gap:0;row-gap:10px;';
+	let html = '<div id="slcm-stepper-wrap"><div class="slcm-stepper" style="' + gridInline + '">';
 	steps.forEach(function (step, i) {
 		var lbl = step.label || '';
 		var safeTitle = lbl.replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -2948,6 +3752,9 @@ function _renderStepper(wf) {
 			_esc(lbl) +
 			'</div>' +
 			'</div>';
+		if (i < steps.length - 1) {
+			html += '<div class="slcm-step-connector" aria-hidden="true"></div>';
+		}
 	});
 	html += '</div></div>';
 
@@ -3352,6 +4159,8 @@ function _validateStage(wf, $page) {
 			fw.$wrapper && fw.$wrapper.find(errSel).removeClass('slcm-field-error');
 		}
 	});
+
+	_slcmValidateApplicantFormatsOnPage(wf, $page, missing);
 
 	return { ok: missing.length === 0, missing };
 }

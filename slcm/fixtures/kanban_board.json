@@ -1,0 +1,53 @@
+[
+ {
+  "columns": [
+   {
+    "column_name": "Submitted",
+    "docstatus": 0,
+    "doctype": "Kanban Board Column",
+    "idx": 1,
+    "indicator": "Cyan",
+    "order": "[]",
+    "status": "Active"
+   },
+   {
+    "column_name": "Approved",
+    "docstatus": 0,
+    "doctype": "Kanban Board Column",
+    "idx": 2,
+    "indicator": "Green",
+    "order": "[]",
+    "status": "Active"
+   },
+   {
+    "column_name": "Rejected",
+    "docstatus": 0,
+    "doctype": "Kanban Board Column",
+    "idx": 3,
+    "indicator": "Orange",
+    "order": "[]",
+    "status": "Active"
+   },
+   {
+    "column_name": "Revoked",
+    "docstatus": 0,
+    "doctype": "Kanban Board Column",
+    "idx": 4,
+    "indicator": "Yellow",
+    "order": "[]",
+    "status": "Active"
+   }
+  ],
+  "docstatus": 0,
+  "doctype": "Kanban Board",
+  "field_name": "status",
+  "fields": "[\"applicant_id\",\"scholarship_scheme\"]",
+  "filters": "[]",
+  "idx": 0,
+  "kanban_board_name": "Scholarship View",
+  "name": "Scholarship View",
+  "private": 0,
+  "reference_doctype": "Scholarship Application",
+  "show_labels": 0
+ }
+]

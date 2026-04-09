@@ -219,7 +219,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
     all_records = frappe.get_all("Entrance Test Seat Allocation",
         filters=all_filters,
         fields=["name", "applicant", "candidate_name", "email", "entrance_test_status", 
-                "score_obtained", "total_score", "entrance_test_rank", "entrance_test_list"]
+                "score_obtained","entrance_test_rank", "entrance_test_list"]
     )
 
     count = 0
@@ -239,7 +239,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
         email = doc.email or ""
         if not email and doc.applicant:
             try:
-                app_email = frappe.db.get_value("Applicant", doc.applicant, "email_id")
+                app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
                 if app_email:
                     email = app_email
             except Exception:
@@ -248,9 +248,10 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
         if email:
             try:
                 _send_result_notification_email(doc, email)
+                _send_result_notification(doc, email)
                 count += 1
             except Exception:
-                frappe.log_error(title=f"Result Email Failed: {doc.name}")
+                frappe.log_error(title=f"Result Email/Notification Failed: {doc.name}")
 
         if i % 10 == 0:
             frappe.db.commit()
@@ -362,7 +363,7 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
         if not email and doc.applicant:
             # Try fetching from Applicant doctype
             try:
-                app_email = frappe.db.get_value("Applicant", doc.applicant, "email_id")
+                app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
                 if app_email:
                     email = app_email
             except Exception:
@@ -372,10 +373,11 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
         if email:
             try:
                 _send_reschedule_email(doc, email)
+                _send_reschedule_notification(doc, email)
             except Exception:
                 frappe.log_error(
                     message=traceback.format_exc(),
-                    title=f"Reschedule Email Failed: {doc.name}"
+                    title=f"Reschedule Email/Notification Failed: {doc.name}"
                 )
         else:
             frappe.log_error(
@@ -428,3 +430,60 @@ def _send_reschedule_email(doc, email):
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Reschedule Email Failed: {doc.name}")
+
+
+def _send_result_notification(doc, email):
+    """Creates a Notification Log entry for the entrance test result."""
+    if not email:
+        return
+    
+    if frappe.db.exists("User", email):
+        try:
+            message_body = f"""
+                <p>Your entrance test result for <strong>"{doc.entrance_test_list}"</strong> has been published.</p>
+                <p>Your score: <strong>{doc.score_obtained}</strong></p>
+                <p>Your rank: <strong>{doc.entrance_test_rank or "—"}</strong></p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Entrance Test Result Published",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Entrance Test Seat Allocation",
+                "document_name": doc.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Result Notification Failed: {doc.name}")
+
+
+def _send_reschedule_notification(doc, email):
+    """Creates a Notification Log entry for the rescheduled entrance test."""
+    if not email:
+        return
+    
+    if frappe.db.exists("User", email):
+        try:
+            message_body = f"""
+                <p>Your entrance test for <strong>"{doc.entrance_test_list}"</strong> has been rescheduled.</p>
+                <p>Please check your admission dashboard to view the new details and select your preferred center.</p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Entrance Test Rescheduled",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Entrance Test Seat Allocation",
+                "document_name": doc.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Reschedule Notification Failed: {doc.name}")

@@ -12,11 +12,14 @@
   "academic_year",
   "approval_reference",
   "allow_multiple_applications",
+  "application_form_type",
   "col_break_basic",
   "status",
   "max_schemes_per_applicant",
   "cycle_start_date",
   "cycle_end_date",
+  "application_start_date",
+  "application_end_date",
   "section_break_ligo",
   "submitted",
   "after_submitted",
@@ -37,6 +40,7 @@
   "after_enroll",
   "section_break_jwca",
   "email_template",
+  "process_completed_message",
   "column_break_njek",
   "application_form_template",
   "section_break_programs",
@@ -117,10 +121,12 @@
    "label": "Programmes Offered in this Cycle"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "programs",
    "fieldtype": "Table",
    "label": "Programmes",
-   "options": "Admission Cycle Program"
+   "options": "Admission Cycle Program",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_stages",
@@ -167,14 +173,14 @@
   {
    "fieldname": "cycle_start_date",
    "fieldtype": "Date",
-   "label": "Cycle Start date",
+   "label": "Cycle Start Date",
    "reqd": 1
   },
   {
    "allow_on_submit": 1,
    "fieldname": "cycle_end_date",
    "fieldtype": "Date",
-   "label": "Cycle end date",
+   "label": "Cycle End Date",
    "reqd": 1
   },
   {
@@ -348,16 +354,46 @@
    "search_index": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "description": "If enable an applicant can apply multiple application for programmes in this cycle",
    "fieldname": "allow_multiple_applications",
    "fieldtype": "Check",
    "label": "Allow Multiple Applications"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "application_start_date",
+   "fieldtype": "Date",
+   "label": "Application Start Date",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "application_end_date",
+   "fieldtype": "Date",
+   "label": "Application End Date",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Web From",
+   "description": "If web from we can able to customise the fields dynamically",
+   "fieldname": "application_form_type",
+   "fieldtype": "Select",
+   "label": "Application Form Type",
+   "options": "Web From\nCustom From"
+  },
+  {
+   "description": "Ex: \"Congratulations! Your application has been successfully processed.\"",
+   "fieldname": "process_completed_message",
+   "fieldtype": "Data",
+   "label": "Process Completed Message"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-30 12:26:22.409055",
+ "modified": "2026-04-08 12:03:54.664010",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

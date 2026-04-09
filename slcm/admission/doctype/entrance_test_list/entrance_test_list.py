@@ -155,7 +155,7 @@ class EntranceTestList(Document):
             email = allocation.email or ""
             if not email and allocation.applicant:
                 try:
-                    app_email = frappe.db.get_value("Applicant", allocation.applicant, "email_id")
+                    app_email = frappe.db.get_value("Applicant", allocation.applicant, "email")
                     if app_email:
                         email = app_email
                 except Exception:
@@ -164,10 +164,11 @@ class EntranceTestList(Document):
             if email:
                 try:
                     _send_allocation_email(allocation, email)
+                    _send_allocation_notification(allocation, email)
                 except Exception:
                     frappe.log_error(
                         message=traceback.format_exc(),
-                        title=f"Allocation Email Failed: {allocation.name}"
+                        title=f"Allocation Email/Notification Failed: {allocation.name}"
                     )
 
             app.allocation_status = "Allocated"
@@ -455,3 +456,34 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     frappe.db.commit()
     
     return _file.file_url
+
+
+def _send_allocation_notification(allocation, email):
+    """Creates a Notification Log entry for the applicant."""
+    if not email:
+        return
+    
+    # The applicant's email is used as their User ID in the portal
+    if frappe.db.exists("User", email):
+        try:
+            # Custom Title and Message similar to Merit List
+            message_body = f"""
+                <p>An entrance test seat has been allocated for you in <strong>"{allocation.entrance_test_list}"</strong>.</p>
+                <p>Please check your admission dashboard to view the details and select your preferred center.</p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Entrance Test Seat Allocated",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Entrance Test Seat Allocation",
+                "document_name": allocation.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            # Silently fail for individual notification logs if one user has issues, but log it
+            frappe.log_error(message=frappe.get_traceback(), title=f"Allocation Notification Failed: {allocation.name}")

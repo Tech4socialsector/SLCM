@@ -1,4 +1,14 @@
 frappe.ui.form.on('Eligibility Rule Mapping', {
+    onload: function (frm) {
+        frm.set_query("admission_cycle", function () {
+            return {
+                filters: {
+                    "status": "Active"
+                }
+            };
+        });
+    },
+
     priority: function (frm) {
         if (frm.doc.priority && frm.doc.priority > 100) {
             frappe.show_alert({

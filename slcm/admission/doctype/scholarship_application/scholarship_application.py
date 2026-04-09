@@ -617,14 +617,12 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			"family_income": flt(family_income),
 			"income_certificate": income_cert_url,
 			"supporting_documents": supporting_docs_url,
-			"status": "Submitted"
+			"status": "Submitted",
+			"workflow_state": "Submitted"
 		})
 		
 		# Insert with ignore permissions to allow creation from portal
 		app.insert(ignore_permissions=True)
-		
-		# Set status to Submitted for portal submissions
-		app.db_set("status", "Submitted")
 		
 		# Update file references
 		if income_cert_url:
