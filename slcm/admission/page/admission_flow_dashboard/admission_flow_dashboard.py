@@ -20,8 +20,8 @@ def get_dashboard_data(filters=None):
         query_filters.append(f"campus = {frappe.db.escape(filters.get('campus'))}")
     if filters.get("program"):
         query_filters.append(f"program = {frappe.db.escape(filters.get('program'))}")
-    if filters.get("reservation_category"):
-        query_filters.append(f"reservation_category = {frappe.db.escape(filters.get('reservation_category'))}")
+    if filters.get("whether_scstobc_ncl"):
+        query_filters.append(f"whether_scstobc_ncl = {frappe.db.escape(filters.get('whether_scstobc_ncl'))}")
     
     if filters.get("date_range"):
         date_range = filters.get("date_range")
@@ -51,7 +51,7 @@ def get_dashboard_data(filters=None):
     trend = get_application_trend(where_clause)
     
     # 6. Category wise
-    category_dist = get_distribution(where_clause, "reservation_category")
+    category_dist = get_distribution(where_clause, "whether_scstobc_ncl")
 
     # 7. Gender Distribution
     gender_dist = get_distribution(where_clause, "gender")
@@ -193,7 +193,7 @@ def get_fee_payment_status(where_clause):
                               .replace('admission_cycle', 'app.admission_cycle')\
                               .replace('campus', 'app.campus')\
                               .replace('program', 'app.program')\
-                              .replace('reservation_category', 'app.reservation_category')\
+                              .replace('whether_scstobc_ncl', 'app.whether_scstobc_ncl')\
                               .replace('gender', 'app.gender')\
                               .replace('state', 'app.state')\
                               .replace('creation', 'app.creation')\

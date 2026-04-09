@@ -1114,23 +1114,7 @@
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
- "links": [
-  {
-   "group": "Admission",
-   "link_doctype": "Applicant Communication Log",
-   "link_fieldname": "applicant"
-  },
-  {
-   "group": "Admission",
-   "link_doctype": "Eligibility Result",
-   "link_fieldname": "applicant_id"
-  },
-  {
-   "group": "Admission",
-   "link_doctype": "Offer Letter",
-   "link_fieldname": "applicant"
-  }
- ],
+ "links": [],
  "make_attachments_public": 1,
  "modified": "2026-04-09 11:19:16.751074",
  "modified_by": "Administrator",

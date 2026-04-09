@@ -25,7 +25,7 @@ def get_my_results():
         "Applicant",
         {"email": user},
         ["name", "candidate_name", "email", "admission_cycle",
-         "campus", "program", "application_status", "reservation_category",
+         "campus", "program", "application_status", "whether_scstobc_ncl",
          "annual_house_hold_income"],
         as_dict=True
     )
