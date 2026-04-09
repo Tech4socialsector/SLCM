@@ -284,7 +284,7 @@ def get_context(context):
             _ap = frappe.get_all(
                 'Applicant',
                 filters={'email': _user},
-                fields=['name', 'application_status', 'candidate_photo', 'reservation_category', 'pwd', 'program_level', 'ka_study_7yrs'],
+                fields=['name', 'application_status', 'candidate_photo', 'whether_scstobc_ncl', 'pwd', 'program_level', 'ka_study_7yrs'],
                 limit=1,
                 order_by='creation desc'
             )
@@ -292,7 +292,7 @@ def get_context(context):
                 _ap = frappe.get_all(
                     'Applicant',
                     filters={'owner': _user},
-                    fields=['name', 'application_status', 'candidate_photo', 'reservation_category', 'pwd', 'program_level', 'ka_study_7yrs'],
+                    fields=['name', 'application_status', 'candidate_photo', 'whether_scstobc_ncl', 'pwd', 'program_level', 'ka_study_7yrs'],
                     limit=1,
                     order_by='creation desc'
                 )
@@ -332,7 +332,7 @@ def get_context(context):
                 {"label": "Photo", "field": "candidate_photo", "required": True},
             ]
 
-            if target_applicant.reservation_category and target_applicant.reservation_category != "NA":
+            if target_applicant.whether_scstobc_ncl and target_applicant.whether_scstobc_ncl != "NA":
                 standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
                 
             if target_applicant.pwd == "Yes":

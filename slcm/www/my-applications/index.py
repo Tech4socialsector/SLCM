@@ -152,7 +152,7 @@ def get_context(context):
             fields=["name","candidate_name","date_of_birth","gender","nationality",
                     "religion","mobile_number","alternate_contact","id_proof",
                     "correspondence_address","city","state","pincode",
-                    "application_status", "intake_type", "reservation_category",
+                    "application_status", "intake_type", "whether_scstobc_ncl",
                     "pwd", "program_level"],
             limit=1, order_by="creation desc")
         if not _prof_apps:
@@ -161,7 +161,7 @@ def get_context(context):
                 fields=["name","candidate_name","date_of_birth","gender","nationality",
                         "religion","mobile_number","alternate_contact","id_proof",
                         "correspondence_address","city","state","pincode",
-                        "application_status", "intake_type", "reservation_category",
+                        "application_status", "intake_type", "whether_scstobc_ncl",
                         "pwd", "program_level"],
                 limit=1, order_by="creation desc")
         if _prof_apps:
@@ -235,7 +235,7 @@ def get_context(context):
             ]
 
             # Optional / Conditional fields
-            if target_applicant.reservation_category and target_applicant.reservation_category != "NA":
+            if target_applicant.whether_scstobc_ncl and target_applicant.whether_scstobc_ncl != "NA":
                 standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
                 
             if target_applicant.pwd == "Yes":
@@ -920,19 +920,17 @@ def get_context(context):
         "Fee Paid":         {"color": "#065f46", "bg": "#d1fae5"},
     }
 
-    data_list = get_applicant_data()
-    if isinstance(data_list, dict) and "error" in data_list:
-        context.error = data_list["error"]
-        context.applications = []
-        # Still fetch offer letters so they show even when API returns error
-        _set_offer_letter_entries(context)
-        return context
+    _user = frappe.session.user
+    apps_by_owner = frappe.get_all("Applicant", filters={"owner": _user}, pluck="name", ignore_permissions=True)
+    apps_by_email = frappe.get_all("Applicant", filters={"email": _user}, pluck="name", ignore_permissions=True)
+    all_app_names = list(set(apps_by_owner + apps_by_email))
 
     applications = []
-    for entry in data_list:
-        prof = entry.get("profile", {})
-        app_id = prof.get("applicant_id")
-        if not app_id: continue
+    
+    # Still fetch offer letters
+    _set_offer_letter_entries(context)
+
+    for app_id in all_app_names:
         app_doc = frappe.get_doc("Applicant", app_id)
         
         status = app_doc.application_status or "Draft"

@@ -120,7 +120,7 @@ class AdmissionDashboard {
         this.add_filter('admission_cycle', __('Admission Cycle'), 'Link', 'Admission Cycle');
         this.add_filter('campus', __('Campus'), 'Link', 'Campus');
         this.add_filter('program', __('Program'), 'Link', 'Program');
-        this.add_filter('reservation_category', __('Category'), 'Link', 'Admission Category');
+        this.add_filter('whether_scstobc_ncl', __('Category'), 'Link', 'Admission Category');
         this.add_filter('date_range', __('Date Range'), 'DateRange');
 
         // Clear button in the filter bar

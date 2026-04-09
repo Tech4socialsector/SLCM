@@ -647,6 +647,19 @@
               </div>
               {% endfor %}
             </div>
+            
+            <!-- Pagination Controls -->
+            <div id="applied-pagination" class="flex items-center justify-between mt-5">
+              <button id="applied-prev" onclick="appliedPage(-1)"
+                class="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50">
+                <span class="material-symbols-outlined text-base">chevron_left</span> Prev
+              </button>
+              <span id="applied-page-info" class="text-xs font-bold text-slate-500"></span>
+              <button id="applied-next" onclick="appliedPage(1)"
+                class="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50">
+                Next <span class="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
             {% else %}
             <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
               <p class="text-slate-500 font-medium text-xs">No applications submitted yet.</p>
@@ -710,6 +723,19 @@
               </div>
               {% endfor %}
             </div>
+
+            <!-- Pagination Controls -->
+            <div id="approved-pagination" class="flex items-center justify-between mt-5">
+              <button id="approved-prev" onclick="approvedPage(-1)"
+                class="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50">
+                <span class="material-symbols-outlined text-base">chevron_left</span> Prev
+              </button>
+              <span id="approved-page-info" class="text-xs font-bold text-slate-500"></span>
+              <button id="approved-next" onclick="approvedPage(1)"
+                class="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50">
+                Next <span class="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
             {% else %}
             <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
               <p class="text-slate-500 font-medium text-xs">No approved scholarships yet.</p>
@@ -772,6 +798,19 @@
                 </div>
               </div>
               {% endfor %}
+            </div>
+
+            <!-- Pagination Controls -->
+            <div id="rejected-pagination" class="flex items-center justify-between mt-5">
+              <button id="rejected-prev" onclick="rejectedPage(-1)"
+                class="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50">
+                <span class="material-symbols-outlined text-base">chevron_left</span> Prev
+              </button>
+              <span id="rejected-page-info" class="text-xs font-bold text-slate-500"></span>
+              <button id="rejected-next" onclick="rejectedPage(1)"
+                class="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50">
+                Next <span class="material-symbols-outlined text-base">chevron_right</span>
+              </button>
             </div>
             {% else %}
             <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">

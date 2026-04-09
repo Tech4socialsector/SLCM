@@ -25,6 +25,7 @@
     border: none;
     background: none;
     white-space: nowrap;
+    flex-shrink: 0;
     border-bottom: 3px solid transparent;
     color: #64748b;
     transition: color 0.2s, border-color 0.2s;
@@ -143,6 +144,223 @@
     }
   }
 
+  /* ── GLOBAL OVERFLOW CONTAINMENT ──────────────────────────── */
+  .pd-main-container {
+    overflow: visible;
+  }
+  .pd-tab-content {
+    overflow: visible;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .pd-tab-content img {
+    max-width: 100%;
+    height: auto;
+  }
+  .pd-tab-content table {
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+  }
+  .pd-tabs-container {
+    overflow: hidden;
+  }
+  .pd-action-bar {
+    overflow: hidden;
+  }
+  .pd-hero-banner {
+    overflow: hidden;
+  }
+  #pd-sidebar {
+    overflow: hidden;
+  }
+
+  /* ── MOBILE RESPONSIVE ────────────────────────────────────── */
+  @media (max-width: 768px) {
+    /* Hero banner */
+    .pd-hero-banner {
+      border-radius: 14px !important;
+      min-height: 280px !important;
+    }
+    .pd-hero-inner {
+      min-height: 280px !important;
+      padding: 28px 24px !important;
+    }
+    .pd-hero-inner h1 {
+      font-size: 26px !important;
+    }
+    /* Main container */
+    .pd-main-container {
+      padding: 0 14px !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    /* Hero banner */
+    .pd-hero-banner {
+      border-radius: 12px !important;
+      min-height: 260px !important;
+    }
+    .pd-hero-inner {
+      min-height: 260px !important;
+      padding: 24px 20px !important;
+    }
+    .pd-hero-inner h1 {
+      font-size: 24px !important;
+    }
+
+    /* Action bar */
+    .pd-action-bar {
+      padding: 14px 16px !important;
+      border-radius: 12px !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+    }
+    .pd-action-bar .pd-action-chips {
+      gap: 8px !important;
+      justify-content: flex-start !important;
+      flex-wrap: wrap !important;
+    }
+    .pd-action-bar .pd-action-chips > div {
+      flex: 0 0 auto;
+      font-size: 12px;
+    }
+    .pd-action-bar .pd-action-chips > div span {
+      font-size: 12px !important;
+    }
+    .pd-action-bar .pd-action-btns {
+      width: 100%;
+    }
+    .pd-action-bar .pd-action-btns a {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* Tab nav — horizontal scroll */
+    #pd-tab-nav {
+      gap: 0;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    #pd-tab-nav::-webkit-scrollbar {
+      display: none;
+    }
+    #pd-tab-nav button {
+      padding: 12px 14px !important;
+      font-size: 12px !important;
+      flex-shrink: 0;
+    }
+
+    /* Tab content */
+    .pd-tab-content {
+      padding: 20px 16px !important;
+    }
+    .pd-tab-content h3 {
+      font-size: 18px !important;
+    }
+
+    /* Sidebar admission card */
+    #pd-sidebar > div {
+      border-radius: 12px !important;
+    }
+
+    /* Sidebar admission details */
+    .pd-sidebar-card {
+      padding: 20px 16px !important;
+    }
+
+    /* Questions card */
+    .pd-questions-card {
+      padding: 24px 16px !important;
+      border-radius: 12px !important;
+    }
+
+    /* Career grid */
+    .pd-career-grid {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Faculty grid */
+    .pd-faculty-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Breadcrumb */
+    .pd-breadcrumb {
+      padding: 12px 0 0 !important;
+    }
+
+    /* Main container */
+    .pd-main-container {
+      padding: 0 12px !important;
+    }
+
+    /* Grid gap */
+    #pd-grid {
+      gap: 16px !important;
+    }
+
+    /* Tabs container */
+    .pd-tabs-container {
+      border-radius: 12px !important;
+    }
+
+    /* Sidebar admission detail rows */
+    .pd-adm-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    /* Description content overflow */
+    .pd-tab-content div[style*="line-height"] {
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .pd-hero-banner {
+      min-height: 220px !important;
+      border-radius: 10px !important;
+    }
+    .pd-hero-inner {
+      min-height: 220px !important;
+      padding: 20px 16px !important;
+    }
+    .pd-hero-inner h1 {
+      font-size: 20px !important;
+      line-height: 1.25 !important;
+    }
+    .pd-action-bar {
+      padding: 12px 14px !important;
+      margin-top: 12px !important;
+    }
+    .pd-action-bar .pd-action-chips > div {
+      padding: 6px 10px !important;
+    }
+    .pd-faculty-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 10px !important;
+    }
+    .pd-faculty-card {
+      padding: 14px 10px !important;
+    }
+    #pd-tab-nav button {
+      padding: 10px 12px !important;
+      font-size: 11px !important;
+    }
+    .pd-tab-content {
+      padding: 16px 14px !important;
+    }
+    .pd-sidebar-card {
+      padding: 16px 14px !important;
+    }
+    .pd-questions-card {
+      padding: 20px 14px !important;
+    }
+  }
+
   /* Fade in */
   @keyframes pdFadeUp {
     from {
@@ -218,10 +436,10 @@
 {# ── PROGRAMME DETAIL ──────────────────────────────────────────────── #}
 
 <div style="background:#f5f7f8;margin:0 -20px 0;padding-bottom:32px;">
-  <div style="max-width:1200px;margin:0 auto;padding:0 20px;">
+  <div class="pd-main-container" style="max-width:1200px;margin:0 auto;padding:0 20px;">
 
     <!-- BREADCRUMB -->
-    <div style="padding:16px 0 0;">
+    <div class="pd-breadcrumb" style="padding:16px 0 0;">
       <a href="/admission" style="display:inline-flex;align-items:center;gap:6px;
               font-size:13px;font-weight:600;color:#64748b;text-decoration:none;"
         onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#64748b'">
@@ -233,7 +451,7 @@
     <!-- HERO BANNER -->
     {% set _hero_bg = _pimage or _hero or "" %}
     <div class="pd-fade" style="margin-top:16px;animation-delay:0s;">
-      <div style="border-radius:20px;overflow:hidden;min-height:420px;
+      <div class="pd-hero-banner" style="border-radius:20px;overflow:hidden;min-height:420px;
                 position:relative;
                 {% if _hero_bg %}
                   background: linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.95) 100%),
@@ -241,7 +459,7 @@
                 {% else %}
                   background: linear-gradient(135deg, var(--primary) 0%, #0d2040 70%);
                 {% endif %}">
-        <div style="position:relative;z-index:2;display:flex;flex-direction:column;
+        <div class="pd-hero-inner" style="position:relative;z-index:2;display:flex;flex-direction:column;
                   justify-content:flex-end;min-height:420px;padding:36px 40px;">
           {% if _level %}
           <span style="display:inline-block;padding:4px 12px;
@@ -266,40 +484,46 @@
     </div>
 
     <!-- ACTION BAR -->
-    <div class="pd-fade" style="background:white;border-radius:14px;padding:20px 32px;
+    <div class="pd-fade pd-action-bar" style="background:white;border-radius:14px;padding:20px 32px;
               margin-top:16px;border:1.5px solid #e2e8f0;
               display:flex;flex-wrap:wrap;align-items:center;
               justify-content:space-between;gap:16px;animation-delay:0.06s;">
-      <div style="display:flex;flex-wrap:wrap;gap:32px;">
+      <div class="pd-action-chips" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
         {% if _dur %}
-        <div>
-          <p style="font-size:10px;font-weight:700;
-                  letter-spacing:0.08em;color:#94a3b8;margin:0 0 3px;">Duration</p>
-          <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
-            {{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)
-          </p>
-        </div>
-        {% endif %}
-        {% if _credits %}
-        <div>
-          <p style="font-size:10px;font-weight:700;
-                  letter-spacing:0.08em;color:#94a3b8;margin:0 0 3px;">Credits</p>
-          <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
-            {{ _credits }} Units
-          </p>
+        <div style="display:inline-flex;align-items:center;gap:6px;
+                    padding:8px 14px;border-radius:20px;
+                    background:#f8fafc;border:1.5px solid #e2e8f0;">
+          <span class="material-symbols-outlined" style="font-size:16px;color:var(--primary);">schedule</span>
+          <span style="font-size:13px;font-weight:600;color:#334155;">
+            {{ _dur }} Year{{ 's' if _dur|string != '1' }}
+          </span>
         </div>
         {% endif %}
         {% if _intake %}
-        <div>
-          <p style="font-size:10px;font-weight:700;
-                  letter-spacing:0.08em;color:#94a3b8;margin:0 0 3px;">Admission via</p>
-          <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
-            {{ _intake }}
-          </p>
+        <div style="display:inline-flex;align-items:center;gap:6px;
+                    padding:8px 14px;border-radius:20px;
+                    background:#f8fafc;border:1.5px solid #e2e8f0;">
+          <span class="material-symbols-outlined" style="font-size:16px;color:var(--primary);">assignment</span>
+          <span style="font-size:13px;font-weight:600;color:#334155;">{{ _intake }}</span>
         </div>
         {% endif %}
+        {% if _credits %}
+        <div style="display:inline-flex;align-items:center;gap:6px;
+                    padding:8px 14px;border-radius:20px;
+                    background:#f8fafc;border:1.5px solid #e2e8f0;">
+          <span class="material-symbols-outlined" style="font-size:16px;color:var(--primary);">school</span>
+          <span style="font-size:13px;font-weight:600;color:#334155;">{{ _credits }} Credits</span>
+        </div>
+        {% endif %}
+        <!-- {% if frappe.session.user and frappe.session.user != "Guest" and user_app_name %}
+        <div style="display:inline-flex;align-items:center;gap:6px;
+                    padding:8px 14px;border-radius:20px;
+                    background:#dcfce7;border:1.5px solid #bbf7d0;">
+          <span class="material-symbols-outlined" style="font-size:16px;color:#16a34a;">check_circle</span>
+        </div>
+        {% endif %} -->
       </div>
-      <div style="display:flex;gap:10px;flex-shrink:0;">
+      <div class="pd-action-btns" style="display:flex;gap:10px;flex-shrink:0;">
         {% if frappe.session.user and frappe.session.user != "Guest" %}
         {% if user_app_name %}
         <a href="/my-applications?app={{ user_app_name }}" style="display:inline-flex;align-items:center;gap:8px;
@@ -541,13 +765,13 @@
       <div>
 
         <!-- TABS CONTAINER -->
-        <div style="background:white;border-radius:16px;
+        <div class="pd-tabs-container" style="background:white;border-radius:16px;
                   border:1.5px solid #e2e8f0;overflow:hidden;">
 
           <!-- Tab nav -->
           <div id="pd-tab-nav" style="display:flex;border-bottom:1px solid #f1f5f9;overflow-x:auto;">
             <button class="pd-active" onclick="pdTab(this,'pd-description')">
-              Description
+              Overview
             </button>
             <button onclick="pdTab(this,'pd-curriculum')">
               Curriculum
@@ -556,7 +780,7 @@
               Eligibility
             </button>
             <button onclick="pdTab(this,'pd-career')">
-              Career prospects
+              Career
             </button>
             <button onclick="pdTab(this,'pd-faculty')">
               Faculty
@@ -564,7 +788,7 @@
           </div>
 
           <!-- TAB: DESCRIPTION -->
-          <div id="pd-description" style="padding:28px;">
+          <div id="pd-description" class="pd-tab-content" style="padding:28px;">
             <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">
               About This Programme
             </h3>
@@ -586,7 +810,7 @@
           </div>
 
           <!-- TAB: CURRICULUM -->
-          <div id="pd-curriculum" style="padding:28px;display:none;">
+          <div id="pd-curriculum" class="pd-tab-content" style="padding:28px;display:none;">
             <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">
               What You'll Study
             </h3>
@@ -648,7 +872,7 @@
           </div>
 
           <!-- TAB: ELIGIBILITY -->
-          <div id="pd-eligibility" style="padding:28px;display:none;">
+          <div id="pd-eligibility" class="pd-tab-content" style="padding:28px;display:none;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
               <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0;">
                 Eligibility Criteria
@@ -724,12 +948,12 @@
           </div>
 
           <!-- TAB: CAREER PROSPECTS -->
-          <div id="pd-career" style="padding:28px;display:none;">
+          <div id="pd-career" class="pd-tab-content" style="padding:28px;display:none;">
             <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">
               Career Opportunities
             </h3>
             {% if _career %}
-            <div style="display:grid;
+            <div class="pd-career-grid" style="display:grid;
                       grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
                       gap:12px;">
               {% for c in _career %}
@@ -772,12 +996,12 @@
           </div>
 
           <!-- TAB: FACULTY -->
-          <div id="pd-faculty" style="padding:28px;display:none;">
+          <div id="pd-faculty" class="pd-tab-content" style="padding:28px;display:none;">
             <h3 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 20px;">
               Faculty
             </h3>
             {% if _faculty %}
-            <div style="display:grid;
+            <div class="pd-faculty-grid" style="display:grid;
                       grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
                       gap:16px;">
               {% for f in _faculty %}
@@ -840,67 +1064,63 @@
       <div id="pd-sidebar" style="position:sticky;top:80px;">
 
         <!-- ADMISSION DETAILS -->
-        <div style="background:white;border-radius:16px;padding:28px;
+        <div class="pd-sidebar-card" style="background:white;border-radius:16px;padding:28px;
                   border:1.5px solid #e2e8f0;margin-bottom:16px;">
-          <h4 style="font-size:16px;font-weight:700;color:#0f172a;margin:0 0 20px;">
+          <h4 style="font-size:18px;font-weight:700;color:var(--primary);margin:0 0 20px;
+                    padding-bottom:14px;border-bottom:2px solid var(--primary);">
             Admission Details
           </h4>
           <div style="display:flex;flex-direction:column;gap:16px;">
 
-            {% if _intake %}
-            <div>
-              <p style="font-size:10px;font-weight:700;
-                      letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
-                Admission via
-              </p>
-              <p style="font-size:14px;color:#475569;margin:0;">{{ _intake }}</p>
-            </div>
-            {% endif %}
-
-            {% if _dur %}
-            <div>
-              <p style="font-size:10px;font-weight:700;
-                      letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
-                Duration
-              </p>
-              <p style="font-size:14px;color:#475569;margin:0;">
-                {{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)
-              </p>
-            </div>
-            {% endif %}
-
-            {% if _elig %}
-            <div>
-              <p style="font-size:10px;font-weight:700;
-                      letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
-                Eligibility
-              </p>
-              <div style="font-size:13px;color:#475569;line-height:1.6;">
-                {{ _elig[:180] | striptags }}{% if _elig|length > 180 %}…{% endif %}
+            {% if active_cycle %}
+            <div style="display:flex;align-items:flex-start;gap:14px;">
+              <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">event_note</span>
+              <div>
+                <p style="font-size:10px;font-weight:700;
+                        letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;text-transform:uppercase;">APPLICATION CYCLE</p>
+                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">{{ active_cycle.name }}</p>
+                {% if _deadline %}
+                <p style="font-size:12px;color:#64748b;margin:2px 0 0;">Deadline: {{ _deadline }}</p>
+                {% endif %}
               </div>
-            </div>
-            {% elif _erules %}
-            <div>
-              <p style="font-size:10px;font-weight:700;
-                      letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
-                Eligibility
-              </p>
-              {% set _fr = _erules[0] %}
-              <p style="font-size:13px;color:#475569;margin:0;line-height:1.6;">
-                {{ (_fr.get('description') if _fr.get else _fr.description) or
-                (_fr.get('rule_name') if _fr.get else _fr.rule_name) or
-                'See Eligibility tab for details.' }}
-              </p>
             </div>
             {% endif %}
 
             {% if _fee %}
-            <div>
-              <p style="font-size:10px;font-weight:700;
-                      letter-spacing:0.07em;color:#94a3b8;margin:0 0 4px;">
-                Application fee
-              </p>
-              <p style="font-size:14px;color:#475569;margin:0;">{{ _fee }}</p>
+            <div style="display:flex;align-items:flex-start;gap:14px;">
+              <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">payments</span>
+              <div>
+                <p style="font-size:10px;font-weight:700;
+                        letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;text-transform:uppercase;">APPLICATION FEE</p>
+                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">₹ {{ _fee }}</p>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if _intake %}
+            <div style="display:flex;align-items:flex-start;gap:14px;">
+              <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">quiz</span>
+              <div>
+                <p style="font-size:10px;font-weight:700;
+                        letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;text-transform:uppercase;">ENTRANCE CRITERIA</p>
+                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">{{ _intake }}</p>
+                {% if _elig %}
+                <p style="font-size:12px;color:#64748b;margin:2px 0 0;">{{ _elig[:80] | striptags }}{% if _elig|length > 80 %}…{% endif %}</p>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            {% if _dur %}
+            <div style="display:flex;align-items:flex-start;gap:14px;">
+              <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">hourglass_top</span>
+              <div>
+                <p style="font-size:10px;font-weight:700;
+                        letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;text-transform:uppercase;">DURATION</p>
+                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
+                  {{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)
+                </p>
+              </div>
             </div>
             {% endif %}
 
@@ -969,26 +1189,23 @@
         </div>
 
         <!-- QUESTIONS CARD -->
-        <div style="background:#0f172a;border-radius:16px;padding:28px;
+        <div class="pd-questions-card" style="background:var(--primary);border-radius:16px;padding:28px;
                   position:relative;overflow:hidden;">
           <div style="position:relative;z-index:2;">
-            <h4 style="font-size:16px;font-weight:700;color:white;margin:0 0 8px;">
-              Questions?
+            <h4 style="font-size:18px;font-weight:700;color:white;margin:0 0 8px;">
+              Still have questions?
             </h4>
-            <p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0 0 20px;">
-              Connect with our admissions team to learn more about this programme.
+            <p style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6;margin:0 0 20px;">
+              Our admissions counselors are available for one-on-one sessions to help you navigate your academic future.
             </p>
-            <a href="mailto:{{ support_email or 'admissions@nlsiu.ac.in' }}" style="display:inline-flex;align-items:center;gap:8px;
-                    font-size:13px;font-weight:700;
-                    color:var(--secondary);text-decoration:none;" onmouseover="this.style.textDecoration='underline'"
-              onmouseout="this.style.textDecoration='none'">
-              Contact admissions
-              <span class="material-symbols-outlined" style="font-size:18px;">
-                arrow_forward
-              </span>
+            <a href="mailto:{{ support_email or 'admissions@nlsiu.ac.in' }}" style="display:block;width:100%;padding:13px;text-align:center;
+                    border-radius:10px;background:white;color:var(--primary);font-size:14px;
+                    font-weight:700;text-decoration:none;transition:opacity .2s;"
+              onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+              Speak with an Expert
             </a>
           </div>
-          <div style="position:absolute;right:-18px;bottom:-18px;opacity:0.1;">
+          <div style="position:absolute;right:-18px;bottom:-18px;opacity:0.08;">
             <span class="material-symbols-outlined" style="font-size:120px;color:white;">
               contact_support
             </span>
