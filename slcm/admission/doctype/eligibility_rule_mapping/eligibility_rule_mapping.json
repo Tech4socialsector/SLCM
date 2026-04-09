@@ -27,6 +27,7 @@
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
@@ -34,6 +35,7 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Programme",
    "options": "Program",
    "reqd": 1
@@ -41,6 +43,7 @@
   {
    "fieldname": "campus",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
@@ -56,6 +59,7 @@
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
+   "in_standard_filter": 1,
    "label": "Is Active"
   },
   {
@@ -78,7 +82,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 11:54:32.711305",
+ "modified": "2026-04-09 10:21:14.700231",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",

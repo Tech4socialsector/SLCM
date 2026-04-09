@@ -42,6 +42,7 @@
   {
    "fieldname": "qualification_level",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Qualification level",
    "options": "XII\nUndergraduate\nPostgraduate",
    "reqd": 1
@@ -113,6 +114,7 @@
   {
    "fieldname": "campus",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
@@ -143,7 +145,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 20:45:53.562556",
+ "modified": "2026-04-09 10:20:43.649546",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",
