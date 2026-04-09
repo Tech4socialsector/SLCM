@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 
 
-class CourseResultAccess(Document):
+class AccessResultSettings(Document):
 
 	def validate(self):
 		# Auto-lock when edit access is revoked — but never auto-unlock
@@ -14,7 +14,6 @@ class CourseResultAccess(Document):
 			self.status = "LOCKED"
 
 	def before_save(self):
-		# Revoking rules per the UI notes:
 		# 1. Auto-generate grade and grade report are revoked when mask_student_info is ON
 		if self.mask_student_info:
 			self.auto_generate_grade_access = 0

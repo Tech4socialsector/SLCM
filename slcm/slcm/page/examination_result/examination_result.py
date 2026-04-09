@@ -7,15 +7,15 @@ import frappe
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def _get_or_create_access(exam_plan, course):
-	"""Return the Course Result Access doc for the given exam_plan+course, creating if absent."""
+	"""Return the Access Result Settings doc for the given exam_plan+course, creating if absent."""
 	existing = frappe.db.get_value(
-		"Course Result Access",
+		"Access Result Settings",
 		{"exam_plan": exam_plan, "course": course},
 		"name",
 	)
 	if existing:
-		return frappe.get_doc("Course Result Access", existing)
-	doc = frappe.new_doc("Course Result Access")
+		return frappe.get_doc("Access Result Settings", existing)
+	doc = frappe.new_doc("Access Result Settings")
 	doc.exam_plan    = exam_plan
 	doc.course       = course
 	doc.status       = "UNLOCKED"
@@ -26,7 +26,7 @@ def _get_or_create_access(exam_plan, course):
 
 
 def _access_map(exam_plan):
-	"""Return a dict of course → Course Result Access row (without child tables)."""
+	"""Return a dict of course → Access Result Settings row (without child tables)."""
 	rows = frappe.db.sql(
 		"""
 		SELECT
@@ -36,7 +36,7 @@ def _access_map(exam_plan):
 			cra.relative_grading_access, cra.mask_student_info,
 			cra.generate_grade_report, cra.moderation_policy_access,
 			cra.status
-		FROM `tabCourse Result Access` cra
+		FROM `tabAccess Result Settings` cra
 		WHERE cra.exam_plan = %(exam_plan)s
 		""",
 		{"exam_plan": exam_plan},
@@ -60,7 +60,7 @@ def _evaluator_map(exam_plan):
 			rce.evaluator_email,
 			f.faculty_name
 		FROM `tabResult Course Evaluator` rce
-		INNER JOIN `tabCourse Result Access` cra ON rce.parent = cra.name
+		INNER JOIN `tabAccess Result Settings` cra ON rce.parent = cra.name
 		LEFT JOIN `tabFaculty` f ON f.name = rce.evaluator_name
 		WHERE cra.exam_plan = %(exam_plan)s
 		""",
@@ -87,7 +87,7 @@ def _visibility_map(exam_plan):
 		"""
 		SELECT cra.course, rev.exam_type, eat.type_name
 		FROM `tabResult Exam Visibility` rev
-		INNER JOIN `tabCourse Result Access` cra ON rev.parent = cra.name
+		INNER JOIN `tabAccess Result Settings` cra ON rev.parent = cra.name
 		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = rev.exam_type
 		WHERE cra.exam_plan = %(exam_plan)s
 		""",
@@ -285,14 +285,14 @@ def remove_evaluator(exam_plan, course, evaluator_name):
 	evaluator_type='Class Faculty' — removes the first Class Faculty row.
 	"""
 	name = frappe.db.get_value(
-		"Course Result Access",
+		"Access Result Settings",
 		{"exam_plan": exam_plan, "course": course},
 		"name",
 	)
 	if not name:
 		return True
 
-	doc = frappe.get_doc("Course Result Access", name)
+	doc = frappe.get_doc("Access Result Settings", name)
 	target = (evaluator_name or "").strip()
 
 	if target:
@@ -546,7 +546,7 @@ def get_course_info(course, exam_plan=None):
 	assignment = assignment[0] if assignment else {}
 
 	access = frappe.db.get_value(
-		"Course Result Access",
+		"Access Result Settings",
 		{"exam_plan": assignment.get("exam_plan"), "course": course},
 		["view_access", "edit_access", "edit_deadline", "mask_student_info",
 		 "auto_generate_grade_access", "status"],
@@ -1081,7 +1081,7 @@ def get_course_overview(exam_plan, course):
 	) or {}
 
 	access = frappe.db.get_value(
-		"Course Result Access",
+		"Access Result Settings",
 		{"exam_plan": exam_plan, "course": course},
 		["view_access", "edit_access", "mask_student_info", "status",
 		 "auto_generate_grade_access", "edit_grade_access"],
@@ -1177,7 +1177,7 @@ def get_course_students_with_marks(exam_plan, course, search="", page=1, page_le
 		"""
 		SELECT rev.exam_type, eat.type_name
 		FROM `tabResult Exam Visibility` rev
-		INNER JOIN `tabCourse Result Access` cra ON rev.parent = cra.name
+		INNER JOIN `tabAccess Result Settings` cra ON rev.parent = cra.name
 		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = rev.exam_type
 		WHERE cra.exam_plan = %(exam_plan)s AND cra.course = %(course)s
 		""",
@@ -1323,8 +1323,8 @@ def get_grading_schema_details(name):
 def get_result_summary(exam_plan):
 	"""Return high-level counts for the result settings dashboard."""
 	total      = frappe.db.count("Course", {})
-	configured = frappe.db.count("Course Result Access", {"exam_plan": exam_plan})
-	locked     = frappe.db.count("Course Result Access", {"exam_plan": exam_plan, "status": "LOCKED"})
+	configured = frappe.db.count("Access Result Settings", {"exam_plan": exam_plan})
+	locked     = frappe.db.count("Access Result Settings", {"exam_plan": exam_plan, "status": "LOCKED"})
 	unlocked   = configured - locked
 	return {
 		"total_courses": total,
@@ -1512,7 +1512,7 @@ def save_marks(course, exam_plan, student, component, assessment_type, marks_fie
 
 	# Check lock status
 	access = frappe.db.get_value(
-		"Course Result Access",
+		"Access Result Settings",
 		{"exam_plan": exam_plan, "course": course},
 		["edit_access", "status"],
 		as_dict=True,
@@ -1641,10 +1641,10 @@ def _lookup_grade(grade_schema_name, total_marks):
 
 @frappe.whitelist()
 def toggle_lock(course, exam_plan):
-	"""Toggle LOCKED / UNLOCKED status on the Course Result Access record."""
+	"""Toggle LOCKED / UNLOCKED status on the Access Result Settings record."""
 	doc        = _get_or_create_access(exam_plan, course)
 	new_status = "UNLOCKED" if doc.status == "LOCKED" else "LOCKED"
-	frappe.db.set_value("Course Result Access", doc.name, "status", new_status)
+	frappe.db.set_value("Access Result Settings", doc.name, "status", new_status)
 	frappe.db.commit()
 	return {"status": new_status}
 

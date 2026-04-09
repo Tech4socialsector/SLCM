@@ -110,7 +110,7 @@ def save_publish_setting(exam_plan, components, show_total_marks, show_sgpa,
 @frappe.whitelist()
 def get_access_settings(exam_plan):
 	"""
-	Return all courses in the exam plan with their Course Result Access settings.
+	Return all courses in the exam plan with their Access Result Settings.
 	Courses are sourced from Student Course Marks (distinct courses for the plan).
 	"""
 	if not exam_plan:
@@ -133,12 +133,12 @@ def get_access_settings(exam_plan):
 	result = []
 	for c in courses:
 		name = frappe.db.get_value(
-			"Course Result Access",
+			"Access Result Settings",
 			{"exam_plan": exam_plan, "course": c["course"]},
 			"name",
 		)
 		if name:
-			doc = frappe.get_doc("Course Result Access", name)
+			doc = frappe.get_doc("Access Result Settings", name)
 			result.append({
 				"course":                    c["course"],
 				"course_name":               c["course_name"],
@@ -197,7 +197,7 @@ def save_access_setting(exam_plan, course, status, view_access, view_deadline,
                         edit_grade_access, relative_grading_access,
                         mask_student_info, generate_grade_report,
                         moderation_policy_access, evaluators, visible_exams):
-	"""Save or create a Course Result Access record for one course."""
+	"""Save or create an Access Result Settings record for one course."""
 	if not exam_plan or not course:
 		frappe.throw("Exam Plan and Course are required")
 
@@ -207,12 +207,12 @@ def save_access_setting(exam_plan, course, status, view_access, view_deadline,
 		visible_exams = json.loads(visible_exams)
 
 	name = frappe.db.get_value(
-		"Course Result Access",
+		"Access Result Settings",
 		{"exam_plan": exam_plan, "course": course},
 		"name",
 	)
-	doc = frappe.get_doc("Course Result Access", name) if name \
-	      else frappe.new_doc("Course Result Access")
+	doc = frappe.get_doc("Access Result Settings", name) if name \
+	      else frappe.new_doc("Access Result Settings")
 
 	if not name:
 		doc.exam_plan = exam_plan

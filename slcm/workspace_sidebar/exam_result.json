@@ -82,8 +82,8 @@
    "icon": "shield-check",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Course Result Access",
-   "link_to": "Course Result Access",
+   "label": "Access Result Settings",
+   "link_to": "Access Result Settings",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
