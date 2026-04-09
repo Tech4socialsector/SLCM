@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Admissions{% endblock %} — {{ ws_title or "SLCM" }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -1052,16 +1052,17 @@
                                     {% set _platform = link.get('platform') if link.get else link.platform %}
                                     {% set _url = link.get('url') if link.get else link.url %}
                                     {% set _icon = "" %}
-                                    {% if _platform == "Facebook" %}{% set _icon = "fa-brands fa-facebook" %}
-                                    {% elif _platform == "Instagram" %}{% set _icon = "fa-brands fa-instagram" %}
-                                    {% elif _platform == "X (Twitter)" %}{% set _icon = "fa-brands fa-x-twitter" %}
-                                    {% elif _platform == "LinkedIn" %}{% set _icon = "fa-brands fa-linkedin" %}
-                                    {% elif _platform == "YouTube" %}{% set _icon = "fa-brands fa-youtube" %}
-                                    {% elif _platform == "WhatsApp" %}{% set _icon = "fa-brands fa-whatsapp" %}
-                                    {% elif _platform == "Telegram" %}{% set _icon = "fa-brands fa-telegram" %}
-                                    {% elif _platform == "Threads" %}{% set _icon = "fa-brands fa-threads" %}
-                                    {% elif _platform == "Pinterest" %}{% set _icon = "fa-brands fa-pinterest" %}
-                                    {% elif _platform == "TikTok" %}{% set _icon = "fa-brands fa-tiktok" %}
+                                    {% set _p = _platform.lower() %}
+                                    {% if _p == "facebook" %}{% set _icon = "fa-brands fa-facebook" %}
+                                    {% elif _p == "instagram" %}{% set _icon = "fa-brands fa-instagram" %}
+                                    {% elif "twitter" in _p or _p == "x" %}{% set _icon = "fa-brands fa-x-twitter" %}
+                                    {% elif _p == "linkedin" %}{% set _icon = "fa-brands fa-linkedin" %}
+                                    {% elif _p == "youtube" %}{% set _icon = "fa-brands fa-youtube" %}
+                                    {% elif _p == "whatsapp" %}{% set _icon = "fa-brands fa-whatsapp" %}
+                                    {% elif _p == "telegram" %}{% set _icon = "fa-brands fa-telegram" %}
+                                    {% elif _p == "threads" %}{% set _icon = "fa-brands fa-threads" %}
+                                    {% elif _p == "pinterest" %}{% set _icon = "fa-brands fa-pinterest" %}
+                                    {% elif _p == "tiktok" %}{% set _icon = "fa-brands fa-tiktok" %}
                                     {% endif %}
                                     
                                     {% if _icon %}
