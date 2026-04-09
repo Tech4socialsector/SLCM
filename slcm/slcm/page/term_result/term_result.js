@@ -207,22 +207,84 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		.tr-cdlg-grade-pill.pass  { color:#059669; }
 		.tr-cdlg-marks   { font-size:11px; color:#64748b; }
 		.tr-cdlg-dash    { color:#cbd5e1; font-size:13px; font-weight:600; }
+
+		/* ── Institutional Filter Modal ── */
+		.xif-overlay { position:fixed; inset:0; background:rgba(15,23,42,.35);
+		               z-index:10000; display:flex; align-items:center; justify-content:center;
+		               backdrop-filter:blur(2px); }
+		.xif-modal   { background:#fff; border-radius:14px; width:660px; max-width:95vw;
+		               max-height:85vh; display:flex; flex-direction:column;
+		               box-shadow:0 20px 60px rgba(0,0,0,.18); overflow:hidden; }
+		.xif-header  { display:flex; align-items:center; justify-content:space-between;
+		               padding:16px 20px; border-bottom:1.5px solid #f1f5f9; }
+		.xif-title   { font-size:15px; font-weight:700; color:#0f172a; }
+		.xif-close   { width:30px; height:30px; border-radius:8px; border:none;
+		               background:#f1f5f9; cursor:pointer; display:flex;
+		               align-items:center; justify-content:center; color:#64748b;
+		               font-size:16px; transition:all .15s; }
+		.xif-close:hover { background:#fee2e2; color:#ef4444; }
+		.xif-body    { display:flex; flex:1; overflow:hidden; }
+		.xif-types   { width:190px; flex-shrink:0; border-right:1.5px solid #f1f5f9;
+		               padding:8px; background:#fafbff; }
+		.xif-type    { padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600;
+		               color:#475569; cursor:pointer; margin-bottom:2px;
+		               transition:all .15s; display:flex; align-items:center; gap:8px; }
+		.xif-type:hover { background:#f1f5f9; color:#1e293b; }
+		.xif-type.active { background:#eef2ff; color:#4f46e5; }
+		.xif-type-badge { min-width:18px; height:18px; border-radius:20px;
+		                  background:#4f46e5; color:#fff; font-size:10px; font-weight:700;
+		                  display:inline-flex; align-items:center; justify-content:center;
+		                  padding:0 5px; margin-left:auto; }
+		.xif-panel   { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+		.xif-ph      { padding:14px 16px 8px; border-bottom:1.5px solid #f1f5f9; }
+		.xif-ph-title{ font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px; }
+		.xif-search  { width:100%; height:32px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 10px 0 30px; font-size:12.5px; outline:none; color:#1e293b;
+		               background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 9px center;
+		               box-sizing:border-box; transition:border-color .2s; }
+		.xif-search:focus { border-color:#4f46e5; background-color:#fff; }
+		.xif-opts    { flex:1; overflow-y:auto; padding:8px; }
+		.xif-opt     { display:flex; align-items:center; gap:10px; padding:9px 12px;
+		               border-radius:8px; cursor:pointer; font-size:13px; font-weight:500;
+		               color:#334155; transition:background .12s; }
+		.xif-opt:hover { background:#f8fafc; }
+		.xif-opt.checked { background:#eef2ff; color:#3730a3; }
+		.xif-opt input[type="checkbox"] { width:15px; height:15px; accent-color:#4f46e5;
+		                                  cursor:pointer; flex-shrink:0; }
+		.xif-empty-opts { padding:32px; text-align:center; color:#cbd5e1; font-size:13px; }
+		.xif-footer  { display:flex; align-items:center; justify-content:space-between;
+		               padding:12px 16px; border-top:1.5px solid #f1f5f9; background:#fafbff; }
+		.xif-status  { font-size:12.5px; color:#64748b; font-weight:500; }
+		.xif-status strong { color:#4f46e5; }
+		.xif-actions { display:flex; gap:8px; }
+		.xif-clear   { padding:0 14px; height:32px; border-radius:7px;
+		               border:1.5px solid #e2e8f0; background:#fff; color:#64748b;
+		               font-size:12.5px; font-weight:600; cursor:pointer; transition:all .15s; }
+		.xif-clear:hover { border-color:#ef4444; color:#ef4444; background:#fff5f5; }
+		.xif-apply   { padding:0 18px; height:32px; border-radius:7px; border:none;
+		               background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff;
+		               font-size:12.5px; font-weight:700; cursor:pointer; transition:opacity .15s; }
+		.xif-apply:hover { opacity:.88; }
+		.xif-btn-active { background:linear-gradient(135deg,#eef2ff,#e0e7ff) !important;
+		                  border-color:#c7d2fe !important; color:#4338ca !important; }
 		`;
 		document.head.appendChild(style);
 	}
 
 	// ── State ─────────────────────────────────────────────────────────────────
 	var S = {
-		exam_plan:   null,
-		students:    [],
-		total:       0,
-		page:        1,
-		page_length: 20,
-		search:      '',
-		sort_by:     'registration_id',
-		sort_order:  'asc',
-		loading:     false,
+		exam_plan:    null,
+		students:     [],
+		total:        0,
+		page:         1,
+		page_length:  20,
+		search:       '',
+		sort_by:      'registration_id',
+		sort_order:   'asc',
+		loading:      false,
 		search_timer: null,
+		inst_filter:  { programmes: [], batches: [] },
+		inst_options: null,
 	};
 
 	// ── Render shell ──────────────────────────────────────────────────────────
@@ -287,6 +349,10 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 						<input id="tr-search" type="text" placeholder="Search by student name or id">
 					</div>
 					<div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+						<button class="tr-btn" id="tr-inst-filter-btn">
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+							Institutional Filter
+						</button>
 						<button class="tr-btn" id="tr-moderation-btn">
 							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
 							Result Moderation
@@ -403,10 +469,13 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 
 	// ── Exam Plan change ──────────────────────────────────────────────────────
 	$examPlan.on('change', function () {
-		S.exam_plan = $(this).val();
-		S.page = 1;
-		S.search = '';
+		S.exam_plan   = $(this).val();
+		S.page        = 1;
+		S.search      = '';
+		S.inst_filter = { programmes: [], batches: [] };
+		S.inst_options = null;
 		$search.val('');
+		$body.find('#tr-inst-filter-btn').removeClass('xif-btn-active').find('.xif-count').remove();
 		if (S.exam_plan) {
 			$content.show();
 			loadStats();
@@ -472,6 +541,23 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 	// ── Download actions ──────────────────────────────────────────────────────
 	$body.find('#tr-dl-gradesheets').on('click',   function () { frappe.show_alert({message:'Download Gradesheets – coming soon', indicator:'blue'}); });
 	$body.find('#tr-dl-consolidated').on('click',  function () { frappe.show_alert({message:'Download Consolidated Report – coming soon', indicator:'blue'}); });
+
+	// ── Institutional Filter ──────────────────────────────────────────────────
+	$body.find('#tr-inst-filter-btn').on('click', function () {
+		if (!S.exam_plan) { frappe.show_alert({message:'Select an Exam Plan first.', indicator:'orange'}); return; }
+		if (S.inst_options) {
+			show_inst_filter_dialog(S.inst_options);
+		} else {
+			frappe.call({
+				method: 'slcm.slcm.page.term_result.term_result.get_term_inst_filter_options',
+				args:   { exam_plan: S.exam_plan },
+				callback: function (r) {
+					S.inst_options = r.message || { programmes: [], batches: [] };
+					show_inst_filter_dialog(S.inst_options);
+				},
+			});
+		}
+	});
 
 	// ── Result Moderation ─────────────────────────────────────────────────────
 	$body.find('#tr-moderation-btn').on('click', function () { frappe.show_alert({message:'Result Moderation – coming soon', indicator:'blue'}); });
@@ -568,12 +654,14 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		frappe.call({
 			method: 'slcm.slcm.page.term_result.term_result.get_term_students',
 			args: {
-				exam_plan:   S.exam_plan,
-				search:      S.search,
-				page:        S.page,
-				page_length: S.page_length,
-				sort_by:     S.sort_by,
-				sort_order:  S.sort_order,
+				exam_plan:        S.exam_plan,
+				search:           S.search,
+				page:             S.page,
+				page_length:      S.page_length,
+				sort_by:          S.sort_by,
+				sort_order:       S.sort_order,
+				inst_programmes:  JSON.stringify(S.inst_filter.programmes),
+				inst_batches:     JSON.stringify(S.inst_filter.batches),
 			},
 			callback: function (r) {
 				S.loading = false;
@@ -834,4 +922,98 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 			},
 		});
 	});
+
+	// ── Institutional Filter Dialog ───────────────────────────────────────────
+	function show_inst_filter_dialog(opts) {
+		var sel = {
+			programmes: S.inst_filter.programmes.slice(),
+			batches:    S.inst_filter.batches.slice(),
+		};
+		var TYPES = [
+			{ key: 'programmes', label: 'Programme',
+			  icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+			  items: opts.programmes },
+			{ key: 'batches', label: 'Batch / Year',
+			  icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+			  items: opts.batches },
+		];
+		var activeType = 0;
+
+		function count_all() { return sel.programmes.length + sel.batches.length; }
+
+		function render_types() {
+			var html = '';
+			TYPES.forEach(function (t, i) {
+				var cnt = sel[t.key].length;
+				html += '<div class="xif-type' + (i === activeType ? ' active' : '') + '" data-idx="' + i + '">' +
+					t.icon + ' ' + t.label +
+					(cnt ? '<span class="xif-type-badge">' + cnt + '</span>' : '') + '</div>';
+			});
+			$modal.find('.xif-types').html(html);
+			$modal.find('.xif-type').on('click', function () {
+				activeType = parseInt($(this).data('idx'));
+				render_types(); render_panel();
+			});
+		}
+
+		function render_panel(sv) {
+			var t = TYPES[activeType];
+			var items = (t.items || []).filter(function (v) {
+				return !sv || String(v).toLowerCase().includes(sv.toLowerCase());
+			});
+			$modal.find('.xif-ph-title').text(t.label);
+			var html = items.length ? items.map(function (v) {
+				var chk = sel[t.key].indexOf(String(v)) !== -1;
+				return '<div class="xif-opt' + (chk ? ' checked' : '') + '" data-val="' + frappe.utils.escape_html(String(v)) + '">' +
+					'<input type="checkbox"' + (chk ? ' checked' : '') + '><span>' + frappe.utils.escape_html(String(v)) + '</span></div>';
+			}).join('') : '<div class="xif-empty-opts">No options available</div>';
+			$modal.find('.xif-opts').html(html);
+			$modal.find('.xif-opt').on('click', function (e) {
+				e.preventDefault();
+				var val = $(this).data('val'), key = TYPES[activeType].key;
+				var idx = sel[key].indexOf(String(val));
+				if (idx === -1) sel[key].push(String(val)); else sel[key].splice(idx, 1);
+				render_types(); render_panel($modal.find('.xif-search').val()); update_footer();
+			});
+		}
+
+		function update_footer() {
+			var total = count_all();
+			var parts = [];
+			if (sel.programmes.length) parts.push(sel.programmes.length + ' Programme(s)');
+			if (sel.batches.length)    parts.push(sel.batches.length + ' Batch(es)');
+			$modal.find('.xif-status').html(
+				total ? '<strong>' + total + ' filter' + (total > 1 ? 's' : '') + '</strong> selected: ' + parts.join(', ')
+				      : 'No Filters Applied'
+			);
+		}
+
+		var $overlay = $('<div class="xif-overlay"></div>');
+		var $modal = $('<div class="xif-modal"><div class="xif-header"><span class="xif-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" style="vertical-align:-3px;margin-right:6px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Institutional Filter</span><button class="xif-close">&#10005;</button></div><div class="xif-body"><div class="xif-types"></div><div class="xif-panel"><div class="xif-ph"><div class="xif-ph-title"></div><input class="xif-search" type="text" placeholder="Search\u2026"></div><div class="xif-opts"></div></div></div><div class="xif-footer"><span class="xif-status">No Filters Applied</span><div class="xif-actions"><button class="xif-clear">Clear All</button><button class="xif-apply">Apply</button></div></div></div>');
+		$overlay.append($modal);
+		$('body').append($overlay);
+		render_types(); render_panel(); update_footer();
+
+		$modal.find('.xif-search').on('input', function () { render_panel($(this).val()); });
+		$modal.find('.xif-clear').on('click', function () {
+			sel.programmes = []; sel.batches = [];
+			render_types(); render_panel($modal.find('.xif-search').val()); update_footer();
+		});
+		$modal.find('.xif-apply').on('click', function () {
+			S.inst_filter = { programmes: sel.programmes, batches: sel.batches };
+			S.page = 1;
+			var total = count_all();
+			var $btn = $body.find('#tr-inst-filter-btn');
+			if (total) {
+				$btn.addClass('xif-btn-active').find('.xif-count').remove();
+				$btn.append('<span class="xif-count" style="background:#4f46e5;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;">' + total + '</span>');
+			} else {
+				$btn.removeClass('xif-btn-active').find('.xif-count').remove();
+			}
+			$overlay.remove();
+			loadStudents();
+		});
+		$modal.find('.xif-close').on('click', function () { $overlay.remove(); });
+		$overlay.on('click', function (e) { if ($(e.target).is($overlay)) $overlay.remove(); });
+	}
 };

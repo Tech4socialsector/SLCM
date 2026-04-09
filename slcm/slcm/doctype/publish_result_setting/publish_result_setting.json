@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "autoname": "field:exam_plan",
+ "creation": "2026-04-09 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "exam_plan",
+  "section_components",
+  "publish_components",
+  "section_exam",
+  "show_total_marks",
+  "show_sgpa",
+  "show_egradesheet",
+  "no_publish_unpaid",
+  "no_publish_no_feedback"
+ ],
+ "fields": [
+  {
+   "fieldname": "exam_plan",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Exam Plan",
+   "options": "Exam Plan",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "section_components",
+   "fieldtype": "Section Break",
+   "label": "Component Settings"
+  },
+  {
+   "fieldname": "publish_components",
+   "fieldtype": "Table",
+   "label": "Publish Marks For Components",
+   "options": "Publish Result Setting Component"
+  },
+  {
+   "fieldname": "section_exam",
+   "fieldtype": "Section Break",
+   "label": "Exam Settings"
+  },
+  {
+   "fieldname": "show_total_marks",
+   "fieldtype": "Check",
+   "label": "Show Total Marks",
+   "default": "0"
+  },
+  {
+   "fieldname": "show_sgpa",
+   "fieldtype": "Check",
+   "label": "Show SGPA",
+   "default": "0"
+  },
+  {
+   "fieldname": "show_egradesheet",
+   "fieldtype": "Check",
+   "label": "Show E-GradeSheet Download Option",
+   "default": "0"
+  },
+  {
+   "fieldname": "no_publish_unpaid",
+   "fieldtype": "Check",
+   "label": "Do not Publish Result for Student who have not paid Fees",
+   "default": "0"
+  },
+  {
+   "fieldname": "no_publish_no_feedback",
+   "fieldtype": "Check",
+   "label": "Do not Publish Result for Student(s) who have not given faculty feedback",
+   "default": "0"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Publish Result Setting",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

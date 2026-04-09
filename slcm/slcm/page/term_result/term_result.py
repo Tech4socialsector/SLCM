@@ -149,8 +149,29 @@ def get_exam_plans(search=None):
 
 
 @frappe.whitelist()
+def get_term_inst_filter_options(exam_plan):
+	"""Return distinct programmes and batches for students in this exam plan."""
+	if not exam_plan:
+		return {"programmes": [], "batches": []}
+	rows = frappe.db.sql(
+		"""
+		SELECT DISTINCT sm.programme, sm.batch_year
+		FROM `tabStudent Course Marks` scm
+		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.exam_plan = %(exam_plan)s
+		""",
+		{"exam_plan": exam_plan},
+		as_dict=True,
+	)
+	programmes = sorted(set(r["programme"] for r in rows if r.get("programme")))
+	batches    = sorted(set(str(r["batch_year"]) for r in rows if r.get("batch_year")), reverse=True)
+	return {"programmes": programmes, "batches": batches}
+
+
+@frappe.whitelist()
 def get_term_students(exam_plan, search="", page=1, page_length=20,
-                      sort_by="registration_id", sort_order="asc"):
+                      sort_by="registration_id", sort_order="asc",
+                      inst_programmes="", inst_batches=""):
 	"""Return paginated students enrolled in the exam plan with term result data."""
 	if not exam_plan:
 		return {"students": [], "total": 0}
@@ -167,15 +188,28 @@ def get_term_students(exam_plan, search="", page=1, page_length=20,
 	}
 	sort_col = sort_col_map.get(sort_by, "sm.registration_id")
 
+	f_programmes = frappe.parse_json(inst_programmes) if inst_programmes else []
+	f_batches    = frappe.parse_json(inst_batches)    if inst_batches    else []
+
 	params       = {"exam_plan": exam_plan}
-	search_cond  = ""
+	extra_cond   = ""
 	if search:
-		search_cond = (
+		extra_cond += (
 			" AND (sm.registration_id LIKE %(search)s"
 			" OR sm.first_name LIKE %(search)s"
 			" OR sm.last_name LIKE %(search)s)"
 		)
 		params["search"] = f"%{search}%"
+	if f_programmes:
+		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
+		extra_cond += f" AND sm.programme IN ({placeholders})"
+		for i, v in enumerate(f_programmes):
+			params[f"prog_{i}"] = v
+	if f_batches:
+		placeholders = ",".join([f"%(batch_{i})s" for i in range(len(f_batches))])
+		extra_cond += f" AND sm.batch_year IN ({placeholders})"
+		for i, v in enumerate(f_batches):
+			params[f"batch_{i}"] = v
 
 	students = frappe.db.sql(
 		f"""
@@ -189,13 +223,13 @@ def get_term_students(exam_plan, search="", page=1, page_length=20,
 			sm.programme,
 			sm.batch_year,
 			sm.current_cgpa,
-			sm.passport_size_photo                                                  AS image,
+			sm.passport_size_photo                                              AS image,
 			sm.email,
 			COUNT(DISTINCT scm.course)                                          AS course_count
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.exam_plan = %(exam_plan)s
-		{search_cond}
+		{extra_cond}
 		GROUP BY scm.student
 		ORDER BY {sort_col} {sort_dir}
 		LIMIT %(lim)s OFFSET %(off)s
@@ -210,7 +244,7 @@ def get_term_students(exam_plan, search="", page=1, page_length=20,
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.exam_plan = %(exam_plan)s
-		{search_cond}
+		{extra_cond}
 		""",
 		params,
 		as_dict=True,
