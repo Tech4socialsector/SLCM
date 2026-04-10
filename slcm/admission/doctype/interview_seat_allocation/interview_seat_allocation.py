@@ -6,7 +6,7 @@ from frappe import _
 import json
 import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, get_datetime, format_date, format_time
+from frappe.utils import now_datetime, get_url, get_datetime, format_date, format_time, flt
 from datetime import datetime
 
 
@@ -144,9 +144,17 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
     )
 
     total_attended = len(attended_records)
+    current_rank = 0
+    last_score = None
+
     for i, rec in enumerate(attended_records, start=1):
+        score = flt(rec.interview_score)
+        if last_score is None or score != last_score:
+            current_rank += 1
+            last_score = score
+
         frappe.db.set_value("Interview Seat Allocation", rec.name, {
-            "rank": i,
+            "rank": current_rank,
             "result_published": 1
         }, update_modified=False)
         if i % 10 == 0 or i == total_attended:

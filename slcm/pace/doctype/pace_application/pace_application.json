@@ -75,6 +75,7 @@
   "column_break_qsvv",
   "passport_oci",
   "govt_id",
+  "application_form",
   "declaration_tab",
   "declaration_html",
   "i_agree",
@@ -495,6 +496,11 @@
    "fieldname": "parents_details_tab",
    "fieldtype": "Tab Break",
    "label": "Parents Details"
+  },
+  {
+   "fieldname": "application_form",
+   "fieldtype": "Attach",
+   "label": "Application form"
   }
  ],
  "grid_page_length": 50,
