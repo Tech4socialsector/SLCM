@@ -12,80 +12,120 @@
 
 {% else %}
 
-<div class="sp-page-header fade-in">
+{# ── Page Header ───────────────────────────────────────────── #}
+<div class="sp-page-header fade-in" style="margin-bottom:20px;">
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--sp-text-4);margin-bottom:4px;">
+    Financial Overview
+  </div>
   <h1 class="sp-page-title">Fees &amp; Payments</h1>
-  <p class="sp-page-sub">Fee invoices and payment history</p>
 </div>
 
-{# ── Overdue Alert ─────────────────────────────────────────── #}
-{% set ns = namespace(overdue=0) %}
-{% for inv in invoices %}
-  {% if inv.is_overdue %}{% set ns.overdue = ns.overdue + 1 %}{% endif %}
-{% endfor %}
-{% if ns.overdue > 0 %}
-<div class="sp-alert sp-alert-danger fade-in">
-  <span class="sp-ms">error</span>
+{# ── Total Payable Hero Card ───────────────────────────────── #}
+<div class="sp-fee-hero fade-in">
+  <div class="sp-fee-hero-label">
+    Total Payable
+    <span class="sp-ms">account_balance</span>
+  </div>
+  <div class="sp-fee-hero-amount">&#8377;{{ "{:,.2f}".format(total_payable) }}</div>
+  <div class="sp-fee-hero-sub">
+    {% if current_enrollment %}
+      {{ current_enrollment.academic_year or "" }}
+      {% if current_enrollment.term_name %} · {{ current_enrollment.term_name }}{% endif %}
+    {% else %}
+      All academic periods
+    {% endif %}
+  </div>
+</div>
+
+{# ── Paid + Scholarship Mini Cards ────────────────────────── #}
+<div class="sp-fee-mini-grid fade-in">
+  <div class="sp-fee-mini">
+    <div class="sp-fee-mini-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">check_circle</div>
+    <div>
+      <div class="sp-fee-mini-lbl">Paid</div>
+      <div class="sp-fee-mini-val" style="color:var(--sp-success);">&#8377;{{ "{:,.2f}".format(total_paid) }}</div>
+    </div>
+  </div>
+  <div class="sp-fee-mini">
+    <div class="sp-fee-mini-icon" style="background:var(--sp-purple-bg);color:var(--sp-purple);">workspace_premium</div>
+    <div>
+      <div class="sp-fee-mini-lbl">Scholarship</div>
+      <div class="sp-fee-mini-val" style="color:var(--sp-purple);">&#8377;{{ "{:,.2f}".format(total_scholarship) }}</div>
+    </div>
+  </div>
+</div>
+
+{# ── Outstanding / All Clear ───────────────────────────────── #}
+{% if has_dues %}
+<div class="sp-fee-outstanding fade-in">
   <div>
-    <strong>{{ ns.overdue }} overdue invoice{% if ns.overdue != 1 %}s{% endif %}.</strong>
-    Please clear dues to avoid penalties. Contact the Finance Office for assistance.
+    <div class="sp-fee-outstanding-label">
+      <span class="sp-ms">warning</span> Total Outstanding
+    </div>
+    <div class="sp-fee-outstanding-amount">&#8377;{{ "{:,.2f}".format(total_outstanding) }}</div>
+  </div>
+  <a href="/student-portal/fees" class="sp-fee-pay-btn" onclick="spScrollToInvoices(event)">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
+    PAY NOW
+  </a>
+</div>
+{% else %}
+<div class="sp-fee-clear fade-in">
+  <span class="sp-ms-lg">check_circle</span>
+  <div>
+    <div class="sp-fee-clear-title">You're all paid up!</div>
+    <div class="sp-fee-clear-sub">No outstanding dues on your account.</div>
   </div>
 </div>
 {% endif %}
 
-{# ── Summary Cards ─────────────────────────────────────────── #}
-<div class="sp-fee-summary-grid fade-in">
-  <div class="sp-fee-summary-card">
-    <div class="sp-fee-summary-label">Total Payable</div>
-    <div class="sp-fee-summary-value" style="color:var(--sp-text-1);">&#8377;{{ "{:,.0f}".format(total_payable) }}</div>
-  </div>
-  <div class="sp-fee-summary-card">
-    <div class="sp-fee-summary-label">Paid</div>
-    <div class="sp-fee-summary-value" style="color:var(--sp-success);">&#8377;{{ "{:,.0f}".format(total_paid) }}</div>
-  </div>
-  <div class="sp-fee-summary-card">
-    <div class="sp-fee-summary-label">Outstanding</div>
-    <div class="sp-fee-summary-value" style="color:{% if has_dues %}var(--sp-danger){% else %}var(--sp-success){% endif %};">&#8377;{{ "{:,.0f}".format(total_outstanding) }}</div>
-  </div>
-  <div class="sp-fee-summary-card">
-    <div class="sp-fee-summary-label">Scholarship</div>
-    <div class="sp-fee-summary-value" style="color:#7c3aed;">&#8377;{{ "{:,.0f}".format(total_scholarship) }}</div>
-  </div>
-</div>
-
-{# ── Payment Progress ──────────────────────────────────────── #}
+{# ── Payment Progress Bar ──────────────────────────────────── #}
 {% if total_payable > 0 %}
-<div class="sp-card fade-in" style="padding:20px;margin-bottom:24px;">
-  <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+{% set paid_pct = ((total_paid / total_payable * 100) if total_payable > 0 else 0)|round|int %}
+<div class="sp-card fade-in" style="padding:18px 20px;margin-bottom:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
     <span style="font-size:13px;font-weight:600;color:var(--sp-text-2);">Payment Progress</span>
-    <span style="font-size:13px;color:var(--sp-text-4);">{{ "%.0f"|format((total_paid / total_payable * 100) if total_payable > 0 else 0) }}% paid</span>
+    <span style="font-size:13px;color:var(--sp-success);font-weight:700;">{{ paid_pct }}% paid</span>
   </div>
-  <div class="sp-progress" style="height:12px;">
-    <div class="sp-progress-bar" style="width:{{ "%.0f"|format((total_paid / total_payable * 100) if total_payable > 0 else 0) }}%;background:var(--sp-success);"></div>
+  <div class="sp-progress" style="height:10px;border-radius:99px;">
+    <div class="sp-progress-bar" style="width:{{ paid_pct }}%;background:var(--sp-success);border-radius:99px;"></div>
   </div>
 </div>
 {% endif %}
 
-{# ── Invoice List ──────────────────────────────────────────── #}
+{# ── Recent Invoices ───────────────────────────────────────── #}
+<div class="sp-section-hdr fade-in" id="sp-invoices-section">
+  <div class="sp-section-hdr-title">Recent Invoices</div>
+  {% if has_invoices %}
+  <a href="#" class="sp-section-hdr-link" onclick="return false;">View Archive</a>
+  {% endif %}
+</div>
+
 {% if not has_invoices %}
-<div class="sp-empty fade-in">
-  <span class="sp-ms">receipt_long</span>
-  <p class="sp-empty-title">No fee invoices found</p>
-  <p class="sp-empty-sub">Your fee invoices will appear here once they are generated.</p>
+{# Empty State #}
+<div class="sp-card fade-in" style="padding:48px 24px;text-align:center;margin-bottom:24px;">
+  <div style="width:64px;height:64px;background:var(--sp-bg);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:32px;color:var(--sp-text-4);">description</span>
+  </div>
+  <p style="font-size:16px;font-weight:700;color:var(--sp-text-2);margin:0 0 6px;">No fee invoices found</p>
+  <p style="font-size:13px;color:var(--sp-text-4);margin:0 0 24px;line-height:1.6;">
+    You're all caught up. There are no pending or new invoices<br>issued to your account for the current period.
+  </p>
+  <button class="sp-btn sp-btn-secondary" onclick="window.location.reload()">
+    <span class="sp-ms">refresh</span> Check for Updates
+  </button>
 </div>
 
 {% else %}
-<div style="font-size:14px;font-weight:700;color:var(--sp-text-2);margin-bottom:14px;" class="fade-in">
-  All Invoices <span style="font-size:13px;font-weight:400;color:var(--sp-text-4);">({{ invoices|length }})</span>
-</div>
 
+{# Invoice Accordion List #}
 {% for inv in invoices %}
-<div class="sp-invoice-card fade-in" style="animation-delay:{{ loop.index * 0.05 }}s;">
+<div class="sp-invoice-card fade-in" style="margin-bottom:12px;animation-delay:{{ loop.index * 0.05 }}s;">
 
-  {# Accordion Header #}
   <div class="sp-invoice-header" id="hdr-{{ loop.index }}" onclick="spToggleInvoice({{ loop.index }})">
     <div style="display:flex;align-items:center;gap:14px;">
-      <div style="width:44px;height:44px;border-radius:12px;background:{{ inv.status_bg }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:22px;color:{{ inv.status_color }};">
+      <div style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:{% if inv.status == 'Paid' %}var(--sp-success-bg){% elif inv.is_overdue %}var(--sp-danger-bg){% else %}var(--sp-warning-bg){% endif %};">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:22px;color:{% if inv.status == 'Paid' %}var(--sp-success){% elif inv.is_overdue %}var(--sp-danger){% else %}var(--sp-warning){% endif %};">
           {% if inv.status == 'Paid' %}check_circle{% elif inv.is_overdue %}error{% else %}receipt_long{% endif %}
         </span>
       </div>
@@ -93,23 +133,25 @@
         <div style="font-size:15px;font-weight:700;color:var(--sp-text-1);">{{ inv.academic_term or inv.name }}</div>
         <div style="font-size:12px;color:var(--sp-text-4);">
           {% if inv.invoice_date %}{{ frappe.utils.formatdate(inv.invoice_date, "dd MMM yyyy") }}{% endif %}
-          {% if inv.due_date %} &nbsp;·&nbsp; Due: {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}{% endif %}
+          {% if inv.due_date %} · Due {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}{% endif %}
         </div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
       <div style="text-align:right;">
-        <div style="font-size:16px;font-weight:700;color:{{ inv.status_color }};">{{ inv.formatted_outstanding }}</div>
-        <div style="font-size:11px;color:var(--sp-text-4);">outstanding</div>
+        <div style="font-size:15px;font-weight:700;color:{% if inv.outstanding_amount > 0 %}var(--sp-accent){% else %}var(--sp-success){% endif %};">
+          {{ inv.formatted_outstanding }}
+        </div>
+        <div style="font-size:10px;color:var(--sp-text-4);text-transform:uppercase;letter-spacing:0.05em;">outstanding</div>
       </div>
-      <span class="sp-badge" style="background:{{ inv.status_bg }};color:{{ inv.status_color }};">
+      <span class="sp-badge" style="background:{% if inv.status == 'Paid' %}var(--sp-success-bg);color:var(--sp-success){% elif inv.is_overdue %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-warning-bg);color:var(--sp-warning){% endif %};">
         {% if inv.is_overdue %}Overdue{% else %}{{ inv.status }}{% endif %}
       </span>
       <span class="sp-ms" id="chv-{{ loop.index }}" style="font-family:'Material Symbols Outlined';font-size:20px;color:var(--sp-text-4);transition:transform 0.25s;">expand_more</span>
     </div>
   </div>
 
-  {# Accordion Body #}
   <div class="sp-invoice-body" id="inv-{{ loop.index }}">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
 
@@ -122,8 +164,8 @@
         </div>
         {% if inv.scholarship_amount and inv.scholarship_amount > 0 %}
         <div class="sp-fee-detail-row">
-          <span style="color:#7c3aed;">Scholarship</span>
-          <span style="font-weight:600;color:#7c3aed;">- &#8377;{{ "{:,.0f}".format(inv.scholarship_amount) }}</span>
+          <span style="color:var(--sp-purple);">Scholarship</span>
+          <span style="font-weight:600;color:var(--sp-purple);">- &#8377;{{ "{:,.0f}".format(inv.scholarship_amount) }}</span>
         </div>
         {% endif %}
         <div class="sp-fee-detail-row">
@@ -134,13 +176,13 @@
           <span style="color:var(--sp-success);">Amount Paid</span>
           <span style="font-weight:600;color:var(--sp-success);">{{ inv.formatted_paid }}</span>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;margin-top:4px;background:{% if inv.outstanding_amount > 0 %}var(--sp-danger-bg){% else %}var(--sp-success-bg){% endif %};">
-          <span style="font-weight:700;color:{% if inv.outstanding_amount > 0 %}var(--sp-danger){% else %}var(--sp-success){% endif %};">Outstanding</span>
-          <span style="font-weight:800;color:{% if inv.outstanding_amount > 0 %}var(--sp-danger){% else %}var(--sp-success){% endif %};">{{ inv.formatted_outstanding }}</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;margin-top:6px;background:{% if inv.outstanding_amount > 0 %}#fff0f0{% else %}var(--sp-success-bg){% endif %};">
+          <span style="font-weight:700;color:{% if inv.outstanding_amount > 0 %}var(--sp-accent){% else %}var(--sp-success){% endif %};">Outstanding</span>
+          <span style="font-weight:800;color:{% if inv.outstanding_amount > 0 %}var(--sp-accent){% else %}var(--sp-success){% endif %};">{{ inv.formatted_outstanding }}</span>
         </div>
       </div>
 
-      {# Payments #}
+      {# Payment History #}
       <div>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--sp-text-4);margin-bottom:12px;">Payment History</div>
         {% if inv.payments %}
@@ -150,15 +192,15 @@
               <div style="font-weight:600;color:var(--sp-success);">&#8377;{{ "{:,.0f}".format(p.amount or 0) }}</div>
               <div style="font-size:11px;color:var(--sp-text-4);">
                 {{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") if p.payment_date else "" }}
-                {% if p.payment_mode %}&nbsp;·&nbsp; {{ p.payment_mode }}{% endif %}
+                {% if p.payment_mode %} · {{ p.payment_mode }}{% endif %}
               </div>
             </div>
           </div>
           {% endfor %}
         {% else %}
-          <div style="text-align:center;padding:24px;color:var(--sp-text-4);">
-            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:30px;display:block;margin-bottom:8px;">payments</span>
-            No payments recorded
+          <div style="text-align:center;padding:28px 16px;color:var(--sp-text-4);">
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:28px;display:block;margin-bottom:8px;">payments</span>
+            <span style="font-size:13px;">No payments recorded</span>
           </div>
         {% endif %}
       </div>
@@ -168,22 +210,59 @@
 
 </div>
 {% endfor %}
-{% endif %}
+
+{% endif %}{# end has_invoices #}
+
+{# ── Payment Support ───────────────────────────────────────── #}
+<div style="margin-top:32px;" class="fade-in">
+  <div class="sp-card-section-label" style="padding:0;margin-bottom:12px;">Payment Support</div>
+  <div class="sp-support-list">
+    <a href="/helpdesk/new-ticket" target="_blank" class="sp-support-item">
+      <div class="sp-support-icon">local_library</div>
+      <div>
+        <div class="sp-support-title">Bursar Office Support</div>
+        <div class="sp-support-sub">Available Mon–Fri, 9AM–5PM</div>
+      </div>
+      <span class="sp-ms sp-ms-right">chevron_right</span>
+    </a>
+    <div class="sp-support-item" onclick="window.print()">
+      <div class="sp-support-icon">receipt</div>
+      <div>
+        <div class="sp-support-title">Payment History</div>
+        <div class="sp-support-sub">Download receipts for past payments</div>
+      </div>
+      <span class="sp-ms sp-ms-right">chevron_right</span>
+    </div>
+    <a href="/helpdesk" target="_blank" class="sp-support-item">
+      <div class="sp-support-icon">support_agent</div>
+      <div>
+        <div class="sp-support-title">Help &amp; Helpdesk</div>
+        <div class="sp-support-sub">Submit a support ticket or query</div>
+      </div>
+      <span class="sp-ms sp-ms-right">chevron_right</span>
+    </a>
+  </div>
+</div>
 
 {% endif %}{# end no_student #}
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
 function spToggleInvoice(i) {
-  var body   = document.getElementById('inv-' + i);
-  var hdr    = document.getElementById('hdr-' + i);
-  var chv    = document.getElementById('chv-' + i);
-  var isOpen = body.classList.contains('open');
+  var body = document.getElementById('inv-' + i);
+  var hdr  = document.getElementById('hdr-' + i);
+  var chv  = document.getElementById('chv-' + i);
+  var open = body.classList.contains('open');
   body.classList.toggle('open');
   hdr.classList.toggle('open');
-  if (chv) chv.style.transform = isOpen ? '' : 'rotate(180deg)';
+  if (chv) chv.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+function spScrollToInvoices(e) {
+  e.preventDefault();
+  var el = document.getElementById('sp-invoices-section');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 </script>
 {% endblock %}

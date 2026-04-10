@@ -2,6 +2,13 @@
 
 {% block title %}Attendance{% endblock %}
 
+{% block extra_head %}
+<script>
+  /* CSRF token for Frappe API calls */
+  var SP_CSRF = "{{ frappe.session.csrf_token }}";
+</script>
+{% endblock %}
+
 {% block content %}
 
 {% if no_student %}
@@ -12,22 +19,23 @@
 
 {% else %}
 
+{# ── Page Header ───────────────────────────────────────────────── #}
 <div class="sp-page-header fade-in">
   <h1 class="sp-page-title">Attendance</h1>
-  <p class="sp-page-sub">Course-wise attendance tracking</p>
+  <p class="sp-page-sub">Track your attendance, applications, and office hours</p>
 </div>
 
-{# ── Summary Stats ─────────────────────────────────────────── #}
+{# ── Summary Stats ─────────────────────────────────────────────── #}
 <div class="sp-att-stat-grid fade-in">
   <div class="sp-att-stat">
     <div class="sp-att-stat-num" style="color:{% if avg_attendance >= 75 %}var(--sp-success){% elif avg_attendance >= 60 %}var(--sp-warning){% else %}var(--sp-danger){% endif %};">
       {{ avg_attendance }}%
     </div>
-    <div class="sp-att-stat-lbl">Overall Avg</div>
+    <div class="sp-att-stat-lbl">Overall Average</div>
   </div>
   <div class="sp-att-stat">
     <div class="sp-att-stat-num" style="color:var(--sp-primary);">{{ total_courses }}</div>
-    <div class="sp-att-stat-lbl">Courses</div>
+    <div class="sp-att-stat-lbl">Total Courses</div>
   </div>
   <div class="sp-att-stat">
     <div class="sp-att-stat-num" style="color:var(--sp-danger);">{{ courses_below_75 }}</div>
@@ -39,136 +47,1061 @@
   </div>
 </div>
 
-{# ── Alerts ────────────────────────────────────────────────── #}
+{# ── Alert ─────────────────────────────────────────────────────── #}
 {% if courses_below_75 > 0 %}
 <div class="sp-alert sp-alert-warning fade-in">
   <span class="sp-ms">warning</span>
   <div>
     <strong>{{ courses_below_75 }} course{% if courses_below_75 != 1 %}s{% endif %} below 75%.</strong>
-    You may not be eligible for exams in these courses. Contact your Faculty Advisor.
+    You may not be eligible for exams in these courses. Use the <em>Condonation</em> tab if eligible, or contact your Faculty Advisor.
   </div>
 </div>
 {% endif %}
 
-{# ── No Data ───────────────────────────────────────────────── #}
-{% if not attendance_summaries %}
-<div class="sp-empty fade-in">
-  <span class="sp-ms">event_available</span>
-  <p class="sp-empty-title">No attendance records yet</p>
-  <p class="sp-empty-sub">Attendance will appear here once sessions have been recorded.</p>
+{# ── Tab Navigation ────────────────────────────────────────────── #}
+<div class="sp-tab-nav fade-in">
+  <button class="sp-tab active" onclick="spSwitchTab('overview', this)" id="tab-btn-overview">
+    <span class="sp-ms">event_available</span>
+    Overview
+  </button>
+  <button class="sp-tab" onclick="spSwitchTab('famfa', this)" id="tab-btn-famfa">
+    <span class="sp-ms">assignment</span>
+    FA / MFA
+    {% if fa_mfa_applications %}
+    <span class="sp-tab-badge">{{ fa_mfa_applications|length }}</span>
+    {% endif %}
+  </button>
+  <button class="sp-tab" onclick="spSwitchTab('condonation', this)" id="tab-btn-condonation">
+    <span class="sp-ms">how_to_reg</span>
+    Condonation
+    {% if condonation_applications %}
+    <span class="sp-tab-badge">{{ condonation_applications|length }}</span>
+    {% endif %}
+  </button>
+  <button class="sp-tab" onclick="spSwitchTab('officehours', this)" id="tab-btn-officehours">
+    <span class="sp-ms">schedule</span>
+    Office Hours
+    {% if office_hours_sessions %}
+    <span class="sp-tab-badge sp-tab-badge-info">{{ office_hours_sessions|length }}</span>
+    {% endif %}
+  </button>
 </div>
 
-{% else %}
+{# ══════════════════════════════════════════════════════════════════
+   TAB 1 — OVERVIEW
+══════════════════════════════════════════════════════════════════ #}
+<div id="sp-tab-overview" class="sp-tab-panel active">
 
-{# ── Course Cards (grouped by term) ───────────────────────── #}
-{% for tg in term_groups %}
-<div style="margin-bottom:28px;" class="fade-in">
-  <div style="font-size:14px;font-weight:700;color:var(--sp-text-2);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-primary);">calendar_month</span>
-    {{ tg.term }}
-    <span style="font-size:12px;font-weight:400;color:var(--sp-text-4);">
-      {{ tg.summaries|length }} course{% if tg.summaries|length != 1 %}s{% endif %}
-    </span>
+  {% if not attendance_summaries %}
+  <div class="sp-empty fade-in">
+    <span class="sp-ms">event_available</span>
+    <p class="sp-empty-title">No attendance records yet</p>
+    <p class="sp-empty-sub">Attendance will appear here once sessions have been recorded.</p>
   </div>
+  {% else %}
 
-  <div class="sp-att-grid">
-    {% for s in tg.summaries %}
-    <div class="sp-att-card" style="border-left-color:{{ s.status_color }};">
-
-      {# Header #}
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px;">
-        <div style="overflow:hidden;">
-          <div style="font-size:14px;font-weight:700;color:var(--sp-text-1);line-height:1.3;">{{ s.course_display }}</div>
-          <div style="font-size:12px;color:var(--sp-text-4);margin-top:2px;">{{ s.faculty }}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:24px;font-weight:800;color:{{ s.status_color }};line-height:1;">{{ s.pct }}%</div>
-          <span class="sp-badge" style="font-size:10px;background:{% if s.status_label == 'Good' %}var(--sp-success-bg);color:var(--sp-success){% elif s.status_label == 'Low' %}var(--sp-warning-bg);color:var(--sp-warning){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
-            {{ s.status_label }}
-          </span>
-        </div>
-      </div>
-
-      {# Progress Bar #}
-      <div class="sp-progress" style="margin-bottom:10px;height:6px;">
-        <div class="sp-progress-bar" style="width:{{ s.pct if s.pct <= 100 else 100 }}%;background:{{ s.status_color }};"></div>
-      </div>
-
-      {# Stats Row #}
-      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--sp-text-4);">
-        <span><strong style="color:var(--sp-text-2);">{{ s.attended_classes|int }}</strong> / {{ s.total_classes|int }} sessions</span>
-        {% if s.minimum_required_percentage %}
-        <span>Required: <strong style="color:var(--sp-text-2);">{{ s.minimum_required_percentage|int }}%</strong></span>
-        {% endif %}
-        {% if s.shortfall > 0 %}
-        <span style="color:var(--sp-danger);">Shortfall: <strong>{{ s.shortfall }}%</strong></span>
-        {% endif %}
-      </div>
-
-      {# Eligibility Badges #}
-      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        {% if s.eligible_for_exam is not none %}
-        <span class="sp-badge" style="background:{% if s.eligible_for_exam %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
-          <span class="sp-ms">{% if s.eligible_for_exam %}check_circle{% else %}cancel{% endif %}</span>
-          {% if s.eligible_for_exam %}Exam Eligible{% else %}Not Eligible{% endif %}
-        </span>
-        {% endif %}
-        {% if s.total_condonation_hours and s.total_condonation_hours > 0 %}
-        <span class="sp-badge" style="background:var(--sp-info-bg);color:var(--sp-info);">
-          Condonation: {{ s.total_condonation_hours|int }}h
-        </span>
-        {% endif %}
-        {% if s.total_fa_mfa_hours and s.total_fa_mfa_hours > 0 %}
-        <span class="sp-badge" style="background:#f3e8ff;color:#7c3aed;">
-          FA/MFA: {{ s.total_fa_mfa_hours|int }}h
-        </span>
-        {% endif %}
-      </div>
-
+  {# Course Cards grouped by term #}
+  {% for tg in term_groups %}
+  <div style="margin-bottom:28px;" class="fade-in">
+    <div style="font-size:13px;font-weight:700;color:var(--sp-text-2);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+      <span class="sp-ms" style="font-size:18px;color:var(--sp-primary);">calendar_month</span>
+      {{ tg.term }}
+      <span style="font-size:12px;font-weight:400;color:var(--sp-text-4);">
+        {{ tg.summaries|length }} course{% if tg.summaries|length != 1 %}s{% endif %}
+      </span>
     </div>
-    {% endfor %}
-  </div>
-</div>
-{% endfor %}
 
-{# ── Recent Daily Attendance ──────────────────────────────── #}
-{% if recent_attendance %}
-<div class="sp-card fade-in" style="margin-top:8px;">
-  <div class="sp-card-header">
-    <div class="sp-card-title"><span class="sp-ms">history</span> Recent Attendance (Last 30 Days)</div>
+    <div class="sp-att-grid">
+      {% for s in tg.summaries %}
+      <div class="sp-att-card" style="border-left-color:{{ s.status_color }};">
+
+        {# Header #}
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+          <div style="overflow:hidden;flex:1;">
+            <div style="font-size:14px;font-weight:700;color:var(--sp-text-1);line-height:1.35;">{{ s.course_display }}</div>
+            <div style="font-size:12px;color:var(--sp-text-4);margin-top:2px;">
+              <span class="sp-ms" style="font-size:13px;vertical-align:-2px;">person</span>
+              {{ s.faculty }}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:26px;font-weight:800;color:{{ s.status_color }};line-height:1;">{{ s.pct }}%</div>
+            <span class="sp-badge" style="font-size:10px;background:{% if s.status_label == 'Good' %}var(--sp-success-bg);color:var(--sp-success){% elif s.status_label == 'Low' %}var(--sp-warning-bg);color:var(--sp-warning){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
+              {{ s.status_label }}
+            </span>
+          </div>
+        </div>
+
+        {# Progress Bar #}
+        <div class="sp-progress" style="margin-bottom:10px;">
+          <div class="sp-progress-bar" style="width:{{ s.pct if s.pct <= 100 else 100 }}%;background:{{ s.status_color }};"></div>
+        </div>
+
+        {# Stats Row #}
+        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sp-text-4);margin-bottom:10px;">
+          <span>
+            <strong style="color:var(--sp-text-2);">{{ s.attended_classes|int }}</strong>
+            / {{ s.total_class_hours|int }}h attended
+          </span>
+          {% if s.minimum_required_percentage %}
+          <span>Min: <strong style="color:var(--sp-text-2);">{{ s.minimum_required_percentage|int }}%</strong></span>
+          {% endif %}
+          {% if s.shortfall > 0 %}
+          <span style="color:var(--sp-danger);">Shortfall: <strong>{{ s.shortfall }}%</strong></span>
+          {% endif %}
+        </div>
+
+        {# Badges Row #}
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          {% if s.eligible_for_exam is not none %}
+          <span class="sp-badge" style="background:{% if s.eligible_for_exam %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
+            <span class="sp-ms">{% if s.eligible_for_exam %}check_circle{% else %}cancel{% endif %}</span>
+            {% if s.eligible_for_exam %}Exam Eligible{% else %}Not Eligible{% endif %}
+          </span>
+          {% endif %}
+          {% if s.total_office_hours and s.total_office_hours > 0 %}
+          <span class="sp-badge" style="background:var(--sp-info-bg);color:var(--sp-info);">
+            <span class="sp-ms">schedule</span>Office: {{ s.total_office_hours }}h
+          </span>
+          {% endif %}
+          {% if s.total_condonation_hours and s.total_condonation_hours > 0 %}
+          <span class="sp-badge" style="background:#e8f5e9;color:#2e7d32;">
+            <span class="sp-ms">how_to_reg</span>Cond: {{ s.total_condonation_hours }}h
+          </span>
+          {% endif %}
+          {% if s.total_fa_mfa_hours and s.total_fa_mfa_hours > 0 %}
+          <span class="sp-badge" style="background:#f3e8ff;color:#7c3aed;">
+            <span class="sp-ms">assignment</span>FA/MFA: {{ s.total_fa_mfa_hours }}h
+          </span>
+          {% endif %}
+        </div>
+
+        {# Apply Buttons #}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--sp-border);padding-top:10px;">
+          {% if allow_fa_mfa %}
+          <button class="sp-btn sp-btn-outline sp-btn-sm"
+            onclick="spOpenFAMFA('{{ s.course }}', '{{ s.course_display|replace("'", "\\'") }}')"
+            title="Apply for First Attempt / Medical First Attempt">
+            <span class="sp-ms">assignment</span>Apply FA/MFA
+          </button>
+          {% endif %}
+          {% if s.can_apply_condonation %}
+          <button class="sp-btn sp-btn-outline-warning sp-btn-sm"
+            onclick="spOpenCondonation('{{ s.course_offering }}', '{{ s.course_display|replace("'", "\\'") }}')"
+            title="Apply for Attendance Condonation">
+            <span class="sp-ms">how_to_reg</span>Apply Condonation
+          </button>
+          {% elif allow_condonation and s.pct < (s.minimum_required_percentage or 75) and not s.can_apply_condonation %}
+          <span class="sp-badge" style="background:var(--sp-bg);color:var(--sp-text-4);font-size:11px;" title="Attendance too low to apply for condonation">
+            <span class="sp-ms">lock</span>Condonation N/A
+          </span>
+          {% endif %}
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
   </div>
-  <div style="overflow-x:auto;">
-    <table class="sp-table">
+  {% endfor %}
+
+  {# Recent Attendance Table #}
+  {% if recent_attendance %}
+  <div class="sp-card fade-in" style="margin-top:8px;">
+    <div class="sp-card-header">
+      <div class="sp-card-title">
+        <span class="sp-ms">history</span> Recent Attendance
+        <span style="font-size:12px;font-weight:400;color:var(--sp-text-4);">(Last 30 days)</span>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="sp-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Course</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recent_attendance %}
+          <tr>
+            <td style="font-weight:500;white-space:nowrap;">
+              {{ frappe.utils.formatdate(r.attendance_date, "dd MMM yyyy") }}
+            </td>
+            <td style="color:var(--sp-text-3);">{{ r.course_offer or "—" }}</td>
+            <td style="font-size:12px;color:var(--sp-text-4);">{{ r.session_type or "Class" }}</td>
+            <td>
+              <span class="sp-badge" style="background:{% if r.status == 'Present' %}var(--sp-success-bg);color:var(--sp-success){% elif r.status == 'Absent' %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-info-bg);color:var(--sp-info){% endif %};">
+                {{ r.status }}
+              </span>
+            </td>
+            <td style="font-size:12px;color:var(--sp-text-4);white-space:nowrap;">
+              {% if r.in_time %}{{ r.in_time }}{% if r.out_time %} – {{ r.out_time }}{% endif %}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}{# end not attendance_summaries #}
+</div>{# end tab-overview #}
+
+
+{# ══════════════════════════════════════════════════════════════════
+   TAB 2 — FA / MFA APPLICATIONS
+══════════════════════════════════════════════════════════════════ #}
+<div id="sp-tab-famfa" class="sp-tab-panel">
+
+  <div class="sp-tab-section-header">
+    <div>
+      <h2 class="sp-section-title">FA / MFA Applications</h2>
+      <p class="sp-section-sub">First Attempt &amp; Medical First Attempt applications for examinations</p>
+    </div>
+    {% if allow_fa_mfa %}
+    <button class="sp-btn sp-btn-primary" onclick="spOpenFAMFA('', '')">
+      <span class="sp-ms">add</span> New Application
+    </button>
+    {% endif %}
+  </div>
+
+  {% if not allow_fa_mfa %}
+  <div class="sp-alert sp-alert-info fade-in" style="margin-top:16px;">
+    <span class="sp-ms">info</span>
+    <div>FA/MFA Applications are currently <strong>disabled</strong> by the administration.</div>
+  </div>
+  {% elif not fa_mfa_applications %}
+  <div class="sp-empty fade-in">
+    <span class="sp-ms">assignment</span>
+    <p class="sp-empty-title">No FA/MFA Applications</p>
+    <p class="sp-empty-sub">You have not submitted any FA/MFA applications yet.</p>
+    <button class="sp-btn sp-btn-primary" style="margin-top:16px;" onclick="spOpenFAMFA('', '')">
+      <span class="sp-ms">add</span> New Application
+    </button>
+  </div>
+  {% else %}
+  <div style="overflow-x:auto;margin-top:4px;">
+    <table class="sp-table sp-card fade-in" style="overflow:hidden;">
       <thead>
         <tr>
-          <th>Date</th>
+          <th>App ID</th>
           <th>Course</th>
+          <th>Exam Date</th>
+          <th>Type</th>
+          <th>Reason</th>
           <th>Status</th>
-          <th>Time</th>
+          <th>Granted Hours</th>
         </tr>
       </thead>
       <tbody>
-        {% for r in recent_attendance %}
+        {% for app in fa_mfa_applications %}
         <tr>
-          <td style="font-weight:500;">{{ frappe.utils.formatdate(r.attendance_date, "dd MMM yyyy") }}</td>
-          <td style="color:var(--sp-text-3);">{{ r.course_offering or "—" }}</td>
           <td>
-            <span class="sp-badge" style="background:{% if r.status == 'Present' %}var(--sp-success-bg);color:var(--sp-success){% elif r.status == 'Absent' %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-info-bg);color:var(--sp-info){% endif %};">
-              {{ r.status }}
+            <span style="font-family:monospace;font-size:12px;color:var(--sp-text-4);">{{ app.name }}</span>
+          </td>
+          <td style="font-weight:500;">{{ app.course_name or app.course or "—" }}</td>
+          <td style="white-space:nowrap;">
+            {{ frappe.utils.formatdate(app.examination_date, "dd MMM yyyy") if app.examination_date else "—" }}
+          </td>
+          <td>
+            <span class="sp-badge" style="background:var(--sp-info-bg);color:var(--sp-info);">
+              {{ app.application_type or "—" }}
             </span>
           </td>
-          <td style="font-size:12px;color:var(--sp-text-4);">
-            {% if r.in_time %}{{ r.in_time }}{% if r.out_time %} – {{ r.out_time }}{% endif %}{% else %}—{% endif %}
+          <td style="font-size:13px;color:var(--sp-text-3);">{{ app.reason or "—" }}</td>
+          <td>
+            <span class="sp-badge" style="background:{{ app.status_bg }};color:{{ app.status_color }};">
+              {% if app.status == "Pending" %}<span class="sp-ms">hourglass_empty</span>
+              {% elif app.status == "Approved" %}<span class="sp-ms">check_circle</span>
+              {% else %}<span class="sp-ms">cancel</span>{% endif %}
+              {{ app.status }}
+            </span>
+          </td>
+          <td style="text-align:center;">
+            {% if app.granted_hours %}
+            <strong style="color:var(--sp-success);">{{ app.granted_hours }}h</strong>
+            {% else %}—{% endif %}
           </td>
         </tr>
+        {% if app.status == "Rejected" and app.rejection_reason %}
+        <tr style="background:var(--sp-danger-bg);">
+          <td colspan="7" style="font-size:12px;color:var(--sp-danger);padding:6px 16px;">
+            <strong>Rejection Reason:</strong> {{ app.rejection_reason }}
+          </td>
+        </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>
   </div>
+  {% endif %}
+
+  {# Info box about FA/MFA #}
+  <div class="sp-info-box fade-in" style="margin-top:24px;">
+    <span class="sp-ms">info</span>
+    <div>
+      <strong>About FA/MFA:</strong>
+      <ul style="margin:6px 0 0 16px;padding:0;font-size:13px;line-height:1.8;">
+        <li><strong>First Attempt (FA)</strong> — For University Representation (competitions, events)</li>
+        <li><strong>Medical First Attempt (MFA)</strong> — For Medical Reasons or Bereavement</li>
+        <li>Submit before the exam date with valid proof. Approval grants attendance hours.</li>
+      </ul>
+    </div>
+  </div>
+</div>{# end tab-famfa #}
+
+
+{# ══════════════════════════════════════════════════════════════════
+   TAB 3 — CONDONATION
+══════════════════════════════════════════════════════════════════ #}
+<div id="sp-tab-condonation" class="sp-tab-panel">
+
+  <div class="sp-tab-section-header">
+    <div>
+      <h2 class="sp-section-title">Condonation Applications</h2>
+      <p class="sp-section-sub">Request attendance condonation for approved absences</p>
+    </div>
+    {% if allow_condonation %}
+    <button class="sp-btn sp-btn-primary" onclick="spOpenCondonation('', '')">
+      <span class="sp-ms">add</span> New Application
+    </button>
+    {% endif %}
+  </div>
+
+  {% if not allow_condonation %}
+  <div class="sp-alert sp-alert-info fade-in" style="margin-top:16px;">
+    <span class="sp-ms">info</span>
+    <div>Condonation Applications are currently <strong>disabled</strong> by the administration.</div>
+  </div>
+  {% elif not condonation_applications %}
+  <div class="sp-empty fade-in">
+    <span class="sp-ms">how_to_reg</span>
+    <p class="sp-empty-title">No Condonation Applications</p>
+    <p class="sp-empty-sub">You have not submitted any condonation applications yet.</p>
+    {% if allow_condonation %}
+    <button class="sp-btn sp-btn-primary" style="margin-top:16px;" onclick="spOpenCondonation('', '')">
+      <span class="sp-ms">add</span> New Application
+    </button>
+    {% endif %}
+  </div>
+  {% else %}
+  <div style="overflow-x:auto;margin-top:4px;">
+    <table class="sp-table sp-card fade-in" style="overflow:hidden;">
+      <thead>
+        <tr>
+          <th>App ID</th>
+          <th>Course</th>
+          <th>Sessions</th>
+          <th>Hours</th>
+          <th>Reason</th>
+          <th>Faculty Rec.</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in condonation_applications %}
+        <tr>
+          <td>
+            <span style="font-family:monospace;font-size:12px;color:var(--sp-text-4);">{{ app.name }}</span>
+          </td>
+          <td style="font-weight:500;">{{ app.course_display }}</td>
+          <td style="text-align:center;">{{ app.number_of_sessions or 0 }}</td>
+          <td style="text-align:center;">{{ app.number_of_hours or 0 }}h</td>
+          <td style="font-size:13px;color:var(--sp-text-3);">{{ app.condonation_reason or "—" }}</td>
+          <td>
+            {% set rec = app.faculty_recommendation or "Pending" %}
+            <span class="sp-badge" style="font-size:11px;background:{% if rec == 'Recommended' %}var(--sp-success-bg);color:var(--sp-success){% elif rec == 'Not Recommended' %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-warning-bg);color:var(--sp-warning){% endif %};">
+              {{ rec }}
+            </span>
+          </td>
+          <td>
+            <span class="sp-badge" style="background:{{ app.status_bg }};color:{{ app.status_color }};">
+              {% if app.final_status == "Pending" %}<span class="sp-ms">hourglass_empty</span>
+              {% elif app.final_status == "Approved" %}<span class="sp-ms">check_circle</span>
+              {% else %}<span class="sp-ms">cancel</span>{% endif %}
+              {{ app.final_status or "Pending" }}
+            </span>
+          </td>
+        </tr>
+        {% if app.remarks %}
+        <tr style="background:#f9fafb;">
+          <td colspan="7" style="font-size:12px;color:var(--sp-text-3);padding:6px 16px;">
+            <strong>Remarks:</strong> {{ app.remarks }}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# Info box about condonation #}
+  <div class="sp-info-box fade-in" style="margin-top:24px;">
+    <span class="sp-ms">info</span>
+    <div>
+      <strong>About Condonation:</strong>
+      <ul style="margin:6px 0 0 16px;padding:0;font-size:13px;line-height:1.8;">
+        <li>Eligible if your attendance is between <strong>{{ min_condonation_pct|int }}%</strong> and <strong>74%</strong></li>
+        <li>Requires Faculty recommendation followed by Programme Chair approval</li>
+        <li>Submit with a valid proof document (medical certificate, event proof, etc.)</li>
+        <li>Approval will automatically update your attendance percentage</li>
+      </ul>
+    </div>
+  </div>
+</div>{# end tab-condonation #}
+
+
+{# ══════════════════════════════════════════════════════════════════
+   TAB 4 — OFFICE HOURS
+══════════════════════════════════════════════════════════════════ #}
+<div id="sp-tab-officehours" class="sp-tab-panel">
+
+  <div class="sp-tab-section-header">
+    <div>
+      <h2 class="sp-section-title">Office Hours Sessions</h2>
+      <p class="sp-section-sub">Upcoming office hours for your enrolled courses</p>
+    </div>
+  </div>
+
+  {% if not office_hours_sessions %}
+  <div class="sp-empty fade-in">
+    <span class="sp-ms">schedule</span>
+    <p class="sp-empty-title">No Upcoming Office Hours</p>
+    <p class="sp-empty-sub">No office hours sessions are currently scheduled for your courses.</p>
+  </div>
+  {% else %}
+  <div class="sp-oh-grid fade-in">
+    {% for oh in office_hours_sessions %}
+    <div class="sp-oh-card {% if oh.session_status == 'Conducted' %}sp-oh-conducted{% endif %}">
+
+      {# Status ribbon #}
+      <div class="sp-oh-status-bar" style="background:{% if oh.session_status == 'Scheduled' %}var(--sp-primary){% else %}var(--sp-text-4){% endif %};">
+        <span class="sp-ms" style="font-size:14px;">{% if oh.session_status == 'Scheduled' %}schedule{% else %}done_all{% endif %}</span>
+        {{ oh.session_status }}
+      </div>
+
+      {# Course name #}
+      <div style="font-size:14px;font-weight:700;color:var(--sp-text-1);line-height:1.3;margin-bottom:12px;">
+        {{ oh.course_display }}
+      </div>
+
+      {# Details grid #}
+      <div class="sp-oh-details">
+        <div class="sp-oh-detail-item">
+          <span class="sp-ms">calendar_today</span>
+          <span>{{ frappe.utils.formatdate(oh.session_date, "EEE, dd MMM yyyy") }}</span>
+        </div>
+        <div class="sp-oh-detail-item">
+          <span class="sp-ms">access_time</span>
+          <span>{{ oh.start_fmt }} – {{ oh.end_fmt }}
+            {% if oh.duration_hours %}<em style="color:var(--sp-text-4);">({{ oh.duration_hours }}h)</em>{% endif %}
+          </span>
+        </div>
+        {% if oh.faculty %}
+        <div class="sp-oh-detail-item">
+          <span class="sp-ms">person</span>
+          <span>{{ oh.faculty }}</span>
+        </div>
+        {% endif %}
+        {% if oh.location %}
+        <div class="sp-oh-detail-item">
+          <span class="sp-ms">location_on</span>
+          <span>{{ oh.location }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Register button #}
+      {% if oh.is_scheduled %}
+      <div style="margin-top:14px;">
+        <button class="sp-btn sp-btn-primary sp-btn-sm sp-btn-full"
+          onclick="spRegisterOfficeHours('{{ oh.name }}', '{{ oh.course_display|replace("'", "\\'") }}')"
+          id="oh-btn-{{ oh.name }}">
+          <span class="sp-ms">how_to_reg</span> Register Attendance
+        </button>
+      </div>
+      {% else %}
+      <div style="margin-top:14px;">
+        <span class="sp-btn sp-btn-sm sp-btn-full" style="background:var(--sp-bg);color:var(--sp-text-4);cursor:default;border:1px solid var(--sp-border);">
+          <span class="sp-ms">done_all</span> Session Conducted
+        </span>
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# Info box #}
+  <div class="sp-info-box fade-in" style="margin-top:24px;">
+    <span class="sp-ms">info</span>
+    <div style="font-size:13px;line-height:1.8;">
+      <strong>About Office Hours:</strong> Attending office hours sessions counts towards your attendance percentage.
+      Click <strong>Register Attendance</strong> to log your participation for a scheduled session.
+      Office hours hours are added to your total attendance automatically.
+    </div>
+  </div>
+
+</div>{# end tab-officehours #}
+
+
+{# ══════════════════════════════════════════════════════════════════
+   MODAL — FA / MFA APPLICATION
+══════════════════════════════════════════════════════════════════ #}
+<div class="sp-modal-overlay" id="modal-famfa" onclick="spCloseModalIf(event, 'modal-famfa')">
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="famfa-modal-title">
+    <div class="sp-modal-header">
+      <div class="sp-modal-title" id="famfa-modal-title">
+        <span class="sp-ms">assignment</span> New FA / MFA Application
+      </div>
+      <button class="sp-modal-close" onclick="spCloseModal('modal-famfa')" aria-label="Close">
+        <span class="sp-ms">close</span>
+      </button>
+    </div>
+
+    <div class="sp-modal-body">
+      <div id="famfa-alert" class="sp-form-alert" style="display:none;"></div>
+
+      <form id="form-famfa" onsubmit="return false;">
+
+        {# Course #}
+        <div class="sp-form-group">
+          <label class="sp-form-label" for="famfa-course">
+            Course <span class="sp-required">*</span>
+          </label>
+          {% if student_courses %}
+          <select class="sp-form-control" id="famfa-course" name="course" required>
+            <option value="">— Select Course —</option>
+            {% for c in student_courses %}
+            <option value="{{ c.course }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <input type="text" class="sp-form-control" id="famfa-course" name="course"
+            placeholder="Enter course ID" required>
+          {% endif %}
+        </div>
+
+        <div class="sp-form-row">
+          {# Application Type #}
+          <div class="sp-form-group">
+            <label class="sp-form-label" for="famfa-type">
+              Application Type <span class="sp-required">*</span>
+            </label>
+            <select class="sp-form-control" id="famfa-type" name="application_type" required>
+              <option value="">— Select —</option>
+              <option value="First Attempt (FA)">First Attempt (FA)</option>
+              <option value="Medical First Attempt (MFA)">Medical First Attempt (MFA)</option>
+            </select>
+          </div>
+
+          {# Reason #}
+          <div class="sp-form-group">
+            <label class="sp-form-label" for="famfa-reason">
+              Reason <span class="sp-required">*</span>
+            </label>
+            <select class="sp-form-control" id="famfa-reason" name="reason" required
+              onchange="spToggleEventDates()">
+              <option value="">— Select Reason —</option>
+              <option value="University Representation">University Representation</option>
+              <option value="Medical Reasons">Medical Reasons</option>
+              <option value="Bereavement">Bereavement</option>
+            </select>
+          </div>
+        </div>
+
+        {# Examination Date #}
+        <div class="sp-form-group">
+          <label class="sp-form-label" for="famfa-exam-date">
+            Examination Date <span class="sp-required">*</span>
+          </label>
+          <input type="date" class="sp-form-control" id="famfa-exam-date"
+            name="examination_date" required>
+        </div>
+
+        {# Event Dates (conditional) #}
+        <div id="famfa-event-dates" style="display:none;">
+          <div class="sp-form-row">
+            <div class="sp-form-group">
+              <label class="sp-form-label" for="famfa-event-from">
+                Event From Date <span class="sp-required">*</span>
+              </label>
+              <input type="date" class="sp-form-control" id="famfa-event-from"
+                name="event_from_date">
+            </div>
+            <div class="sp-form-group">
+              <label class="sp-form-label" for="famfa-event-to">
+                Event To Date <span class="sp-required">*</span>
+              </label>
+              <input type="date" class="sp-form-control" id="famfa-event-to"
+                name="event_to_date">
+            </div>
+          </div>
+        </div>
+
+        {# Description #}
+        <div class="sp-form-group">
+          <label class="sp-form-label" for="famfa-desc">Description / Details</label>
+          <textarea class="sp-form-control sp-form-textarea" id="famfa-desc"
+            name="description" rows="3"
+            placeholder="Briefly describe the circumstances…"></textarea>
+        </div>
+
+        {# Proof Document #}
+        <div class="sp-form-group">
+          <label class="sp-form-label" for="famfa-proof">
+            Proof Document <span class="sp-required">*</span>
+          </label>
+          <div class="sp-file-upload-wrapper">
+            <input type="file" class="sp-file-input" id="famfa-proof" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+            <label class="sp-file-label" for="famfa-proof">
+              <span class="sp-ms">upload_file</span>
+              <span id="famfa-proof-name">Click to upload (PDF, JPG, PNG, DOC)</span>
+            </label>
+          </div>
+          <div id="famfa-upload-progress" class="sp-upload-progress" style="display:none;">
+            <div class="sp-upload-bar"></div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="sp-modal-footer">
+      <button class="sp-btn sp-btn-secondary" onclick="spCloseModal('modal-famfa')">
+        Cancel
+      </button>
+      <button class="sp-btn sp-btn-primary" onclick="spSubmitFAMFA()" id="btn-submit-famfa">
+        <span class="sp-ms">send</span> Submit Application
+      </button>
+    </div>
+  </div>
 </div>
-{% endif %}
 
-{% endif %}{# end no attendance_summaries #}
+
+{# ══════════════════════════════════════════════════════════════════
+   MODAL — CONDONATION APPLICATION
+══════════════════════════════════════════════════════════════════ #}
+<div class="sp-modal-overlay" id="modal-condonation" onclick="spCloseModalIf(event, 'modal-condonation')">
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="cond-modal-title">
+    <div class="sp-modal-header">
+      <div class="sp-modal-title" id="cond-modal-title">
+        <span class="sp-ms">how_to_reg</span> New Condonation Application
+      </div>
+      <button class="sp-modal-close" onclick="spCloseModal('modal-condonation')" aria-label="Close">
+        <span class="sp-ms">close</span>
+      </button>
+    </div>
+
+    <div class="sp-modal-body">
+      <div id="cond-alert" class="sp-form-alert" style="display:none;"></div>
+
+      <form id="form-condonation" onsubmit="return false;">
+
+        {# Course Offering #}
+        <div class="sp-form-group">
+          <label class="sp-form-label" for="cond-course">
+            Course <span class="sp-required">*</span>
+          </label>
+          {% if student_cos %}
+          <select class="sp-form-control" id="cond-course" name="course_offering" required>
+            <option value="">— Select Course —</option>
+            {% for c in student_cos %}
+            <option value="{{ c.course_offering }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <input type="text" class="sp-form-control" id="cond-course" name="course_offering"
+            placeholder="Enter Course Offering ID" required>
+          {% endif %}
+        </div>
+
+        <div class="sp-form-row">
+          {# Number of Sessions #}
+          <div class="sp-form-group">
+            <label class="sp-form-label" for="cond-sessions">
+              Sessions to Condone <span class="sp-required">*</span>
+            </label>
+            <input type="number" class="sp-form-control" id="cond-sessions"
+              name="number_of_sessions" min="1" max="30" placeholder="e.g. 3" required>
+          </div>
+
+          {# Number of Hours #}
+          <div class="sp-form-group">
+            <label class="sp-form-label" for="cond-hours">
+              Hours to Condone <span class="sp-required">*</span>
+            </label>
+            <input type="number" class="sp-form-control" id="cond-hours"
+              name="number_of_hours" min="0.5" step="0.5" placeholder="e.g. 3.0" required>
+          </div>
+        </div>
+
+        {# Reason #}
+        <div class="sp-form-group">
+          <label class="sp-form-label" for="cond-reason">
+            Reason <span class="sp-required">*</span>
+          </label>
+          <select class="sp-form-control" id="cond-reason" name="condonation_reason" required>
+            <option value="">— Select Reason —</option>
+            {% for r in condonation_reasons %}
+            <option value="{{ r }}">{{ r }}</option>
+            {% endfor %}
+            {% if not condonation_reasons %}
+            <option value="Medical">Medical</option>
+            <option value="Family Emergency">Family Emergency</option>
+            <option value="University Event">University Event</option>
+            {% endif %}
+          </select>
+        </div>
+
+        {# Proof Document #}
+        <div class="sp-form-group">
+          <label class="sp-form-label" for="cond-proof">Proof Document</label>
+          <div class="sp-file-upload-wrapper">
+            <input type="file" class="sp-file-input" id="cond-proof" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+            <label class="sp-file-label" for="cond-proof">
+              <span class="sp-ms">upload_file</span>
+              <span id="cond-proof-name">Click to upload (PDF, JPG, PNG, DOC)</span>
+            </label>
+          </div>
+          <div id="cond-upload-progress" class="sp-upload-progress" style="display:none;">
+            <div class="sp-upload-bar"></div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="sp-modal-footer">
+      <button class="sp-btn sp-btn-secondary" onclick="spCloseModal('modal-condonation')">
+        Cancel
+      </button>
+      <button class="sp-btn sp-btn-primary" onclick="spSubmitCondonation()" id="btn-submit-cond">
+        <span class="sp-ms">send</span> Submit Application
+      </button>
+    </div>
+  </div>
+</div>
+
+
+{# ── Toast Notification ────────────────────────────────────────── #}
+<div id="sp-toast" class="sp-toast" role="alert" aria-live="polite"></div>
+
 {% endif %}{# end no_student #}
+{% endblock %}
 
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  /* ── CSRF token ─────────────────────────────────────────────── */
+  var CSRF = SP_CSRF || '';
+
+  /* ── Tab switching ──────────────────────────────────────────── */
+  window.spSwitchTab = function (name, btn) {
+    document.querySelectorAll('.sp-tab-panel').forEach(function (p) {
+      p.classList.remove('active');
+    });
+    document.querySelectorAll('.sp-tab').forEach(function (b) {
+      b.classList.remove('active');
+    });
+    var panel = document.getElementById('sp-tab-' + name);
+    if (panel) panel.classList.add('active');
+    if (btn) btn.classList.add('active');
+  };
+
+  /* ── Modal helpers ──────────────────────────────────────────── */
+  window.spOpenModal = function (id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  window.spCloseModal = function (id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  };
+
+  window.spCloseModalIf = function (evt, id) {
+    if (evt.target === document.getElementById(id)) {
+      spCloseModal(id);
+    }
+  };
+
+  /* Close on Escape key */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.sp-modal-overlay.open').forEach(function (m) {
+        m.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    }
+  });
+
+  /* ── Toast notification ─────────────────────────────────────── */
+  window.spToast = function (msg, type) {
+    var el = document.getElementById('sp-toast');
+    if (!el) return;
+    el.className = 'sp-toast sp-toast-' + (type || 'info') + ' open';
+    el.innerHTML =
+      '<span class="sp-ms">' +
+      (type === 'success' ? 'check_circle' : type === 'danger' ? 'error' : 'info') +
+      '</span><span>' + msg + '</span>';
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.classList.remove('open'); }, 5000);
+  };
+
+  /* ── Show inline form alert ─────────────────────────────────── */
+  function spShowAlert(alertId, msg, type) {
+    var el = document.getElementById(alertId);
+    if (!el) return;
+    el.className = 'sp-form-alert sp-form-alert-' + (type || 'danger');
+    el.innerHTML =
+      '<span class="sp-ms">' +
+      (type === 'success' ? 'check_circle' : 'error') +
+      '</span><span>' + msg + '</span>';
+    el.style.display = 'flex';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function spHideAlert(alertId) {
+    var el = document.getElementById(alertId);
+    if (el) el.style.display = 'none';
+  }
+
+  /* ── API call helper ────────────────────────────────────────── */
+  function spCall(method, args) {
+    return fetch('/api/method/' + method, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': CSRF,
+      },
+      body: JSON.stringify(args),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.exc) {
+          var msg = data.exc;
+          try { msg = JSON.parse(data.exc)[0]; } catch (e) {}
+          /* Strip Python traceback if present */
+          msg = (msg || 'An error occurred').split('\n').pop().trim();
+          /* Frappe wraps user-facing errors in ValidationError — strip prefix */
+          msg = msg.replace(/^.*?ValidationError:\s*/i, '');
+          throw new Error(msg);
+        }
+        return data.message;
+      });
+  }
+
+  /* ── File upload helper ─────────────────────────────────────── */
+  function spUploadFile(inputEl, progressId) {
+    return new Promise(function (resolve, reject) {
+      var file = inputEl && inputEl.files && inputEl.files[0];
+      if (!file) { resolve(null); return; }
+
+      var prog = document.getElementById(progressId);
+      if (prog) prog.style.display = 'block';
+
+      var fd = new FormData();
+      fd.append('file', file, file.name);
+      fd.append('is_private', '0');
+
+      fetch('/api/method/upload_file', {
+        method: 'POST',
+        headers: { 'X-Frappe-CSRF-Token': CSRF },
+        body: fd,
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (prog) prog.style.display = 'none';
+          if (data.message && data.message.file_url) {
+            resolve(data.message.file_url);
+          } else {
+            reject(new Error('File upload failed. Please try again.'));
+          }
+        })
+        .catch(function (err) {
+          if (prog) prog.style.display = 'none';
+          reject(err);
+        });
+    });
+  }
+
+  /* Show file name on selection */
+  function spBindFileInput(inputId, nameId) {
+    var inp = document.getElementById(inputId);
+    var lbl = document.getElementById(nameId);
+    if (!inp || !lbl) return;
+    inp.addEventListener('change', function () {
+      lbl.textContent = inp.files[0] ? inp.files[0].name : 'Click to upload (PDF, JPG, PNG, DOC)';
+    });
+  }
+  spBindFileInput('famfa-proof', 'famfa-proof-name');
+  spBindFileInput('cond-proof', 'cond-proof-name');
+
+  /* ── FA/MFA ─────────────────────────────────────────────────── */
+  window.spOpenFAMFA = function (courseId, courseName) {
+    spHideAlert('famfa-alert');
+    document.getElementById('form-famfa').reset();
+    document.getElementById('famfa-proof-name').textContent = 'Click to upload (PDF, JPG, PNG, DOC)';
+    document.getElementById('famfa-event-dates').style.display = 'none';
+
+    /* Pre-select course if provided */
+    var sel = document.getElementById('famfa-course');
+    if (sel && courseId) {
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === courseId) {
+          sel.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    spOpenModal('modal-famfa');
+  };
+
+  window.spToggleEventDates = function () {
+    var reason = document.getElementById('famfa-reason').value;
+    var block = document.getElementById('famfa-event-dates');
+    if (block) block.style.display = reason === 'University Representation' ? 'block' : 'none';
+  };
+
+  window.spSubmitFAMFA = function () {
+    spHideAlert('famfa-alert');
+    var btn = document.getElementById('btn-submit-famfa');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Uploading…';
+
+    var proofInput = document.getElementById('famfa-proof');
+
+    spUploadFile(proofInput, 'famfa-upload-progress')
+      .then(function (fileUrl) {
+        btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
+
+        var reason = document.getElementById('famfa-reason').value;
+        var args = {
+          course: document.getElementById('famfa-course').value,
+          examination_date: document.getElementById('famfa-exam-date').value,
+          application_type: document.getElementById('famfa-type').value,
+          reason: reason,
+          description: document.getElementById('famfa-desc').value,
+          proof_document: fileUrl,
+        };
+        if (reason === 'University Representation') {
+          args.event_from_date = document.getElementById('famfa-event-from').value || null;
+          args.event_to_date = document.getElementById('famfa-event-to').value || null;
+        }
+
+        return spCall('slcm.api.student_portal.submit_fa_mfa_application', args);
+      })
+      .then(function (result) {
+        spCloseModal('modal-famfa');
+        spToast(result.message || 'FA/MFA Application submitted successfully!', 'success');
+        setTimeout(function () { location.reload(); }, 2000);
+      })
+      .catch(function (err) {
+        spShowAlert('famfa-alert', err.message || 'Submission failed. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="sp-ms">send</span> Submit Application';
+      });
+  };
+
+  /* ── Condonation ────────────────────────────────────────────── */
+  window.spOpenCondonation = function (courseOffering, courseName) {
+    spHideAlert('cond-alert');
+    document.getElementById('form-condonation').reset();
+    document.getElementById('cond-proof-name').textContent = 'Click to upload (PDF, JPG, PNG, DOC)';
+
+    /* Pre-select course if provided */
+    var sel = document.getElementById('cond-course');
+    if (sel && courseOffering) {
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === courseOffering) {
+          sel.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    spOpenModal('modal-condonation');
+  };
+
+  window.spSubmitCondonation = function () {
+    spHideAlert('cond-alert');
+    var btn = document.getElementById('btn-submit-cond');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Uploading…';
+
+    var proofInput = document.getElementById('cond-proof');
+
+    spUploadFile(proofInput, 'cond-upload-progress')
+      .then(function (fileUrl) {
+        btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
+
+        var args = {
+          course_offering: document.getElementById('cond-course').value,
+          number_of_sessions: document.getElementById('cond-sessions').value,
+          number_of_hours: document.getElementById('cond-hours').value,
+          condonation_reason: document.getElementById('cond-reason').value,
+          proof_document: fileUrl || null,
+        };
+
+        return spCall('slcm.api.student_portal.submit_condonation_application', args);
+      })
+      .then(function (result) {
+        spCloseModal('modal-condonation');
+        spToast(result.message || 'Condonation application submitted successfully!', 'success');
+        setTimeout(function () { location.reload(); }, 2000);
+      })
+      .catch(function (err) {
+        spShowAlert('cond-alert', err.message || 'Submission failed. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="sp-ms">send</span> Submit Application';
+      });
+  };
+
+  /* ── Office Hours Registration ──────────────────────────────── */
+  window.spRegisterOfficeHours = function (sessionName, courseDisplay) {
+    if (!confirm('Register your attendance for the office hours session: ' + courseDisplay + '?')) return;
+
+    var btn = document.getElementById('oh-btn-' + sessionName);
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Registering…';
+    }
+
+    spCall('slcm.api.student_portal.register_office_hours_attendance', {
+      session_name: sessionName,
+    })
+      .then(function (result) {
+        spToast(result.message || 'Registered for office hours session!', 'success');
+        if (btn) {
+          btn.innerHTML = '<span class="sp-ms">check_circle</span> Registered';
+          btn.style.background = 'var(--sp-success)';
+          btn.style.borderColor = 'var(--sp-success)';
+        }
+      })
+      .catch(function (err) {
+        spToast(err.message || 'Registration failed. Please try again.', 'danger');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span class="sp-ms">how_to_reg</span> Register Attendance';
+        }
+      });
+  };
+
+})();
+</script>
 {% endblock %}

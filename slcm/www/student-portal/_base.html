@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Student Portal{% endblock %} — SLCM</title>
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
 
-  <!-- Student Portal Stylesheet -->
   <link rel="stylesheet" href="/assets/slcm/css/student_portal.css">
 
   {% block extra_head %}{% endblock %}
@@ -20,13 +18,11 @@
 <body>
 
 {% if is_guest %}
-{# ── Redirect to login ─────────────────────────────────── #}
 <script>window.location.href = "/login?redirect-to=/student-portal";</script>
 
 {% else %}
-{# ── Full Portal Layout ────────────────────────────────── #}
 
-{# ── Top Navbar ──────────────────────────────────────────── #}
+{# ── Top Navbar ──────────────────────────────────────────────── #}
 <nav class="sp-nav">
   <div class="sp-nav-left">
     <div class="sp-hamburger" id="sp-hamburger" onclick="spToggleSidebar()">
@@ -66,6 +62,9 @@
         <a href="/student-portal" class="sp-dropdown-item">
           <span class="sp-ms">dashboard</span> Dashboard
         </a>
+        <a href="/student-portal/support" class="sp-dropdown-item">
+          <span class="sp-ms">support_agent</span> Help &amp; Support
+        </a>
         <hr class="sp-dropdown-divider">
         <a href="/logout" class="sp-dropdown-item sp-danger">
           <span class="sp-ms">logout</span> Sign Out
@@ -81,7 +80,7 @@
 {# ── Layout Wrapper ───────────────────────────────────────── #}
 <div class="sp-layout">
 
-  {# ── Sidebar ────────────────────────────────────────────── #}
+  {# ── Sidebar ─────────────────────────────────────────────── #}
   <aside class="sp-sidebar" id="sp-sidebar">
 
     {# Student Card #}
@@ -152,6 +151,30 @@
   </main>
 
 </div>{# end sp-layout #}
+
+{# ── Bottom Tab Navigation (mobile) ──────────────────────── #}
+<nav class="sp-bottom-nav">
+  <div class="sp-bottom-nav-inner">
+    <a href="/student-portal"            class="sp-bn-item {% if active_page == 'dashboard'  %}active{% endif %}">
+      <span class="sp-ms">dashboard</span>Dashboard
+    </a>
+    <a href="/student-portal/courses"    class="sp-bn-item {% if active_page == 'courses'    %}active{% endif %}">
+      <span class="sp-ms">menu_book</span>Courses
+    </a>
+    <a href="/student-portal/attendance" class="sp-bn-item {% if active_page == 'attendance' %}active{% endif %}">
+      <span class="sp-ms">event_available</span>Attendance
+    </a>
+    <a href="/student-portal/fees"       class="sp-bn-item {% if active_page == 'fees'       %}active{% endif %}">
+      <span class="sp-ms">payments</span>Fees
+    </a>
+    <a href="/student-portal/profile"    class="sp-bn-item {% if active_page == 'profile'    %}active{% endif %}">
+      <span class="sp-ms">person</span>Profile
+    </a>
+    <a href="/student-portal/support"    class="sp-bn-item {% if active_page == 'support'    %}active{% endif %}">
+      <span class="sp-ms">support_agent</span>Support
+    </a>
+  </div>
+</nav>
 
 {% endif %}{# end is_guest check #}
 

@@ -819,3 +819,1096 @@ header[class*="navbar"], .website-header,
 @media (max-width: 900px) {
   .sp-profile-layout { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Attendance Enhancements — Tabs · Modals · Forms · Cards
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Button styles ────────────────────────────────────────── */
+.sp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s, opacity 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.sp-btn:active { transform: scale(0.97); }
+.sp-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.sp-btn .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 16px; }
+
+.sp-btn-primary {
+  background: var(--sp-primary);
+  color: #fff;
+  border-color: var(--sp-primary);
+}
+.sp-btn-primary:hover:not(:disabled) {
+  background: var(--sp-primary-dark);
+  box-shadow: 0 4px 14px rgba(26,60,110,0.3);
+}
+
+.sp-btn-secondary {
+  background: var(--sp-bg);
+  color: var(--sp-text-2);
+  border-color: var(--sp-border);
+}
+.sp-btn-secondary:hover:not(:disabled) { background: #e9ebee; }
+
+.sp-btn-outline {
+  background: transparent;
+  color: var(--sp-primary);
+  border-color: var(--sp-primary);
+}
+.sp-btn-outline:hover:not(:disabled) {
+  background: var(--sp-primary-light);
+}
+
+.sp-btn-outline-warning {
+  background: transparent;
+  color: var(--sp-warning);
+  border-color: var(--sp-warning);
+}
+.sp-btn-outline-warning:hover:not(:disabled) {
+  background: var(--sp-warning-bg);
+}
+
+.sp-btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+.sp-btn-sm .sp-ms { font-size: 14px; }
+
+.sp-btn-full { width: 100%; justify-content: center; }
+
+/* ── Tab Navigation ───────────────────────────────────────── */
+.sp-tab-nav {
+  display: flex;
+  gap: 4px;
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 14px;
+  padding: 6px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sp-tab-nav::-webkit-scrollbar { display: none; }
+
+.sp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sp-text-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  font-family: inherit;
+  flex-shrink: 0;
+  position: relative;
+}
+.sp-tab .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 18px; }
+.sp-tab:hover:not(.active) { background: var(--sp-bg); color: var(--sp-text-1); }
+.sp-tab.active {
+  background: var(--sp-primary);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(26,60,110,0.3);
+}
+.sp-tab.active .sp-ms { color: rgba(255,255,255,0.9); }
+
+.sp-tab-badge {
+  background: var(--sp-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 16px;
+}
+.sp-tab.active .sp-tab-badge { background: rgba(255,255,255,0.3); }
+.sp-tab-badge-info { background: var(--sp-primary); }
+.sp-tab.active .sp-tab-badge-info { background: rgba(255,255,255,0.3); }
+
+/* ── Tab Panels ───────────────────────────────────────────── */
+.sp-tab-panel { display: none; }
+.sp-tab-panel.active { display: block; }
+
+/* ── Tab section header ───────────────────────────────────── */
+.sp-tab-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.sp-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+  margin: 0 0 4px;
+}
+.sp-section-sub {
+  font-size: 13px;
+  color: var(--sp-text-3);
+  margin: 0;
+}
+
+/* ── Info box ─────────────────────────────────────────────── */
+.sp-info-box {
+  background: var(--sp-info-bg);
+  border: 1px solid rgba(3,105,161,0.15);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  color: var(--sp-info);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.sp-info-box > .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.sp-info-box ul { color: var(--sp-text-2); }
+
+/* ── Modal Overlay ────────────────────────────────────────── */
+.sp-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.sp-modal-overlay.open { display: flex; }
+
+.sp-modal {
+  background: var(--sp-card);
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: spModalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
+}
+@keyframes spModalIn {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0);     }
+}
+
+.sp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--sp-border);
+  flex-shrink: 0;
+}
+.sp-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sp-modal-title .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 20px; color: var(--sp-primary); }
+
+.sp-modal-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--sp-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.sp-modal-close:hover { background: var(--sp-border); }
+.sp-modal-close .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 18px; color: var(--sp-text-3); }
+
+.sp-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sp-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--sp-border);
+  flex-shrink: 0;
+  background: var(--sp-bg);
+}
+
+/* ── Form elements ────────────────────────────────────────── */
+.sp-form-group { margin-bottom: 16px; }
+.sp-form-group:last-child { margin-bottom: 0; }
+
+.sp-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 480px) { .sp-form-row { grid-template-columns: 1fr; } }
+
+.sp-form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sp-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.sp-required { color: var(--sp-danger); }
+
+.sp-form-control {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--sp-text-1);
+  background: var(--sp-bg);
+  border: 1.5px solid var(--sp-border);
+  border-radius: 9px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.sp-form-control:focus {
+  border-color: var(--sp-primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(26,60,110,0.1);
+}
+.sp-form-control::placeholder { color: var(--sp-text-4); }
+
+select.sp-form-control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+  cursor: pointer;
+}
+
+.sp-form-textarea { resize: vertical; min-height: 80px; }
+
+/* File upload */
+.sp-file-upload-wrapper { position: relative; }
+.sp-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+.sp-file-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1.5px dashed var(--sp-border);
+  border-radius: 9px;
+  background: var(--sp-bg);
+  color: var(--sp-text-3);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 44px;
+  word-break: break-all;
+}
+.sp-file-label:hover { border-color: var(--sp-primary); background: var(--sp-primary-light); }
+.sp-file-label .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 20px; color: var(--sp-primary); flex-shrink: 0; }
+
+.sp-upload-progress {
+  height: 4px;
+  background: var(--sp-border);
+  border-radius: 99px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.sp-upload-bar {
+  height: 100%;
+  background: var(--sp-primary);
+  border-radius: 99px;
+  animation: spUploadAnim 1.4s ease-in-out infinite;
+}
+@keyframes spUploadAnim {
+  0%   { width: 0%; margin-left: 0; }
+  50%  { width: 60%; margin-left: 20%; }
+  100% { width: 0%; margin-left: 100%; }
+}
+
+/* Inline form alert */
+.sp-form-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.sp-form-alert .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.sp-form-alert-danger  { background: var(--sp-danger-bg);  color: var(--sp-danger);  }
+.sp-form-alert-success { background: var(--sp-success-bg); color: var(--sp-success); }
+
+/* ── Office Hours Grid ────────────────────────────────────── */
+.sp-oh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 600px) { .sp-oh-grid { grid-template-columns: 1fr; } }
+
+.sp-oh-card {
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.sp-oh-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.1); transform: translateY(-2px); }
+.sp-oh-conducted { opacity: 0.7; }
+
+.sp-oh-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.sp-oh-status-bar .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 14px; }
+
+.sp-oh-card > div:not(.sp-oh-status-bar) { padding: 0 16px; }
+.sp-oh-card > div:nth-child(2) { padding-top: 14px; }
+.sp-oh-card > div:last-child { padding-bottom: 14px; }
+
+.sp-oh-details {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.sp-oh-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sp-text-3);
+}
+.sp-oh-detail-item .sp-ms {
+  font-family: 'Material Symbols Outlined';
+  font-size: 16px;
+  color: var(--sp-primary);
+  flex-shrink: 0;
+}
+
+/* ── Toast Notification ───────────────────────────────────── */
+.sp-toast {
+  position: fixed;
+  bottom: 28px;
+  right: 24px;
+  min-width: 280px;
+  max-width: 420px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  z-index: 9999;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  animation: spToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.sp-toast.open { display: flex; }
+.sp-toast .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 20px; flex-shrink: 0; }
+.sp-toast-success { background: #166534; color: #fff; }
+.sp-toast-danger  { background: #991b1b; color: #fff; }
+.sp-toast-info    { background: var(--sp-primary); color: #fff; }
+@keyframes spToastIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ── Responsive tweaks ────────────────────────────────────── */
+@media (max-width: 640px) {
+  .sp-tab { padding: 8px 12px; font-size: 12px; }
+  .sp-tab .sp-ms { font-size: 16px; }
+  .sp-modal { border-radius: 14px; }
+  .sp-modal-footer { flex-direction: column-reverse; }
+  .sp-modal-footer .sp-btn { width: 100%; justify-content: center; }
+  .sp-toast { bottom: 16px; right: 12px; left: 12px; min-width: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Design Refresh — Dashboard · Fees · Helpdesk · Bottom Nav
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Updated design tokens ────────────────────────────────── */
+:root {
+  --sp-primary:       #1a2744;
+  --sp-primary-dark:  #111d38;
+  --sp-primary-light: rgba(26,39,68,0.08);
+  --sp-primary-mid:   rgba(26,39,68,0.18);
+  --sp-accent:        #e63946;
+  --sp-accent-bg:     #fde8ea;
+  --sp-purple:        #7c3aed;
+  --sp-purple-bg:     #ede9fe;
+  --sp-gold:          #c8a14b;
+}
+
+/* ── Bottom Tab Navigation ────────────────────────────────── */
+.sp-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: var(--sp-card);
+  border-top: 1px solid var(--sp-border);
+  z-index: 200;
+  padding: 0 8px env(safe-area-inset-bottom);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+}
+.sp-bottom-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 64px;
+}
+.sp-bn-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  color: var(--sp-text-4);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: all 0.15s;
+  min-width: 56px;
+}
+.sp-bn-item .sp-ms {
+  font-family: 'Material Symbols Outlined';
+  font-size: 22px;
+  transition: color 0.15s;
+}
+.sp-bn-item.active { color: var(--sp-primary); }
+.sp-bn-item.active .sp-ms { color: var(--sp-primary); font-variation-settings: 'FILL' 1; }
+
+@media (max-width: 768px) {
+  .sp-bottom-nav { display: flex; flex-direction: column; justify-content: center; }
+  .sp-main { padding-bottom: calc(64px + 20px); }
+}
+
+/* ── Helpdesk sidebar item ────────────────────────────────── */
+.sp-nav-item.sp-helpdesk {
+  background: linear-gradient(135deg, rgba(26,39,68,0.06), rgba(26,39,68,0.02));
+  border: 1px dashed var(--sp-border);
+  margin-top: 4px;
+}
+.sp-nav-item.sp-helpdesk .sp-ms { color: var(--sp-primary); }
+.sp-nav-item.sp-helpdesk:hover { background: var(--sp-primary-light); border-color: var(--sp-primary); }
+
+/* ── Academic Standing Hero (Dashboard) ───────────────────── */
+.sp-standing-hero {
+  background: #fff;
+  border: 1px solid var(--sp-border);
+  border-radius: 20px;
+  padding: 28px 28px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.sp-standing-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sp-text-4);
+  margin-bottom: 6px;
+}
+.sp-standing-pct {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+.sp-standing-sub {
+  font-size: 14px;
+  color: var(--sp-text-3);
+  margin-bottom: 20px;
+}
+.sp-standing-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sp-standing-box {
+  background: var(--sp-bg);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sp-standing-box-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Material Symbols Outlined';
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.sp-standing-box-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--sp-text-1);
+  line-height: 1;
+}
+.sp-standing-box-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sp-text-4);
+  margin-top: 3px;
+}
+
+/* ── SVG Donut Chart ──────────────────────────────────────── */
+.sp-donut-wrap {
+  width: 56px; height: 56px;
+  flex-shrink: 0;
+  position: relative;
+}
+.sp-donut {
+  width: 56px; height: 56px;
+  transform: rotate(-90deg);
+}
+.sp-donut-track {
+  fill: none;
+  stroke: var(--sp-border);
+  stroke-width: 3.5;
+}
+.sp-donut-fill {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s ease;
+}
+.sp-donut-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+}
+
+/* ── Course Insight Row ───────────────────────────────────── */
+.sp-course-insights { display: flex; flex-direction: column; }
+.sp-insight-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--sp-border);
+  cursor: default;
+  transition: background 0.12s;
+}
+.sp-insight-row:last-child { border-bottom: none; }
+.sp-insight-info { flex: 1; min-width: 0; }
+.sp-insight-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sp-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.sp-insight-sessions {
+  font-size: 12px;
+  color: var(--sp-text-4);
+}
+.sp-insight-bar {
+  width: 4px;
+  height: 36px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Fee Hero Card ────────────────────────────────────────── */
+.sp-fee-hero {
+  background: linear-gradient(135deg, #1a2744 0%, #253660 100%);
+  border-radius: 20px;
+  padding: 24px;
+  color: #fff;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.sp-fee-hero::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+}
+.sp-fee-hero::before {
+  content: '';
+  position: absolute;
+  bottom: -60px; left: -30px;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 50%;
+}
+.sp-fee-hero-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sp-fee-hero-label .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 22px; color: rgba(255,255,255,0.3); }
+.sp-fee-hero-amount {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+.sp-fee-hero-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Fee Mini Cards ───────────────────────────────────────── */
+.sp-fee-mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.sp-fee-mini {
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sp-fee-mini-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Material Symbols Outlined';
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.sp-fee-mini-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--sp-text-4);
+  margin-bottom: 3px;
+}
+.sp-fee-mini-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--sp-text-1);
+  line-height: 1;
+}
+
+/* ── Outstanding Card ─────────────────────────────────────── */
+.sp-fee-outstanding {
+  background: #fff0f0;
+  border: 1.5px solid #fca5a5;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.sp-fee-outstanding-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sp-danger);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.sp-fee-outstanding-label .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 14px; }
+.sp-fee-outstanding-amount {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--sp-danger);
+  line-height: 1;
+}
+.sp-fee-pay-btn {
+  background: var(--sp-danger);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.sp-fee-pay-btn:hover { background: #b91c1c; box-shadow: 0 4px 14px rgba(220,38,38,0.35); transform: translateY(-1px); }
+.sp-fee-pay-btn:active { transform: scale(0.97); }
+
+/* ── Section Header with action link ─────────────────────── */
+.sp-section-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.sp-section-hdr-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+}
+.sp-section-hdr-link {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--sp-primary);
+  text-decoration: none;
+}
+.sp-section-hdr-link:hover { text-decoration: underline; }
+
+/* ── Payment Support list ─────────────────────────────────── */
+.sp-support-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.sp-support-item {
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  transition: background 0.12s, box-shadow 0.12s;
+  cursor: pointer;
+}
+.sp-support-item:hover { background: #f9fafb; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.sp-support-icon {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: var(--sp-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Material Symbols Outlined';
+  font-size: 22px;
+  color: var(--sp-primary);
+  flex-shrink: 0;
+}
+.sp-support-title { font-size: 14px; font-weight: 600; color: var(--sp-text-1); }
+.sp-support-sub   { font-size: 12px; color: var(--sp-text-4); margin-top: 1px; }
+.sp-support-item .sp-ms-right {
+  font-family: 'Material Symbols Outlined';
+  font-size: 20px;
+  color: var(--sp-text-4);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Fee all-clear card ───────────────────────────────────── */
+.sp-fee-clear {
+  background: var(--sp-success-bg);
+  border: 1px solid #86efac;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.sp-fee-clear .sp-ms-lg {
+  font-family: 'Material Symbols Outlined';
+  font-size: 32px;
+  color: var(--sp-success);
+  flex-shrink: 0;
+}
+.sp-fee-clear-title { font-size: 15px; font-weight: 700; color: var(--sp-success); }
+.sp-fee-clear-sub   { font-size: 13px; color: #166534; margin-top: 2px; }
+
+/* ── Dashboard alert banner ───────────────────────────────── */
+.sp-dash-alert {
+  background: #fff0f0;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-danger);
+  margin-bottom: 20px;
+}
+.sp-dash-alert .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 18px; flex-shrink: 0; }
+
+/* ── Card section label ───────────────────────────────────── */
+.sp-card-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sp-text-4);
+  padding: 14px 20px 0;
+}
+
+/* Mobile adjustments for bottom nav ──────────────────────── */
+@media (max-width: 768px) {
+  .sp-fee-outstanding { flex-direction: column; align-items: flex-start; }
+  .sp-fee-pay-btn { width: 100%; justify-content: center; }
+  .sp-standing-pct { font-size: 44px; }
+  .sp-fee-hero-amount { font-size: 28px; }
+}
+
+/* =============================================================
+   Dashboard v2 — Stats Bar, Quick Actions, Enrollment Grid
+   ============================================================= */
+
+/* ── Stats Bar ────────────────────────────────────────────── */
+.sp-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) { .sp-stats-bar { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .sp-stats-bar { grid-template-columns: 1fr 1fr; } }
+
+.sp-stat-pill {
+  background: var(--sp-card);
+  border-radius: var(--sp-radius);
+  border: 1px solid var(--sp-border);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s;
+}
+.sp-stat-pill:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+
+.sp-stat-pill-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: 'Material Symbols Outlined';
+  font-size: 20px;
+}
+.sp-stat-pill-icon .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 20px; }
+
+.sp-stat-pill-val {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.sp-stat-pill-lbl {
+  font-size: 11px;
+  color: var(--sp-text-4);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* ── Enrollment Grid ──────────────────────────────────────── */
+.sp-enroll-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.sp-info-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-text-1);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ── Quick Actions ────────────────────────────────────────── */
+.sp-quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 8px;
+  background: var(--sp-bg);
+  border: 1px solid var(--sp-border);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--sp-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+  text-align: center;
+}
+.sp-quick-action .sp-ms {
+  font-family: 'Material Symbols Outlined';
+  font-size: 22px;
+  color: var(--sp-primary);
+}
+.sp-quick-action:hover {
+  background: var(--sp-primary-light);
+  border-color: var(--sp-primary);
+  color: var(--sp-primary);
+}
+.sp-quick-action:hover .sp-ms { color: var(--sp-primary); }
+
+/* =============================================================
+   Support Page
+   ============================================================= */
+
+.sp-ticket-card {
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius);
+  padding: 16px 20px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: box-shadow 0.2s;
+}
+.sp-ticket-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+
+.sp-ticket-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: 'Material Symbols Outlined'; font-size: 20px;
+}
+.sp-ticket-subject {
+  font-size: 14px; font-weight: 700; color: var(--sp-text-1); margin-bottom: 4px;
+}
+.sp-ticket-meta {
+  font-size: 12px; color: var(--sp-text-4); display: flex; gap: 12px; flex-wrap: wrap;
+}
+
+.sp-support-hero {
+  background: linear-gradient(135deg, var(--sp-primary) 0%, #2a4f8f 100%);
+  border-radius: var(--sp-radius);
+  padding: 28px 24px;
+  color: #fff;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.sp-support-hero .sp-ms {
+  font-family: 'Material Symbols Outlined';
+  font-size: 40px;
+  color: rgba(255,255,255,0.6);
+  flex-shrink: 0;
+}
+.sp-support-hero-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.sp-support-hero-sub { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.5; }
+
+.sp-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+@media (max-width: 600px) { .sp-cat-grid { grid-template-columns: 1fr 1fr; } }
+
+.sp-cat-btn {
+  background: var(--sp-card);
+  border: 2px solid var(--sp-border);
+  border-radius: 12px;
+  padding: 14px 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.sp-cat-btn:hover, .sp-cat-btn.active {
+  border-color: var(--sp-primary);
+  background: var(--sp-primary-light);
+}
+.sp-cat-btn .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 24px; color: var(--sp-primary); display: block; margin-bottom: 6px; }
+.sp-cat-btn span:last-child { font-size: 12px; font-weight: 600; color: var(--sp-text-2); }

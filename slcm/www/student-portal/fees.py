@@ -53,11 +53,11 @@ def get_context(context):
 
         # Status colors
         STATUS_STYLE = {
-            "Paid":             {"color": "var(--success)", "bg": "var(--success-bg)"},
-            "Partially Paid":   {"color": "var(--warning)", "bg": "var(--warning-bg)"},
-            "Unpaid":           {"color": "var(--danger)",  "bg": "var(--danger-bg)"},
-            "Overdue":          {"color": "var(--danger)",  "bg": "var(--danger-bg)"},
-            "Cancelled":        {"color": "var(--text-4)",  "bg": "var(--bg)"},
+            "Paid":             {"color": "var(--sp-success)", "bg": "var(--sp-success-bg)"},
+            "Partially Paid":   {"color": "var(--sp-warning)", "bg": "var(--sp-warning-bg)"},
+            "Unpaid":           {"color": "var(--sp-danger)",  "bg": "var(--sp-danger-bg)"},
+            "Overdue":          {"color": "var(--sp-danger)",  "bg": "var(--sp-danger-bg)"},
+            "Cancelled":        {"color": "var(--sp-text-4)",  "bg": "var(--sp-bg)"},
         }
 
         today = frappe.utils.getdate(frappe.utils.today())

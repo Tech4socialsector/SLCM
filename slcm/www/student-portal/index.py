@@ -31,29 +31,23 @@ def get_context(context):
         enrollment = _get_active_enrollment(student_name)
         context.enrollment = enrollment
 
-        # ── Stat: Course Count ─────────────────────────────────
-        course_count = 0
-        enrolled_courses = []
-        if enrollment:
-            enrolled_courses = frappe.get_all(
-                "Student Enrollment Course",
-                filters={"parent": enrollment.name},
-                fields=["course_offering", "course", "credits", "status"],
-                ignore_permissions=True
-            )
-            course_count = len(enrolled_courses)
-
-        context.course_count = course_count
-
-        # ── Stat: Attendance Summary ───────────────────────────
+        # ── Attendance Summaries ───────────────────────────────
         att_summaries = frappe.get_all(
             "Attendance Summary",
             filters={"student": student_name},
             fields=["attendance_percentage", "eligible_for_exam", "course_offering", "course"],
             order_by="creation desc",
             limit=50,
-            ignore_permissions=True
+            ignore_permissions=True,
         )
+
+        # Build a fast lookup map
+        att_map = {}
+        for s in att_summaries:
+            if s.course_offering:
+                att_map[s.course_offering] = s
+            if s.course:
+                att_map.setdefault(s.course, s)
 
         if att_summaries:
             pcts = [s.attendance_percentage or 0 for s in att_summaries]
@@ -61,8 +55,55 @@ def get_context(context):
         else:
             avg_att = 0.0
 
+        # Enrich att_summaries with course display names and faculty
+        for s in att_summaries:
+            co_name = s.course_offering or ""
+            s["course_display"] = s.course or co_name or "—"
+            s["faculty"] = "—"
+            if co_name:
+                try:
+                    co = frappe.db.get_value(
+                        "Course Offering", co_name,
+                        ["course_name", "faculty", "credit_value"],
+                        as_dict=True,
+                    )
+                    if co:
+                        if co.course_name:
+                            s["course_display"] = co.course_name
+                        s["faculty"] = co.faculty or "—"
+                        s["credits"] = co.credit_value or 0
+                except Exception:
+                    pass
+
         context.avg_attendance = avg_att
-        context.attendance_summaries = att_summaries[:5]
+        context.attendance_summaries = att_summaries[:6]
+        context.courses_eligible = sum(1 for s in att_summaries if s.eligible_for_exam)
+
+        # ── Course Count from enrollment child rows (Program Enrollment) ──
+        enrolled_courses = []
+        if enrollment:
+            enrolled_courses = frappe.get_all(
+                "Program Enrollment",
+                filters={"parent": enrollment.name},
+                fields=["course", "course_name", "credit_value", "course_type"],
+                ignore_permissions=True,
+            )
+
+        # Fallback: derive course list from attendance summaries if child rows empty
+        if not enrolled_courses and att_summaries:
+            enrolled_courses = [
+                frappe._dict({
+                    "course": s.course or "",
+                    "course_name": s.get("course_display") or "",
+                    "credit_value": s.get("credits") or 0,
+                    "course_type": "—",
+                    "_co": s.course_offering or "",
+                    "_faculty": s.get("faculty") or "—",
+                })
+                for s in att_summaries
+            ]
+
+        context.course_count = len(enrolled_courses)
 
         # ── Stat: Outstanding Fees ─────────────────────────────
         fee_invoices = frappe.get_all(
@@ -72,7 +113,7 @@ def get_context(context):
                     "outstanding_amount", "status", "due_date"],
             order_by="creation desc",
             limit=20,
-            ignore_permissions=True
+            ignore_permissions=True,
         )
 
         total_outstanding = sum(inv.outstanding_amount or 0 for inv in fee_invoices)
@@ -83,39 +124,36 @@ def get_context(context):
         # ── CGPA ──────────────────────────────────────────────
         context.cgpa = round(student.current_cgpa or 0.0, 2)
 
-        # ── Recent courses for quick view ──────────────────────
+        # ── Courses Quick View ─────────────────────────────────
         course_display = []
         for ec in enrolled_courses[:6]:
-            co_name = ec.course_offering or ""
-            co_data = {}
+            # co_name: prefer explicit field, then _co sentinel from att fallback
+            co_name = ec.get("course_offering") or ec.get("_co") or ""
+            course_id = ec.course or ""
+
+            co_data = frappe._dict()
             if co_name:
                 try:
                     co = frappe.db.get_value(
                         "Course Offering",
                         co_name,
-                        ["course_name", "faculty", "credit_value", "term_name", "status"],
-                        as_dict=True
+                        ["course_name", "faculty", "credit_value", "term_name"],
+                        as_dict=True,
                     )
                     if co:
                         co_data = co
                 except Exception:
                     pass
 
-            # Get attendance for this course
-            att_pct = 0
-            for s in att_summaries:
-                if s.course_offering == co_name or s.course == ec.course:
-                    att_pct = round(s.attendance_percentage or 0, 1)
-                    break
+            att = att_map.get(co_name) or att_map.get(course_id) or frappe._dict()
+            att_pct = round(float(att.get("attendance_percentage") or 0), 1)
 
             course_display.append({
                 "course_offering": co_name,
-                "course": ec.course or "",
-                "course_name": co_data.get("course_name") or ec.course or "—",
-                "credits": co_data.get("credit_value") or ec.credits or 0,
-                "faculty": co_data.get("faculty") or "—",
-                "term_name": co_data.get("term_name") or (enrollment.term_name if enrollment else ""),
-                "status": ec.status or "Enrolled",
+                "course": course_id,
+                "course_name": co_data.get("course_name") or ec.get("course_name") or course_id or "—",
+                "credits": co_data.get("credit_value") or ec.get("credit_value") or 0,
+                "faculty": co_data.get("faculty") or ec.get("_faculty") or "—",
                 "attendance_pct": att_pct,
             })
 
@@ -123,22 +161,20 @@ def get_context(context):
 
         # ── Upcoming / Today's Classes ─────────────────────────
         today = frappe.utils.today()
+        enrolled_co_set = {s.course_offering for s in att_summaries if s.course_offering}
         try:
             upcoming_sessions = frappe.get_all(
                 "Attendance Session",
                 filters=[
                     ["session_date", ">=", today],
-                    ["status", "=", "Active"]
+                    ["status", "=", "Active"],
                 ],
                 fields=["name", "session_date", "start_time", "course_offering",
                         "session_type", "venue"],
                 order_by="session_date asc, start_time asc",
-                limit=5,
-                ignore_permissions=True
+                limit=10,
+                ignore_permissions=True,
             )
-
-            # Filter to only student's enrolled course offerings
-            enrolled_co_set = {ec.course_offering for ec in enrolled_courses if ec.course_offering}
             context.upcoming_sessions = [
                 s for s in upcoming_sessions if s.course_offering in enrolled_co_set
             ][:4]
