@@ -22,6 +22,8 @@
   "instructions_link",
   "section_break_mjih",
   "course",
+  "column_break_krym",
+  "faculty",
   "overview_tab",
   "show_overview_tab",
   "overview",
@@ -70,7 +72,7 @@
   },
   {
    "fieldname": "fee_indian",
-   "fieldtype": "Currency",
+   "fieldtype": "Data",
    "label": "Fee (Indian Nationals)",
    "precision": "1"
   },
@@ -150,6 +152,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval: doc.programme_name",
    "fieldname": "course",
    "fieldtype": "Table MultiSelect",
    "in_standard_filter": 1,
@@ -175,11 +178,22 @@
    "label": "Show Apply Introduction"
   },
   {
+<<<<<<< Updated upstream
    "fieldname": "duration_type",
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Duration Type",
    "options": "Month\nYear"
+=======
+   "fieldname": "faculty",
+   "fieldtype": "Table MultiSelect",
+   "label": "Faculty",
+   "options": "PACE Programme Faculty"
+  },
+  {
+   "fieldname": "column_break_krym",
+   "fieldtype": "Column Break"
+>>>>>>> Stashed changes
   }
  ],
  "grid_page_length": 50,
@@ -187,7 +201,11 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
+<<<<<<< Updated upstream
  "modified": "2026-04-09 17:34:06.884765",
+=======
+ "modified": "2026-04-09 17:07:28.050516",
+>>>>>>> Stashed changes
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Programme",
