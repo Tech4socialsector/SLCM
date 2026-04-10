@@ -80,15 +80,15 @@
         }
         
         .sidebar-card {
-            background-color: var(--secondary-container);
+            background-color: #c4c5c7;
             border-radius: 4px;
             padding: 2.25rem;
         }
         .cycle-badge {
-            background-color: color-mix(in srgb, var(--secondary-container) 80%, white);
-            color: var(--on-secondary-container);
+            background-color: rgba(255, 255, 255, 0.5);
+            color: #111827;
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 800;
             padding: 4px 10px;
             border-radius: 4px;
             display: inline-block;
@@ -97,7 +97,7 @@
             margin-bottom: 0.5rem;
         }
         .sidebar-card h3 {
-            color: var(--on-secondary-container);
+            color: #031424;
             font-family: 'Newsreader', serif;
             font-size: 2rem;
             font-weight: 700;
@@ -109,20 +109,24 @@
             justify-content: space-between;
             align-items: center;
             padding: 1.1rem 0;
-            border-bottom: 1px solid color-mix(in srgb, var(--on-secondary-container) 10%, transparent);
-            font-size: 15px;
-            color: #58413f;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            font-size: 14px;
+            color: #4b5563;
         }
         .sidebar-row:last-child { border-bottom: none; }
         .sidebar-label { font-weight: 500; }
-        .sidebar-value { font-weight: 700; text-align: right; }
+        .sidebar-value { font-weight: 800; text-align: right; color: #111827; }
         
         .status-badge {
             font-size: 10px;
-            font-weight: 800;
+            font-weight: 900;
             padding: 4px 12px;
             border-radius: 20px;
             text-transform: uppercase;
+            color: white;
+        }
+        .status-badge.bg-green-600 {
+            background-color: #1bba5e !important;
         }
         
         .btn-maroon {
@@ -187,7 +191,8 @@
 
         <div class="absolute top-4 md:top-5 left-0 right-0 z-30 max-w-7xl mx-auto px-6 md:px-8 lg:px-10 w-full pointer-events-none">
             <a href="/pace/admission"
-                class="pointer-events-auto inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-90 transition-opacity [text-shadow:0_0_12px_rgba(250,249,248,0.95),0_1px_2px_rgba(255,255,255,0.8)]">
+                style="color: var(--primary);"
+                class="pointer-events-auto inline-flex items-center gap-2 text-sm font-semibold hover:opacity-90 transition-opacity [text-shadow:0_0_12px_rgba(250,249,248,0.95),0_1px_2px_rgba(255,255,255,0.8)]">
                 <span class="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
                 Back to programmes
             </a>
@@ -197,10 +202,10 @@
             {% set name_parts = (programme_name or "").split(' in ') %}
             <h1 class="hero-title font-headline text-5xl md:text-6xl lg:text-7xl">
                 {% if name_parts|length > 1 %}
-                    <span class="main-part">{{ name_parts[0] }} in</span>
+                    <span class="main-part" style="color: var(--primary);">{{ name_parts[0] }} in</span>
                     <span class="sub-part">{{ name_parts[1] }}</span>
                 {% else %}
-                    <span class="main-part">{{ programme_name }}</span>
+                    <span class="main-part" style="color: var(--primary);">{{ programme_name }}</span>
                 {% endif %}
             </h1>
         </div>
@@ -300,23 +305,26 @@
                 <div class="space-y-1">
                     <div class="sidebar-row">
                         <span class="sidebar-label">Status</span>
-                        <span class="status-badge {{ status_badge.css if status_badge else 'bg-red-700 text-white' }}">{{ status_badge.label if status_badge else 'CLOSED' }}</span>
+                        <span class="status-badge {{ status_badge.css if status_badge else 'bg-[#1bba5e]' }}">{{ status_badge.label if status_badge else 'OPEN' }}</span>
                     </div>
                     <div class="sidebar-row">
                         <span class="sidebar-label">Duration</span>
-                        <span class="sidebar-value">{{ duration or "1 Year (Distance)" }}</span>
+                        <span class="sidebar-value">{{ duration or "1" }}</span>
                     </div>
                     <div class="sidebar-row">
                         <span class="sidebar-label">Indian Fee</span>
-                        <span class="sidebar-value">{{ fee_indian }}</span>
+                        <span class="sidebar-value">{{ fee_indian or "₹ 600.00" }}</span>
                     </div>
                     <div class="sidebar-row">
                         <span class="sidebar-label">Foreign Fee</span>
-                        <span class="sidebar-value">{{ fee_foreign }}</span>
+                        <span class="sidebar-value">{{ fee_foreign or "₹ 6,000.00" }}</span>
                     </div>
                 </div>
                 
-                <div class="mt-4">
+                <div class="mt-6 space-y-3">
+                    <a href="#apply" class="btn-maroon" onclick="document.querySelector('[data-tab-btn=\'apply\']').click(); event.preventDefault();">
+                        <span>Apply Now</span>
+                    </a>
                     <a href="#" class="btn-maroon">
                         <span class="material-symbols-outlined text-lg">download</span>
                         <span>Download Prospectus</span>
