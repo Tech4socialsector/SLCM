@@ -74,8 +74,11 @@
             box-sizing: border-box;
         }
 
+        /* One vertical scrollport: overflow-x:hidden on both html and body can force overflow-y:auto on
+           both (CSS 2.1 pairing), which shows two vertical scrollbars. Scroll on html only. */
         html {
-            overflow-x: hidden;
+            overflow-x: clip;
+            overflow-y: auto;
         }
 
         body {
@@ -84,7 +87,8 @@
             color: var(--text);
             margin: 0;
             padding-top: 60px;
-            overflow-x: hidden;
+            overflow-x: visible;
+            overflow-y: visible;
         }
     </style>
     {% block theme_vars %}{% endblock %}
@@ -427,6 +431,28 @@
             display: flex;
             gap: 12px;
             justify-content: stretch;
+        }
+
+        .confirm-premium-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .confirm-premium-close:hover {
+            background: #f1f5f9;
+            color: #475569;
         }
 
         .confirm-btn-cancel,
@@ -906,7 +932,7 @@
                 <div
                     style="width:38px;height:38px;border-radius:50%;background:rgba(26,60,110,0.1);color:var(--primary);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
                     {% if frappe.db.get_value("User", frappe.session.user, "user_image") %}
-                    <img src="{{ frappe.db.get_value(" User", frappe.session.user, "user_image" ) }}"
+                    <img src="{{ frappe.db.get_value("User", frappe.session.user, "user_image") }}"
                         style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
                     <span>{{ frappe.session.user[0]|upper }}</span>
@@ -999,7 +1025,7 @@
     </main>
     {% else %}
     <main class="adm-main">
-        <div class="adm-container" style="padding-top:12px;">
+        <div class="adm-container {% block adm_container_extra_class %}{% endblock %}" style="padding-top:12px;">
             {% block content %}{% endblock %}
         </div>
     </main>
@@ -1007,13 +1033,16 @@
 
     <style>
         .full-bleed-footer {
-            margin-left: calc(-50vw + 50%);
-            margin-right: calc(-50vw + 50%);
-            width: 100vw;
+            /* Use 100% of body — avoids horizontal scrollbar from 100vw + vertical scrollbar */
+            width: 100%;
+            max-width: none;
+            margin-left: 0;
+            margin-right: 0;
             position: relative;
             background: #0f172a;
             color: #94a3b8;
             padding: 48px 0 24px;
+            box-sizing: border-box;
         }
 
         .footer-container {
@@ -1323,10 +1352,10 @@
     </footer>
 
     <!-- Announcement slide panel -->
-    <div id="ann-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;"
+    <div id="ann-overlay" style="display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,0.35);z-index:500;"
         onclick="closeAnnPanel()"></div>
 
-    <div id="ann-panel" style="position:fixed;top:0;height:100vh;
+    <div id="ann-panel" style="position:fixed;top:60px;height:calc(100vh - 60px);
             background:#fff;z-index:501;box-shadow:-4px 0 24px rgba(0,0,0,0.12);
             display:flex;flex-direction:column;overflow:hidden;">
 
@@ -1421,6 +1450,13 @@
         aria-labelledby="confirm-title">
         <div class="confirm-premium-backdrop"></div>
         <div class="confirm-premium-card">
+            <button type="button" class="confirm-premium-close"
+                onclick="document.getElementById('confirm-overlay').style.display='none'" aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
             <div class="confirm-premium-icon" aria-hidden="true">
                 <svg class="confirm-premium-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

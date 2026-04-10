@@ -1,20 +1,15 @@
-<!DOCTYPE html>
+{% extends "slcm/www/admission_base.html" %}
 
-<html class="scroll-smooth" lang="en">
+{% block adm_container_extra_class %}pace-index-bleed{% endblock %}
 
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>NLSIU PACE | Professional and Continuing Education</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <script id="tailwind-config">
-        tailwind.config = {
+{# Colours come from Applicant Portal Config via admission_base :root --primary / --secondary #}
+
+{% block title %}NLSIU PACE | Professional and Continuing Education{% endblock %}
+
+{% block page_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet" />
+    <script id="tailwind-config-pace-index">
+tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
@@ -41,9 +36,9 @@
                         "outline-variant": "#e0bfbf",
                         "error": "#ba1a1a",
                         "surface-container-highest": "#e1e3e4",
-                        "primary-container": "#800020",
+                        "primary-container": "var(--pace-primary-strong)",
                         "tertiary": "#272727",
-                        "primary": "#570013",
+                        "primary": "var(--primary)",
                         "inverse-surface": "#2e3132",
                         "primary-fixed-dim": "#ffb3b5",
                         "secondary-fixed-dim": "#e9c349",
@@ -100,7 +95,11 @@
         }
 
         .hero-gradient {
-            background: linear-gradient(135deg, rgba(87, 0, 19, 0.95) 0%, rgba(128, 0, 32, 0.8) 100%);
+            background: linear-gradient(
+                135deg,
+                color-mix(in srgb, var(--primary) 94%, black) 0%,
+                color-mix(in srgb, var(--primary) 55%, black) 100%
+            );
         }
 
         .editorial-shadow {
@@ -127,7 +126,7 @@
         }
 
         .program-card:hover .program-card-shadow {
-            box-shadow: 0 30px 60px -15px rgba(87, 0, 19, 0.12);
+            box-shadow: 0 30px 60px -15px color-mix(in srgb, var(--primary) 22%, transparent);
         }
 
         .faq-transition {
@@ -139,7 +138,7 @@
         }
 
         .input-transition:focus {
-            box-shadow: inset 0 2px 4px 0 rgba(87, 0, 19, 0.05);
+            box-shadow: inset 0 2px 4px 0 color-mix(in srgb, var(--primary) 12%, transparent);
         }
 
         .hidden-program {
@@ -174,40 +173,131 @@
                 transform: translateX(-50%);
             }
         }
-    </style>
-</head>
 
-<body class="bg-background text-on-surface font-body antialiased overflow-x-hidden">
-    <!-- TopNavBar -->
-    <nav class="fixed top-0 w-full z-[100] bg-white/90 backdrop-blur-xl border-b border-surface-variant/30">
-        <div class="flex justify-between items-center px-8 lg:px-16 py-5 max-w-screen-2xl mx-auto">
-            <div class="flex items-center gap-4">
-                <span class="text-3xl font-headline font-bold tracking-tight text-primary">NLSIU PACE</span>
-            </div>
-            <!-- Desktop Navigation -->
-            <div class="hidden lg:flex items-center gap-10">
-                <a class="text-primary border-b-2 border-secondary pb-1 text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">About</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">Programmes</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">Admissions</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">FAQs</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">Contact Us</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">Alumni</a>
-            </div>
-            <div class="flex items-center gap-6">
-                <button
-                    class="bg-primary text-white px-8 py-2.5 rounded-sm font-label text-xs uppercase tracking-[0.2em] font-bold hover:bg-primary-container transition-all hover:shadow-lg active:scale-95">
-                    myNLS
-                </button>
-            </div>
-        </div>
-    </nav>
-    <main class="relative pt-20">
+        main.adm-main > .adm-container.pace-index-bleed {
+            max-width: none !important;
+            width: 100%;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            padding-top: 0 !important;
+        }
+        main.adm-main:has(> .adm-container.pace-index-bleed) {
+            background: #f8f9fa;
+            max-width: 100%;
+            /* Do not set overflow-x on main: paired with visible-y it becomes overflow-y:auto → double scrollbar */
+            overflow: visible;
+        }
+        .pace-index-root {
+            max-width: 100%;
+            overflow: visible;
+            --pace-primary-strong: color-mix(in srgb, var(--primary) 78%, black);
+        }
+        .pace-prog-desc-clamp {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Bootstrap also defines .text-primary / .bg-primary (blue); force portal primary inside PACE page */
+        .pace-index-root .text-primary {
+            color: var(--primary) !important;
+        }
+        .pace-index-root .bg-primary {
+            background-color: var(--primary) !important;
+        }
+        .pace-index-root .border-primary {
+            border-color: var(--primary) !important;
+        }
+
+        .pace-explore-card {
+            border-radius: 1rem;
+            border: 1px solid color-mix(in srgb, var(--primary) 12%, #e7e5e4);
+            background: linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--primary) 4%, #fafaf9) 100%);
+            box-shadow: 0 4px 24px -8px color-mix(in srgb, var(--primary) 14%, transparent);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+        .pace-explore-card:hover {
+            transform: translateY(-4px);
+            border-color: color-mix(in srgb, var(--primary) 32%, #d6d3d1);
+            box-shadow: 0 20px 40px -12px color-mix(in srgb, var(--primary) 22%, transparent);
+        }
+        .pace-explore-card__icon {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--primary) 12%, white);
+            color: var(--primary);
+            margin-bottom: 1.25rem;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .pace-explore-card:hover .pace-explore-card__icon {
+            background: color-mix(in srgb, var(--primary) 18%, white);
+            transform: scale(1.05);
+        }
+        .pace-explore-card__icon .material-symbols-outlined {
+            font-size: 2.25rem;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pace-explore-card__title {
+            font-family: Newsreader, serif;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--primary) !important;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+        .pace-explore-card__desc {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: #584141;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .pace-explore-section__title {
+            font-family: Newsreader, serif;
+            color: var(--primary) !important;
+        }
+
+        .pace-inquiry-card {
+            border-radius: 1rem;
+            border: 1px solid color-mix(in srgb, var(--primary) 10%, #e7e5e4);
+            border-top: 4px solid var(--primary);
+            box-shadow: 0 12px 40px -12px color-mix(in srgb, var(--primary) 18%, transparent);
+            background: #fff;
+        }
+        .pace-inquiry-card .pace-inquiry-title {
+            font-family: Newsreader, serif;
+            color: var(--primary) !important;
+        }
+        .pace-inquiry-card .bg-primary {
+            background-color: var(--primary) !important;
+        }
+        .pace-inquiry-card .bg-primary:hover {
+            background-color: color-mix(in srgb, var(--primary) 88%, black) !important;
+        }
+        .pace-inquiry-select-label {
+            color: color-mix(in srgb, var(--primary) 58%, #57534e) !important;
+            letter-spacing: 0.2em;
+        }
+        /* Programme listing cards: hover title tint from portal primary */
+        #program-grid .group:hover h3 {
+            color: color-mix(in srgb, var(--primary) 72%, white) !important;
+        }
+        /* Tailwind hover:bg-primary-container — ensure darker primary even if theme color-mix fails in CDN */
+        .pace-index-root .hover\:bg-primary-container:hover {
+            background-color: color-mix(in srgb, var(--primary) 78%, black) !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="pace-index-root relative bg-background text-on-surface font-body antialiased">
         <!-- Latest Updates Ticker -->
         <div class="bg-secondary-container py-3 border-b border-secondary/10 overflow-hidden">
             <div class="max-w-[1400px] mx-auto px-8 flex items-center gap-8">
@@ -235,14 +325,13 @@
             </div>
         </div>
         <!-- Hero Section -->
-        <section class="relative min-h-[90vh] flex items-center overflow-hidden">
-            <div class="absolute inset-0 z-0">
-                <img alt="Academic Institution" class="w-full h-full object-cover scale-105"
+        <section class="relative min-h-[90vh] flex items-center overflow-x-clip overflow-y-hidden">
+            <div class="absolute inset-0 z-0 overflow-hidden">
+                <img alt="Academic Institution" class="w-full h-full object-cover"
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ" />
                 <div class="absolute inset-0 hero-gradient"></div>
-                <!-- Diagonal Accent Overlay -->
-                <div
-                    class="absolute top-0 right-0 w-1/3 h-full bg-primary/20 -skew-x-12 translate-x-1/2 pointer-events-none">
+                <!-- Diagonal accent: kept inside bounds (no translate-x-1/2) to avoid horizontal overflow -->
+                <div class="absolute top-0 right-0 h-full w-[38%] bg-primary/20 -skew-x-12 origin-top-right pointer-events-none">
                 </div>
             </div>
             <div class="relative z-10 max-w-7xl mx-auto px-8 w-full">
@@ -279,47 +368,46 @@
             <div class="absolute bottom-0 left-0 w-full h-12 bg-background cross-edge-mask z-20"></div>
         </section>
         <!-- Explore all Programmes & Courses Section (Intro) -->
-        <section class="pt-12 pb-24 bg-white relative z-30 reveal-up">
+        <section class="pt-10 pb-24 bg-white relative z-30 reveal-up">
             <div class="max-w-[1200px] mx-auto px-8">
-                <h2 class="text-center text-4xl font-headline text-primary mb-16 leading-tight">Explore all Programmes
-                    &amp; Courses</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                <h2 class="pace-explore-section__title text-center text-4xl font-headline mb-12 md:mb-14 leading-tight">
+                    Explore all Programmes &amp; Courses</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                     <!-- Master's Degree -->
-                    <div class="flex flex-col items-center text-center group">
-                        <div class="mb-6">
-                            <span class="material-symbols-outlined text-primary text-5xl font-light">school</span>
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">school</span>
                         </div>
-                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Master's Degree</h3>
-                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Two-year Master of
-                            Business Laws programme tailored for lawyers and managers. Online &amp; hybrid format.</p>
+                        <h3 class="pace-explore-card__title">Master's Degree</h3>
+                        <p class="pace-explore-card__desc font-light">Two-year Master of Business Laws programme tailored
+                            for lawyers and managers. Online &amp; hybrid format.</p>
                     </div>
                     <!-- Postgraduate Diplomas -->
-                    <div class="flex flex-col items-center text-center group">
-                        <div class="mb-6">
-                            <span
-                                class="material-symbols-outlined text-primary text-5xl font-light">workspace_premium</span>
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">workspace_premium</span>
                         </div>
-                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Postgraduate Diplomas</h3>
-                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">One-year online &amp;
-                            hybrid diplomas in specialized domains like Human Rights and Cyber Law.</p>
+                        <h3 class="pace-explore-card__title">Postgraduate Diplomas</h3>
+                        <p class="pace-explore-card__desc font-light">One-year online &amp; hybrid diplomas in
+                            specialized domains like Human Rights and Cyber Law.</p>
                     </div>
                     <!-- Executive & Corporate -->
-                    <div class="flex flex-col items-center text-center group">
-                        <div class="mb-6">
-                            <span class="material-symbols-outlined text-primary text-5xl font-light">groups</span>
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">groups</span>
                         </div>
-                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Executive &amp; Corporate</h3>
-                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Crafted learning material
-                            for officials in hybrid, online, and in-person professional formats.</p>
+                        <h3 class="pace-explore-card__title">Executive &amp; Corporate</h3>
+                        <p class="pace-explore-card__desc font-light">Crafted learning material for officials in hybrid,
+                            online, and in-person professional formats.</p>
                     </div>
                     <!-- Certificate Course -->
-                    <div class="flex flex-col items-center text-center group">
-                        <div class="mb-6">
-                            <span class="material-symbols-outlined text-primary text-5xl font-light">verified</span>
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">verified</span>
                         </div>
-                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Certificate Course</h3>
-                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Foundations for a Legal
-                            Education (FLE) designed for high school to law school transitions.</p>
+                        <h3 class="pace-explore-card__title">Certificate Course</h3>
+                        <p class="pace-explore-card__desc font-light">Foundations for a Legal Education (FLE) designed
+                            for high school to law school transitions.</p>
                     </div>
                 </div>
             </div>
@@ -339,12 +427,13 @@
             <!-- Program Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 reveal-up mb-16" id="program-grid">
             </div>
+            <p class="hidden text-center text-on-surface-variant text-sm py-12" id="program-grid-empty">No programmes are open for admission right now. Please check back later.</p>
             <!-- Load More Section -->
-            <div class="mt-16 flex flex-col items-center gap-6 reveal-up" id="load-more-container">
+            <div class="mt-16 flex flex-col items-center gap-6 reveal-up hidden" id="load-more-container">
                 <div class="flex flex-col items-center gap-2">
                     <span class="text-[10px] font-bold tracking-[0.2em] text-on-surface/40 uppercase">Page <span
-                            id="page-indicator">1 / 2</span></span>
-                    <button
+                            id="page-indicator">1 / 1</span></span>
+                    <button type="button"
                         class="flex items-center justify-center gap-3 px-12 py-6 bg-surface-container-high hover:bg-surface-variant text-on-surface-variant font-bold text-sm uppercase tracking-widest rounded-xl transition-all group"
                         id="load-more-btn">
                         Load More Programmes
@@ -400,57 +489,40 @@
                     </div>
                     <!-- Inquiry Form -->
                     <div class="lg:col-span-7 lg:-mt-12 reveal-up">
-                        <div class="bg-white p-12 lg:p-16 editorial-shadow border border-surface-variant/30 relative">
-                            <h3 class="text-4xl font-headline text-primary mb-6 italic">Programme Inquiry</h3>
-                            <p class="text-on-surface-variant mb-10 text-lg font-light">Complete the form below and our
+                        <div class="pace-inquiry-card p-12 lg:p-16 relative">
+                            <h3 class="pace-inquiry-title text-4xl font-headline mb-6 italic">Programme Inquiry</h3>
+                            <p class="text-on-surface-variant mb-10 font-light" style="font-size: 1.05rem;">Complete the form below and our
                                 admissions counsellors will curate personalised guidance for your career trajectory.</p>
-                            <form class="space-y-8">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div class="relative group">
-                                        <input
-                                            class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
-                                            id="full-name" placeholder=" " type="text" />
-                                        <label
-                                            class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
-                                            for="full-name">Full name</label>
+                            <form class="space-y-6" id="programme-inquiry-form" onsubmit="event.preventDefault(); alert('Thank you for your inquiry. Our admissions counsellors will contact you shortly.'); this.reset();">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#a1a1aa] cursor-pointer" for="full-name">Full Name</label>
+                                        <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="full-name" name="full_name" type="text" autocomplete="name" required />
                                     </div>
-                                    <div class="relative group">
-                                        <input
-                                            class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
-                                            id="email" placeholder=" " type="email" />
-                                        <label
-                                            class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
-                                            for="email">Email address</label>
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#a1a1aa] cursor-pointer" for="email">Email Address</label>
+                                        <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="email" name="email" type="email" autocomplete="email" required />
                                     </div>
                                 </div>
-                                <div class="relative group">
-                                    <input
-                                        class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
-                                        id="phone" placeholder=" " type="tel" />
-                                    <label
-                                        class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
-                                        for="phone">Phone number</label>
+                                <div class="space-y-2 pt-2">
+                                    <label class="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#a1a1aa] cursor-pointer" for="phone">Phone Number</label>
+                                    <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="phone" name="phone" type="tel" autocomplete="tel" pattern="[0-9\+\-\s\(\)]{10,20}" title="Please enter a valid phone number" required />
                                 </div>
-                                <div class="relative group">
-                                    <label
-                                        class="block text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60 mb-2">Programme
-                                        of interest</label>
+                                <div class="space-y-2 pt-2">
+                                    <label class="block text-[10px] font-bold uppercase tracking-[0.15em] pb-1 cursor-pointer" style="color: var(--primary);" for="programme">Programme of Interest</label>
                                     <div class="relative">
-                                        <select
-                                            class="w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg appearance-none cursor-pointer pr-10 input-transition">
-                                            <option>Master of Business Laws (MBL)</option>
-                                            <option>PG Diploma in Cyber Law</option>
-                                            <option>PG Diploma in IP Rights</option>
-                                            <option>PG Diploma in Environmental Law</option>
+                                        <select class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all text-base text-[#3f3f46] appearance-none cursor-pointer pr-10 pb-3" id="programme" name="programme" required>
+                                            <option value="" disabled selected>Select a programme</option>
+                                            <option value="Master of Business Laws (MBL)">Master of Business Laws (MBL)</option>
+                                            <option value="PG Diploma in Cyber Law">PG Diploma in Cyber Law</option>
+                                            <option value="PG Diploma in IP Rights">PG Diploma in IP Rights</option>
+                                            <option value="PG Diploma in Environmental Law">PG Diploma in Environmental Law</option>
                                         </select>
-                                        <span
-                                            class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40">expand_more</span>
+                                        <span class="material-symbols-outlined absolute right-0 top-[30%] pointer-events-none text-[#a1a1aa] text-xl">expand_more</span>
                                     </div>
                                 </div>
                                 <div class="pt-6">
-                                    <button
-                                        class="w-full bg-primary text-white py-5 font-label text-xs font-bold uppercase tracking-[0.3em] transition-all hover:bg-primary-container hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 shadow-lg"
-                                        type="submit">
+                                    <button class="w-full py-4 font-label text-[11px] font-bold uppercase tracking-[0.25em] transition-all hover:opacity-90 active:scale-[0.99] shadow-sm rounded-sm" style="background-color: var(--primary); color: white;" type="submit">
                                         Submit Request
                                     </button>
                                 </div>
@@ -519,245 +591,140 @@
                 </div>
             </div>
         </section>
-    </main>
-    <!-- Footer -->
-    <footer class="bg-[#2D000A] text-white py-24 overflow-hidden relative">
-        <div class="max-w-[1400px] mx-auto px-8 relative z-10">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-20">
-                <div class="lg:col-span-5">
-                    <span class="text-3xl font-headline font-bold text-white block mb-8 tracking-tight">NLSIU
-                        PACE</span>
-                    <p class="text-white/60 text-lg leading-relaxed mb-8 font-light max-w-md">
-                        Professional and Continuing Education (PACE) is the strategic outreach of NLSIU, dedicated to
-                        democratizing elite legal education for global professionals.
-                    </p>
-                    <div class="flex gap-6">
-                        <a class="w-10 h-10 flex items-center justify-center border border-white/20 rounded-full hover:bg-secondary hover:border-secondary transition-all"
-                            href="#">
-                            <span class="material-symbols-outlined text-lg">public</span>
-                        </a>
-                        <a class="w-10 h-10 flex items-center justify-center border border-white/20 rounded-full hover:bg-secondary hover:border-secondary transition-all"
-                            href="#">
-                            <span class="material-symbols-outlined text-lg">mail</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="lg:col-span-7">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-10">
-                        <div>
-                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
-                                Programmes</h4>
-                            <ul class="space-y-4">
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
-                                        href="#">Business Laws (MBL)</a></li>
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">Cyber
-                                        Law &amp; Forensics</a></li>
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
-                                        href="#">Intellectual Property</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
-                                Resources</h4>
-                            <ul class="space-y-4">
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">LMS
-                                        Portal</a></li>
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">Digital
-                                        Library</a></li>
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
-                                        href="#">Academic Calendar</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
-                                Contact</h4>
-                            <div class="text-white/60 text-xs leading-loose space-y-2 font-light">
-                                <p>Gnana Bharathi Main Rd,<br />Bengaluru, 560072</p>
-                                <p>admissions.pace@nls.ac.in</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8">
-                <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest">© National Law School of India
-                    University. Excellence since 1987.</p>
-                <div class="flex flex-wrap justify-center gap-8">
-                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
-                        href="#">Privacy</a>
-                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
-                        href="#">Terms</a>
-                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
-                        href="#">Sitemap</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-    <script>
-        const PROGRAMMES = [
-            {
-                id: 1,
-                title: "Master of Business Laws (MBL)",
-                category_label: "Postgraduate",
-                description: "A flagship two-year programme providing a comprehensive understanding of business law and its impact on corporate governance.",
-                duration: "2 years",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
-            },
-            {
-                id: 2,
-                title: "PG Diploma in Cyber Law & Forensics",
-                category_label: "Diploma",
-                description: "Bridging the gap between technological advancement and legal regulation in the digital frontier.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
-            },
-            {
-                id: 3,
-                title: "PG Diploma in IP Rights Law",
-                category_label: "Diploma",
-                description: "Equipping practitioners with specialised knowledge in patent, copyright, and trademark law frameworks.",
-                duration: "1 year",
-                status: "Closed",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAex_cOyWlHi17JDVM7yJsnKrY0FYGiLzilmXl7cHi0_3upqgMAA8hDeEQeThPjFilmWTvi-NGrzb9BMHDuymWDjxYrIlTWq3k6B_BsGgU01GppPqkojPln4_m6OLrN3aC9MxRFczj-CGhgdvDk4O-hV0nZmtLpWeZTeKWADq6nxNeoFW0DrLhrqT7p7_2YmlCwGzrL9AhEvavfU5Euy65tZoNRqGUF_74qjfSZVvEnt15xo-K-z5ngNKePKx8cgnCKuroZxnr0MxY"
-            },
-            {
-                id: 4,
-                title: "PG Diploma in Environmental Law",
-                category_label: "Diploma",
-                description: "Critical legal frameworks for sustainable development and resource management in a global context.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ"
-            },
-            {
-                id: 5,
-                title: "PG Diploma in Human Rights Law",
-                category_label: "Diploma",
-                description: "Exploration of international and domestic human rights protection mechanisms and legal advocacy.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
-            },
-            {
-                id: 6,
-                title: "PG Diploma in Medical Law & Ethics",
-                category_label: "Diploma",
-                description: "Intersection of law, medicine, and bioethics, addressing clinical negligence and healthcare regulation.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
-            },
-            {
-                id: 7,
-                title: "PG Diploma in Consumer Law & Practice",
-                category_label: "Diploma",
-                description: "Advanced study of consumer protection frameworks and dispute resolution in the modern marketplace.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAex_cOyWlHi17JDVM7yJsnKrY0FYGiLzilmXl7cHi0_3upqgMAA8hDeEQeThPjFilmWTvi-NGrzb9BMHDuymWDjxYrIlTWq3k6B_BsGgU01GppPqkojPln4_m6OLrN3aC9MxRFczj-CGhgdvDk4O-hV0nZmtLpWeZTeKWADq6nxNeoFW0DrLhrqT7p7_2YmlCwGzrL9AhEvavfU5Euy65tZoNRqGUF_74qjfSZVvEnt15xo-K-z5ngNKePKx8cgnCKuroZxnr0MxY"
-            },
-            {
-                id: 8,
-                title: "PG Diploma in Labour Law",
-                category_label: "Diploma",
-                description: "In-depth study of labour codes, social security, and industrial disputes management in the modern economy.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ"
-            },
-            {
-                id: 9,
-                title: "PG Diploma in Constitutional Law",
-                category_label: "Diploma",
-                description: "Understand the bedrock of Indian democracy. Analyse landmark judgments and constitutional principles with experts.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
-            },
-            {
-                id: 10,
-                title: "PG Diploma in ADR & Arbitration",
-                category_label: "Diploma",
-                description: "Master the skills of negotiation, mediation, and arbitration. A practical approach to alternative dispute resolution.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
-            }
-        ];
 
-        function renderPage(page) {
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+        const PROGRAMMES = {{ (pace_programmes or []) | tojson }};
+        const DEFAULT_PROGRAM_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ";
+        const PAGE_SIZE = 6;
+
+        function escapeHtml(s) {
+            if (!s) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function programmeDetailUrl(prog) {
+            if (prog.detail_url) return prog.detail_url;
+            const slug = prog.detail_slug || prog.programme || '';
+            return '/pace/admission/' + encodeURIComponent(slug);
+        }
+
+        function appendProgrammeCards(programs) {
             const grid = document.getElementById('program-grid');
-            const start = (page - 1) * 6;
-            const end = page === 1 ? 6 : 10;
-            const programs = PROGRAMMES.slice(start, end);
+            programs.forEach(function (prog) {
+                const title = prog.programme_name || prog.programme || 'Programme';
+                const status = (prog.admission_status || 'Closed');
+                const statusClass = status === 'Open' ? 'bg-green-600' : 'bg-neutral-400';
+                const desc = prog.description || '';
+                const duration = prog.duration_label || '—';
+                const img = (prog.image_url && String(prog.image_url).trim()) ? prog.image_url : DEFAULT_PROGRAM_IMAGE;
+                const href = programmeDetailUrl(prog);
 
-            programs.forEach(prog => {
+                const wrap = document.createElement('a');
+                wrap.href = href;
+                wrap.className = 'block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm';
+                wrap.setAttribute('aria-label', 'View details: ' + title);
+
                 const card = document.createElement('div');
-                card.className = "group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active";
+                card.className = 'group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active h-full';
 
-                const statusClass = prog.status === 'Open' ? 'bg-green-600' : 'bg-neutral-400';
+                card.innerHTML =
+                    '<div class="relative overflow-hidden aspect-[16/10] z-0">' +
+                    '<img alt="" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="' + escapeHtml(img) + '">' +
+                    '<div class="absolute top-4 right-4 px-3 py-1 ' + statusClass + ' text-white text-[9px] font-bold uppercase tracking-widest shadow-lg">' + escapeHtml(status.toUpperCase()) + '</div>' +
+                    '</div>' +
+                    '<div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow flex flex-col">' +
+                    '<span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary uppercase mb-3 block">PACE Programme</span>' +
+                    '<h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">' + escapeHtml(title) + '</h3>' +
+                    '<p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light line-clamp-3 overflow-hidden pace-prog-desc-clamp">' + escapeHtml(desc) + '</p>' +
+                    '<div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">' +
+                    '<div class="flex items-center gap-2 text-on-surface/50">' +
+                    '<span class="material-symbols-outlined text-lg">schedule</span>' +
+                    '<span class="text-[10px] font-bold uppercase tracking-widest">' + escapeHtml(duration) + '</span>' +
+                    '</div>' +
+                    '<span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform text-xl" aria-hidden="true">arrow_forward</span>' +
+                    '</div></div>';
 
-                card.innerHTML = `
-                <div class="relative overflow-hidden aspect-[16/10] z-0">
-                    <img alt="${prog.title}" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="${prog.image_url}">
-                    <div class="absolute top-4 right-4 px-3 py-1 ${statusClass} text-white text-[9px] font-bold uppercase tracking-widest shadow-lg">${prog.status.toUpperCase()}</div>
-                </div>
-                <div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow">
-                    <span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary uppercase mb-3 block">${prog.category_label}</span>
-                    <h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">${prog.title}</h3>
-                    <p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light">${prog.description}</p>
-                    <div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">
-                        <div class="flex items-center gap-2 text-on-surface/50">
-                            <span class="material-symbols-outlined text-lg">schedule</span>
-                            <span class="text-[10px] font-bold uppercase tracking-widest">${prog.duration}</span>
-                        </div>
-                        <span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform text-xl">arrow_forward</span>
-                    </div>
-                </div>
-            `;
-                grid.appendChild(card);
+                wrap.appendChild(card);
+                grid.appendChild(wrap);
             });
         }
 
-        // Simple intersection observer for scroll animations
+        function initProgrammeGrid() {
+            const grid = document.getElementById('program-grid');
+            const emptyEl = document.getElementById('program-grid-empty');
+            const loadWrap = document.getElementById('load-more-container');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            const pageIndicator = document.getElementById('page-indicator');
+
+            grid.innerHTML = '';
+            if (!PROGRAMMES.length) {
+                emptyEl.classList.remove('hidden');
+                loadWrap.classList.add('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+
+            const totalPages = Math.max(1, Math.ceil(PROGRAMMES.length / PAGE_SIZE));
+            let currentPage = 1;
+
+            function renderSlice(page) {
+                const start = (page - 1) * PAGE_SIZE;
+                const slice = PROGRAMMES.slice(start, start + PAGE_SIZE);
+                appendProgrammeCards(slice);
+                if (pageIndicator) {
+                    pageIndicator.textContent = page + ' / ' + totalPages;
+                }
+            }
+
+            renderSlice(1);
+
+            if (totalPages <= 1) {
+                loadWrap.classList.add('hidden');
+                loadMoreBtn.disabled = true;
+            } else {
+                loadWrap.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Load More Programmes <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-y-1">expand_more</span>';
+                loadMoreBtn.classList.remove('cursor-not-allowed', 'bg-neutral-200');
+
+                loadMoreBtn.onclick = function () {
+                    if (currentPage >= totalPages) return;
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.textContent = 'Loading...';
+                    currentPage += 1;
+                    renderSlice(currentPage);
+                    if (currentPage >= totalPages) {
+                        loadMoreBtn.innerHTML = 'All Programmes Loaded';
+                        loadMoreBtn.classList.add('cursor-not-allowed', 'bg-neutral-200');
+                    } else {
+                        loadMoreBtn.innerHTML = 'Load More Programmes <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-y-1">expand_more</span>';
+                        loadMoreBtn.disabled = false;
+                    }
+                };
+            }
+        }
+
         const observerOptions = {
             threshold: 0.1,
             rootMargin: "0px 0px -50px 0px"
         };
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('active');
                 }
             });
         }, observerOptions);
 
-        document.querySelectorAll('.reveal-up').forEach(el => observer.observe(el));
+        document.querySelectorAll('.reveal-up').forEach(function (el) { observer.observe(el); });
 
-        // Load More Logic
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        const pageIndicator = document.getElementById('page-indicator');
-
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', () => {
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.innerHTML = 'Loading...';
-
-                setTimeout(() => {
-                    renderPage(2);
-                    pageIndicator.innerText = '2 / 2';
-                    loadMoreBtn.innerHTML = 'All Programmes Loaded';
-                    loadMoreBtn.classList.add('cursor-not-allowed', 'bg-neutral-200');
-                }, 800);
-            });
-        }
-
-        // Initialize Page 1
-        renderPage(1);
+        initProgrammeGrid();
     </script>
-</body>
-
-</html>
+{% endblock %}

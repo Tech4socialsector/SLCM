@@ -9,19 +9,17 @@
   "programme_name",
   "programme_code",
   "route",
-  "fee_indian",
-  "fee_foreign",
   "contact_email",
+  "instructions_text",
+  "instructions_link",
   "column_break_uuau",
   "published",
   "banner_image",
   "admission_status",
   "duration_type",
   "duration",
-  "instructions_text",
-  "instructions_link",
-  "section_break_mjih",
-  "course",
+  "section_break_wbef",
+  "faculty",
   "overview_tab",
   "show_overview_tab",
   "overview",
@@ -67,18 +65,6 @@
    "label": "Duration",
    "length": 2,
    "non_negative": 1
-  },
-  {
-   "fieldname": "fee_indian",
-   "fieldtype": "Currency",
-   "label": "Fee (Indian Nationals)",
-   "precision": "1"
-  },
-  {
-   "fieldname": "fee_foreign",
-   "fieldtype": "Currency",
-   "label": "Fee (Foreign Nationals)",
-   "precision": "1"
   },
   {
    "depends_on": "eval: doc.show_overview_tab",
@@ -146,17 +132,6 @@
    "label": "Overview"
   },
   {
-   "fieldname": "section_break_mjih",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "course",
-   "fieldtype": "Table MultiSelect",
-   "in_standard_filter": 1,
-   "label": "Course",
-   "options": "PACE Programme Course Table"
-  },
-  {
    "default": "0",
    "fieldname": "show_overview_tab",
    "fieldtype": "Check",
@@ -180,6 +155,16 @@
    "in_standard_filter": 1,
    "label": "Duration Type",
    "options": "Month\nYear"
+  },
+  {
+   "fieldname": "section_break_wbef",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "faculty",
+   "fieldtype": "Table",
+   "label": "Faculty",
+   "options": "PACE Faculty Table"
   }
  ],
  "grid_page_length": 50,
@@ -187,7 +172,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-09 17:34:06.884765",
+ "modified": "2026-04-10 14:41:35.447146",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Programme",
