@@ -9,6 +9,7 @@
   "pace_program",
   "nationality_type",
   "payment_mode",
+  "payment_gateway",
   "column_break_1",
   "valid_from",
   "valid_to",
@@ -49,6 +50,14 @@
    "label": "Payment Mode",
    "options": "\nOnline\nCash\nBoth",
    "reqd": 1
+  },
+  {
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "label": "Payment Gateway",
+   "options": "Payment Gateway",
+   "depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)",
+   "mandatory_depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)"
   },
   {
    "fieldname": "column_break_1",

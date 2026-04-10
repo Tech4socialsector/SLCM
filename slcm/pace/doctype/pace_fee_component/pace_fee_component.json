@@ -9,6 +9,7 @@
   "fee_component",
   "amount",
   "tax_rate",
+  "currency",
   "tax_amount",
   "total_amount"
  ],
@@ -27,6 +28,7 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount",
+   "options": "parent:currency",
    "reqd": 1
   },
   {
@@ -36,10 +38,19 @@
    "label": "Tax Rate (%)"
   },
   {
+   "fetch_from": "parent.currency",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
    "fieldname": "tax_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Tax Amount",
+   "options": "parent:currency",
    "read_only": 1
   },
   {
@@ -47,6 +58,7 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Total Amount",
+   "options": "parent:currency",
    "read_only": 1,
    "reqd": 1
   }

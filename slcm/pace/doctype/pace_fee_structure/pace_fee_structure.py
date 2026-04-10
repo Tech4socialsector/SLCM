@@ -14,6 +14,7 @@ class PACEFeeStructure(Document):
 	def validate(self):
 		self.calculate_totals()
 		self.validate_dates()
+		self.set_status()
 		self.validate_active_fee_structure()
 
 	def calculate_totals(self):
@@ -36,9 +37,22 @@ class PACEFeeStructure(Document):
 		row.total_amount = row.amount + row.tax_amount
 
 	def validate_dates(self):
+		from frappe.utils import getdate, nowdate
+		today = getdate(nowdate())
+
+		if self.valid_from and (self.is_new() or self.has_value_changed("valid_from")):
+			if getdate(self.valid_from) < today:
+				frappe.throw(_("Valid From date cannot be a past date"))
+
 		if self.valid_from and self.valid_to:
-			if self.valid_from > self.valid_to:
+			if getdate(self.valid_from) > getdate(self.valid_to):
 				frappe.throw(_("Valid From cannot be greater than Valid Until"))
+
+	def set_status(self):
+		from frappe.utils import getdate, nowdate
+		if self.valid_to and getdate(self.valid_to) < getdate(nowdate()):
+			if self.status != "Inactive":
+				self.status = "Inactive"
 
 	def validate_active_fee_structure(self):
 		if self.status == "Active":
