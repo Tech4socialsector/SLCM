@@ -322,9 +322,21 @@
                 </div>
                 
                 <div class="mt-6 space-y-3">
-                    <a href="#apply" class="btn-maroon" onclick="document.querySelector('[data-tab-btn=\'apply\']').click(); event.preventDefault();">
-                        <span>Apply Now</span>
-                    </a>
+                    {% if existing_application %}
+                        {% if existing_application.status == 'Draft' %}
+                            <a href="/pace-application-form/{{ existing_application.name }}/edit" class="btn-maroon">
+                                <span>Continue Application</span>
+                            </a>
+                        {% else %}
+                            <a href="/pace-application-form/{{ existing_application.name }}" class="btn-maroon">
+                                <span>View Application</span>
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="/pace-application-form/new?programme={{ programme_name | urlencode }}&academic_year={{ academic_year | urlencode }}" class="btn-maroon">
+                            <span>Apply Now</span>
+                        </a>
+                    {% endif %}
                     <a href="#" class="btn-maroon">
                         <span class="material-symbols-outlined text-lg">download</span>
                         <span>Download Prospectus</span>

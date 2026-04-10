@@ -25,7 +25,7 @@
  "list_columns": [],
  "login_required": 1,
  "max_attachment_size": 0,
- "modified": "2026-04-09 17:01:30.911224",
+ "modified": "2026-04-10 18:04:20.993405",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "pace-application-form",
@@ -69,6 +69,7 @@
   },
   {
    "allow_read_on_all_link_options": 0,
+   "default": "Mr",
    "fieldname": "title",
    "fieldtype": "Select",
    "hidden": 0,
@@ -78,7 +79,7 @@
    "options": "Mr\nMiss\nMrs\nDr\nProf\nMs",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -91,7 +92,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -106,7 +107,7 @@
    "placeholder": "Select",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -145,7 +146,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -158,7 +159,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -171,7 +172,7 @@
    "max_value": 0,
    "options": "Email",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -185,7 +186,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -223,7 +224,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -249,8 +250,8 @@
    "max_value": 0,
    "options": "PACE Programme",
    "precision": "",
-   "read_only": 0,
-   "reqd": 0,
+   "read_only": 1,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -277,7 +278,7 @@
    "placeholder": "Select",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -307,7 +308,7 @@
    "placeholder": "Select",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -361,7 +362,7 @@
    "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -392,6 +393,7 @@
   },
   {
    "allow_read_on_all_link_options": 0,
+   "default": "Mr",
    "fieldname": "father_title",
    "fieldtype": "Select",
    "hidden": 0,
@@ -426,7 +428,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -444,6 +446,7 @@
   },
   {
    "allow_read_on_all_link_options": 0,
+   "default": "Mrs",
    "fieldname": "mother_title",
    "fieldtype": "Select",
    "hidden": 0,
@@ -478,7 +481,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -568,7 +571,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -594,7 +597,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -633,7 +636,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -648,7 +651,7 @@
    "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -662,7 +665,7 @@
    "options": "Country",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -675,7 +678,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -701,7 +704,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -727,7 +730,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -752,7 +755,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -768,7 +771,7 @@
    "placeholder": "Select",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -782,7 +785,7 @@
    "options": "Country",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -795,7 +798,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -835,7 +838,7 @@
    "options": "PACE UG Degree Details",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -866,7 +869,7 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
+   "description": "Max Limit 1 MB( Only jpeg , jpg , png allowed )",
    "fieldname": "student_signature",
    "fieldtype": "Attach Image",
    "hidden": 0,
@@ -875,7 +878,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -890,7 +893,7 @@
    "options": "YES\nNO",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -947,7 +950,7 @@
    "options": "YES\nNO",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -988,7 +991,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -1028,6 +1031,20 @@
    "label": "Submission Date",
    "max_length": 0,
    "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "hidden": 0,
+   "label": "Academic Year",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "Academic Year",
    "precision": "",
    "read_only": 0,
    "reqd": 0,

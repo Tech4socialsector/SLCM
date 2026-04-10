@@ -9,11 +9,35 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "globe",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Admission",
+   "link_to": "PACE Admission",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "briefcase-business",
    "indent": 0,
    "keep_closed": 0,
    "label": "PACE Application",
    "link_to": "PACE Application",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "blocks",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Programme",
+   "link_to": "PACE Programme",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -33,17 +57,17 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "blocks",
+   "icon": "badge-dollar-sign",
    "indent": 0,
    "keep_closed": 0,
-   "label": "PACE Programme",
-   "link_to": "PACE Programme",
+   "label": "PACE Fee Structure",
+   "link_to": "PACE Fee Structure",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-04-09 17:58:49.279410",
+ "modified": "2026-04-10 18:08:43.706728",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",

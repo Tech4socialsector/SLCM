@@ -88,12 +88,15 @@ function _paceInjectCSS() {
 		'.pace-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.pace-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
 		'.pace-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
-		/* ── Top bar (Back left) ── */
-		'#pace-form-topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 4px;margin-bottom:4px;}',
-		'#pace-back-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
-			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #cbd5e1;' +
-			'background:#f8fafc;color:#334155;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s;}',
-		'#pace-back-btn:hover{background:#f1f5f9;border-color:#94a3b8;color:#1e293b;}',
+		/* ── Top bar ── */
+		'#pace-form-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-bottom:8px;max-width:1400px;margin-left:auto;margin-right:auto;}',
+		'#pace-form-topbar-left{display:flex;align-items:center;gap:20px;}',
+		'#pace-back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;' +
+			'font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;' +
+			'cursor:pointer;text-decoration:none!important;transition:all .2s;}',
+		'#pace-back-btn:hover{background:#f8fafc;border-color:#cbd5e1;color:#1e293b;}',
+		'#pace-applying-for-wrap{font-size:13px;color:#64748b;}',
+		'#pace-applying-for-wrap strong{color:#1e293b;margin-left:4px;}',
 		/* ── Stepper ── */
 		'#pace-stepper-wrap{padding:15px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;width:100%;box-sizing:border-box;}',
 		'#pace-stepper-wrap::-webkit-scrollbar{display:none;}',
@@ -226,20 +229,218 @@ function paceShowToast(message, type, durationMs) {
 // ───────────────────────────────────────────────────────────────────
 //  PORTAL SHELL — themed nav + footer (Applicant Portal Config)
 // ───────────────────────────────────────────────────────────────────
+// Module-level store for user data fetched from portal shell
+/**
+ * Dynamic Applicant Name Sync: concatenates Title + First + Middle + Last
+ */
+function _paceSetupNameSync() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && typeof wf.on === 'function') {
+			clearInterval(t);
+			
+			var runSync = function() {
+				var t  = (wf.get_value('title') || '').trim();
+				var f  = (wf.get_value('first_name') || '').trim();
+				var m  = (wf.get_value('middle_name') || '').trim();
+				var l  = (wf.get_value('last_name') || '').trim();
+				
+				var parts = [];
+				if (t) parts.push(t);
+				if (f) parts.push(f);
+				if (m) parts.push(m);
+				if (l) parts.push(l);
+				
+				var fullName = parts.join(' ');
+				if (fullName !== (wf.get_value('applicant_name') || '').trim()) {
+					wf.set_value('applicant_name', fullName);
+				}
+			};
+
+			wf.on('title', runSync);
+			wf.on('first_name', runSync);
+			wf.on('middle_name', runSync);
+			wf.on('last_name', runSync);
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
+var _paceUserData = null;
+
 function _paceInjectPortalShell() {
 	if (document.getElementById('pace-adm-nav')) return;
 	frappe.call({
 		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_portal_shell_data',
 		callback: function (r) {
 			var d = (r && r.message) || {};
+			_paceUserData = d;
 			_paceBuildShell(d);
-			pacePrefillUserDetails(d);
+			_paceTriggerPrefill();
 		},
 		error: function () {
 			_paceBuildShell({ primary_color: '#1a3c6e', secondary_color: '#c8a14b', portal_title: 'PACE', user: 'Guest' });
 		},
 	});
 }
+
+/** 
+ * Co-ordinates between Portal Shell API and Web Form Lifecycle.
+ * Runs prefill as soon as BOTH are ready.
+ */
+function _paceTriggerPrefill() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		// Wait for web_form AND fields_dict AND our shell user data
+		if (wf && wf.fields_dict && Object.keys(wf.fields_dict).length > 0 && _paceUserData) {
+			clearInterval(t);
+			_paceRunPrefill();
+		}
+		if (++n > 200) clearInterval(t); 
+	}, 100);
+}
+
+/** Actual prefill execution */
+var _pacePrefillDone = false;
+function _paceRunPrefill() {
+	if (_pacePrefillDone) return;
+	
+	var wf = window.frappe && frappe.web_form;
+	if (!wf || !wf.fields_dict || !_paceUserData) return;
+
+	// Only prefill for NEW applications
+	var isNew = false;
+	try {
+		isNew = wf.doc && (wf.doc['__islocal'] || wf.doc.name === 'new' || !wf.doc.name || wf.is_new);
+	} catch (e) {}
+	if (!isNew) isNew = (window.location.pathname.indexOf('/new') !== -1);
+	
+	if (!isNew) return;
+	_pacePrefillDone = true;
+
+	var d = _paceUserData;
+	var searchParams = new URLSearchParams(window.location.search);
+	var programme = searchParams.get('programme');
+	var academicYear = searchParams.get('academic_year');
+
+	function applyContextValues() {
+		if (programme) try { wf.set_value('programme', programme); } catch (e) {}
+		if (academicYear) try { wf.set_value('academic_year', academicYear); } catch (e) {}
+	}
+
+	function fillBase() {
+		if (d.first_name) try { wf.set_value('first_name', d.first_name); } catch (e) {}
+		if (d.middle_name) try { wf.set_value('middle_name', d.middle_name); } catch (e) {}
+		if (d.last_name) try { wf.set_value('last_name', d.last_name); } catch (e) {}
+		if (d.email) try { wf.set_value('email_address', d.email); } catch (e) {}
+		if (d.full_name) try { wf.set_value('applicant_name', d.full_name); } catch (e) {}
+	}
+
+	// First pass
+	applyContextValues();
+	fillBase();
+	try { wf.refresh(); } catch (e) {}
+
+	// 2. Check for existing application for THIS programme
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.check_existing_pace_application',
+		args: { programme: programme, academic_year: academicYear },
+		callback: function (r) {
+			var existing = r && r.message;
+			if (existing && existing.name) {
+				var p = (window.location.pathname || '').replace(/\/$/, '');
+				var isNewRoute = p.indexOf('/new') !== -1;
+				
+				// If we are on /new but there is already an application
+				if (isNewRoute) {
+					if (existing.status === 'Draft') {
+						// Redirect to the existing draft
+						var rt = (wf && wf.route) || 'pace-application-form';
+						window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + '/edit';
+						return; 
+					} else {
+						// It's submitted / verified / etc.
+						frappe.msgprint({
+							title: __('Already Applied'),
+							message: __('You have already submitted an application for <b>{0}</b> (ID: {1}). You cannot start a new application for the same programme.').format(programme, existing.name),
+							indicator: 'orange',
+							primary_action: {
+								label: __('Back to Programmes'),
+								action: function() { window.location.href = '/pace'; }
+							}
+						});
+						return;
+					}
+				}
+			}
+
+			// 3. Fallback: Fetch old application (from ANY program) for prefill
+			_paceFetchOldPrefill(wf, fillBase, applyContextValues);
+		},
+		error: function() {
+			_paceFetchOldPrefill(wf, fillBase, applyContextValues);
+		}
+	});
+
+	// Aggressive retry for initial empty fields
+	var nRetry = 0;
+	var retryT = setInterval(function() {
+		applyContextValues();
+		fillBase();
+		if (++nRetry > 10) clearInterval(retryT);
+	}, 1000);
+}
+
+/** Wrapper for the historical prefill logic */
+function _paceFetchOldPrefill(wf, fillBase, applyContextValues) {
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_old_pace_application',
+		callback: function (r) {
+			var oldData = r && r.message;
+			var count = 0;
+			if (oldData && Object.keys(oldData).length > 0) {
+				for (var k in oldData) {
+					if (!oldData.hasOwnProperty(k)) continue;
+					if (k === 'programme' || k === 'academic_year') continue;
+					var val = oldData[k];
+					var fd = wf.fields_dict[k];
+					
+					// Skip attachments except photo
+					if (fd && (fd.df.fieldtype === 'Attach' || fd.df.fieldtype === 'Attach Image') && k !== 'upload_student_photo') continue;
+					
+					try {
+						var curr = wf.get_value(k);
+						if ((curr === null || curr === undefined || curr === '') && val) {
+							if (Array.isArray(val) && fd && fd.grid) {
+								fd.grid.df.data = val;
+								fd.grid.refresh();
+								count++;
+							} else if (!Array.isArray(val)) {
+								wf.set_value(k, val);
+								count++;
+							}
+						}
+					} catch (e2) {}
+				}
+				if (count > 0) paceShowToast('Form auto-filled from your previous application.', 'success', 5000);
+			}
+			fillBase();
+			applyContextValues();
+			try { wf.refresh(); } catch (e) {}
+		},
+		error: function() {
+			fillBase();
+			applyContextValues();
+			try { wf.refresh(); } catch (e) {}
+		}
+	});
+}
+
+
+
+
 
 function _paceBuildShell(cfg) {
 	if (document.getElementById('pace-adm-nav')) return;
@@ -347,33 +548,11 @@ function _paceBuildShell(cfg) {
 	document.body.appendChild(footer);
 }
 
+/** Legacy stub — actual prefill is now done by _paceRunPrefill via _paceTriggerPrefill */
 function pacePrefillUserDetails(d) {
-	if (!frappe.web_form || !d) return;
-
-	// Only prefill for NEW applications
-	var isNew = false;
-	try {
-		isNew = frappe.web_form.doc['__islocal'] || frappe.web_form.doc.name === 'new';
-	} catch (e) {
-		isNew = window.location.pathname.indexOf('/new') !== -1;
-	}
-
-	if (!isNew) return;
-
-	// Set values if they are currently empty
-	if (d.first_name && !frappe.web_form.get_value('first_name')) {
-		frappe.web_form.set_value('first_name', d.first_name);
-	}
-	if (d.middle_name && !frappe.web_form.get_value('middle_name')) {
-		frappe.web_form.set_value('middle_name', d.middle_name);
-	}
-	if (d.last_name && !frappe.web_form.get_value('last_name')) {
-		frappe.web_form.set_value('last_name', d.last_name);
-	}
-	if (d.email && !frappe.web_form.get_value('email_address')) {
-		frappe.web_form.set_value('email_address', d.email);
-	}
+	_paceUserData = d || _paceUserData;
 }
+
 
 // ───────────────────────────────────────────────────────────────────
 //  APPLICATION STATUS BADGE
@@ -412,7 +591,9 @@ function paceSetupStatusBadge() {
 			window._pace_badge_done = true;
 
 			var titleEl = $title[0];
-			var idText = (titleEl.textContent || '').replace(/\s+/g, ' ').trim();
+			var docName = _paceGetDocName();
+			var idText = (docName && docName !== 'new' && docName !== 'list') ? docName : (titleEl.textContent || '').replace(/\s+/g, ' ').trim();
+			
 			titleEl.textContent = '';
 			titleEl.classList.add('pace-app-heading-row');
 
@@ -441,6 +622,50 @@ function paceSetupStatusBadge() {
 		}
 		if (attempts > 80) clearInterval(t);
 	}, 100);
+}
+
+// ───────────────────────────────────────────────────────────────────
+//  TOP BAR (Back Button + Applying For)
+// ───────────────────────────────────────────────────────────────────
+var _SVG_BACK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>';
+
+function paceSetupTopBar() {
+	if (document.getElementById('pace-form-topbar')) return;
+
+	var $head = $('.web-form-container .web-form-head, .web-form-head, .web-form-header').first();
+	if (!$head.length) $head = $('form.web-form, .web-form-container').first();
+	if (!$head.length) return;
+
+	var bar = document.createElement('div');
+	bar.id = 'pace-form-topbar';
+
+	var left = document.createElement('div');
+	left.id = 'pace-form-topbar-left';
+
+	var back = document.createElement('a');
+	back.id = 'pace-back-btn';
+	back.href = '/pace';
+	back.title = 'Back to PACE Programmes';
+	back.innerHTML = _SVG_BACK + '<span>Back</span>';
+
+	var apply = document.createElement('div');
+	apply.id = 'pace-applying-for-wrap';
+	var prog = _paceResolveField('programme') || '';
+	apply.innerHTML = '<span>Applying for:</span> <strong id="pace-applying-for-prog">' + _paceEsc(prog) + '</strong>';
+
+	left.appendChild(back);
+	left.appendChild(apply);
+	bar.appendChild(left);
+
+	if ($head.is('form')) $head.prepend(bar);
+	else $head.before(bar);
+
+	// Sync programme name if it changes (e.g. from prefill)
+	setInterval(function() {
+		var p = _paceResolveField('programme');
+		var el = document.getElementById('pace-applying-for-prog');
+		if (p && el && el.textContent !== p) el.textContent = p;
+	}, 1000);
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -777,6 +1002,43 @@ function _paceRenderStepper(wf) {
 		setTimeout(updateStepperUI, 200);
 	});
 
+	// INTERCEPT Next Click for Validation (Capture phase to run BEFORE Frappe)
+	document.addEventListener('click', function(e) {
+		var btn = e.target.closest && e.target.closest('.btn-next');
+		if (!btn) return;
+
+		var wf = window.frappe && frappe.web_form;
+		if (!wf) return;
+		
+		var $pages = $('.web-form .form-layout > .form-page');
+		var $currPage = $pages.filter(':visible').first();
+		if (!$currPage.length) return;
+
+		// Find index of current page to show in logs if needed, but we use $currPage for validation
+		var skip = _paceSkipForwardValidation(wf);
+		if (skip) return;
+
+		var check = _paceValidateStage(wf, $currPage);
+		if (!check.ok) {
+			// Stop Frappe's internal navigation
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			
+			var base = __('Please fill all required fields before proceeding.');
+			if (check.missing && check.missing.length && typeof frappe !== 'undefined' && frappe.msgprint) {
+				frappe.msgprint({
+					title: __('Required fields'),
+					message: _paceEsc(base) + '<br><br><ul><li>' + check.missing.join('</li><li>') + '</li></ul>',
+					indicator: 'red'
+				});
+			} else {
+				paceShowToast(base, 'error');
+			}
+			return false;
+		}
+	}, true);
+
 	// Click on stepper step: validate mandatory fields before forward navigation
 	$('#pace-stepper-wrap').on('click', '.pace-step', function () {
 		var targetIdx = parseInt($(this).attr('data-index'), 10);
@@ -919,11 +1181,12 @@ function paceSetupPhotoPreview() {
 
 // ───────────────────────────────────────────────────────────────────
 //  ATTACH FIELD VALIDATION — file type + size limits
-//  • Attach Image: max 1 MB — png, jpeg, jpg
-//  • Attach (documents): max 5 MB — png, jpeg, jpg, pdf
+//  • All Attachments: max 1 MB
+//  • Student Photo: png, jpeg, jpg only
+//  • All Other Docs: png, jpeg, jpg, pdf allowed
 // ───────────────────────────────────────────────────────────────────
 var _PACE_IMG_MAX = 1 * 1024 * 1024;       // 1 MB
-var _PACE_DOC_MAX = 5 * 1024 * 1024;       // 5 MB
+var _PACE_DOC_MAX = 1 * 1024 * 1024;       // 1 MB
 var _PACE_IMG_EXTS = ['png', 'jpeg', 'jpg'];
 var _PACE_DOC_EXTS = ['png', 'jpeg', 'jpg', 'pdf'];
 var _PACE_IMG_TYPES = ['.png', '.jpeg', '.jpg', '.jpe', 'image/png', 'image/jpeg', 'image/jpg'];
@@ -932,15 +1195,15 @@ var _PACE_DOC_TYPES = ['.png', '.jpeg', '.jpg', '.jpe', '.pdf', 'image/png', 'im
 function _paceValidateFile(file, fieldtype) {
 	if (!file) return true;
 	var ext = (file.name || '').split('.').pop().toLowerCase();
-	var isImg = fieldtype === 'Attach Image';
+	var isImg = (fieldtype === 'Attach Image' || (window._paceLastAttachCtx && _paceLastAttachCtx.fieldname === 'upload_student_photo'));
 	var allowed = isImg ? _PACE_IMG_EXTS : _PACE_DOC_EXTS;
-	var maxBytes = isImg ? _PACE_IMG_MAX : _PACE_DOC_MAX;
-	var maxLabel = isImg ? '1 MB' : '5 MB';
+	var maxBytes = _PACE_IMG_MAX;
+	var maxLabel = '1 MB';
 
 	if (allowed.indexOf(ext) === -1) {
 		paceShowToast(
 			'\u26a0 Invalid file type ".' + ext + '". ' +
-			(isImg ? 'Use png, jpeg, or jpg only (max 1 MB).' : 'Use png, jpeg, jpg, or pdf only (max 5 MB).'),
+			(isImg ? 'Use png, jpeg, or jpg only (max 1 MB).' : 'Use png, jpeg, jpg, or pdf only (max 1 MB).'),
 			'error'
 		);
 		return false;
@@ -989,17 +1252,12 @@ function _paceWrapFileUploader() {
 			var ctx = window._paceLastAttachCtx;
 			if (Date.now() - (ctx.ts || 0) < 120000) {
 				var base = Object.assign({}, opts.restrictions || {});
-				if (ctx.fieldtype === 'Attach Image') {
-					opts.restrictions = Object.assign(base, {
-						max_file_size: _PACE_IMG_MAX + 1,
-						allowed_file_types: _PACE_IMG_TYPES.slice(),
-					});
-				} else if (ctx.fieldtype === 'Attach') {
-					opts.restrictions = Object.assign(base, {
-						max_file_size: _PACE_DOC_MAX + 1,
-						allowed_file_types: _PACE_DOC_TYPES.slice(),
-					});
-				}
+				var isPhoto = ctx.fieldname === 'upload_student_photo';
+
+				opts.restrictions = Object.assign(base, {
+					max_file_size: _PACE_IMG_MAX,
+					allowed_file_types: (isPhoto ? _PACE_IMG_TYPES : _PACE_DOC_TYPES).slice(),
+				});
 			}
 		}
 		return new Original(opts);
@@ -1051,6 +1309,44 @@ function paceSetupAttachValidation() {
 			clearInterval(_upTimer);
 		}
 	}, 120);
+
+	paceSetupAttachHighlight();
+}
+
+/** Rewrite descriptions to show the correct 1MB limits in the UI */
+function paceSetupAttachHighlight() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict) {
+			for (var f in wf.fields_dict) {
+				var fd = wf.fields_dict[f];
+				if (fd && (fd.df.fieldtype === 'Attach' || fd.df.fieldtype === 'Attach Image')) {
+					var isPhoto = f === 'upload_student_photo';
+					var txt = isPhoto 
+						? 'Max Limit 1 MB( Only jpeg, jpg, png allowed )'
+						: 'Max Limit 1 MB( Only jpeg, jpg, png, pdf allowed )';
+					
+					// Update DocField description
+					fd.df.description = txt;
+					
+					// Update UI if already rendered
+					if (fd.$wrapper) {
+						var $desc = fd.$wrapper.find('.help-box');
+						if ($desc.length) {
+							$desc.text(txt).show().css('color', '#64748b');
+						} else {
+							// For modern Frappe web form fields, description might be in .input-max-width or just after
+							$('<div class="help-box small text-muted">' + txt + '</div>').appendTo(fd.$wrapper);
+						}
+					}
+				}
+			}
+			// Only clear once a reasonable number of fields are loaded
+			if (Object.keys(wf.fields_dict).length > 10) clearInterval(t);
+		}
+		if (++n > 100) clearInterval(t);
+	}, 500);
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -1399,14 +1695,85 @@ function paceSetupNumericRestrictions() {
 }
 
 // ───────────────────────────────────────────────────────────────────
-//  FIELD ERROR CLEAR — remove error outline on user input
-// ───────────────────────────────────────────────────────────────────
 function paceSetupFieldErrorClear() {
 	$(document).on('input change', '.web-form input, .web-form textarea, .web-form select', function () {
 		var $t = $(this);
 		$t.removeClass('pace-field-error');
 		$t.closest('.frappe-control').find('.pace-field-error').removeClass('pace-field-error');
 	});
+}
+
+// ───────────────────────────────────────────────────────────────────
+//  ADDRESS SYNC — Correspondence to Permanent
+// ───────────────────────────────────────────────────────────────────
+function paceSetupAddressSync() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.is_permanent_address_same) {
+			clearInterval(t);
+			
+			var sync = function() {
+				if (!wf.get_value('is_permanent_address_same')) return;
+				
+				var mapping = {
+					'address_line_1': 'p_address_line_1',
+					'address_line_2': 'p_address_line_2',
+					'city': 'p_city',
+					'district': 'p_district',
+					'state': 'p_state',
+					'country': 'p_country',
+					'pincode': 'p_pincode'
+				};
+				
+				for (var src in mapping) {
+					var val = wf.get_value(src);
+					if (val !== undefined && val !== null) {
+						wf.set_value(mapping[src], val);
+					}
+				}
+			};
+
+			// Bind to checkbox and all source fields
+			wf.on('is_permanent_address_same', sync);
+			['address_line_1', 'address_line_2', 'city', 'district', 'state', 'country', 'pincode'].forEach(function(f) {
+				wf.on(f, sync);
+			});
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
+// ───────────────────────────────────────────────────────────────────
+//  PINCODE VALIDATION — 6 digits only
+// ───────────────────────────────────────────────────────────────────
+function paceSetupPincodeValidation() {
+	var validatePincode = function(fieldname) {
+		var wf = window.frappe && frappe.web_form;
+		if (!wf) return;
+		var val = String(wf.get_value(fieldname) || '').trim();
+		if (!val) return;
+
+		var digits = val.replace(/\D/g, '');
+		if (digits.length !== 6 || val.length !== 6) {
+			paceShowToast('\u26a0 Pincode must be exactly 6 numeric digits.', 'error');
+			// Optionally clear or trim
+			if (digits.length > 6) wf.set_value(fieldname, digits.slice(0, 6));
+		}
+	};
+
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.pincode) {
+			clearInterval(t);
+			wf.on('pincode', function() { validatePincode('pincode'); });
+			if (wf.fields_dict.p_pincode) {
+				wf.on('p_pincode', function() { validatePincode('p_pincode'); });
+			}
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -1418,6 +1785,21 @@ frappe.ready(function () {
 
 	// Portal shell nav / footer (themed from Applicant Portal Config)
 	_paceInjectPortalShell();
+
+	// Trigger autofill immediately (also hooks web_form.on('load') independently of shell call)
+	_paceTriggerPrefill();
+
+	// Dynamic Applicant Name sync
+	_paceSetupNameSync();
+
+	// Address Sync
+	paceSetupAddressSync();
+
+	// Pincode Validation
+	paceSetupPincodeValidation();
+
+	// Top Bar (Back + Applying for)
+	paceSetupTopBar();
 
 	// Application status badge in page title
 	paceSetupStatusBadge();
