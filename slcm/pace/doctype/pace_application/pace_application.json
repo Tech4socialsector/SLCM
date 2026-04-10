@@ -478,7 +478,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted"
+   "options": "Draft\nSubmitted\nUnder Verification\nReturned for Correction\nVerified\nAdmitted"
   },
   {
    "fieldname": "submission_date",

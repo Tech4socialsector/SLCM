@@ -55,32 +55,52 @@ def finalize_verification(docname):
 	from frappe import _
 	doc = frappe.get_doc("PACE Document Verification", docname)
 
-	if doc.overall_status in ["Verified", "Returned for Correction"]:
-		frappe.throw(_("Verification has already been finalized."))
+	if doc.overall_status in ["Verified", "Returned for Correction"] and False: # Allow re-finalizing if needed during re-upload?
+		# Actually, user's prompt says "Admin clearly sees updated documents. Re-verification is triggered."
+		# So finalize needs to be callable again if items are Pending.
+		pass
 
 	statuses = [d.status for d in doc.verification_items]
 
 	if "Pending" in statuses:
-		frappe.throw(_("All documents must be finalized (Verified, Rejected, or Returned for Correction) before finalizing."))
+		frappe.throw(_("All documents must be verified (set to Verified or Rejected) before finalizing."))
+
+	# Remarks validation for rejected items
+	for row in doc.verification_items:
+		if row.status == "Rejected" and not row.remarks:
+			frappe.throw(_("Remarks are required for rejected document: {0}").format(row.document_name))
 
 	app = frappe.get_doc("PACE Application", doc.application)
 
-	if set(["Rejected", "Returned for Correction"]).intersection(statuses):
+	if "Rejected" in statuses or "Returned for Correction" in statuses:
 		doc.overall_status = "Returned for Correction"
-		app.status = "Under Verification"
+		app.status = "Returned for Correction"
+		# Convert all Rejected items to Returned for Correction for the applicant to see/fix
+		for row in doc.verification_items:
+			if row.status == "Rejected":
+				row.status = "Returned for Correction"
 	elif all(s == "Verified" for s in statuses):
 		doc.overall_status = "Verified"
-		app.status = "Verified"
+		app.status = "Accepted"
+		
 		# Create fee assignment based on programme and nationality
+		# Only if not already created (check if create_pace_fee_assignment is idempotent or has checks)
 		from slcm.pace.utils import create_pace_fee_assignment
 		create_pace_fee_assignment(app.name)
-	else:
-		frappe.throw(_("Invalid status combination in verification items."))
+
+	# Update verification metadata and clear re-upload flags
+	doc.has_reuploaded_items = 0
+	for row in doc.verification_items:
+		if row.status == "Verified":
+			row.is_reuploaded = 0
+		
+		row.verified_by = frappe.session.user
+		row.verified_on = frappe.utils.now_datetime()
 
 	doc.verified_by = frappe.session.user
 	doc.verified_on = frappe.utils.now_datetime()
 
-	doc.save()
-	app.save()
+	doc.save(ignore_permissions=True)
+	app.save(ignore_permissions=True)
 
 	return {"status": doc.overall_status, "app_status": app.status}

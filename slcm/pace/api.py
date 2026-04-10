@@ -362,4 +362,56 @@ def get_pace_programmes(academic_year=None):
 			}
 		)
 
-	return out
+
+@frappe.whitelist()
+def reset_verification_status(application, fieldname, file=None):
+	"""
+	Resets the verification status of a document item when it is re-uploaded.
+	"""
+	verification_name = frappe.db.get_value("PACE Document Verification", {"application": application}, "name")
+	if not verification_name:
+		return {"status": "error", "message": "Verification record not found."}
+
+	verification = frappe.get_doc("PACE Document Verification", verification_name)
+	updated = False
+
+	found = False
+	for row in verification.verification_items:
+		if row.fieldname == fieldname:
+			found = True
+			# Always update the file if provided, regardless of status
+			if file:
+				row.file = file
+				updated = True
+			
+			# Only reset to Pending and mark as re-uploaded if it was officially Returned
+			if row.status == "Returned for Correction":
+				row.status = "Pending"
+				row.remarks = ""
+				row.is_reuploaded = 1
+				row.reuploaded_on = now_datetime()
+				updated = True
+
+	if not found:
+		# Add missing document to verification items
+		meta = frappe.get_meta("PACE Application")
+		field_label = meta.get_label(fieldname)
+		verification.append("verification_items", {
+			"document_name": field_label or fieldname,
+			"fieldname": fieldname,
+			"file": file,
+			"status": "Pending",
+			"is_reuploaded": 1,
+			"reuploaded_on": now_datetime()
+		})
+		updated = True
+
+	if updated:
+		# If any item was actually reset to Pending, mark the parent for admin review
+		if any(r.status == "Pending" and r.is_reuploaded for r in verification.verification_items):
+			verification.has_reuploaded_items = 1
+			
+		verification.save(ignore_permissions=True)
+		return {"status": "success"}
+	
+	return {"status": "not_found"}

@@ -15,5 +15,41 @@ frappe.ui.form.on("PACE Application", {
                 });
             });
         }
+    },
+    ug_degree_certificate(frm) {
+        trigger_reupload(frm, "ug_degree_certificate");
+    },
+    govt_id(frm) {
+        trigger_reupload(frm, "govt_id");
+    },
+    student_signature(frm) {
+        trigger_reupload(frm, "student_signature");
+    },
+    passport_oci(frm) {
+        trigger_reupload(frm, "passport_oci");
+    },
+    self_declaration(frm) {
+        trigger_reupload(frm, "self_declaration");
     }
 });
+
+function trigger_reupload(frm, fieldname) {
+    if (frm.doc[fieldname] && ["Returned for Correction", "Under Verification", "Submitted"].includes(frm.doc.status)) {
+        frappe.call({
+            method: "slcm.pace.api.reset_verification_status",
+            args: {
+                application: frm.doc.name,
+                fieldname: fieldname,
+                file: frm.doc[fieldname]
+            },
+            callback: function(r) {
+                if (r.message && r.message.status === "success") {
+                    frappe.show_alert({
+                        message: __("Document updated. Marked for re-verification."),
+                        indicator: 'orange'
+                    });
+                }
+            }
+        });
+    }
+}

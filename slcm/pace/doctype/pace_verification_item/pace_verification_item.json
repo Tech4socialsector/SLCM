@@ -10,7 +10,11 @@
   "fieldname",
   "file",
   "status",
-  "remarks"
+  "remarks",
+  "is_reuploaded",
+  "reuploaded_on",
+  "verified_by",
+  "verified_on"
  ],
  "fields": [
   {
@@ -50,6 +54,33 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Remarks"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_reuploaded",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Reuploaded",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reuploaded_on",
+   "fieldtype": "Datetime",
+   "label": "Reuploaded On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verified_by",
+   "fieldtype": "Link",
+   "label": "Verified By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verified_on",
+   "fieldtype": "Datetime",
+   "label": "Verified On",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

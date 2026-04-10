@@ -8,6 +8,7 @@
   "application",
   "applicant_name",
   "overall_status",
+  "has_reuploaded_items",
   "column_break_fymu",
   "verified_by",
   "verified_on",
@@ -42,6 +43,13 @@
    "label": "Overall Status",
    "options": "Pending\nVerified\nReturned for Correction",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "has_reuploaded_items",
+   "fieldtype": "Check",
+   "label": "Has Re-uploaded Items",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_fymu",
