@@ -75,6 +75,7 @@
   "column_break_qsvv",
   "passport_oci",
   "govt_id",
+  "application_form",
   "declaration_tab",
   "declaration_html",
   "i_agree",
@@ -494,13 +495,18 @@
    "fieldname": "parents_details_tab",
    "fieldtype": "Tab Break",
    "label": "Parents Details"
+  },
+  {
+   "fieldname": "application_form",
+   "fieldtype": "Attach",
+   "label": "Application form"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-09 14:12:43.787938",
+ "modified": "2026-04-10 09:47:34.703808",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
