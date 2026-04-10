@@ -48,10 +48,31 @@
         }
 
         :root {
+
             /* Defaults from Dashboard */
-                --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
-                --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
-                --accent: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+            --primary: {
+                    {
+                    portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')
+                }
+            }
+
+            ;
+
+            --secondary: {
+                    {
+                    portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')
+                }
+            }
+
+            ;
+
+            --accent: {
+                    {
+                    portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')
+                }
+            }
+
+            ;
             --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
             --text-1: #1f2937;
             --text-2: #374151;
@@ -221,17 +242,59 @@
         }
 
         /* Responsive container logic */
-        @media (min-width: 1600px) { .adm-container { max-width: 1540px; } }
-        @media (min-width: 1920px) { .adm-container { max-width: 1840px; } }
-        @media (min-width: 2500px) { .adm-container { max-width: 2300px; } }
+        @media (min-width: 1600px) {
+            .adm-container {
+                max-width: 1540px;
+            }
+        }
 
-        @media (max-width: 1200px) { .adm-container { max-width: 1140px; padding: 0 20px; } }
-        @media (max-width: 992px)  { .adm-container { max-width: 960px;  padding: 0 18px; } }
-        @media (max-width: 768px)  { .adm-container { max-width: 720px;  padding: 0 16px; } }
-        @media (max-width: 576px)  {
-            .adm-container { max-width: 100%; padding: 0 12px; overflow-x: hidden; }
-            .adm-main { overflow-x: hidden; }
-            .adm-nav { padding: 0 12px; }
+        @media (min-width: 1920px) {
+            .adm-container {
+                max-width: 1840px;
+            }
+        }
+
+        @media (min-width: 2500px) {
+            .adm-container {
+                max-width: 2300px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .adm-container {
+                max-width: 1140px;
+                padding: 0 20px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .adm-container {
+                max-width: 960px;
+                padding: 0 18px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .adm-container {
+                max-width: 720px;
+                padding: 0 16px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .adm-container {
+                max-width: 100%;
+                padding: 0 12px;
+                /* overflow-x: hidden; */
+            }
+
+            .adm-main {
+                /* overflow-x: hidden; */
+            }
+
+            .adm-nav {
+                padding: 0 12px;
+            }
         }
 
         .adm-footer {
@@ -297,13 +360,21 @@
             justify-content: center;
             padding: 24px;
         }
+
         .confirm-overlay-premium[style*="flex"] {
             animation: confirmFadeIn 0.2s ease-out;
         }
+
         @keyframes confirmFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
+
         .confirm-premium-backdrop {
             position: absolute;
             inset: 0;
@@ -311,6 +382,7 @@
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
         }
+
         .confirm-premium-card {
             position: relative;
             background: #fff;
@@ -321,10 +393,19 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
             animation: confirmSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+
         @keyframes confirmSlideUp {
-            from { opacity: 0; transform: translateY(20px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
+
         .confirm-premium-icon {
             width: 56px;
             height: 56px;
@@ -338,11 +419,13 @@
             font-size: 26px;
             box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 35%, transparent);
         }
+
         .confirm-premium-icon-svg {
             width: 28px;
             height: 28px;
             color: #fff;
         }
+
         .confirm-premium-title {
             font-size: 1.25rem;
             font-weight: 700;
@@ -351,6 +434,7 @@
             text-align: center;
             letter-spacing: -0.02em;
         }
+
         .confirm-premium-message {
             font-size: 15px;
             line-height: 1.6;
@@ -359,11 +443,13 @@
             text-align: center;
             white-space: pre-line;
         }
+
         .confirm-premium-actions {
             display: flex;
             gap: 12px;
             justify-content: stretch;
         }
+
         .confirm-btn-cancel,
         .confirm-btn-ok {
             flex: 1;
@@ -375,20 +461,24 @@
             transition: all 0.2s ease;
             border: none;
         }
+
         .confirm-btn-cancel {
             background: #f1f5f9;
             color: #475569;
             border: 1.5px solid #e2e8f0;
         }
+
         .confirm-btn-cancel:hover {
             background: #e2e8f0;
             color: #334155;
         }
+
         .confirm-btn-ok {
             background: var(--primary);
             color: #fff;
             box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 40%, transparent);
         }
+
         .confirm-btn-ok:hover {
             filter: brightness(1.08);
             box-shadow: 0 6px 20px color-mix(in srgb, var(--primary) 45%, transparent);
@@ -703,26 +793,25 @@
                 Login / Apply
             </a>
 
-                {% else %}
-                <!-- Logged in: avatar circle + full name + dropdown -->
-                {% set _user_info = frappe.db.get_value("User", _nav_user, ["full_name", "user_image"], as_dict=True) or {} %}
-                {% set _full_name = _user_info.full_name or _nav_user %}
-                {% set _user_img = _user_info.user_image %}
-                <div class="adm-avatar-wrap nav-hide-mobile" style="position:relative; display:flex; align-items:center; gap:10px;">
-                  <button id="adm-avatar-btn"
-                          onclick="toggleAvatarMenu(event)"
-                          style="width:38px;height:38px;border-radius:50%;
+            {% else %}
+            <!-- Logged in: avatar circle + full name + dropdown -->
+            {% set _user_info = frappe.db.get_value("User", _nav_user, ["full_name", "user_image"], as_dict=True) or {}
+            %}
+            {% set _full_name = _user_info.full_name or _nav_user %}
+            {% set _user_img = _user_info.user_image %}
+            <div class="adm-avatar-wrap nav-hide-mobile"
+                style="position:relative; display:flex; align-items:center; gap:10px;">
+                <button id="adm-avatar-btn" onclick="toggleAvatarMenu(event)" style="width:38px;height:38px;border-radius:50%;
                                  background:rgba(255,255,255,0.15);color:white;
                                  border:2px solid rgba(255,255,255,0.3);
                                  font-weight:800;font-size:15px;cursor:pointer;
                                  display:flex;align-items:center;justify-content:center;
-                                 transition:all 0.2s; overflow:hidden; padding:0;"
-                          title="{{ _nav_user }}"
-                          aria-haspopup="true" aria-expanded="false">
+                                 transition:all 0.2s; overflow:hidden; padding:0;" title="{{ _nav_user }}"
+                    aria-haspopup="true" aria-expanded="false">
                     {% if _user_img %}
-                      <img src="{{ _user_img }}" id="adm-avatar-img" style="width:100%; height:100%; object-fit:cover;">
+                    <img src="{{ _user_img }}" id="adm-avatar-img" style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
-                      <span id="adm-avatar-init">{{ _first_letter }}</span>
+                    <span id="adm-avatar-init">{{ _first_letter }}</span>
                     {% endif %}
                 </button>
                 <span style="color:white; font-size:13px; font-weight:600; opacity:0.95; cursor:pointer;"
@@ -738,8 +827,7 @@
                               overflow:hidden;z-index:9999;">
                     <!-- User email header -->
                     <div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">
-                        <div
-                            style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:0.05em;">
+                        <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:0.05em;">
                             Signed in as</div>
                         <div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;
                                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">
@@ -832,31 +920,40 @@
     <!-- Mobile drawer — slides down below navbar -->
     <div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
         {% if frappe.session.user and frappe.session.user != "Guest" %}
-            <div class="drawer-user-header" style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #f0f0f0;margin-bottom:8px;">
-                <a href="/merit-and-scholarship/admission_dashboard?panel=profile" onclick="closeDrawer()" style="display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer;">
-                    <div style="width:38px;height:38px;border-radius:50%;background:rgba(26,60,110,0.1);color:var(--primary);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-                        {% if frappe.db.get_value("User", frappe.session.user, "user_image") %}
-                          <img src="{{ frappe.db.get_value("User", frappe.session.user, "user_image") }}" style="width:100%; height:100%; object-fit:cover;">
-                        {% else %}
-                          <span>{{ frappe.session.user[0]|upper }}</span>
-                        {% endif %}
-                    </div>
-                    <div style="display:flex;flex-direction:column;max-width:180px;">
-                        <span style="font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                            {{ frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user }}
-                        </span>
-                        <span style="font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ frappe.session.user }}</span>
-                    </div>
-                </a>
-                <div>
-                    <button onclick="document.getElementById('bellBtn').click(); closeDrawer();" style="background:none;border:none;color:#64748b;cursor:pointer;padding:4px;" title="Notifications">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
-                    </button>
+        <div class="drawer-user-header"
+            style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #f0f0f0;margin-bottom:8px;">
+            <a href="/merit-and-scholarship/admission_dashboard?panel=profile" onclick="closeDrawer()"
+                style="display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer;">
+                <div
+                    style="width:38px;height:38px;border-radius:50%;background:rgba(26,60,110,0.1);color:var(--primary);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                    {% if frappe.db.get_value("User", frappe.session.user, "user_image") %}
+                    <img src="{{ frappe.db.get_value(" User", frappe.session.user, "user_image" ) }}"
+                        style="width:100%; height:100%; object-fit:cover;">
+                    {% else %}
+                    <span>{{ frappe.session.user[0]|upper }}</span>
+                    {% endif %}
                 </div>
+                <div style="display:flex;flex-direction:column;max-width:180px;">
+                    <span
+                        style="font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        {{ frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user }}
+                    </span>
+                    <span
+                        style="font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{
+                        frappe.session.user }}</span>
+                </div>
+            </a>
+            <div>
+                <button onclick="document.getElementById('bellBtn').click(); closeDrawer();"
+                    style="background:none;border:none;color:#64748b;cursor:pointer;padding:4px;" title="Notifications">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                </button>
             </div>
+        </div>
         {% endif %}
 
         <a href="/admission" class="drawer-link" onclick="closeDrawer()">
@@ -948,13 +1045,51 @@
         }
 
         /* Synchronize with main container */
-        @media (min-width: 1600px) { .footer-container { max-width: 1540px; } }
-        @media (min-width: 1920px) { .footer-container { max-width: 1840px; } }
-        @media (min-width: 2500px) { .footer-container { max-width: 2300px; } }
-        @media (max-width: 1200px) { .footer-container { max-width: 1140px; padding: 0 20px; } }
-        @media (max-width: 992px)  { .footer-container { max-width: 960px;  padding: 0 18px; } }
-        @media (max-width: 768px)  { .footer-container { max-width: 720px;  padding: 0 16px; } }
-        @media (max-width: 576px)  { .footer-container { max-width: 100%;   padding: 0 14px; } }
+        @media (min-width: 1600px) {
+            .footer-container {
+                max-width: 1540px;
+            }
+        }
+
+        @media (min-width: 1920px) {
+            .footer-container {
+                max-width: 1840px;
+            }
+        }
+
+        @media (min-width: 2500px) {
+            .footer-container {
+                max-width: 2300px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .footer-container {
+                max-width: 1140px;
+                padding: 0 20px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .footer-container {
+                max-width: 960px;
+                padding: 0 18px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .footer-container {
+                max-width: 720px;
+                padding: 0 16px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .footer-container {
+                max-width: 100%;
+                padding: 0 14px;
+            }
+        }
 
         .footer-grid {
             display: grid;
@@ -967,17 +1102,28 @@
         }
 
         @media (max-width: 1024px) {
-            .footer-col { grid-column: span 6; }
-            .footer-col:first-child { 
+            .footer-col {
+                grid-column: span 6;
+            }
+
+            .footer-col:first-child {
                 grid-column: span 12;
                 margin-bottom: 8px;
             }
         }
 
         @media (max-width: 768px) {
-            .footer-col { grid-column: span 12; }
-            .footer-col:first-child { margin-bottom: 0; }
-            .footer-grid { gap: 40px; }
+            .footer-col {
+                grid-column: span 12;
+            }
+
+            .footer-col:first-child {
+                margin-bottom: 0;
+            }
+
+            .footer-grid {
+                gap: 40px;
+            }
         }
 
         .footer-links-grid {
@@ -1062,138 +1208,140 @@
     {% set _pc = portal_config if (portal_config is defined and portal_config) else {} %}
     {% set _f_addr = (_pc.get('footer_address') if _pc.get else _pc.footer_address) or '' %}
     {% set _f_phone = (_pc.get('footer_phone') if _pc.get else _pc.footer_phone) or '' %}
-    {% set _f_email = (_pc.get('footer_email') or _pc.get('contact_email')) if _pc.get else (_pc.footer_email or _pc.contact_email) or '' %}
+    {% set _f_email = (_pc.get('footer_email') or _pc.get('contact_email')) if _pc.get else (_pc.footer_email or
+    _pc.contact_email) or '' %}
     {% set _f_title = (_pc.get('portal_title') if _pc.get else _pc.portal_title) or 'Admissions' %}
     {% set _f_powerd_by = (_pc.get('powerd_by') if _pc.get else _pc.powerd_by) or 'boscosoft' %}
 
     {# footer_programs comes from update_website_context #}
     {% set _f_programs = footer_programs or [] %}
 
-        <footer class="full-bleed-footer">
-            <div class="footer-container">
-                <div class="footer-grid">
-                    <!-- Brand -->
-                    <div class="footer-col">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
-                            <div
-                                style="width: 32px; height: 32px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff;">
-                                <span class="material-symbols-outlined" style="font-size: 20px;">school</span>
-                            </div>
-                            <h2 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0;">{{ _f_title }}</h2>
+    <footer class="full-bleed-footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <!-- Brand -->
+                <div class="footer-col">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                        <div
+                            style="width: 32px; height: 32px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">school</span>
                         </div>
+                        <h2 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0;">{{ _f_title }}</h2>
+                    </div>
 
-                        {% set _social_links = _pc.get('social_links') if _pc.get else _pc.social_links %}
-                        {% if _social_links %}
-                        <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; margin-bottom: 24px;">
-                            {% for link in _social_links %}
-                                {% set _link_active = link.get('is_active') if link.get else link.is_active %}
-                                {% if _link_active %}
-                                    {% set _platform = link.get('platform') if link.get else link.platform %}
-                                    {% set _url = link.get('url') if link.get else link.url %}
-                                    {% set _icon = "" %}
-                                    {% set _p = _platform.lower() %}
-                                    {% if _p == "facebook" %}{% set _icon = "fa-brands fa-facebook" %}
-                                    {% elif _p == "instagram" %}{% set _icon = "fa-brands fa-instagram" %}
-                                    {% elif "twitter" in _p or _p == "x" %}{% set _icon = "fa-brands fa-x-twitter" %}
-                                    {% elif _p == "linkedin" %}{% set _icon = "fa-brands fa-linkedin" %}
-                                    {% elif _p == "youtube" %}{% set _icon = "fa-brands fa-youtube" %}
-                                    {% elif _p == "whatsapp" %}{% set _icon = "fa-brands fa-whatsapp" %}
-                                    {% elif _p == "telegram" %}{% set _icon = "fa-brands fa-telegram" %}
-                                    {% elif _p == "threads" %}{% set _icon = "fa-brands fa-threads" %}
-                                    {% elif _p == "pinterest" %}{% set _icon = "fa-brands fa-pinterest" %}
-                                    {% elif _p == "tiktok" %}{% set _icon = "fa-brands fa-tiktok" %}
-                                    {% endif %}
-                                    
-                                    {% if _icon %}
-                                    <a href="{{ _url }}" target="_blank" style="color: #fff; font-size: 18px; transition: transform 0.2s; display: inline-flex;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'" title="{{ _platform }}">
-                                        <i class="{{ _icon }}"></i>
-                                    </a>
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                        </div>
+                    {% set _social_links = _pc.get('social_links') if _pc.get else _pc.social_links %}
+                    {% if _social_links %}
+                    <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; margin-bottom: 24px;">
+                        {% for link in _social_links %}
+                        {% set _link_active = link.get('is_active') if link.get else link.is_active %}
+                        {% if _link_active %}
+                        {% set _platform = link.get('platform') if link.get else link.platform %}
+                        {% set _url = link.get('url') if link.get else link.url %}
+                        {% set _icon = "" %}
+                        {% set _p = _platform.lower() %}
+                        {% if _p == "facebook" %}{% set _icon = "fa-brands fa-facebook" %}
+                        {% elif _p == "instagram" %}{% set _icon = "fa-brands fa-instagram" %}
+                        {% elif "twitter" in _p or _p == "x" %}{% set _icon = "fa-brands fa-x-twitter" %}
+                        {% elif _p == "linkedin" %}{% set _icon = "fa-brands fa-linkedin" %}
+                        {% elif _p == "youtube" %}{% set _icon = "fa-brands fa-youtube" %}
+                        {% elif _p == "whatsapp" %}{% set _icon = "fa-brands fa-whatsapp" %}
+                        {% elif _p == "telegram" %}{% set _icon = "fa-brands fa-telegram" %}
+                        {% elif _p == "threads" %}{% set _icon = "fa-brands fa-threads" %}
+                        {% elif _p == "pinterest" %}{% set _icon = "fa-brands fa-pinterest" %}
+                        {% elif _p == "tiktok" %}{% set _icon = "fa-brands fa-tiktok" %}
                         {% endif %}
 
-                        <!-- <p style="font-size: 13px; line-height: 1.5; max-width: 400px; margin: 0;">
+                        {% if _icon %}
+                        <a href="{{ _url }}" target="_blank"
+                            style="color: #fff; font-size: 18px; transition: transform 0.2s; display: inline-flex;"
+                            onmouseover="this.style.transform='translateY(-3px)'"
+                            onmouseout="this.style.transform='none'" title="{{ _platform }}">
+                            <i class="{{ _icon }}"></i>
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- <p style="font-size: 13px; line-height: 1.5; max-width: 400px; margin: 0;">
                             National Law School of India University Admissions Portal. Empowering the next generation of
                             legal professionals.
                         </p> -->
-                    </div>
+                </div>
 
-                    <!-- Links -->
-                    <div class="footer-col">
-                        <div class="footer-links-grid">
-                            <div>
-                                <h4 class="footer-title">Programme</h4>
-                                <ul class="footer-links">
-                                    {% for p in _f_programs[:4] %}
-                                    <li><a href="/admission/{{ p.slug }}">{{ p.name }}</a></li>
-                                    {% endfor %}
-                                    {% if _f_programs|length > 4 %}
-                                    <li><a href="/admission#programs">View all programmes</a></li>
-                                    {% elif _f_programs|length > 0 %}
-                                    <li><a href="/admission">Browse all</a></li>
-                                    {% else %}
-                                    <li class="text-sm italic opacity-60">No active programmes</li>
-                                    {% endif %}
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 class="footer-title">Admissions</h4>
-                                <ul class="footer-links">
-                                    <li><a href="/admission">Apply now</a></li>
-                                    <li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>
-                                    <li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>
-                                </ul>
-                            </div>
+                <!-- Links -->
+                <div class="footer-col">
+                    <div class="footer-links-grid">
+                        <div>
+                            <h4 class="footer-title">Programme</h4>
+                            <ul class="footer-links">
+                                {% for p in _f_programs[:4] %}
+                                <li><a href="/admission/{{ p.slug }}">{{ p.name }}</a></li>
+                                {% endfor %}
+                                {% if _f_programs|length > 4 %}
+                                <li><a href="/admission#programs">View all programmes</a></li>
+                                {% elif _f_programs|length > 0 %}
+                                <li><a href="/admission">Browse all</a></li>
+                                {% else %}
+                                <li class="text-sm italic opacity-60">No active programmes</li>
+                                {% endif %}
+                            </ul>
                         </div>
-                    </div>
-
-                    <!-- Contact -->
-                    <div class="footer-col">
-                        <h4 class="footer-title">Contact</h4>
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            {% if _f_addr %}
-                            <div class="footer-contact-item">
-                                <span class="material-symbols-outlined"
-                                    style="color: #fff; font-size: 18px;">location_on</span>
-                                <span>{{ _f_addr }}</span>
-                            </div>
-                            {% endif %}
-                            {% if _f_phone %}
-                            <div class="footer-contact-item">
-                                <span class="material-symbols-outlined"
-                                    style="color: #fff; font-size: 18px;">call</span>
-                                <span>{{ _f_phone }}</span>
-                            </div>
-                            {% endif %}
-                            {% if _f_email %}
-                            <div class="footer-contact-item">
-                                <span class="material-symbols-outlined"
-                                    style="color: #fff; font-size: 18px;">mail</span>
-                                <a href="mailto:{{ _f_email }}">{{ _f_email }}</a>
-                            </div>
-                            {% endif %}
-                            {% if not _f_addr and not _f_phone and not _f_email %}
-                            <p style="font-size: 12px; font-style: italic; color: #64748b;">
-                                Contact details not configured.<br>Set them in Admission Portal Config.
-                            </p>
-                            {% endif %}
+                        <div>
+                            <h4 class="footer-title">Admissions</h4>
+                            <ul class="footer-links">
+                                <li><a href="/admission">Apply now</a></li>
+                                <li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>
+                                <li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bottom -->
-                <div class="footer-bottom">
-                    <p style="font-size: 12px; margin: 0;">
-                        © {{ frappe.utils.nowdate()[:4] }} {{ _f_title }}. All rights reserved.
-                    </p>
-                    <p style="font-size: 12px; margin: 0; color: #94a3b8;">
-                        Powered by <strong style="color: #fff; font-weight: 700;">{{ _f_powerd_by }}</strong>
-                    </p>
+                <!-- Contact -->
+                <div class="footer-col">
+                    <h4 class="footer-title">Contact</h4>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        {% if _f_addr %}
+                        <div class="footer-contact-item">
+                            <span class="material-symbols-outlined"
+                                style="color: #fff; font-size: 18px;">location_on</span>
+                            <span>{{ _f_addr }}</span>
+                        </div>
+                        {% endif %}
+                        {% if _f_phone %}
+                        <div class="footer-contact-item">
+                            <span class="material-symbols-outlined" style="color: #fff; font-size: 18px;">call</span>
+                            <span>{{ _f_phone }}</span>
+                        </div>
+                        {% endif %}
+                        {% if _f_email %}
+                        <div class="footer-contact-item">
+                            <span class="material-symbols-outlined" style="color: #fff; font-size: 18px;">mail</span>
+                            <a href="mailto:{{ _f_email }}">{{ _f_email }}</a>
+                        </div>
+                        {% endif %}
+                        {% if not _f_addr and not _f_phone and not _f_email %}
+                        <p style="font-size: 12px; font-style: italic; color: #64748b;">
+                            Contact details not configured.<br>Set them in Admission Portal Config.
+                        </p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </footer>
+
+            <!-- Bottom -->
+            <div class="footer-bottom">
+                <p style="font-size: 12px; margin: 0;">
+                    © {{ frappe.utils.nowdate()[:4] }} {{ _f_title }}. All rights reserved.
+                </p>
+                <p style="font-size: 12px; margin: 0; color: #94a3b8;">
+                    Powered by <strong style="color: #fff; font-weight: 700;">{{ _f_powerd_by }}</strong>
+                </p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Announcement slide panel -->
     <div id="ann-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;"
@@ -1234,9 +1382,12 @@
         <div id="notif-filters" style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:8px 12px;
             border-bottom:1px solid var(--border);flex-shrink:0;">
             <span style="font-size:11px;color:var(--muted);font-weight:600;">Filter:</span>
-            <button type="button" class="ann-filter-btn notif-read-filter active" data-read="all" onclick="setNotifReadFilter('all', this)">All</button>
-            <button type="button" class="ann-filter-btn notif-read-filter" data-read="unread" onclick="setNotifReadFilter('unread', this)">Unread</button>
-            <button type="button" class="ann-filter-btn notif-read-filter" data-read="read" onclick="setNotifReadFilter('read', this)">Read</button>
+            <button type="button" class="ann-filter-btn notif-read-filter active" data-read="all"
+                onclick="setNotifReadFilter('all', this)">All</button>
+            <button type="button" class="ann-filter-btn notif-read-filter" data-read="unread"
+                onclick="setNotifReadFilter('unread', this)">Unread</button>
+            <button type="button" class="ann-filter-btn notif-read-filter" data-read="read"
+                onclick="setNotifReadFilter('read', this)">Read</button>
         </div>
 
         <!-- Announcement filters -->
@@ -1252,7 +1403,8 @@
             <button type="button" class="ann-filter-btn" data-type="Event" onclick="setAnnFilter('Event', this)">
                 Event
             </button>
-            <button type="button" class="ann-filter-btn" data-type="Announcement" onclick="setAnnFilter('Announcement', this)">
+            <button type="button" class="ann-filter-btn" data-type="Announcement"
+                onclick="setAnnFilter('Announcement', this)">
                 Announcement
             </button>
             <button type="button" class="ann-filter-btn" data-type="Alert" onclick="setAnnFilter('Alert', this)">
@@ -1286,14 +1438,16 @@
         style="position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:10050;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;max-width:min(440px,94vw);">
     </div>
 
-    <div id="confirm-overlay" class="confirm-overlay-premium" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div id="confirm-overlay" class="confirm-overlay-premium" role="dialog" aria-modal="true"
+        aria-labelledby="confirm-title">
         <div class="confirm-premium-backdrop"></div>
         <div class="confirm-premium-card">
             <div class="confirm-premium-icon" aria-hidden="true">
-                <svg class="confirm-premium-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                <svg class="confirm-premium-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
             </div>
             <h3 id="confirm-title" class="confirm-premium-title">Confirm</h3>
