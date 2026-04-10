@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>NLSIU PACE | Application Status</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed": "#b6ebfb",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#40000b",
+                        "on-primary-fixed-variant": "#8e0f28",
+                        "surface-tint": "#af2b3e",
+                        "on-secondary-container": "#79363b",
+                        "primary-fixed-dim": "#ffb3b5",
+                        "on-tertiary-container": "#7cb0c0",
+                        "secondary-container": "#fda3a6",
+                        "on-surface-variant": "#584141",
+                        "on-secondary-fixed": "#3b070e",
+                        "on-tertiary-fixed-variant": "#114d5b",
+                        "surface-container-highest": "#d5e3fc",
+                        "on-background": "#0d1c2e",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#233144",
+                        "on-secondary-fixed-variant": "#743237",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#0d1c2e",
+                        "surface-dim": "#ccdbf3",
+                        "primary-fixed": "#ffdada",
+                        "surface-container": "#e6eeff",
+                        "outline-variant": "#e0bfbf",
+                        "surface-container-high": "#dce9ff",
+                        "secondary-fixed-dim": "#ffb3b5",
+                        "primary-container": "#800020",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-error": "#ffffff",
+                        "secondary": "#90494d",
+                        "tertiary": "#002c36",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#004451",
+                        "background": "#f8f9ff",
+                        "primary": "#570013",
+                        "surface-container-low": "#eff4ff",
+                        "on-primary-container": "#ff828a",
+                        "tertiary-fixed-dim": "#9acfde",
+                        "outline": "#8c7071",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#ffb3b5",
+                        "surface-variant": "#d5e3fc",
+                        "surface": "#f8f9ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#ffdada",
+                        "on-tertiary-fixed": "#001f26"
+                    },
+                    fontFamily: {
+                        "headline": ["Newsreader", "serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+            vertical-align: middle
+        }
+
+        .bg-burgundy-gradient {
+            background: linear-gradient(135deg, #800020 0%, #570013 100%)
+        }
+
+        .shadow-ambient {
+            box-shadow: 0 10px 40px rgba(13, 28, 46, 0.06)
+        }
+
+        /* ── Tracker ── */
+        .step-node {
+            transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Progress line fills smoothly */
+        #progress-line {
+            transition: width 1s ease-in-out;
+        }
+
+        /* Completed node: green circle with check */
+        .node-completed {
+            background: #166534 !important;
+            border-color: #166534 !important;
+            border-radius: 9999px !important;
+            transform: scale(1.15);
+        }
+
+        /* Pop-in keyframe for completed nodes */
+        @keyframes node-pop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .node-pop {
+            animation: node-pop 150ms ease-out forwards;
+        }
+
+        /* Active node: yellow pulse */
+        @keyframes pulse-active {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.5);
+            }
+
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 12px rgba(250, 204, 21, 0);
+            }
+        }
+
+        .node-active {
+            background: #facc15 !important;
+            border-color: #854d0e !important;
+            border-radius: 9999px !important;
+            animation: pulse-active 1.8s ease-in-out infinite;
+        }
+
+        /* Labels always visible */
+        .tracker-node-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Confetti */
+        .confetti-particle {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 2px;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        @keyframes confetti-burst {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Pending nodes stay dim */
+        .node-pending {
+            opacity: 0.38;
+        }
+
+        [title] {
+            cursor: help
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface font-body selection:bg-primary-fixed">
+    <main class="pt-12 pb-12 max-w-7xl mx-auto px-6">
+
+        <!-- Hero / Title -->
+        <section class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div class="space-y-1">
+                <h1 class="font-headline text-5xl font-bold tracking-tight text-on-background">Post Graduate Diploma
+                </h1>
+                <p class="font-headline italic text-xl text-on-surface-variant">Cyber Law &amp; Information Security
+                    (Batch 2024-25)</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="px-4 py-2 bg-surface-container-highest rounded-full border border-primary/10">
+                    <span class="text-xs font-bold tracking-wide text-primary">App ID: NLS-PACE-24-9021</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sequential process tracker -->
+        <section class="mb-8 p-10 bg-surface-container-lowest rounded-xl shadow-ambient overflow-visible relative">
+            <div class="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-xl"></div>
+
+            <div class="relative flex justify-between items-start" id="tracker-container">
+                <!-- Track background line -->
+                <div class="absolute top-5 left-0 w-full h-0.5 bg-surface-container-high z-0"></div>
+                <!-- Active progress fill -->
+                <div class="absolute top-5 left-0 w-0 h-0.5 bg-primary z-0" id="progress-line"></div>
+
+                <!-- Step 1: Submitted -->
+                <div class="relative z-10 flex flex-col items-center gap-0 tracker-node" data-index="0"
+                    data-status="completed" style="width:20%">
+                    <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center mb-4 step-node border-2 border-outline-variant node-pending"
+                        id="node-0">
+                        <span class="material-symbols-outlined text-base text-on-surface-variant">check_circle</span>
+                    </div>
+                    <div class="tracker-node-content flex flex-col items-center text-center">
+                        <span class="text-[0.6875rem] font-bold tracking-wide text-[#166534] mb-1">Submitted</span>
+                        <span class="text-xs text-on-surface-variant font-medium">14 Jul 2024</span>
+                    </div>
+                </div>
+
+                <!-- Step 2: Verified -->
+                <div class="relative z-10 flex flex-col items-center tracker-node" data-index="1"
+                    data-status="completed" style="width:20%">
+                    <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center mb-4 step-node border-2 border-outline-variant node-pending"
+                        id="node-1">
+                        <span class="material-symbols-outlined text-base text-on-surface-variant">verified_user</span>
+                    </div>
+                    <div class="tracker-node-content flex flex-col items-center text-center">
+                        <span class="text-[0.6875rem] font-bold tracking-wide text-[#166534] mb-1">Verified</span>
+                        <span class="text-xs text-on-surface-variant font-medium">22 Jul 2024</span>
+                    </div>
+                </div>
+
+                <!-- Step 3: Fee payment (Active) -->
+                <div class="relative z-10 flex flex-col items-center tracker-node" data-index="2" data-status="active"
+                    style="width:20%">
+                    <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center mb-4 step-node border-2 border-outline-variant node-pending"
+                        id="node-2">
+                        <span class="material-symbols-outlined text-base text-on-surface-variant">payments</span>
+                    </div>
+                    <div class="tracker-node-content flex flex-col items-center text-center">
+                        <span class="text-[0.6875rem] font-bold tracking-wide text-[#854d0e] mb-1">Fee payment</span>
+                        <span class="text-xs text-[#854d0e] font-bold">Action required</span>
+                    </div>
+                </div>
+
+                <!-- Step 4: Offer letter (Pending) -->
+                <div class="relative z-10 flex flex-col items-center tracker-node" data-index="3" data-status="pending"
+                    style="width:20%">
+                    <div class="w-10 h-10 rounded-full bg-surface-container-high border-2 border-outline-variant flex items-center justify-center mb-4 step-node node-pending"
+                        id="node-3">
+                        <span class="material-symbols-outlined text-base text-on-surface-variant">description</span>
+                    </div>
+                    <div class="tracker-node-content flex flex-col items-center text-center">
+                        <span class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant mb-1">Offer
+                            letter</span>
+                        <span class="text-xs text-on-surface-variant font-medium">Pending</span>
+                    </div>
+                </div>
+
+                <!-- Step 5: Enrolled (Pending) -->
+                <div class="relative z-10 flex flex-col items-center tracker-node" data-index="4" data-status="pending"
+                    style="width:20%">
+                    <div class="w-10 h-10 rounded-full bg-surface-container-high border-2 border-outline-variant flex items-center justify-center mb-4 step-node node-pending"
+                        id="node-4">
+                        <span class="material-symbols-outlined text-base text-on-surface-variant">school</span>
+                    </div>
+                    <div class="tracker-node-content flex flex-col items-center text-center">
+                        <span
+                            class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant mb-1">Enrolled</span>
+                        <span class="text-xs text-on-surface-variant font-medium">Pending</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main layout grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+            <!-- Left column -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Document checklist -->
+                <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="font-headline text-2xl font-semibold text-on-surface">Document Repository</h2>
+                        <span class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">4 of 4
+                            verified</span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <table class="w-full text-left border-separate border-spacing-y-2">
+                            <thead class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
+                                <tr>
+                                    <th class="pb-4 px-4 font-bold">Document name</th>
+                                    <th class="pb-4 px-4 font-bold">Status</th>
+                                    <th class="pb-4 px-4 text-right font-bold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors group">
+                                    <td class="py-4 px-4 rounded-l-xl">
+                                        <div class="flex items-center gap-3">
+                                            <span
+                                                class="material-symbols-outlined text-on-surface-variant">account_balance</span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-on-surface">Undergraduate Degree
+                                                    Certificate</div>
+                                                <div class="text-[0.6875rem] text-on-surface-variant">PDF, 1.2MB</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcfce7] text-[#166534] text-[0.6875rem] font-bold tracking-wide">
+                                            <span class="material-symbols-outlined text-xs"
+                                                style="font-variation-settings:'FILL' 1">check_circle</span>
+                                            Verified
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-4 text-right rounded-r-xl">
+                                        <button
+                                            class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-all"
+                                            title="View the verified PDF">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr
+                                    class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors group">
+                                    <td class="py-4 px-4 rounded-l-xl">
+                                        <div class="flex items-center gap-3">
+                                            <span class="material-symbols-outlined text-on-surface-variant">badge</span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-on-surface">Government Issued ID
+                                                    (Aadhar/Passport)</div>
+                                                <div class="text-[0.6875rem] text-on-surface-variant">JPG, 850KB</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcfce7] text-[#166534] text-[0.6875rem] font-bold tracking-wide">
+                                            <span class="material-symbols-outlined text-xs"
+                                                style="font-variation-settings:'FILL' 1">check_circle</span>
+                                            Verified
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-4 text-right rounded-r-xl">
+                                        <button
+                                            class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-all"
+                                            title="View identity proof">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-surface-container-low/50 border-2 border-[#fef9c3] rounded-xl">
+                                    <td class="py-4 px-4 rounded-l-xl">
+                                        <div class="flex items-center gap-3">
+                                            <span class="material-symbols-outlined text-[#854d0e]">work</span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-on-surface">Work Experience
+                                                    Certificate</div>
+                                                <div class="text-[0.6875rem] text-[#854d0e]">Current upload is blurry
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fef9c3] text-[#854d0e] text-[0.6875rem] font-bold tracking-wide">
+                                            <span class="material-symbols-outlined text-xs">error</span>
+                                            Re-upload
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-4 text-right rounded-r-xl">
+                                        <button
+                                            class="px-4 py-1.5 bg-[#854d0e] text-white text-[0.6875rem] font-bold tracking-wide rounded-lg hover:brightness-110 transition-all shadow-sm"
+                                            title="Upload clearer copy">
+                                            Upload
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr
+                                    class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors group">
+                                    <td class="py-4 px-4 rounded-l-xl">
+                                        <div class="flex items-center gap-3">
+                                            <span
+                                                class="material-symbols-outlined text-on-surface-variant">history_edu</span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-on-surface">Secondary Education
+                                                    Transcript</div>
+                                                <div class="text-[0.6875rem] text-on-surface-variant">PDF, 3.4MB</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcfce7] text-[#166534] text-[0.6875rem] font-bold tracking-wide">
+                                            <span class="material-symbols-outlined text-xs"
+                                                style="font-variation-settings:'FILL' 1">check_circle</span>
+                                            Verified
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-4 text-right rounded-r-xl">
+                                        <button
+                                            class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-all"
+                                            title="View transcripts">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Feedback -->
+                <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-surface-container-low p-6 rounded-xl">
+                        <div class="flex items-start gap-4">
+                            <div class="p-3 bg-white rounded-lg">
+                                <span class="material-symbols-outlined text-primary">help_center</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-on-surface mb-1">Need assistance?</h4>
+                                <p class="text-xs text-on-surface-variant leading-relaxed">Our admissions counselors are
+                                    available Mon-Fri, 9 am to 5 pm.</p>
+                                <button
+                                    class="mt-3 text-xs font-bold text-primary tracking-wide hover:underline">Contact
+                                    support</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low p-6 rounded-xl">
+                        <div class="flex items-start gap-4">
+                            <div class="p-3 bg-white rounded-lg">
+                                <span class="material-symbols-outlined text-primary">history</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-on-surface mb-1">Activity log</h4>
+                                <p class="text-xs text-on-surface-variant leading-relaxed">Review the chronological
+                                    history of your application.</p>
+                                <button class="mt-3 text-xs font-bold text-primary tracking-wide hover:underline">View
+                                    audit trail</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right column -->
+            <div class="space-y-8">
+
+                <!-- Actionable status -->
+                <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5">
+                        <span class="material-symbols-outlined text-8xl">account_balance_wallet</span>
+                    </div>
+                    <h3 class="text-[0.6875rem] font-bold tracking-wide text-primary mb-6">Current actions</h3>
+                    <div class="space-y-4">
+                        <button
+                            class="w-full bg-burgundy-gradient text-white py-4 px-6 rounded-xl font-bold flex items-center justify-between group shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
+                            title="Proceed to payment">
+                            <span class="flex items-center gap-3">
+                                <span class="material-symbols-outlined">payments</span>
+                                <span>Pay course fee</span>
+                            </span>
+                            <span
+                                class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </button>
+                        <div class="grid grid-cols-1 gap-3">
+                            <button
+                                class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all"
+                                title="Download application">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                                <span>Download application</span>
+                            </button>
+                            <button
+                                class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all"
+                                title="View payment receipts">
+                                <span class="material-symbols-outlined text-lg">receipt_long</span>
+                                <span>Payment receipt</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-8 pt-6 border-t border-outline-variant/30">
+                        <div class="flex items-center gap-2 text-error font-bold text-[0.6875rem] tracking-wide mb-2">
+                            <span class="material-symbols-outlined text-sm">alarm</span>
+                            Deadline: 31 Aug 2024
+                        </div>
+                        <p class="text-xs text-on-surface-variant italic">Failure to complete payment before the
+                            deadline may result in forfeiture of your provisional admission.</p>
+                    </div>
+                </section>
+
+                <!-- Enrolment details -->
+                <section class="bg-primary text-white rounded-xl shadow-ambient overflow-hidden">
+                    <div class="p-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-headline text-xl font-bold italic">Enrolment Details</h3>
+                            <span class="material-symbols-outlined text-white/50">auto_awesome</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                                <div class="text-[0.6875rem] tracking-wide text-white/70">Academic year</div>
+                                <div class="font-bold text-sm">2024 - 2025</div>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                                <div class="text-[0.6875rem] tracking-wide text-white/70">Course duration</div>
+                                <div class="font-bold text-sm">12 Months</div>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                                <div class="text-[0.6875rem] tracking-wide text-white/70">Mode</div>
+                                <div class="font-bold text-sm">Online / Hybrid</div>
+                            </div>
+                        </div>
+                        <div class="mt-8 p-4 bg-white/10 rounded-lg border border-white/20 backdrop-blur-sm">
+                            <p class="text-xs leading-relaxed text-white/90">
+                                <span class="font-bold">Next milestone:</span> Your personalised offer letter will be
+                                generated within 24 hours of successful fee verification.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="h-24 w-full relative">
+                        <img alt="Library scene" class="w-full h-full object-cover mix-blend-overlay grayscale"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJZhWmUkJR-V27Tv5vM0ASS-JyL5dFA3t3a-Gq3AJTWFe7NFZAYlt2a-uSj8AhIVCRfkWX-URwypT7WNcGU0GzWAwBQyz_qn0P6TdShWQu6P3q9JtZBBqfcCNfi5AbQWfUPkjE26ersyyrr588fmD9X-TH4Bxv-8QbikobqREPTrYe3UUgdX7vm5314Lkoen9-gL3pFV2Vid7P_IlGwDAd23sp07xXyCO05mF5BuhrkTY0tvOe74UtiO4Dd3eG-hYR7Jvdblo00uA" />
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-8 mt-auto bg-slate-50 border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex flex-col items-center md:items-start gap-1">
+                <span class="font-serif text-sm italic text-slate-500">NLSIU Bangalore</span>
+                <span class="text-[0.6875rem] font-bold tracking-wide text-slate-400">© 2024 NLSIU Bangalore. All rights
+                    reserved.</span>
+            </div>
+            <div class="flex items-center gap-8">
+                <a class="text-[0.6875rem] font-bold tracking-wide text-slate-500 hover:text-[#800020] transition-colors"
+                    href="#">Privacy policy</a>
+                <a class="text-[0.6875rem] font-bold tracking-wide text-slate-500 hover:text-[#800020] transition-colors"
+                    href="#">Terms of service</a>
+                <a class="text-[0.6875rem] font-bold tracking-wide text-slate-500 hover:text-[#800020] transition-colors"
+                    href="#">Contact support</a>
+                <a class="text-[0.6875rem] font-bold tracking-wide text-slate-500 hover:text-[#800020] transition-colors"
+                    href="#">Legal archive</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nodes = document.querySelectorAll('.tracker-node');
+            const progressLine = document.getElementById('progress-line');
+            const totalSteps = nodes.length;
+
+            /* ── helpers ── */
+            const wait = ms => new Promise(r => setTimeout(r, ms));
+
+            const confettiColors = ['#166534', '#ffdada', '#800020', '#facc15', '#dcfce7', '#ff828a'];
+
+            function burst(nodeEl) {
+                for (let i = 0; i < 16; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'confetti-particle';
+                    p.style.backgroundColor = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 30 + Math.random() * 50;
+                    p.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    p.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+                    p.style.setProperty('--rot', `${Math.random() * 360}deg`);
+                    p.style.left = '50%';
+                    p.style.top = '50%';
+                    p.style.animation = 'confetti-burst 0.75s ease-out forwards';
+                    nodeEl.style.position = 'relative';
+                    nodeEl.style.overflow = 'visible';
+                    nodeEl.appendChild(p);
+                    setTimeout(() => p.remove(), 780);
+                }
+            }
+
+            /* ── main animation ── */
+            async function animateTracker() {
+                /* Initial delay to show all stages in pending state */
+                await wait(300);
+
+                for (let i = 0; i < totalSteps; i++) {
+                    const node = nodes[i];
+                    const status = node.getAttribute('data-status');
+                    const nodeEl = document.getElementById(`node-${i}`);
+
+                    /* 1 ── advance the progress line to this node's position (centered in the node) */
+                    const pct = (i * 20) + 10;
+                    progressLine.style.width = `${pct}%`;
+
+                    /* wait for the progress line to reach the node (transition is 1s) */
+                    await wait(1000);
+
+                    /* 2 ── style the node */
+                    nodeEl.classList.remove('node-pending');
+
+                    if (status === 'completed') {
+                        /* clear the dim, set green filled circle with check */
+                        nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
+                        nodeEl.classList.add('node-completed', 'node-pop');
+
+                        /* 3 ── wait for the node pop to finish (150ms), then trigger confetti */
+                        await wait(150);
+                        burst(nodeEl);
+
+                    } else if (status === 'active') {
+                        nodeEl.innerHTML = `<span class="material-symbols-outlined text-[#854d0e] text-base" style="font-variation-settings:'FILL' 1">payments</span>`;
+                        nodeEl.classList.add('node-active');
+                    }
+
+                    if (status !== 'completed') break;
+
+                    await wait(200);  /* pause before next segment */
+                }
+            }
+
+            animateTracker();
+        });
+    </script>
+</body>
+
+</html>
