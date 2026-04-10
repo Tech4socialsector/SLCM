@@ -2740,6 +2740,70 @@ function setupAttachFieldValidation() {
 	}, 120);
 }
 
+// ───────────────────────────────────────────────────────────────────
+//  FORCE PUBLIC UPLOADS — auto-uncheck Private in Frappe upload dialog
+// ───────────────────────────────────────────────────────────────────
+function _slcmForcePublicInNode(root) {
+	if (!root || !root.querySelectorAll) return;
+	// 1. Click "Set all public" button if present (handles batch queue)
+	root.querySelectorAll('button, .btn').forEach(function (btn) {
+		if (!btn._slcmPublicClicked && /set all public/i.test((btn.textContent || '').trim())) {
+			btn._slcmPublicClicked = true;
+			setTimeout(function () { btn.click(); }, 30);
+		}
+	});
+	// 2. Uncheck any Private checkbox directly
+	root.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+		if (cb._slcmPublicDone) return;
+		var lbl = cb.closest('label') || cb.parentElement || {};
+		var txt = (lbl.textContent || cb.name || cb.id || '').toLowerCase();
+		if (txt.indexOf('private') !== -1 && cb.checked) {
+			cb._slcmPublicDone = true;
+			setTimeout(function () {
+				// Trigger Vue reactivity via click, not direct .checked mutation
+				if (cb.checked) cb.click();
+			}, 40);
+		}
+	});
+}
+
+function setupSlcmForcePublicUploads() {
+	// MutationObserver: fires whenever Frappe injects the upload modal into DOM
+	var observer = new MutationObserver(function (mutations) {
+		mutations.forEach(function (m) {
+			m.addedNodes.forEach(function (node) {
+				if (!node || node.nodeType !== 1) return;
+				// Direct match (the uploader root itself)
+				if (node.classList && (node.classList.contains('file-uploader') ||
+						node.classList.contains('modal-dialog') ||
+						node.classList.contains('modal'))) {
+					_slcmForcePublicInNode(node);
+				}
+				// Descendant match
+				if (node.querySelectorAll) {
+					node.querySelectorAll('.file-uploader').forEach(_slcmForcePublicInNode);
+				}
+			});
+		});
+	});
+	observer.observe(document.body, { childList: true, subtree: true });
+
+	// Polling fallback: catches dynamically rendered Vue child nodes
+	// that arrive after the modal container is first inserted
+	setInterval(function () {
+		var uploaders = document.querySelectorAll(
+			'.modal.show .file-uploader, ' +
+			'.modal[style*="display: block"] .file-uploader, ' +
+			'.file-uploader'
+		);
+		uploaders.forEach(_slcmForcePublicInNode);
+		// Also scan open modals for Private checkboxes added by Vue after modal frame
+		var modals = document.querySelectorAll('.modal.show, .modal[style*="display: block"]');
+		modals.forEach(_slcmForcePublicInNode);
+	}, 300);
+}
+
+
 function setupNumericFieldRestriction() {
 	// Select common numeric field types used in SLCM (Int, Float, Currency, Percent)
 	var NUMERIC_TYPES = ['Int', 'Float', 'Currency', 'Percent'];
@@ -3620,6 +3684,7 @@ frappe.ready(function () {
 	setupSubmittedFormUX();
 	setupCandidatePhotoPreview();
 	setupAttachFieldValidation();
+	setupSlcmForcePublicUploads();
 	setupNumericFieldRestriction();
 	setupApplicantFieldBoundaries();
 	setupPhoneValidation();
