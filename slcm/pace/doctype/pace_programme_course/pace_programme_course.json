@@ -8,7 +8,6 @@
  "engine": "InnoDB",
  "field_order": [
   "course_title",
-  "programme",
   "course_intro",
   "unites"
  ],
@@ -29,20 +28,12 @@
    "fieldtype": "Table",
    "label": "Unites",
    "options": "PACE Course Unit"
-  },
-  {
-   "fieldname": "programme",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Programme",
-   "options": "PACE Programme",
-   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-31 17:06:46.924565",
+ "modified": "2026-04-10 15:06:38.972596",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Programme Course",

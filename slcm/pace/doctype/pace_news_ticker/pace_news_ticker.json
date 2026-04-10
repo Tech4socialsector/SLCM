@@ -8,7 +8,8 @@
  "field_order": [
   "ticker_text",
   "ticker_link",
-  "is_active"
+  "is_active",
+  "first_priority"
  ],
  "fields": [
   {
@@ -30,13 +31,19 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Is Active"
+  },
+  {
+   "default": "0",
+   "fieldname": "first_priority",
+   "fieldtype": "Check",
+   "label": "First Priority"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-10 14:57:16.527974",
+ "modified": "2026-04-10 17:05:55.038626",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE News Ticker",

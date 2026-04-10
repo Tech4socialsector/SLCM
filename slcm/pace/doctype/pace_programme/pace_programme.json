@@ -19,6 +19,7 @@
   "duration_type",
   "duration",
   "section_break_wbef",
+  "course",
   "faculty",
   "overview_tab",
   "show_overview_tab",
@@ -165,6 +166,12 @@
    "fieldtype": "Table",
    "label": "Faculty",
    "options": "PACE Faculty Table"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Table",
+   "label": "Courses",
+   "options": "PACE Programme Course Table"
   }
  ],
  "grid_page_length": 50,
@@ -172,7 +179,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-10 14:41:35.447146",
+ "modified": "2026-04-10 15:12:53.105949",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Programme",

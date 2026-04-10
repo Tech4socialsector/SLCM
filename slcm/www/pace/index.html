@@ -90,15 +90,19 @@ tailwind.config = {
         }
     </script>
     <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
         }
 
         .hero-gradient {
             background: linear-gradient(
-                135deg,
-                color-mix(in srgb, var(--primary) 94%, black) 0%,
-                color-mix(in srgb, var(--primary) 55%, black) 100%
+                to bottom,
+                rgba(15, 23, 42, 0.4) 0%,
+                rgba(15, 23, 42, 0.8) 100%
             );
         }
 
@@ -159,9 +163,35 @@ tailwind.config = {
             white-space: nowrap;
         }
 
+        .ticker-wrap:hover .ticker {
+            animation-play-state: paused;
+        }
+
         .ticker {
             display: inline-block;
             animation: ticker 40s linear infinite;
+            font-size: 15.5px;
+            font-weight: 700;
+            color: var(--on-secondary-fixed);
+            padding-left: 100%;
+            white-space: nowrap;
+        }
+
+        .ticker a {
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: inline-block;
+            padding-right: 40px;
+        }
+
+        .ticker span {
+            padding-right: 5px;
+        }
+
+        .ticker a:hover {
+            color: var(--primary);
+            filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 30%, transparent));
         }
 
         @keyframes ticker {
@@ -170,7 +200,7 @@ tailwind.config = {
             }
 
             100% {
-                transform: translateX(-50%);
+                transform: translateX(-100%);
             }
         }
 
@@ -299,35 +329,28 @@ tailwind.config = {
 {% block content %}
 <div class="pace-index-root relative bg-background text-on-surface font-body antialiased">
         <!-- Latest Updates Ticker -->
-        <div class="bg-secondary-container py-3 border-b border-secondary/10 overflow-hidden">
+        <div class="bg-secondary-container py-3 border-b border-secondary/10 overflow-hidden" id="pace-ticker-bar">
             <div class="max-w-[1400px] mx-auto px-8 flex items-center gap-8">
                 <div class="flex items-center gap-3 shrink-0">
                     <span class="material-symbols-outlined text-secondary text-lg">campaign</span>
                     <span
                         class="text-[10px] font-bold tracking-[0.2em] text-on-secondary-fixed uppercase flex items-center gap-2">
                         Latest Updates
-                        <span
-                            class="inline-block px-1.5 py-0.5 bg-primary text-white text-[8px] rounded-sm animate-blink">NEW</span>
                     </span>
                 </div>
                 <div class="ticker-wrap flex-grow">
-                    <div class="ticker text-xs font-medium text-on-secondary-fixed space-x-12 flex">
-                        <span>• FLE 2024 admissions are now live until 15 August.</span>
-                        <span>• NLSIU ranks #1 in NIRF Law category for the seventh consecutive year.</span>
-                        <span>• New PG Diploma in Digital Laws and Policy introduced.</span>
-                        <span>• FLE 2024 admissions are now live until 15 August.</span>
-                        <span>• NLSIU ranks #1 in NIRF Law category for the seventh consecutive year.</span>
-                        <span>• New PG Diploma in Digital Laws and Policy introduced.</span>
+                    <div class="ticker text-xs font-medium text-on-secondary-fixed space-x-12 flex" id="pace-ticker-items">
+                        <span>Loading updates…</span>
                     </div>
                 </div>
                 <a class="shrink-0 text-[10px] font-black tracking-widest text-primary uppercase border-b-2 border-primary/20 hover:border-primary transition-all"
-                    href="#">View All News</a>
+                    href="#" id="pace-ticker-view-all" style="display:none;">View All News</a>
             </div>
         </div>
         <!-- Hero Section -->
         <section class="relative min-h-[90vh] flex items-center overflow-x-clip overflow-y-hidden">
             <div class="absolute inset-0 z-0 overflow-hidden">
-                <img alt="Academic Institution" class="w-full h-full object-cover"
+                <img alt="Academic Institution" class="w-full h-full object-cover" id="pace-hero-bg"
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ" />
                 <div class="absolute inset-0 hero-gradient"></div>
                 <!-- Diagonal accent: kept inside bounds (no translate-x-1/2) to avoid horizontal overflow -->
@@ -339,28 +362,25 @@ tailwind.config = {
                     <div class="flex items-center justify-center gap-4 mb-6">
                         <span
                             class="inline-flex items-center px-4 py-1.5 bg-secondary-container text-on-secondary-fixed rounded-full font-label text-[10px] tracking-[0.25em] uppercase font-black shadow-lg border border-secondary/20">
-                            Enrolling Now for 2024
+                               <span id="pace-hero-badge">Loading…</span>
                         </span>
                     </div>
                     <h1 class="text-3xl md:text-4xl lg:text-4xl font-headline text-white leading-snug mb-8">
-                        Admissions Open
-                        <span class="block text-secondary-fixed italic mt-2">Foundations for a Legal Education (FLE) Course</span>
+                        <span id="pace-hero-title"> </span>
+                        <span class="block text-secondary-fixed italic mt-2" id="pace-hero-subtitle"></span>
                     </h1>
-                    <p class="text-lg md:text-xl text-white/80 font-body leading-relaxed mb-10 max-w-2xl font-light mx-auto">
-                        Designed for individuals seeking to bridge the gap between diverse professional backgrounds and
-                        the rigors of legal thought. Start your journey at India's premier law university.
-                    </p>
+                    <p class="text-lg md:text-xl text-white/80 font-body leading-relaxed mb-10 max-w-2xl font-light mx-auto" id="pace-hero-desc"></p>
                     <div class="flex flex-wrap justify-center gap-8">
-                        <button
+                        <a id="pace-hero-cta"
                             class="bg-secondary-container text-on-secondary-fixed px-10 py-4 rounded-sm font-label text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-secondary hover:text-white hover:-translate-y-1 shadow-xl">
-                            Apply Now
-                        </button>
-                        <button
+                            Loading…
+                        </a>
+                        <a id="pace-hero-cta2" href="#" target="_blank" rel="noopener"
                             class="group flex items-center gap-4 border-b border-white/40 pb-2 text-white font-label text-xs font-bold uppercase tracking-[0.2em] hover:border-white transition-all">
-                            View Prospectus
+                            <span id="pace-hero-cta2-label"> </span>
                             <span
                                 class="material-symbols-outlined transition-transform group-hover:translate-x-2">arrow_right_alt</span>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -413,7 +433,7 @@ tailwind.config = {
             </div>
         </section>
         <!-- Program Grid -->
-        <section class="py-24 px-8 max-w-[1400px] mx-auto relative z-30">
+        <section id="pace-programmes" class="py-24 px-8 max-w-[1400px] mx-auto relative z-30">
             <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-10 reveal-up">
                 <div class="max-w-2xl">
                     <h2 class="text-4xl md:text-5xl font-headline text-primary mb-6 leading-tight">Continuing Education
@@ -513,16 +533,13 @@ tailwind.config = {
                                     <div class="relative">
                                         <select class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all text-base text-[#3f3f46] appearance-none cursor-pointer pr-10 pb-3" id="programme" name="programme" required>
                                             <option value="" disabled selected>Select a programme</option>
-                                            <option value="Master of Business Laws (MBL)">Master of Business Laws (MBL)</option>
-                                            <option value="PG Diploma in Cyber Law">PG Diploma in Cyber Law</option>
-                                            <option value="PG Diploma in IP Rights">PG Diploma in IP Rights</option>
-                                            <option value="PG Diploma in Environmental Law">PG Diploma in Environmental Law</option>
                                         </select>
                                         <span class="material-symbols-outlined absolute right-0 top-[30%] pointer-events-none text-[#a1a1aa] text-xl">expand_more</span>
                                     </div>
                                 </div>
+                                <div id="pace-enquiry-message" class="hidden text-sm" style="padding-top:6px;"></div>
                                 <div class="pt-6">
-                                    <button class="w-full py-4 font-label text-[11px] font-bold uppercase tracking-[0.25em] transition-all hover:opacity-90 active:scale-[0.99] shadow-sm rounded-sm" style="background-color: var(--primary); color: white;" type="submit">
+                                    <button class="w-full py-4 font-label text-[11px] font-bold uppercase tracking-[0.25em] transition-all hover:opacity-90 active:scale-[0.99] shadow-sm rounded-sm" style="background-color: var(--primary); color: white;" type="submit" id="pace-enquiry-submit">
                                         Submit Request
                                     </button>
                                 </div>
@@ -538,57 +555,8 @@ tailwind.config = {
                 <h2 class="text-4xl md:text-5xl font-headline text-primary mb-6">Clarifying Your Path</h2>
                 <div class="w-16 h-1 bg-secondary mx-auto"></div>
             </div>
-            <div class="space-y-2">
-                <!-- Accordion Item 1 -->
-                <div class="group border-b border-surface-variant/30">
-                    <button
-                        class="w-full py-8 flex justify-between items-center text-left hover:text-primary transition-colors focus:outline-none"
-                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.icon').classList.toggle('rotate-45')">
-                        <span class="text-xl font-headline font-medium tracking-tight">How do the online examinations
-                            work?</span>
-                        <span
-                            class="material-symbols-outlined icon text-on-surface/30 transition-transform text-2xl">add</span>
-                    </button>
-                    <div
-                        class="hidden pb-8 text-on-surface-variant text-lg font-light leading-relaxed max-w-3xl faq-transition">
-                        Examinations are conducted twice a year in a high-fidelity digital proctored environment. Our
-                        secure testing platform ensures academic integrity while providing global accessibility for
-                        professional candidates.
-                    </div>
-                </div>
-                <!-- Accordion Item 2 -->
-                <div class="group border-b border-surface-variant/30">
-                    <button
-                        class="w-full py-8 flex justify-between items-center text-left hover:text-primary transition-colors focus:outline-none"
-                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.icon').classList.toggle('rotate-45')">
-                        <span class="text-xl font-headline font-medium tracking-tight">Is there an age limit for these
-                            programs?</span>
-                        <span
-                            class="material-symbols-outlined icon text-on-surface/30 transition-transform text-2xl">add</span>
-                    </button>
-                    <div
-                        class="hidden pb-8 text-on-surface-variant text-lg font-light leading-relaxed max-w-3xl faq-transition">
-                        No, we champion lifelong learning. Our PACE programs are designed for professionals at any stage
-                        of their career who wish to integrate rigorous legal knowledge into their existing expertise.
-                    </div>
-                </div>
-                <!-- Accordion Item 3 -->
-                <div class="group border-b border-surface-variant/30">
-                    <button
-                        class="w-full py-8 flex justify-between items-center text-left hover:text-primary transition-colors focus:outline-none"
-                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.icon').classList.toggle('rotate-45')">
-                        <span class="text-xl font-headline font-medium tracking-tight">What are the eligibility criteria
-                            for the MBL?</span>
-                        <span
-                            class="material-symbols-outlined icon text-on-surface/30 transition-transform text-2xl">add</span>
-                    </button>
-                    <div
-                        class="hidden pb-8 text-on-surface-variant text-lg font-light leading-relaxed max-w-3xl faq-transition">
-                        Candidates must hold a Bachelor’s degree in any discipline from a recognized university. The
-                        curriculum is structured to accommodate those without prior legal backgrounds, focusing on
-                        functional legal mastery.
-                    </div>
-                </div>
+            <div class="space-y-2" id="pace-faqs">
+                <div class="text-center text-on-surface-variant text-sm py-10">Loading FAQs…</div>
             </div>
         </section>
 
@@ -597,7 +565,6 @@ tailwind.config = {
 
 {% block extra_js %}
 <script>
-        const PROGRAMMES = {{ (pace_programmes or []) | tojson }};
         const DEFAULT_PROGRAM_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ";
         const PAGE_SIZE = 6;
 
@@ -612,6 +579,28 @@ tailwind.config = {
             if (prog.detail_url) return prog.detail_url;
             const slug = prog.detail_slug || prog.programme || '';
             return '/pace/admission/' + encodeURIComponent(slug);
+        }
+
+        function callApi(method, args) {
+            args = args || {};
+            return new Promise(function (resolve, reject) {
+                if (window.frappe && frappe.call) {
+                    frappe.call({
+                        method: method,
+                        args: args,
+                        callback: function (r) { resolve((r && r.message) || null); },
+                        error: function (err) { reject(err); }
+                    });
+                    return;
+                }
+                fetch('/api/method/' + method, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(args)
+                }).then(function (res) { return res.json(); })
+                  .then(function (d) { resolve(d.message); })
+                  .catch(reject);
+            });
         }
 
         function appendProgrammeCards(programs) {
@@ -663,19 +652,19 @@ tailwind.config = {
             const pageIndicator = document.getElementById('page-indicator');
 
             grid.innerHTML = '';
-            if (!PROGRAMMES.length) {
+            if (!window.PACE_PROGRAMMES || !window.PACE_PROGRAMMES.length) {
                 emptyEl.classList.remove('hidden');
                 loadWrap.classList.add('hidden');
                 return;
             }
             emptyEl.classList.add('hidden');
 
-            const totalPages = Math.max(1, Math.ceil(PROGRAMMES.length / PAGE_SIZE));
+            const totalPages = Math.max(1, Math.ceil(window.PACE_PROGRAMMES.length / PAGE_SIZE));
             let currentPage = 1;
 
             function renderSlice(page) {
                 const start = (page - 1) * PAGE_SIZE;
-                const slice = PROGRAMMES.slice(start, start + PAGE_SIZE);
+                const slice = window.PACE_PROGRAMMES.slice(start, start + PAGE_SIZE);
                 appendProgrammeCards(slice);
                 if (pageIndicator) {
                     pageIndicator.textContent = page + ' / ' + totalPages;
@@ -725,6 +714,216 @@ tailwind.config = {
 
         document.querySelectorAll('.reveal-up').forEach(function (el) { observer.observe(el); });
 
-        initProgrammeGrid();
+        function setEnquiryMessage(type, text) {
+            const el = document.getElementById('pace-enquiry-message');
+            if (!el) return;
+            el.classList.remove('hidden');
+            el.style.color = type === 'success' ? '#16a34a' : (type === 'error' ? '#dc2626' : '#475569');
+            el.textContent = text || '';
+        }
+
+        function renderFaqs(faqs) {
+            const wrap = document.getElementById('pace-faqs');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            if (!faqs || !faqs.length) {
+                wrap.innerHTML = '<div class="text-center text-on-surface-variant text-sm py-10">No FAQs available right now.</div>';
+                return;
+            }
+            faqs.forEach(function (f) {
+                const item = document.createElement('div');
+                item.className = 'group border-b border-surface-variant/30';
+                item.innerHTML =
+                    '<button class="w-full py-8 flex justify-between items-center text-left hover:text-primary transition-colors focus:outline-none" type="button">' +
+                        '<span class="text-xl font-headline font-medium tracking-tight">' + escapeHtml(f.question || '') + '</span>' +
+                        '<span class="material-symbols-outlined icon text-on-surface/30 transition-transform text-2xl">add</span>' +
+                    '</button>' +
+                    '<div class="hidden pb-8 text-on-surface-variant text-lg font-light leading-relaxed max-w-3xl faq-transition">' +
+                        (f.answer || '') +
+                    '</div>';
+                const btn = item.querySelector('button');
+                const ans = item.querySelector('div');
+                const ic = item.querySelector('.icon');
+                btn.addEventListener('click', function () {
+                    ans.classList.toggle('hidden');
+                    if (ic) ic.classList.toggle('rotate-45');
+                });
+                wrap.appendChild(item);
+            });
+        }
+
+        function renderTicker(items) {
+            const bar = document.getElementById('pace-ticker-bar');
+            const wrap = document.getElementById('pace-ticker-items');
+            if (!bar || !wrap) return;
+            wrap.innerHTML = '';
+            if (!items || !items.length) {
+                wrap.innerHTML = '<span>• No updates at the moment.</span>';
+                return;
+            }
+
+            // Priority Sorting: Higher first_priority values come first
+            items.sort(function(a, b) {
+                return (b.first_priority || 0) - (a.first_priority || 0);
+            });
+
+            const list = [];
+            items.forEach(function (it, idx) {
+                const text = (it.ticker_text || '').trim();
+                if (!text) return;
+                const link = (it.ticker_link || '').trim();
+                let badge = '';
+                if (idx === 0) {
+                    badge = '<span class="badge-partylight-text text-[11px]">New</span>';
+                }
+                if (link) {
+                    list.push('<a href="' + escapeHtml(link) + '" target="_blank" rel="noopener">' + badge + '• ' + escapeHtml(text) + '</a>');
+                } else {
+                    list.push('<span>' + badge + '• ' + escapeHtml(text) + '</span>');
+                }
+            });
+
+            // Duplication Fix: Only double if there are multiple items for a better loop
+            // Otherwise, just show once to respect user's request
+            const finalHtml = (items.length > 1) ? list.concat(list).join('') : list.join('');
+            wrap.innerHTML = finalHtml || '<span>• No updates at the moment.</span>';
+        }
+
+        function applyHero(data) {
+            const bg = document.getElementById('pace-hero-bg');
+            const badge = document.getElementById('pace-hero-badge');
+            const title = document.getElementById('pace-hero-title');
+            const subtitle = document.getElementById('pace-hero-subtitle');
+            const desc = document.getElementById('pace-hero-desc');
+            const cta = document.getElementById('pace-hero-cta');
+            const cta2 = document.getElementById('pace-hero-cta2');
+            const cta2Label = document.getElementById('pace-hero-cta2-label');
+
+            if (bg && data.hero_background_image) bg.src = data.hero_background_image;
+            if (badge) badge.textContent = data.hero_badge_text || '';
+            if (title) title.textContent = data.hero_title || '';
+            if (subtitle) subtitle.textContent = data.hero_subtitle || '';
+            if (desc) desc.textContent = data.hero_description || '';
+
+            if (cta) {
+                cta.textContent = data.hero_cta_label || 'Apply Now';
+                cta.href = '/pace/admission#pace-programmes';
+            }
+            if (cta2Label) cta2Label.textContent = data.hero_cta2_label || 'View Prospectus';
+            if (cta2) {
+                if (data.hero_prospectus_file) {
+                    cta2.href = data.hero_prospectus_file;
+                    cta2.style.display = '';
+                } else {
+                    cta2.href = '#';
+                    cta2.style.display = 'none';
+                }
+            }
+        }
+
+        function populateProgrammeDropdown(programmes) {
+            const sel = document.getElementById('programme');
+            if (!sel) return;
+            const first = sel.querySelector('option[value=""]');
+            sel.innerHTML = '';
+            if (first) sel.appendChild(first);
+            if (!programmes || !programmes.length) return;
+            programmes.forEach(function (p) {
+                const opt = document.createElement('option');
+                opt.value = p.name || p.programme || '';
+                opt.textContent = p.programme_name || p.name || p.programme || 'Programme';
+                sel.appendChild(opt);
+            });
+        }
+
+        async function loadPaceData() {
+            try {
+                const data = await callApi('slcm.pace.api.get_pace_page_data', {});
+                if (!data || data.success === false) {
+                    throw new Error((data && data.message) || 'Could not load page data.');
+                }
+                try { console.log('[PACE] page data', data); } catch (e) {}
+
+                if (data.show_ticker === 0) {
+                    const bar = document.getElementById('pace-ticker-bar');
+                    if (bar) bar.style.display = 'none';
+                } else {
+                    renderTicker(data.ticker_items || []);
+                }
+
+                applyHero(data);
+                renderFaqs(data.faqs || []);
+                window.PACE_PROGRAMMES = data.programmes || [];
+                initProgrammeGrid();
+            } catch (e) {
+                try { console.error('[PACE] failed to load page data', e); } catch (e2) {}
+                const bar = document.getElementById('pace-ticker-bar');
+                if (bar) bar.style.display = 'none';
+                const faq = document.getElementById('pace-faqs');
+                if (faq) faq.innerHTML = '<div class="text-center text-on-surface-variant text-sm py-10">Could not load FAQs.</div>';
+                window.PACE_PROGRAMMES = [];
+                initProgrammeGrid();
+            }
+        }
+
+        async function loadProgrammeOptions() {
+            try {
+                const progs = await callApi('slcm.pace.api.get_pace_programmes', {});
+                populateProgrammeDropdown(progs || []);
+            } catch (e) {
+                populateProgrammeDropdown([]);
+            }
+        }
+
+        async function submitEnquiry() {
+            const btn = document.getElementById('pace-enquiry-submit');
+            const form = document.getElementById('programme-inquiry-form');
+            if (!form) return;
+
+            const full_name = (document.getElementById('full-name') || {}).value || '';
+            const email = (document.getElementById('email') || {}).value || '';
+            const phone = (document.getElementById('phone') || {}).value || '';
+            const programme_of_interest = (document.getElementById('programme') || {}).value || '';
+
+            if (!full_name.trim() || !email.trim() || !phone.trim() || !programme_of_interest.trim()) {
+                setEnquiryMessage('error', 'Please fill all required fields.');
+                return;
+            }
+
+            try {
+                if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+                setEnquiryMessage('info', '');
+                const r = await callApi('slcm.pace.api.submit_pace_enquiry', {
+                    full_name: full_name,
+                    email: email,
+                    phone: phone,
+                    programme_of_interest: programme_of_interest
+                });
+                if (!r || r.success !== true) {
+                    setEnquiryMessage('error', (r && r.message) ? r.message : 'Could not submit enquiry.');
+                    return;
+                }
+                setEnquiryMessage('success', 'Thank you. Our admissions counsellors will contact you shortly.');
+                form.reset();
+            } catch (e) {
+                setEnquiryMessage('error', 'Could not submit enquiry. Please try again.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Submit Request'; }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('programme-inquiry-form');
+            if (form) {
+                form.removeAttribute('onsubmit');
+                form.addEventListener('submit', function (ev) {
+                    ev.preventDefault();
+                    submitEnquiry();
+                });
+            }
+        });
+
+        loadPaceData();
+        loadProgrammeOptions();
     </script>
 {% endblock %}

@@ -1,12 +1,14 @@
 import frappe
 
-from slcm.pace.api import get_pace_programmes
-
 
 def get_context(context):
     context.no_cache = 1
     try:
-        context.pace_programmes = get_pace_programmes()
+        pc = frappe.get_single("Applicant Portal Config")
+        if not int(pc.get("enable_pace_admission") or 0):
+            raise frappe.PageDoesNotExistError
+    except frappe.PageDoesNotExistError:
+        raise
     except Exception:
-        frappe.log_error(frappe.get_traceback(), "PACE index — get_pace_programmes")
-        context.pace_programmes = []
+        # If config is missing/misconfigured, don't expose the page publicly.
+        raise frappe.PageDoesNotExistError
