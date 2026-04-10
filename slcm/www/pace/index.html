@@ -1,20 +1,22 @@
-<!DOCTYPE html>
+{% extends "slcm/www/admission_base.html" %}
 
-<html class="scroll-smooth" lang="en">
+{% block adm_container_extra_class %}pace-index-bleed{% endblock %}
 
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>NLSIU PACE | Professional and Continuing Education</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <script id="tailwind-config">
-        tailwind.config = {
+{% block theme_vars %}
+<style>
+    :root {
+        --primary: #920c24;
+        --accent: #735c00;
+    }
+</style>
+{% endblock %}
+
+{% block title %}NLSIU PACE | Professional and Continuing Education{% endblock %}
+
+{% block page_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet" />
+    <script id="tailwind-config-pace-index">
+tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
@@ -41,9 +43,9 @@
                         "outline-variant": "#e0bfbf",
                         "error": "#ba1a1a",
                         "surface-container-highest": "#e1e3e4",
-                        "primary-container": "#800020",
+                        "primary-container": "#b91c3a",
                         "tertiary": "#272727",
-                        "primary": "#570013",
+                        "primary": "#920c24",
                         "inverse-surface": "#2e3132",
                         "primary-fixed-dim": "#ffb3b5",
                         "secondary-fixed-dim": "#e9c349",
@@ -100,7 +102,7 @@
         }
 
         .hero-gradient {
-            background: linear-gradient(135deg, rgba(87, 0, 19, 0.95) 0%, rgba(128, 0, 32, 0.8) 100%);
+            background: linear-gradient(135deg, rgba(146, 12, 36, 0.95) 0%, rgba(100, 8, 28, 0.85) 100%);
         }
 
         .editorial-shadow {
@@ -127,7 +129,7 @@
         }
 
         .program-card:hover .program-card-shadow {
-            box-shadow: 0 30px 60px -15px rgba(87, 0, 19, 0.12);
+            box-shadow: 0 30px 60px -15px rgba(146, 12, 36, 0.14);
         }
 
         .faq-transition {
@@ -139,7 +141,7 @@
         }
 
         .input-transition:focus {
-            box-shadow: inset 0 2px 4px 0 rgba(87, 0, 19, 0.05);
+            box-shadow: inset 0 2px 4px 0 rgba(146, 12, 36, 0.06);
         }
 
         .hidden-program {
@@ -174,40 +176,35 @@
                 transform: translateX(-50%);
             }
         }
-    </style>
-</head>
 
-<body class="bg-background text-on-surface font-body antialiased overflow-x-hidden">
-    <!-- TopNavBar -->
-    <nav class="fixed top-0 w-full z-[100] bg-white/90 backdrop-blur-xl border-b border-surface-variant/30">
-        <div class="flex justify-between items-center px-8 lg:px-16 py-5 max-w-screen-2xl mx-auto">
-            <div class="flex items-center gap-4">
-                <span class="text-3xl font-headline font-bold tracking-tight text-primary">NLSIU PACE</span>
-            </div>
-            <!-- Desktop Navigation -->
-            <div class="hidden lg:flex items-center gap-10">
-                <a class="text-primary border-b-2 border-secondary pb-1 text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">About</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">Programmes</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">Admissions</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">FAQs</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">Contact Us</a>
-                <a class="text-on-surface/70 hover:text-primary transition-colors text-xs uppercase tracking-[0.2em] font-bold"
-                    href="#">Alumni</a>
-            </div>
-            <div class="flex items-center gap-6">
-                <button
-                    class="bg-primary text-white px-8 py-2.5 rounded-sm font-label text-xs uppercase tracking-[0.2em] font-bold hover:bg-primary-container transition-all hover:shadow-lg active:scale-95">
-                    myNLS
-                </button>
-            </div>
-        </div>
-    </nav>
-    <main class="relative pt-20">
+        main.adm-main > .adm-container.pace-index-bleed {
+            max-width: none !important;
+            width: 100%;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            padding-top: 0 !important;
+        }
+        main.adm-main:has(> .adm-container.pace-index-bleed) {
+            background: #f8f9fa;
+            max-width: 100%;
+            /* Do not set overflow-x on main: paired with visible-y it becomes overflow-y:auto → double scrollbar */
+            overflow: visible;
+        }
+        .pace-index-root {
+            max-width: 100%;
+            overflow: visible;
+        }
+        .pace-prog-desc-clamp {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="pace-index-root relative bg-background text-on-surface font-body antialiased">
         <!-- Latest Updates Ticker -->
         <div class="bg-secondary-container py-3 border-b border-secondary/10 overflow-hidden">
             <div class="max-w-[1400px] mx-auto px-8 flex items-center gap-8">
@@ -235,14 +232,13 @@
             </div>
         </div>
         <!-- Hero Section -->
-        <section class="relative min-h-[90vh] flex items-center overflow-hidden">
-            <div class="absolute inset-0 z-0">
-                <img alt="Academic Institution" class="w-full h-full object-cover scale-105"
+        <section class="relative min-h-[90vh] flex items-center overflow-x-clip overflow-y-hidden">
+            <div class="absolute inset-0 z-0 overflow-hidden">
+                <img alt="Academic Institution" class="w-full h-full object-cover"
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ" />
                 <div class="absolute inset-0 hero-gradient"></div>
-                <!-- Diagonal Accent Overlay -->
-                <div
-                    class="absolute top-0 right-0 w-1/3 h-full bg-primary/20 -skew-x-12 translate-x-1/2 pointer-events-none">
+                <!-- Diagonal accent: kept inside bounds (no translate-x-1/2) to avoid horizontal overflow -->
+                <div class="absolute top-0 right-0 h-full w-[38%] bg-primary/20 -skew-x-12 origin-top-right pointer-events-none">
                 </div>
             </div>
             <div class="relative z-10 max-w-7xl mx-auto px-8 w-full">
@@ -520,81 +516,12 @@
                 </div>
             </div>
         </section>
-    </main>
-    <!-- Footer -->
-    <footer class="bg-[#2D000A] text-white py-24 overflow-hidden relative">
-        <div class="max-w-[1400px] mx-auto px-8 relative z-10">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-20">
-                <div class="lg:col-span-5">
-                    <span class="text-3xl font-headline font-bold text-white block mb-8 tracking-tight">NLSIU
-                        PACE</span>
-                    <p class="text-white/60 text-lg leading-relaxed mb-8 font-light max-w-md">
-                        Professional and Continuing Education (PACE) is the strategic outreach of NLSIU, dedicated to
-                        democratizing elite legal education for global professionals.
-                    </p>
-                    <div class="flex gap-6">
-                        <a class="w-10 h-10 flex items-center justify-center border border-white/20 rounded-full hover:bg-secondary hover:border-secondary transition-all"
-                            href="#">
-                            <span class="material-symbols-outlined text-lg">public</span>
-                        </a>
-                        <a class="w-10 h-10 flex items-center justify-center border border-white/20 rounded-full hover:bg-secondary hover:border-secondary transition-all"
-                            href="#">
-                            <span class="material-symbols-outlined text-lg">mail</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="lg:col-span-7">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-10">
-                        <div>
-                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
-                                Programmes</h4>
-                            <ul class="space-y-4">
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
-                                        href="#">Business Laws (MBL)</a></li>
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">Cyber
-                                        Law &amp; Forensics</a></li>
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
-                                        href="#">Intellectual Property</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
-                                Resources</h4>
-                            <ul class="space-y-4">
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">LMS
-                                        Portal</a></li>
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs" href="#">Digital
-                                        Library</a></li>
-                                <li><a class="text-white/60 hover:text-white transition-colors text-xs"
-                                        href="#">Academic Calendar</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="text-secondary-fixed font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
-                                Contact</h4>
-                            <div class="text-white/60 text-xs leading-loose space-y-2 font-light">
-                                <p>Gnana Bharathi Main Rd,<br />Bengaluru, 560072</p>
-                                <p>admissions.pace@nls.ac.in</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8">
-                <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest">© National Law School of India
-                    University. Excellence since 1987.</p>
-                <div class="flex flex-wrap justify-center gap-8">
-                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
-                        href="#">Privacy</a>
-                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
-                        href="#">Terms</a>
-                    <a class="text-white/40 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest"
-                        href="#">Sitemap</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-    <script>
+
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
         const PROGRAMMES = {{ (pace_programmes or []) | tojson }};
         const DEFAULT_PROGRAM_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ";
         const PAGE_SIZE = 6;
@@ -639,7 +566,7 @@
                     '<div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow flex flex-col">' +
                     '<span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary uppercase mb-3 block">PACE Programme</span>' +
                     '<h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">' + escapeHtml(title) + '</h3>' +
-                    '<p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light flex-grow">' + escapeHtml(desc) + '</p>' +
+                    '<p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light line-clamp-3 overflow-hidden pace-prog-desc-clamp">' + escapeHtml(desc) + '</p>' +
                     '<div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">' +
                     '<div class="flex items-center gap-2 text-on-surface/50">' +
                     '<span class="material-symbols-outlined text-lg">schedule</span>' +
@@ -725,6 +652,4 @@
 
         initProgrammeGrid();
     </script>
-</body>
-
-</html>
+{% endblock %}

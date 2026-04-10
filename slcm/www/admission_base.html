@@ -74,8 +74,11 @@
             box-sizing: border-box;
         }
 
+        /* One vertical scrollport: overflow-x:hidden on both html and body can force overflow-y:auto on
+           both (CSS 2.1 pairing), which shows two vertical scrollbars. Scroll on html only. */
         html {
-            overflow-x: hidden;
+            overflow-x: clip;
+            overflow-y: auto;
         }
 
         body {
@@ -84,7 +87,8 @@
             color: var(--text);
             margin: 0;
             padding-top: 60px;
-            overflow-x: hidden;
+            overflow-x: visible;
+            overflow-y: visible;
         }
     </style>
     {% block theme_vars %}{% endblock %}
@@ -999,7 +1003,7 @@
     </main>
     {% else %}
     <main class="adm-main">
-        <div class="adm-container" style="padding-top:12px;">
+        <div class="adm-container {% block adm_container_extra_class %}{% endblock %}" style="padding-top:12px;">
             {% block content %}{% endblock %}
         </div>
     </main>
@@ -1007,13 +1011,16 @@
 
     <style>
         .full-bleed-footer {
-            margin-left: calc(-50vw + 50%);
-            margin-right: calc(-50vw + 50%);
-            width: 100vw;
+            /* Use 100% of body — avoids horizontal scrollbar from 100vw + vertical scrollbar */
+            width: 100%;
+            max-width: none;
+            margin-left: 0;
+            margin-right: 0;
             position: relative;
             background: #0f172a;
             color: #94a3b8;
             padding: 48px 0 24px;
+            box-sizing: border-box;
         }
 
         .footer-container {
